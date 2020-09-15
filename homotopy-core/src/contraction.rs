@@ -1,10 +1,12 @@
-use crate::diagram::*;
 use crate::common::*;
+use crate::diagram::*;
 use crate::rewrite::*;
-use crate::util::graph::Graph;
 use crate::util::union_find::UnionFind;
+use petgraph::algo::tarjan_scc;
+use petgraph::graphmap::{DiGraphMap, GraphMap};
 use std::collections::HashMap;
 use std::hash::Hash;
+use std::rc::Rc;
 
 #[derive(Clone)]
 struct Span(Rewrite, Diagram, Rewrite);
@@ -12,12 +14,121 @@ struct Span(Rewrite, Diagram, Rewrite);
 #[derive(PartialEq, Eq, Debug, Clone, Copy, Hash, PartialOrd, Ord)]
 struct Node(usize, usize);
 
-#[derive(PartialEq, Eq, Debug, Clone, Copy, Hash)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy, Hash, PartialOrd, Ord)]
 struct Component(usize);
 
-type Bias = usize;
+type BiasValue = usize;
 
-fn colimit(diagrams: &[(Diagram, Bias)], spans: &[(usize, Span, usize)]) -> Option<Vec<Rewrite>> {
+#[derive(Debug, Clone, Copy)]
+pub enum Bias {
+    Higher,
+    Lower,
+}
+
+pub fn contract(
+    diagram: &DiagramN,
+    height: SingularHeight,
+    bias: Option<Bias>,
+) -> Option<RewriteN> {
+    let slices: Vec<_> = diagram.slices().collect();
+    let cospans = diagram.cospans();
+
+    let cospan0 = cospans.get(height)?;
+    let cospan1 = cospans.get(height + 1)?;
+
+    let singular0 = slices.get(height * 2 + 1)?;
+    let regular = slices.get(height * 2 + 2)?;
+    let singular1 = slices.get(height * 2 + 3)?;
+
+    let span = Span(
+        cospan0.backward.clone(),
+        regular.clone(),
+        cospan1.forward.clone(),
+    );
+
+    let (bias0, bias1) = match bias {
+        None => (0, 0),
+        Some(Bias::Higher) => (1, 0),
+        Some(Bias::Lower) => (0, 1),
+    };
+
+    let result = colimit(
+        &[(singular0.clone(), bias0), (singular1.clone(), bias1)],
+        &[(0, span, 1)],
+    )?;
+
+    let rewrite = RewriteN::new(
+        diagram.dimension(),
+        vec![Cone {
+            index: height,
+            target: Cospan {
+                forward: Rewrite::compose(cospan0.forward.clone(), result[0].clone()).unwrap(),
+                backward: Rewrite::compose(cospan1.backward.clone(), result[1].clone()).unwrap(),
+            },
+            source: vec![cospan0.clone(), cospan1.clone()],
+            slices: result,
+        }],
+    );
+
+    Some(rewrite)
+}
+
+pub fn contract_in_path(
+    diagram: &DiagramN,
+    path: &[Height],
+    height: SingularHeight,
+    bias: Option<Bias>,
+) -> Option<RewriteN> {
+    match path.split_first() {
+        None => contract(diagram, height, bias),
+        Some((step, rest)) => {
+            let slice = diagram.slice(*step)?.to_n()?.clone();
+            let rewrite = contract_in_path(&slice, rest, height, bias)?;
+            match step {
+                Height::Regular(i) => Some(RewriteN::new(
+                    diagram.dimension(),
+                    vec![Cone {
+                        index: *i,
+                        source: vec![],
+                        target: Cospan {
+                            forward: rewrite.clone().into(),
+                            backward: rewrite.into(),
+                        },
+                        slices: vec![],
+                    }],
+                )),
+                Height::Singular(i) => {
+                    let source_cospan = &diagram.cospans()[*i];
+                    Some(RewriteN::new(
+                        diagram.dimension(),
+                        vec![Cone {
+                            index: *i,
+                            source: vec![source_cospan.clone()],
+                            target: Cospan {
+                                forward: Rewrite::compose(
+                                    source_cospan.forward.clone(),
+                                    rewrite.clone().into(),
+                                )
+                                .unwrap(),
+                                backward: Rewrite::compose(
+                                    source_cospan.backward.clone(),
+                                    rewrite.clone().into(),
+                                )
+                                .unwrap(),
+                            },
+                            slices: vec![rewrite.into()],
+                        }],
+                    ))
+                }
+            }
+        }
+    }
+}
+
+fn colimit(
+    diagrams: &[(Diagram, BiasValue)],
+    spans: &[(usize, Span, usize)],
+) -> Option<Vec<Rewrite>> {
     let dimension = diagrams[0].0.dimension();
 
     for diagram in diagrams {
@@ -43,7 +154,7 @@ fn colimit(diagrams: &[(Diagram, Bias)], spans: &[(usize, Span, usize)]) -> Opti
 }
 
 fn colimit_base(
-    diagrams: &[(Diagram, Bias)],
+    diagrams: &[(Diagram, BiasValue)],
     spans: &[(usize, Span, usize)],
 ) -> Option<Vec<Rewrite>> {
     let mut union_find = UnionFind::new(diagrams.len());
@@ -78,7 +189,7 @@ fn colimit_base(
             diagrams
                 .iter()
                 .map(|(diagram, _)| {
-                    Rewrite::Rewrite0(diagram.to_generator().unwrap(), max_generator)
+                    Rewrite0::new(diagram.to_generator().unwrap(), max_generator).into()
                 })
                 .collect(),
         )
@@ -88,22 +199,23 @@ fn colimit_base(
 }
 
 fn colimit_recursive(
-    diagrams: &[(Diagram, Bias)],
+    diagrams: &[(Diagram, BiasValue)],
     spans: &[(usize, Span, usize)],
 ) -> Option<Vec<Rewrite>> {
     let mut span_slices: HashMap<(Node, Node), Span> = HashMap::new();
     let mut diagram_slices: HashMap<Node, Diagram> = HashMap::new();
     let mut node_to_cospan: HashMap<Node, Cospan> = HashMap::new();
-    let mut delta: Graph<Node, (), ()> = Graph::new();
+
+    let mut delta: DiGraphMap<Node, ()> = GraphMap::new();
 
     // Explode the input diagrams into their singular slices and the spans between them.
     for (key, (diagram, _)) in diagrams.iter().enumerate() {
         let diagram = diagram.to_n().unwrap();
-        let slices = diagram.slices();
+        let slices: Vec<_> = diagram.slices().collect();
         let cospans = diagram.cospans();
 
         for height in 0..diagram.size() {
-            delta.add_node(Node(key, height), ());
+            delta.add_node(Node(key, height));
             diagram_slices.insert(Node(key, height), slices[height * 2 + 1].clone());
             node_to_cospan.insert(Node(key, height), cospans[height].clone());
         }
@@ -114,10 +226,10 @@ fn colimit_recursive(
             let forward = cospans[height].forward.clone();
 
             span_slices.insert(
-                (Node(key, height), Node(key, height - 1)),
+                (Node(key, height - 1), Node(key, height)),
                 Span(backward, slice, forward),
             );
-            delta.add_edge(Node(key, height), Node(key, height - 1), ());
+            delta.add_edge(Node(key, height - 1), Node(key, height), ());
         }
     }
 
@@ -127,7 +239,7 @@ fn colimit_recursive(
         let backward = backward.to_n().unwrap();
         let forward = forward.to_n().unwrap();
         let diagram = diagram.to_n().unwrap();
-        let slices = diagram.slices();
+        let slices: Vec<_> = diagram.slices().collect();
 
         for height in 0..diagram.size() {
             let slice = slices[height * 2 + 1].clone();
@@ -143,7 +255,7 @@ fn colimit_recursive(
     }
 
     // Get the strongly connected components of the delta graph in topological order.
-    let mut scc_to_nodes = delta.sccs();
+    let mut scc_to_nodes = tarjan_scc(&delta);
     scc_to_nodes.reverse();
 
     // Associate to every node its component
@@ -154,20 +266,45 @@ fn colimit_recursive(
         .collect();
 
     // Contract the graph to a DAG
-    let scc_graph: Graph<Component, Vec<Node>, Vec<(Node, Node)>> =
-        delta.contract(|node| node_to_scc[node]);
+    let mut scc_graph: DiGraphMap<Component, ()> = GraphMap::new();
+    let mut scc_spans: HashMap<Component, Vec<(Node, Span, Node)>> = HashMap::new();
+
+    for scc in 0..scc_to_nodes.len() {
+        scc_graph.add_node(Component(scc));
+    }
+
+    for (s, t, _) in delta.all_edges() {
+        let s = node_to_scc[&s];
+        let t = node_to_scc[&t];
+
+        if s != t {
+            scc_graph.add_edge(s, t, ());
+        }
+    }
+
+    for ((s, t), span) in &span_slices {
+        let s_component = node_to_scc[&s];
+        let t_component = node_to_scc[&t];
+
+        if s_component == t_component {
+            scc_spans
+                .entry(s_component)
+                .or_insert(Vec::new())
+                .push((*s, span.clone(), *t));
+        }
+    }
 
     // Linearize the DAG if possible.
-    let scc_to_priority: HashMap<Component, (usize, Bias)> = {
+    let scc_to_priority: HashMap<Component, (usize, BiasValue)> = {
         // This bit relies on the topological order of the strongly connected components
         // to compute the shortest distance from a root.
-        let mut scc_to_priority: HashMap<Component, (usize, Bias)> = HashMap::new();
+        let mut scc_to_priority: HashMap<Component, (usize, BiasValue)> = HashMap::new();
 
         for scc in 0..scc_to_nodes.len() {
             let distance = scc_graph
-                .pred(&Component(scc))
-                .iter()
-                .map(|p| scc_to_priority[p].0)
+                .neighbors_directed(Component(scc), petgraph::Direction::Incoming)
+                .filter(|p| p.0 != scc)
+                .map(|p| scc_to_priority[&p].0 + 1)
                 .fold(0, std::cmp::max);
 
             let bias = scc_to_nodes[scc]
@@ -188,8 +325,6 @@ fn colimit_recursive(
     };
 
     if !is_strictly_increasing(&components_sorted, |scc| scc_to_priority[scc]) {
-        // Ambiguous
-        // TODO: Add bias to priority
         return None;
     }
 
@@ -203,30 +338,22 @@ fn colimit_recursive(
     let mut rewrite_slices: HashMap<Node, Rewrite> = HashMap::new();
 
     for component in scc_graph.nodes() {
-        let nodes = scc_graph.get_node(&component).unwrap();
+        let nodes = &scc_to_nodes[component.0];
 
-        // Every node in the strongly connected component corresponds to a slice of the input
-        // diagrams. We assign a uniformly zero bias to avoid mysterious and arbitrary resolving of
-        // ambiguity in deeper levels.
-        let diagrams: Vec<(Diagram, Bias)> = nodes
+        let diagrams: Vec<(Diagram, BiasValue)> = nodes
             .iter()
             .map(|node| (diagram_slices[node].clone(), 0))
             .collect();
 
-        // Edges between nodes in the component correspond to slices of the input spans. We filter
-        // out the backwards edges that we added above to ensure that nodes connected by a slice
-        // of a span end up in the same strongly connected component.
-        let spans: Vec<(usize, Span, usize)> = scc_graph
-            .get_edge(&component, &component)
+        let spans: Vec<(usize, Span, usize)> = scc_spans
+            .get(&component)
             .cloned()
             .unwrap_or(Vec::new())
-            .iter()
-            .filter_map(|(s, t)| {
-                let s_index = nodes.iter().position(|n| n == s).unwrap();
-                let t_index = nodes.iter().position(|n| n == t).unwrap();
-                span_slices
-                    .get(&(*s, *t))
-                    .map(|span| (s_index, span.clone(), t_index))
+            .into_iter()
+            .map(|(s, span, t)| {
+                let s_index = nodes.iter().position(|n| *n == s).unwrap();
+                let t_index = nodes.iter().position(|n| *n == t).unwrap();
+                (s_index, span, t_index)
             })
             .collect();
 
@@ -244,7 +371,7 @@ fn colimit_recursive(
         // Sort the nodes. This will assure that the forward rewrite into the first node
         // and the backward rewrite into the last node are rewrites at the boundaries
         // of the component and thus can be used to determine the target cospan.
-        let mut nodes = scc_graph.get_node(component).unwrap().clone();
+        let mut nodes = scc_to_nodes[component.0].clone();
         nodes.sort();
 
         let first = nodes.first().unwrap();
@@ -253,11 +380,13 @@ fn colimit_recursive(
         let forward = Rewrite::compose(
             node_to_cospan[first].forward.clone(),
             rewrite_slices[first].clone(),
-        );
+        )
+        .unwrap();
         let backward = Rewrite::compose(
             node_to_cospan[last].backward.clone(),
             rewrite_slices[last].clone(),
-        );
+        )
+        .unwrap();
 
         cospans.push(Cospan { forward, backward });
     }
@@ -297,4 +426,57 @@ where
         }
     }
     return true;
+}
+
+mod test {
+    use super::*;
+
+    #[test]
+    fn beads() {
+        let x = Generator {
+            id: 0,
+            dimension: 0,
+        };
+        let f = Generator {
+            id: 1,
+            dimension: 1,
+        };
+        let p = Generator {
+            id: 2,
+            dimension: 2,
+        };
+
+        let fd = DiagramN::new(f, x, x);
+        let pd = DiagramN::new(p, fd.clone(), fd.clone());
+
+        let pfd = pd.attach(fd.clone(), Boundary::Target, &[]).unwrap();
+        let left = pfd.attach(pd.clone(), Boundary::Source, &[1]).unwrap();
+        let right = pfd.attach(pd.clone(), Boundary::Target, &[1]).unwrap();
+
+        let left_contract = contract(&left, 0, None).expect("failed to contract left diagram");
+        let right_contract = contract(&right, 0, None).expect("failed to contract right diagram");
+
+        let left_to_right = DiagramN::new_unsafe(
+            left.clone().into(),
+            vec![Cospan {
+                forward: left_contract.clone().into(),
+                backward: right_contract.clone().into(),
+            }],
+        );
+
+        let right_to_left = DiagramN::new_unsafe(
+            right.clone().into(),
+            vec![Cospan {
+                forward: right_contract.clone().into(),
+                backward: left_contract.clone().into(),
+            }],
+        );
+
+        assert_eq!(left_to_right.target(), right.clone().into());
+        assert_eq!(right_to_left.target(), left.clone().into());
+        assert_eq!(
+            left_to_right.slice(Height::Singular(0)).unwrap(),
+            right_to_left.slice(Height::Singular(0)).unwrap()
+        );
+    }
 }

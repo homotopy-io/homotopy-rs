@@ -1,0 +1,11 @@
+[package]
+name = "homotopy-core"
+version = "0.1.0"
+authors = ["Lukas Heidemann <lukas@heidemann.me>"]
+edition = "2018"
+
+[dependencies]
+petgraph = "*"
+thiserror = "*"
+serde = { features = ["derive"], version = "1.0" }
+serde_json = "1.0"

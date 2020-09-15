@@ -1,0 +1,16 @@
+[package]
+name = "homotopy-web"
+version = "0.1.0"
+authors = ["Lukas Heidemann <lukas@heidemann.me>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+homotopy-core = { path = "../homotopy-core" }
+wasm-bindgen = { features = ["serde-serialize"], version = "0.2" }
+minilp = "0.1"
+serde = { features = ["derive"], version = "1.0" }
+serde_json = "1.0"
+rand = { version = "*", features = ["wasm-bindgen"] }
