@@ -2,8 +2,8 @@ use crate::common::*;
 use crate::diagram::*;
 use crate::layout::Layout;
 use crate::rewrite::*;
-use std::collections::HashMap;
 use serde::Serialize;
+use std::collections::HashMap;
 
 #[derive(Serialize)]
 pub enum Element {
@@ -11,7 +11,7 @@ pub enum Element {
     CellWire(Vec<Point>),
     CellSurface(Vec<Point>),
     IdentityWire(Vec<Point>),
-    IdentitySurface(Vec<(Point, Point)>)
+    IdentitySurface(Vec<(Point, Point)>),
 }
 
 pub type Point = (SliceIndex, SliceIndex);
@@ -350,7 +350,8 @@ impl Generators {
 
         // TODO: Projection
         Generators(
-            diagram.slices()
+            diagram
+                .slices()
                 .map(|slice| {
                     slice
                         .to_n()
@@ -388,7 +389,10 @@ fn make_identity(id: Identity, diagram_size: usize, elements: &mut Elements) {
     for (i, x) in id.xs.iter().enumerate() {
         let height = SliceIndex::from_int(id.start.to_int(diagram_size) + i as isize, diagram_size);
         left.push(((Regular(*x).into(), height), (Singular(*x).into(), height)));
-        right.push(((Regular(*x + 1).into(), height), (Singular(*x).into(), height)));
+        right.push((
+            (Regular(*x + 1).into(), height),
+            (Singular(*x).into(), height),
+        ));
         wire.push((Singular(*x).into(), height));
     }
 
@@ -421,14 +425,13 @@ mod test {
 
         let mut result = md.clone();
 
-        for _ in 0..1000 {
+        for _ in 0..10 {
             result = result.attach(md.clone(), Boundary::Source, &[0]).unwrap();
         }
 
         result
     }
 
-    #[test]
     fn test() {
         let diagram = benchmark("construction", || example_assoc());
         let generators = Generators::new(&diagram);
@@ -436,11 +439,6 @@ mod test {
         benchmark("layout", || solver.solve(10000));
         let layout = solver.finish();
         let svg = make_svg(&diagram, &layout, &generators);
-
-        use std::fs::File;
-        use std::io::prelude::*;
-        let mut file = File::create("test.svg").unwrap();
-        write!(file, "{}", svg).unwrap();
     }
 
     fn benchmark<F, A>(name: &str, f: F) -> A

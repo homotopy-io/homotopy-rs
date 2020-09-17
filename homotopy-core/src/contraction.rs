@@ -408,7 +408,10 @@ fn colimit_recursive(
         }
 
         rewrites.push(Rewrite::RewriteN(RewriteN::from_slices(
-            &diagram, &target, slices,
+            diagram.dimension(),
+            diagram.cospans(),
+            target.cospans(),
+            slices,
         )));
     }
 

@@ -1,7 +1,7 @@
 use crate::common::*;
 use crate::diagram::*;
+use serde::Serialize;
 use thiserror::Error;
-use serde::{ Serialize };
 
 #[derive(Debug)]
 struct Constraint(Vec<(usize, usize)>, (usize, usize));

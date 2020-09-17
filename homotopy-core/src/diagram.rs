@@ -224,7 +224,7 @@ impl DiagramN {
             None => {
                 println!("slice not there");
                 return false;
-            },
+            }
         };
 
         match diagram {
@@ -420,8 +420,7 @@ impl<'a> ExactSizeIterator for Slices<'a> {
     }
 }
 
-impl<'a> std::iter::FusedIterator for Slices<'a> {
-}
+impl<'a> std::iter::FusedIterator for Slices<'a> {}
 
 #[derive(Debug, Error)]
 pub enum AttachmentError {

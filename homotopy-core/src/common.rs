@@ -1,5 +1,5 @@
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
-use serde::{ Serialize, Deserialize, Serializer, Deserializer };
 
 #[derive(PartialEq, Eq, Copy, Clone, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct Generator {
@@ -50,7 +50,8 @@ impl Height {
 
 impl Serialize for Height {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where S: Serializer
+    where
+        S: Serializer,
     {
         serializer.serialize_u32(self.to_int() as u32)
     }
@@ -58,7 +59,8 @@ impl Serialize for Height {
 
 impl<'de> Deserialize<'de> for Height {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         Ok(Height::from_int(u32::deserialize(deserializer)? as usize))
     }

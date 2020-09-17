@@ -17,6 +17,10 @@ impl Cospan {
         let backward = self.backward.pad(embedding);
         Cospan { forward, backward }
     }
+
+    pub fn is_identity(&self) -> bool {
+        self.forward.is_identity() && self.backward.is_identity()
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
@@ -65,6 +69,14 @@ impl Rewrite {
         match self {
             Rewrite0(_) => 0,
             RewriteN(r) => r.dimension(),
+        }
+    }
+
+    pub fn is_identity(&self) -> bool {
+        use Rewrite::*;
+        match self {
+            Rewrite0(r) => r.is_identity(),
+            RewriteN(r) => r.is_identity(),
         }
     }
 
@@ -121,11 +133,19 @@ pub struct Rewrite0(pub(crate) Option<(Generator, Generator)>);
 
 impl Rewrite0 {
     pub fn new(source: Generator, target: Generator) -> Self {
-        Rewrite0(Some((source, target)))
+        if source == target {
+            Rewrite0(None)
+        } else {
+            Rewrite0(Some((source, target)))
+        }
     }
 
     pub fn identity() -> Self {
         Rewrite0(None)
+    }
+
+    pub fn is_identity(&self) -> bool {
+        self.0.is_none()
     }
 
     pub fn source(&self) -> Option<Generator> {
@@ -167,6 +187,11 @@ impl RewriteN {
             panic!("Can not create RewriteN of dimension zero.");
         }
 
+        let cones = cones
+            .into_iter()
+            .filter(|cone| !cone.is_identity())
+            .collect();
+
         RewriteN(Rc::new(RewriteInternal { dimension, cones }))
     }
 
@@ -187,18 +212,20 @@ impl RewriteN {
         RewriteN::new(dimension, Vec::new())
     }
 
+    pub fn is_identity(&self) -> bool {
+        self.0.cones.len() == 0
+    }
+
     pub fn from_slices(
-        source: &DiagramN,
-        target: &DiagramN,
+        dimension: usize,
+        source_cospans: &[Cospan],
+        target_cospans: &[Cospan],
         slices: Vec<Vec<Rewrite>>,
     ) -> RewriteN {
         let mut cones = Vec::new();
         let mut index = 0;
-        let source_cospans = source.cospans();
-        let target_cospans = target.cospans();
 
         for (target, cone_slices) in slices.into_iter().enumerate() {
-            // TODO: Detect identities
             let size = cone_slices.len();
             cones.push(Cone {
                 source: source_cospans[index..index + size].to_vec(),
@@ -209,7 +236,7 @@ impl RewriteN {
             index += size;
         }
 
-        RewriteN::new(source.dimension(), cones)
+        RewriteN::new(dimension, cones)
     }
 
     pub fn dimension(&self) -> usize {
@@ -374,6 +401,13 @@ pub(crate) struct Cone {
 }
 
 impl Cone {
+    pub(crate) fn is_identity(&self) -> bool {
+        self.slices.len() == 1
+            && self.source.len() == 1
+            && self.source[0] == self.target
+            && self.slices[0].is_identity()
+    }
+
     pub(crate) fn len(&self) -> usize {
         self.source.len()
     }
