@@ -5,94 +5,58 @@ use std::collections::HashMap;
 use std::ops::Range;
 
 #[derive(Debug, Clone)]
-struct Degeneracy {
-    trivial: Vec<usize>,
-    slices: Vec<Degeneracy>,
-}
-
-impl Degeneracy {
-    fn new(trivial: Vec<SingularHeight>, slices: Vec<Degeneracy>) -> Self {
-        Degeneracy { trivial, slices }
-    }
-
-    fn zero() -> Self {
-        Degeneracy {
-            trivial: Vec::new(),
-            slices: Vec::new(),
-        }
-    }
-
-    fn singular_preimage(&self, i: SingularHeight) -> Range<SingularHeight> {
-        for (count, trivial) in self.trivial.iter().enumerate() {
-            if *trivial == i {
-                return i-count .. i - count;
-            } else if *trivial > i {
-                return i - count .. i - count + 1;
-            }
-        }
-
-        i - self.trivial.len() .. i - self.trivial.len() + 1
-    }
-
-    fn singular_image(&self, i: SingularHeight) -> SingularHeight {
-        for (count, trivial) in self.trivial.iter().enumerate() {
-            if i + count < *trivial {
-                return i + count;
-            }
-        }
-        i + self.trivial.len()
-    }
-
-    fn slice(&self, i: SingularHeight) -> Option<Degeneracy> {
-        self.slices.get(i).cloned()
-    }
-}
-
-#[derive(Debug, Clone)]
-struct SinkArrow {
+pub struct SinkArrow {
     source: Diagram,
-    degeneracy: Degeneracy,
     rewrite: Rewrite,
 }
 
 impl SinkArrow {
     fn slice(&self, i: SingularHeight) -> Option<SinkArrow> {
-        let degeneracy = self.degeneracy.slice(i)?;
         let source = self.source.to_n()?.slice(Height::Singular(i))?;
-        let rewrite = self.rewrite.to_n()?.slice(self.degeneracy.singular_image(i));
-        Some(SinkArrow { source, degeneracy, rewrite })
+        let rewrite = self.rewrite.to_n()?.slice(i);
+        Some(SinkArrow { source, rewrite })
     }
 
     fn singular_preimage(&self, i: SingularHeight) -> Range<SingularHeight> {
-        let range = self.rewrite.to_n().unwrap().singular_preimage(i);
-        let start = self.degeneracy.singular_preimage(range.start);
-        let end = self.degeneracy.singular_preimage(range.end);
-        Range { start: start.start, end: end.end }
+        self.rewrite.to_n().unwrap().singular_preimage(i)
     }
 }
-
-struct Output {
-    diagram: Diagram,
-    factors: Vec<Rewrite>,
-    degeneracy: Degeneracy,
-}
-
-// TODO: Homotopy construction will need singular normalisation
 
 pub fn normalize(diagram: &Diagram) -> Diagram {
-    let output = normalize_relative(diagram, &[]);
-    output.diagram
+    let diagram = normalize_regular(diagram);
+    let (rewrite, _) = normalize_singular(&diagram, &[]);
+    diagram.rewrite_backward(&rewrite)
 }
 
-fn normalize_relative(diagram: &Diagram, sink: &[SinkArrow]) -> Output {
-    match diagram {
-        Diagram::Diagram0(_) => Output {
-            degeneracy: Degeneracy::zero(),
-            factors: sink.iter().map(|input| input.rewrite.clone()).collect(),
-            diagram: diagram.clone(),
-        },
-        Diagram::DiagramN(d) => normalize_recursive(d, sink),
+pub fn normalize_regular(diagram: &Diagram) -> Diagram {
+    // Zero-dimensional diagrams are already normalized. 
+    let diagram = match diagram {
+        Diagram::Diagram0(_) => { return diagram.clone(); },
+        Diagram::DiagramN(d) => d
+    };
+
+    // 
+    let slices: Vec<_> = diagram.slices().collect();
+    let mut rewrites: Vec<Rewrite> = Vec::new();
+
+    for i in 0..diagram.size() + 1 {
+        let slice = &slices[Height::Regular(i).to_int()];
+        let (rewrite, _) = normalize_singular(slice, &[]);
+        rewrites.push(rewrite);
     }
+
+    // Build cospans
+    let mut cospans_normalized = Vec::new();
+    let cospans = diagram.cospans();
+    for i in 0..diagram.size() {
+        let forward = Rewrite::compose(rewrites[i].clone(), cospans[i].forward.clone()).unwrap();
+        let backward = Rewrite::compose(rewrites[i + 1].clone(), cospans[i].backward.clone()).unwrap();
+        cospans_normalized.push(Cospan { forward, backward })
+    }
+
+    let source_normalized = diagram.source().rewrite_backward(&rewrites[0]);
+
+    DiagramN::new_unsafe(source_normalized, cospans_normalized).into()
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -102,19 +66,20 @@ enum Role {
     Slice(usize, SingularHeight),
 }
 
-fn normalize_recursive(diagram: &DiagramN, sink: &[SinkArrow]) -> Output {
+pub fn normalize_singular(diagram: &Diagram, sink: &[SinkArrow]) -> (Rewrite, Vec<Rewrite>) {
+    let diagram = match diagram {
+        Diagram::Diagram0(_) => { 
+            let factors = sink.iter().map(|_| Rewrite0::identity().into()).collect();
+            let degeneracy = Rewrite0::identity().into();
+            return (degeneracy, factors)
+        },
+        Diagram::DiagramN(d) => d
+    };
+
     use Height::*;
 
     let slices: Vec<_> = diagram.slices().collect();
     let cospans = diagram.cospans();
-
-    // Normalise the regular levels
-    let mut regular_normalised: Vec<Output> = Vec::new();
-
-    for i in 0..slices.len() + 1 {
-        let slice = &slices[Regular(i).to_int()];
-        regular_normalised.push(normalize_relative(slice, &[]));
-    }
 
     // Collect the subproblems
     let mut subproblems: Vec<Vec<SinkArrow>> = (0..diagram.size()).map(|_| Vec::new()).collect();
@@ -123,20 +88,16 @@ fn normalize_recursive(diagram: &DiagramN, sink: &[SinkArrow]) -> Output {
 
     for i in 0..diagram.size() {
         let cospan = &cospans[i];
-        let regular0 = &regular_normalised[i];
-        let regular1 = &regular_normalised[i + 1];
 
         subproblems[i].push(SinkArrow {
-            source: regular0.diagram.clone(),
-            degeneracy: regular0.degeneracy.clone(),
+            source: slices[Regular(i).to_int()].clone(),
             rewrite: cospan.forward.clone(),
         });
 
         roles[i].push(Role::Forward);
 
         subproblems[i].push(SinkArrow {
-            source: regular1.diagram.clone(),
-            degeneracy: regular1.degeneracy.clone(),
+            source: slices[Regular(i + 1).to_int()].clone(),
             rewrite: cospan.backward.clone(),
         });
 
@@ -154,17 +115,16 @@ fn normalize_recursive(diagram: &DiagramN, sink: &[SinkArrow]) -> Output {
     }
 
     // For each subproblem recursively call relative normalisation
-    let mut degeneracies: Vec<Degeneracy> = Vec::new();
+    let mut degeneracies: Vec<Rewrite> = Vec::new();
     let mut factor_slices: Vec<HashMap<Role, Rewrite>> = Vec::new();
 
     for (target, subproblem) in subproblems.iter().enumerate() {
         let slice = &slices[Singular(target).to_int()];
-        let output = normalize_relative(slice, &subproblem);
+        let (degeneracy, factors) = normalize_singular(slice, &subproblem);
 
-        degeneracies.push(output.degeneracy);
+        degeneracies.push(degeneracy);
         factor_slices.push(
-            output
-                .factors
+            factors
                 .into_iter()
                 .zip(&roles[target])
                 .map(|(factor, role)| (*role, factor))
@@ -214,8 +174,23 @@ fn normalize_recursive(diagram: &DiagramN, sink: &[SinkArrow]) -> Output {
         }
     }
 
+    // Build the parallel degeneracy
+    let degeneracy_parallel = RewriteN::from_slices(
+        diagram.dimension(),
+        &normalized_cospans,
+        diagram.cospans(),
+        degeneracies.iter().map(|d| vec![d.clone()]).collect()
+    );
+
+    let degeneracy_simple = RewriteN::make_degeneracy(
+        diagram.dimension(),
+        &normalized_cospans,
+        &trivial
+    );
+
+    let degeneracy = RewriteN::compose(degeneracy_simple, degeneracy_parallel).unwrap();
+
     // Assemble the result
-    let normalized = DiagramN::new_unsafe(diagram.source(), normalized_cospans);
     let factors = factors
         .into_iter()
         .enumerate()
@@ -229,38 +204,7 @@ fn normalize_recursive(diagram: &DiagramN, sink: &[SinkArrow]) -> Output {
             .into()
         })
         .collect();
-    let degeneracy = Degeneracy::new(trivial, degeneracies);
-    Output {
-        diagram: normalized.into(),
-        factors: factors,
-        degeneracy: degeneracy,
-    }
+
+    (degeneracy.into(), factors)
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn degeneracy_singular_image() {
-        let degeneracy = Degeneracy::new(vec![1, 4, 5], vec![Degeneracy::zero(); 15]);
-
-        assert_eq!(degeneracy.singular_image(0), 0);
-        assert_eq!(degeneracy.singular_image(1), 2);
-        assert_eq!(degeneracy.singular_image(2), 3);
-        assert_eq!(degeneracy.singular_image(3), 6);
-        assert_eq!(degeneracy.singular_image(4), 7);
-    }
-
-    #[test]
-    fn degeneracy_singular_preimage() {
-        let degeneracy = Degeneracy::new(vec![1, 4, 5], vec![Degeneracy::zero(); 15]);
-
-        assert_eq!(degeneracy.singular_preimage(0), 0..1);
-        assert_eq!(degeneracy.singular_preimage(1), 1..1);
-        assert_eq!(degeneracy.singular_preimage(2), 1..2);
-        assert_eq!(degeneracy.singular_preimage(3), 2..3);
-        assert_eq!(degeneracy.singular_preimage(6), 3..4);
-        assert_eq!(degeneracy.singular_preimage(7), 4..5);
-    }
-}

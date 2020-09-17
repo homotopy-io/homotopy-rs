@@ -2,6 +2,7 @@ use crate::common::*;
 use crate::rewrite::*;
 use std::rc::Rc;
 use thiserror::Error;
+use std::convert::TryFrom;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Diagram {
@@ -55,7 +56,7 @@ impl Diagram {
         }
     }
 
-    fn rewrite_forward(self, rewrite: &Rewrite) -> Diagram {
+    pub(crate) fn rewrite_forward(self, rewrite: &Rewrite) -> Diagram {
         use Diagram::*;
         use Rewrite::*;
         match self {
@@ -73,7 +74,7 @@ impl Diagram {
         }
     }
 
-    fn rewrite_backward(self, rewrite: &Rewrite) -> Diagram {
+    pub(crate) fn rewrite_backward(self, rewrite: &Rewrite) -> Diagram {
         use Diagram::*;
         use Rewrite::*;
         match self {
@@ -222,7 +223,6 @@ impl DiagramN {
         let slice = match self.slice(height) {
             Some(slice) => slice,
             None => {
-                println!("slice not there");
                 return false;
             }
         };
@@ -352,6 +352,28 @@ impl From<DiagramN> for Diagram {
 impl From<Generator> for Diagram {
     fn from(generator: Generator) -> Self {
         Diagram::Diagram0(generator)
+    }
+}
+
+impl TryFrom<Diagram> for DiagramN {
+    type Error = ();
+
+    fn try_from(from: Diagram) -> Result<Self, Self::Error> {
+        match from {
+            Diagram::DiagramN(from) => Ok(from),
+            Diagram::Diagram0(_) => Err(())
+        }
+    }
+}
+
+impl TryFrom<Diagram> for Generator {
+    type Error = ();
+
+    fn try_from(from: Diagram) -> Result<Self, Self::Error> {
+        match from {
+            Diagram::DiagramN(_) => Err(()),
+            Diagram::Diagram0(g) => Ok(g)
+        }
     }
 }
 
