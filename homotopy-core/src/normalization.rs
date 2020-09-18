@@ -29,13 +29,15 @@ pub fn normalize(diagram: &Diagram) -> Diagram {
 }
 
 pub fn normalize_regular(diagram: &Diagram) -> Diagram {
-    // Zero-dimensional diagrams are already normalized. 
+    // Zero-dimensional diagrams are already normalized.
     let diagram = match diagram {
-        Diagram::Diagram0(_) => { return diagram.clone(); },
-        Diagram::DiagramN(d) => d
+        Diagram::Diagram0(_) => {
+            return diagram.clone();
+        }
+        Diagram::DiagramN(d) => d,
     };
 
-    // 
+    //
     let slices: Vec<_> = diagram.slices().collect();
     let mut rewrites: Vec<Rewrite> = Vec::new();
 
@@ -50,7 +52,8 @@ pub fn normalize_regular(diagram: &Diagram) -> Diagram {
     let cospans = diagram.cospans();
     for i in 0..diagram.size() {
         let forward = Rewrite::compose(rewrites[i].clone(), cospans[i].forward.clone()).unwrap();
-        let backward = Rewrite::compose(rewrites[i + 1].clone(), cospans[i].backward.clone()).unwrap();
+        let backward =
+            Rewrite::compose(rewrites[i + 1].clone(), cospans[i].backward.clone()).unwrap();
         cospans_normalized.push(Cospan { forward, backward })
     }
 
@@ -68,15 +71,22 @@ enum Role {
 
 pub fn normalize_singular(diagram: &Diagram, sink: &[SinkArrow]) -> (Rewrite, Vec<Rewrite>) {
     let diagram = match diagram {
-        Diagram::Diagram0(_) => { 
+        Diagram::Diagram0(_) => {
             let factors = sink.iter().map(|_| Rewrite0::identity().into()).collect();
             let degeneracy = Rewrite0::identity().into();
-            return (degeneracy, factors)
-        },
-        Diagram::DiagramN(d) => d
+            return (degeneracy, factors);
+        }
+        Diagram::DiagramN(d) => d,
     };
 
     use Height::*;
+
+    // The diagram can not be normalised any further if one map in the sink is an identity rewrite.
+    if sink.iter().any(|input| input.rewrite.is_identity()) {
+        let degeneracy = Rewrite::identity(diagram.dimension());
+        let factors = sink.iter().map(|input| input.rewrite.clone()).collect();
+        return (degeneracy, factors);
+    }
 
     let slices: Vec<_> = diagram.slices().collect();
     let cospans = diagram.cospans();
@@ -179,14 +189,11 @@ pub fn normalize_singular(diagram: &Diagram, sink: &[SinkArrow]) -> (Rewrite, Ve
         diagram.dimension(),
         &normalized_cospans,
         diagram.cospans(),
-        degeneracies.iter().map(|d| vec![d.clone()]).collect()
+        degeneracies.iter().map(|d| vec![d.clone()]).collect(),
     );
 
-    let degeneracy_simple = RewriteN::make_degeneracy(
-        diagram.dimension(),
-        &normalized_cospans,
-        &trivial
-    );
+    let degeneracy_simple =
+        RewriteN::make_degeneracy(diagram.dimension(), &normalized_cospans, &trivial);
 
     let degeneracy = RewriteN::compose(degeneracy_simple, degeneracy_parallel).unwrap();
 
@@ -207,4 +214,3 @@ pub fn normalize_singular(diagram: &Diagram, sink: &[SinkArrow]) -> (Rewrite, Ve
 
     (degeneracy.into(), factors)
 }
-

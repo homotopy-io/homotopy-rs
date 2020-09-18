@@ -1,8 +1,8 @@
 use crate::common::*;
 use crate::rewrite::*;
+use std::convert::TryFrom;
 use std::rc::Rc;
 use thiserror::Error;
-use std::convert::TryFrom;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Diagram {
@@ -272,13 +272,10 @@ impl DiagramN {
     ) -> Result<DiagramN, AttachmentError> {
         use Boundary::*;
 
-        let depth =
-            self.dimension()
-                .checked_sub(diagram.dimension())
-                .ok_or_else(|| AttachmentError::Dimension(
-                    diagram.dimension(),
-                    self.dimension(),
-                ))?;
+        let depth = self
+            .dimension()
+            .checked_sub(diagram.dimension())
+            .ok_or_else(|| AttachmentError::Dimension(diagram.dimension(), self.dimension()))?;
 
         if depth == 0 {
             let cospans: Vec<_> = diagram
@@ -360,7 +357,7 @@ impl TryFrom<Diagram> for DiagramN {
     fn try_from(from: Diagram) -> Result<Self, Self::Error> {
         match from {
             Diagram::DiagramN(from) => Ok(from),
-            Diagram::Diagram0(_) => Err(())
+            Diagram::Diagram0(_) => Err(()),
         }
     }
 }
@@ -371,7 +368,7 @@ impl TryFrom<Diagram> for Generator {
     fn try_from(from: Diagram) -> Result<Self, Self::Error> {
         match from {
             Diagram::DiagramN(_) => Err(()),
-            Diagram::Diagram0(g) => Ok(g)
+            Diagram::Diagram0(g) => Ok(g),
         }
     }
 }

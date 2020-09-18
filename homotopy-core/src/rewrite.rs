@@ -1,9 +1,9 @@
 use crate::common::*;
 use crate::diagram::*;
 
+use std::cmp::Ordering;
 use std::ops::Range;
 use std::rc::Rc;
-use std::cmp::Ordering;
 use thiserror::Error;
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
@@ -220,7 +220,7 @@ impl RewriteN {
     pub(crate) fn make_degeneracy(
         dimension: usize,
         target_cospans: &[Cospan],
-        trivial_heights: &[SingularHeight]
+        trivial_heights: &[SingularHeight],
     ) -> Self {
         let cones = trivial_heights
             .iter()
@@ -229,7 +229,7 @@ impl RewriteN {
                 index: height - i,
                 source: vec![],
                 target: target_cospans[*height].clone(),
-                slices: vec![]
+                slices: vec![],
             })
             .collect();
 
@@ -374,9 +374,15 @@ impl RewriteN {
         for cone in self.cones() {
             let adjusted = (index as isize - offset) as usize;
             match adjusted.cmp(&cone.index) {
-                Ordering::Less => { return adjusted..adjusted + 1; },
-                Ordering::Equal => { return cone.index..cone.index + cone.len(); },
-                Ordering::Greater => { offset += 1 - cone.len() as isize; }
+                Ordering::Less => {
+                    return adjusted..adjusted + 1;
+                }
+                Ordering::Equal => {
+                    return cone.index..cone.index + cone.len();
+                }
+                Ordering::Greater => {
+                    offset += 1 - cone.len() as isize;
+                }
             }
         }
 

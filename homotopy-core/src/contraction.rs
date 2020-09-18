@@ -2,8 +2,8 @@ use crate::common::*;
 use crate::diagram::*;
 use crate::rewrite::*;
 use petgraph::algo::tarjan_scc;
-use petgraph::unionfind::UnionFind;
 use petgraph::graphmap::{DiGraphMap, GraphMap};
+use petgraph::unionfind::UnionFind;
 use std::collections::HashMap;
 use std::hash::Hash;
 
@@ -346,7 +346,8 @@ fn colimit_recursive(
 
         let spans: Vec<(usize, Span, usize)> = scc_spans
             .get(&component)
-            .cloned().unwrap_or_default()
+            .cloned()
+            .unwrap_or_default()
             .into_iter()
             .map(|(s, span, t)| {
                 let s_index = nodes.iter().position(|n| *n == s).unwrap();
