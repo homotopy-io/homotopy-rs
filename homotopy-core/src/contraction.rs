@@ -1,12 +1,11 @@
 use crate::common::*;
 use crate::diagram::*;
 use crate::rewrite::*;
-use crate::util::union_find::UnionFind;
 use petgraph::algo::tarjan_scc;
+use petgraph::unionfind::UnionFind;
 use petgraph::graphmap::{DiGraphMap, GraphMap};
 use std::collections::HashMap;
 use std::hash::Hash;
-
 
 #[derive(Clone)]
 struct Span(Rewrite, Diagram, Rewrite);
@@ -431,7 +430,7 @@ where
 }
 
 mod test {
-    
+    use super::*;
 
     #[test]
     fn beads() {
