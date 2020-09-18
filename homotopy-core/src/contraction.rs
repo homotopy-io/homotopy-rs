@@ -6,7 +6,7 @@ use petgraph::algo::tarjan_scc;
 use petgraph::graphmap::{DiGraphMap, GraphMap};
 use std::collections::HashMap;
 use std::hash::Hash;
-use std::rc::Rc;
+
 
 #[derive(Clone)]
 struct Span(Rewrite, Diagram, Rewrite);
@@ -262,7 +262,7 @@ fn colimit_recursive(
     let node_to_scc: HashMap<Node, Component> = scc_to_nodes
         .iter()
         .enumerate()
-        .flat_map(|(i, nodes)| nodes.into_iter().map(move |node| (*node, Component(i))))
+        .flat_map(|(i, nodes)| nodes.iter().map(move |node| (*node, Component(i))))
         .collect();
 
     // Contract the graph to a DAG
@@ -289,7 +289,7 @@ fn colimit_recursive(
         if s_component == t_component {
             scc_spans
                 .entry(s_component)
-                .or_insert(Vec::new())
+                .or_insert_with(Vec::new)
                 .push((*s, span.clone(), *t));
         }
     }
@@ -300,7 +300,7 @@ fn colimit_recursive(
         // to compute the shortest distance from a root.
         let mut scc_to_priority: HashMap<Component, (usize, BiasValue)> = HashMap::new();
 
-        for scc in 0..scc_to_nodes.len() {
+        for (scc, _) in scc_to_nodes.iter().enumerate() {
             let distance = scc_graph
                 .neighbors_directed(Component(scc), petgraph::Direction::Incoming)
                 .filter(|p| p.0 != scc)
@@ -319,7 +319,7 @@ fn colimit_recursive(
     };
 
     let components_sorted: Vec<Component> = {
-        let mut components: Vec<_> = (0..scc_to_nodes.len()).map(|i| Component(i)).collect();
+        let mut components: Vec<_> = (0..scc_to_nodes.len()).map(Component).collect();
         components.sort_by_key(|scc| scc_to_priority[scc]);
         components
     };
@@ -347,8 +347,7 @@ fn colimit_recursive(
 
         let spans: Vec<(usize, Span, usize)> = scc_spans
             .get(&component)
-            .cloned()
-            .unwrap_or(Vec::new())
+            .cloned().unwrap_or_default()
             .into_iter()
             .map(|(s, span, t)| {
                 let s_index = nodes.iter().position(|n| *n == s).unwrap();
@@ -415,7 +414,7 @@ fn colimit_recursive(
         )));
     }
 
-    return Some(rewrites);
+    Some(rewrites)
 }
 
 fn is_strictly_increasing<T, K, F>(slice: &[T], key: F) -> bool
@@ -428,11 +427,11 @@ where
             return false;
         }
     }
-    return true;
+    true
 }
 
 mod test {
-    use super::*;
+    
 
     #[test]
     fn beads() {
@@ -452,9 +451,9 @@ mod test {
         let fd = DiagramN::new(f, x, x);
         let pd = DiagramN::new(p, fd.clone(), fd.clone());
 
-        let pfd = pd.attach(fd.clone(), Boundary::Target, &[]).unwrap();
+        let pfd = pd.attach(fd, Boundary::Target, &[]).unwrap();
         let left = pfd.attach(pd.clone(), Boundary::Source, &[1]).unwrap();
-        let right = pfd.attach(pd.clone(), Boundary::Target, &[1]).unwrap();
+        let right = pfd.attach(pd, Boundary::Target, &[1]).unwrap();
 
         let left_contract = contract(&left, 0, None).expect("failed to contract left diagram");
         let right_contract = contract(&right, 0, None).expect("failed to contract right diagram");
@@ -470,13 +469,13 @@ mod test {
         let right_to_left = DiagramN::new_unsafe(
             right.clone().into(),
             vec![Cospan {
-                forward: right_contract.clone().into(),
-                backward: left_contract.clone().into(),
+                forward: right_contract.into(),
+                backward: left_contract.into(),
             }],
         );
 
-        assert_eq!(left_to_right.target(), right.clone().into());
-        assert_eq!(right_to_left.target(), left.clone().into());
+        assert_eq!(left_to_right.target(), right.into());
+        assert_eq!(right_to_left.target(), left.into());
         assert_eq!(
             left_to_right.slice(Height::Singular(0)).unwrap(),
             right_to_left.slice(Height::Singular(0)).unwrap()

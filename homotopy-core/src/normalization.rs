@@ -135,9 +135,9 @@ pub fn normalize_singular(diagram: &Diagram, sink: &[SinkArrow]) -> (Rewrite, Ve
     // Build the normalized diagram
     let mut normalized_cospans: Vec<Cospan> = Vec::new();
 
-    for i in 0..diagram.size() {
-        let forward = factor_slices[i].remove(&Role::Forward).unwrap();
-        let backward = factor_slices[i].remove(&Role::Backward).unwrap();
+    for factor_slice in factor_slices.iter_mut() {
+        let forward = factor_slice.remove(&Role::Forward).unwrap();
+        let backward = factor_slice.remove(&Role::Backward).unwrap();
         normalized_cospans.push(Cospan { forward, backward });
     }
 
@@ -161,7 +161,7 @@ pub fn normalize_singular(diagram: &Diagram, sink: &[SinkArrow]) -> (Rewrite, Ve
     let trivial: Vec<SingularHeight> = (0..diagram.size())
         .filter(|i| {
             normalized_cospans[*i].is_identity()
-                && factors.iter().all(|factor| factor[*i].len() == 0)
+                && factors.iter().all(|factor| factor[*i].is_empty())
         })
         .collect();
 

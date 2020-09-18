@@ -1,8 +1,9 @@
 use crate::common::*;
 use crate::diagram::*;
-use std::fmt;
+
 use std::ops::Range;
 use std::rc::Rc;
+use std::cmp::Ordering;
 use thiserror::Error;
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
@@ -83,7 +84,7 @@ impl Rewrite {
     pub(crate) fn pad(&self, embedding: &[usize]) -> Self {
         use Rewrite::*;
         match self {
-            Rewrite0(r) => Rewrite0(r.clone()),
+            Rewrite0(r) => Rewrite0(*r),
             RewriteN(r) => RewriteN(r.pad(embedding)),
         }
     }
@@ -213,7 +214,7 @@ impl RewriteN {
     }
 
     pub fn is_identity(&self) -> bool {
-        self.0.cones.len() == 0
+        self.0.cones.is_empty()
     }
 
     pub(crate) fn make_degeneracy(
@@ -250,7 +251,7 @@ impl RewriteN {
                 source: source_cospans[index..index + size].to_vec(),
                 target: target_cospans[target].clone(),
                 slices: cone_slices,
-                index: index,
+                index,
             });
             index += size;
         }
@@ -279,7 +280,7 @@ impl RewriteN {
             .iter()
             .find(|cone| cone.index <= height && height < cone.index + cone.len())
             .map(|cone| cone.slices[height - cone.index].clone())
-            .unwrap_or(Rewrite::identity(self.dimension() - 1))
+            .unwrap_or_else(|| Rewrite::identity(self.dimension() - 1))
     }
 
     pub fn compose(f: RewriteN, g: RewriteN) -> Result<RewriteN, CompositionError> {
@@ -339,9 +340,9 @@ impl RewriteN {
 
                         g_cones.push(Cone {
                             index: (g_cone.index as isize + offset) as usize,
-                            source: source,
+                            source,
                             target: g_cone.target.clone(),
-                            slices: slices,
+                            slices,
                         });
                     }
                 }
@@ -372,12 +373,10 @@ impl RewriteN {
 
         for cone in self.cones() {
             let adjusted = (index as isize - offset) as usize;
-            if adjusted < cone.index {
-                return adjusted..adjusted + 1;
-            } else if adjusted == cone.index {
-                return cone.index..cone.index + cone.len();
-            } else {
-                offset += 1 - cone.len() as isize;
+            match adjusted.cmp(&cone.index) {
+                Ordering::Less => { return adjusted..adjusted + 1; },
+                Ordering::Equal => { return cone.index..cone.index + cone.len(); },
+                Ordering::Greater => { offset += 1 - cone.len() as isize; }
             }
         }
 

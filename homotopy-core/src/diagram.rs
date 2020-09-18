@@ -142,7 +142,7 @@ impl DiagramN {
     }
 
     /// An iterator over all of the diagram's slices.
-    pub fn slices<'a>(&'a self) -> Slices<'a> {
+    pub fn slices(&self) -> Slices {
         Slices::new(self)
     }
 
@@ -256,7 +256,6 @@ impl DiagramN {
     pub fn max_generator(&self) -> Generator {
         // TODO: This can be done more efficiently by looking at the parts
         self.slices()
-            .into_iter()
             .map(|slice| slice.max_generator())
             .max_by_key(|generator| generator.dimension)
             .unwrap()
@@ -276,7 +275,7 @@ impl DiagramN {
         let depth =
             self.dimension()
                 .checked_sub(diagram.dimension())
-                .ok_or(AttachmentError::Dimension(
+                .ok_or_else(|| AttachmentError::Dimension(
                     diagram.dimension(),
                     self.dimension(),
                 ))?;

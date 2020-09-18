@@ -59,7 +59,6 @@ impl Solver {
         let positions = Positions(
             diagram
                 .slices()
-                .into_iter()
                 .map(|slice| {
                     (0..slice.to_n().unwrap().size() * 2 + 1)
                         .map(|i| i as f32)
@@ -232,8 +231,7 @@ mod tests {
         let fd = DiagramN::new(f, x, x);
         let ffd = fd.attach(fd.clone(), Boundary::Target, &[]).unwrap();
         let md = DiagramN::new(m, ffd, fd);
-        let rd = md.attach(md.clone(), Boundary::Source, &[1]).unwrap();
-        rd
+        md.attach(md.clone(), Boundary::Source, &[1]).unwrap()
     }
 
     #[test]
@@ -241,7 +239,7 @@ mod tests {
         let diagram = example_assoc();
         let mut solver = Solver::new(diagram).unwrap();
         solver.solve(10);
-        let layout = solver.finish();
+        let _layout = solver.finish();
 
         // TODO: Write test
     }

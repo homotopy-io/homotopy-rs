@@ -165,7 +165,6 @@ fn analyze(diagram: &DiagramN) -> Vec<Block> {
 
     let slices: Vec<DiagramN> = diagram
         .slices()
-        .into_iter()
         .map(|slice| slice.to_n().unwrap().clone())
         .collect();
     let cospans = diagram.cospans();
@@ -223,7 +222,7 @@ fn analyze(diagram: &DiagramN) -> Vec<Block> {
         }
 
         blocks.extend(identities.drain().map(|(_, id)| Block::Identity(id)));
-        std::mem::replace(&mut identities, new_identities);
+        identities = new_identities;
     }
 
     for x in 0..slices.last().unwrap().size() {
@@ -298,7 +297,7 @@ fn make_cell(position: (usize, usize), rewrites: (&RewriteN, &RewriteN), element
 
     // Surfaces
     for (wire_xs, wire_y) in &[(x_source.clone(), y), (x_target.clone(), y + 1)] {
-        for (i, wire_x) in wire_xs.clone().enumerate() {
+        for (_i, wire_x) in wire_xs.clone().enumerate() {
             elements.push(Element::CellSurface(vec![
                 (Regular(wire_x).into(), Regular(*wire_y).into()),
                 (Singular(wire_x).into(), Regular(*wire_y).into()),
@@ -401,6 +400,7 @@ fn make_identity(id: Identity, diagram_size: usize, elements: &mut Elements) {
     elements.push(Element::IdentityWire(wire));
 }
 
+#[cfg(test)]
 mod test {
     use super::*;
     use crate::layout;
@@ -432,23 +432,13 @@ mod test {
         result
     }
 
+    #[test]
     fn test() {
-        let diagram = benchmark("construction", || example_assoc());
+        let diagram = example_assoc();
         let generators = Generators::new(&diagram);
         let mut solver = layout::Solver::new(diagram.clone()).unwrap();
-        benchmark("layout", || solver.solve(10000));
+        solver.solve(100);
         let layout = solver.finish();
-        let svg = make_svg(&diagram, &layout, &generators);
-    }
-
-    fn benchmark<F, A>(name: &str, f: F) -> A
-    where
-        F: FnOnce() -> A,
-    {
-        let start = std::time::Instant::now();
-        let result = f();
-        let duration = std::time::Instant::now().duration_since(start);
-        println!("[{}] {}us", name, duration.as_micros());
-        result
+        let _svg = make_svg(&diagram, &layout, &generators);
     }
 }
