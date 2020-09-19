@@ -1,6 +1,7 @@
 use crate::common::*;
 use crate::diagram::*;
 use serde::Serialize;
+use std::convert::*;
 use thiserror::Error;
 
 #[derive(Debug)]
@@ -60,7 +61,7 @@ impl Solver {
             diagram
                 .slices()
                 .map(|slice| {
-                    (0..slice.to_n().unwrap().size() * 2 + 1)
+                    (0..DiagramN::try_from(slice).unwrap().size() * 2 + 1)
                         .map(|i| i as f32)
                         .collect()
                 })
@@ -161,9 +162,9 @@ fn make_constraints(diagram: &DiagramN) -> Vec<Constraint> {
         let cospan = &cospans[i];
         let forward = cospan.forward.to_n().unwrap();
         let backward = cospan.backward.to_n().unwrap();
-        let regular0 = &slices[i * 2].to_n().unwrap();
-        let singular = &slices[i * 2 + 1].to_n().unwrap();
-        let regular1 = &slices[i * 2 + 2].to_n().unwrap();
+        let regular0: &DiagramN = (&slices[i * 2]).try_into().unwrap();
+        let singular: &DiagramN = (&slices[i * 2 + 1]).try_into().unwrap();
+        let regular1: &DiagramN = (&slices[i * 2 + 2]).try_into().unwrap();
 
         use Height::*;
 

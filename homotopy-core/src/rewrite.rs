@@ -275,6 +275,22 @@ impl RewriteN {
         targets
     }
 
+    pub(crate) fn cone_over_target(&self, height: usize) -> Option<&Cone> {
+        let mut offset: isize = 0;
+
+        for cone in self.cones() {
+            let target = (cone.index as isize + offset) as usize;
+
+            if target == height {
+                return Some(cone);
+            }
+
+            offset += 1 - cone.len() as isize;
+        }
+
+        None
+    }
+
     pub fn slice(&self, height: usize) -> Rewrite {
         self.cones()
             .iter()
@@ -394,7 +410,7 @@ impl RewriteN {
         let mut offset = 0;
 
         for cone in self.cones() {
-            if index < (cone.index as isize + offset) as usize {
+            if index <= (cone.index as isize + offset) as usize {
                 return (index as isize - offset) as usize;
             } else {
                 offset += 1 - cone.len() as isize;

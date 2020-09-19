@@ -4,6 +4,7 @@ use crate::layout::Layout;
 use crate::rewrite::*;
 use serde::Serialize;
 use std::collections::HashMap;
+use std::convert::*;
 
 #[derive(Serialize)]
 pub enum Element {
@@ -165,7 +166,7 @@ fn analyze(diagram: &DiagramN) -> Vec<Block> {
 
     let slices: Vec<DiagramN> = diagram
         .slices()
-        .map(|slice| slice.to_n().unwrap().clone())
+        .map(|slice| slice.try_into().unwrap())
         .collect();
     let cospans = diagram.cospans();
 
@@ -352,8 +353,7 @@ impl Generators {
             diagram
                 .slices()
                 .map(|slice| {
-                    slice
-                        .to_n()
+                    DiagramN::try_from(slice)
                         .unwrap()
                         .slices()
                         .map(|p| p.max_generator())

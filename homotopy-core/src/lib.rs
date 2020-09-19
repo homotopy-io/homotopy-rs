@@ -5,6 +5,7 @@ pub mod graphic2d;
 pub mod layout;
 pub mod normalization;
 pub mod rewrite;
+pub mod typecheck;
 
 pub use common::{Boundary, Generator, Height, SliceIndex};
 pub use diagram::{Diagram, DiagramN};

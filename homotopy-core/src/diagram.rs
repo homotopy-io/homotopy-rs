@@ -1,6 +1,7 @@
 use crate::common::*;
 use crate::rewrite::*;
 use std::convert::TryFrom;
+use std::convert::*;
 use std::rc::Rc;
 use thiserror::Error;
 
@@ -16,14 +17,6 @@ impl Diagram {
         match self {
             Diagram0(g) => Some(*g),
             DiagramN(_) => None,
-        }
-    }
-
-    pub fn to_n(&self) -> Option<&DiagramN> {
-        use Diagram::*;
-        match self {
-            Diagram0(_) => None,
-            DiagramN(d) => Some(d),
         }
     }
 
@@ -175,7 +168,7 @@ impl DiagramN {
         }
     }
 
-    fn rewrite_forward(mut self, rewrite: &RewriteN) -> DiagramN {
+    pub(crate) fn rewrite_forward(mut self, rewrite: &RewriteN) -> DiagramN {
         let diagram: &mut DiagramInternal = Rc::make_mut(&mut self.0);
         let mut offset: isize = 0;
 
@@ -191,7 +184,7 @@ impl DiagramN {
         DiagramN(self.0)
     }
 
-    fn rewrite_backward(mut self, rewrite: &RewriteN) -> DiagramN {
+    pub(crate) fn rewrite_backward(mut self, rewrite: &RewriteN) -> DiagramN {
         let diagram: &mut DiagramInternal = Rc::make_mut(&mut self.0);
         let mut offset: isize = 0;
 
@@ -362,6 +355,17 @@ impl TryFrom<Diagram> for DiagramN {
     }
 }
 
+impl<'a> TryFrom<&'a Diagram> for &'a DiagramN {
+    type Error = ();
+
+    fn try_from(from: &'a Diagram) -> Result<Self, Self::Error> {
+        match from {
+            Diagram::DiagramN(from) => Ok(from),
+            Diagram::Diagram0(_) => Err(()),
+        }
+    }
+}
+
 impl TryFrom<Diagram> for Generator {
     type Error = ();
 
@@ -489,7 +493,10 @@ mod test {
             let mut slice = diagram.clone().into();
 
             for p in *point {
-                slice = slice.to_n().unwrap().slice(Height::from_int(*p)).unwrap();
+                slice = DiagramN::try_from(slice)
+                    .unwrap()
+                    .slice(Height::from_int(*p))
+                    .unwrap();
             }
 
             let generator = slice.to_generator().unwrap();

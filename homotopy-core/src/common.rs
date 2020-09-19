@@ -7,6 +7,12 @@ pub struct Generator {
     pub dimension: usize,
 }
 
+impl Generator {
+    pub fn new(id: usize, dimension: usize) -> Self {
+        Generator { id, dimension }
+    }
+}
+
 impl fmt::Debug for Generator {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_fmt(format_args!("{}:{}", self.id, self.dimension))

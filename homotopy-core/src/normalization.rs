@@ -2,6 +2,7 @@ use crate::common::*;
 use crate::diagram::*;
 use crate::rewrite::*;
 use std::collections::HashMap;
+use std::convert::*;
 use std::ops::Range;
 
 #[derive(Debug, Clone)]
@@ -12,7 +13,9 @@ pub struct SinkArrow {
 
 impl SinkArrow {
     fn slice(&self, i: SingularHeight) -> Option<SinkArrow> {
-        let source = self.source.to_n()?.slice(Height::Singular(i))?;
+        let source = <&DiagramN>::try_from(&self.source)
+            .ok()?
+            .slice(Height::Singular(i))?;
         let rewrite = self.rewrite.to_n()?.slice(i);
         Some(SinkArrow { source, rewrite })
     }
@@ -72,7 +75,7 @@ enum Role {
 pub fn normalize_singular(diagram: &Diagram, sink: &[SinkArrow]) -> (Rewrite, Vec<Rewrite>) {
     let diagram = match diagram {
         Diagram::Diagram0(_) => {
-            let factors = sink.iter().map(|_| Rewrite0::identity().into()).collect();
+            let factors = sink.iter().map(|input| input.rewrite.clone()).collect();
             let degeneracy = Rewrite0::identity().into();
             return (degeneracy, factors);
         }
@@ -204,7 +207,7 @@ pub fn normalize_singular(diagram: &Diagram, sink: &[SinkArrow]) -> (Rewrite, Ve
         .map(|(i, factor)| {
             RewriteN::from_slices(
                 diagram.dimension(),
-                sink[i].source.to_n().unwrap().cospans(),
+                <&DiagramN>::try_from(&sink[i].source).unwrap().cospans(),
                 diagram.cospans(),
                 factor,
             )

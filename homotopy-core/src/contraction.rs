@@ -6,6 +6,7 @@ use petgraph::graphmap::{DiGraphMap, GraphMap};
 use petgraph::unionfind::UnionFind;
 use std::collections::HashMap;
 use std::hash::Hash;
+use std::convert::*;
 
 #[derive(Clone)]
 struct Span(Rewrite, Diagram, Rewrite);
@@ -81,7 +82,7 @@ pub fn contract_in_path(
     match path.split_first() {
         None => contract(diagram, height, bias),
         Some((step, rest)) => {
-            let slice = diagram.slice(*step)?.to_n()?.clone();
+            let slice: DiagramN = diagram.slice(*step)?.try_into().ok()?;
             let rewrite = contract_in_path(&slice, rest, height, bias)?;
             match step {
                 Height::Regular(i) => Some(RewriteN::new(
@@ -209,7 +210,7 @@ fn colimit_recursive(
 
     // Explode the input diagrams into their singular slices and the spans between them.
     for (key, (diagram, _)) in diagrams.iter().enumerate() {
-        let diagram = diagram.to_n().unwrap();
+        let diagram: &DiagramN = diagram.try_into().unwrap();
         let slices: Vec<_> = diagram.slices().collect();
         let cospans = diagram.cospans();
 
@@ -237,7 +238,7 @@ fn colimit_recursive(
         let Span(backward, diagram, forward) = span;
         let backward = backward.to_n().unwrap();
         let forward = forward.to_n().unwrap();
-        let diagram = diagram.to_n().unwrap();
+        let diagram: &DiagramN = diagram.try_into().unwrap();
         let slices: Vec<_> = diagram.slices().collect();
 
         for height in 0..diagram.size() {
@@ -390,13 +391,13 @@ fn colimit_recursive(
         cospans.push(Cospan { forward, backward });
     }
 
-    let target = DiagramN::new_unsafe(diagrams[0].0.to_n().unwrap().source(), cospans);
+    let target = DiagramN::new_unsafe(<&DiagramN>::try_from(&diagrams[0].0).unwrap().source(), cospans);
 
     // Assemble the rewrites
     let mut rewrites: Vec<Rewrite> = Vec::new();
 
     for (key, diagram) in diagrams.iter().enumerate() {
-        let diagram = diagram.0.to_n().unwrap();
+        let diagram: &DiagramN = (&diagram.0).try_into().unwrap();
         let mut slices: Vec<Vec<Rewrite>> = (0..target.size()).map(|_| Vec::new()).collect();
 
         for height in 0..diagram.size() {
@@ -435,18 +436,9 @@ mod test {
 
     #[test]
     fn beads() {
-        let x = Generator {
-            id: 0,
-            dimension: 0,
-        };
-        let f = Generator {
-            id: 1,
-            dimension: 1,
-        };
-        let p = Generator {
-            id: 2,
-            dimension: 2,
-        };
+        let x = Generator::new(0, 0);
+        let f = Generator::new(1, 1);
+        let p = Generator::new(2, 2);
 
         let fd = DiagramN::new(f, x, x);
         let pd = DiagramN::new(p, fd.clone(), fd.clone());
