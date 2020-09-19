@@ -279,12 +279,12 @@ mod test {
         let m = Generator::new(2, 2);
         let a = Generator::new(3, 3);
 
-        let f_d = DiagramN::new(f, x, x);
+        let f_d = DiagramN::new(f, x, x).unwrap();
         let ff_d = f_d.attach(f_d.clone(), Boundary::Target, &[]).unwrap();
-        let m_d = DiagramN::new(m, ff_d, f_d.clone());
+        let m_d = DiagramN::new(m, ff_d, f_d.clone()).unwrap();
         let left_d = m_d.attach(m_d.clone(), Boundary::Source, &[0]).unwrap();
         let right_d = m_d.attach(m_d.clone(), Boundary::Source, &[1]).unwrap();
-        let a_d = DiagramN::new(a, left_d.clone(), right_d.clone());
+        let a_d = DiagramN::new(a, left_d.clone(), right_d.clone()).unwrap();
 
         let mut signature = HashMap::<Generator, Diagram>::new();
         signature.insert(x, x.into());

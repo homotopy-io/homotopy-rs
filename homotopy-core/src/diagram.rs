@@ -90,20 +90,34 @@ impl Diagram {
 pub struct DiagramN(Rc<DiagramInternal>);
 
 impl DiagramN {
-    pub fn new<S, T>(generator: Generator, source: S, target: T) -> Self
+    pub fn new<S, T>(generator: Generator, source: S, target: T) -> Result<Self, NewDiagramError>
     where
         S: Into<Diagram>,
         T: Into<Diagram>,
     {
-        let source = source.into();
-        let target = target.into();
+        let source: Diagram = source.into();
+        let target: Diagram = target.into();
+
+        if source.dimension() != target.dimension() || generator.dimension != source.dimension() + 1
+        {
+            return Err(NewDiagramError::Dimension);
+        }
+
+        match (&source, &target) {
+            (Diagram::DiagramN(source), Diagram::DiagramN(target)) => {
+                if source.source() != target.source() || source.target() != target.target() {
+                    return Err(NewDiagramError::NonGlobular);
+                }
+            }
+            _ => {}
+        }
 
         let cospan = Cospan {
             forward: Rewrite::cone_over_generator(generator, source.clone()),
             backward: Rewrite::cone_over_generator(generator, target),
         };
 
-        DiagramN::new_unsafe(source, vec![cospan])
+        Ok(DiagramN::new_unsafe(source, vec![cospan]))
     }
 
     pub fn new_unsafe(source: Diagram, cospans: Vec<Cospan>) -> Self {
@@ -154,9 +168,9 @@ impl DiagramN {
 
     /// Access a particular slice.
     ///
-    /// This function rewrites the source until the slice of the desired height is reached.
-    /// When all of the diagram's slices are needed, use [DiagramN::slices] to avoid quadratic
-    /// complexity.
+    /// This function rewrites the source until the slice of the desired height is reached.  When
+    /// all of the diagram's slices are needed, use [slices](crate::diagram::DiagramN::slices) to avoid
+    /// quadratic complexity.
     pub fn slice<I>(&self, index: I) -> Option<Diagram>
     where
         I: Into<SliceIndex>,
@@ -445,6 +459,15 @@ impl<'a> ExactSizeIterator for Slices<'a> {
 impl<'a> std::iter::FusedIterator for Slices<'a> {}
 
 #[derive(Debug, Error)]
+pub enum NewDiagramError {
+    #[error("non-compatible dimensions when creating diagram")]
+    Dimension,
+
+    #[error("can't create diagram with non-globular boundaries")]
+    NonGlobular,
+}
+
+#[derive(Debug, Error)]
 pub enum AttachmentError {
     #[error("can't attach diagram of dimension {0} to a diagram of dimension {1}")]
     Dimension(usize, usize),
@@ -475,12 +498,12 @@ mod test {
             dimension: 3,
         };
 
-        let fd = DiagramN::new(f, x, x);
+        let fd = DiagramN::new(f, x, x).unwrap();
         let ffd = fd.attach(fd.clone(), Boundary::Target, &[]).unwrap();
-        let md = DiagramN::new(m, ffd, fd);
+        let md = DiagramN::new(m, ffd, fd).unwrap();
         let ld = md.attach(md.clone(), Boundary::Source, &[0]).unwrap();
         let rd = md.attach(md.clone(), Boundary::Source, &[1]).unwrap();
-        let ad = DiagramN::new(a, ld, rd);
+        let ad = DiagramN::new(a, ld, rd).unwrap();
 
         ad
     }

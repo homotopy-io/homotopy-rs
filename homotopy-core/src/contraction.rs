@@ -5,8 +5,8 @@ use petgraph::algo::tarjan_scc;
 use petgraph::graphmap::{DiGraphMap, GraphMap};
 use petgraph::unionfind::UnionFind;
 use std::collections::HashMap;
-use std::hash::Hash;
 use std::convert::*;
+use std::hash::Hash;
 
 #[derive(Clone)]
 struct Span(Rewrite, Diagram, Rewrite);
@@ -391,7 +391,10 @@ fn colimit_recursive(
         cospans.push(Cospan { forward, backward });
     }
 
-    let target = DiagramN::new_unsafe(<&DiagramN>::try_from(&diagrams[0].0).unwrap().source(), cospans);
+    let target = DiagramN::new_unsafe(
+        <&DiagramN>::try_from(&diagrams[0].0).unwrap().source(),
+        cospans,
+    );
 
     // Assemble the rewrites
     let mut rewrites: Vec<Rewrite> = Vec::new();
@@ -440,8 +443,8 @@ mod test {
         let f = Generator::new(1, 1);
         let p = Generator::new(2, 2);
 
-        let fd = DiagramN::new(f, x, x);
-        let pd = DiagramN::new(p, fd.clone(), fd.clone());
+        let fd = DiagramN::new(f, x, x).unwrap();
+        let pd = DiagramN::new(p, fd.clone(), fd.clone()).unwrap();
 
         let pfd = pd.attach(fd, Boundary::Target, &[]).unwrap();
         let left = pfd.attach(pd.clone(), Boundary::Source, &[1]).unwrap();

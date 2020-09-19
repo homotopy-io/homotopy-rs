@@ -229,9 +229,9 @@ mod tests {
             dimension: 2,
         };
 
-        let fd = DiagramN::new(f, x, x);
+        let fd = DiagramN::new(f, x, x).unwrap();
         let ffd = fd.attach(fd.clone(), Boundary::Target, &[]).unwrap();
-        let md = DiagramN::new(m, ffd, fd);
+        let md = DiagramN::new(m, ffd, fd).unwrap();
         md.attach(md.clone(), Boundary::Source, &[1]).unwrap()
     }
 
