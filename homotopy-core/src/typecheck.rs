@@ -75,7 +75,7 @@ where
 }
 
 fn target_points(rewrites: &[Rewrite]) -> Vec<(Point, Generator)> {
-    if rewrites.len() == 0 {
+    if rewrites.is_empty() {
         return vec![];
     }
 

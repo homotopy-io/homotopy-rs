@@ -1,3 +1,4 @@
+pub mod attach;
 pub mod common;
 pub mod contraction;
 pub mod diagram;

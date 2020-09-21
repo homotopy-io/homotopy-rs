@@ -1,4 +1,5 @@
 use crate::common::*;
+use crate::contraction;
 use crate::rewrite::*;
 use std::convert::TryFrom;
 use std::convert::*;
@@ -331,6 +332,7 @@ impl DiagramN {
             match boundary {
                 Source => {
                     let source = Diagram::DiagramN(source.attach(diagram, boundary, embedding)?);
+                    // TODO: Pad by 1 or by the size of `diagram`?
                     let mut padding = vec![0; depth - 1];
                     padding.push(1);
                     let cospans = self.0.cospans.iter().map(|c| c.pad(&padding)).collect();
@@ -338,7 +340,7 @@ impl DiagramN {
                 }
                 Target => {
                     let source = Diagram::DiagramN(source.attach(diagram, boundary, embedding)?);
-                    let cospans = self.0.cospans.clone(); // todo: pad depth
+                    let cospans = self.0.cospans.clone();
                     Ok(DiagramN::new_unsafe(source, cospans))
                 }
             }
