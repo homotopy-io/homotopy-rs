@@ -42,7 +42,7 @@ pub fn contract(
             let target = diagram.target().try_into().ok()?;
             let forward = contract_in_path(&target, path, height, bias)?;
             let singular = target.rewrite_forward(&forward);
-            let (backward, _) = normalization::normalize_singular(&singular.into(), &[]);
+            let backward = normalization::normalize_singular(&singular.into());
 
             let cospan = Cospan {
                 forward: forward.into(),
@@ -57,7 +57,7 @@ pub fn contract(
             let diagram_source = diagram.source().try_into().ok()?;
             let backward = contract_in_path(&diagram_source, path, height, bias)?;
             let singular = diagram_source.rewrite_backward(&backward);
-            let (forward, _) = normalization::normalize_singular(&singular.clone().into(), &[]);
+            let forward = normalization::normalize_singular(&singular.clone().into());
             let source = singular.rewrite_backward(forward.to_n()?);
 
             let cospan = Cospan {
