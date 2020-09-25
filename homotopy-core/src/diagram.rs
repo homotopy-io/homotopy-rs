@@ -1,3 +1,4 @@
+use crate::attach::*;
 use crate::common::*;
 use crate::contraction;
 use crate::rewrite::*;
@@ -278,73 +279,83 @@ impl DiagramN {
         boundary: Boundary,
         embedding: &[usize],
     ) -> Result<DiagramN, AttachmentError> {
-        use Boundary::*;
-
         let depth = self
             .dimension()
             .checked_sub(diagram.dimension())
             .ok_or_else(|| AttachmentError::Dimension(diagram.dimension(), self.dimension()))?;
 
-        if depth == 0 {
-            let cospans: Vec<_> = diagram
-                .cospans()
-                .iter()
-                .map(|c| c.pad(&embedding))
-                .collect();
-
-            match boundary {
-                Source => {
-                    let mut source = self.0.source.clone();
-
-                    if !source.embeds(&diagram.target(), embedding) {
-                        return Err(AttachmentError::Incompatible);
-                    }
-
-                    for cospan in cospans.iter().rev() {
-                        source = source.rewrite_forward(&cospan.backward);
-                        source = source.rewrite_backward(&cospan.forward);
-                    }
-
-                    let mut result_cospans = Vec::new();
-                    result_cospans.extend(cospans.into_iter());
-                    result_cospans.extend(self.0.cospans.to_vec().into_iter());
-
-                    Ok(DiagramN::new_unsafe(source, result_cospans))
-                }
-                Target => {
-                    if !self.target().embeds(&diagram.source(), embedding) {
-                        return Err(AttachmentError::Incompatible);
-                    }
-
-                    let mut result_cospans = Vec::new();
-                    result_cospans.extend(self.0.cospans.to_vec().into_iter());
-                    result_cospans.extend(cospans.into_iter());
-
-                    Ok(DiagramN::new_unsafe(self.0.source.clone(), result_cospans))
-                }
+        attach(self.clone(), BoundaryPath(boundary, depth), |slice| {
+            if !slice.embeds(&diagram.slice(boundary.flip()).unwrap(), embedding) {
+                Err(AttachmentError::Incompatible)
+            } else {
+                Ok(diagram
+                    .cospans()
+                    .iter()
+                    .map(|c| c.pad(&embedding))
+                    .collect())
             }
-        } else {
-            let source = match &self.0.source {
-                Diagram::Diagram0(_) => panic!(),
-                Diagram::DiagramN(s) => s,
-            };
+        })
 
-            match boundary {
-                Source => {
-                    let source = Diagram::DiagramN(source.attach(diagram, boundary, embedding)?);
-                    // TODO: Pad by 1 or by the size of `diagram`?
-                    let mut padding = vec![0; depth - 1];
-                    padding.push(1);
-                    let cospans = self.0.cospans.iter().map(|c| c.pad(&padding)).collect();
-                    Ok(DiagramN::new_unsafe(source, cospans))
-                }
-                Target => {
-                    let source = Diagram::DiagramN(source.attach(diagram, boundary, embedding)?);
-                    let cospans = self.0.cospans.clone();
-                    Ok(DiagramN::new_unsafe(source, cospans))
-                }
-            }
-        }
+        // if depth == 0 {
+        //     let cospans: Vec<_> = diagram
+        //         .cospans()
+        //         .iter()
+        //         .map(|c| c.pad(&embedding))
+        //         .collect();
+
+        //     match boundary {
+        //         Source => {
+        //             let mut source = self.0.source.clone();
+
+        //             if !source.embeds(&diagram.target(), embedding) {
+        //                 return Err(AttachmentError::Incompatible);
+        //             }
+
+        //             for cospan in cospans.iter().rev() {
+        //                 source = source.rewrite_forward(&cospan.backward);
+        //                 source = source.rewrite_backward(&cospan.forward);
+        //             }
+
+        //             let mut result_cospans = Vec::new();
+        //             result_cospans.extend(cospans.into_iter());
+        //             result_cospans.extend(self.0.cospans.to_vec().into_iter());
+
+        //             Ok(DiagramN::new_unsafe(source, result_cospans))
+        //         }
+        //         Target => {
+        //             if !self.target().embeds(&diagram.source(), embedding) {
+        //                 return Err(AttachmentError::Incompatible);
+        //             }
+
+        //             let mut result_cospans = Vec::new();
+        //             result_cospans.extend(self.0.cospans.to_vec().into_iter());
+        //             result_cospans.extend(cospans.into_iter());
+
+        //             Ok(DiagramN::new_unsafe(self.0.source.clone(), result_cospans))
+        //         }
+        //     }
+        // } else {
+        //     let source = match &self.0.source {
+        //         Diagram::Diagram0(_) => panic!(),
+        //         Diagram::DiagramN(s) => s,
+        //     };
+
+        //     match boundary {
+        //         Source => {
+        //             let source = Diagram::DiagramN(source.attach(diagram, boundary, embedding)?);
+        //             // TODO: Pad by 1 or by the size of `diagram`?
+        //             let mut padding = vec![0; depth - 1];
+        //             padding.push(1);
+        //             let cospans = self.0.cospans.iter().map(|c| c.pad(&padding)).collect();
+        //             Ok(DiagramN::new_unsafe(source, cospans))
+        //         }
+        //         Target => {
+        //             let source = Diagram::DiagramN(source.attach(diagram, boundary, embedding)?);
+        //             let cospans = self.0.cospans.clone();
+        //             Ok(DiagramN::new_unsafe(source, cospans))
+        //         }
+        //     }
+        // }
     }
 }
 

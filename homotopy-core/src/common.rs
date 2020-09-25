@@ -27,6 +27,15 @@ pub enum Boundary {
     Target,
 }
 
+impl Boundary {
+    pub fn flip(self) -> Self {
+        match self {
+            Boundary::Source => Boundary::Target,
+            Boundary::Target => Boundary::Source,
+        }
+    }
+}
+
 pub type SingularHeight = usize;
 
 pub type RegularHeight = usize;

@@ -29,67 +29,39 @@ pub enum Bias {
 
 pub fn contract(
     diagram: &DiagramN,
-    boundary: BoundaryPath,
-    path: &[Height],
+    boundary_path: BoundaryPath,
+    interior_path: &[Height],
     height: SingularHeight,
     bias: Option<Bias>,
 ) -> Option<DiagramN> {
     // TODO: Clean this up. This has some duplication and is very similar to the
     // logic for attaching diagrams.
     // TODO: Think of a better API for this.
-    match boundary {
-        BoundaryPath(Boundary::Target, 0) => {
-            let target = diagram.target().try_into().ok()?;
-            let forward = contract_in_path(&target, path, height, bias)?;
-            let singular = target.rewrite_forward(&forward);
-            let backward = normalization::normalize_singular(&singular.into());
+    // TODO: Replace Option with Result and proper errors
 
-            let cospan = Cospan {
-                forward: forward.into(),
-                backward: backward.into(),
-            };
-            let mut cospans = diagram.cospans().to_vec();
-            cospans.push(cospan);
-
-            Some(DiagramN::new_unsafe(diagram.source(), cospans))
-        }
-        BoundaryPath(Boundary::Source, 0) => {
-            let diagram_source = diagram.source().try_into().ok()?;
-            let backward = contract_in_path(&diagram_source, path, height, bias)?;
-            let singular = diagram_source.rewrite_backward(&backward);
-            let forward = normalization::normalize_singular(&singular.clone().into());
-            let source = singular.rewrite_backward(forward.to_n()?);
-
-            let cospan = Cospan {
-                forward: forward.into(),
-                backward: backward.into(),
-            };
-            let mut cospans = diagram.cospans().to_vec();
-            cospans.insert(0, cospan);
-
-            Some(DiagramN::new_unsafe(source.into(), cospans))
-        }
-        BoundaryPath(b, depth) => {
-            let source: DiagramN = diagram.source().try_into().ok()?;
-            let source = contract(
-                &source,
-                BoundaryPath(Boundary::Target, depth - 1),
-                path,
-                height,
-                bias,
-            )?
-            .into();
-            let cospans = match b {
-                Boundary::Source => {
-                    let mut pad = vec![0; depth - 1];
-                    pad.push(1);
-                    diagram.cospans().iter().map(|c| c.pad(&pad)).collect()
-                }
-                Boundary::Target => diagram.cospans().to_vec(),
-            };
-            Some(DiagramN::new_unsafe(source, cospans))
-        }
+    if boundary_path.1 >= diagram.dimension() {
+        return None;
     }
+
+    let result: Result<_, ()> = attach(diagram.clone(), boundary_path, |slice| {
+        let slice = slice.try_into()?;
+        let contract = contract_in_path(&slice, interior_path, height, bias).ok_or(())?;
+        let singular = slice.rewrite_forward(&contract);
+        let normalize = normalization::normalize_singular(&singular.into());
+
+        Ok(vec![match boundary_path.0 {
+            Boundary::Source => Cospan {
+                forward: normalize,
+                backward: contract.into(),
+            },
+            Boundary::Target => Cospan {
+                forward: contract.into(),
+                backward: normalize,
+            },
+        }])
+    });
+
+    result.ok()
 }
 
 fn contract_base(

@@ -1,5 +1,6 @@
 use crate::common::*;
 use crate::diagram::*;
+use crate::rewrite::*;
 use std::convert::*;
 
 #[derive(Debug, Clone, Copy)]
@@ -31,5 +32,62 @@ impl BoundaryPath {
         }
 
         diagram.slice(self.0)
+    }
+}
+
+pub fn attach<F, E>(diagram: DiagramN, path: BoundaryPath, build: F) -> Result<DiagramN, E>
+where
+    F: FnOnce(Diagram) -> Result<Vec<Cospan>, E>,
+{
+    let (diagram, _) = attach_worker(diagram, path, build)?;
+    Ok(diagram)
+}
+
+fn attach_worker<F, E>(
+    diagram: DiagramN,
+    path: BoundaryPath,
+    build: F,
+) -> Result<(DiagramN, usize), E>
+where
+    F: FnOnce(Diagram) -> Result<Vec<Cospan>, E>,
+{
+    match path {
+        BoundaryPath(Boundary::Source, 0) => {
+            let mut cospans = build(diagram.source())?;
+            let mut source = diagram.source();
+
+            for cospan in cospans.iter().rev() {
+                source = source.rewrite_forward(&cospan.backward);
+                source = source.rewrite_backward(&cospan.forward);
+            }
+
+            let offset = cospans.len();
+            cospans.extend(diagram.cospans().iter().cloned());
+            Ok((DiagramN::new_unsafe(source, cospans), offset))
+        }
+
+        BoundaryPath(Boundary::Target, 0) => {
+            let added_cospans = build(diagram.target())?;
+            let offset = added_cospans.len();
+            let mut cospans = diagram.cospans().to_vec();
+            cospans.extend(added_cospans);
+            Ok((DiagramN::new_unsafe(diagram.source(), cospans), offset))
+        }
+
+        BoundaryPath(boundary, depth) => {
+            let source: DiagramN = diagram.source().try_into().unwrap();
+            let (source, offset) = attach_worker(source, BoundaryPath(boundary, depth - 1), build)?;
+
+            let cospans = match boundary {
+                Boundary::Source => {
+                    let mut pad = vec![0; depth - 1];
+                    pad.push(offset);
+                    diagram.cospans().iter().map(|c| c.pad(&pad)).collect()
+                }
+                Boundary::Target => diagram.cospans().to_vec(),
+            };
+
+            Ok((DiagramN::new_unsafe(source.into(), cospans), offset))
+        }
     }
 }
