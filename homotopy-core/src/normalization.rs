@@ -5,16 +5,22 @@ use std::collections::HashMap;
 use std::convert::*;
 use std::rc::Rc;
 
+/// A degeneracy map which keeps track of a subset of identity levels in a diagram.
+///
+/// Degeneracy maps are non-globular in order to support the normalization of a diagram's
+/// boundaries. Since we only normalize globular diagrams however, the regular slices of any
+/// degeneracy map that we construct are determined by the regular slices of the target diagram.
+/// Therefore this data type only stores the singular slices of any degeneracy map.
 #[derive(Debug, Clone)]
 enum Degeneracy {
-    Identity(usize),
+    Identity,
     Degeneracy(Vec<SingularHeight>, Vec<Rc<Degeneracy>>),
 }
 
 impl Degeneracy {
-    fn new(dimension: usize, trivial: Vec<SingularHeight>, slices: Vec<Rc<Degeneracy>>) -> Self {
+    fn new(trivial: Vec<SingularHeight>, slices: Vec<Rc<Degeneracy>>) -> Self {
         if trivial.len() == 0 && slices.iter().all(|slice| slice.is_identity()) {
-            Degeneracy::Identity(dimension)
+            Degeneracy::Identity
         } else {
             Degeneracy::Degeneracy(trivial, slices)
         }
@@ -22,7 +28,7 @@ impl Degeneracy {
 
     fn singular_preimage(&self, i: SingularHeight) -> Height {
         match self {
-            Degeneracy::Identity(_) => Height::Singular(i),
+            Degeneracy::Identity => Height::Singular(i),
             Degeneracy::Degeneracy(trivial, _) => {
                 for (count, trivial) in trivial.iter().enumerate() {
                     if *trivial == i {
@@ -39,16 +45,20 @@ impl Degeneracy {
 
     fn is_identity(&self) -> bool {
         match self {
-            Degeneracy::Identity(_) => true,
+            Degeneracy::Identity => true,
             Degeneracy::Degeneracy(_, _) => false,
         }
     }
 
+    /// Converts this degeneracy map into a rewrite, under the assumption that it represents a
+    /// globular degeneracy map. This function is supposed to be called by the `normalize_singular`
+    /// function which does not normalize regular levels. The assumption of globularity is not
+    /// checked.
     fn to_rewrite(&self, source: &Diagram, target: &Diagram) -> Rewrite {
         assert_eq!(source.dimension(), target.dimension());
 
         let (trivial, slices) = match self {
-            Degeneracy::Identity(dimension) => return Rewrite::identity(*dimension),
+            Degeneracy::Identity => return Rewrite::identity(source.dimension()),
             Degeneracy::Degeneracy(trivial, slices) => (trivial, slices),
         };
 
@@ -82,13 +92,10 @@ impl Degeneracy {
             .into()
     }
 
-    fn slice_into(&self, target_height: SingularHeight) -> Rc<Self> {
+    fn slice_into(&self, target_height: SingularHeight) -> &Self {
         match self {
-            Degeneracy::Identity(dimension) => {
-                assert!(*dimension > 0);
-                Rc::new(Degeneracy::Identity(dimension - 1))
-            }
-            Degeneracy::Degeneracy(_, slices) => slices[target_height].clone(),
+            Degeneracy::Identity => &Degeneracy::Identity,
+            Degeneracy::Degeneracy(_, slices) => &slices[target_height],
         }
     }
 }
@@ -134,7 +141,7 @@ impl SinkArrow {
 
             let slice_rewrite = rewrite.slice(middle_height);
             let slice_middle = middle.slice(Height::Singular(middle_height)).unwrap();
-            let slice_degeneracy = self.degeneracy.slice_into(middle_height);
+            let slice_degeneracy = self.degeneracy.slice_into(middle_height).clone();
             let slice_source = source.slice(Height::Singular(source_height)).unwrap();
             slices.push((
                 source_height,
@@ -142,7 +149,7 @@ impl SinkArrow {
                     source: slice_source,
                     rewrite: slice_rewrite,
                     middle: slice_middle,
-                    degeneracy: slice_degeneracy,
+                    degeneracy: Rc::new(slice_degeneracy),
                 },
             ));
         }
@@ -164,8 +171,7 @@ pub fn normalize(diagram: &Diagram) -> Diagram {
 
 pub fn normalize_singular(diagram: &Diagram) -> Rewrite {
     fn normalize_regular(regular: &Diagram) -> (Diagram, Rc<Degeneracy>) {
-        let degeneracy = Degeneracy::Identity(regular.dimension());
-        (regular.clone(), Rc::new(degeneracy))
+        (regular.clone(), Rc::new(Degeneracy::Identity))
     }
 
     let output = normalize_relative(diagram, &[], normalize_regular);
@@ -178,10 +184,10 @@ struct Output {
     diagram: Diagram,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-enum Role {
-    Forward,
-    Backward,
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+enum Factor {
+    Forward(SingularHeight),
+    Backward(SingularHeight),
     Slice(usize, SingularHeight),
 }
 
@@ -189,12 +195,13 @@ fn normalize_relative<R>(diagram: &Diagram, sink: &[SinkArrow], mut normalize_re
 where
     R: FnMut(&Diagram) -> (Diagram, Rc<Degeneracy>) + Copy,
 {
+    // Base case for 0-dimensional diagrams.
     let diagram = match diagram {
         Diagram::Diagram0(_) => {
             let factors = sink.iter().map(|input| input.rewrite.clone()).collect();
             return Output {
                 factors,
-                degeneracy: Rc::new(Degeneracy::Identity(0)),
+                degeneracy: Rc::new(Degeneracy::Identity),
                 diagram: diagram.clone(),
             };
         }
@@ -203,145 +210,133 @@ where
 
     use Height::*;
 
-    // Normalize the regular levels
+    let diagram: &DiagramN = diagram.try_into().unwrap();
     let slices: Vec<_> = diagram.slices().collect();
-    let regular_normalized: Vec<(Diagram, Rc<Degeneracy>)> = (0..(diagram.size() + 1))
-        .map(|i| normalize_regular(&slices[Height::Regular(i).to_int()]))
-        .collect();
+
+    let mut degeneracies: HashMap<Height, Rc<Degeneracy>> = HashMap::new();
+    let mut factors: HashMap<Factor, Rewrite> = HashMap::new();
+    let mut regular: Vec<Diagram> = Vec::new();
+
+    // Normalize the regular levels
+    for height in 0..diagram.size() + 1 {
+        let slice = &slices[Regular(height).to_int()];
+        let (normalized, degeneracy) = normalize_regular(slice);
+        regular.push(normalized);
+        degeneracies.insert(Regular(height), degeneracy);
+    }
 
     // The diagram can not be normalised any further if one map in the sink is an identity rewrite.
     if sink.iter().any(|input| input.is_identity()) {
         return Output {
-            degeneracy: Rc::new(Degeneracy::Identity(diagram.dimension())),
+            degeneracy: Rc::new(Degeneracy::Identity),
             factors: sink.iter().map(|input| input.rewrite.clone()).collect(),
             diagram: diagram.clone().into(),
         };
     }
 
-    let slices: Vec<_> = diagram.slices().collect();
-    let cospans = diagram.cospans();
-
-    // Collect the subproblems
+    // Construct the subproblems
     let mut subproblems: Vec<Vec<SinkArrow>> = (0..diagram.size()).map(|_| Vec::new()).collect();
-    let mut roles: Vec<Vec<Role>> = (0..diagram.size()).map(|_| Vec::new()).collect();
+    let mut roles: Vec<Vec<Factor>> = (0..diagram.size()).map(|_| Vec::new()).collect();
 
-    for i in 0..diagram.size() {
-        let cospan = &cospans[i];
-
+    for (i, cospan) in diagram.cospans().iter().enumerate() {
         subproblems[i].push(SinkArrow {
-            source: regular_normalized[i].0.clone(),
-            degeneracy: regular_normalized[i].1.clone(),
+            source: regular[i].clone(),
+            degeneracy: degeneracies[&Regular(i)].clone(),
             middle: slices[Regular(i).to_int()].clone(),
             rewrite: cospan.forward.clone(),
         });
 
-        roles[i].push(Role::Forward);
+        roles[i].push(Factor::Forward(i));
 
         subproblems[i].push(SinkArrow {
-            source: regular_normalized[i + 1].0.clone(),
-            degeneracy: regular_normalized[i + 1].1.clone(),
+            source: regular[i + 1].clone(),
+            degeneracy: degeneracies[&Regular(i + 1)].clone(),
             middle: slices[Regular(i + 1).to_int()].clone(),
             rewrite: cospan.backward.clone(),
         });
 
-        roles[i].push(Role::Backward);
+        roles[i].push(Factor::Backward(i));
     }
 
     for (i, input) in sink.iter().enumerate() {
         for target in 0..diagram.size() {
             for (j, slice) in input.slices_into(target) {
                 subproblems[target].push(slice);
-                roles[target].push(Role::Slice(i, j));
+                roles[target].push(Factor::Slice(i, j));
             }
         }
     }
 
-    // For each subproblem recursively call relative normalisation
-    let mut singular_degeneracies: Vec<Rc<Degeneracy>> = Vec::new();
-    let mut factor_slices: Vec<HashMap<Role, Rewrite>> = Vec::new();
-
-    for (target, subproblem) in subproblems.iter().enumerate() {
-        let slice = &slices[Singular(target).to_int()];
-        let output = normalize_relative(slice, &subproblem, normalize_regular);
-
-        singular_degeneracies.push(output.degeneracy);
-        factor_slices.push(
-            output
-                .factors
-                .into_iter()
-                .zip(&roles[target])
-                .map(|(factor, role)| (*role, factor))
-                .collect(),
+    // Solve the subproblems
+    for target_height in 0..diagram.size() {
+        let slice = &slices[Height::Singular(target_height).to_int()];
+        let output = normalize_relative(slice, &subproblems[target_height], normalize_regular);
+        degeneracies.insert(Singular(target_height), output.degeneracy);
+        factors.extend(
+            roles[target_height]
+                .iter()
+                .zip(output.factors)
+                .map(|(role, factor)| (*role, factor)),
         );
     }
 
-    // Build the normalized diagram
-    let mut normalized_cospans: Vec<Cospan> = Vec::new();
-
-    for factor_slice in factor_slices.iter_mut() {
-        let forward = factor_slice.remove(&Role::Forward).unwrap();
-        let backward = factor_slice.remove(&Role::Backward).unwrap();
-        normalized_cospans.push(Cospan { forward, backward });
-    }
-
-    // Assemble the factorisation rewrite slices
-    let mut factors: Vec<Vec<Vec<Rewrite>>> = Vec::new();
-
-    for (i, input) in sink.iter().enumerate() {
-        let slices: Vec<Vec<Rewrite>> = (0..diagram.size())
-            .map(|target| {
-                input
-                    .singular_preimage(target)
-                    .into_iter()
-                    .map(|j| factor_slices[target].remove(&Role::Slice(i, j)).unwrap())
-                    .collect()
-            })
-            .collect();
-
-        factors.push(slices);
-    }
-
-    // Find all trivial heights
+    // Find the trivial heights
     let trivial: Vec<SingularHeight> = (0..diagram.size())
-        .filter(|i| {
-            normalized_cospans[*i].is_identity()
-                && factors.iter().all(|factor| factor[*i].is_empty())
+        .filter(|target_height| {
+            roles[*target_height].iter().all(|f| match f {
+                Factor::Forward(_) => factors[f].is_identity(),
+                Factor::Backward(_) => factors[f].is_identity(),
+                Factor::Slice(_, _) => false,
+            })
         })
         .collect();
 
-    // Remove the cospans at the trivial heights
-    for i in trivial.iter().rev() {
-        normalized_cospans.remove(*i);
+    // Assemble the normalized parts, filtering out the trivial levels.
+    let normalized_cospans: Vec<_> = (0..diagram.size())
+        .filter(|height| !trivial.iter().any(|t| t == height))
+        .map(|height| Cospan {
+            forward: factors[&Factor::Forward(height)].clone(),
+            backward: factors[&Factor::Backward(height)].clone(),
+        })
+        .collect();
 
-        for factor in &mut factors {
-            factor.remove(*i);
-        }
-    }
-
-    // Build the degeneracy
-    let degeneracy = Degeneracy::new(diagram.dimension(), trivial, singular_degeneracies);
-
-    // Assemble the result
-    let diagram_normalized =
-        DiagramN::new_unsafe(regular_normalized[0].0.clone(), normalized_cospans);
-
-    let factors = factors
-        .into_iter()
+    let normalized_factors = sink
+        .iter()
         .enumerate()
-        .map(|(i, factor)| {
+        .map(|(i, input)| {
+            let source: &DiagramN = (&input.source).try_into().unwrap();
+
             RewriteN::from_slices(
                 diagram.dimension(),
-                <&DiagramN>::try_from(&sink[i].source).unwrap().cospans(),
-                diagram.cospans(),
-                factor,
+                source.cospans(),
+                &normalized_cospans,
+                (0..diagram.size())
+                    .filter(|height| !trivial.iter().any(|t| t == height))
+                    .map(|target_height| {
+                        input
+                            .singular_preimage(target_height)
+                            .into_iter()
+                            .map(|source_height| factors[&Factor::Slice(i, source_height)].clone())
+                            .collect()
+                    })
+                    .collect(),
             )
             .into()
         })
         .collect();
 
+    let normalized_diagram = DiagramN::new_unsafe(regular[0].clone(), normalized_cospans).into();
+
+    let degeneracy = Degeneracy::new(
+        trivial,
+        (0..diagram.size())
+            .map(|i| degeneracies[&Singular(i)].clone())
+            .collect(),
+    );
+
     Output {
-        factors,
+        factors: normalized_factors,
+        diagram: normalized_diagram,
         degeneracy: Rc::new(degeneracy),
-        diagram: diagram_normalized.into(),
     }
 }
