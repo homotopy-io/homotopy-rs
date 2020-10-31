@@ -8,6 +8,7 @@ use std::rc::Rc;
 use yew::prelude::*;
 use yew_functional::*;
 use yew_functional_macro::functional_component;
+use web_sys::Element;
 use Default;
 
 type Finger = i32;
@@ -50,7 +51,7 @@ enum Action {
     TouchMove(Finger, Point),
     TouchUp(Finger),
     MouseWheel(Point, f64),
-    MouseDown(Point),
+    MouseDown,
     MouseMove(Point),
     MouseUp,
 }
@@ -59,7 +60,7 @@ enum Action {
 struct State {
     translate: Point,
     touch: HashMap<Finger, Point>,
-    mouse: Option<Point>,
+    mouse: bool,
     scale: f64,
 }
 
@@ -81,6 +82,7 @@ pub struct Props {
 
 #[functional_component]
 pub fn panZoom(props: &Props) -> Html {
+    let node_ref = use_ref(|| NodeRef::default());
     let (state, dispatch) = use_reducer(
         |prev: Rc<State>, action: Action| -> State {
             match action {
@@ -92,9 +94,9 @@ pub fn panZoom(props: &Props) -> Html {
                     },
                     ..State::clone(&prev)
                 },
-                Action::TouchMove(f, pos) => {
+                Action::TouchMove(f, d) => {
                     let mut touch = prev.touch.clone();
-                    touch.insert(f, pos);
+                    touch.get_mut(&f).map(|p| *p = *p + d);
                     if prev.touch.len() != 2 {
                         State {
                             touch,
@@ -110,12 +112,11 @@ pub fn panZoom(props: &Props) -> Html {
                             )
                         };
                         let scale = prev.scale * (distance(&touch) / distance(&prev.touch));
-                        let last = prev.touch.get(&f).unwrap_or(&pos);
-                        let avg = touch.iter().map(|x| *x.1).sum::<Point>().scale(0.5);
-                        let zoom_point = (avg - prev.translate).scale(1.0 / prev.scale);
+                        let avg = touch.values().map(|x| *x).sum::<Point>().scale(0.5);
+                        let zoom_point = avg.scale(1.0 / prev.scale);
                         let translate = prev.translate
                             + zoom_point.scale(prev.scale - scale)
-                            + (pos - *last).scale(0.5);
+                            + d.scale(0.5);
                         State {
                             touch,
                             translate,
@@ -133,8 +134,8 @@ pub fn panZoom(props: &Props) -> Html {
                     ..State::clone(&prev)
                 },
                 Action::MouseWheel(p, d) => {
-                    let scale = prev.scale * if d < 0.0 { 1.1 } else { 0.9 };
-                    let zoom_point = (p - prev.translate).scale(1.0 / prev.scale);
+                    let scale = prev.scale * if d < 0.0 { 1.1 } else { 1.0 / 1.1 };
+                    let zoom_point = p.scale(1.0 / prev.scale);
                     let translate = prev.translate + zoom_point.scale(prev.scale - scale);
                     State {
                         scale,
@@ -142,19 +143,20 @@ pub fn panZoom(props: &Props) -> Html {
                         ..State::clone(&prev)
                     }
                 }
-                Action::MouseDown(p) => State {
-                    mouse: Some(p),
+                Action::MouseDown => State {
+                    mouse: true,
                     ..State::clone(&prev)
                 },
-                Action::MouseMove(p) => match prev.mouse {
-                    Some(origin) => State {
-                        translate: prev.translate + p - origin,
+                Action::MouseMove(d) => if prev.mouse {
+                    State {
+                        translate: prev.translate + d,
                         ..State::clone(&prev)
-                    },
-                    None => State::clone(&prev),
-                },
+                    }
+                } else {
+                    State::clone(&prev)
+                }
                 Action::MouseUp => State {
-                    mouse: None,
+                    mouse: false,
                     ..State::clone(&prev)
                 },
             }
@@ -172,16 +174,19 @@ pub fn panZoom(props: &Props) -> Html {
     html! {
         <div class="panzoom_child"
              style={format!(
-                     "transform:translate({x}px, {y}px) scale({s});",
+                     "transform-origin: 0 0; transform:translate({x}px, {y}px) scale({s});",
                      x=state.translate.0,
                      y=state.translate.1,
                      s=state.scale
                    )}
-             onpointerdown=Callback::from(closure!(clone dispatch, |evt: PointerEvent| {
-                 let pos = Point(evt.offset_x(), evt.offset_y());
+             onpointerdown=Callback::from(closure!(clone dispatch, clone node_ref, |evt: PointerEvent| {
+                 let boundingrect = node_ref.borrow().cast::<Element>().unwrap().get_bounding_client_rect();
+                 let top = boundingrect.top();
+                 let left = boundingrect.left();
+                 let pos = Point(evt.client_x() - left as i32, evt.client_y() - top as i32);
                  match (evt.pointer_type().as_str(), evt.ctrl_key()) {
                      ("touch", _) => dispatch(Action::TouchDown(evt.pointer_id(), pos)),
-                     ("mouse", true) => dispatch(Action::MouseDown(pos)),
+                     ("mouse", true) => dispatch(Action::MouseDown),
                      _ => {}
                  };
              }))
@@ -196,21 +201,27 @@ pub fn panZoom(props: &Props) -> Html {
                  };
              }))
              onpointermove=Callback::from(closure!(clone dispatch, |evt: PointerEvent| {
-                 let pos = Point(evt.offset_x(), evt.offset_y());
+                 let pos = Point(evt.movement_x(), evt.movement_y());
                  match evt.pointer_type().as_str() {
                      "touch" => dispatch(Action::TouchMove(evt.pointer_id(), pos)),
                      "mouse" => dispatch(Action::MouseMove(pos)),
                      _ => {}
                  };
              }))
-             onwheel=Callback::from(closure!(clone dispatch, |evt: WheelEvent| {
+             onwheel=Callback::from(closure!(clone dispatch, clone node_ref, |evt: WheelEvent| {
+                 evt.prevent_default();
                  if evt.ctrl_key() {
-                     let pos = Point(evt.offset_x(), evt.offset_y());
+                     let boundingrect = node_ref.borrow().cast::<Element>().unwrap().get_bounding_client_rect();
+                     let top = boundingrect.top();
+                     let left = boundingrect.left();
+                     let pos = Point(evt.client_x() - left as i32, evt.client_y() - top as i32);
                      dispatch(Action::MouseWheel(pos, evt.delta_y()))
                  }
              }))
+             ref=node_ref.borrow().clone()
         >
         { props.children.clone() }
         </div>
     }
 }
+
