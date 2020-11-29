@@ -241,6 +241,7 @@ fn colimit_recursive(
     diagrams: &[(Diagram, BiasValue)],
     spans: &[(usize, Span, usize)],
 ) -> Option<Vec<Rewrite>> {
+    use Height::*;
     let mut span_slices: HashMap<(Node, Node), Span> = HashMap::new();
     let mut diagram_slices: HashMap<Node, Diagram> = HashMap::new();
     let mut node_to_cospan: HashMap<Node, Cospan> = HashMap::new();
@@ -255,12 +256,12 @@ fn colimit_recursive(
 
         for height in 0..diagram.size() {
             delta.add_node(Node(key, height));
-            diagram_slices.insert(Node(key, height), slices[height * 2 + 1].clone());
+            diagram_slices.insert(Node(key, height), slices[Singular(height).to_int()].clone());
             node_to_cospan.insert(Node(key, height), cospans[height].clone());
         }
 
         for height in 1..diagram.size() {
-            let slice = slices[height * 2].clone();
+            let slice = slices[Regular(height).to_int()].clone();
             let backward = cospans[height].backward.clone();
             let forward = cospans[height].forward.clone();
 
@@ -281,7 +282,7 @@ fn colimit_recursive(
         let slices: Vec<_> = diagram.slices().collect();
 
         for height in 0..diagram.size() {
-            let slice = slices[height * 2 + 1].clone();
+            let slice = slices[Singular(height).to_int()].clone();
             let source_node = Node(*source, backward.singular_image(height));
             let target_node = Node(*target, forward.singular_image(height));
 
