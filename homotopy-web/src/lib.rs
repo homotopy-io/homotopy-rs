@@ -2,6 +2,7 @@
 mod app;
 
 use wasm_bindgen::prelude::*;
+use wasm_logger;
 
 // When the `wee_alloc` feature is enabled, this uses `wee_alloc` as the global
 // allocator.
@@ -19,6 +20,8 @@ pub fn main_js() -> Result<(), JsValue> {
     // It's disabled in release mode so it doesn't bloat up the file size.
     #[cfg(debug_assertions)]
     console_error_panic_hook::set_once();
+
+    wasm_logger::init(wasm_logger::Config::default());
 
     yew::start_app::<app::App>();
 

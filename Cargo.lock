@@ -272,12 +272,14 @@ dependencies = [
  "futures 0.1.30",
  "homotopy-core",
  "js-sys",
+ "log",
  "quote 1.0.7",
  "serde",
  "syn",
  "wasm-bindgen",
  "wasm-bindgen-futures 0.3.27",
- "wasm-bindgen-test 0.2.50",
+ "wasm-bindgen-test",
+ "wasm-logger",
  "web-sys",
  "wee_alloc",
  "yew",
@@ -630,21 +632,7 @@ dependencies = [
  "scoped-tls",
  "wasm-bindgen",
  "wasm-bindgen-futures 0.3.27",
- "wasm-bindgen-test-macro 0.2.50",
-]
-
-[[package]]
-name = "wasm-bindgen-test"
-version = "0.3.18"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34d1cdc8b98a557f24733d50a1199c4b0635e465eecba9c45b214544da197f64"
-dependencies = [
- "console_error_panic_hook",
- "js-sys",
- "scoped-tls",
- "wasm-bindgen",
- "wasm-bindgen-futures 0.4.18",
- "wasm-bindgen-test-macro 0.3.18",
+ "wasm-bindgen-test-macro",
 ]
 
 [[package]]
@@ -658,13 +646,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "wasm-bindgen-test-macro"
-version = "0.3.18"
+name = "wasm-logger"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8fb9c67be7439ee8ab1b7db502a49c05e51e2835b66796c705134d9b8e1a585"
+checksum = "074649a66bb306c8f2068c9016395fa65d8e08d2affcbf95acf3c24c3ab19718"
 dependencies = [
- "proc-macro2 1.0.24",
- "quote 1.0.7",
+ "log",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
@@ -774,16 +763,14 @@ dependencies = [
 [[package]]
 name = "yew-mdc"
 version = "0.1.0"
+source = "git+https://github.com/NickHu/yew-mdc#8c88f26d3d45ca58cfee18bc68af81a6f2d46bbf"
 dependencies = [
  "cfg-if",
- "futures 0.3.6",
  "js-sys",
  "lazy_static",
  "serde",
  "serde_json",
  "wasm-bindgen",
- "wasm-bindgen-futures 0.4.18",
- "wasm-bindgen-test 0.3.18",
  "web-sys",
  "yew",
 ]

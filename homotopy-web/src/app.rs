@@ -1,5 +1,7 @@
+mod diagram2d;
 mod panzoom;
 use closure::closure;
+use diagram2d::Diagram2D;
 use homotopy_core::*;
 use panzoom::PanZoom;
 use serde::{Deserialize, Serialize};
@@ -154,6 +156,33 @@ pub fn app(props: &Props) -> Html {
         Default::default(),
     );
 
+    let example = {
+        let x = Generator {
+            id: 0,
+            dimension: 0,
+        };
+        let f = Generator {
+            id: 1,
+            dimension: 1,
+        };
+        let m = Generator {
+            id: 2,
+            dimension: 2,
+        };
+
+        let fd = DiagramN::new(f, x, x).unwrap();
+        let ffd = fd.attach(fd.clone(), Boundary::Target, &[]).unwrap();
+        let md = DiagramN::new(m, ffd, fd).unwrap();
+
+        let mut result = md.clone();
+
+        for _ in 0..10 {
+            result = result.attach(md.clone(), Boundary::Source, &[0]).unwrap();
+        }
+
+        result
+    };
+
     html! {
         <>
         <TopAppBar id="app-bar">
@@ -186,9 +215,9 @@ pub fn app(props: &Props) -> Html {
         </TopAppBar>
 
         <Drawer id="drawer"
-            classes="mdc-top-app-bar--fixed-adjust"
-            style=yew_mdc::components::drawer::Style::Dismissible
-            open={state.view.is_some()}
+            // classes="mdc-top-app-bar--fixed-adjust"
+            // style=yew_mdc::components::drawer::Style::Dismissible
+            // open={state.view.is_some()}
         >
             <DrawerHeader>
                 <h3 class="mdc-drawer__title">{match state.view {
@@ -206,9 +235,9 @@ pub fn app(props: &Props) -> Html {
         <div class="mdc-drawer-app-content mdc-top-app-bar--fixed-adjust">
             <main class="main-content" id="main-content">
                 <PanZoom>
-                    <svg width="1000" height="1000">
-                        <circle cx="500" cy="500" r="250" stroke="green" stroke-width="4" fill="yellow" />
-                    </svg>
+                    <Diagram2D diagram={example} on_select={Callback::from(|pt| {
+                        log::info!("clicked! {:?}", pt);
+                    })} />
                 </PanZoom>
             </main>
         </div>
