@@ -1,0 +1,13 @@
+# https://github.com/yewstack/yew/issues/1026#issuecomment-667742564
+[package]
+name = "yew-functional-macro"
+version = "0.1.0"
+authors = ["Jonathan Kelley <jkelleyrtp@gmail.com>"]
+edition = "2018"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1.0.7"
+syn = { version = "1.0.45", features = ["full"] }

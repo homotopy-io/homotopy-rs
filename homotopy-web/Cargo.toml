@@ -1,16 +1,64 @@
 [package]
 name = "homotopy-web"
+description = "Web frontend for homotopy.io"
 version = "0.1.0"
-authors = ["Lukas Heidemann <lukas@heidemann.me>"]
+authors = ["Lukas Heidemann <lukas@heidemann.me>", "Nick Hu <me@nickhu.co.uk>"]
+categories = ["wasm"]
+readme = "README.md"
 edition = "2018"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[profile.release]
+# This makes the compiled code faster and smaller, but it makes compiling slower,
+# so it's only enabled in release mode.
+lto = true
+
+[features]
+# If you uncomment this line, it will enable `wee_alloc`:
+default = ["wee_alloc"]
+
 [dependencies]
 homotopy-core = { path = "../homotopy-core" }
-wasm-bindgen = { features = ["serde-serialize"], version = "0.2" }
-minilp = "0.1"
-serde = { features = ["derive"], version = "1.0" }
-serde_json = "1.0"
-rand = { version = "*", features = ["wasm-bindgen"] }
+closure = "0.3"
+quote = "1.0.7"
+serde = { version = "1.0", features = ["derive"] }
+syn = "1.0.45"
+yew = "0.17"
+yew-functional = { git = "https://github.com/yewstack/yew", tag = "0.17.4" } # yew-functional not released yet
+yew-functional-macro = { path = "yew-functional-macro" }
+# yew-mdc = { git = "https://github.com/dungeonfog/yew-mdc" }
+yew-mdc = { git = "https://github.com/NickHu/yew-mdc" }
+
+# The `wasm-bindgen` crate provides the bare minimum functionality needed
+# to interact with JavaScript.
+wasm-bindgen = { version = "0.2.45", features = ["serde-serialize"] }
+
+wasm-logger = "*"
+log = "*"
+
+# `wee_alloc` is a tiny allocator for wasm that is only ~1K in code size
+# compared to the default allocator's ~10K. However, it is slower than the default
+# allocator, so it's not enabled by default.
+wee_alloc = { version = "0.4.2", optional = true }
+
+# The `web-sys` crate allows you to interact with the various browser APIs,
+# like the DOM.
+[dependencies.web-sys]
+version = "0.3.22"
+features = ["console", "Element", "DomRect"]
+
+# The `console_error_panic_hook` crate provides better debugging of panics by
+# logging them with `console.error`. This is great for development, but requires
+# all the `std::fmt` and `std::panicking` infrastructure, so it's only enabled
+# in debug mode.
+[target."cfg(debug_assertions)".dependencies]
+console_error_panic_hook = "0.1.5"
+
+# These crates are used for running unit tests.
+[dev-dependencies]
+wasm-bindgen-test = "0.2.45"
+futures = "0.1.27"
+js-sys = "0.3.22"
+wasm-bindgen-futures = "0.3.22"

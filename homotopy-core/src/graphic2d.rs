@@ -15,6 +15,18 @@ pub enum Element {
     IdentitySurface(Vec<(Point, Point)>),
 }
 
+impl Element {
+    pub fn codimension(&self) -> usize {
+        match self {
+            Element::CellPoint(_) => 2,
+            Element::IdentityWire(_) => 1,
+            Element::CellWire(_) => 1,
+            Element::IdentitySurface(_) => 0,
+            Element::CellSurface(_) => 0,
+        }
+    }
+}
+
 pub type Point = (SliceIndex, SliceIndex);
 
 pub fn make_svg(diagram: &DiagramN, layout: &Layout, generators: &Generators) -> String {
@@ -34,13 +46,7 @@ pub fn make_svg(diagram: &DiagramN, layout: &Layout, generators: &Generators) ->
         height * scale
     );
 
-    elements.sort_by_key(|element| match element {
-        Element::CellPoint(_) => 2,
-        Element::IdentityWire(_) => 1,
-        Element::CellWire(_) => 1,
-        Element::IdentitySurface(_) => 0,
-        Element::CellSurface(_) => 0,
-    });
+    elements.sort_by_key(Element::codimension);
 
     // TODO: Clean this up.
 
@@ -246,7 +252,7 @@ fn analyze(diagram: &DiagramN) -> Vec<Block> {
 
 type Elements = Vec<Element>;
 
-fn make_elements(diagram: &DiagramN) -> Vec<Element> {
+pub fn make_elements(diagram: &DiagramN) -> Vec<Element> {
     let cospans = diagram.cospans();
     let mut elements = Vec::new();
     let blocks = analyze(diagram);
@@ -270,6 +276,22 @@ fn make_elements(diagram: &DiagramN) -> Vec<Element> {
             }
         }
     }
+
+    // Left boundary
+    elements.push({
+        let mut points = Vec::with_capacity(diagram.size() * 2 + 2);
+        points.push(Boundary::Source.into());
+        points.extend((0..diagram.size() * 2).map(|i| SliceIndex::from(Height::from_int(i))));
+        points.push(Boundary::Target.into());
+        Element::IdentitySurface(
+            points
+                .into_iter()
+                .map(|y| ((Height::Regular(0).into(), y), (Boundary::Source.into(), y)))
+                .collect(),
+        )
+    });
+
+    // TODO: Right boundary
 
     elements
 }

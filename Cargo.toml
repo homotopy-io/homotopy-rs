@@ -2,5 +2,9 @@
 
 members = [
   "homotopy-core",
-  "homotopy-web"
+  "homotopy-web",
+  "homotopy-web/yew-functional-macro"
 ]
+
+[patch.crates-io]
+yew = { git = "https://github.com/yewstack/yew", tag = "0.17.4" }

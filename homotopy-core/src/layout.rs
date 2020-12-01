@@ -130,6 +130,12 @@ impl Solver {
 pub struct Layout(Vec<Vec<f32>>);
 
 impl Layout {
+    pub fn new(diagram: DiagramN, max_steps: usize) -> Result<Layout, Error> {
+        let mut solver = Solver::new(diagram)?;
+        solver.solve(max_steps);
+        Ok(solver.finish())
+    }
+
     pub fn get(&self, x: SliceIndex, y: SliceIndex) -> Option<(f32, f32)> {
         let slice = match y {
             SliceIndex::Boundary(Boundary::Source) => self.0.first()?,
@@ -139,7 +145,7 @@ impl Layout {
 
         let y_pos = match y {
             SliceIndex::Boundary(Boundary::Source) => 0.0,
-            SliceIndex::Boundary(Boundary::Target) => self.0.len() as f32 + 2.0,
+            SliceIndex::Boundary(Boundary::Target) => self.0.len() as f32 + 1.0,
             SliceIndex::Interior(height) => height.to_int() as f32 + 1.0,
         };
 
