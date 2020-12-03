@@ -2,6 +2,7 @@ pub mod attach;
 pub mod common;
 pub mod contraction;
 pub mod diagram;
+pub mod projection;
 pub mod graphic2d;
 pub mod layout;
 pub mod normalization;

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::cmp::Ordering;
 use std::fmt;
 
 #[derive(PartialEq, Eq, Copy, Clone, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -40,7 +41,7 @@ pub type SingularHeight = usize;
 
 pub type RegularHeight = usize;
 
-#[derive(PartialEq, Eq, Copy, Clone, Debug, PartialOrd, Ord, Hash)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug, Hash)]
 pub enum Height {
     Singular(SingularHeight),
     Regular(RegularHeight),
@@ -63,6 +64,18 @@ impl Height {
     }
 }
 
+impl PartialOrd for Height {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Height {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.to_int().cmp(&other.to_int())
+    }
+}
+
 impl Serialize for Height {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -81,7 +94,7 @@ impl<'de> Deserialize<'de> for Height {
     }
 }
 
-#[derive(PartialEq, Eq, Copy, Clone, Debug, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug, Hash, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum SliceIndex {
     Boundary(Boundary),
@@ -105,6 +118,28 @@ impl SliceIndex {
         } else {
             Height::from_int(h as usize).into()
         }
+    }
+}
+
+impl Ord for SliceIndex {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        use self::Boundary::*;
+        use SliceIndex::*;
+        match (self, other) {
+            (Boundary(Source), Boundary(Source)) => Ordering::Equal,
+            (Boundary(Source), _) => Ordering::Less,
+            (Interior(_), Boundary(Source)) => Ordering::Greater,
+            (Interior(x), Interior(y)) => x.cmp(y),
+            (Interior(_), Boundary(Target)) => Ordering::Less,
+            (Boundary(Target), Boundary(Target)) => Ordering::Equal,
+            (Boundary(Target), _) => Ordering::Less,
+        }
+    }
+}
+
+impl PartialOrd for SliceIndex {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
     }
 }
 

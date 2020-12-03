@@ -1,466 +1,436 @@
 use crate::common::*;
-use crate::diagram::*;
+use crate::diagram::DiagramN;
 use crate::layout::Layout;
-use crate::rewrite::*;
-use serde::Serialize;
+use crate::projection::Generators;
+use crate::rewrite::RewriteN;
+use petgraph::unionfind::UnionFind;
+use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::convert::*;
+use std::convert::TryInto;
+use std::hash::Hash;
 
-#[derive(Serialize)]
-pub enum Element {
-    CellPoint(Point),
-    CellWire(Vec<Point>),
-    CellSurface(Vec<Point>),
-    IdentityWire(Vec<Point>),
-    IdentitySurface(Vec<(Point, Point)>),
+/// An element to draw in the 2d graphic of a diagram.
+///
+/// Connected components of surfaces and wires for the same generator are merged for efficiency
+/// reasons. This gives produces vastly fewer path elements or draw instructions, but does not
+/// distinguish between regions in the diagram that map to different actions when interacted with.
+#[derive(Debug, Clone, PartialEq)]
+pub enum GraphicElement {
+    Surface(Generator, VectorPath),
+    Wire(Generator, VectorPath),
+    Point(Generator, (f32, f32)),
 }
 
-impl Element {
-    pub fn codimension(&self) -> usize {
+/// An action region in the diagram.
+///
+/// Adjacent regions for the same generator are not merged so that they can be used to determine
+/// the precise logical location in the diagram a user interacts with. While these regions could
+/// also be used for drawing the diagram, surfaces and wires are subdivided into numerous parts
+/// which can slow down drawing or increase the size of generated vector images unneccessarily.
+#[derive(Debug, Clone, PartialEq)]
+pub enum ActionRegion {
+    Surface(Coordinate, Coordinate, Coordinate, VectorPath),
+    Wire(Coordinate, Coordinate, VectorPath),
+    Point(Coordinate, (f32, f32)),
+}
+
+/// The 2-dimensional geometry of a diagram. 
+#[derive(Debug, Clone, PartialEq)]
+pub struct Geometry {
+    /// The elements to draw for a diagram's 2-dimensional graphic. Has to be drawn in order for
+    /// correct results.
+    pub graphic: Vec<GraphicElement>,
+
+    /// Regions in the graphic that map to a logical location for interactivity. Hit tests
+    /// have to be performed in order for correct results.
+    pub actions: Vec<ActionRegion>,
+}
+
+pub type VectorPath = Vec<VectorCommand>;
+
+/// Vector path commands.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum VectorCommand {
+    /// Move to a location.
+    MoveTo((f32, f32)),
+    /// Draw a line.
+    LineTo((f32, f32)),
+    /// Draw a cubic Bezier curve.
+    CurveTo((f32, f32), (f32, f32), (f32, f32)),
+}
+
+impl VectorCommand {
+    /// The SVG path command string.
+    pub fn to_str(&self) -> String {
         match self {
-            Element::CellPoint(_) => 2,
-            Element::IdentityWire(_) => 1,
-            Element::CellWire(_) => 1,
-            Element::IdentitySurface(_) => 0,
-            Element::CellSurface(_) => 0,
+            VectorCommand::MoveTo((x, y)) => format!("M {} {}", x, y),
+            VectorCommand::LineTo((x, y)) => format!("L {} {}", x, y),
+            VectorCommand::CurveTo((x0, y0), (x1, y1), (x2, y2)) => {
+                format!("C {} {}, {} {}, {} {}", x0, y0, x1, y1, x2, y2)
+            }
         }
     }
 }
 
-pub type Point = (SliceIndex, SliceIndex);
+impl Geometry {
+    pub fn new(diagram: &DiagramN, layout: &Layout, generators: &Generators) -> Self {
+        let complex = generate_complex(diagram);
+        let actions = complex_to_actions(&complex, layout);
+        let graphic = complex_to_graphic(&complex, layout, generators);
+        Geometry { actions, graphic }
+    }
+}
 
-pub fn make_svg(diagram: &DiagramN, layout: &Layout, generators: &Generators) -> String {
-    let mut svg = String::new();
-
-    let mut elements = make_elements(diagram);
-    let colors = &["lightgray", "gray", "black"];
-    let scale: f32 = 50.0;
-
-    let (width, height) = layout
-        .get(Boundary::Target.into(), Boundary::Target.into())
-        .unwrap();
-
-    svg += &format!(
-        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{}\" height=\"{}\">\n",
-        width * scale,
-        height * scale
-    );
-
-    elements.sort_by_key(Element::codimension);
-
-    // TODO: Clean this up.
-
-    for element in elements {
-        match element {
-            Element::CellPoint(element) => {
-                let generator = generators.get(element.0, element.1).unwrap();
-                let position = layout.get(element.0, element.1).unwrap();
-
-                svg += &format!(
-                    "<circle r=\"5\" cx=\"{}\" cy=\"{}\" fill=\"{}\" />\n",
-                    position.0 * scale,
-                    position.1 * scale,
-                    colors[generator.id]
-                );
+/// Construct the action regions from the simplicial complex of a diagram.
+fn complex_to_actions(complex: &[Simplex], layout: &Layout) -> Vec<ActionRegion> {
+    let mut regions: Vec<_> = complex
+        .iter()
+        .map(|simplex| match simplex {
+            Simplex::Surface(p0, p1, p2) => {
+                ActionRegion::Surface(*p0, *p1, *p2, to_curve(&[*p0, *p1, *p2], true, layout))
             }
-            Element::CellWire(element) => {
-                let mut path = String::new();
-
-                // TODO: Bezier curves
-                for (i, (x, y)) in element.iter().enumerate() {
-                    let (x, y) = layout.get(*x, *y).unwrap();
-
-                    if i == 0 {
-                        path += &format!("M {} {}", x * scale, y * scale);
-                    } else {
-                        path += &format!("L {} {}", x * scale, y * scale);
-                    }
-                }
-
-                let generator = generators.get(element[0].0, element[0].1).unwrap();
-
-                svg += &format!(
-                    "<path d=\"{}\" fill=\"none\" stroke=\"{}\" stroke-width=\"4\" />\n",
-                    path, colors[generator.id]
-                );
+            Simplex::Wire(p0, p1) => {
+                ActionRegion::Wire(*p0, *p1, to_curve(&[*p0, *p1], false, layout))
             }
-            Element::CellSurface(element) => {
-                let mut path = String::new();
+            Simplex::Point(p) => ActionRegion::Point(*p, layout.get(p.0, p.1).unwrap()),
+        })
+        .collect();
 
-                // TODO: Bezier curves
-                for (i, (x, y)) in element.iter().enumerate() {
-                    let (x, y) = layout.get(*x, *y).unwrap();
+    regions.sort_by_key(|region| match region {
+        ActionRegion::Surface(_, _, _, _) => 0,
+        ActionRegion::Wire(_, _, _) => 1,
+        ActionRegion::Point(_, _) => 2,
+    });
 
-                    if i == 0 {
-                        path += &format!("M {} {}", x * scale, y * scale);
-                    } else {
-                        path += &format!("L {} {}", x * scale, y * scale);
-                    }
-                }
+    regions
+}
 
-                let generator = generators.get(element[0].0, element[0].1).unwrap();
+/// Construct the graphical elements from the simplicial complex of a diagram.
+fn complex_to_graphic(
+    complex: &[Simplex],
+    layout: &Layout,
+    generators: &Generators,
+) -> Vec<GraphicElement> {
+    let mut elements = Vec::new();
+    let mut grouped_surfaces: HashMap<Generator, Vec<Vec<Coordinate>>> = HashMap::new();
 
-                svg += &format!(
-                    "<path d=\"{}\" fill=\"{}\" stroke=\"{}\" strokeWidth=\"1\" />\n",
-                    path, colors[generator.id], colors[generator.id]
-                );
+    for simplex in complex {
+        match simplex {
+            Simplex::Surface(p0, p1, p2) => {
+                let generator = generators.get(p0.0, p0.1).unwrap();
+                let (o0, o1, o2) = orient_surface((*p0, *p1, *p2));
+                grouped_surfaces
+                    .entry(generator)
+                    .or_default()
+                    .push(vec![o0, o1, o2]);
             }
-            Element::IdentityWire(element) => {
-                let mut path = String::new();
-
-                for (i, (x, y)) in element.iter().enumerate() {
-                    let (x, y) = layout.get(*x, *y).unwrap();
-
-                    if i == 0 {
-                        path += &format!("M {} {}", x * scale, y * scale);
-                    } else {
-                        path += &format!("L {} {}", x * scale, y * scale);
-                    }
-                }
-
-                let generator = generators.get(element[0].0, element[0].1).unwrap();
-
-                svg += &format!(
-                    "<path d=\"{}\" fill=\"none\" stroke=\"{}\" stroke-width=\"4\" />\n",
-                    path, colors[generator.id]
-                );
+            Simplex::Wire(p0, p1) => {
+                let generator = generators.get(p0.0, p0.1).unwrap();
+                elements.push(GraphicElement::Wire(
+                    generator,
+                    to_curve(&[*p0, *p1], false, layout),
+                ));
             }
-            Element::IdentitySurface(element) => {
-                let mut points = Vec::new();
-                points.extend(element.iter().map(|(p, _)| *p));
-                points.extend(element.iter().rev().map(|(_, p)| *p));
-
-                let mut path = String::new();
-
-                // TODO: Bezier curves?
-                for (i, (x, y)) in points.iter().enumerate() {
-                    let (x, y) = layout.get(*x, *y).unwrap();
-
-                    if i == 0 {
-                        path += &format!("M {} {}", x * scale, y * scale);
-                    } else {
-                        path += &format!("L {} {}", x * scale, y * scale);
-                    }
-                }
-
-                let generator = generators.get(points[0].0, points[0].1).unwrap();
-
-                svg += &format!(
-                    "<path d=\"{}\" fill=\"{}\" stroke=\"{}\" stroke-width=\"1\" />\n",
-                    path, colors[generator.id], colors[generator.id]
-                );
+            Simplex::Point(p) => {
+                let generator = generators.get(p.0, p.1).unwrap();
+                elements.push(GraphicElement::Point(
+                    generator,
+                    layout.get(p.0, p.1).unwrap(),
+                ));
             }
         }
     }
 
-    svg += "</svg>";
-    svg
+    for (generator, surfaces) in grouped_surfaces {
+        for merged in merge_surfaces(surfaces.into_iter()) {
+            elements.push(GraphicElement::Surface(
+                generator,
+                to_curve(&merged, true, layout),
+            ));
+        }
+    }
+
+    // TODO: Group and merge wires as well.
+
+    elements.sort_by_key(|element| match element {
+        GraphicElement::Surface(_, _) => 0,
+        GraphicElement::Wire(_, _) => 1,
+        GraphicElement::Point(_, _) => 2,
+    });
+
+    elements
 }
 
-enum Block {
-    Cell(SingularHeight, SingularHeight),
-    Identity(Identity),
+/// Creates a vector path for between the specified points, using Bezier curves
+/// and straight paths where appropriate.
+fn to_curve(points: &[Coordinate], closed: bool, layout: &Layout) -> VectorPath {
+    assert!(points.len() > 0);
+
+    let mut commands = Vec::with_capacity(points.len() + 1);
+
+    let start = layout.get(points[0].0, points[0].1).unwrap();
+    commands.push(VectorCommand::MoveTo((start.0, start.1)));
+
+    for i in 1..points.len() {
+        commands.push(to_curve_segment(points[i - 1], points[i], layout));
+    }
+
+    if closed {
+        commands.push(to_curve_segment(*points.last().unwrap(), points[0], layout));
+    }
+
+    commands
 }
 
-struct Identity {
-    start: SliceIndex,
-    xs: Vec<SingularHeight>,
+/// Creates a single vector command in a path.
+fn to_curve_segment(start: Coordinate, end: Coordinate, layout: &Layout) -> VectorCommand {
+    use self::Height::*;
+    use self::SliceIndex::*;
+
+    let layout_start = layout.get(start.0, start.1).unwrap();
+    let layout_end = layout.get(end.0, end.1).unwrap();
+
+    match (start, end) {
+        (
+            (Interior(Singular(_)), Interior(Regular(_))),
+            (Interior(Singular(_)), Interior(Singular(_))),
+        ) => VectorCommand::CurveTo(
+            (layout_start.0, (layout_end.1 + layout_start.1) / 2.0),
+            (layout_start.0, layout_end.1),
+            (layout_end.0, layout_end.1),
+        ),
+        (
+            (Interior(Singular(_)), Interior(Singular(_))),
+            (Interior(Singular(_)), Interior(Regular(_))),
+        ) => VectorCommand::CurveTo(
+            (layout_end.0, layout_start.1),
+            (layout_end.0, (layout_end.1 + layout_start.1) / 2.0),
+            (layout_start.0, layout_start.1),
+        ),
+        _ => VectorCommand::LineTo(layout_end),
+    }
 }
 
-fn analyze(diagram: &DiagramN) -> Vec<Block> {
+/// Logical coordinates in the diagram.
+pub type Coordinate = (SliceIndex, SliceIndex);
+
+/// Orients a surface so it has consistent orientation with the rest.
+fn orient_surface(
+    surface: (Coordinate, Coordinate, Coordinate),
+) -> (Coordinate, Coordinate, Coordinate) {
+    fn ordering_to_int(ordering: Ordering) -> isize {
+        match ordering {
+            Ordering::Less => (-1),
+            Ordering::Equal => 0,
+            Ordering::Greater => 1,
+        }
+    }
+
+    let (p0, p1, p2) = surface;
+
+    let a0 = ordering_to_int(p1.0.cmp(&p0.0));
+    let a1 = ordering_to_int(p1.1.cmp(&p0.1));
+    let b0 = ordering_to_int(p2.0.cmp(&p1.0));
+    let b1 = ordering_to_int(p2.1.cmp(&p1.1));
+
+    if a0 * b1 - a1 * b0 < 0 {
+        (p1, p0, p2)
+    } else {
+        (p0, p1, p2)
+    }
+}
+
+// Merges surfaces together. Assumes a consistent orientation.
+fn merge_surfaces<P, I>(surfaces: I) -> Vec<Vec<P>>
+where
+    P: Hash + Eq + Copy,
+    I: ExactSizeIterator<Item = Vec<P>>,
+{
+    // Find a representative for each connected component
+    let count = surfaces.len();
+    let mut repr = UnionFind::<usize>::new(count);
+    let mut edge_to_surface: HashMap<(P, P), usize> = HashMap::new();
+
+    for (surface_index, surface) in surfaces.enumerate() {
+        for i in 0..surface.len() {
+            let source = surface[i];
+            let target = surface[(i + 1) % surface.len()];
+
+            match edge_to_surface.remove(&(target, source)) {
+                Some(other_index) => {
+                    repr.union(surface_index, other_index);
+                }
+                None => {
+                    edge_to_surface.insert((source, target), surface_index);
+                }
+            }
+        }
+    }
+
+    // Gather the connected components
+    let components: Vec<_> = {
+        let mut components = vec![vec![]; count];
+
+        for (edge, index) in edge_to_surface {
+            components[repr.find(index)].push(edge);
+        }
+
+        components
+            .into_iter()
+            .filter(|edges| !edges.is_empty())
+            .collect()
+    };
+
+    // Orient each connected component
+    let parts: Vec<_> = {
+        let mut parts = vec![];
+
+        for component in components {
+            let next: HashMap<P, P> = component.iter().map(|(s, t)| (*s, *t)).collect();
+            let mut part = vec![component[0].0];
+            let mut end = component[0].1;
+
+            while end != part[0] {
+                part.push(end);
+                end = next[&end];
+            }
+
+            parts.push(part);
+        }
+
+        parts
+    };
+
+    parts
+}
+
+#[derive(Debug, Clone)]
+enum Simplex {
+    Surface(Coordinate, Coordinate, Coordinate),
+    Wire(Coordinate, Coordinate),
+    Point(Coordinate),
+}
+
+/// Generate a 2-dimensional simplicial complex for a diagram.
+fn generate_complex(diagram: &DiagramN) -> Vec<Simplex> {
     use Height::*;
+    let mut complex = Vec::new();
 
     let slices: Vec<DiagramN> = diagram
         .slices()
         .map(|slice| slice.try_into().unwrap())
         .collect();
+
     let cospans = diagram.cospans();
 
-    let mut blocks = Vec::new();
-    let mut identities: HashMap<SingularHeight, Identity> = (0..slices.first().unwrap().size())
-        .map(|i| {
-            (
-                i,
-                Identity {
-                    start: Boundary::Source.into(),
-                    xs: vec![i, i],
-                },
-            )
-        })
-        .collect();
-
     for y in 0..diagram.size() {
+        let slice = &slices[Singular(y).to_int()];
         let forward = cospans[y].forward.to_n().unwrap();
         let backward = cospans[y].backward.to_n().unwrap();
 
-        let mut targets = forward.targets();
-        targets.extend(backward.targets());
-        targets.sort();
-        targets.dedup();
-
-        let size = slices[Singular(y).to_int()].size();
-
-        let mut new_identities = HashMap::new();
-
-        for x in 0..size {
-            if !targets.iter().any(|t| *t == x) {
-                let source_x = forward.singular_preimage(x).start;
-                let target_x = backward.singular_preimage(x).start;
-
-                match identities.remove(&source_x) {
-                    None => {
-                        new_identities.insert(
-                            target_x,
-                            Identity {
-                                start: Regular(y).into(),
-                                xs: vec![source_x, x, target_x],
-                            },
-                        );
-                    }
-                    Some(mut id) => {
-                        id.xs.push(x);
-                        id.xs.push(target_x);
-                        new_identities.insert(target_x, id);
-                    }
-                };
-            } else {
-                blocks.push(Block::Cell(x, y));
-            }
-        }
-
-        blocks.extend(identities.drain().map(|(_, id)| Block::Identity(id)));
-        identities = new_identities;
-    }
-
-    for x in 0..slices.last().unwrap().size() {
-        match identities.remove(&x) {
-            None => {
-                blocks.push(Block::Identity(Identity {
-                    start: Regular(diagram.size()).into(),
-                    xs: vec![x, x],
-                }));
-            }
-            Some(mut id) => {
-                id.xs.push(x);
-                blocks.push(Block::Identity(id));
-            }
-        }
-    }
-
-    blocks
-}
-
-type Elements = Vec<Element>;
-
-pub fn make_elements(diagram: &DiagramN) -> Vec<Element> {
-    let cospans = diagram.cospans();
-    let mut elements = Vec::new();
-    let blocks = analyze(diagram);
-
-    for block in blocks {
-        match block {
-            Block::Identity(id) => {
-                make_identity(id, diagram.size(), &mut elements);
-            }
-            Block::Cell(x, y) => {
-                let cospan = &cospans[y];
-                let forward = cospan.forward.to_n().unwrap();
-                let backward = cospan.backward.to_n().unwrap();
-
-                make_cell(
-                    (x, y),
-                    //(regular0, singular, regular1),
-                    (forward, backward),
-                    &mut elements,
-                );
-            }
-        }
-    }
-
-    // Left boundary
-    elements.push({
-        let mut points = Vec::with_capacity(diagram.size() * 2 + 2);
-        points.push(Boundary::Source.into());
-        points.extend((0..diagram.size() * 2).map(|i| SliceIndex::from(Height::from_int(i))));
-        points.push(Boundary::Target.into());
-        Element::IdentitySurface(
-            points
-                .into_iter()
-                .map(|y| ((Height::Regular(0).into(), y), (Boundary::Source.into(), y)))
-                .collect(),
-        )
-    });
-
-    // TODO: Right boundary
-
-    elements
-}
-
-fn make_cell(position: (usize, usize), rewrites: (&RewriteN, &RewriteN), elements: &mut Elements) {
-    let (x, y) = position;
-    let (forward, backward) = rewrites;
-
-    let x_source = forward.singular_preimage(x);
-    let x_target = backward.singular_preimage(x);
-
-    use Height::*;
-
-    // Point
-    elements.push(Element::CellPoint((Singular(x).into(), Singular(y).into())));
-
-    // Wires
-    for (wire_xs, wire_y) in &[(x_source.clone(), y), (x_target.clone(), y + 1)] {
-        for wire_x in wire_xs.clone() {
-            elements.push(Element::CellWire(vec![
-                (Singular(wire_x).into(), Regular(*wire_y).into()),
-                (Singular(x).into(), Singular(y).into()),
-            ]));
-        }
-    }
-
-    // Surfaces
-    for (wire_xs, wire_y) in &[(x_source.clone(), y), (x_target.clone(), y + 1)] {
-        for (_i, wire_x) in wire_xs.clone().enumerate() {
-            elements.push(Element::CellSurface(vec![
-                (Regular(wire_x).into(), Regular(*wire_y).into()),
-                (Singular(wire_x).into(), Regular(*wire_y).into()),
-                (Singular(x).into(), Singular(y).into()),
-            ]));
-
-            elements.push(Element::CellSurface(vec![
-                (Regular(wire_x + 1).into(), Regular(*wire_y).into()),
-                (Singular(wire_x).into(), Regular(*wire_y).into()),
-                (Singular(x).into(), Singular(y).into()),
-            ]));
-        }
-    }
-
-    elements.push(Element::CellSurface(vec![
-        (Regular(x).into(), Singular(y).into()),
-        (Singular(x).into(), Singular(y).into()),
-        (Regular(x_source.start).into(), Regular(y).into()),
-    ]));
-
-    elements.push(Element::CellSurface(vec![
-        (Regular(x + 1).into(), Singular(y).into()),
-        (Singular(x).into(), Singular(y).into()),
-        (Regular(x_source.end).into(), Regular(y).into()),
-    ]));
-
-    elements.push(Element::CellSurface(vec![
-        (Regular(x).into(), Singular(y).into()),
-        (Singular(x).into(), Singular(y).into()),
-        (Regular(x_target.start).into(), Regular(y + 1).into()),
-    ]));
-
-    elements.push(Element::CellSurface(vec![
-        (Regular(x + 1).into(), Singular(y).into()),
-        (Singular(x).into(), Singular(y).into()),
-        (Regular(x_target.end).into(), Regular(y + 1).into()),
-    ]));
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct Generators(Vec<Vec<Generator>>);
-
-impl Generators {
-    pub fn new(diagram: &DiagramN) -> Self {
-        if diagram.dimension() < 2 {
-            // TODO: Make this into an error
-            panic!();
-        }
-
-        // TODO: Projection
-        Generators(
-            diagram
-                .slices()
-                .map(|slice| {
-                    DiagramN::try_from(slice)
-                        .unwrap()
-                        .slices()
-                        .map(|p| p.max_generator())
-                        .collect()
-                })
-                .collect(),
-        )
-    }
-
-    pub fn get(&self, x: SliceIndex, y: SliceIndex) -> Option<Generator> {
-        let slice = match y {
-            SliceIndex::Boundary(Boundary::Source) => self.0.first()?,
-            SliceIndex::Boundary(Boundary::Target) => self.0.last()?,
-            SliceIndex::Interior(height) => self.0.get(height.to_int())?,
+        let targets = {
+            let mut targets = forward.targets();
+            targets.extend(backward.targets());
+            targets
         };
 
-        match x {
-            SliceIndex::Boundary(Boundary::Source) => slice.first().cloned(),
-            SliceIndex::Boundary(Boundary::Target) => slice.last().cloned(),
-            SliceIndex::Interior(height) => slice.get(height.to_int()).cloned(),
+        for x in 0..slice.size() {
+            generate_cell(x, y, y, forward, &mut complex);
+            generate_cell(x, y, y + 1, backward, &mut complex);
+
+            if targets.iter().any(|t| *t == x) {
+                complex.push(Simplex::Point((Singular(x).into(), Singular(y).into())));
+            }
         }
     }
+
+    complex
 }
 
-fn make_identity(id: Identity, diagram_size: usize, elements: &mut Elements) {
+fn generate_cell(sx: usize, sy: usize, ry: usize, rewrite: &RewriteN, complex: &mut Vec<Simplex>) {
     use Height::*;
 
-    let mut left: Vec<(Point, Point)> = Vec::new();
-    let mut right: Vec<(Point, Point)> = Vec::new();
-    let mut wire: Vec<Point> = Vec::new();
+    let rxs = rewrite.singular_preimage(sx);
 
-    for (i, x) in id.xs.iter().enumerate() {
-        let height = SliceIndex::from_int(id.start.to_int(diagram_size) + i as isize, diagram_size);
-        left.push(((Regular(*x).into(), height), (Singular(*x).into(), height)));
-        right.push((
-            (Regular(*x + 1).into(), height),
-            (Singular(*x).into(), height),
+    for rx in rxs.clone() {
+        // Surface to the left of a wire
+        complex.push(Simplex::Surface(
+            (Regular(rx).into(), Regular(ry).into()),
+            (Singular(rx).into(), Regular(ry).into()),
+            (Singular(sx).into(), Singular(sy).into()),
         ));
-        wire.push((Singular(*x).into(), height));
+
+        // Surface to the right of a wire
+        complex.push(Simplex::Surface(
+            (Regular(rx + 1).into(), Regular(ry).into()),
+            (Singular(rx).into(), Regular(ry).into()),
+            (Singular(sx).into(), Singular(sy).into()),
+        ));
+
+        // Wire
+        complex.push(Simplex::Wire(
+            (Singular(rx).into(), Regular(ry).into()),
+            (Singular(sx).into(), Singular(sy).into()),
+        ));
     }
 
-    elements.push(Element::IdentitySurface(left));
-    elements.push(Element::IdentitySurface(right));
-    elements.push(Element::IdentityWire(wire));
+    // Surface to the left
+    complex.push(Simplex::Surface(
+        (Regular(rxs.start).into(), Regular(ry).into()),
+        (Regular(sx).into(), Singular(sy).into()),
+        (Singular(sx).into(), Singular(sy).into()),
+    ));
+
+    // Surface to the right
+    complex.push(Simplex::Surface(
+        (Regular(rxs.end).into(), Regular(ry).into()),
+        (Regular(sx + 1).into(), Singular(sy).into()),
+        (Singular(sx).into(), Singular(sy).into()),
+    ));
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
-    use crate::layout;
+// mod test {
+//     use super::*;
+//     use crate::diagram::Diagram;
 
-    fn example_assoc() -> DiagramN {
-        let x = Generator {
-            id: 0,
-            dimension: 0,
-        };
-        let f = Generator {
-            id: 1,
-            dimension: 1,
-        };
-        let m = Generator {
-            id: 2,
-            dimension: 2,
-        };
+//     #[test]
+//     fn test() {
+//         let x = Generator::new(0, 0);
+//         let y = Generator::new(1, 0);
+//         let z = Generator::new(2, 0);
+//         let f = Generator::new(3, 1);
+//         let g = Generator::new(4, 1);
+//         let h = Generator::new(5, 1);
+//         let m = Generator::new(6, 2);
 
-        let fd = DiagramN::new(f, x, x).unwrap();
-        let ffd = fd.attach(fd.clone(), Boundary::Target, &[]).unwrap();
-        let md = DiagramN::new(m, ffd, fd).unwrap();
+//         let d_f = DiagramN::new(f, x, y).unwrap();
+//         let d_g = DiagramN::new(g, y, z).unwrap();
+//         let d_h = DiagramN::new(h, x, z).unwrap();
+//         let d_fg = d_f.attach(d_g.clone(), Boundary::Target, &[]).unwrap();
+//         let d_m = DiagramN::new(m, d_fg, d_h).unwrap();
 
-        let mut result = md.clone();
+//         let generators = Generators::new(&d_m);
+//         let complex = generate_complex(&d_m);
 
-        for _ in 0..10 {
-            result = result.attach(md.clone(), Boundary::Source, &[0]).unwrap();
-        }
+//         // for surface in complex.surfaces {
+//         //     let surface = surface.clone().orient(surface.orientation().unwrap());
+//         //     println!("{:?} {:?}", surface.orientation(), surface);
+//         // }
 
-        result
-    }
+//         let mut surfaces_grouped: HashMap<Generator, Vec<Surface>> = HashMap::new();
 
-    #[test]
-    fn test() {
-        let diagram = example_assoc();
-        let generators = Generators::new(&diagram);
-        let mut solver = layout::Solver::new(diagram.clone()).unwrap();
-        solver.solve(100);
-        let layout = solver.finish();
-        let _svg = make_svg(&diagram, &layout, &generators);
-    }
-}
+//         for surface in complex.surfaces {
+//             let orientation = surface.orientation().unwrap();
+//             let generator = generators.get(surface.0 .0, surface.0 .1).unwrap();
+//             let surface = surface.orient(orientation);
+//             surfaces_grouped.entry(generator).or_default().push(surface);
+//         }
+
+//         let result: Vec<_> = surfaces_grouped
+//             .into_iter()
+//             .map(|(generator, surfaces)| (generator, merge_surfaces(surfaces.into_iter())))
+//             .collect();
+
+//         println!("{:#?}", result);
+//     }
+// }
