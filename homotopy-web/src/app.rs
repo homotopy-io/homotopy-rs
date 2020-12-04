@@ -176,7 +176,7 @@ pub fn app(props: &Props) -> Html {
 
         let mut result = md.clone();
 
-        for _ in 0..10 {
+        for _ in 0..2 {
             result = result.attach(md.clone(), Boundary::Source, &[0]).unwrap();
         }
 

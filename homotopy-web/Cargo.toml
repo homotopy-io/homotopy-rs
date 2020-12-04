@@ -56,9 +56,9 @@ features = [
   "DomRect",
   "Document",
   "Window",
-  "HtmlCanvasElement",
-  "CanvasRenderingContext2d",
-  "Path2d",
+  "TouchEvent",
+  "TouchList",
+  "Touch",
   "Performance"
 ]
 

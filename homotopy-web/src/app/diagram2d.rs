@@ -180,15 +180,15 @@ impl Diagram2D {
 
             match region {
                 ActionRegion::Surface(_, path) => {
-                    geometry::Fill { path }.contains_point(point, 1.0)
+                    geometry::Fill::new(path).contains_point(point, 1.0)
                 }
                 ActionRegion::Wire(_, path) => {
                     let width = self.props.style.wire_thickness;
-                    geometry::Stroke { path, width }.contains_point(point, 1.0)
+                    geometry::Stroke::new(path, width).contains_point(point, 1.0)
                 }
                 ActionRegion::Point(_, center) => {
                     let radius = self.props.style.point_radius;
-                    geometry::Circle { center, radius }.contains_point(point)
+                    geometry::Circle::new(center, radius).contains_point(point)
                 }
             }
         });

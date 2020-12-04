@@ -1,4 +1,5 @@
-use euclid::default::Point2D;
+use euclid::default::{Point2D, Rect, Transform2D};
+use lyon_algorithms::aabb::fast_bounding_rect;
 use lyon_algorithms::hit_test::hit_test_path;
 use lyon_geom::{CubicBezierSegment, QuadraticBezierSegment};
 use lyon_path::Path;
@@ -6,12 +7,23 @@ use std::fmt::Write;
 
 pub type Point = Point2D<f32>;
 
+#[derive(Debug, Clone)]
 pub struct Fill {
     pub path: Path,
+    bounds: Rect<f32>,
 }
 
 impl Fill {
+    pub fn new(path: Path) -> Self {
+        let bounds = fast_bounding_rect(path.into_iter());
+        Fill { path, bounds }
+    }
+
     pub fn contains_point(&self, point: Point, tolerance: f32) -> bool {
+        if !self.bounds.contains(point) {
+            return false;
+        }
+
         hit_test_path(
             &point,
             self.path.into_iter(),
@@ -21,12 +33,23 @@ impl Fill {
     }
 }
 
+impl Into<Shape> for Fill {
+    fn into(self) -> Shape {
+        Shape::Fill(self)
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Stroke {
     pub path: Path,
     pub width: f32,
 }
 
 impl Stroke {
+    pub fn new(path: Path, width: f32) -> Self {
+        Stroke { path, width }
+    }
+
     pub fn contains_point(&self, point: Point, tolerance: f32) -> bool {
         for event in self.path.into_iter() {
             use lyon_path::Event;
@@ -97,14 +120,31 @@ fn distance_to_line_segment(point: Point, from: Point, to: Point) -> f32 {
     }
 }
 
+impl Into<Shape> for Stroke {
+    fn into(self) -> Shape {
+        Shape::Stroke(self)
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Circle {
     pub center: Point,
     pub radius: f32,
 }
 
 impl Circle {
+    pub fn new(center: Point, radius: f32) -> Self {
+        Circle { center, radius }
+    }
+
     pub fn contains_point(&self, point: Point) -> bool {
         (self.center - point).square_length() < self.radius * self.radius
+    }
+}
+
+impl Into<Shape> for Circle {
+    fn into(self) -> Shape {
+        Shape::Circle(self)
     }
 }
 
@@ -142,4 +182,21 @@ pub fn path_to_svg(path: Path) -> String {
     }
 
     svg
+}
+
+#[derive(Debug, Clone)]
+pub enum Shape {
+    Fill(Fill),
+    Stroke(Stroke),
+    Circle(Circle),
+}
+
+impl Shape {
+    pub fn contains_point(&self, point: Point, tolerance: f32) -> bool {
+        match self {
+            Shape::Fill(s) => s.contains_point(point, tolerance),
+            Shape::Stroke(s) => s.contains_point(point, tolerance),
+            Shape::Circle(s) => s.contains_point(point),
+        }
+    }
 }
