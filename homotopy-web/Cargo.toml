@@ -21,6 +21,7 @@ default = ["wee_alloc"]
 
 [dependencies]
 homotopy-core = { path = "../homotopy-core" }
+homotopy-graphics = { path = "../homotopy-graphics" }
 closure = "0.3"
 quote = "1.0.7"
 serde = { version = "1.0", features = ["derive"] }
@@ -37,6 +38,8 @@ wasm-bindgen = { version = "0.2.45", features = ["serde-serialize"] }
 
 wasm-logger = "*"
 log = "*"
+euclid = "*"
+lyon_path = "*"
 
 # `wee_alloc` is a tiny allocator for wasm that is only ~1K in code size
 # compared to the default allocator's ~10K. However, it is slower than the default
@@ -47,7 +50,17 @@ wee_alloc = { version = "0.4.2", optional = true }
 # like the DOM.
 [dependencies.web-sys]
 version = "0.3.22"
-features = ["console", "Element", "DomRect"]
+features = [
+  "console",
+  "Element",
+  "DomRect",
+  "Document",
+  "Window",
+  "HtmlCanvasElement",
+  "CanvasRenderingContext2d",
+  "Path2d",
+  "Performance"
+]
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires

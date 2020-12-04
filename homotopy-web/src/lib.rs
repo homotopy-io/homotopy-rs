@@ -1,5 +1,6 @@
 #![recursion_limit="512"]
 mod app;
+mod path;
 
 use wasm_bindgen::prelude::*;
 use wasm_logger;

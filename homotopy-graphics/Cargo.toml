@@ -1,11 +1,16 @@
 [package]
-name = "homotopy-core"
+name = "homotopy-graphics"
 version = "0.1.0"
 authors = ["Lukas Heidemann <lukas@heidemann.me>"]
 edition = "2018"
 
 [dependencies]
-petgraph = "*"
+homotopy-core = { path = "../homotopy-core" }
+euclid = "*"
+lyon_geom = "0.16"
+lyon_algorithms = "0.16"
+lyon_path = "0.16"
 thiserror = "*"
 serde = { features = ["derive"], version = "1.0" }
 serde_json = "1.0"
+petgraph = "*"
