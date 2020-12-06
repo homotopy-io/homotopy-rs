@@ -1,3 +1,4 @@
+use crate::model::RenderStyle;
 use euclid::default::{Point2D, Size2D, Transform2D};
 use homotopy_core::complex::{make_complex, Simplex};
 use homotopy_core::projection::Generators;
@@ -11,7 +12,7 @@ use yew::prelude::*;
 
 pub struct Diagram2D {
     props: Props,
-    computed: Computed,
+    diagram: PreparedDiagram,
     link: ComponentLink<Self>,
     node_ref: NodeRef,
 }
@@ -20,26 +21,9 @@ pub struct Diagram2D {
 pub struct Props {
     pub diagram: DiagramN,
     #[prop_or_default]
-    pub style: Style,
+    pub style: RenderStyle,
     #[prop_or_default]
     pub on_select: Callback<Simplex>,
-}
-
-#[derive(Clone, PartialEq, Copy)]
-pub struct Style {
-    scale: f32,
-    wire_thickness: f32,
-    point_radius: f32,
-}
-
-impl Default for Style {
-    fn default() -> Self {
-        Style {
-            scale: 40.0,
-            wire_thickness: 8.0,
-            point_radius: 6.0,
-        }
-    }
 }
 
 // TODO: Generator -> Color map in props
@@ -53,14 +37,24 @@ pub enum Message {
 
 /// The computed properties of a diagram that are potentially expensive to compute but can be
 /// cached if the diagram does not change.
-struct Computed {
-    layout: Layout,
+struct PreparedDiagram {
     graphic: Vec<GraphicElement>,
-    actions: Vec<ActionRegion>,
+    actions: Vec<(Simplex, geometry::Shape)>,
+
+    /// The width and height of the diagram image in pixels.
+    ///
+    /// This is not the size of the diagram as it appears on the screen, since
+    /// it might be zoomed by any parent component.
+    dimensions: Size2D<f32>,
+
+    /// Transform coordinates in the diagram layout to coordinates in the SVG image. In
+    /// particular, the vertical direction is flipped so that diagrams are read from
+    /// bottom to top.
+    transform: Transform2D<f32>,
 }
 
-impl Computed {
-    fn new(diagram: &DiagramN) -> Self {
+impl PreparedDiagram {
+    fn new(diagram: DiagramN, style: RenderStyle) -> Self {
         assert!(diagram.dimension() >= 2);
 
         let generators = Generators::new(&diagram);
@@ -68,10 +62,32 @@ impl Computed {
         let complex = make_complex(&diagram);
         let graphic = GraphicElement::build(&complex, &layout, &generators);
         let actions = ActionRegion::build(&complex, &layout);
-        Computed {
-            layout,
+
+        let dimensions = layout
+            .get(Boundary::Target.into(), Boundary::Target.into())
+            .unwrap()
+            .to_vector()
+            .to_size()
+            * style.scale;
+
+        let transform = Transform2D::scale(style.scale, -style.scale)
+            .then_translate((0.0, dimensions.height).into());
+
+        let actions = actions
+            .into_iter()
+            .map(|action| {
+                let shape = action
+                    .transformed(&transform)
+                    .to_shape(style.wire_thickness, style.point_radius);
+                ((&action).into(), shape)
+            })
+            .collect();
+
+        PreparedDiagram {
             graphic,
             actions,
+            dimensions,
+            transform,
         }
     }
 }
@@ -81,13 +97,13 @@ impl Component for Diagram2D {
     type Properties = Props;
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let computed = Computed::new(&props.diagram);
+        let diagram = PreparedDiagram::new(props.diagram.clone(), props.style);
         let node_ref = NodeRef::default();
         Diagram2D {
             props,
-            computed,
             link,
             node_ref,
+            diagram,
         }
     }
 
@@ -95,8 +111,14 @@ impl Component for Diagram2D {
         match msg {
             Message::OnClick(point) => {
                 let point = self.transform_screen_to_image().transform_point(point);
-                match self.find_region(point) {
-                    Some(region) => self.props.on_select.emit(region.into()),
+                let result = self
+                    .diagram
+                    .actions
+                    .iter()
+                    .find(|(_, shape)| shape.contains_point(point, 0.01))
+                    .map(|(simplex, _)| simplex.clone());
+                match result {
+                    Some(simplex) => self.props.on_select.emit(simplex),
                     None => {}
                 }
                 false
@@ -105,9 +127,9 @@ impl Component for Diagram2D {
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        if self.props.diagram != props.diagram {
+        if (self.props.diagram != props.diagram) || (self.props.style != props.style) {
+            self.diagram = PreparedDiagram::new(self.props.diagram.clone(), props.style);
             self.props = props;
-            self.computed = Computed::new(&self.props.diagram);
             true
         } else if self.props != props {
             self.props = props;
@@ -118,7 +140,7 @@ impl Component for Diagram2D {
     }
 
     fn view(&self) -> Html {
-        let size = self.dimensions();
+        let size = self.diagram.dimensions;
 
         let onclick = {
             let link = self.link.clone();
@@ -137,21 +159,13 @@ impl Component for Diagram2D {
                 onclick={onclick}
                 ref={self.node_ref.clone()}
             >
-                {self.computed.graphic.iter().map(|e| self.view_element(e)).collect::<Html>()}
+                {self.diagram.graphic.iter().map(|e| self.view_element(e)).collect::<Html>()}
             </svg>
         }
     }
 }
 
 impl Diagram2D {
-    /// Transform coordinates in the diagram layout to coordinates in the SVG image. In
-    /// particular, the vertical direction is flipped so that diagrams are read from
-    /// bottom to top.
-    fn transform(&self) -> Transform2D<f32> {
-        let scale = self.props.style.scale;
-        Transform2D::scale(scale, -scale).then_translate((0.0, self.dimensions().height).into())
-    }
-
     /// Transform coordinates on the screen (such as those in `MouseEvent`s) to coordinates in the
     /// SVG image. This incorporates translation and zoom of the diagram component.
     fn transform_screen_to_image(&self) -> Transform2D<f32> {
@@ -162,7 +176,7 @@ impl Diagram2D {
             .get_bounding_client_rect();
 
         let screen_size = Size2D::new(rect.width() as f32, rect.height() as f32);
-        let image_size = self.dimensions();
+        let image_size = self.diagram.dimensions;
 
         Transform2D::translation(-rect.left() as f32, -rect.top() as f32).then_scale(
             image_size.width / screen_size.width,
@@ -170,51 +184,9 @@ impl Diagram2D {
         )
     }
 
-    /// Find the action region corresponding to a point in image coordinates.
-    /// To use this to react to mouse events, the location of the mouse first needs
-    /// to be translated into image coordinates using `transform_screen_to_image`.
-    fn find_region(&self, point: Point2D<f32>) -> Option<&ActionRegion> {
-        // TODO: Cache the hit test geometry, so we can precompute bounding rectangles
-        let result = self.computed.actions.iter().find(|region| {
-            let region = region.transformed(&self.transform());
-
-            match region {
-                ActionRegion::Surface(_, path) => {
-                    geometry::Fill::new(path).contains_point(point, 1.0)
-                }
-                ActionRegion::Wire(_, path) => {
-                    let width = self.props.style.wire_thickness;
-                    geometry::Stroke::new(path, width).contains_point(point, 1.0)
-                }
-                ActionRegion::Point(_, center) => {
-                    let radius = self.props.style.point_radius;
-                    geometry::Circle::new(center, radius).contains_point(point)
-                }
-            }
-        });
-
-        result
-    }
-
     fn generator_color(&self, generator: Generator) -> &str {
         let colors = &["lightgray", "gray", "black"];
         colors[generator.id]
-    }
-
-    /// The width and height of the diagram image in pixels.
-    ///
-    /// This is not the size of the diagram as it appears on the screen, since
-    /// it might be zoomed by any parent component.
-    fn dimensions(&self) -> Size2D<f32> {
-        let size = self
-            .computed
-            .layout
-            .get(Boundary::Target.into(), Boundary::Target.into())
-            .unwrap()
-            .to_vector()
-            .to_size();
-
-        size * self.props.style.scale
     }
 
     /// Creates the SVG elements for the diagram.
@@ -224,19 +196,19 @@ impl Diagram2D {
 
         match element {
             GraphicElement::Surface(_, path) => {
-                let path = path_to_svg(path.transformed(&self.transform()));
+                let path = path_to_svg(path.transformed(&self.diagram.transform));
                 html! {
                     <path d={path} fill={color} stroke={color} stroke-width={1} />
                 }
             }
             GraphicElement::Wire(_, path) => {
-                let path = path_to_svg(path.transformed(&self.transform()));
+                let path = path_to_svg(path.transformed(&self.diagram.transform));
                 html! {
                     <path d={path} stroke={color} stroke-width={self.props.style.wire_thickness} fill="none" />
                 }
             }
             GraphicElement::Point(_, point) => {
-                let point = self.transform().transform_point(*point);
+                let point = self.diagram.transform.transform_point(*point);
                 html! {
                     <circle r={self.props.style.point_radius} cx={point.x} cy={point.y} fill={color} />
                 }

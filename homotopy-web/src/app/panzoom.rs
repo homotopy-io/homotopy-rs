@@ -223,6 +223,7 @@ impl PanZoom {
             r#"
                 transform-origin: 0 0;
                 transform: translate({x}px, {y}px) scale({s});
+                position: absolute;
             "#,
             x = self.state.translate.x,
             y = self.state.translate.y,
@@ -235,6 +236,7 @@ impl PanZoom {
         r#"
             overflow: hidden;
             touch-action: none;
+            position: relative;
         "#
     }
 }

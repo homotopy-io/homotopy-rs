@@ -1,4 +1,4 @@
-use crate::geometry::Point;
+use crate::geometry::{Circle, Fill, Point, Shape, Stroke};
 use crate::layout2d::Layout;
 use euclid::default::Transform2D;
 use homotopy_core::common::*;
@@ -70,6 +70,14 @@ impl ActionRegion {
         regions.extend(region_surfaces);
         regions
     }
+
+    pub fn to_shape(&self, wire_thickness: f32, point_radius: f32) -> Shape {
+        match self {
+            ActionRegion::Surface(_, path) => Fill::new(path.clone()).into(),
+            ActionRegion::Wire(_, path) => Stroke::new(path.clone(), wire_thickness).into(),
+            ActionRegion::Point(_, point) => Circle::new(*point, point_radius).into(),
+        }
+    }
 }
 
 impl Into<Simplex> for &ActionRegion {
@@ -77,7 +85,7 @@ impl Into<Simplex> for &ActionRegion {
         match self {
             ActionRegion::Surface(ps, _) => Simplex::Surface(*ps),
             ActionRegion::Wire(ps, _) => Simplex::Wire(*ps),
-            ActionRegion::Point(ps, _) => Simplex::Point(*ps)
+            ActionRegion::Point(ps, _) => Simplex::Point(*ps),
         }
     }
 }
