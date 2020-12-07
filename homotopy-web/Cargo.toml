@@ -58,6 +58,7 @@ features = [
   "Element",
   "DomRect",
   "Document",
+  "HtmlHeadElement",
   "Window",
   "TouchEvent",
   "TouchList",

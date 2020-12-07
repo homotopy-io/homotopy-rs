@@ -1,12 +1,15 @@
 use homotopy_core::common::*;
+use homotopy_core::complex::Simplex;
 use homotopy_core::diagram::NewDiagramError;
 use homotopy_core::{Diagram, DiagramN};
 use im::{HashMap, Vector};
 use std::convert::*;
 use thiserror::Error;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Action {
+    ToggleDrawer(Drawer),
+
     /// Create a new generator of dimension zero.
     CreateGeneratorZero,
 
@@ -43,6 +46,8 @@ pub enum Action {
     /// diagram in the workspace, nothing happens. If the slice does not exist, an error will be
     /// shown.
     DescendSlice(SliceIndex),
+
+    SelectSimplex(Simplex),
 }
 
 #[derive(Clone, PartialEq, Eq)]
@@ -50,14 +55,64 @@ pub struct State {
     signature: HashMap<Generator, GeneratorInfo>,
     workspace: Option<Workspace>,
     boundary: Option<SelectedBoundary>,
+    drawer: Option<Drawer>,
 }
 
 impl Default for State {
     fn default() -> Self {
+        let x = Generator {
+            id: 0,
+            dimension: 0,
+        };
+        let f = Generator {
+            id: 1,
+            dimension: 1,
+        };
+        let m = Generator {
+            id: 2,
+            dimension: 2,
+        };
+
+        let fd = DiagramN::new(f, x, x).unwrap();
+        let ffd = fd.attach(fd.clone(), Boundary::Target, &[]).unwrap();
+        let md = DiagramN::new(m, ffd, fd.clone()).unwrap();
+
+        let mut result = md.clone();
+
+        for _ in 0..1 {
+            result = result.attach(md.clone(), Boundary::Source, &[0]).unwrap();
+        }
+
+        let mut signature: HashMap<Generator, GeneratorInfo> = Default::default();
+
+        signature.insert(x, GeneratorInfo {
+            name: "x".to_string(),
+            color: COLORS[0].to_owned(),
+            diagram: x.into()
+        });
+
+        signature.insert(f, GeneratorInfo {
+            name: "f".to_string(),
+            color: COLORS[1].to_owned(),
+            diagram: fd.into()
+        });
+
+        signature.insert(m, GeneratorInfo {
+            name: "m".to_string(),
+            color: COLORS[2].to_owned(),
+            diagram: md.into()
+        });
+
+        log::info!("signature size: {}", signature.len());
+
         State {
-            signature: Default::default(),
-            workspace: Default::default(),
+            signature,
+            workspace: Some(Workspace {
+                path: Default::default(),
+                diagram: result.into(),
+            }),
             boundary: Default::default(),
+            drawer: Default::default(),
         }
     }
 }
@@ -110,6 +165,8 @@ impl State {
             Action::SelectGenerator(generator) => self.select_generator(generator),
             Action::AscendSlice(count) => Ok(self.ascend_slice(count)),
             Action::DescendSlice(slice) => self.descend_slice(slice),
+            Action::SelectSimplex(simplex) => self.select_simplex(simplex),
+            Action::ToggleDrawer(drawer) => Ok(self.toggle_drawer(drawer)),
         }
     }
 
@@ -120,7 +177,7 @@ impl State {
 
         let info = GeneratorInfo {
             name: format!("Cell {}", id),
-            color: "gray".to_owned(), // TODO
+            color: COLORS[id % COLORS.len()].to_owned(),
             diagram: generator.into(),
         };
 
@@ -138,7 +195,7 @@ impl State {
 
         let info = GeneratorInfo {
             name: format!("Cell {}", id),
-            color: "gray".to_owned(), // TODO
+            color: COLORS[id % COLORS.len()].to_owned(),
             diagram: diagram.into(),
         };
 
@@ -181,6 +238,13 @@ impl State {
                     self.workspace = None;
                 }
             }
+            (Some(workspace), None) => {
+                self.boundary = Some(SelectedBoundary {
+                    boundary,
+                    diagram: workspace.diagram.clone(),
+                });
+                self.workspace = None;
+            }
             _ => {}
         };
 
@@ -210,6 +274,10 @@ impl State {
 
     /// Handler for [Action::SelectGenerator].
     fn select_generator(&mut self, generator: Generator) -> Result<(), ModelError> {
+        if self.workspace.is_some() {
+            return Ok(());
+        }
+
         let info = self
             .signature
             .get(&generator)
@@ -254,6 +322,21 @@ impl State {
 
         Ok(())
     }
+
+    /// Handler for [Action::SelectSimplex].
+    fn select_simplex(&mut self, _simplex: Simplex) -> Result<(), ModelError> {
+        log::warn!("SelectSimplex handler not implemented.");
+        Ok(())
+    }
+
+    /// Handler for [Action::ToggleDrawer].
+    fn toggle_drawer(&mut self, drawer: Drawer) {
+        if self.drawer == Some(drawer) {
+            self.drawer = None;
+        } else {
+            self.drawer = Some(drawer);
+        }
+    }
 }
 
 impl State {
@@ -267,6 +350,10 @@ impl State {
 
     pub fn render_style(&self) -> RenderStyle {
         RenderStyle::default()
+    }
+
+    pub fn drawer(&self) -> Option<Drawer> {
+        self.drawer
     }
 }
 
@@ -286,3 +373,21 @@ impl Default for RenderStyle {
         }
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Drawer {
+    Project,
+    Signature,
+    User,
+}
+
+const COLORS: &[&'static str] = &[
+    "#2980b9", // belize blue
+    "#c0392b", // pomegranate
+    "#f39c12", // orange
+    "#8e44ad", // wisteria
+    "#27ae60", // nephritis
+    "#f1c40f", // sunflower
+    "#ffffff", // white
+    "#000000", //black
+];

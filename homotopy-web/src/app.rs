@@ -1,6 +1,8 @@
-mod diagram2d;
 mod panzoom;
+mod diagram2d;
 mod signature;
+mod workspace;
+mod signature_stylesheet;
 use crate::model;
 use closure::closure;
 use diagram2d::Diagram2D;
@@ -11,9 +13,11 @@ use signature::SignatureView;
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::rc::Rc;
+use workspace::WorkspaceView;
+use signature_stylesheet::SignatureStylesheet;
 use yew::prelude::*;
 
-mod icon {
+pub mod icon {
     use yew::prelude::*;
     use yewtil::NeqAssign;
 
@@ -63,6 +67,7 @@ pub enum Message {
 pub struct App {
     dispatch: Callback<model::Action>,
     state: model::State,
+    signature_stylesheet: SignatureStylesheet
 }
 
 impl Component for App {
@@ -70,9 +75,12 @@ impl Component for App {
     type Properties = Props;
 
     fn create(_props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let state = Default::default();
+        let state = model::State::default();
         let dispatch = link.callback(Message::Dispatch);
-        App { state, dispatch }
+        let mut signature_stylesheet = SignatureStylesheet::new("generator");
+        signature_stylesheet.update(state.signature().clone());
+        signature_stylesheet.mount();
+        App { state, dispatch, signature_stylesheet }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
@@ -86,6 +94,7 @@ impl Component for App {
                         log::error!("Error occured: {}", error);
                     }
                 }
+                self.signature_stylesheet.update(self.state.signature().clone());
             }
         }
         true
@@ -96,34 +105,7 @@ impl Component for App {
     }
 
     fn view(&self) -> Html {
-        let example = {
-            let x = Generator {
-                id: 0,
-                dimension: 0,
-            };
-            let f = Generator {
-                id: 1,
-                dimension: 1,
-            };
-            let m = Generator {
-                id: 2,
-                dimension: 2,
-            };
-
-            let fd = DiagramN::new(f, x, x).unwrap();
-            let ffd = fd.attach(fd.clone(), Boundary::Target, &[]).unwrap();
-            let md = DiagramN::new(m, ffd, fd).unwrap();
-
-            let mut result = md.clone();
-
-            for _ in 0..1 {
-                result = result.attach(md.clone(), Boundary::Source, &[0]).unwrap();
-            }
-
-            result
-        };
-
-        use model::Action;
+        use model::{Action, Drawer};
         let dispatch = &self.dispatch;
 
         let button_clear = self.view_sidebar_button(
@@ -159,41 +141,51 @@ impl Component for App {
         let button_project = self.view_sidebar_button(
             "Project",
             "info",
-            Callback::from(|_| {})
+            dispatch.reform(|_| Action::ToggleDrawer(Drawer::Project)),
         );
 
         let button_signature = self.view_sidebar_button(
             "Signature",
             "list",
-            Callback::from(|_| {})
+            dispatch.reform(|_| Action::ToggleDrawer(Drawer::Signature)),
         );
 
         let button_user = self.view_sidebar_button(
             "User",
             "perm_identity",
-            Callback::from(|_| {})
+            dispatch.reform(|_| Action::ToggleDrawer(Drawer::User)),
         );
 
-        // TODO: Show onboarding info if workspace and signature is empty
-        // TODO: Render 1d and 0d diagrams
         let workspace = match self.state.workspace() {
-            Some(workspace) if workspace.visible_dimension() >= 2 => {
-                // let diagram: DiagramN = workspace.visible_diagram().try_into().unwrap();
-                // TODO: The workspace needs to be its own component
+            Some(workspace) => {
                 html! {
-                    <content class="workspace">
-                        // <PanZoom class="workspace__panzoom">
-                        //     <Diagram2D diagram={workspace.diagram.clone()} />
-                        // </PanZoom>
-                    </content>
+                    <WorkspaceView
+                        workspace={workspace}
+                        dispatch={dispatch}
+                    />
                 }
             }
             _ => {
+                // TODO: Show onboarding info if workspace and signature is empty
                 html! {
                     <content class="workspace workspace--empty">
                     </content>
                 }
             }
+        };
+
+        let drawer = match self.state.drawer() {
+            Some(Drawer::Project) => Default::default(),
+            Some(Drawer::Signature) => {
+                html! {
+                    <SignatureView
+                        signature={self.state.signature()}
+                        dispatch={dispatch}
+                    />
+                }
+            }
+            Some(Drawer::User) => Default::default(),
+            None => Default::default(),
         };
 
         html! {
@@ -213,20 +205,21 @@ impl Component for App {
                         {button_clear}
                     </nav>
                 </aside>
-                <SignatureView
-                    signature={self.state.signature()}
-                    dispatch={dispatch}
-                />
+                {drawer}
                 {workspace}
             </main>
         }
+    }
+
+    fn destroy(&mut self) {
+        self.signature_stylesheet.unmount();
     }
 }
 
 impl App {
     fn view_sidebar_button(&self, label: &str, icon: &str, callback: Callback<MouseEvent>) -> Html {
         html! {
-            <div class="sidebar__button tooltip" onclick={callback} data-tooltip={label}>
+            <div class="sidebar__button tooltip tooltip--right" onclick={callback} data-tooltip={label}>
                 <Icon name={icon} />
             </div>
         }

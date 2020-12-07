@@ -4,7 +4,7 @@ use web_sys::{DomRect, Element, TouchList};
 use yew::prelude::*;
 use Default;
 
-type Finger = i32;
+pub type Finger = i32;
 type Point = Point2D<f64>;
 type Vector = Vector2D<f64>;
 
@@ -18,27 +18,86 @@ pub enum Message {
     MouseUp,
 }
 
-#[derive(Debug, Clone)]
-struct State {
+pub struct PanZoom {
     translate: Vector,
     scale: f64,
     mouse: Option<Point>,
     touches: Vec<(Finger, Point)>,
+    node_ref: NodeRef,
+    on_mouse_move: Callback<MouseEvent>,
+    on_mouse_down: Callback<MouseEvent>,
+    on_mouse_up: Callback<MouseEvent>,
+    on_wheel: Callback<WheelEvent>,
+    on_touch_move: Callback<TouchEvent>,
+    on_touch_update: Callback<TouchEvent>,
 }
 
-impl Default for State {
-    fn default() -> Self {
-        State {
+impl PanZoom {
+    pub fn new(node_ref: NodeRef, callback: Callback<Message>) -> Self {
+        let node_ref = NodeRef::default();
+
+        let on_mouse_down = Callback::from(closure!(clone callback, |e: MouseEvent| {
+            if e.ctrl_key() {
+                e.prevent_default();
+                let x = e.client_x() as f64;
+                let y = e.client_y() as f64;
+                callback.emit(Message::MouseDown((x, y).into()));
+            }
+        }));
+
+        let on_mouse_move = Callback::from(closure!(clone callback, |e: MouseEvent| {
+            e.prevent_default();
+            let x = e.client_x() as f64;
+            let y = e.client_y() as f64;
+            callback.emit(Message::MouseMove((x, y).into()));
+        }));
+
+        let on_mouse_up = Callback::from(closure!(clone callback, |e: MouseEvent| {
+            e.prevent_default();
+            callback.emit(Message::MouseUp);
+        }));
+
+        let on_wheel = Callback::from(closure!(clone callback, clone node_ref, |e: WheelEvent| {
+            if e.ctrl_key() {
+                e.prevent_default();
+                let rect = bounding_rect(&node_ref);
+                let x = e.client_x() as f64 - rect.left();
+                let y = e.client_y() as f64 - rect.top();
+                let delta = e.delta_y();
+                callback.emit(Message::MouseWheel((x, y).into(), delta));
+            }
+        }));
+
+        let on_touch_move =
+            Callback::from(closure!(clone callback, clone node_ref, |e: TouchEvent| {
+                e.prevent_default();
+                let touches = read_touch_list(&e.touches(), &node_ref).collect();
+                callback.emit(Message::TouchMove(touches));
+            }));
+
+        let on_touch_update =
+            Callback::from(closure!(clone callback, clone node_ref, |e: TouchEvent| {
+                // e.prevent_default();
+                let touches = read_touch_list(&e.touches(), &node_ref).collect();
+                callback.emit(Message::TouchUpdate(touches));
+            }));
+
+        PanZoom {
+            node_ref,
+            on_mouse_down,
+            on_mouse_move,
+            on_mouse_up,
+            on_wheel,
+            on_touch_move,
+            on_touch_update,
             translate: Vector::zero(),
             scale: 1.0,
-            mouse: None,
-            touches: Vec::new(),
+            mouse: Default::default(),
+            touches: Default::default(),
         }
     }
-}
 
-impl State {
-    fn update(&mut self, msg: Message) -> ShouldRender {
+    pub fn update(&mut self, msg: Message) -> bool {
         match msg {
             Message::MouseDown(point) => {
                 self.mouse = Some(point);
@@ -48,16 +107,14 @@ impl State {
                 self.mouse = None;
                 false
             }
-            Message::MouseMove(next) => {
-                match self.mouse {
-                    Some(prev) => {
-                        self.translate += next - prev;
-                        self.mouse = Some(next);
-                        true
-                    }
-                    None => false
+            Message::MouseMove(next) => match self.mouse {
+                Some(prev) => {
+                    self.translate += next - prev;
+                    self.mouse = Some(next);
+                    true
                 }
-            }
+                None => false,
+            },
             Message::MouseWheel(point, delta) => {
                 let scale = self.scale * if delta < 0.0 { 1.1 } else { 1.0 / 1.1 };
                 self.translate = point - (point - self.translate) * (scale / self.scale);
@@ -73,7 +130,8 @@ impl State {
                 }
 
                 let average_next = (touches[0].1.to_vector() + touches[1].1.to_vector()) * 0.5;
-                let average_prev = (self.touches[0].1.to_vector() + self.touches[1].1.to_vector()) * 0.5;
+                let average_prev =
+                    (self.touches[0].1.to_vector() + self.touches[1].1.to_vector()) * 0.5;
 
                 let scale = {
                     let distance_prev = (self.touches[0].1 - self.touches[1].1).length().max(0.01);
@@ -81,7 +139,8 @@ impl State {
                     self.scale * (distance_next / distance_prev)
                 };
 
-                self.translate = average_next - (average_prev - self.translate) * (scale / self.scale);
+                self.translate =
+                    average_next - (average_prev - self.translate) * (scale / self.scale);
                 self.scale = scale;
                 self.touches = touches;
                 true
@@ -93,151 +152,47 @@ impl State {
             }
         }
     }
-}
 
-#[derive(Default, Clone, Debug, PartialEq, Properties)]
-pub struct Props {
-    pub children: Children,
-    #[prop_or_default]
-    pub class: String
-}
-
-pub struct PanZoom {
-    state: State,
-    props: Props,
-    node_ref: NodeRef,
-    on_mouse_move: Callback<MouseEvent>,
-    on_mouse_down: Callback<MouseEvent>,
-    on_mouse_up: Callback<MouseEvent>,
-    on_wheel: Callback<WheelEvent>,
-    on_touch_move: Callback<TouchEvent>,
-    on_touch_update: Callback<TouchEvent>,
-}
-
-impl Component for PanZoom {
-    type Message = Message;
-
-    type Properties = Props;
-
-    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let node_ref = NodeRef::default();
-
-        let on_mouse_down = Callback::from(closure!(clone link, |e: MouseEvent| {
-            if e.ctrl_key() {
-                e.prevent_default();
-                let x = e.client_x() as f64;
-                let y = e.client_y() as f64;
-                link.send_message(Message::MouseDown((x, y).into()));
-            }
-        }));
-
-        let on_mouse_move = Callback::from(closure!(clone link, |e: MouseEvent| {
-            e.prevent_default();
-            let x = e.client_x() as f64;
-            let y = e.client_y() as f64;
-            link.send_message(Message::MouseMove((x, y).into()));
-        }));
-
-        let on_mouse_up = Callback::from(closure!(clone link, |e: MouseEvent| {
-            e.prevent_default();
-            link.send_message(Message::MouseUp);
-        }));
-
-        let on_wheel = Callback::from(closure!(clone link, clone node_ref, |e: WheelEvent| {
-            if e.ctrl_key() {
-                e.prevent_default();
-                let rect = bounding_rect(&node_ref);
-                let x = e.client_x() as f64 - rect.left();
-                let y = e.client_y() as f64 - rect.top();
-                let delta = e.delta_y();
-                link.send_message(Message::MouseWheel((x, y).into(), delta));
-            }
-        }));
-
-        let on_touch_move = Callback::from(closure!(clone link, clone node_ref, |e: TouchEvent| {
-            e.prevent_default();
-            let touches = read_touch_list(&e.touches(), &node_ref).collect();
-            link.send_message(Message::TouchMove(touches));
-        }));
-
-        let on_touch_update =
-            Callback::from(closure!(clone link, clone node_ref, |e: TouchEvent| {
-                e.prevent_default();
-                let touches = read_touch_list(&e.touches(), &node_ref).collect();
-                link.send_message(Message::TouchUpdate(touches));
-            }));
-
-        PanZoom {
-            state: State::default(),
-            props,
-            node_ref,
-            on_mouse_down,
-            on_mouse_move,
-            on_mouse_up,
-            on_wheel,
-            on_touch_move,
-            on_touch_update,
-        }
+    pub fn translate(&self) -> Vector {
+        self.translate
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
-        self.state.update(msg)
+    pub fn scale(&self) -> f64 {
+        self.scale
     }
 
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        if self.props == props {
-            false
-        } else {
-            self.props = props;
-            true
-        }
+    pub fn node_ref(&self) -> NodeRef {
+        self.node_ref.clone()
     }
 
-    fn view(&self) -> Html {
-        html! {
-            <div
-                class={format!("{}", self.props.class)}
-                style={self.style_parent()}
-                ref={self.node_ref.clone()}
-                onmousemove={self.on_mouse_move.clone()}
-                onmousedown={self.on_mouse_down.clone()}
-                onmouseup={self.on_mouse_up.clone()}
-                onwheel={self.on_wheel.clone()}
-                ontouchstart={self.on_touch_update.clone()}
-                ontouchmove={self.on_touch_move.clone()}
-                ontouchend={self.on_touch_update.clone()}
-                ontouchcancel={self.on_touch_update.clone()}
-            >
-                <div style={self.style_child()}>
-                    {self.props.children.clone()}
-                </div>
-            </div>
-        }
-    }
-}
-
-impl PanZoom {
-    #[inline(always)]
-    fn style_child(&self) -> String {
-        format!(
-            r#"
-                transform-origin: 0 0;
-                transform: translate({x}px, {y}px) scale({s});
-                position: absolute;
-            "#,
-            x = self.state.translate.x,
-            y = self.state.translate.y,
-            s = self.state.scale
-        )
+    /// Event listener for the `mousemove` event.
+    pub fn on_mouse_move(&self) -> Callback<MouseEvent> {
+        self.on_mouse_move.clone()
     }
 
-    #[inline(always)]
-    fn style_parent(&self) -> &'static str {
-        r#"
-            overflow: hidden;
-            touch-action: none;
-            position: relative;
-        "#
+    /// Event listener for the `mousedown` event.
+    pub fn on_mouse_down(&self) -> Callback<MouseEvent> {
+        self.on_mouse_down.clone()
+    }
+
+    /// Event listener for the `mouseup` event.
+    pub fn on_mouse_up(&self) -> Callback<MouseEvent> {
+        self.on_mouse_up.clone()
+    }
+
+    /// Event listener for the `wheel` event.
+    pub fn on_wheel(&self) -> Callback<WheelEvent> {
+        self.on_wheel.clone()
+    }
+
+    /// Event listener for the `touchmove` event.
+    pub fn on_touch_move(&self) -> Callback<TouchEvent> {
+        self.on_touch_move.clone()
+    }
+
+    /// Event listener for the `touchstart`, `touchend` and `touchcancel` events.
+    pub fn on_touch_update(&self) -> Callback<TouchEvent> {
+        self.on_touch_update.clone()
     }
 }
 

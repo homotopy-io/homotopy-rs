@@ -1,8 +1,9 @@
+use crate::app::signature_stylesheet::SignatureStylesheet;
 use crate::model::RenderStyle;
 use euclid::default::{Point2D, Size2D, Transform2D};
 use homotopy_core::complex::{make_complex, Simplex};
 use homotopy_core::projection::Generators;
-use homotopy_core::{Boundary, DiagramN, Generator};
+use homotopy_core::{Boundary, Diagram, DiagramN, Generator, Height, SliceIndex};
 use homotopy_graphics::geometry;
 use homotopy_graphics::geometry::path_to_svg;
 use homotopy_graphics::graphic2d::*;
@@ -11,14 +12,14 @@ use web_sys::Element;
 use yew::prelude::*;
 
 pub struct Diagram2D {
-    props: Props,
+    props: Props2D,
     diagram: PreparedDiagram,
     link: ComponentLink<Self>,
     node_ref: NodeRef,
 }
 
 #[derive(Clone, PartialEq, Properties)]
-pub struct Props {
+pub struct Props2D {
     pub diagram: DiagramN,
     #[prop_or_default]
     pub style: RenderStyle,
@@ -26,11 +27,10 @@ pub struct Props {
     pub on_select: Callback<Simplex>,
 }
 
-// TODO: Generator -> Color map in props
 // TODO: Drag callbacks in props
 // TODO: Highlights in props
 
-pub enum Message {
+pub enum Message2D {
     /// The diagram has been clicked at a point in screen coordinates.
     OnClick(Point2D<f32>),
 }
@@ -93,8 +93,8 @@ impl PreparedDiagram {
 }
 
 impl Component for Diagram2D {
-    type Message = Message;
-    type Properties = Props;
+    type Message = Message2D;
+    type Properties = Props2D;
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
         let diagram = PreparedDiagram::new(props.diagram.clone(), props.style);
@@ -109,7 +109,7 @@ impl Component for Diagram2D {
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
-            Message::OnClick(point) => {
+            Message2D::OnClick(point) => {
                 let point = self.transform_screen_to_image().transform_point(point);
                 let result = self
                     .diagram
@@ -147,7 +147,7 @@ impl Component for Diagram2D {
             Callback::from(move |e: MouseEvent| {
                 let x = e.client_x() as f32;
                 let y = e.client_y() as f32;
-                link.send_message(Message::OnClick((x, y).into()));
+                link.send_message(Message2D::OnClick((x, y).into()));
             })
         };
 
@@ -184,35 +184,174 @@ impl Diagram2D {
         )
     }
 
-    fn generator_color(&self, generator: Generator) -> &str {
-        let colors = &["lightgray", "gray", "black"];
-        colors[generator.id]
-    }
-
     /// Creates the SVG elements for the diagram.
     fn view_element(&self, element: &GraphicElement) -> Html {
         let generator = element.generator();
-        let color = self.generator_color(generator);
 
         match element {
             GraphicElement::Surface(_, path) => {
+                let class = SignatureStylesheet::name("generator", generator, "surface");
                 let path = path_to_svg(path.transformed(&self.diagram.transform));
                 html! {
-                    <path d={path} fill={color} stroke={color} stroke-width={1} />
+                    <path d={path} class={class} stroke-width={1} />
                 }
             }
             GraphicElement::Wire(_, path) => {
+                let class = SignatureStylesheet::name("generator", generator, "wire");
                 let path = path_to_svg(path.transformed(&self.diagram.transform));
                 html! {
-                    <path d={path} stroke={color} stroke-width={self.props.style.wire_thickness} fill="none" />
+                    <path d={path} class={class} stroke-width={self.props.style.wire_thickness} fill="none" />
                 }
             }
             GraphicElement::Point(_, point) => {
+                let class = SignatureStylesheet::name("generator", generator, "point");
                 let point = self.diagram.transform.transform_point(*point);
                 html! {
-                    <circle r={self.props.style.point_radius} cx={point.x} cy={point.y} fill={color} />
+                    <circle r={self.props.style.point_radius} cx={point.x} cy={point.y} class={class} />
                 }
             }
+        }
+    }
+}
+
+#[derive(Clone, PartialEq, Properties)]
+pub struct Props1D {
+    pub diagram: DiagramN,
+    #[prop_or_default]
+    pub style: RenderStyle,
+}
+
+pub enum Message1D {}
+
+pub struct Diagram1D {
+    props: Props1D,
+}
+
+impl Component for Diagram1D {
+    type Message = Message1D;
+    type Properties = Props1D;
+
+    fn create(props: Self::Properties, _link: ComponentLink<Self>) -> Self {
+        Diagram1D { props }
+    }
+
+    fn update(&mut self, _msg: Self::Message) -> ShouldRender {
+        false
+    }
+
+    fn change(&mut self, props: Self::Properties) -> ShouldRender {
+        if self.props != props {
+            self.props = props;
+            true
+        } else {
+            false
+        }
+    }
+
+    fn view(&self) -> Html {
+        let size = self.dimensions();
+        let generators: Vec<_> = self
+            .props
+            .diagram
+            .slices()
+            .map(|slice| slice.max_generator())
+            .collect();
+
+        let mut points = Vec::new();
+        let mut wires = Vec::new();
+
+        for height in 0..self.props.diagram.size() {
+            wires.push(self.view_wire(
+                generators[Height::Regular(height).to_int()],
+                Height::Regular(height).into(),
+                Height::Singular(height).into(),
+            ));
+
+            wires.push(self.view_wire(
+                generators[Height::Regular(height + 1).to_int()],
+                Height::Regular(height + 1).into(),
+                Height::Singular(height).into(),
+            ));
+
+            points.push(self.view_point(
+                generators[Height::Singular(height).to_int()],
+                Height::Singular(height).into(),
+            ));
+        }
+
+        wires.push(self.view_wire(
+            generators[0],
+            Height::Regular(0).into(),
+            Boundary::Source.into(),
+        ));
+
+        wires.push(self.view_wire(
+            *generators.last().unwrap(),
+            Height::Regular(self.props.diagram.size()).into(),
+            Boundary::Target.into(),
+        ));
+
+        html! {
+            <svg
+                xmlns={"http://www.w3.org/2000/svg"}
+                 width={size.width}
+                 height={size.height}
+            >
+                {wires.into_iter().collect::<Html>()}
+                {points.into_iter().collect::<Html>()}
+            </svg>
+        }
+    }
+}
+
+impl Diagram1D {
+    fn dimensions(&self) -> Size2D<f32> {
+        let style = &self.props.style;
+        let width = f32::max(style.point_radius, style.wire_thickness) * 2.0;
+        let height = (self.props.diagram.size() as f32 + 1.0) * 2.0 * style.scale;
+        Size2D::new(width, height)
+    }
+
+    fn to_y(&self, index: SliceIndex) -> f32 {
+        use self::Boundary::*;
+        use self::SliceIndex::*;
+
+        let scale = self.props.style.scale;
+        let size = self.dimensions();
+
+        match index {
+            Boundary(Source) => size.height,
+            Boundary(Target) => 0.0,
+            Interior(height) => size.height - (height.to_int() as f32 + 1.0) * scale,
+        }
+    }
+
+    fn view_wire(&self, generator: Generator, from: SliceIndex, to: SliceIndex) -> Html {
+        let path = format!(
+            "M {x} {from} L {x} {to}",
+            from = self.to_y(from),
+            to = self.to_y(to),
+            x = self.dimensions().width * 0.5
+        );
+        let class = SignatureStylesheet::name("generator", generator, "wire");
+        let style = &self.props.style;
+
+        html! {
+            <path d={path} class={class} stroke-width={style.wire_thickness} fill="none" />
+        }
+    }
+
+    fn view_point(&self, generator: Generator, point: SliceIndex) -> Html {
+        let class = SignatureStylesheet::name("generator", generator, "point");
+        let style = &self.props.style;
+
+        html! {
+            <circle
+                cx={self.dimensions().width * 0.5}
+                cy={self.to_y(point)}
+                r={style.point_radius}
+                class={class}
+            />
         }
     }
 }
