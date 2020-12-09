@@ -122,6 +122,12 @@ impl SliceIndex {
 }
 
 impl Ord for SliceIndex {
+    /// ```
+    /// # use homotopy_core::common::Boundary::*;
+    /// # use homotopy_core::common::SliceIndex::*;
+    /// assert!(Boundary(Source) < Interior(Regular(0)));
+    /// assert!(Interior(Regular(10)) < Boundary(Target));
+    /// ```
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         use self::Boundary::*;
         use SliceIndex::*;
@@ -132,7 +138,7 @@ impl Ord for SliceIndex {
             (Interior(x), Interior(y)) => x.cmp(y),
             (Interior(_), Boundary(Target)) => Ordering::Less,
             (Boundary(Target), Boundary(Target)) => Ordering::Equal,
-            (Boundary(Target), _) => Ordering::Less,
+            (Boundary(Target), _) => Ordering::Greater,
         }
     }
 }

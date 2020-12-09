@@ -8,6 +8,8 @@ use homotopy_core::{Diagram, DiagramN};
 use std::convert::*;
 use yew::prelude::*;
 
+// TODO: Workspace rerendering when panzoom is changed needs to be smoother.
+
 #[derive(Clone, PartialEq, Properties)]
 pub struct Props {
     pub workspace: model::Workspace,

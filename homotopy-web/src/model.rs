@@ -72,16 +72,21 @@ impl Default for State {
             id: 2,
             dimension: 2,
         };
+        let a = Generator {
+            id: 3,
+            dimension: 3,
+        };
 
         let fd = DiagramN::new(f, x, x).unwrap();
         let ffd = fd.attach(fd.clone(), Boundary::Target, &[]).unwrap();
         let md = DiagramN::new(m, ffd, fd.clone()).unwrap();
+        let left = md.attach(md.clone(), Boundary::Source, &[0]).unwrap();
+        let right = md.attach(md.clone(), Boundary::Source, &[1]).unwrap();
+        let ad = DiagramN::new(a, left, right).unwrap();
 
-        let mut result = md.clone();
-
-        for _ in 0..1 {
-            result = result.attach(md.clone(), Boundary::Source, &[0]).unwrap();
-        }
+        // for _ in 0..1 {
+        //     result = result.attach(md.clone(), Boundary::Source, &[0]).unwrap();
+        // }
 
         let mut signature: HashMap<Generator, GeneratorInfo> = Default::default();
 
@@ -103,13 +108,19 @@ impl Default for State {
             diagram: md.into()
         });
 
+        signature.insert(a, GeneratorInfo {
+            name: "a".to_string(),
+            color: COLORS[3].to_owned(),
+            diagram: ad.clone().into()
+        });
+
         log::info!("signature size: {}", signature.len());
 
         State {
             signature,
             workspace: Some(Workspace {
                 path: Default::default(),
-                diagram: result.into(),
+                diagram: ad.into(),
             }),
             boundary: Default::default(),
             drawer: Default::default(),

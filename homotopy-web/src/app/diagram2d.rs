@@ -128,7 +128,7 @@ impl Component for Diagram2D {
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
         if (self.props.diagram != props.diagram) || (self.props.style != props.style) {
-            self.diagram = PreparedDiagram::new(self.props.diagram.clone(), props.style);
+            self.diagram = PreparedDiagram::new(props.diagram.clone(), props.style);
             self.props = props;
             true
         } else if self.props != props {
