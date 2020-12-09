@@ -1,13 +1,14 @@
-mod panzoom;
 mod diagram2d;
+mod panzoom;
 mod signature;
-mod workspace;
 mod signature_stylesheet;
+mod workspace;
 use crate::model;
 use homotopy_core::*;
 use signature::SignatureView;
-use workspace::WorkspaceView;
 use signature_stylesheet::SignatureStylesheet;
+use wasm_bindgen::JsCast;
+use workspace::WorkspaceView;
 use yew::prelude::*;
 
 pub mod icon {
@@ -47,6 +48,99 @@ pub mod icon {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct SidebarButton {
+    label: &'static str,
+    icon: &'static str,
+    action: model::Action,
+    shortcut: Option<char>,
+}
+
+impl SidebarButton {
+    pub fn view(&self, dispatch: Callback<model::Action>) -> Html {
+        let action = self.action.clone();
+
+        html! {
+            <div
+                class="sidebar__button tooltip tooltip--right"
+                onclick={dispatch.reform(move |_| action.clone())}
+                data-tooltip={self.label}
+            >
+                <Icon name={self.icon} />
+            </div>
+        }
+    }
+}
+
+// TODO: Automatically add shortcut name to label
+
+const BUTTON_CLEAR: SidebarButton = SidebarButton {
+    label: "Clear (C)",
+    icon: "clear",
+    action: model::Action::ClearWorkspace,
+    shortcut: Some('c'),
+};
+
+const BUTTON_IDENTITY: SidebarButton = SidebarButton {
+    label: "Identity (I)",
+    icon: "upgrade",
+    action: model::Action::TakeIdentityDiagram,
+    shortcut: Some('i'),
+};
+
+const BUTTON_SOURCE: SidebarButton = SidebarButton {
+    label: "Source (S)",
+    icon: "arrow_circle_down",
+    action: model::Action::SetBoundary(Boundary::Source),
+    shortcut: Some('s'),
+};
+
+const BUTTON_TARGET: SidebarButton = SidebarButton {
+    label: "Target (T)",
+    icon: "arrow_circle_up",
+    action: model::Action::SetBoundary(Boundary::Target),
+    shortcut: Some('t'),
+};
+
+const BUTTON_ADD_GENERATOR: SidebarButton = SidebarButton {
+    label: "Add Generator (A)",
+    icon: "add_circle_outline",
+    action: model::Action::CreateGeneratorZero,
+    shortcut: Some('a'),
+};
+
+const BUTTON_PROJECT: SidebarButton = SidebarButton {
+    label: "Project",
+    icon: "info",
+    action: model::Action::ToggleDrawer(model::Drawer::Project),
+    shortcut: None,
+};
+
+const BUTTON_SIGNATURE: SidebarButton = SidebarButton {
+    label: "Signature",
+    icon: "list",
+    action: model::Action::ToggleDrawer(model::Drawer::Signature),
+    shortcut: None,
+};
+
+const BUTTON_USER: SidebarButton = SidebarButton {
+    label: "User",
+    icon: "perm_identity",
+    action: model::Action::ToggleDrawer(model::Drawer::User),
+    shortcut: None,
+};
+
+const BUTTONS: &[&SidebarButton] = &[
+    &BUTTON_CLEAR,
+    &BUTTON_IDENTITY,
+    &BUTTON_SOURCE,
+    &BUTTON_TARGET,
+    &BUTTON_ADD_GENERATOR,
+    &BUTTON_PROJECT,
+    &BUTTON_SIGNATURE,
+    &BUTTON_USER,
+];
+
 use icon::Icon;
 
 #[derive(Default, Clone, Debug, PartialEq, Properties)]
@@ -60,7 +154,7 @@ pub enum Message {
 pub struct App {
     dispatch: Callback<model::Action>,
     state: model::State,
-    signature_stylesheet: SignatureStylesheet
+    signature_stylesheet: SignatureStylesheet,
 }
 
 impl Component for App {
@@ -70,10 +164,21 @@ impl Component for App {
     fn create(_props: Self::Properties, link: ComponentLink<Self>) -> Self {
         let state = model::State::default();
         let dispatch = link.callback(Message::Dispatch);
+
+        // Install the signature stylesheet
         let mut signature_stylesheet = SignatureStylesheet::new("generator");
         signature_stylesheet.update(state.signature().clone());
         signature_stylesheet.mount();
-        App { state, dispatch, signature_stylesheet }
+
+        // Install the keyboard listener for shortcuts
+        // TODO: Remove these when App is destroyed.
+        App::install_keyboard_shortcuts(dispatch.clone());
+
+        App {
+            state,
+            dispatch,
+            signature_stylesheet,
+        }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
@@ -87,7 +192,8 @@ impl Component for App {
                         log::error!("Error occured: {}", error);
                     }
                 }
-                self.signature_stylesheet.update(self.state.signature().clone());
+                self.signature_stylesheet
+                    .update(self.state.signature().clone());
             }
         }
         true
@@ -98,56 +204,8 @@ impl Component for App {
     }
 
     fn view(&self) -> Html {
-        use model::{Action, Drawer};
+        use model::Drawer;
         let dispatch = &self.dispatch;
-
-        let button_clear = self.view_sidebar_button(
-            "Clear (C)",
-            "clear",
-            dispatch.reform(|_| Action::ClearWorkspace),
-        );
-
-        let button_identity = self.view_sidebar_button(
-            "Identity (I)",
-            "upgrade",
-            dispatch.reform(|_| Action::TakeIdentityDiagram),
-        );
-
-        let button_source = self.view_sidebar_button(
-            "Source (S)",
-            "arrow_circle_down",
-            dispatch.reform(|_| Action::SetBoundary(Boundary::Source)),
-        );
-
-        let button_target = self.view_sidebar_button(
-            "Target (T)",
-            "arrow_circle_up",
-            dispatch.reform(|_| Action::SetBoundary(Boundary::Target)),
-        );
-
-        let button_create_generator_zero = self.view_sidebar_button(
-            "Add Generator (A)",
-            "add_circle_outline",
-            dispatch.reform(|_| Action::CreateGeneratorZero),
-        );
-
-        let button_project = self.view_sidebar_button(
-            "Project",
-            "info",
-            dispatch.reform(|_| Action::ToggleDrawer(Drawer::Project)),
-        );
-
-        let button_signature = self.view_sidebar_button(
-            "Signature",
-            "list",
-            dispatch.reform(|_| Action::ToggleDrawer(Drawer::Signature)),
-        );
-
-        let button_user = self.view_sidebar_button(
-            "User",
-            "perm_identity",
-            dispatch.reform(|_| Action::ToggleDrawer(Drawer::User)),
-        );
 
         let workspace = match self.state.workspace() {
             Some(workspace) => {
@@ -186,16 +244,16 @@ impl Component for App {
                 <aside class="sidebar">
                     <img src="/logo.svg" class="sidebar__logo" />
                     <nav class="sidebar__nav">
-                        {button_project}
-                        {button_signature}
-                        {button_user}
+                        {BUTTON_PROJECT.view(dispatch.clone())}
+                        {BUTTON_SIGNATURE.view(dispatch.clone())}
+                        {BUTTON_USER.view(dispatch.clone())}
                     </nav>
                     <nav class="sidebar__tools">
-                        {button_create_generator_zero}
-                        {button_source}
-                        {button_target}
-                        {button_identity}
-                        {button_clear}
+                        {BUTTON_ADD_GENERATOR.view(dispatch.clone())}
+                        {BUTTON_SOURCE.view(dispatch.clone())}
+                        {BUTTON_TARGET.view(dispatch.clone())}
+                        {BUTTON_IDENTITY.view(dispatch.clone())}
+                        {BUTTON_CLEAR.view(dispatch.clone())}
                     </nav>
                 </aside>
                 {drawer}
@@ -210,11 +268,22 @@ impl Component for App {
 }
 
 impl App {
-    fn view_sidebar_button(&self, label: &str, icon: &str, callback: Callback<MouseEvent>) -> Html {
-        html! {
-            <div class="sidebar__button tooltip tooltip--right" onclick={callback} data-tooltip={label}>
-                <Icon name={icon} />
-            </div>
-        }
+    fn install_keyboard_shortcuts(dispatch: Callback<model::Action>) {
+        let onkeypress =
+            wasm_bindgen::closure::Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
+                let key = event.key().chars().next().unwrap();
+                let button = BUTTONS.iter().find(|button| button.shortcut == Some(key));
+
+                if let Some(button) = button {
+                    dispatch.emit(button.action.clone());
+                }
+            }) as Box<dyn FnMut(_)>);
+
+        web_sys::window()
+            .unwrap()
+            .add_event_listener_with_callback("keypress", onkeypress.as_ref().unchecked_ref())
+            .unwrap();
+
+        onkeypress.forget();
     }
 }
