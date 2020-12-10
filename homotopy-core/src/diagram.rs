@@ -1,6 +1,5 @@
 use crate::attach::*;
 use crate::common::*;
-use crate::contraction;
 use crate::rewrite::*;
 use std::convert::TryFrom;
 use std::convert::*;
@@ -48,6 +47,17 @@ impl Diagram {
             (Diagram0(g0), Diagram0(g1)) => g0 == g1,
             (Diagram0(_), DiagramN(_)) => false,
             (DiagramN(d), _) => d.embeds(diagram, embedding),
+        }
+    }
+
+    pub fn embeddings(&self, diagram: &Diagram) -> Embeddings {
+        use Diagram::*;
+        match (self, diagram) {
+            (Diagram0(g0), Diagram0(g1)) if g0 == g1 => {
+                Embeddings(Box::new(std::iter::once(vec![])))
+            }
+            (Diagram0(_), _) => Embeddings(Box::new(std::iter::empty())),
+            (DiagramN(d), _) => d.embeddings(diagram),
         }
     }
 
@@ -194,7 +204,7 @@ impl DiagramN {
             diagram
                 .cospans
                 .splice(start..stop, vec![cone.target.clone()]);
-            offset += (cone.len() - 1) as isize;
+            offset += cone.len() as isize - 1;
         }
 
         DiagramN(self.0)
@@ -208,7 +218,7 @@ impl DiagramN {
             let start = (cone.index as isize + offset) as usize;
             let stop = (cone.index as isize + 1 + offset) as usize;
             diagram.cospans.splice(start..stop, cone.source.clone());
-            offset -= (cone.len() - 1) as isize;
+            offset -= cone.len() as isize - 1;
         }
 
         DiagramN(self.0)
@@ -253,6 +263,44 @@ impl DiagramN {
                 }
             }
         }
+    }
+
+    pub fn embeddings(&self, diagram: &Diagram) -> Embeddings {
+        use std::cmp::Ordering;
+
+        match self.dimension().cmp(&diagram.dimension()) {
+            Ordering::Less => Embeddings(Box::new(std::iter::empty())),
+            Ordering::Equal => {
+                let diagram = DiagramN::try_from(diagram.clone()).unwrap();
+                let embeddings = self.embeddings_slice(diagram.source());
+                let haystack = self.clone();
+                Embeddings(Box::new(embeddings.filter(move |embedding| {
+                    let (start, rest) = embedding.split_first().unwrap();
+                    haystack.cospans().get(*start..diagram.size() + *start)
+                        == Some(
+                            &diagram
+                                .cospans()
+                                .iter()
+                                .map(|c| c.pad(rest))
+                                .collect::<Vec<_>>(),
+                        )
+                })))
+            }
+            Ordering::Greater => Embeddings(Box::new(self.embeddings_slice(diagram.clone()))),
+        }
+    }
+
+    fn embeddings_slice(&self, diagram: Diagram) -> impl Iterator<Item = Vec<usize>> {
+        self.clone()
+            .slices()
+            .step_by(2)
+            .enumerate()
+            .flat_map(move |(index, slice)| {
+                slice.embeddings(&diagram).into_iter().map(move |mut emb| {
+                    emb.insert(0, index);
+                    emb
+                })
+            })
     }
 
     /// The size of the diagram is the number of singular slices or equivalently the number of
@@ -411,44 +459,46 @@ struct DiagramInternal {
 }
 
 /// Iterator over a diagram's slices. Constructed via [DiagramN::slices].
-pub struct Slices<'a> {
+pub struct Slices {
     current: Option<Diagram>,
     direction: Direction,
-    cospans: &'a [Cospan],
+    cospans: Vec<Cospan>,
 }
 
-impl<'a> Slices<'a> {
-    fn new(diagram: &'a DiagramN) -> Self {
+impl Slices {
+    fn new(diagram: &DiagramN) -> Self {
         Slices {
             current: Some(diagram.source()),
             direction: Direction::Forward,
-            cospans: diagram.cospans(),
+            cospans: diagram.cospans().iter().rev().cloned().collect(),
         }
     }
 }
 
-impl<'a> Iterator for Slices<'a> {
+impl Iterator for Slices {
     type Item = Diagram;
 
     fn next(&mut self) -> Option<Self::Item> {
+        if self.cospans.is_empty() {
+            return std::mem::replace(&mut self.current, None);
+        }
+
         let current = self.current.as_ref()?;
 
-        let next = match self.cospans.first() {
-            Some(cospan) => match self.direction {
-                Direction::Forward => {
-                    self.direction = Direction::Backward;
-                    Some(current.clone().rewrite_forward(&cospan.forward))
-                }
-                Direction::Backward => {
-                    self.direction = Direction::Forward;
-                    self.cospans = &self.cospans[1..];
-                    Some(current.clone().rewrite_backward(&cospan.backward))
-                }
-            },
-            None => None,
+        let next = match self.direction {
+            Direction::Forward => {
+                let cospan = self.cospans.last().unwrap();
+                self.direction = Direction::Backward;
+                current.clone().rewrite_forward(&cospan.forward)
+            }
+            Direction::Backward => {
+                let cospan = self.cospans.pop().unwrap();
+                self.direction = Direction::Forward;
+                current.clone().rewrite_backward(&cospan.backward)
+            }
         };
 
-        std::mem::replace(&mut self.current, next)
+        std::mem::replace(&mut self.current, Some(next))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -456,7 +506,7 @@ impl<'a> Iterator for Slices<'a> {
     }
 }
 
-impl<'a> ExactSizeIterator for Slices<'a> {
+impl<'a> ExactSizeIterator for Slices {
     fn len(&self) -> usize {
         if self.current.is_none() {
             0
@@ -469,7 +519,19 @@ impl<'a> ExactSizeIterator for Slices<'a> {
     }
 }
 
-impl<'a> std::iter::FusedIterator for Slices<'a> {}
+impl<'a> std::iter::FusedIterator for Slices {}
+
+pub struct Embeddings(Box<dyn Iterator<Item = Vec<RegularHeight>>>);
+
+impl Iterator for Embeddings {
+    type Item = Vec<RegularHeight>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
+    }
+}
+
+impl std::iter::FusedIterator for Embeddings {}
 
 #[derive(Debug, Error)]
 pub enum NewDiagramError {
@@ -572,5 +634,21 @@ mod test {
                 (&[4, 2], 0),
             ],
         );
+    }
+
+    #[test]
+    fn scalar() {
+        let x = Generator::new(0, 0);
+        let f = Generator::new(1, 2);
+
+        let xd = Diagram::from(x);
+        let fd = DiagramN::new(f, xd.identity(), xd.identity()).unwrap();
+
+        assert_eq!(fd.source(), xd.identity());
+        assert_eq!(fd.target(), xd.identity());
+
+        let cospan = &fd.cospans()[0];
+        let forward = cospan.forward.to_n().unwrap();
+        assert_eq!(forward.regular_preimage(0), 0..2);
     }
 }

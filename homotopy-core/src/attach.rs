@@ -3,7 +3,7 @@ use crate::diagram::*;
 use crate::rewrite::*;
 use std::convert::*;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BoundaryPath(pub Boundary, pub usize);
 
 impl BoundaryPath {
@@ -14,8 +14,8 @@ impl BoundaryPath {
         let mut interior = Vec::new();
 
         for height in path.iter().rev() {
-            match (boundary_path, height) {
-                (Some(mut bp), _) => bp.1 += 1,
+            match (&mut boundary_path, height) {
+                (Some(bp), _) => bp.1 += 1,
                 (None, Boundary(b)) => boundary_path = Some(BoundaryPath(*b, 0)),
                 (None, Interior(h)) => interior.insert(0, *h),
             }
@@ -32,6 +32,16 @@ impl BoundaryPath {
         }
 
         diagram.slice(self.0)
+    }
+
+    #[inline(always)]
+    pub fn boundary(&self) -> Boundary {
+        self.0
+    }
+
+    #[inline(always)]
+    pub fn depth(&self) -> usize {
+        self.1
     }
 }
 

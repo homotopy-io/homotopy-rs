@@ -15,6 +15,12 @@ crate-type = ["cdylib", "rlib"]
 # so it's only enabled in release mode.
 lto = true
 
+[profile.dev]
+lto = "thin"
+
+[profile.dev.package."*"]
+opt-level = 3
+
 [features]
 # If you uncomment this line, it will enable `wee_alloc`:
 default = ["wee_alloc"]
@@ -48,6 +54,7 @@ thiserror = "*"
 # allocator, so it's not enabled by default.
 wee_alloc = { version = "0.4.2", optional = true }
 im = "*"
+arrayvec = "0.5"
 
 # The `web-sys` crate allows you to interact with the various browser APIs,
 # like the DOM.

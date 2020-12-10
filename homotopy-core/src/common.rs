@@ -125,6 +125,7 @@ impl Ord for SliceIndex {
     /// ```
     /// # use homotopy_core::common::Boundary::*;
     /// # use homotopy_core::common::SliceIndex::*;
+    /// # use homotopy_core::common::Height::*;
     /// assert!(Boundary(Source) < Interior(Regular(0)));
     /// assert!(Interior(Regular(10)) < Boundary(Target));
     /// ```

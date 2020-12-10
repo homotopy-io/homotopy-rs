@@ -204,10 +204,12 @@ version = "0.1.0"
 dependencies = [
  "euclid",
  "homotopy-core",
+ "log",
  "lyon_algorithms",
  "lyon_geom",
  "lyon_path",
  "petgraph",
+ "seahash",
  "serde",
  "serde_json",
  "thiserror",
@@ -217,6 +219,7 @@ dependencies = [
 name = "homotopy-web"
 version = "0.1.0"
 dependencies = [
+ "arrayvec",
  "closure",
  "console_error_panic_hook",
  "euclid",
@@ -429,6 +432,12 @@ name = "scoped-tls"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ea6a9290e3c9cf0f18145ef7ffa62d68ee0bf5fcd651017e586dc7fd5da448c2"
+
+[[package]]
+name = "seahash"
+version = "4.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "39ee459cae272d224928ca09a1df5406da984f263dc544f9f8bde92a8c3dc916"
 
 [[package]]
 name = "serde"
@@ -727,14 +736,6 @@ dependencies = [
  "wasm-bindgen-futures 0.4.18",
  "web-sys",
  "yew-macro",
-]
-
-[[package]]
-name = "yew-functional-macro"
-version = "0.1.0"
-dependencies = [
- "quote 1.0.7",
- "syn",
 ]
 
 [[package]]

@@ -3,7 +3,7 @@
 members = [
   "homotopy-core",
   "homotopy-web",
-  "homotopy-web/yew-functional-macro"
+  "homotopy-graphics",
 ]
 
 [patch.crates-io]

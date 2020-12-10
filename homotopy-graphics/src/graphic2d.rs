@@ -6,6 +6,7 @@ use homotopy_core::complex::Simplex;
 use homotopy_core::projection::Generators;
 use lyon_path::Path;
 use petgraph::unionfind::UnionFind;
+use seahash::SeaHasher;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::hash::Hash;
@@ -105,6 +106,8 @@ pub enum GraphicElement {
     Point(Generator, Point),
 }
 
+type FastHashMap<K, V> = HashMap<K, V, std::hash::BuildHasherDefault<SeaHasher>>;
+
 impl GraphicElement {
     /// Apply an affine coordinate transformation to the element.
     pub fn transformed(&self, transform: &Transform2D<f32>) -> Self {
@@ -137,7 +140,7 @@ impl GraphicElement {
         let mut surface_elements = Vec::new();
         let mut point_elements = Vec::new();
 
-        let mut grouped_surfaces: HashMap<Generator, Vec<[Coordinate; 3]>> = HashMap::new();
+        let mut grouped_surfaces = FastHashMap::<Generator, Vec<[Coordinate; 3]>>::default();
 
         for simplex in complex {
             match simplex {
@@ -212,7 +215,7 @@ where
     // Find a representative for each connected component.
     let count = surfaces.len();
     let mut repr = UnionFind::<usize>::new(count);
-    let mut edge_to_surface: HashMap<(P, P), usize> = HashMap::new();
+    let mut edge_to_surface = FastHashMap::<(P, P), usize>::default();
 
     for (surface_index, surface) in surfaces.enumerate() {
         for i in 0..surface.len() {
@@ -249,7 +252,7 @@ where
         let mut parts = vec![];
 
         for component in components {
-            let next: HashMap<P, P> = component.iter().map(|(s, t)| (*s, *t)).collect();
+            let next: FastHashMap<P, P> = component.iter().map(|(s, t)| (*s, *t)).collect();
             let mut part = vec![component[0].0];
             let mut end = component[0].1;
 
@@ -298,7 +301,7 @@ fn make_path_segment(
 
     match (start, end) {
         (
-            (Interior(Singular(_)), Interior(Regular(_))),
+            (_, Interior(Regular(_))),
             (Interior(Singular(_)), Interior(Singular(_))),
         ) => builder.cubic_bezier_to(
             (layout_start.x, 0.8 * layout_end.y + 0.2 * layout_start.y).into(),
@@ -307,11 +310,11 @@ fn make_path_segment(
         ),
         (
             (Interior(Singular(_)), Interior(Singular(_))),
-            (Interior(Singular(_)), Interior(Regular(_))),
+            (_, Interior(Regular(_))),
         ) => builder.cubic_bezier_to(
             (layout_end.x, layout_start.y).into(),
             (layout_end.x, 0.2 * layout_end.y + 0.8 * layout_start.y).into(),
-            layout_start,
+            layout_end,
         ),
         _ => builder.line_to(layout_end),
     };

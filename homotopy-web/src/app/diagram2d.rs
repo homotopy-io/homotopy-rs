@@ -24,7 +24,15 @@ pub struct Props2D {
     #[prop_or_default]
     pub style: RenderStyle,
     #[prop_or_default]
-    pub on_select: Callback<Simplex>,
+    pub on_select: Callback<Vec<Vec<SliceIndex>>>,
+    #[prop_or_default]
+    pub highlight: Option<Highlight2D>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Highlight2D {
+    from: [SliceIndex; 2],
+    to: [SliceIndex; 2],
 }
 
 // TODO: Drag callbacks in props
@@ -40,6 +48,7 @@ pub enum Message2D {
 struct PreparedDiagram {
     graphic: Vec<GraphicElement>,
     actions: Vec<(Simplex, geometry::Shape)>,
+    layout: Layout,
 
     /// The width and height of the diagram image in pixels.
     ///
@@ -84,6 +93,7 @@ impl PreparedDiagram {
             .collect();
 
         PreparedDiagram {
+            layout,
             graphic,
             actions,
             dimensions,
@@ -118,7 +128,10 @@ impl Component for Diagram2D {
                     .find(|(_, shape)| shape.contains_point(point, 0.01))
                     .map(|(simplex, _)| simplex.clone());
                 match result {
-                    Some(simplex) => self.props.on_select.emit(simplex),
+                    Some(simplex) => self
+                        .props
+                        .on_select
+                        .emit(simplex.into_iter().map(|(x, y)| vec![y, x]).collect()),
                     None => {}
                 }
                 false
@@ -145,11 +158,15 @@ impl Component for Diagram2D {
         let onclick = {
             let link = self.link.clone();
             Callback::from(move |e: MouseEvent| {
-                let x = e.client_x() as f32;
-                let y = e.client_y() as f32;
-                link.send_message(Message2D::OnClick((x, y).into()));
+                if !e.ctrl_key() {
+                    let x = e.client_x() as f32;
+                    let y = e.client_y() as f32;
+                    link.send_message(Message2D::OnClick((x, y).into()));
+                }
             })
         };
+
+        log::info!("redrawing diagram");
 
         html! {
             <svg
@@ -160,6 +177,7 @@ impl Component for Diagram2D {
                 ref={self.node_ref.clone()}
             >
                 {self.diagram.graphic.iter().map(|e| self.view_element(e)).collect::<Html>()}
+                {self.view_highlight()}
             </svg>
         }
     }
@@ -212,6 +230,39 @@ impl Diagram2D {
             }
         }
     }
+
+    fn view_highlight(&self) -> Html {
+        let highlight = match self.props.highlight {
+            Some(highlight) => highlight,
+            None => {
+                return Default::default();
+            }
+        };
+
+        let from = self.position(highlight.from);
+        let to = self.position(highlight.to);
+
+        let path = format!(
+            "M {from_x} {from_y} L {from_x} {to_y} L {to_x} {to_y} L {to_x} {from_y} Z",
+            from_x = from.x,
+            from_y = from.y,
+            to_x = to.x,
+            to_y = to.y
+        );
+
+        html! {
+            <path
+                d={path}
+                class="diagram-svg__highlight"
+            />
+        }
+    }
+
+    fn position(&self, point: [SliceIndex; 2]) -> Point2D<f32> {
+        let point = self.diagram.layout.get(point[0], point[1]).unwrap();
+        let point = self.diagram.transform.transform_point(point);
+        point
+    }
 }
 
 #[derive(Clone, PartialEq, Properties)]
@@ -219,6 +270,8 @@ pub struct Props1D {
     pub diagram: DiagramN,
     #[prop_or_default]
     pub style: RenderStyle,
+    #[prop_or_default]
+    pub on_select: Callback<Vec<Vec<SliceIndex>>>,
 }
 
 pub enum Message1D {}
@@ -336,8 +389,21 @@ impl Diagram1D {
         let class = SignatureStylesheet::name("generator", generator, "wire");
         let style = &self.props.style;
 
+        let onselect = self.props.on_select.clone();
+        let onclick = Callback::from(move |e: MouseEvent| {
+            if !e.ctrl_key() {
+                onselect.emit(vec![vec![from], vec![to]]);
+            }
+        });
+
         html! {
-            <path d={path} class={class} stroke-width={style.wire_thickness} fill="none" />
+            <path
+                d={path}
+                class={class}
+                stroke-width={style.wire_thickness}
+                fill="none"
+                onclick={onclick}
+            />
         }
     }
 
@@ -345,12 +411,20 @@ impl Diagram1D {
         let class = SignatureStylesheet::name("generator", generator, "point");
         let style = &self.props.style;
 
+        let onselect = self.props.on_select.clone();
+        let onclick = Callback::from(move |e: MouseEvent| {
+            if !e.ctrl_key() {
+                onselect.emit(vec![vec![point]]);
+            }
+        });
+
         html! {
             <circle
                 cx={self.dimensions().width * 0.5}
                 cy={self.to_y(point)}
                 r={style.point_radius}
                 class={class}
+                onclick={onclick}
             />
         }
     }

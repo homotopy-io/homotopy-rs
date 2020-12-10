@@ -101,6 +101,15 @@ impl Positions {
             false
         }
     }
+
+    fn width(&self) -> f32 {
+        self.0
+            .iter()
+            .map(|row| row.last().unwrap())
+            .max_by_key(|x| (**x * 100.0).floor() as usize)
+            .cloned()
+            .unwrap()
+    }
 }
 
 #[derive(Error, Debug)]
@@ -132,7 +141,7 @@ impl Solver {
                 .collect(),
         );
 
-        let constraints = Constraint::build(&diagram);
+        let constraints: Vec<_> = Constraint::build(&diagram).into_iter().filter(|c| c.0.len() > 0).collect();
 
         Ok(Solver {
             positions,
@@ -144,7 +153,7 @@ impl Solver {
         let mut changed = false;
 
         for constraint in &self.constraints {
-            changed = self.positions.propagate(constraint);
+            changed = self.positions.propagate(constraint) || changed;
         }
 
         changed
@@ -188,12 +197,18 @@ impl Solver {
     }
 
     pub fn finish(self) -> Layout {
-        Layout(self.positions.0)
+        Layout {
+            width: self.positions.width(),
+            positions: self.positions.0,
+        }
     }
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct Layout(Vec<Vec<f32>>);
+pub struct Layout {
+    positions: Vec<Vec<f32>>,
+    width: f32,
+}
 
 impl Layout {
     /// Solve for a diagram's layout with a given maximum number of iterations.
@@ -207,21 +222,23 @@ impl Layout {
 
     /// The position of a logical point in the layout.
     pub fn get(&self, x: SliceIndex, y: SliceIndex) -> Option<Point> {
+        let positions = &self.positions;
+
         let slice = match y {
-            SliceIndex::Boundary(Boundary::Source) => self.0.first()?,
-            SliceIndex::Boundary(Boundary::Target) => self.0.last()?,
-            SliceIndex::Interior(height) => self.0.get(height.to_int())?,
+            SliceIndex::Boundary(Boundary::Source) => positions.first()?,
+            SliceIndex::Boundary(Boundary::Target) => positions.last()?,
+            SliceIndex::Interior(height) => positions.get(height.to_int())?,
         };
 
         let y_pos = match y {
             SliceIndex::Boundary(Boundary::Source) => 0.0,
-            SliceIndex::Boundary(Boundary::Target) => self.0.len() as f32 + 1.0,
+            SliceIndex::Boundary(Boundary::Target) => positions.len() as f32 + 1.0,
             SliceIndex::Interior(height) => height.to_int() as f32 + 1.0,
         };
 
         let x_pos = match x {
             SliceIndex::Boundary(Boundary::Source) => 0.0,
-            SliceIndex::Boundary(Boundary::Target) => slice.last()? + 2.0,
+            SliceIndex::Boundary(Boundary::Target) => self.width + 2.0,
             SliceIndex::Interior(height) => slice.get(height.to_int())? + 1.0,
         };
 
@@ -229,36 +246,49 @@ impl Layout {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 
-    fn example_assoc() -> DiagramN {
-        let x = Generator {
-            id: 0,
-            dimension: 0,
-        };
-        let f = Generator {
-            id: 1,
-            dimension: 1,
-        };
-        let m = Generator {
-            id: 2,
-            dimension: 2,
-        };
-
+    #[test]
+    fn test_assoc() {
+        let x = Generator::new(0, 0);
+        let f = Generator::new(1, 1);
+        let m = Generator::new(2, 2);
         let fd = DiagramN::new(f, x, x).unwrap();
         let ffd = fd.attach(fd.clone(), Boundary::Target, &[]).unwrap();
         let md = DiagramN::new(m, ffd, fd).unwrap();
-        md.attach(md.clone(), Boundary::Source, &[1]).unwrap()
-    }
-
-    #[test]
-    fn test_assoc() {
-        let diagram = example_assoc();
-        let mut solver = Solver::new(diagram).unwrap();
-        solver.solve(10);
-        let _layout = solver.finish();
+        let diagram = md.attach(md.clone(), Boundary::Source, &[1]).unwrap();
+        let layout = Layout::new(diagram, 10).unwrap();
 
         // TODO: Write test
+    }
+
+    /// Test that the right boundary for a scalar is straight. This is required so that the padding
+    /// with the boundary makes the diagram rectangular.
+    #[test]
+    fn test_scalar() {
+        use Height::*;
+
+        let x = Generator::new(0, 0);
+        let f = Generator::new(1, 2);
+        let xd = Diagram::from(x);
+        let fd = DiagramN::new(f, xd.identity(), xd.identity()).unwrap();
+        let layout = Layout::new(fd, 10).unwrap();
+
+        assert_eq!(
+            layout
+                .get(Boundary::Target.into(), Regular(0).into())
+                .unwrap()
+                .x,
+            4.0
+        );
+        assert_eq!(
+            layout
+                .get(Boundary::Target.into(), Regular(1).into())
+                .unwrap()
+                .x,
+            4.0
+        );
     }
 }

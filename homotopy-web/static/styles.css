@@ -286,3 +286,12 @@ body, html {
     background: var(--drawer-selected);
   }
 }
+
+/** Diagram SVG */
+
+.diagram-svg__highlight {
+  stroke-width: 1px;
+  stroke-dasharray: 4;
+  stroke: black;
+  fill: #ffff0033;
+}

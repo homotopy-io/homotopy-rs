@@ -23,6 +23,7 @@ pub enum Message {
 pub struct WorkspaceView {
     props: Props,
     panzoom: panzoom::PanZoom,
+    on_select: Callback<Vec<Vec<SliceIndex>>>,
 }
 
 impl Component for WorkspaceView {
@@ -32,7 +33,8 @@ impl Component for WorkspaceView {
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
         let panzoom_callback = link.callback(Message::PanZoom);
         let panzoom = panzoom::PanZoom::new(NodeRef::default(), panzoom_callback);
-        WorkspaceView { props, panzoom }
+        let on_select = props.dispatch.reform(model::Action::SelectPoints);
+        WorkspaceView { props, panzoom, on_select }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
@@ -141,6 +143,7 @@ impl WorkspaceView {
                     <div class="workspace__diagram" style={self.diagram_style()}>
                         <Diagram1D
                             diagram={diagram.clone()}
+                            on_select={self.on_select.clone()}
                         />
                     </div>
                 }
@@ -150,7 +153,7 @@ impl WorkspaceView {
                     <div class="workspace__diagram" style={self.diagram_style()}>
                         <Diagram2D
                             diagram={diagram.clone()}
-                            on_select={self.props.dispatch.reform(model::Action::SelectSimplex)}
+                            on_select={self.on_select.clone()}
                         />
                     </div>
                 }

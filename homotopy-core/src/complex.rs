@@ -13,6 +13,29 @@ pub enum Simplex {
     Point([Coordinate; 1]),
 }
 
+impl Simplex {
+    pub fn first(&self) -> Coordinate {
+        match self {
+            Simplex::Surface(p) => p[0],
+            Simplex::Wire(p) => p[0],
+            Simplex::Point(p) => p[0],
+        }
+    }
+}
+
+impl IntoIterator for Simplex {
+    type Item = Coordinate;
+    type IntoIter = std::vec::IntoIter<Coordinate>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        match self {
+            Simplex::Surface(p) => p.to_vec().into_iter(),
+            Simplex::Wire(p) => p.to_vec().into_iter(),
+            Simplex::Point(p) => p.to_vec().into_iter(),
+        }
+    }
+}
+
 /// TODO: Clean this up. The boundary code is a bit verbose.
 /// TODO: Complexes in higher dimensions
 
