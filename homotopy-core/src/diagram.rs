@@ -37,8 +37,8 @@ impl Diagram {
         }
     }
 
-    pub fn identity(&self) -> Diagram {
-        Diagram::DiagramN(DiagramN::new_unsafe(self.clone(), vec![]))
+    pub fn identity(&self) -> DiagramN {
+        DiagramN::new_unsafe(self.clone(), vec![])
     }
 
     pub fn embeds(&self, diagram: &Diagram, embedding: &[usize]) -> bool {
@@ -316,6 +316,10 @@ impl DiagramN {
             .map(|slice| slice.max_generator())
             .max_by_key(|generator| generator.dimension)
             .unwrap()
+    }
+
+    pub fn identity(&self) -> DiagramN {
+        Diagram::from(self.clone()).identity()
     }
 
     // TODO: This needs better documentation
@@ -644,8 +648,8 @@ mod test {
         let xd = Diagram::from(x);
         let fd = DiagramN::new(f, xd.identity(), xd.identity()).unwrap();
 
-        assert_eq!(fd.source(), xd.identity());
-        assert_eq!(fd.target(), xd.identity());
+        assert_eq!(fd.source(), xd.identity().into());
+        assert_eq!(fd.target(), xd.identity().into());
 
         let cospan = &fd.cospans()[0];
         let forward = cospan.forward.to_n().unwrap();

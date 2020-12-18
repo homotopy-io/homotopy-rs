@@ -60,14 +60,12 @@ where
             let mut signature_diagram = normalize(&signature_diagram);
 
             while signature_diagram.dimension() < restricted.dimension() {
-                signature_diagram = signature_diagram.identity();
+                signature_diagram = signature_diagram.identity().into();
             }
 
             if restricted != signature_diagram {
                 return Err(TypeError::IllTyped);
             }
-
-            println!("success");
         }
     }
 
@@ -187,7 +185,7 @@ fn restrict_diagram(diagram: &Diagram, embedding: &Embedding) -> Diagram {
         }
         Embedding::Regular(height, slice) => {
             let diagram: DiagramN = diagram.clone().try_into().unwrap();
-            restrict_diagram(&diagram.slice(Height::Regular(*height)).unwrap(), slice).identity()
+            restrict_diagram(&diagram.slice(Height::Regular(*height)).unwrap(), slice).identity().into()
         }
         Embedding::Singular(height, slices) => {
             let diagram: &DiagramN = diagram.try_into().unwrap();

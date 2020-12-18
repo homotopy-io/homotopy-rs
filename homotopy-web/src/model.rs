@@ -400,14 +400,17 @@ impl State {
                 .clone()
                 .try_into()
                 .unwrap();
-            let boundary: Boundary = option
-                .boundary_path
-                .clone()
-                .map(|bp| bp.boundary())
-                .unwrap_or(Boundary::Target);
             let embedding: Vec<_> = option.embedding.iter().cloned().collect();
 
-            let result = diagram.attach(generator, boundary, &embedding).unwrap();
+            let result = match &option.boundary_path {
+                Some(bp) => diagram
+                    .attach(generator, bp.boundary(), &embedding)
+                    .unwrap(),
+                None => diagram
+                    .identity()
+                    .attach(generator, Boundary::Target, &embedding)
+                    .unwrap(),
+            };
 
             workspace.attach = None;
             workspace.highlight = None;
