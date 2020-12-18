@@ -50,6 +50,8 @@ pub enum Action {
     SelectPoints(Vec<Vec<SliceIndex>>),
 
     Attach(AttachOption),
+
+    HighlightAttachment(Option<AttachOption>),
 }
 
 #[derive(Clone, PartialEq, Eq)]
@@ -83,6 +85,7 @@ pub struct Workspace {
     pub diagram: Diagram,
     pub path: Vector<SliceIndex>,
     pub attach: Option<Vector<AttachOption>>,
+    pub highlight: Option<AttachOption>,
 }
 
 impl Workspace {
@@ -123,6 +126,7 @@ impl State {
             Action::SelectPoints(points) => self.select_points(points),
             Action::ToggleDrawer(drawer) => Ok(self.toggle_drawer(drawer)),
             Action::Attach(option) => Ok(self.attach(option)),
+            Action::HighlightAttachment(option) => Ok(self.highlight_attachment(option)),
         }
     }
 
@@ -243,6 +247,7 @@ impl State {
             diagram: info.diagram.clone(),
             path: Default::default(),
             attach: Default::default(),
+            highlight: Default::default(),
         });
 
         Ok(())
@@ -255,6 +260,9 @@ impl State {
                 workspace.path.pop_back();
                 count -= 1;
             }
+
+            workspace.attach = None;
+            workspace.highlight = None;
         }
     }
 
@@ -275,6 +283,8 @@ impl State {
 
             // Update workspace
             workspace.path = path;
+            workspace.attach = None;
+            workspace.highlight = None;
         }
 
         Ok(())
@@ -366,9 +376,14 @@ impl State {
             self.attach(matches.into_iter().next().unwrap());
             Ok(())
         } else if matches.len() > 1 {
-            self.workspace.as_mut().unwrap().attach = Some(matches.into_iter().collect());
+            let workspace = self.workspace.as_mut().unwrap();
+            workspace.attach = Some(matches.into_iter().collect());
+            workspace.highlight = None;
             Ok(())
         } else {
+            let workspace = self.workspace.as_mut().unwrap();
+            workspace.attach = None;
+            workspace.highlight = None;
             Ok(())
         }
     }
@@ -395,6 +410,7 @@ impl State {
             let result = diagram.attach(generator, boundary, &embedding).unwrap();
 
             workspace.attach = None;
+            workspace.highlight = None;
 
             // TODO: Figure out what should happen with the slice path
             match option.boundary_path {
@@ -414,6 +430,13 @@ impl State {
             self.drawer = None;
         } else {
             self.drawer = Some(drawer);
+        }
+    }
+
+    /// Handler for [Action::HighlightAttachment].
+    fn highlight_attachment(&mut self, option: Option<AttachOption>) {
+        if let Some(workspace) = &mut self.workspace {
+            workspace.highlight = option;
         }
     }
 }

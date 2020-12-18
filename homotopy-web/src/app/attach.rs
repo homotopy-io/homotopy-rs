@@ -67,11 +67,24 @@ impl AttachView {
             move |_| Action::Attach(option.clone())
         });
 
+        let onmouseenter = self.props.dispatch.reform({
+            let option = option.clone();
+            move |_| Action::HighlightAttachment(Some(option.clone()))
+        });
+
+        let onmouseleave = self
+            .props
+            .dispatch
+            .reform(|_| Action::HighlightAttachment(None));
+
         // TODO: Maybe extract a common component for this and the signature.
+        // TODO: How should highlights work on touch devices?
         html! {
             <li
                 class="attach__option"
                 onclick={onclick}
+                onmouseenter={onmouseenter}
+                onmouseleave={onmouseleave}
             >
                 <span
                     class="attach__option-color"

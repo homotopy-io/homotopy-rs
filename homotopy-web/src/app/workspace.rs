@@ -2,6 +2,7 @@ use crate::app::diagram2d::{Diagram1D, Diagram2D};
 use crate::app::icon::Icon;
 use crate::app::panzoom;
 use crate::model;
+use crate::model::GeneratorInfo;
 use closure::closure;
 use homotopy_core::common::*;
 use homotopy_core::{Diagram, DiagramN};
@@ -14,6 +15,7 @@ use yew::prelude::*;
 pub struct Props {
     pub workspace: model::Workspace,
     pub dispatch: Callback<model::Action>,
+    pub signature: im::HashMap<Generator, GeneratorInfo>,
 }
 
 pub enum Message {

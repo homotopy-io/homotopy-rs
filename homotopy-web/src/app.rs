@@ -208,12 +208,14 @@ impl Component for App {
 
     fn view(&self) -> Html {
         let dispatch = &self.dispatch;
+        let signature = self.state.signature();
 
         let workspace = match self.state.workspace() {
             Some(workspace) => {
                 html! {
                     <WorkspaceView
                         workspace={workspace}
+                        signature={signature}
                         dispatch={dispatch}
                     />
                 }
