@@ -1,6 +1,5 @@
 use homotopy_core::attach::BoundaryPath;
 use homotopy_core::common::*;
-use homotopy_core::complex::Simplex;
 use homotopy_core::diagram::NewDiagramError;
 use homotopy_core::{Diagram, DiagramN};
 use im::{HashMap, Vector};
@@ -49,6 +48,8 @@ pub enum Action {
     DescendSlice(SliceIndex),
 
     SelectPoints(Vec<Vec<SliceIndex>>),
+
+    Attach(AttachOption),
 }
 
 #[derive(Clone, PartialEq, Eq)]
@@ -61,74 +62,6 @@ pub struct State {
 
 impl Default for State {
     fn default() -> Self {
-        let x = Generator {
-            id: 0,
-            dimension: 0,
-        };
-        let f = Generator {
-            id: 1,
-            dimension: 1,
-        };
-        let m = Generator {
-            id: 2,
-            dimension: 2,
-        };
-        let a = Generator {
-            id: 3,
-            dimension: 3,
-        };
-
-        let fd = DiagramN::new(f, x, x).unwrap();
-        let ffd = fd.attach(fd.clone(), Boundary::Target, &[]).unwrap();
-        let md = DiagramN::new(m, ffd, fd.clone()).unwrap();
-        let left = md.attach(md.clone(), Boundary::Source, &[0]).unwrap();
-        let right = md.attach(md.clone(), Boundary::Source, &[1]).unwrap();
-        let ad = DiagramN::new(a, left, right).unwrap();
-
-        // for _ in 0..1 {
-        //     result = result.attach(md.clone(), Boundary::Source, &[0]).unwrap();
-        // }
-
-        let mut signature: HashMap<Generator, GeneratorInfo> = Default::default();
-
-        signature.insert(
-            x,
-            GeneratorInfo {
-                name: "x".to_string(),
-                color: COLORS[0].to_owned(),
-                diagram: x.into(),
-            },
-        );
-
-        signature.insert(
-            f,
-            GeneratorInfo {
-                name: "f".to_string(),
-                color: COLORS[1].to_owned(),
-                diagram: fd.into(),
-            },
-        );
-
-        signature.insert(
-            m,
-            GeneratorInfo {
-                name: "m".to_string(),
-                color: COLORS[2].to_owned(),
-                diagram: md.into(),
-            },
-        );
-
-        signature.insert(
-            a,
-            GeneratorInfo {
-                name: "a".to_string(),
-                color: COLORS[3].to_owned(),
-                diagram: ad.clone().into(),
-            },
-        );
-
-        log::info!("signature size: {}", signature.len());
-
         State {
             signature: Default::default(),
             workspace: None,
@@ -149,6 +82,7 @@ pub struct GeneratorInfo {
 pub struct Workspace {
     pub diagram: Diagram,
     pub path: Vector<SliceIndex>,
+    pub attach: Option<Vector<AttachOption>>,
 }
 
 impl Workspace {
@@ -188,6 +122,7 @@ impl State {
             Action::DescendSlice(slice) => self.descend_slice(slice),
             Action::SelectPoints(points) => self.select_points(points),
             Action::ToggleDrawer(drawer) => Ok(self.toggle_drawer(drawer)),
+            Action::Attach(option) => Ok(self.attach(option)),
         }
     }
 
@@ -307,6 +242,7 @@ impl State {
         self.workspace = Some(Workspace {
             diagram: info.diagram.clone(),
             path: Default::default(),
+            attach: Default::default(),
         });
 
         Ok(())
@@ -400,8 +336,6 @@ impl State {
             .map(|bp| bp.boundary())
             .unwrap_or(Boundary::Target);
 
-        log::info!("position: {:?}", (&boundary_path, &point));
-
         let matches: Vec<AttachOption> = {
             let mut matches = Vec::new();
 
@@ -428,10 +362,11 @@ impl State {
             matches
         };
 
-        log::info!("matches: {:#?}", matches);
-
         if matches.len() == 1 {
             self.attach(matches.into_iter().next().unwrap());
+            Ok(())
+        } else if matches.len() > 1 {
+            self.workspace.as_mut().unwrap().attach = Some(matches.into_iter().collect());
             Ok(())
         } else {
             Ok(())
@@ -441,15 +376,15 @@ impl State {
     fn attach(&mut self, option: AttachOption) {
         if let Some(workspace) = &mut self.workspace {
             // TODO: Better error handling, although none of these errors should occur
-            let diagram = DiagramN::try_from(workspace.diagram.clone()).unwrap();
-            let generator = DiagramN::try_from(
-                self.signature
-                    .get(&option.generator)
-                    .unwrap()
-                    .diagram
-                    .clone(),
-            )
-            .unwrap();
+            let diagram: DiagramN = workspace.diagram.clone().try_into().unwrap();
+            let generator: DiagramN = self
+                .signature
+                .get(&option.generator)
+                .unwrap()
+                .diagram
+                .clone()
+                .try_into()
+                .unwrap();
             let boundary: Boundary = option
                 .boundary_path
                 .clone()
@@ -458,6 +393,8 @@ impl State {
             let embedding: Vec<_> = option.embedding.iter().cloned().collect();
 
             let result = diagram.attach(generator, boundary, &embedding).unwrap();
+
+            workspace.attach = None;
 
             // TODO: Figure out what should happen with the slice path
             match option.boundary_path {
@@ -523,11 +460,11 @@ pub enum Drawer {
     User,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct AttachOption {
-    generator: Generator,
-    boundary_path: Option<BoundaryPath>,
-    embedding: Vector<usize>,
+    pub generator: Generator,
+    pub boundary_path: Option<BoundaryPath>,
+    pub embedding: Vector<usize>,
 }
 
 const COLORS: &[&'static str] = &[
@@ -543,16 +480,11 @@ const COLORS: &[&'static str] = &[
 
 fn contains_point(diagram: Diagram, point: &[Height], embedding: &[RegularHeight]) -> bool {
     use Diagram::*;
-    assert!(embedding.len() <= point.len());
 
-    if diagram.dimension() != point.len() {
-        return false;
-    }
-
-    match diagram {
-        Diagram0(_) => true,
-        DiagramN(diagram) => {
-            let (height, point) = point.split_first().unwrap();
+    match (point.split_first(), diagram) {
+        (None, _) => true,
+        (Some(_), Diagram0(_)) => false,
+        (Some((height, point)), DiagramN(diagram)) => {
             let (shift, embedding) = embedding.split_first().unwrap_or((&0, &[]));
             let shift = Height::Regular(*shift);
 

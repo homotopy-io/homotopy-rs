@@ -3,7 +3,7 @@ use crate::diagram::*;
 use crate::rewrite::*;
 use std::convert::*;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BoundaryPath(pub Boundary, pub usize);
 
 impl BoundaryPath {

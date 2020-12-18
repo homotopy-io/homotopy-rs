@@ -1,9 +1,12 @@
+mod attach;
 mod diagram2d;
 mod panzoom;
 mod signature;
 mod signature_stylesheet;
 mod workspace;
 use crate::model;
+use crate::model::Drawer;
+use attach::AttachView;
 use homotopy_core::*;
 use signature::SignatureView;
 use signature_stylesheet::SignatureStylesheet;
@@ -204,7 +207,6 @@ impl Component for App {
     }
 
     fn view(&self) -> Html {
-        use model::Drawer;
         let dispatch = &self.dispatch;
 
         let workspace = match self.state.workspace() {
@@ -225,19 +227,7 @@ impl Component for App {
             }
         };
 
-        let drawer = match self.state.drawer() {
-            Some(Drawer::Project) => Default::default(),
-            Some(Drawer::Signature) => {
-                html! {
-                    <SignatureView
-                        signature={self.state.signature()}
-                        dispatch={dispatch}
-                    />
-                }
-            }
-            Some(Drawer::User) => Default::default(),
-            None => Default::default(),
-        };
+        let drawer = self.drawer();
 
         html! {
             <main class="app">
@@ -268,6 +258,39 @@ impl Component for App {
 }
 
 impl App {
+    fn drawer(&self) -> Html {
+        let dispatch = &self.dispatch;
+        let attach_options = self
+            .state
+            .workspace()
+            .map(|workspace| workspace.attach.clone())
+            .flatten();
+
+        if let Some(attach_options) = attach_options {
+            return html! {
+                <AttachView
+                    dispatch={dispatch}
+                    options={attach_options}
+                    signature={self.state.signature()}
+                />
+            };
+        }
+
+        match self.state.drawer() {
+            Some(Drawer::Project) => Default::default(),
+            Some(Drawer::Signature) => {
+                html! {
+                    <SignatureView
+                        signature={self.state.signature()}
+                        dispatch={dispatch}
+                    />
+                }
+            }
+            Some(Drawer::User) => Default::default(),
+            None => Default::default(),
+        }
+    }
+
     fn install_keyboard_shortcuts(dispatch: Callback<model::Action>) {
         let onkeypress =
             wasm_bindgen::closure::Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {

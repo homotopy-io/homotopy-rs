@@ -287,11 +287,46 @@ body, html {
   }
 }
 
-/** Diagram SVG */
+/* Diagram SVG */
 
 .diagram-svg__highlight {
   stroke-width: 1px;
   stroke-dasharray: 4;
   stroke: black;
   fill: #ffff0033;
+}
+
+/* Attachment Options */
+
+.attach__options {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.attach__option {
+  padding: var(--space-1);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  cursor: pointer;
+}
+
+.attach__option-name {
+  padding: var(--space-0);
+  flex: 1;
+}
+
+.attach__option-color {
+  padding: var(--space-0);
+  margin: var(--space-0);
+  border-radius: calc(var(--space-0));
+  border: 1px solid var(--generator-color-border);
+}
+
+@media (pointer: fine) {
+  .attach__option:hover {
+    background: var(--drawer-selected);
+  }
 }
