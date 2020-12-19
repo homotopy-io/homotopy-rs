@@ -1,4 +1,4 @@
-use crate::app::diagram2d::{Diagram1D, Diagram2D};
+use crate::app::diagram2d::{Diagram1D, Diagram2D, Highlight2D};
 use crate::app::icon::Icon;
 use crate::app::panzoom;
 use crate::model;
@@ -36,7 +36,11 @@ impl Component for WorkspaceView {
         let panzoom_callback = link.callback(Message::PanZoom);
         let panzoom = panzoom::PanZoom::new(NodeRef::default(), panzoom_callback);
         let on_select = props.dispatch.reform(model::Action::SelectPoints);
-        WorkspaceView { props, panzoom, on_select }
+        WorkspaceView {
+            props,
+            panzoom,
+            on_select,
+        }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
@@ -151,11 +155,13 @@ impl WorkspaceView {
                 }
             }
             Diagram::DiagramN(diagram) => {
+                let highlight = self.highlight_2d();
                 html! {
                     <div class="workspace__diagram" style={self.diagram_style()}>
                         <Diagram2D
                             diagram={diagram.clone()}
                             on_select={self.on_select.clone()}
+                            highlight={highlight}
                         />
                     </div>
                 }
@@ -174,7 +180,9 @@ impl WorkspaceView {
         let mut buttons = Vec::new();
         buttons.push(self.view_slice_button(Boundary::Target.into()));
         buttons.extend(
-            (0..(slices * 2 + 1)).rev().map(|i| self.view_slice_button(Height::from_int(i).into())),
+            (0..(slices * 2 + 1))
+                .rev()
+                .map(|i| self.view_slice_button(Height::from_int(i).into())),
         );
         buttons.push(self.view_slice_button(Boundary::Source.into()));
 
@@ -219,6 +227,45 @@ impl WorkspaceView {
             >
                 <Icon name="arrow_right" />
             </div>
+        }
+    }
+
+    fn highlight_2d(&self) -> Option<Highlight2D> {
+        use Height::*;
+
+        let option = self.props.workspace.highlight.as_ref()?;
+
+        let info = self.props.signature.get(&option.generator).unwrap();
+        let needle: DiagramN = info.diagram.clone().try_into().unwrap();
+        let embedding = &option.embedding;
+
+        match &option.boundary_path {
+            None => {
+                let target: DiagramN = needle.target().try_into().unwrap();
+                Some(Highlight2D {
+                    from: [Regular(embedding[0]).into(), Regular(embedding[1]).into()],
+                    to: [
+                        Regular(embedding[0] + target.size()).into(),
+                        Regular(embedding[1] + needle.size()).into(),
+                    ],
+                })
+            }
+            Some(bp) if bp.depth() == 0 => {
+                let slice: DiagramN = needle
+                    .slice(bp.boundary().flip())
+                    .unwrap()
+                    .try_into()
+                    .unwrap();
+                let size = slice.size();
+                Some(Highlight2D {
+                    from: [Regular(embedding[0]).into(), bp.boundary().into()],
+                    to: [Regular(embedding[0] + size).into(), bp.boundary().into()],
+                })
+            }
+            Some(bp) => Some(Highlight2D {
+                from: [bp.boundary().into(), Boundary::Source.into()],
+                to: [bp.boundary().into(), Boundary::Target.into()],
+            }),
         }
     }
 

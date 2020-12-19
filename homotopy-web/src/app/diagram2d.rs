@@ -1,6 +1,6 @@
 use crate::app::signature_stylesheet::SignatureStylesheet;
 use crate::model::RenderStyle;
-use euclid::default::{Point2D, Size2D, Transform2D};
+use euclid::default::{Point2D, Size2D, Transform2D, Vector2D};
 use homotopy_core::complex::{make_complex, Simplex};
 use homotopy_core::projection::Generators;
 use homotopy_core::{Boundary, Diagram, DiagramN, Generator, Height, SliceIndex};
@@ -31,8 +31,8 @@ pub struct Props2D {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Highlight2D {
-    from: [SliceIndex; 2],
-    to: [SliceIndex; 2],
+    pub from: [SliceIndex; 2],
+    pub to: [SliceIndex; 2],
 }
 
 // TODO: Drag callbacks in props
@@ -166,6 +166,7 @@ impl Component for Diagram2D {
             })
         };
 
+        // TODO: Do not redraw diagram when highlight changes!
         log::info!("redrawing diagram");
 
         html! {
@@ -238,9 +239,11 @@ impl Diagram2D {
                 return Default::default();
             }
         };
+        
+        let padding = self.props.style.scale * 0.25;
 
-        let from = self.position(highlight.from);
-        let to = self.position(highlight.to);
+        let from = self.position(highlight.from) + Vector2D::new(padding, padding);
+        let to = self.position(highlight.to) - Vector2D::new(padding, padding);
 
         let path = format!(
             "M {from_x} {from_y} L {from_x} {to_y} L {to_x} {to_y} L {to_x} {from_y} Z",
