@@ -1,10 +1,14 @@
 use homotopy_core::attach::BoundaryPath;
 use homotopy_core::common::*;
 use homotopy_core::diagram::NewDiagramError;
+use homotopy_core::contraction::contract;
+use homotopy_core::expansion::expand;
 use homotopy_core::{Diagram, DiagramN};
 use im::{HashMap, Vector};
 use std::convert::*;
 use thiserror::Error;
+pub mod homotopy;
+use homotopy::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Action {
@@ -52,6 +56,8 @@ pub enum Action {
     Attach(AttachOption),
 
     HighlightAttachment(Option<AttachOption>),
+
+    Homotopy(Homotopy)
 }
 
 #[derive(Clone, PartialEq, Eq)]
@@ -127,6 +133,8 @@ impl State {
             Action::ToggleDrawer(drawer) => Ok(self.toggle_drawer(drawer)),
             Action::Attach(option) => Ok(self.attach(option)),
             Action::HighlightAttachment(option) => Ok(self.highlight_attachment(option)),
+            Action::Homotopy(Homotopy::Expand(homotopy)) => self.homotopy_expansion(homotopy),
+            Action::Homotopy(Homotopy::Contract(homotopy)) => self.homotopy_contraction(homotopy),
         }
     }
 
@@ -441,6 +449,79 @@ impl State {
         if let Some(workspace) = &mut self.workspace {
             workspace.highlight = option;
         }
+    }
+
+    fn homotopy_expansion(&mut self, homotopy: Expand) -> Result<(), ModelError> {
+        if let Some(workspace) = &mut self.workspace {
+            let diagram: DiagramN = workspace.diagram.clone().try_into().unwrap();
+
+            let location = {
+                let mut location: Vec<_> = workspace.path.iter().cloned().collect();
+                location.extend(homotopy.location);
+                location
+            };
+
+            let (boundary_path, interior_path) = BoundaryPath::split(&location);
+            
+            match boundary_path {
+                Some(boundary_path) => {
+                    // TODO: Show errors
+                    let result = expand(&diagram, boundary_path, &interior_path, homotopy.direction).unwrap();
+                    workspace.diagram = result.into();
+                    // TODO: Update path appropriately
+                }
+                None => {
+                    // TODO: Show errors
+                    let result = expand(&diagram.identity(), Boundary::Target.into(), &interior_path, homotopy.direction).unwrap();
+                    workspace.diagram = result.target();
+                    // TODO: Update path appropriately
+                }
+            }
+
+        }
+
+        Ok(())
+    }
+
+    fn homotopy_contraction(&mut self, homotopy: Contract) -> Result<(), ModelError> {
+        // TODO: Proper errors
+
+        if let Some(workspace) = &mut self.workspace {
+            let diagram: DiagramN = workspace.diagram.clone().try_into().unwrap();
+            let location = {
+                let mut location: Vec<_> = workspace.path.iter().cloned().collect();
+                location.extend(homotopy.location);
+                location
+            };
+            let (boundary_path, interior_path) = BoundaryPath::split(&location);
+
+            let height = match homotopy.direction {
+                Direction::Forward => homotopy.height,
+                Direction::Backward => {
+                    if homotopy.height == 0 {
+                        // TODO: Show an error
+                        panic!("Contracting off the edge of the diagram.");
+                    }
+
+                    homotopy.height - 1
+                }
+            };
+
+            match boundary_path {
+                Some(boundary_path) => {
+                    let result = contract(&diagram, boundary_path, &interior_path, height, homotopy.bias).unwrap();
+                    workspace.diagram = result.into();
+                    // TODO: Update path appropriately
+                },
+                None => {
+                    let result = contract(&diagram.identity(), Boundary::Target.into(), &interior_path, height, homotopy.bias).unwrap();
+                    workspace.diagram = result.target();
+                    // TODO: Update path appropriately?
+                }
+            }
+        }
+
+        Ok(())
     }
 }
 

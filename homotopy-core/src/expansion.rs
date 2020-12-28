@@ -1,6 +1,7 @@
 use crate::common::*;
 use crate::diagram::*;
 use crate::rewrite::*;
+use crate::attach::*;
 use std::cmp::Ordering;
 use thiserror::Error;
 
@@ -19,7 +20,33 @@ pub enum ExpansionError {
     SingleComponent,
 }
 
-pub fn expansion(
+pub fn expand(
+    diagram: &DiagramN,
+    boundary_path: BoundaryPath,
+    interior_path: &[Height],
+    direction: Direction,
+) -> Result<DiagramN, ExpansionError> {
+    attach(
+        diagram.clone(),
+        boundary_path.clone(),
+        |slice| {
+            let expand: Rewrite = expand_in_path(&slice, interior_path, direction)?;
+            let identity = Rewrite::identity(slice.dimension());
+            Ok(vec![match boundary_path.boundary() {
+                Boundary::Source => Cospan {
+                    forward: expand,
+                    backward: identity,
+                },
+                Boundary::Target => Cospan {
+                    forward: identity,
+                    backward: expand
+                }
+            }])
+        }
+    )
+}
+
+pub fn expand_in_path(
     diagram: &Diagram,
     location: &[Height],
     direction: Direction,
@@ -29,16 +56,16 @@ pub fn expansion(
     match location.split_first() {
         _ if diagram.dimension() < location.len() => Err(ExpansionError::OutOfBounds),
         None | Some((_, &[])) => Err(ExpansionError::LocationTooShort),
-        Some((Regular(h0), &[h1])) => expansion_base_regular(diagram, *h0, h1, direction),
+        Some((Regular(h0), &[h1])) => expand_base_regular(diagram, *h0, h1, direction),
         Some((Singular(h0), &[Singular(h1)])) => {
-            expansion_base_singular(diagram, *h0, h1, direction)
+            expand_base_singular(diagram, *h0, h1, direction)
         }
         Some((Regular(_), _)) => Err(ExpansionError::RegularSlice),
-        Some((Singular(height), rest)) => expansion_recursive(diagram, *height, rest, direction),
+        Some((Singular(height), rest)) => expand_recursive(diagram, *height, rest, direction),
     }
 }
 
-fn expansion_base_regular(
+fn expand_base_regular(
     _diagram: &Diagram,
     _h0: RegularHeight,
     _h1: Height,
@@ -48,7 +75,7 @@ fn expansion_base_regular(
     unimplemented!("smoothing")
 }
 
-fn expansion_base_singular(
+fn expand_base_singular(
     diagram: &Diagram,
     h0: SingularHeight,
     h1: SingularHeight,
@@ -255,7 +282,7 @@ fn expand_cospan(
     })
 }
 
-fn expansion_recursive(
+fn expand_recursive(
     diagram: &Diagram,
     height: SingularHeight,
     rest: &[Height],
@@ -270,7 +297,7 @@ fn expansion_recursive(
         .slice(Height::Singular(height))
         .ok_or(ExpansionError::OutOfBounds)?;
 
-    let recursive = expansion(&slice, rest, direction)?;
+    let recursive = expand_in_path(&slice, rest, direction)?;
 
     // TODO: Try to perform factorisation, else insert bubble
 

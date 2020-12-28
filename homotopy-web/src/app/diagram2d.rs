@@ -1,21 +1,27 @@
 use crate::app::signature_stylesheet::SignatureStylesheet;
 use crate::model::RenderStyle;
 use euclid::default::{Point2D, Size2D, Transform2D, Vector2D};
+use euclid::Angle;
 use homotopy_core::complex::{make_complex, Simplex};
 use homotopy_core::projection::Generators;
 use homotopy_core::{Boundary, Diagram, DiagramN, Generator, Height, SliceIndex};
+use homotopy_core::common::Direction;
 use homotopy_graphics::geometry;
 use homotopy_graphics::geometry::path_to_svg;
 use homotopy_graphics::graphic2d::*;
 use homotopy_graphics::layout2d::Layout;
 use web_sys::Element;
 use yew::prelude::*;
+use std::f32::consts::PI;
+use crate::model::homotopy::{Homotopy, Contract, Expand};
+use homotopy_core::contraction::Bias;
 
 pub struct Diagram2D {
     props: Props2D,
     diagram: PreparedDiagram,
     link: ComponentLink<Self>,
     node_ref: NodeRef,
+    drag_start: Option<Point2D<f32>>,
 }
 
 #[derive(Clone, PartialEq, Properties)]
@@ -25,6 +31,8 @@ pub struct Props2D {
     pub style: RenderStyle,
     #[prop_or_default]
     pub on_select: Callback<Vec<Vec<SliceIndex>>>,
+    #[prop_or_default]
+    pub on_homotopy: Callback<Homotopy>,
     #[prop_or_default]
     pub highlight: Option<Highlight2D>,
 }
@@ -39,8 +47,9 @@ pub struct Highlight2D {
 // TODO: Highlights in props
 
 pub enum Message2D {
-    /// The diagram has been clicked at a point in screen coordinates.
-    OnClick(Point2D<f32>),
+    OnMouseDown(Point2D<f32>),
+    OnMouseMove(Point2D<f32>),
+    OnMouseUp,
 }
 
 /// The computed properties of a diagram that are potentially expensive to compute but can be
@@ -109,30 +118,63 @@ impl Component for Diagram2D {
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
         let diagram = PreparedDiagram::new(props.diagram.clone(), props.style);
         let node_ref = NodeRef::default();
+        let drag_start = Default::default();
         Diagram2D {
             props,
             link,
             node_ref,
             diagram,
+            drag_start,
         }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
-            Message2D::OnClick(point) => {
-                let point = self.transform_screen_to_image().transform_point(point);
-                let result = self
-                    .diagram
-                    .actions
-                    .iter()
-                    .find(|(_, shape)| shape.contains_point(point, 0.01))
-                    .map(|(simplex, _)| simplex.clone());
-                match result {
-                    Some(simplex) => self
-                        .props
-                        .on_select
-                        .emit(simplex.into_iter().map(|(x, y)| vec![y, x]).collect()),
-                    None => {}
+            Message2D::OnMouseDown(point) => {
+                self.drag_start = Some(point);
+                false
+            }
+            Message2D::OnMouseMove(point) => {
+                if let Some(start) = self.drag_start {
+                    let diff: Vector2D<f32> = point - start;
+                    let distance = self.props.style.scale * 0.5;
+
+                    if diff.square_length() < distance * distance {
+                        return false;
+                    }
+
+                    let angle = diff.angle_from_x_axis();
+                    self.drag_start = None;
+
+                    let simplex = match self.simplex_at(start) {
+                        Some(simplex) => simplex,
+                        None => return false,
+                    };
+
+                    let homotopy = drag_to_homotopy(angle, simplex, self.props.diagram.clone());
+
+                    if let Some(homotopy) = homotopy {
+                        log::info!("Homotopy: {:?}", homotopy);
+                        self.props.on_homotopy.emit(homotopy);
+                    } else {
+                        log::info!("No homotopy");
+                    }
+                }
+                false
+            }
+            Message2D::OnMouseUp => {
+                // If the mouse button is released without having travelled a distance great enough
+                // to indicate a drag, it should be interpreted as a click.  This is preferrable to
+                // a separate onclick handler since drags aren't interpreted as clicks anymore.
+                if let Some(point) = self.drag_start {
+                    self.drag_start = None;
+                    match self.simplex_at(point) {
+                        Some(simplex) => self
+                            .props
+                            .on_select
+                            .emit(simplex.into_iter().map(|(x, y)| vec![y, x]).collect()),
+                        None => {}
+                    }
                 }
                 false
             }
@@ -155,18 +197,38 @@ impl Component for Diagram2D {
     fn view(&self) -> Html {
         let size = self.diagram.dimensions;
 
-        let onclick = {
+        let on_mouse_down = {
             let link = self.link.clone();
             Callback::from(move |e: MouseEvent| {
-                if !e.ctrl_key() {
+                if !e.alt_key() {
                     let x = e.client_x() as f32;
                     let y = e.client_y() as f32;
-                    link.send_message(Message2D::OnClick((x, y).into()));
+                    link.send_message(Message2D::OnMouseDown((x, y).into()));
                 }
             })
         };
 
+        let on_mouse_move = {
+            let link = self.link.clone();
+            Callback::from(move |e: MouseEvent| {
+                if !e.alt_key() {
+                    let x = e.client_x() as f32;
+                    let y = e.client_y() as f32;
+                    link.send_message(Message2D::OnMouseMove((x, y).into()));
+                }
+            })
+        };
+
+        let on_mouse_up = {
+            let link = self.link.clone();
+            Callback::from(move |_e: MouseEvent| {
+                link.send_message(Message2D::OnMouseUp);
+            })
+        };
+
         // TODO: Do not redraw diagram when highlight changes!
+        // TODO: Do not redraw diagram for drags.
+
         log::info!("redrawing diagram");
 
         html! {
@@ -174,7 +236,9 @@ impl Component for Diagram2D {
                 xmlns={"http://www.w3.org/2000/svg"}
                 width={size.width}
                 height={size.height}
-                onclick={onclick}
+                onmousedown={on_mouse_down}
+                onmouseup={on_mouse_up}
+                onmousemove={on_mouse_move}
                 ref={self.node_ref.clone()}
             >
                 {self.diagram.graphic.iter().map(|e| self.view_element(e)).collect::<Html>()}
@@ -239,7 +303,7 @@ impl Diagram2D {
                 return Default::default();
             }
         };
-        
+
         let padding = self.props.style.scale * 0.25;
 
         let from = self.position(highlight.from) + Vector2D::new(padding, padding);
@@ -265,6 +329,15 @@ impl Diagram2D {
         let point = self.diagram.layout.get(point[0], point[1]).unwrap();
         let point = self.diagram.transform.transform_point(point);
         point
+    }
+
+    fn simplex_at(&self, point: Point2D<f32>) -> Option<Simplex> {
+        let point = self.transform_screen_to_image().transform_point(point);
+        self.diagram
+            .actions
+            .iter()
+            .find(|(_, shape)| shape.contains_point(point, 0.01))
+            .map(|(simplex, _)| simplex.clone())
     }
 }
 
@@ -430,5 +503,71 @@ impl Diagram1D {
                 onclick={onclick}
             />
         }
+    }
+}
+
+fn drag_to_homotopy(angle: Angle<f32>, simplex: Simplex, diagram: DiagramN) -> Option<Homotopy> {
+    use SliceIndex::*;
+    use Height::*;
+
+    let abs_radians = angle.radians.abs();
+    let horizontal = abs_radians < PI / 4.0 || abs_radians > (3.0 * PI) / 4.0;
+    let up = angle.radians >= 0.0;
+
+    // TODO: Find correct drag point in the presence of boundaries
+    let point = simplex.first();
+    let y = match point.1 {
+        Interior(y) => y,
+        Boundary(_) => return None,
+    };
+    let x = match point.0 {
+        Interior(y) => y,
+        Boundary(_) => return None,
+    };
+
+    // TODO: Horizontal drags. This requires depths.
+    
+    // Decide if the drag is an expansion or a contraction
+    let expansion = match y {
+        Regular(_) => true,
+        Singular(height) => {
+            let cospan = &diagram.cospans()[height];
+            // TODO: This should probably be a method on Cospan.
+            let mut targets: Vec<_> = cospan.forward.to_n().unwrap().targets();
+            targets.extend(cospan.backward.to_n().unwrap().targets());
+            targets.sort();
+            targets.dedup();
+            targets.len() > 1
+        }
+    };
+
+    let direction = if angle.radians <= 0.0 {
+        Direction::Forward
+    } else {
+        Direction::Backward
+    };
+
+    if expansion {
+        Some(Homotopy::Expand(Expand {
+            location: vec![y.into(), x.into()],
+            direction
+        }))
+    } else {
+        let bias = Some(match abs_radians < PI / 2.0 {
+            true => Bias::Higher,
+            false => Bias::Lower
+        });
+
+        let height = match y {
+            Regular(_) => unreachable!(),
+            Singular(height) => height,
+        };
+
+        Some(Homotopy::Contract(Contract {
+            bias,
+            location: vec![],
+            height,
+            direction
+        }))
     }
 }

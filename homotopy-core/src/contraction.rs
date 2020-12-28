@@ -21,7 +21,7 @@ struct Component(usize);
 
 type BiasValue = usize;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Bias {
     Higher,
     Lower,

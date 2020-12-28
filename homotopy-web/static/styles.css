@@ -9,9 +9,9 @@
   --tooltip-foreground: var(--sidebar-foreground);
 
   --drawer-width: 250px;
-  --drawer-background: #ffffff;
+  --drawer-background: #f9f9f9;
   --drawer-foreground: #575f66;
-  --drawer-border: #8A919966;
+  --drawer-border: #e1e1e1;
   --drawer-selected: #d1e4f4;
 
   --path-background: #ffffff;
@@ -229,6 +229,7 @@ body, html {
 .drawer__header {
   height: var(--sidebar-width);
   min-height: var(--sidebar-width);
+
   padding: var(--space-0);
   border-bottom: 1px solid var(--drawer-border);
   display: flex;

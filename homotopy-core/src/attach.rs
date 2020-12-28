@@ -45,6 +45,12 @@ impl BoundaryPath {
     }
 }
 
+impl From<Boundary> for BoundaryPath {
+    fn from(boundary: Boundary) -> Self {
+        BoundaryPath(boundary, 0)
+    }
+}
+
 pub fn attach<F, E>(diagram: DiagramN, path: BoundaryPath, build: F) -> Result<DiagramN, E>
 where
     F: FnOnce(Diagram) -> Result<Vec<Cospan>, E>,

@@ -37,8 +37,8 @@ impl PanZoom {
         let node_ref = NodeRef::default();
 
         let on_mouse_down = Callback::from(closure!(clone callback, |e: MouseEvent| {
-            if e.ctrl_key() {
-                e.prevent_default();
+            e.prevent_default();
+            if e.alt_key() {
                 let x = e.client_x() as f64;
                 let y = e.client_y() as f64;
                 callback.emit(Message::MouseDown((x, y).into()));
@@ -58,7 +58,7 @@ impl PanZoom {
         }));
 
         let on_wheel = Callback::from(closure!(clone callback, clone node_ref, |e: WheelEvent| {
-            if e.ctrl_key() {
+            if e.alt_key() {
                 e.prevent_default();
                 let rect = bounding_rect(&node_ref);
                 let x = e.client_x() as f64 - rect.left();

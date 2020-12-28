@@ -2,6 +2,7 @@ use crate::app::diagram2d::{Diagram1D, Diagram2D, Highlight2D};
 use crate::app::icon::Icon;
 use crate::app::panzoom;
 use crate::model;
+use crate::model::homotopy::Homotopy;
 use crate::model::GeneratorInfo;
 use closure::closure;
 use homotopy_core::common::*;
@@ -26,6 +27,7 @@ pub struct WorkspaceView {
     props: Props,
     panzoom: panzoom::PanZoom,
     on_select: Callback<Vec<Vec<SliceIndex>>>,
+    on_homotopy: Callback<Homotopy>,
 }
 
 impl Component for WorkspaceView {
@@ -36,10 +38,12 @@ impl Component for WorkspaceView {
         let panzoom_callback = link.callback(Message::PanZoom);
         let panzoom = panzoom::PanZoom::new(NodeRef::default(), panzoom_callback);
         let on_select = props.dispatch.reform(model::Action::SelectPoints);
+        let on_homotopy = props.dispatch.reform(model::Action::Homotopy);
         WorkspaceView {
             props,
             panzoom,
             on_select,
+            on_homotopy
         }
     }
 
@@ -161,6 +165,7 @@ impl WorkspaceView {
                         <Diagram2D
                             diagram={diagram.clone()}
                             on_select={self.on_select.clone()}
+                            on_homotopy={self.on_homotopy.clone()}
                             highlight={highlight}
                         />
                     </div>
