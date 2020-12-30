@@ -204,7 +204,7 @@ impl DiagramN {
             diagram
                 .cospans
                 .splice(start..stop, vec![cone.target.clone()]);
-            offset += cone.len() as isize - 1;
+            offset -= cone.len() as isize - 1;
         }
 
         DiagramN(self.0)
@@ -218,7 +218,7 @@ impl DiagramN {
             let start = (cone.index as isize + offset) as usize;
             let stop = (cone.index as isize + 1 + offset) as usize;
             diagram.cospans.splice(start..stop, cone.source.clone());
-            offset -= cone.len() as isize - 1;
+            offset += cone.len() as isize - 1;
         }
 
         DiagramN(self.0)

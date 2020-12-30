@@ -38,6 +38,7 @@ pub fn contract(
     // logic for attaching diagrams.
     // TODO: Think of a better API for this.
     // TODO: Replace Option with Result and proper errors
+    // TODO: Perform type checking
 
     if boundary_path.1 >= diagram.dimension() {
         return None;

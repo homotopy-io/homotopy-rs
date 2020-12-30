@@ -329,7 +329,7 @@ impl RewriteN {
                     } else if index < 0 {
                         cones.push(f_cone.clone());
                         g_cones.push(g_cone);
-                        offset += 1 - f_cone.len() as isize;
+                        offset -= 1 - f_cone.len() as isize;
                     } else {
                         let index = index as usize;
 
