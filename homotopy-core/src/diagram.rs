@@ -212,13 +212,11 @@ impl DiagramN {
 
     pub(crate) fn rewrite_backward(mut self, rewrite: &RewriteN) -> DiagramN {
         let diagram: &mut DiagramInternal = Rc::make_mut(&mut self.0);
-        let mut offset: isize = 0;
 
         for cone in rewrite.cones() {
-            let start = (cone.index as isize + offset) as usize;
-            let stop = (cone.index as isize + 1 + offset) as usize;
+            let start = cone.index;
+            let stop = cone.index + 1;
             diagram.cospans.splice(start..stop, cone.source.clone());
-            offset += cone.len() as isize - 1;
         }
 
         DiagramN(self.0)

@@ -1,7 +1,7 @@
+use crate::attach::*;
 use crate::common::*;
 use crate::diagram::*;
 use crate::rewrite::*;
-use crate::attach::*;
 use std::cmp::Ordering;
 use thiserror::Error;
 
@@ -20,7 +20,7 @@ pub enum ExpansionError {
     SingleComponent,
 
     #[error("smoothing is not yet implemented")]
-    SmoothingNotImplemented
+    SmoothingNotImplemented,
 }
 
 pub fn expand(
@@ -29,24 +29,20 @@ pub fn expand(
     interior_path: &[Height],
     direction: Direction,
 ) -> Result<DiagramN, ExpansionError> {
-    attach(
-        diagram.clone(),
-        boundary_path.clone(),
-        |slice| {
-            let expand: Rewrite = expand_in_path(&slice, interior_path, direction)?;
-            let identity = Rewrite::identity(slice.dimension());
-            Ok(vec![match boundary_path.boundary() {
-                Boundary::Source => Cospan {
-                    forward: expand,
-                    backward: identity,
-                },
-                Boundary::Target => Cospan {
-                    forward: identity,
-                    backward: expand
-                }
-            }])
-        }
-    )
+    attach(diagram.clone(), boundary_path.clone(), |slice| {
+        let expand: Rewrite = expand_in_path(&slice, interior_path, direction)?;
+        let identity = Rewrite::identity(slice.dimension());
+        Ok(vec![match boundary_path.boundary() {
+            Boundary::Source => Cospan {
+                forward: expand,
+                backward: identity,
+            },
+            Boundary::Target => Cospan {
+                forward: identity,
+                backward: expand,
+            },
+        }])
+    })
 }
 
 pub fn expand_in_path(
@@ -60,9 +56,7 @@ pub fn expand_in_path(
         _ if diagram.dimension() < location.len() => Err(ExpansionError::OutOfBounds),
         None | Some((_, &[])) => Err(ExpansionError::LocationTooShort),
         Some((Regular(h0), &[h1])) => expand_base_regular(diagram, *h0, h1, direction),
-        Some((Singular(h0), &[Singular(h1)])) => {
-            expand_base_singular(diagram, *h0, h1, direction)
-        }
+        Some((Singular(h0), &[Singular(h1)])) => expand_base_singular(diagram, *h0, h1, direction),
         Some((Regular(_), _)) => Err(ExpansionError::RegularSlice),
         Some((Singular(height), rest)) => expand_recursive(diagram, *height, rest, direction),
     }
@@ -239,7 +233,7 @@ fn expand_cospan(
         None => RewriteN::identity(forward.dimension()),
         Some(index) => {
             let mut cone = forward.cones()[index].clone();
-            cone.index = (index as isize - forward_delta + backward_delta) as usize;
+            cone.index = (cone.index as isize - forward_delta + backward_delta) as usize;
             RewriteN::new(forward.dimension(), vec![cone])
         }
     };
@@ -328,4 +322,100 @@ fn expand_recursive(
         }],
     )
     .into())
+}
+
+mod test {
+    use super::*;
+    use crate::contraction::contract;
+    use std::convert::*;
+
+    /// Test if contraction followed by expansion is the identity on a diagram consisting of two
+    /// paralell multiplications.
+    #[test]
+    fn multiplication() {
+        let x = Generator::new(0, 0);
+        let f = Generator::new(1, 1);
+        let m = Generator::new(2, 2);
+
+        let fd = DiagramN::new(f, x, x).unwrap();
+        let ffd = fd.attach(fd.clone(), Boundary::Target, &[]).unwrap();
+        let md = DiagramN::new(m, ffd.clone(), fd.clone()).unwrap();
+
+        // Construct diagram with two multiplications.
+        let original = {
+            let original = md.clone();
+            let original = original.attach(fd.clone(), Boundary::Target, &[]).unwrap();
+            let original = original.attach(fd.clone(), Boundary::Target, &[]).unwrap();
+            let original = original.attach(md.clone(), Boundary::Target, &[1]).unwrap();
+            original
+        };
+
+        // Contract the multiplications to the same height.
+        let contracted: DiagramN = {
+            let contracted = original.identity();
+            let contracted = contracted.clone();
+            let contracted = contract(&contracted, Boundary::Target.into(), &[], 0, None).unwrap();
+            contracted.target().try_into().unwrap()
+        };
+
+        // Expand upwards.
+        let expanded: DiagramN = {
+            let expanded = contracted.identity();
+            let expanded = expand(
+                &expanded,
+                Boundary::Target.into(),
+                &[Height::Singular(0), Height::Singular(1)],
+                Direction::Forward,
+            ).unwrap();
+            expanded.target().try_into().unwrap()
+        };
+
+        // We should be back where we started before the contraction.
+        assert_eq!(original, expanded);
+    }
+
+    /// Test if contraction followed by expansion is the identity on a diagram consisting of two
+    /// paralell comultiplications.
+    #[test]
+    fn comultiplication() {
+        let x = Generator::new(0, 0);
+        let f = Generator::new(1, 1);
+        let m = Generator::new(2, 2);
+
+        let fd = DiagramN::new(f, x, x).unwrap();
+        let ffd = fd.attach(fd.clone(), Boundary::Target, &[]).unwrap();
+        let md = DiagramN::new(m, fd.clone(), ffd.clone()).unwrap();
+
+        // Construct diagram with two comultiplications.
+        let original = {
+            let original = md.clone();
+            let original = original.attach(fd.clone(), Boundary::Target, &[]).unwrap();
+            let original = original.attach(fd.clone(), Boundary::Target, &[]).unwrap();
+            let original = original.attach(md.clone(), Boundary::Source, &[1]).unwrap();
+            original
+        };
+
+        // Contract the multiplications to the same height.
+        let contracted: DiagramN = {
+            let contracted = original.identity();
+            let contracted = contracted.clone();
+            let contracted = contract(&contracted, Boundary::Target.into(), &[], 0, None).unwrap();
+            contracted.target().try_into().unwrap()
+        };
+
+        // Expand upwards.
+        let expanded: DiagramN = {
+            let expanded = contracted.identity();
+            let expanded = expand(
+                &expanded,
+                Boundary::Target.into(),
+                &[Height::Singular(0), Height::Singular(1)],
+                Direction::Backward,
+            ).unwrap();
+            expanded.target().try_into().unwrap()
+        };
+
+        // We should be back where we started before the contraction.
+        assert_eq!(original, expanded);
+    }
 }
