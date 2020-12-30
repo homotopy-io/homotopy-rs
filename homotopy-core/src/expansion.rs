@@ -18,6 +18,9 @@ pub enum ExpansionError {
 
     #[error("can't expand a single component")]
     SingleComponent,
+
+    #[error("smoothing is not yet implemented")]
+    SmoothingNotImplemented
 }
 
 pub fn expand(
@@ -72,7 +75,7 @@ fn expand_base_regular(
     _direction: Direction,
 ) -> Result<Rewrite, ExpansionError> {
     // TODO: Implement smoothing
-    unimplemented!("smoothing")
+    Err(ExpansionError::SmoothingNotImplemented)
 }
 
 fn expand_base_singular(

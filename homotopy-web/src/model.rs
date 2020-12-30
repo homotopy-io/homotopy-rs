@@ -1,8 +1,8 @@
 use homotopy_core::attach::BoundaryPath;
 use homotopy_core::common::*;
-use homotopy_core::diagram::NewDiagramError;
 use homotopy_core::contraction::contract;
-use homotopy_core::expansion::expand;
+use homotopy_core::diagram::NewDiagramError;
+use homotopy_core::expansion::{expand, ExpansionError};
 use homotopy_core::{Diagram, DiagramN};
 use im::{HashMap, Vector};
 use std::convert::*;
@@ -57,7 +57,7 @@ pub enum Action {
 
     HighlightAttachment(Option<AttachOption>),
 
-    Homotopy(Homotopy)
+    Homotopy(Homotopy),
 }
 
 #[derive(Clone, PartialEq, Eq)]
@@ -114,6 +114,10 @@ pub enum ModelError {
     UnknownGeneratorSelected,
     #[error("tried to descend into an invalid diagram slice")]
     InvalidSlice,
+    #[error("error while performing expansion")]
+    ExpansionError(#[from] ExpansionError),
+    #[error("error while performing contraction")]
+    ContractionError,
 }
 
 impl State {
@@ -224,7 +228,11 @@ impl State {
         match &mut self.workspace {
             Some(workspace) => {
                 workspace.diagram = workspace.diagram.identity().into();
-                // TODO: Figure out what to do with the path
+
+                // TODO: Figure out what to do with the path in all cases
+                if workspace.diagram.dimension() >= 2 {
+                    workspace.path.push_back(Boundary::Target.into());
+                }
             }
             None => {}
         }
@@ -462,22 +470,29 @@ impl State {
             };
 
             let (boundary_path, interior_path) = BoundaryPath::split(&location);
-            
+
             match boundary_path {
                 Some(boundary_path) => {
                     // TODO: Show errors
-                    let result = expand(&diagram, boundary_path, &interior_path, homotopy.direction).unwrap();
+                    let result =
+                        expand(&diagram, boundary_path, &interior_path, homotopy.direction)
+                            .map_err(ModelError::ExpansionError)?;
                     workspace.diagram = result.into();
                     // TODO: Update path appropriately
                 }
                 None => {
                     // TODO: Show errors
-                    let result = expand(&diagram.identity(), Boundary::Target.into(), &interior_path, homotopy.direction).unwrap();
+                    let result = expand(
+                        &diagram.identity(),
+                        Boundary::Target.into(),
+                        &interior_path,
+                        homotopy.direction,
+                    )
+                    .map_err(ModelError::ExpansionError)?;
                     workspace.diagram = result.target();
                     // TODO: Update path appropriately
                 }
             }
-
         }
 
         Ok(())
@@ -509,12 +524,26 @@ impl State {
 
             match boundary_path {
                 Some(boundary_path) => {
-                    let result = contract(&diagram, boundary_path, &interior_path, height, homotopy.bias).unwrap();
+                    let result = contract(
+                        &diagram,
+                        boundary_path,
+                        &interior_path,
+                        height,
+                        homotopy.bias,
+                    )
+                    .ok_or(ModelError::ContractionError)?;
                     workspace.diagram = result.into();
                     // TODO: Update path appropriately
-                },
+                }
                 None => {
-                    let result = contract(&diagram.identity(), Boundary::Target.into(), &interior_path, height, homotopy.bias).unwrap();
+                    let result = contract(
+                        &diagram.identity(),
+                        Boundary::Target.into(),
+                        &interior_path,
+                        height,
+                        homotopy.bias,
+                    )
+                    .ok_or(ModelError::ContractionError)?;
                     workspace.diagram = result.target();
                     // TODO: Update path appropriately?
                 }
