@@ -5,6 +5,7 @@ use homotopy_core::diagram::NewDiagramError;
 use homotopy_core::expansion::{expand, ExpansionError};
 use homotopy_core::{Diagram, DiagramN};
 use im::{HashMap, Vector};
+use std::collections::BTreeSet;
 use std::convert::*;
 use thiserror::Error;
 pub mod homotopy;
@@ -319,51 +320,24 @@ impl State {
             }
         };
 
-        fn path_depth(boundary_path: &Option<BoundaryPath>) -> usize {
-            match boundary_path {
-                Some(boundary_path) => boundary_path.depth() + 1,
-                None => 0,
-            }
-        }
+        let mut matches: BTreeSet<AttachOption> = BTreeSet::new();
 
-        let (boundary_path, point) = {
-            // TODO: It must be possible to do this more cleanly.
-            let candidates: Vec<_> = selected
-                .into_iter()
-                .map(|p| {
-                    let mut point: Vec<_> = workspace.path.iter().cloned().collect();
-                    point.extend(p);
-                    BoundaryPath::split(&point)
-                })
-                .collect();
+        for point in selected.into_iter() {
+            let (boundary_path, point) = BoundaryPath::split(&point);
 
-            let max_depth = candidates
-                .iter()
-                .map(|(bp, _)| path_depth(bp))
-                .max()
-                .unwrap();
-            candidates
-                .into_iter()
-                .find(|(bp, _)| path_depth(bp) == max_depth)
-                .unwrap()
-        };
+            let haystack = match &boundary_path {
+                None => workspace.diagram.clone(),
+                Some(boundary_path) => DiagramN::try_from(workspace.diagram.clone())
+                    .ok()
+                    .map(|diagram| boundary_path.follow(&diagram))
+                    .flatten()
+                    .unwrap(),
+            };
 
-        let haystack = match &boundary_path {
-            None => workspace.diagram.clone(),
-            Some(boundary_path) => DiagramN::try_from(workspace.diagram.clone())
-                .ok()
-                .map(|diagram| boundary_path.follow(&diagram))
-                .flatten()
-                .unwrap(),
-        };
-
-        let boundary: Boundary = boundary_path
-            .clone()
-            .map(|bp| bp.boundary())
-            .unwrap_or(Boundary::Target);
-
-        let matches: Vec<AttachOption> = {
-            let mut matches = Vec::new();
+            let boundary: Boundary = boundary_path
+                .clone()
+                .map(|bp| bp.boundary())
+                .unwrap_or(Boundary::Target);
 
             for (generator, info) in self.signature.iter() {
                 if info.diagram.dimension() == haystack.dimension() + 1 {
@@ -384,9 +358,7 @@ impl State {
                     );
                 }
             }
-
-            matches
-        };
+        }
 
         if matches.len() == 1 {
             self.attach(matches.into_iter().next().unwrap());
