@@ -427,7 +427,7 @@ impl RewriteN {
             self.singular_image(index - 1) + 1
         };
 
-        let right = self.singular_image(index) + 1;
+        let right = self.singular_image(index);
         left..right
     }
 }
