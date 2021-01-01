@@ -1,5 +1,5 @@
 use crate::common::*;
-use crate::diagram::{DiagramN};
+use crate::diagram::DiagramN;
 use serde::Serialize;
 use std::convert::*;
 
@@ -40,5 +40,55 @@ impl Generators {
             SliceIndex::Boundary(Boundary::Target) => slice.last().cloned(),
             SliceIndex::Interior(height) => slice.get(height.to_int()).cloned(),
         }
+    }
+}
+
+pub struct Depths(Vec<Vec<Option<usize>>>);
+
+impl Depths {
+    pub fn new(diagram: &DiagramN) -> Self {
+        if diagram.dimension() < 2 {
+            // TODO: Make this into an error.
+            panic!();
+        }
+
+        Depths(
+            diagram
+                .slices()
+                .map(|slice| {
+                    let slice: DiagramN = slice.try_into().unwrap();
+                    (0..slice.size())
+                        .map(|height| depth(&slice, height))
+                        .collect()
+                })
+                .collect(),
+        )
+    }
+
+    pub fn get(&self, x: SingularHeight, y: SliceIndex) -> Option<usize> {
+        let slice = match y {
+            SliceIndex::Boundary(Boundary::Source) => self.0.first()?,
+            SliceIndex::Boundary(Boundary::Target) => self.0.last()?,
+            SliceIndex::Interior(height) => self.0.get(height.to_int())?,
+        };
+
+        slice.get(x).cloned().flatten()
+    }
+}
+
+fn depth(diagram: &DiagramN, height: usize) -> Option<usize> {
+    if diagram.dimension() < 2 {
+        return None;
+    }
+
+    let cospan = diagram.cospans().get(height)?;
+    let forward = cospan.forward.to_n().unwrap().targets().first().cloned();
+    let backward = cospan.backward.to_n().unwrap().targets().first().cloned();
+
+    match (forward, backward) {
+        (Some(forward), Some(backward)) => Some(std::cmp::min(forward, backward)),
+        (Some(forward), None) => Some(forward),
+        (None, Some(backward)) => Some(backward),
+        (None, None) => None,
     }
 }

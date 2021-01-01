@@ -1,20 +1,21 @@
 use crate::app::signature_stylesheet::SignatureStylesheet;
+use crate::model::homotopy::{Contract, Expand, Homotopy};
 use crate::model::RenderStyle;
 use euclid::default::{Point2D, Size2D, Transform2D, Vector2D};
 use euclid::Angle;
-use homotopy_core::complex::{make_complex, Simplex};
-use homotopy_core::projection::Generators;
-use homotopy_core::{Boundary, Diagram, DiagramN, Generator, Height, SliceIndex};
 use homotopy_core::common::Direction;
+use homotopy_core::complex::{make_complex, Simplex};
+use homotopy_core::contraction::Bias;
+use homotopy_core::projection::{Depths, Generators};
+use homotopy_core::{Boundary, Diagram, DiagramN, Generator, Height, SliceIndex};
 use homotopy_graphics::geometry;
 use homotopy_graphics::geometry::path_to_svg;
 use homotopy_graphics::graphic2d::*;
 use homotopy_graphics::layout2d::Layout;
+use std::convert::*;
+use std::f32::consts::PI;
 use web_sys::Element;
 use yew::prelude::*;
-use std::f32::consts::PI;
-use crate::model::homotopy::{Homotopy, Contract, Expand};
-use homotopy_core::contraction::Bias;
 
 pub struct Diagram2D {
     props: Props2D,
@@ -57,6 +58,7 @@ pub enum Message2D {
 struct PreparedDiagram {
     graphic: Vec<GraphicElement>,
     actions: Vec<(Simplex, geometry::Shape)>,
+    depths: Depths,
     layout: Layout,
 
     /// The width and height of the diagram image in pixels.
@@ -101,8 +103,11 @@ impl PreparedDiagram {
             })
             .collect();
 
+        let depths = Depths::new(&diagram);
+
         PreparedDiagram {
             layout,
+            depths,
             graphic,
             actions,
             dimensions,
@@ -151,7 +156,12 @@ impl Component for Diagram2D {
                         None => return false,
                     };
 
-                    let homotopy = drag_to_homotopy(angle, simplex, self.props.diagram.clone());
+                    let homotopy = drag_to_homotopy(
+                        angle,
+                        simplex,
+                        self.props.diagram.clone(),
+                        &self.diagram.depths,
+                    );
 
                     if let Some(homotopy) = homotopy {
                         log::info!("Homotopy: {:?}", homotopy);
@@ -506,27 +516,45 @@ impl Diagram1D {
     }
 }
 
-fn drag_to_homotopy(angle: Angle<f32>, simplex: Simplex, diagram: DiagramN) -> Option<Homotopy> {
-    use SliceIndex::*;
+fn drag_to_homotopy(
+    angle: Angle<f32>,
+    simplex: Simplex,
+    diagram: DiagramN,
+    depths: &Depths,
+) -> Option<Homotopy> {
     use Height::*;
+    use SliceIndex::*;
 
     let abs_radians = angle.radians.abs();
     let horizontal = abs_radians < PI / 4.0 || abs_radians > (3.0 * PI) / 4.0;
-    let up = angle.radians >= 0.0;
 
     // TODO: Find correct drag point in the presence of boundaries
     let point = simplex.first();
-    let y = match point.1 {
-        Interior(y) => y,
-        Boundary(_) => return None,
+
+    // Handle horizontal and vertical drags
+    let (prefix, y, x, diagram) = if horizontal {
+        let depth = match point.0 {
+            Interior(Singular(x)) => Height::Singular(depths.get(x, point.1)?),
+            _ => return None,
+        };
+
+        let diagram: DiagramN = diagram.slice(point.1)?.try_into().ok()?;
+        (Some(point.1), point.0, depth.into(), diagram)
+    } else {
+        (None, point.1, point.0, diagram)
     };
-    let x = match point.0 {
+
+    // TODO: Are there valid homotopies on boundary coordinates?
+    let y = match y {
         Interior(y) => y,
         Boundary(_) => return None,
     };
 
-    // TODO: Horizontal drags. This requires depths.
-    
+    let x = match x {
+        Interior(y) => y,
+        Boundary(_) => return None,
+    };
+
     // Decide if the drag is an expansion or a contraction
     let expansion = match y {
         Regular(_) => true,
@@ -548,14 +576,18 @@ fn drag_to_homotopy(angle: Angle<f32>, simplex: Simplex, diagram: DiagramN) -> O
     };
 
     if expansion {
+        let mut location: Vec<_> = prefix.into_iter().collect();
+        location.push(y.into());
+        location.push(x.into());
+
         Some(Homotopy::Expand(Expand {
-            location: vec![y.into(), x.into()],
-            direction
+            location,
+            direction,
         }))
     } else {
         let bias = Some(match abs_radians < PI / 2.0 {
             true => Bias::Higher,
-            false => Bias::Lower
+            false => Bias::Lower,
         });
 
         let height = match y {
@@ -565,9 +597,9 @@ fn drag_to_homotopy(angle: Angle<f32>, simplex: Simplex, diagram: DiagramN) -> O
 
         Some(Homotopy::Contract(Contract {
             bias,
-            location: vec![],
+            location: prefix.into_iter().collect(),
             height,
-            direction
+            direction,
         }))
     }
 }
