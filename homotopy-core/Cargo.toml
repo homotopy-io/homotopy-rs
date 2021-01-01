@@ -9,3 +9,4 @@ petgraph = "*"
 thiserror = "*"
 serde = { features = ["derive"], version = "1.0" }
 serde_json = "1.0"
+log = "*"

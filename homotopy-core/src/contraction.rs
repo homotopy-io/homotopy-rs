@@ -10,7 +10,7 @@ use std::collections::HashMap;
 use std::convert::*;
 use std::hash::Hash;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 struct Span(Rewrite, Diagram, Rewrite);
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy, Hash, PartialOrd, Ord)]
@@ -243,7 +243,7 @@ fn colimit_recursive(
     spans: &[(usize, Span, usize)],
 ) -> Option<Vec<Rewrite>> {
     use Height::*;
-    let mut span_slices: HashMap<(Node, Node), Span> = HashMap::new();
+    let mut span_slices: HashMap<(Node, Node), Vec<Span>> = HashMap::new();
     let mut diagram_slices: HashMap<Node, Diagram> = HashMap::new();
     let mut node_to_cospan: HashMap<Node, Cospan> = HashMap::new();
 
@@ -266,10 +266,10 @@ fn colimit_recursive(
             let backward = cospans[height].backward.clone();
             let forward = cospans[height].forward.clone();
 
-            span_slices.insert(
-                (Node(key, height - 1), Node(key, height)),
-                Span(backward, slice, forward),
-            );
+            span_slices
+                .entry((Node(key, height - 1), Node(key, height)))
+                .or_default()
+                .push(Span(backward, slice, forward));
             delta.add_edge(Node(key, height - 1), Node(key, height), ());
         }
     }
@@ -289,7 +289,10 @@ fn colimit_recursive(
 
             let span = Span(backward.slice(height), slice, forward.slice(height));
 
-            span_slices.insert((source_node, target_node), span);
+            span_slices
+                .entry((source_node, target_node))
+                .or_default()
+                .push(span);
             delta.add_edge(source_node, target_node, ());
             delta.add_edge(target_node, source_node, ());
         }
@@ -323,15 +326,17 @@ fn colimit_recursive(
         }
     }
 
-    for ((s, t), span) in &span_slices {
+    for ((s, t), slices) in &span_slices {
         let s_component = node_to_scc[&s];
         let t_component = node_to_scc[&t];
 
         if s_component == t_component {
-            scc_spans
-                .entry(s_component)
-                .or_insert_with(Vec::new)
-                .push((*s, span.clone(), *t));
+            for slice in slices {
+                scc_spans
+                    .entry(s_component)
+                    .or_insert_with(Vec::new)
+                    .push((*s, slice.clone(), *t));
+            }
         }
     }
 
