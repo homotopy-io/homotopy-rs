@@ -1,13 +1,14 @@
 pub mod attach;
 pub mod common;
+pub mod complex;
 pub mod contraction;
 pub mod diagram;
-pub mod projection;
-pub mod complex;
+pub mod expansion;
+pub mod factorization;
 pub mod normalization;
+pub mod projection;
 pub mod rewrite;
 pub mod typecheck;
-pub mod expansion;
 
 pub use common::{Boundary, Generator, Height, SliceIndex};
 pub use diagram::{Diagram, DiagramN};
