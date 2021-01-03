@@ -27,6 +27,15 @@ pub enum Bias {
     Lower,
 }
 
+impl Bias {
+    pub fn flip(self) -> Self {
+        match self {
+            Bias::Higher => Bias::Lower,
+            Bias::Lower => Bias::Higher,
+        }
+    }
+}
+
 pub fn contract(
     diagram: &DiagramN,
     boundary_path: BoundaryPath,
@@ -356,7 +365,7 @@ fn colimit_recursive(
             let bias = scc_to_nodes[scc]
                 .iter()
                 .map(|Node(key, _)| diagrams[*key].1)
-                .fold(0, std::cmp::min);
+                .fold(usize::MAX, std::cmp::min);
 
             scc_to_priority.insert(Component(scc), (distance, bias));
         }

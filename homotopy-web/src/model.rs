@@ -482,15 +482,16 @@ impl State {
             };
             let (boundary_path, interior_path) = BoundaryPath::split(&location);
 
-            let height = match homotopy.direction {
-                Direction::Forward => homotopy.height,
+            let (height, bias) = match homotopy.direction {
+                Direction::Forward => (homotopy.height, homotopy.bias),
                 Direction::Backward => {
                     if homotopy.height == 0 {
                         // TODO: Show an error
                         panic!("Contracting off the edge of the diagram.");
                     }
 
-                    homotopy.height - 1
+                    let bias = homotopy.bias.map(|bias| bias.flip());
+                    (homotopy.height - 1, bias)
                 }
             };
 
@@ -501,7 +502,7 @@ impl State {
                         boundary_path,
                         &interior_path,
                         height,
-                        homotopy.bias,
+                        bias,
                     )
                     .ok_or(ModelError::ContractionError)?;
                     workspace.diagram = result.into();
@@ -513,7 +514,7 @@ impl State {
                         Boundary::Target.into(),
                         &interior_path,
                         height,
-                        homotopy.bias,
+                        bias,
                     )
                     .ok_or(ModelError::ContractionError)?;
                     workspace.diagram = result.target();
