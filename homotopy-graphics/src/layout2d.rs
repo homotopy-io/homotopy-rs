@@ -1,6 +1,7 @@
 use crate::geometry::Point;
 use homotopy_core::common::*;
 use homotopy_core::diagram::*;
+use homotopy_core::rewrite::*;
 use serde::Serialize;
 use std::convert::*;
 use thiserror::Error;
@@ -16,8 +17,8 @@ impl Constraint {
 
         for i in 0..diagram.size() {
             let cospan = &cospans[i];
-            let forward = cospan.forward.to_n().unwrap();
-            let backward = cospan.backward.to_n().unwrap();
+            let forward: &RewriteN = (&cospan.forward).try_into().unwrap();
+            let backward: &RewriteN = (&cospan.backward).try_into().unwrap();
             let regular0: &DiagramN = (&slices[i * 2]).try_into().unwrap();
             let singular: &DiagramN = (&slices[i * 2 + 1]).try_into().unwrap();
             let regular1: &DiagramN = (&slices[i * 2 + 2]).try_into().unwrap();
@@ -141,7 +142,10 @@ impl Solver {
                 .collect(),
         );
 
-        let constraints: Vec<_> = Constraint::build(&diagram).into_iter().filter(|c| c.0.len() > 0).collect();
+        let constraints: Vec<_> = Constraint::build(&diagram)
+            .into_iter()
+            .filter(|c| c.0.len() > 0)
+            .collect();
 
         Ok(Solver {
             positions,

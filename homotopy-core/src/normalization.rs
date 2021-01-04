@@ -115,7 +115,7 @@ impl SinkArrow {
 
     fn singular_preimage(&self, target_height: SingularHeight) -> Vec<SingularHeight> {
         let mut preimage = Vec::new();
-        let rewrite = self.rewrite.to_n().unwrap();
+        let rewrite: &RewriteN = (&self.rewrite).try_into().unwrap();
 
         for middle_height in rewrite.singular_preimage(target_height) {
             match self.degeneracy.singular_preimage(middle_height) {
@@ -128,7 +128,7 @@ impl SinkArrow {
     }
 
     fn slices_into(&self, target_height: SingularHeight) -> Vec<(SingularHeight, SinkArrow)> {
-        let rewrite = self.rewrite.to_n().unwrap();
+        let rewrite: &RewriteN = (&self.rewrite).try_into().unwrap();
         let source = <&DiagramN>::try_from(&self.source).ok().unwrap();
         let middle = <&DiagramN>::try_from(&self.middle).ok().unwrap();
         let mut slices = Vec::new();

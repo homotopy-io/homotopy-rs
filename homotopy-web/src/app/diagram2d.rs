@@ -4,6 +4,7 @@ use crate::model::RenderStyle;
 use euclid::default::{Point2D, Size2D, Transform2D, Vector2D};
 use euclid::Angle;
 use homotopy_core::common::Direction;
+use homotopy_core::rewrite::RewriteN;
 use homotopy_core::complex::{make_complex, Simplex};
 use homotopy_core::contraction::Bias;
 use homotopy_core::projection::{Depths, Generators};
@@ -560,9 +561,12 @@ fn drag_to_homotopy(
         Regular(_) => true,
         Singular(height) => {
             let cospan = &diagram.cospans()[height];
+            let forward: &RewriteN = (&cospan.forward).try_into().unwrap();
+            let backward: &RewriteN = (&cospan.backward).try_into().unwrap();
+
             // TODO: This should probably be a method on Cospan.
-            let mut targets: Vec<_> = cospan.forward.to_n().unwrap().targets();
-            targets.extend(cospan.backward.to_n().unwrap().targets());
+            let mut targets: Vec<_> = forward.targets();
+            targets.extend(backward.targets());
             targets.sort();
             targets.dedup();
             targets.len() > 1

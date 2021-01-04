@@ -2,6 +2,8 @@ use crate::common::*;
 use crate::diagram::*;
 
 use std::cmp::Ordering;
+use std::convert::*;
+use std::fmt;
 use std::ops::Range;
 use std::rc::Rc;
 use thiserror::Error;
@@ -24,25 +26,20 @@ impl Cospan {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(PartialEq, Eq, Clone, Hash)]
 pub enum Rewrite {
     Rewrite0(Rewrite0),
     RewriteN(RewriteN),
 }
 
-// impl fmt::Debug for Rewrite {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         match self {
-//             Rewrite::Rewrite0(None) => f.debug_struct("Rewrite0").finish(),
-//             Rewrite::Rewrite0(Some((s, t))) => f
-//                 .debug_struct("Rewrite0")
-//                 .field("source", s)
-//                 .field("target", t)
-//                 .finish(),
-//             Rewrite::RewriteN(r) => r.fmt(f),
-//         }
-//     }
-// }
+impl fmt::Debug for Rewrite {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Rewrite::RewriteN(r) => r.fmt(f),
+            Rewrite::Rewrite0(r) => r.fmt(f),
+        }
+    }
+}
 
 impl From<RewriteN> for Rewrite {
     fn from(r: RewriteN) -> Self {
@@ -53,6 +50,39 @@ impl From<RewriteN> for Rewrite {
 impl From<Rewrite0> for Rewrite {
     fn from(r: Rewrite0) -> Self {
         Rewrite::Rewrite0(r)
+    }
+}
+
+impl TryFrom<Rewrite> for RewriteN {
+    type Error = ();
+
+    fn try_from(value: Rewrite) -> Result<Self, Self::Error> {
+        match value {
+            Rewrite::Rewrite0(_) => Err(()),
+            Rewrite::RewriteN(r) => Ok(r),
+        }
+    }
+}
+
+impl<'a> TryFrom<&'a Rewrite> for &'a RewriteN {
+    type Error = ();
+
+    fn try_from(value: &'a Rewrite) -> Result<Self, Self::Error> {
+        match value {
+            Rewrite::Rewrite0(_) => Err(()),
+            Rewrite::RewriteN(r) => Ok(r),
+        }
+    }
+}
+
+impl TryFrom<Rewrite> for Rewrite0 {
+    type Error = ();
+
+    fn try_from(value: Rewrite) -> Result<Self, Self::Error> {
+        match value {
+            Rewrite::Rewrite0(r) => Ok(r),
+            Rewrite::RewriteN(_) => Err(()),
+        }
     }
 }
 
@@ -89,14 +119,6 @@ impl Rewrite {
         }
     }
 
-    pub fn to_n(&self) -> Option<&RewriteN> {
-        use Rewrite::*;
-        match self {
-            Rewrite0(_) => None,
-            RewriteN(r) => Some(r),
-        }
-    }
-
     pub fn compose(f: Rewrite, g: Rewrite) -> Result<Rewrite, CompositionError> {
         match (f, g) {
             (Rewrite::Rewrite0(f), Rewrite::Rewrite0(g)) => Ok(Rewrite0::compose(f, g)?.into()),
@@ -129,8 +151,17 @@ impl Rewrite {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Rewrite0(pub(crate) Option<(Generator, Generator)>);
+
+impl fmt::Debug for Rewrite0 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.0 {
+            Some((s, t)) => write!(f, "Rewrite0({:?} -> {:?})", s, t),
+            None => f.debug_struct("Rewrite0").finish(),
+        }
+    }
+}
 
 impl Rewrite0 {
     pub fn new(source: Generator, target: Generator) -> Self {

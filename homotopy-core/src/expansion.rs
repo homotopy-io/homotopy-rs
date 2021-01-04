@@ -3,6 +3,7 @@ use crate::common::*;
 use crate::diagram::*;
 use crate::rewrite::*;
 use std::cmp::Ordering;
+use std::convert::*;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -93,8 +94,8 @@ fn expand_base_singular(
         Direction::Forward => {
             let expansion = expand_cospan(
                 h1,
-                cospan.forward.to_n().unwrap().clone(),
-                cospan.backward.to_n().unwrap().clone(),
+                cospan.forward.clone().try_into().unwrap(),
+                cospan.backward.clone().try_into().unwrap(),
             )?;
 
             let cone = Cone {
@@ -121,8 +122,8 @@ fn expand_base_singular(
         Direction::Backward => {
             let expansion = expand_cospan(
                 h1,
-                cospan.backward.to_n().unwrap().clone(),
-                cospan.forward.to_n().unwrap().clone(),
+                cospan.backward.clone().try_into().unwrap(),
+                cospan.forward.clone().try_into().unwrap(),
             )?;
 
             let cone = Cone {
@@ -366,7 +367,8 @@ mod test {
                 Boundary::Target.into(),
                 &[Height::Singular(0), Height::Singular(1)],
                 Direction::Forward,
-            ).unwrap();
+            )
+            .unwrap();
             expanded.target().try_into().unwrap()
         };
 
@@ -411,7 +413,8 @@ mod test {
                 Boundary::Target.into(),
                 &[Height::Singular(0), Height::Singular(1)],
                 Direction::Backward,
-            ).unwrap();
+            )
+            .unwrap();
             expanded.target().try_into().unwrap()
         };
 

@@ -4,6 +4,7 @@ use crate::normalization::normalize;
 use crate::rewrite::*;
 use std::collections::HashMap;
 use std::convert::TryInto;
+use std::convert::*;
 use std::rc::Rc;
 use thiserror::Error;
 
@@ -97,7 +98,8 @@ fn target_points(rewrites: &[Rewrite]) -> Vec<(Point, Generator)> {
 
     let mut target_rewrites: HashMap<usize, Vec<Rewrite>> = HashMap::new();
 
-    for rewrite in rewrites.iter().map(|r| r.to_n().unwrap()) {
+    for rewrite in rewrites.iter() {
+        let rewrite: RewriteN = rewrite.clone().try_into().unwrap();
         for target_height in rewrite.targets() {
             for source_height in rewrite.singular_preimage(target_height) {
                 target_rewrites
@@ -143,12 +145,12 @@ impl Embedding {
         match self {
             Embedding::Zero => Embedding::Zero,
             Embedding::Regular(height, slice) => {
-                let rewrite = rewrite.to_n().unwrap();
+                let rewrite: &RewriteN = rewrite.try_into().unwrap();
                 let preimage_height = rewrite.regular_image(*height);
                 Embedding::Regular(preimage_height, slice.clone())
             }
             Embedding::Singular(height, slices) => {
-                let rewrite = rewrite.to_n().unwrap();
+                let rewrite: &RewriteN = rewrite.try_into().unwrap();
                 let preimage_height = rewrite.regular_image(*height);
                 let preimage_slices: Vec<_> = slices
                     .iter()
@@ -185,7 +187,9 @@ fn restrict_diagram(diagram: &Diagram, embedding: &Embedding) -> Diagram {
         }
         Embedding::Regular(height, slice) => {
             let diagram: DiagramN = diagram.clone().try_into().unwrap();
-            restrict_diagram(&diagram.slice(Height::Regular(*height)).unwrap(), slice).identity().into()
+            restrict_diagram(&diagram.slice(Height::Regular(*height)).unwrap(), slice)
+                .identity()
+                .into()
         }
         Embedding::Singular(height, slices) => {
             let diagram: &DiagramN = diagram.try_into().unwrap();
@@ -216,7 +220,7 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
         }
         Embedding::Regular(_, _) => Rewrite::identity(rewrite.dimension()),
         Embedding::Singular(height, slices) => {
-            let rewrite = rewrite.to_n().unwrap();
+            let rewrite: &RewriteN = rewrite.try_into().unwrap();
             let mut restricted_cones: Vec<Cone> = Vec::new();
 
             for target_height in rewrite.targets() {

@@ -286,8 +286,8 @@ fn colimit_recursive(
     // Explode the input spans into slice spans.
     for (source, span, target) in spans.iter() {
         let Span(backward, diagram, forward) = span;
-        let backward = backward.to_n().unwrap();
-        let forward = forward.to_n().unwrap();
+        let backward: &RewriteN = backward.try_into().unwrap();
+        let forward: &RewriteN = forward.try_into().unwrap();
         let diagram: &DiagramN = diagram.try_into().unwrap();
         let slices: Vec<_> = diagram.slices().collect();
 

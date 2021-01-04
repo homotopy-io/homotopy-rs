@@ -1,5 +1,6 @@
 use crate::common::*;
 use crate::diagram::DiagramN;
+use crate::rewrite::RewriteN;
 use serde::Serialize;
 use std::convert::*;
 
@@ -82,8 +83,11 @@ fn depth(diagram: &DiagramN, height: usize) -> Option<usize> {
     }
 
     let cospan = diagram.cospans().get(height)?;
-    let forward = cospan.forward.to_n().unwrap().targets().first().cloned();
-    let backward = cospan.backward.to_n().unwrap().targets().first().cloned();
+    let forward: &RewriteN = (&cospan.forward).try_into().unwrap();
+    let backward: &RewriteN = (&cospan.backward).try_into().unwrap();
+
+    let forward = forward.targets().first().cloned();
+    let backward = backward.targets().first().cloned();
 
     match (forward, backward) {
         (Some(forward), Some(backward)) => Some(std::cmp::min(forward, backward)),
