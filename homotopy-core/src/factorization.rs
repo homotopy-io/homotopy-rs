@@ -1,9 +1,7 @@
 pub struct MonotoneSequences {
     cur: Option<Vec<usize>>,
 
-    // tracks least significant digit in the sequence;
-    // once a digit from the right reaches `max` it becomes irrelevant for
-    // subsequent sequences
+    // invariant: ∀ x ∈ cur(end, len). x = max
     end: usize,
 
     pub len: usize,
@@ -32,16 +30,15 @@ impl Iterator for MonotoneSequences {
             }
             Some(seq) => {
                 if seq != &[self.max].repeat(self.len) {
-                    if seq[self.end] != self.max {
-                        seq[self.end] += 1
+                    seq[self.end] += 1; // increment last non-max digit
+                    if seq[self.end] == self.max {
+                        self.end = self.end.saturating_sub(1) // maintain invariant
                     } else {
-                        // least significant digit has been maxed
-                        self.end -= 1; // 1. make the next digit least significant
-                        seq[self.end] += 1; // 2. increment it
                         for i in (self.end + 1)..self.len {
-                            // 3. set all values to the right to it
+                            // set all values to the right to it
                             seq[i] = seq[self.end]
                         }
+                        self.end = self.len - 1 // maintain invariant
                     }
                 } else {
                     self.cur = None
@@ -57,7 +54,33 @@ mod test {
 
     #[test]
     fn monotone_sequences() {
-        let ms = MonotoneSequences::new(2, 1);
-        assert_eq!(ms.collect::<Vec<_>>(), [[0, 0], [0, 1], [1, 1]])
+        let ms_2_1 = MonotoneSequences::new(2, 1);
+        assert_eq!(ms_2_1.collect::<Vec<_>>(), [[0, 0], [0, 1], [1, 1]]);
+        let ms_3_3 = MonotoneSequences::new(3, 3);
+        assert_eq!(
+            ms_3_3.collect::<Vec<_>>(),
+            [
+                [0, 0, 0],
+                [0, 0, 1],
+                [0, 0, 2],
+                [0, 0, 3],
+                [0, 1, 1],
+                [0, 1, 2],
+                [0, 1, 3],
+                [0, 2, 2],
+                [0, 2, 3],
+                [0, 3, 3],
+                [1, 1, 1],
+                [1, 1, 2],
+                [1, 1, 3],
+                [1, 2, 2],
+                [1, 2, 3],
+                [1, 3, 3],
+                [2, 2, 2],
+                [2, 2, 3],
+                [2, 3, 3],
+                [3, 3, 3]
+            ]
+        );
     }
 }
