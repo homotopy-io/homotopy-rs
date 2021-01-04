@@ -452,14 +452,28 @@ impl RewriteN {
     }
 
     pub fn regular_preimage(&self, index: usize) -> Range<usize> {
-        let left = if index == 0 {
-            0
-        } else {
-            self.singular_image(index - 1) + 1
-        };
+        let mut offset = 0;
 
-        let right = self.singular_image(index);
-        left..right
+        for (cone_index, cone) in self.cones().iter().enumerate() {
+            let start = (index as isize + offset) as usize;
+            if cone.index > index || (cone.len() > 0 && cone.index == index) {
+                return start..(start + 1);
+            } else if cone.index == index && cone.len() == 0 {
+                let length = self.cones()[cone_index..]
+                    .iter()
+                    .take_while(|cone| cone.index == index && cone.len() == 0)
+                    .count();
+                return start..(start + length + 1);
+            } else if cone.index < index && index < cone.index + cone.len() {
+                let start = (cone.index as isize + offset) as usize;
+                return start..start;
+            } else {
+                offset += 1 - cone.len() as isize;
+            }
+        }
+
+        let start = (index as isize + offset) as usize;
+        start..(start + 1)
     }
 }
 

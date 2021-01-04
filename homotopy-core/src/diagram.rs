@@ -650,7 +650,9 @@ mod test {
         assert_eq!(fd.target(), xd.identity().into());
 
         let cospan = &fd.cospans()[0];
-        let forward = cospan.forward.to_n().unwrap();
+        let forward: &RewriteN = (&cospan.forward).try_into().unwrap();
+
+        assert_eq!(forward.singular_image(0), 1);
         assert_eq!(forward.regular_preimage(0), 0..2);
     }
 }
