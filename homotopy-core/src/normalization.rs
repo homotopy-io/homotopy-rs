@@ -1,6 +1,7 @@
 use crate::common::*;
 use crate::diagram::*;
 use crate::rewrite::*;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::convert::*;
 use std::rc::Rc;
@@ -19,7 +20,7 @@ enum Degeneracy {
 
 impl Degeneracy {
     fn new(trivial: Vec<SingularHeight>, slices: Vec<Rc<Degeneracy>>) -> Self {
-        if trivial.len() == 0 && slices.iter().all(|slice| slice.is_identity()) {
+        if trivial.is_empty() && slices.iter().all(|slice| slice.is_identity()) {
             Degeneracy::Identity
         } else {
             Degeneracy::Degeneracy(trivial, slices)
@@ -31,10 +32,10 @@ impl Degeneracy {
             Degeneracy::Identity => Height::Singular(i),
             Degeneracy::Degeneracy(trivial, _) => {
                 for (count, trivial) in trivial.iter().enumerate() {
-                    if *trivial == i {
-                        return Height::Regular(i - count);
-                    } else if *trivial > i {
-                        return Height::Singular(i - count);
+                    match trivial.cmp(&i) {
+                        Ordering::Less => {}
+                        Ordering::Equal => return Height::Regular(i - count),
+                        Ordering::Greater => return Height::Singular(i - count),
                     }
                 }
 
@@ -210,7 +211,6 @@ where
 
     use Height::*;
 
-    let diagram: &DiagramN = diagram.try_into().unwrap();
     let slices: Vec<_> = diagram.slices().collect();
 
     let mut degeneracies: HashMap<Height, Rc<Degeneracy>> = HashMap::new();

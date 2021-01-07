@@ -118,13 +118,10 @@ impl DiagramN {
             return Err(NewDiagramError::Dimension);
         }
 
-        match (&source, &target) {
-            (Diagram::DiagramN(source), Diagram::DiagramN(target)) => {
-                if source.source() != target.source() || source.target() != target.target() {
-                    return Err(NewDiagramError::NonGlobular);
-                }
+        if let (Diagram::DiagramN(source), Diagram::DiagramN(target)) = (&source, &target) {
+            if source.source() != target.source() || source.target() != target.target() {
+                return Err(NewDiagramError::NonGlobular);
             }
-            _ => {}
         }
 
         let cospan = Cospan {
@@ -354,7 +351,7 @@ impl DiagramN {
         let (boundary_path, interior_path) = BoundaryPath::split(path);
 
         match boundary_path {
-            Some(boundary_path) => expand(self, boundary_path.into(), &interior_path, direction),
+            Some(boundary_path) => expand(self, boundary_path, &interior_path, direction),
             None => {
                 let result = expand(
                     &self.identity(),

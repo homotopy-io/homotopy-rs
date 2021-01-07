@@ -77,7 +77,7 @@ pub fn make_complex(diagram: &DiagramN) -> Vec<Simplex> {
         let targets = {
             let mut targets = forward.targets();
             targets.extend(backward.targets());
-            targets.sort();
+            targets.sort_unstable();
             targets.dedup();
             targets
         };

@@ -170,12 +170,11 @@ fn expand_cospan(
     assert!(forward_targets.len() + backward_targets.len() != 0);
     assert!(forward_index.is_some() || backward_index.is_some());
 
-    if forward_targets.len() + backward_targets.len() == 1 {
-        return Err(ExpansionError::SingleComponent);
-    } else if forward_targets.len() == 1
-        && backward_targets.len() == 1
-        && forward_index.is_some()
-        && backward_index.is_some()
+    if (forward_targets.len() + backward_targets.len() == 1)
+        || (forward_targets.len() == 1
+            && backward_targets.len() == 1
+            && forward_index.is_some()
+            && backward_index.is_some())
     {
         return Err(ExpansionError::SingleComponent);
     }
@@ -254,7 +253,7 @@ fn expand_cospan(
     };
 
     let new_slice1 = match backward_index {
-        None => backward.clone(),
+        None => backward,
         Some(index) => RewriteN::new(
             backward.dimension(),
             backward
@@ -311,7 +310,7 @@ fn expand_recursive(
                     backward: recursive.clone(),
                 },
                 Cospan {
-                    forward: recursive.clone(),
+                    forward: recursive,
                     backward: target_cospan.backward.clone(),
                 },
             ],

@@ -55,7 +55,7 @@ where
             let restricted = DiagramN::new_unsafe(source, vec![Cospan { forward, backward }]);
 
             let signature_diagram =
-                signature(generator).ok_or_else(|| TypeError::UnknownGenerator(generator))?;
+                signature(generator).ok_or(TypeError::UnknownGenerator(generator))?;
 
             let restricted = normalize(&restricted.into());
             let mut signature_diagram = normalize(&signature_diagram);
@@ -165,7 +165,7 @@ impl Embedding {
                     })
                     .collect();
 
-                if preimage_slices.len() == 0 {
+                if preimage_slices.is_empty() {
                     let cospan = &rewrite.cone_over_target(*height).unwrap().target;
                     Embedding::Regular(
                         preimage_height,
