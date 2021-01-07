@@ -3,7 +3,6 @@ mod app;
 pub mod model;
 
 use wasm_bindgen::prelude::*;
-use wasm_logger;
 
 // When the `wee_alloc` feature is enabled, this uses `wee_alloc` as the global
 // allocator.

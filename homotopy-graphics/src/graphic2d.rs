@@ -60,7 +60,7 @@ impl ActionRegion {
                     region_wires.push(ActionRegion::Wire(*ps, path));
                 }
                 Simplex::Point([p]) => {
-                    let center = layout.get(p.0, p.1).unwrap().into();
+                    let center = layout.get(p.0, p.1).unwrap();
                     region_points.push(ActionRegion::Point([*p], center));
                 }
             }
@@ -162,7 +162,7 @@ impl GraphicElement {
                     let generator = generators.get(p.0, p.1).unwrap();
                     point_elements.push(GraphicElement::Point(
                         generator,
-                        layout.get(p.0, p.1).unwrap().into(),
+                        layout.get(p.0, p.1).unwrap(),
                     ));
                 }
             }
@@ -274,7 +274,7 @@ fn make_path(points: &[Coordinate], closed: bool, layout: &Layout) -> Path {
     let mut builder = Path::builder();
 
     let start = layout.get(points[0].0, points[0].1).unwrap();
-    builder.move_to(start.into());
+    builder.move_to(start);
 
     for i in 1..points.len() {
         make_path_segment(points[i - 1], points[i], layout, &mut builder);

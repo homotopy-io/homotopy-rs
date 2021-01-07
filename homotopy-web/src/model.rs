@@ -9,6 +9,7 @@ use std::convert::*;
 use thiserror::Error;
 pub mod homotopy;
 use homotopy::*;
+use std::cmp::Ordering;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Action {
@@ -124,26 +125,26 @@ impl State {
     /// Update the state in response to an [Action].
     pub fn update(&mut self, action: Action) -> Result<(), ModelError> {
         match action {
-            Action::CreateGeneratorZero => Ok(self.create_generator_zero()),
+            Action::CreateGeneratorZero => self.create_generator_zero(),
             Action::RemoveGenerator(_) => unimplemented!(),
             Action::SetBoundary(boundary) => self.set_boundary(boundary),
-            Action::TakeIdentityDiagram => Ok(self.take_identity_diagram()),
-            Action::ClearWorkspace => Ok(self.clear_workspace()),
-            Action::ClearBoundary => Ok(self.clear_boundary()),
+            Action::TakeIdentityDiagram => self.take_identity_diagram(),
+            Action::ClearWorkspace => self.clear_workspace(),
+            Action::ClearBoundary => self.clear_boundary(),
             Action::SelectGenerator(generator) => self.select_generator(generator),
-            Action::AscendSlice(count) => Ok(self.ascend_slice(count)),
+            Action::AscendSlice(count) => self.ascend_slice(count),
             Action::DescendSlice(slice) => self.descend_slice(slice),
             Action::SelectPoints(points) => self.select_points(points),
-            Action::ToggleDrawer(drawer) => Ok(self.toggle_drawer(drawer)),
-            Action::Attach(option) => Ok(self.attach(option)),
-            Action::HighlightAttachment(option) => Ok(self.highlight_attachment(option)),
+            Action::ToggleDrawer(drawer) => self.toggle_drawer(drawer),
+            Action::Attach(option) => self.attach(option),
+            Action::HighlightAttachment(option) => self.highlight_attachment(option),
             Action::Homotopy(Homotopy::Expand(homotopy)) => self.homotopy_expansion(homotopy),
             Action::Homotopy(Homotopy::Contract(homotopy)) => self.homotopy_contraction(homotopy),
         }
     }
 
     /// Handler for [Action::CreateGeneratorZero].
-    fn create_generator_zero(&mut self) {
+    fn create_generator_zero(&mut self) -> Result<(), ModelError> {
         let id = self.create_generator_id();
         let generator = Generator::new(id, 0);
 
@@ -154,6 +155,7 @@ impl State {
         };
 
         self.signature.insert(generator, info);
+        Ok(())
     }
 
     fn create_generator(
@@ -199,8 +201,8 @@ impl State {
                     self.workspace = None;
                 } else {
                     let (source, target) = match boundary {
-                        Source => (workspace.diagram.clone().into(), selected.diagram.clone()),
-                        Target => (selected.diagram.clone(), workspace.diagram.clone().into()),
+                        Source => (workspace.diagram.clone(), selected.diagram.clone()),
+                        Target => (selected.diagram.clone(), workspace.diagram.clone()),
                     };
 
                     self.create_generator(source, target)
@@ -224,7 +226,7 @@ impl State {
     }
 
     /// Handler for [Action::TakeIdentityDiagram].
-    fn take_identity_diagram(&mut self) {
+    fn take_identity_diagram(&mut self) -> Result<(), ModelError> {
         match &mut self.workspace {
             Some(workspace) => {
                 workspace.diagram = workspace.diagram.identity().into();
@@ -235,17 +237,21 @@ impl State {
                 }
             }
             None => {}
-        }
+        };
+
+        Ok(())
     }
 
     /// Handler for [Action::ClearWorkspace].
-    fn clear_workspace(&mut self) {
+    fn clear_workspace(&mut self) -> Result<(), ModelError> {
         self.workspace = None;
+        Ok(())
     }
 
     /// Handler for [Action::ClearBoundary].
-    fn clear_boundary(&mut self) {
+    fn clear_boundary(&mut self) -> Result<(), ModelError> {
         self.boundary = None;
+        Ok(())
     }
 
     /// Handler for [Action::SelectGenerator].
@@ -270,9 +276,9 @@ impl State {
     }
 
     /// Handler for [Action::AscendSlice].
-    fn ascend_slice(&mut self, mut count: usize) {
+    fn ascend_slice(&mut self, mut count: usize) -> Result<(), ModelError> {
         if let Some(workspace) = &mut self.workspace {
-            while count > 0 && workspace.path.len() > 0 {
+            while count > 0 && !workspace.path.is_empty() {
                 workspace.path.pop_back();
                 count -= 1;
             }
@@ -280,6 +286,8 @@ impl State {
             workspace.attach = None;
             workspace.highlight = None;
         }
+
+        Ok(())
     }
 
     /// Handler for [Action::DescendSlice].
@@ -308,7 +316,7 @@ impl State {
 
     /// Handler for [Action::SelectPoint].
     fn select_points(&mut self, selected: Vec<Vec<SliceIndex>>) -> Result<(), ModelError> {
-        if selected.len() == 0 {
+        if selected.is_empty() {
             return Ok(());
         }
 
@@ -359,23 +367,24 @@ impl State {
             }
         }
 
-        if matches.len() == 1 {
-            self.attach(matches.into_iter().next().unwrap());
-            Ok(())
-        } else if matches.len() > 1 {
-            let workspace = self.workspace.as_mut().unwrap();
-            workspace.attach = Some(matches.into_iter().collect());
-            workspace.highlight = None;
-            Ok(())
-        } else {
-            let workspace = self.workspace.as_mut().unwrap();
-            workspace.attach = None;
-            workspace.highlight = None;
-            Ok(())
+        match matches.len().cmp(&1) {
+            Ordering::Less => {
+                let workspace = self.workspace.as_mut().unwrap();
+                workspace.attach = None;
+                workspace.highlight = None;
+                Ok(())
+            }
+            Ordering::Equal => self.attach(matches.into_iter().next().unwrap()),
+            Ordering::Greater => {
+                let workspace = self.workspace.as_mut().unwrap();
+                workspace.attach = Some(matches.into_iter().collect());
+                workspace.highlight = None;
+                Ok(())
+            }
         }
     }
 
-    fn attach(&mut self, option: AttachOption) {
+    fn attach(&mut self, option: AttachOption) -> Result<(), ModelError> {
         if let Some(workspace) = &mut self.workspace {
             // TODO: Better error handling, although none of these errors should occur
             let diagram: DiagramN = workspace.diagram.clone().try_into().unwrap();
@@ -412,22 +421,28 @@ impl State {
                 }
             }
         }
+
+        Ok(())
     }
 
     /// Handler for [Action::ToggleDrawer].
-    fn toggle_drawer(&mut self, drawer: Drawer) {
+    fn toggle_drawer(&mut self, drawer: Drawer) -> Result<(), ModelError> {
         if self.drawer == Some(drawer) {
             self.drawer = None;
         } else {
             self.drawer = Some(drawer);
         }
+
+        Ok(())
     }
 
     /// Handler for [Action::HighlightAttachment].
-    fn highlight_attachment(&mut self, option: Option<AttachOption>) {
+    fn highlight_attachment(&mut self, option: Option<AttachOption>) -> Result<(), ModelError> {
         if let Some(workspace) = &mut self.workspace {
             workspace.highlight = option;
         }
+
+        Ok(())
     }
 
     fn homotopy_expansion(&mut self, homotopy: Expand) -> Result<(), ModelError> {
@@ -533,7 +548,7 @@ pub struct AttachOption {
     pub embedding: Vector<usize>,
 }
 
-const COLORS: &[&'static str] = &[
+const COLORS: &[&str] = &[
     "#2980b9", // belize blue
     "#c0392b", // pomegranate
     "#f39c12", // orange

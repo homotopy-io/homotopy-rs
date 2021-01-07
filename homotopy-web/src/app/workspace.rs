@@ -112,10 +112,10 @@ impl WorkspaceView {
 
         let class = format!(
             "workspace__path {}",
-            if path.len() > 0 {
-                ""
-            } else {
+            if path.is_empty() {
                 "workspace__path--empty"
+            } else {
+                ""
             }
         );
 

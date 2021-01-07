@@ -144,7 +144,7 @@ impl Solver {
 
         let constraints: Vec<_> = Constraint::build(&diagram)
             .into_iter()
-            .filter(|c| c.0.len() > 0)
+            .filter(|c| !c.0.is_empty())
             .collect();
 
         Ok(Solver {

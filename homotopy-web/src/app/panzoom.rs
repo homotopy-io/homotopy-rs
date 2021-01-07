@@ -2,7 +2,6 @@ use closure::closure;
 use euclid::default::{Point2D, Vector2D};
 use web_sys::{DomRect, Element, TouchList};
 use yew::prelude::*;
-use Default;
 
 pub type Finger = i32;
 type Point = Point2D<f64>;

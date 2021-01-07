@@ -179,12 +179,10 @@ impl Component for Diagram2D {
                 // a separate onclick handler since drags aren't interpreted as clicks anymore.
                 if let Some(point) = self.drag_start {
                     self.drag_start = None;
-                    match self.simplex_at(point) {
-                        Some(simplex) => self
-                            .props
+                    if let Some(simplex) = self.simplex_at(point) {
+                        self.props
                             .on_select
-                            .emit(simplex.into_iter().map(|(x, y)| vec![y, x]).collect()),
-                        None => {}
+                            .emit(simplex.into_iter().map(|(x, y)| vec![y, x]).collect())
                     }
                 }
                 false
@@ -338,8 +336,7 @@ impl Diagram2D {
 
     fn position(&self, point: [SliceIndex; 2]) -> Point2D<f32> {
         let point = self.diagram.layout.get(point[0], point[1]).unwrap();
-        let point = self.diagram.transform.transform_point(point);
-        point
+        self.diagram.transform.transform_point(point)
     }
 
     fn simplex_at(&self, point: Point2D<f32>) -> Option<Simplex> {
@@ -527,7 +524,7 @@ fn drag_to_homotopy(
     use SliceIndex::*;
 
     let abs_radians = angle.radians.abs();
-    let horizontal = abs_radians < PI / 4.0 || abs_radians > (3.0 * PI) / 4.0;
+    let horizontal = !(PI / 4.0 .. (3.0 * PI) / 4.0).contains(&abs_radians);
 
     // TODO: Find correct drag point in the presence of boundaries
     let point = simplex.first();
@@ -567,7 +564,7 @@ fn drag_to_homotopy(
             // TODO: This should probably be a method on Cospan.
             let mut targets: Vec<_> = forward.targets();
             targets.extend(backward.targets());
-            targets.sort();
+            targets.sort_unstable();
             targets.dedup();
             targets.len() > 1
         }
