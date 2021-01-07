@@ -16,3 +16,6 @@ serde_json = "1.0"
 petgraph = "*"
 seahash = "*"
 log = "*"
+
+[dev-dependencies]
+insta = "*"

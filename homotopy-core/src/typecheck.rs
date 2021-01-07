@@ -271,6 +271,7 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
     }
 }
 
+#[cfg(test)]
 mod test {
     use super::*;
 

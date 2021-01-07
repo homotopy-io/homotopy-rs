@@ -1,4 +1,4 @@
-use euclid::default::{Point2D, Rect, Transform2D};
+use euclid::default::{Point2D, Rect};
 use lyon_algorithms::aabb::fast_bounding_rect;
 use lyon_algorithms::hit_test::hit_test_path;
 use lyon_geom::{CubicBezierSegment, QuadraticBezierSegment};

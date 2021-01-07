@@ -43,7 +43,7 @@ impl Component for WorkspaceView {
             props,
             panzoom,
             on_select,
-            on_homotopy
+            on_homotopy,
         }
     }
 

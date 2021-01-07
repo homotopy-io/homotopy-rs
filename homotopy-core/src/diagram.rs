@@ -1,12 +1,15 @@
 use crate::attach::*;
 use crate::common::*;
+use crate::contraction::*;
+use crate::expansion::*;
 use crate::rewrite::*;
 use std::convert::TryFrom;
 use std::convert::*;
+use std::fmt;
 use std::rc::Rc;
 use thiserror::Error;
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Clone)]
 pub enum Diagram {
     Diagram0(Generator),
     DiagramN(DiagramN),
@@ -98,7 +101,7 @@ impl Diagram {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Clone)]
 pub struct DiagramN(Rc<DiagramInternal>);
 
 impl DiagramN {
@@ -132,7 +135,7 @@ impl DiagramN {
         Ok(DiagramN::new_unsafe(source, vec![cospan]))
     }
 
-    pub fn new_unsafe(source: Diagram, cospans: Vec<Cospan>) -> Self {
+    pub(crate) fn new_unsafe(source: Diagram, cospans: Vec<Cospan>) -> Self {
         DiagramN(Rc::new(DiagramInternal { source, cospans }))
     }
 
@@ -165,7 +168,7 @@ impl DiagramN {
         Slices::new(self)
     }
 
-    pub fn singular_slices(&self) -> Vec<Diagram> {
+    pub(crate) fn singular_slices(&self) -> Vec<Diagram> {
         let mut regular = self.0.source.clone();
         let mut slices = Vec::new();
 
@@ -320,6 +323,50 @@ impl DiagramN {
         Diagram::from(self.clone()).identity()
     }
 
+    pub fn contract(
+        &self,
+        path: &[SliceIndex],
+        height: SingularHeight,
+        bias: Option<Bias>,
+    ) -> Option<DiagramN> {
+        let (boundary_path, interior_path) = BoundaryPath::split(path);
+
+        match boundary_path {
+            Some(boundary_path) => contract(self, boundary_path, &interior_path, height, bias),
+            None => {
+                let result = contract(
+                    &self.identity(),
+                    Boundary::Target.into(),
+                    &interior_path,
+                    height,
+                    bias,
+                )?;
+                Some(result.target().try_into().unwrap())
+            }
+        }
+    }
+
+    pub fn expand(
+        &self,
+        path: &[SliceIndex],
+        direction: Direction,
+    ) -> Result<DiagramN, ExpansionError> {
+        let (boundary_path, interior_path) = BoundaryPath::split(path);
+
+        match boundary_path {
+            Some(boundary_path) => expand(self, boundary_path.into(), &interior_path, direction),
+            None => {
+                let result = expand(
+                    &self.identity(),
+                    Boundary::Target.into(),
+                    &interior_path,
+                    direction,
+                )?;
+                Ok(result.target().try_into().unwrap())
+            }
+        }
+    }
+
     // TODO: This needs better documentation
 
     /// Attach a [diagram] to this diagram at the specified [boundary] and the given [embedding].
@@ -345,67 +392,21 @@ impl DiagramN {
                     .collect())
             }
         })
+    }
+}
 
-        // if depth == 0 {
-        //     let cospans: Vec<_> = diagram
-        //         .cospans()
-        //         .iter()
-        //         .map(|c| c.pad(&embedding))
-        //         .collect();
+impl fmt::Debug for DiagramN {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
-        //     match boundary {
-        //         Source => {
-        //             let mut source = self.0.source.clone();
-
-        //             if !source.embeds(&diagram.target(), embedding) {
-        //                 return Err(AttachmentError::Incompatible);
-        //             }
-
-        //             for cospan in cospans.iter().rev() {
-        //                 source = source.rewrite_forward(&cospan.backward);
-        //                 source = source.rewrite_backward(&cospan.forward);
-        //             }
-
-        //             let mut result_cospans = Vec::new();
-        //             result_cospans.extend(cospans.into_iter());
-        //             result_cospans.extend(self.0.cospans.to_vec().into_iter());
-
-        //             Ok(DiagramN::new_unsafe(source, result_cospans))
-        //         }
-        //         Target => {
-        //             if !self.target().embeds(&diagram.source(), embedding) {
-        //                 return Err(AttachmentError::Incompatible);
-        //             }
-
-        //             let mut result_cospans = Vec::new();
-        //             result_cospans.extend(self.0.cospans.to_vec().into_iter());
-        //             result_cospans.extend(cospans.into_iter());
-
-        //             Ok(DiagramN::new_unsafe(self.0.source.clone(), result_cospans))
-        //         }
-        //     }
-        // } else {
-        //     let source = match &self.0.source {
-        //         Diagram::Diagram0(_) => panic!(),
-        //         Diagram::DiagramN(s) => s,
-        //     };
-
-        //     match boundary {
-        //         Source => {
-        //             let source = Diagram::DiagramN(source.attach(diagram, boundary, embedding)?);
-        //             // TODO: Pad by 1 or by the size of `diagram`?
-        //             let mut padding = vec![0; depth - 1];
-        //             padding.push(1);
-        //             let cospans = self.0.cospans.iter().map(|c| c.pad(&padding)).collect();
-        //             Ok(DiagramN::new_unsafe(source, cospans))
-        //         }
-        //         Target => {
-        //             let source = Diagram::DiagramN(source.attach(diagram, boundary, embedding)?);
-        //             let cospans = self.0.cospans.clone();
-        //             Ok(DiagramN::new_unsafe(source, cospans))
-        //         }
-        //     }
-        // }
+impl fmt::Debug for Diagram {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Diagram::Diagram0(generator) => f.debug_tuple("Diagram0").field(generator).finish(),
+            Diagram::DiagramN(diagram) => diagram.fmt(f),
+        }
     }
 }
 
@@ -422,42 +423,51 @@ impl From<Generator> for Diagram {
 }
 
 impl TryFrom<Diagram> for DiagramN {
-    type Error = ();
+    type Error = DimensionError;
 
     fn try_from(from: Diagram) -> Result<Self, Self::Error> {
         match from {
             Diagram::DiagramN(from) => Ok(from),
-            Diagram::Diagram0(_) => Err(()),
+            Diagram::Diagram0(_) => Err(DimensionError),
         }
     }
 }
 
 impl<'a> TryFrom<&'a Diagram> for &'a DiagramN {
-    type Error = ();
+    type Error = DimensionError;
 
     fn try_from(from: &'a Diagram) -> Result<Self, Self::Error> {
         match from {
             Diagram::DiagramN(from) => Ok(from),
-            Diagram::Diagram0(_) => Err(()),
+            Diagram::Diagram0(_) => Err(DimensionError),
         }
     }
 }
 
 impl TryFrom<Diagram> for Generator {
-    type Error = ();
+    type Error = DimensionError;
 
     fn try_from(from: Diagram) -> Result<Self, Self::Error> {
         match from {
-            Diagram::DiagramN(_) => Err(()),
+            Diagram::DiagramN(_) => Err(DimensionError),
             Diagram::Diagram0(g) => Ok(g),
         }
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Clone)]
 struct DiagramInternal {
     source: Diagram,
     cospans: Vec<Cospan>,
+}
+
+impl fmt::Debug for DiagramInternal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("DiagramN")
+            .field("source", &self.source)
+            .field("cospans", &self.cospans)
+            .finish()
+    }
 }
 
 /// Iterator over a diagram's slices. Constructed via [DiagramN::slices].
@@ -556,34 +566,7 @@ pub enum AttachmentError {
 #[cfg(test)]
 mod test {
     use super::*;
-
-    fn example_assoc() -> DiagramN {
-        let x = Generator {
-            id: 0,
-            dimension: 0,
-        };
-        let f = Generator {
-            id: 1,
-            dimension: 1,
-        };
-        let m = Generator {
-            id: 2,
-            dimension: 2,
-        };
-        let a = Generator {
-            id: 3,
-            dimension: 3,
-        };
-
-        let fd = DiagramN::new(f, x, x).unwrap();
-        let ffd = fd.attach(fd.clone(), Boundary::Target, &[]).unwrap();
-        let md = DiagramN::new(m, ffd, fd).unwrap();
-        let ld = md.attach(md.clone(), Boundary::Source, &[0]).unwrap();
-        let rd = md.attach(md.clone(), Boundary::Source, &[1]).unwrap();
-        let ad = DiagramN::new(a, ld, rd).unwrap();
-
-        ad
-    }
+    use std::error::Error;
 
     fn assert_point_ids<D>(diagram: D, points: &[(&[usize], usize)])
     where
@@ -605,11 +588,17 @@ mod test {
     }
 
     #[test]
-    fn associativity_points() {
-        let d = example_assoc().source();
+    fn associativity_points() -> Result<(), Box<dyn Error>> {
+        use Boundary::*;
+
+        let x = Diagram::from(Generator::new(0, 0));
+        let f = DiagramN::new(Generator::new(1, 1), x.clone(), x.clone())?;
+        let ff = f.attach(f.clone(), Target, &[])?;
+        let m = DiagramN::new(Generator::new(2, 2), ff.clone(), f.clone())?;
+        let left = m.attach(m.clone(), Source, &[0])?;
 
         assert_point_ids(
-            d,
+            left,
             &[
                 (&[0, 0], 0),
                 (&[0, 1], 1),
@@ -636,20 +625,19 @@ mod test {
                 (&[4, 2], 0),
             ],
         );
+
+        Ok(())
     }
 
     #[test]
     fn scalar() {
-        let x = Generator::new(0, 0);
-        let f = Generator::new(1, 2);
+        let x = Diagram::from(Generator::new(0, 0));
+        let f = DiagramN::new(Generator::new(1, 2), x.identity(), x.identity()).unwrap();
 
-        let xd = Diagram::from(x);
-        let fd = DiagramN::new(f, xd.identity(), xd.identity()).unwrap();
+        assert_eq!(f.source(), x.identity().into());
+        assert_eq!(f.target(), x.identity().into());
 
-        assert_eq!(fd.source(), xd.identity().into());
-        assert_eq!(fd.target(), xd.identity().into());
-
-        let cospan = &fd.cospans()[0];
+        let cospan = &f.cospans()[0];
         let forward: &RewriteN = (&cospan.forward).try_into().unwrap();
 
         assert_eq!(forward.singular_image(0), 1);

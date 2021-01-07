@@ -44,6 +44,7 @@ impl Generators {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Depths(Vec<Vec<Option<usize>>>);
 
 impl Depths {

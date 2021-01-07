@@ -300,22 +300,18 @@ fn make_path_segment(
     let layout_end = layout.get(end.0, end.1).unwrap();
 
     match (start, end) {
-        (
-            (_, Interior(Regular(_))),
-            (Interior(Singular(_)), Interior(Singular(_))),
-        ) => builder.cubic_bezier_to(
-            (layout_start.x, 0.8 * layout_end.y + 0.2 * layout_start.y).into(),
-            (layout_start.x, layout_end.y).into(),
-            layout_end,
-        ),
-        (
-            (Interior(Singular(_)), Interior(Singular(_))),
-            (_, Interior(Regular(_))),
-        ) => builder.cubic_bezier_to(
-            (layout_end.x, layout_start.y).into(),
-            (layout_end.x, 0.2 * layout_end.y + 0.8 * layout_start.y).into(),
-            layout_end,
-        ),
+        ((_, Interior(Regular(_))), (Interior(Singular(_)), Interior(Singular(_)))) => builder
+            .cubic_bezier_to(
+                (layout_start.x, 0.8 * layout_end.y + 0.2 * layout_start.y).into(),
+                (layout_start.x, layout_end.y).into(),
+                layout_end,
+            ),
+        ((Interior(Singular(_)), Interior(Singular(_))), (_, Interior(Regular(_)))) => builder
+            .cubic_bezier_to(
+                (layout_end.x, layout_start.y).into(),
+                (layout_end.x, 0.2 * layout_end.y + 0.8 * layout_start.y).into(),
+                layout_end,
+            ),
         _ => builder.line_to(layout_end),
     };
 }

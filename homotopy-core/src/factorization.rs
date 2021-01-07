@@ -49,6 +49,7 @@ impl Iterator for MonotoneSequences {
     }
 }
 
+#[cfg(test)]
 mod test {
     use super::*;
 

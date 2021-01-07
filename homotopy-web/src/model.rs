@@ -1,8 +1,7 @@
 use homotopy_core::attach::BoundaryPath;
 use homotopy_core::common::*;
-use homotopy_core::contraction::contract;
 use homotopy_core::diagram::NewDiagramError;
-use homotopy_core::expansion::{expand, ExpansionError};
+use homotopy_core::expansion::ExpansionError;
 use homotopy_core::{Diagram, DiagramN};
 use im::{HashMap, Vector};
 use std::collections::BTreeSet;
@@ -441,30 +440,9 @@ impl State {
                 location
             };
 
-            let (boundary_path, interior_path) = BoundaryPath::split(&location);
+            workspace.diagram = diagram.expand(&location, homotopy.direction)?.into();
 
-            match boundary_path {
-                Some(boundary_path) => {
-                    // TODO: Show errors
-                    let result =
-                        expand(&diagram, boundary_path, &interior_path, homotopy.direction)
-                            .map_err(ModelError::ExpansionError)?;
-                    workspace.diagram = result.into();
-                    // TODO: Update path appropriately
-                }
-                None => {
-                    // TODO: Show errors
-                    let result = expand(
-                        &diagram.identity(),
-                        Boundary::Target.into(),
-                        &interior_path,
-                        homotopy.direction,
-                    )
-                    .map_err(ModelError::ExpansionError)?;
-                    workspace.diagram = result.target();
-                    // TODO: Update path appropriately
-                }
-            }
+            // TODO: Update path appropriately
         }
 
         Ok(())
@@ -480,7 +458,6 @@ impl State {
                 location.extend(homotopy.location);
                 location
             };
-            let (boundary_path, interior_path) = BoundaryPath::split(&location);
 
             let (height, bias) = match homotopy.direction {
                 Direction::Forward => (homotopy.height, homotopy.bias),
@@ -495,32 +472,12 @@ impl State {
                 }
             };
 
-            match boundary_path {
-                Some(boundary_path) => {
-                    let result = contract(
-                        &diagram,
-                        boundary_path,
-                        &interior_path,
-                        height,
-                        bias,
-                    )
-                    .ok_or(ModelError::ContractionError)?;
-                    workspace.diagram = result.into();
-                    // TODO: Update path appropriately
-                }
-                None => {
-                    let result = contract(
-                        &diagram.identity(),
-                        Boundary::Target.into(),
-                        &interior_path,
-                        height,
-                        bias,
-                    )
-                    .ok_or(ModelError::ContractionError)?;
-                    workspace.diagram = result.target();
-                    // TODO: Update path appropriately?
-                }
-            }
+            workspace.diagram = diagram
+                .contract(&location, height, bias)
+                .ok_or(ModelError::ContractionError)?
+                .into();
+
+            // TODO: Update path appropriately.
         }
 
         Ok(())

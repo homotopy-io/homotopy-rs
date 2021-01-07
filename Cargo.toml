@@ -1,10 +1,6 @@
 [workspace]
-
 members = [
   "homotopy-core",
   "homotopy-web",
   "homotopy-graphics",
 ]
-
-[patch.crates-io]
-yew = { git = "https://github.com/yewstack/yew", tag = "0.17.4" }

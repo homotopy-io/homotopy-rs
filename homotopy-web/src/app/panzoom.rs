@@ -34,8 +34,6 @@ pub struct PanZoom {
 
 impl PanZoom {
     pub fn new(node_ref: NodeRef, callback: Callback<Message>) -> Self {
-        let node_ref = NodeRef::default();
-
         let on_mouse_down = Callback::from(closure!(clone callback, |e: MouseEvent| {
             e.prevent_default();
             if e.alt_key() {

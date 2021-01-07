@@ -1,6 +1,7 @@
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::cmp::Ordering;
 use std::fmt;
+use thiserror::*;
 
 #[derive(PartialEq, Eq, Copy, Clone, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct Generator {
@@ -167,3 +168,7 @@ pub enum Direction {
     Forward,
     Backward,
 }
+
+#[derive(Debug, Error)]
+#[error("invalid dimension")]
+pub struct DimensionError;

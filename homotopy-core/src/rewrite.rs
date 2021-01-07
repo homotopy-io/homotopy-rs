@@ -54,34 +54,34 @@ impl From<Rewrite0> for Rewrite {
 }
 
 impl TryFrom<Rewrite> for RewriteN {
-    type Error = ();
+    type Error = DimensionError;
 
     fn try_from(value: Rewrite) -> Result<Self, Self::Error> {
         match value {
-            Rewrite::Rewrite0(_) => Err(()),
+            Rewrite::Rewrite0(_) => Err(DimensionError),
             Rewrite::RewriteN(r) => Ok(r),
         }
     }
 }
 
 impl<'a> TryFrom<&'a Rewrite> for &'a RewriteN {
-    type Error = ();
+    type Error = DimensionError;
 
     fn try_from(value: &'a Rewrite) -> Result<Self, Self::Error> {
         match value {
-            Rewrite::Rewrite0(_) => Err(()),
+            Rewrite::Rewrite0(_) => Err(DimensionError),
             Rewrite::RewriteN(r) => Ok(r),
         }
     }
 }
 
 impl TryFrom<Rewrite> for Rewrite0 {
-    type Error = ();
+    type Error = DimensionError;
 
     fn try_from(value: Rewrite) -> Result<Self, Self::Error> {
         match value {
             Rewrite::Rewrite0(r) => Ok(r),
-            Rewrite::RewriteN(_) => Err(()),
+            Rewrite::RewriteN(_) => Err(DimensionError),
         }
     }
 }
@@ -157,7 +157,7 @@ pub struct Rewrite0(pub(crate) Option<(Generator, Generator)>);
 impl fmt::Debug for Rewrite0 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.0 {
-            Some((s, t)) => write!(f, "Rewrite0({:?} -> {:?})", s, t),
+            Some((s, t)) => f.debug_tuple("Rewrite0").field(&s).field(&t).finish(),
             None => f.debug_struct("Rewrite0").finish(),
         }
     }
@@ -204,10 +204,16 @@ impl Rewrite0 {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(PartialEq, Eq, Clone, Hash)]
 pub struct RewriteN(Rc<RewriteInternal>);
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+impl fmt::Debug for RewriteN {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+#[derive(PartialEq, Eq, Clone, Hash)]
 struct RewriteInternal {
     dimension: usize,
     cones: Vec<Cone>,
@@ -474,6 +480,15 @@ impl RewriteN {
 
         let start = (index as isize + offset) as usize;
         start..(start + 1)
+    }
+}
+
+impl fmt::Debug for RewriteInternal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RewriteN")
+            .field("dimension", &self.dimension)
+            .field("cones", &self.cones)
+            .finish()
     }
 }
 

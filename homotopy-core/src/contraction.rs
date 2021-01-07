@@ -54,7 +54,7 @@ pub fn contract(
     }
 
     let result: Result<_, ()> = attach(diagram.clone(), boundary_path.clone(), |slice| {
-        let slice = slice.try_into()?;
+        let slice = slice.try_into().map_err(|_| ())?;
         let contract = contract_in_path(&slice, interior_path, height, bias).ok_or(())?;
         let singular = slice.rewrite_forward(&contract);
         let normalize = normalization::normalize_singular(&singular.into());
