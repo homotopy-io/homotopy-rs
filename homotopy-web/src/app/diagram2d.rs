@@ -524,7 +524,7 @@ fn drag_to_homotopy(
     use SliceIndex::*;
 
     let abs_radians = angle.radians.abs();
-    let horizontal = !(PI / 4.0 .. (3.0 * PI) / 4.0).contains(&abs_radians);
+    let horizontal = !(PI / 4.0..(3.0 * PI) / 4.0).contains(&abs_radians);
 
     // TODO: Find correct drag point in the presence of boundaries
     let point = simplex.first();

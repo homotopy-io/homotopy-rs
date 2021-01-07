@@ -88,6 +88,7 @@ console_error_panic_hook = "0.1.5"
 
 # These crates are used for running unit tests.
 [dev-dependencies]
+cargo-husky = { features = ["precommit-hook", "run-cargo-check", "run-cargo-test", "run-cargo-fmt", "run-cargo-clippy"], version = "*" }
 wasm-bindgen-test = "0.2.45"
 futures = "0.1.27"
 js-sys = "0.3.22"

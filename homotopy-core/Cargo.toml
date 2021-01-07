@@ -12,4 +12,5 @@ serde_json = "1.0"
 log = "*"
 
 [dev-dependencies]
+cargo-husky = { features = ["precommit-hook", "run-cargo-check", "run-cargo-test", "run-cargo-fmt", "run-cargo-clippy"], version = "*" }
 insta = "*"
