@@ -68,6 +68,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e4cec68f03f32e44924783795810fa50a7035d8c8ebe78580ad7e6c703fba38"
 
 [[package]]
+name = "cargo-husky"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7b02b629252fe8ef6460461409564e2c21d0c8e77e0944f3d189ff06c4e932ad"
+
+[[package]]
 name = "cfg-if"
 version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -223,6 +229,7 @@ checksum = "d7afe4a420e3fe79967a00898cc1f4db7c8a49a9333a29f8a4bd76a253d5cd04"
 name = "homotopy-core"
 version = "0.1.0"
 dependencies = [
+ "cargo-husky",
  "insta",
  "log",
  "petgraph",
@@ -235,6 +242,7 @@ dependencies = [
 name = "homotopy-graphics"
 version = "0.1.0"
 dependencies = [
+ "cargo-husky",
  "euclid",
  "homotopy-core",
  "insta",
@@ -254,6 +262,7 @@ name = "homotopy-web"
 version = "0.1.0"
 dependencies = [
  "arrayvec",
+ "cargo-husky",
  "closure",
  "console_error_panic_hook",
  "euclid",

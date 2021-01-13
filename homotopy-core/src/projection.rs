@@ -1,9 +1,19 @@
+//! Diagrams of higher dimensions can be projected into 2 dimensions to be presented in a user
+//! interface. This module contains diagram analyses which that calculate various aspects about the
+//! 2-dimensional projection of a diagram.
+//!
+//! In order to avoid potentially costly recomputations and accidental quadratic complexity when a
+//! diagram is traversed again for every point, the analyses are performed for the entire diagram
+//! at once and the results are cached for efficient random-access retrieval.
 use crate::common::*;
 use crate::diagram::DiagramN;
 use crate::rewrite::RewriteN;
 use serde::Serialize;
 use std::convert::*;
 
+/// Diagram analysis that determines the generator displayed at any point in the 2-dimensional
+/// projection of a diagram. Currently this is the first maximum-dimensional generator, but will
+/// change to incorporate information about homotopies.
 #[derive(Debug, Clone, Serialize)]
 pub struct Generators(Vec<Vec<Generator>>);
 
@@ -44,6 +54,7 @@ impl Generators {
     }
 }
 
+/// Diagram analysis that finds the depth of cells in the 2-dimensional projection of a diagram.
 #[derive(Debug, Clone)]
 pub struct Depths(Vec<Vec<Option<usize>>>);
 
@@ -96,4 +107,74 @@ fn depth(diagram: &DiagramN, height: usize) -> Option<usize> {
         (None, Some(backward)) => Some(backward),
         (None, None) => None,
     }
+}
+
+/// Diagram analysis that finds the depth of the target for each wire going into a non-trivial
+/// position in the 2-dimensional projection of a diagram. This can be used to render homotopies
+/// appropriately by distinguishing under- and over-passes. This analysis builds on `Depths`.
+#[derive(Debug, Clone)]
+pub struct WireDepths {
+    forward: Vec<Vec<Option<usize>>>,
+    backward: Vec<Vec<Option<usize>>>,
+}
+
+impl WireDepths {
+    pub fn new(diagram: &DiagramN, depths: &Depths) -> Self {
+        assert!(diagram.dimension() >= 2);
+
+        let slices: Vec<DiagramN> = diagram.slices().map(|s| s.try_into().unwrap()).collect();
+        let cospans = diagram.cospans();
+
+        let mut forward = Vec::new();
+        let mut backward = Vec::new();
+
+        for i in 0..diagram.size() {
+            forward.push(wire_depths(
+                &slices[Height::Regular(i).to_int()],
+                (&cospans[i].forward).try_into().unwrap(),
+                i,
+                depths,
+            ));
+
+            backward.push(wire_depths(
+                &slices[Height::Regular(i + 1).to_int()],
+                (&cospans[i].backward).try_into().unwrap(),
+                i,
+                depths,
+            ));
+        }
+
+        WireDepths { forward, backward }
+    }
+
+    pub fn get_forward(&self, x: SingularHeight, y: RegularHeight) -> Option<usize> {
+        self.forward.get(y)?.get(x)?.as_ref().cloned()
+    }
+
+    pub fn get_backward(&self, x: SingularHeight, y: RegularHeight) -> Option<usize> {
+        self.backward.get(y)?.get(x)?.as_ref().cloned()
+    }
+}
+
+fn wire_depths(
+    slice: &DiagramN,
+    rewrite: &RewriteN,
+    height: RegularHeight,
+    depths: &Depths,
+) -> Vec<Option<usize>> {
+    if slice.dimension() < 2 {
+        return [None].repeat(slice.size());
+    }
+
+    let mut wire_depths = Vec::new();
+
+    for i in 0..slice.size() {
+        let rewrite_slice: RewriteN = rewrite.slice(i).try_into().unwrap();
+        let source_depth = depths.get(i, Height::Regular(height).into());
+
+        wire_depths
+            .push(source_depth.map(|source_depth| rewrite_slice.singular_image(source_depth)));
+    }
+
+    wire_depths
 }
