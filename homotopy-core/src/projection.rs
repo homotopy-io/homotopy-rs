@@ -9,6 +9,7 @@ use crate::common::*;
 use crate::diagram::DiagramN;
 use crate::rewrite::RewriteN;
 use serde::Serialize;
+use std::collections::BTreeSet;
 use std::convert::*;
 
 /// Diagram analysis that determines the generator displayed at any point in the 2-dimensional
@@ -177,4 +178,48 @@ fn wire_depths(
     }
 
     wire_depths
+}
+
+/// Diagram analysis that determines for each singular point in the 2-dimensional projection of a
+/// diagram whether it is an identity or contains some non-trivial cell or homotopy.
+#[derive(Debug, Clone)]
+pub struct Identities(Vec<Vec<bool>>);
+
+impl Identities {
+    pub fn new(diagram: &DiagramN) -> Self {
+        assert!(diagram.dimension() >= 2);
+
+        let slices: Vec<_> = diagram.slices().collect();
+        let cospans = diagram.cospans();
+        let mut identities = Vec::new();
+
+        for i in 0..diagram.size() {
+            let slice: &DiagramN = (&slices[Height::Singular(i).to_int()]).try_into().unwrap();
+            let forward: &RewriteN = (&cospans[i].forward).try_into().unwrap();
+            let backward: &RewriteN = (&cospans[i].backward).try_into().unwrap();
+
+            let targets = {
+                let mut targets = BTreeSet::new();
+                targets.extend(forward.targets());
+                targets.extend(backward.targets());
+                targets
+            };
+
+            identities.push((0..slice.size()).map(|j| !targets.contains(&j)).collect());
+        }
+
+        Identities(identities)
+    }
+
+    pub fn is_identity(&self, x: SingularHeight, y: SingularHeight) -> bool {
+        let row = match self.0.get(y) {
+            Some(row) => row,
+            None => return true,
+        };
+
+        match row.get(x) {
+            Some(id) => *id,
+            None => true,
+        }
+    }
 }
