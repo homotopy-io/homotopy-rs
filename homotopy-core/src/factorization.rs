@@ -1,3 +1,10 @@
+use std::collections::HashSet;
+
+use crate::{Cospan, Rewrite};
+use crate::{Diagram, Rewrite0};
+use crate::{Height, RewriteN};
+use thiserror::Error;
+
 pub struct MonotoneSequences {
     cur: Option<Vec<usize>>,
 
@@ -49,6 +56,125 @@ impl Iterator for MonotoneSequences {
     }
 }
 
+/// Given `Rewrite`s A -f> C <g- B, find some `Rewrite` A -h> B which factorises f = g ∘ h
+// modulo trivial cases, this works by guessing a monotone function to underly h, and then recurse
+// down dimensions (as in the 0-dimensional case, the only of the rewrite is the monotone function)
+fn factorize(
+    f: Rewrite,
+    g: Rewrite,
+    source: Diagram,
+    target: Diagram,
+) -> Result<Rewrite, FactorizationError> {
+    if g.is_identity() {
+        Ok(f)
+    } else if f == g {
+        Ok(Rewrite::identity(f.dimension()))
+    } else {
+        match (f, g, source, target) {
+            (
+                Rewrite::Rewrite0(Rewrite0(Some((x, y)))),
+                Rewrite::Rewrite0(Rewrite0(Some((p, q)))),
+                Diagram::Diagram0(s),
+                Diagram::Diagram0(t),
+            ) if x == s && y == q && p == t => Ok(Rewrite::from(Rewrite0(Some((x, p))))),
+            (
+                Rewrite::RewriteN(x),
+                Rewrite::RewriteN(y),
+                Diagram::DiagramN(s),
+                Diagram::DiagramN(t),
+            ) if x.dimension() == y.dimension() => {
+                // get the singular levels in the source of r which aren't tips of identity spans
+                let sources = |r: &RewriteN| {
+                    let mut sources = HashSet::new();
+                    let mut offset = 0;
+                    for cone in r.cones() {
+                        sources.extend((cone.index..(cone.index + cone.len())).map(|i| i + offset));
+                        offset += 1 - cone.len();
+                    }
+                    sources
+                };
+                let f_height = *x.targets().iter().max().unwrap();
+                let g_height = *y.targets().iter().max().unwrap();
+                if g_height < f_height {
+                    return Err(FactorizationError::Codomain);
+                }
+                let f_mono: Vec<usize> = (0..f_height - 1).map(|i| x.singular_image(i)).collect();
+                let g_mono: Vec<usize> = (0..g_height - 1).map(|i| y.singular_image(i)).collect();
+                // iterator to guess a monotone function underlying h
+                let mut mss = MonotoneSequences::new(
+                    // number of singular levels of B
+                    *sources(&y).iter().max().unwrap(),
+                    // number of singular levels of C
+                    g_height,
+                );
+                mss.find_map(|ms| {
+                    if
+                    // if the monotone sequence hits a singular level which is
+                    // the tip of an identity span, then we can skip it
+                    !ms.iter().copied().collect::<HashSet<_>>().is_subset(&sources(&y))
+
+                    // check that this monotone composes with that of g to get that of f
+                    || (0 .. f_height - 1).map(|i| g_mono[ms[i]]).collect::<Vec<_>>() != f_mono
+                    {
+                        None
+                    } else {
+                        // recurse on each monotone component
+                        let mut cone_slices: Vec<Vec<Rewrite>> = Vec::new();
+                        let mut sources: Vec<Cospan> = Vec::new();
+                        let mut targets: Vec<Cospan> = Vec::new();
+                        let mut cur: Option<Vec<Rewrite>> = None;
+                        for (si, ti) in ms.iter().enumerate() {
+                            let sub_s = s.slice(Height::Singular(si))?;
+                            let sub_t = t.slice(Height::Singular(*ti))?;
+                            let slice = factorize(x.slice(si), y.slice(*ti), sub_s, sub_t).ok()?;
+                            if !slice.is_identity() {
+                                sources.push(s.cospans()[si].clone());
+                                match &mut cur {
+                                    Some(slices) => slices.push(slice),
+                                    None => {
+                                        cur = Some(vec![slice]);
+                                        targets.push(t.cospans()[*ti].clone())
+                                    }
+                                }
+                            } else {
+                                cur.map(|slices| cone_slices.push(slices));
+                                cur = None
+                            }
+                        }
+                        cur.map(|slices| cone_slices.push(slices));
+                        Some(
+                            RewriteN::from_slices(x.dimension(), &sources, &targets, cone_slices)
+                                .into(),
+                        )
+                    }
+                })
+                .ok_or(FactorizationError::Failed)
+            }
+
+            // ideally, we would check for matching codomains in the n-rewrite
+            // case also, but this requires threading A through the function
+            (Rewrite::Rewrite0(_), Rewrite::Rewrite0(_), _, _) => Err(FactorizationError::Codomain),
+
+            (x, y, _, _) => Err(FactorizationError::Dimension(x.dimension(), y.dimension())),
+        }
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum FactorizationError {
+    #[error("can't factorize rewrites of different dimensions {0} and {1}")]
+    Dimension(usize, usize),
+
+    #[error("rewrites have different codomains")]
+    Codomain,
+
+    #[error("singular level at height {0} is not in both images")]
+    Image(usize),
+
+    #[error("failed to factorize")]
+    Failed,
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -84,4 +210,6 @@ mod test {
             ]
         );
     }
+
+    // TODO: test factorize
 }
