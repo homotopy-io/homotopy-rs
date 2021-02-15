@@ -9,7 +9,7 @@ use std::fmt;
 use std::rc::Rc;
 use thiserror::Error;
 
-#[derive(PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Hash, Clone)]
 pub enum Diagram {
     Diagram0(Generator),
     DiagramN(DiagramN),
@@ -101,7 +101,7 @@ impl Diagram {
     }
 }
 
-#[derive(PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Hash, Clone)]
 pub struct DiagramN(Rc<DiagramInternal>);
 
 impl DiagramN {
@@ -452,7 +452,7 @@ impl TryFrom<Diagram> for Generator {
     }
 }
 
-#[derive(PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Hash, Clone)]
 struct DiagramInternal {
     source: Diagram,
     cospans: Vec<Cospan>,

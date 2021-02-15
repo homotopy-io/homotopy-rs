@@ -8,6 +8,7 @@ pub mod factorization;
 pub mod normalization;
 pub mod projection;
 pub mod rewrite;
+pub mod serialize;
 pub mod typecheck;
 
 pub use common::{Boundary, Direction, Generator, Height, SliceIndex};

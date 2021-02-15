@@ -1,0 +1,9 @@
+---
+source: homotopy-core/tests/serialize.rs
+expression: "Keyed::<Key<Diagram>>::key(&d)"
+
+---
+Key(
+    214215364020672696877278376778620993536,
+    PhantomData,
+)
