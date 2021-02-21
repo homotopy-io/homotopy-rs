@@ -1,0 +1,333 @@
+:root {
+  --sidebar-background: #0A0E14;
+  --sidebar-foreground: #FAFAFA;
+  --sidebar-width: 48px;
+  --sidebar-icon-size: 1px;
+  --sidebar-hover: #4D5566;
+
+  --tooltip-background: var(--sidebar-background);
+  --tooltip-foreground: var(--sidebar-foreground);
+
+  --drawer-width: 250px;
+  --drawer-background: #f9f9f9;
+  --drawer-foreground: #575f66;
+  --drawer-border: #e1e1e1;
+  --drawer-selected: #d1e4f4;
+
+  --path-background: #ffffff;
+  --path-foreground: #575f66;
+  --path-border: #8A919966;
+  --path-hover: #d1e4f4;
+
+  --space-0: 4px;
+  --space-1: calc(2 * var(--space-0));
+  --space-2: calc(2 * var(--space-1));
+
+  --generator-color-border: #8A919966;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  font-family: 'IBM Plex Sans', 'sans';
+  display: flex;
+  flex: 1;
+  font-size: 14px;
+}
+
+.app {
+  display: flex;
+  flex: 1;
+  position: relative;
+}
+
+/* Sidebar */
+
+.sidebar {
+  background: var(--sidebar-background);
+  border: var(--sidebar-border) 1px solid;
+  color: var(--sidebar-foreground);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar__logo {
+  width: var(--sidebar-width);
+  padding: var(--space-1);
+  box-sizing: border-box;
+}
+
+.sidebar__nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar__tools {
+  flex: 1;
+  justify-content: flex-end;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar__button {
+  font-size: var(--sidebar-icon-size);
+  user-select: none;
+  cursor: pointer; 
+  padding: var(--space-1);
+  text-align: center;
+}
+
+
+@media (pointer: fine) {
+  .sidebar__button:hover {
+    background: var(--sidebar-hover);
+  }
+}
+
+/* Workspace */
+
+.workspace {
+  touch-action: none;
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  position: relative;
+  overflow: hidden;
+}
+
+.workspace__diagram {
+  position: absolute;
+  z-index: 0;
+}
+
+.workspace__path {
+  position: absolute;
+  background: var(--path-background);
+  color: var(--path-foreground);
+  border: 1px solid var(--path-border);
+  left: 50%;
+  transform: translate(-50%, 0);
+  margin: var(--space-0);
+  border-radius: var(--space-0);
+  z-index: 10;
+  display: flex;
+  align-items: stretch;
+  transition: opacity 0.2s;
+}
+
+.workspace__path--empty {
+  opacity: 0;
+}
+
+.workspace__path-step, .workspace__path-home {
+  padding: var(--space-1);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+@media (pointer: fine) {
+  .workspace__path-step:hover, .workspace__path-home:hover {
+    background: var(--path-hover);
+  }
+}
+
+.workspace__slice-buttons {
+  position: absolute;
+  right: 0;
+  box-sizing: border-box;
+  z-index: 5;
+  user-select: none;
+}
+
+.workspace__slice-button {
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: var(--space-1);
+  cursor: pointer;
+}
+
+/* Tooltips */
+
+.tooltip {
+  position: relative;
+}
+
+.tooltip::after {
+  background: var(--tooltip-background);
+  border-radius: 10px;
+  color: var(--tooltip-foreground);
+  display: none;
+  padding: 10px 15px;
+  position: absolute;
+  text-align: center;
+  z-index: 900;
+  content: attr(data-tooltip);
+  font-size: 12px;
+  white-space: nowrap;
+  top: 50%;
+}
+
+.tooltip--right::after {
+  right: 0;
+  transform: translate(calc(100% + 10px), -50%);
+}
+
+.tooltip--left::after {
+  left: 0;
+  transform: translate(calc(-100% - 10px), -50%);
+}
+
+.tooltip::before {
+  background: var(--tooltip-background);
+  content: ' ';
+  display: none;
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  z-index: 900;
+  top: 50%;
+}
+
+.tooltip--right::before {
+  right: 0;
+  transform: translate(calc(100% + 5px), -50%) rotate(45deg);
+}
+
+.tooltip--left::before {
+  left: 0;
+  transform: translate(calc(-100% - 5px), -50%) rotate(45deg);
+}
+
+@media (pointer: fine) {
+  .tooltip:hover::after {
+    display: block;
+  }
+
+  .tooltip:hover::before {
+    display: block;
+  }
+}
+
+/* Drawer */
+
+.drawer {
+  width: var(--drawer-width);
+  border-right: 1px solid var(--drawer-border);
+  background: var(--drawer-background);
+  color: var(--drawer-foreground);
+  display: flex;
+  flex-direction: column;
+  touch-action: none;
+}
+
+.drawer__header {
+  height: var(--sidebar-width);
+  min-height: var(--sidebar-width);
+
+  padding: var(--space-0);
+  border-bottom: 1px solid var(--drawer-border);
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.drawer__title {
+  font-size: 1.2em;
+  padding: var(--space-0);
+}
+
+.drawer__content {
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--drawer-border) var(--drawer-background);
+  touch-action: pan-y;
+}
+
+/* Signature */
+
+.signature__generators {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.signature__generator {
+  padding: var(--space-1);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  cursor: pointer;
+}
+
+.signature__generator-name {
+  padding: var(--space-0);
+  flex: 1;
+}
+
+.signature__generator-dimension {
+  padding: var(--space-0);
+}
+
+.signature__generator-color {
+  padding: var(--space-0);
+  margin: var(--space-0);
+  border-radius: calc(var(--space-0));
+  border: 1px solid var(--generator-color-border);
+}
+
+@media (pointer: fine) {
+  .signature__generator:hover {
+    background: var(--drawer-selected);
+  }
+}
+
+/* Diagram SVG */
+
+.diagram-svg__highlight {
+  stroke-width: 1px;
+  stroke-dasharray: 4;
+  stroke: black;
+  fill: #ffff0033;
+}
+
+/* Attachment Options */
+
+.attach__options {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.attach__option {
+  padding: var(--space-1);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  cursor: pointer;
+}
+
+.attach__option-name {
+  padding: var(--space-0);
+  flex: 1;
+}
+
+.attach__option-color {
+  padding: var(--space-0);
+  margin: var(--space-0);
+  border-radius: calc(var(--space-0));
+  border: 1px solid var(--generator-color-border);
+}
+
+@media (pointer: fine) {
+  .attach__option:hover {
+    background: var(--drawer-selected);
+  }
+}

@@ -1,0 +1,26 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg 
+  width="100.0" 
+  height="100.0"
+  viewBox="20 -100.0 100 100.0" 
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  version="1.1">
+
+  <mask id="circle">
+    <circle cx="70" cy="-50" r="50" fill="white" />
+  </mask>
+
+  <mask id="cross">
+    <!-- <rect x="20" y="-100" width="100" height="100" fill="white" /> -->
+    <circle cx="70" cy="-50" r="50" fill="white" />
+    <path stroke="black" stroke-width="14" d="M40.0 0.0C40.0 -10.0,40.0 -50.0,70.0 -50.0" fill="none" stroke-linecap="round"></path>
+    <path stroke="black" stroke-width="14" d="M100.0 -100.0C100.0 -90.0,100.0 -50.0,70.0 -50.0" fill="none" stroke-linecap="round"></path>
+  </mask>
+
+  <path stroke="white" stroke-width="4" d="M40.0 0.0C40.0 -10.0,40.0 -50.0,70.0 -50.0" fill="none" stroke-linecap="round" mask="url(#circle)"></path>
+  <path stroke="white" stroke-width="4" d="M100.0 0.0C100.0 -10.0,100.0 -50.0,70.0 -50.0" fill="none" stroke-linecap="round" mask="url(#cross)"></path>
+  <path stroke="white" stroke-width="4" d="M40.0 -100.0C40.0 -90.0,40.0 -50.0,70.0 -50.0" fill="none" stroke-linecap="round" mask="url(#cross)"></path>
+  <path stroke="white" stroke-width="4" d="M100.0 -100.0C100.0 -90.0,100.0 -50.0,70.0 -50.0" fill="none" stroke-linecap="round" mask="url(#circle)"></path>
+</svg>
