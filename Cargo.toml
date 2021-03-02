@@ -4,3 +4,12 @@ members = [
   "homotopy-web",
   "homotopy-graphics",
 ]
+
+[profile.release]
+# This makes the compiled code faster and smaller, but it makes compiling slower,
+# so it's only enabled in release mode.
+lto = true
+
+[profile.dev]
+lto = "thin"
+opt-level = 3

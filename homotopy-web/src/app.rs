@@ -1,6 +1,7 @@
 mod attach;
 mod diagram2d;
 mod panzoom;
+mod project;
 mod signature;
 mod signature_stylesheet;
 mod workspace;
@@ -8,6 +9,7 @@ use crate::model;
 use crate::model::Drawer;
 use attach::AttachView;
 use homotopy_core::*;
+use project::ProjectView;
 use signature::SignatureView;
 use signature_stylesheet::SignatureStylesheet;
 use wasm_bindgen::JsCast;
@@ -279,7 +281,11 @@ impl App {
         }
 
         match self.state.drawer() {
-            Some(Drawer::Project) => Default::default(),
+            Some(Drawer::Project) => {
+                html! {
+                    <ProjectView dispatch={dispatch} />
+                }
+            }
             Some(Drawer::Signature) => {
                 html! {
                     <SignatureView

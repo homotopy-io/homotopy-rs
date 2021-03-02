@@ -13,34 +13,23 @@ crate-type = ["cdylib", "rlib"]
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = false
 
-[profile.release]
-# This makes the compiled code faster and smaller, but it makes compiling slower,
-# so it's only enabled in release mode.
-lto = true
-
-[profile.dev]
-lto = "thin"
-
-[profile.dev.package."*"]
-opt-level = 3
-
 [features]
-# If you uncomment this line, it will enable `wee_alloc`:
-default = ["wee_alloc"]
+default = ["console_error_panic_hook", "wee_alloc"]
 
 [dependencies]
 homotopy-core = { path = "../homotopy-core" }
 homotopy-graphics = { path = "../homotopy-graphics" }
 closure = "0.3"
+js-sys = "*"
 quote = "1.0.7"
 serde = { version = "1.0", features = ["derive"] }
+rmp-serde = { features = ["serde128"], version = "*" } # u128 support is new
 syn = "1.0.45"
 # yew = "0.17"
-yew = { git = "https://github.com/yewstack/yew" } # yew-functional not released yet
-yewtil = { git = "https://github.com/yewstack/yew" } # yew-functional not released yet
-# yew-functional-macro = { path = "yew-functional-macro" }
-# yew-mdc = { git = "https://github.com/dungeonfog/yew-mdc" }
-# yew-mdc = { git = "https://github.com/NickHu/yew-mdc" }
+yew = { git = "https://github.com/yewstack/yew" }
+yew-services = { git = "https://github.com/yewstack/yew" }
+yew-functional = { git = "https://github.com/yewstack/yew" } # yew-functional not released yet
+yewtil = { git = "https://github.com/yewstack/yew" }
 
 # The `wasm-bindgen` crate provides the bare minimum functionality needed
 # to interact with JavaScript.
@@ -52,11 +41,17 @@ euclid = "*"
 lyon_path = "*"
 thiserror = "*"
 
+# The `console_error_panic_hook` crate provides better debugging of panics by
+# logging them with `console.error`. This is great for development, but requires
+# all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
+# code size when deploying.
+console_error_panic_hook = { version = "*", optional = true }
+
 # `wee_alloc` is a tiny allocator for wasm that is only ~1K in code size
 # compared to the default allocator's ~10K. However, it is slower than the default
 # allocator, so it's not enabled by default.
-wee_alloc = { version = "0.4.2", optional = true }
-im = "*"
+wee_alloc = { version = "*", optional = true }
+im = { version = "*", features = ["serde"] }
 arrayvec = "0.5"
 
 # The `web-sys` crate allows you to interact with the various browser APIs,
@@ -79,17 +74,9 @@ features = [
   "EventListener",
 ]
 
-# The `console_error_panic_hook` crate provides better debugging of panics by
-# logging them with `console.error`. This is great for development, but requires
-# all the `std::fmt` and `std::panicking` infrastructure, so it's only enabled
-# in debug mode.
-[target."cfg(debug_assertions)".dependencies]
-console_error_panic_hook = "0.1.5"
-
 # These crates are used for running unit tests.
 [dev-dependencies]
 cargo-husky = { features = ["precommit-hook", "run-cargo-check", "run-cargo-test", "run-cargo-fmt", "run-cargo-clippy"], version = "*" }
 wasm-bindgen-test = "0.2.45"
 futures = "0.1.27"
-js-sys = "0.3.22"
 wasm-bindgen-futures = "0.3.22"

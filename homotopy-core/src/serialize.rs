@@ -40,6 +40,12 @@ pub struct Serialization {
     signature: HashMap<Generator, Key<Diagram>>,
 }
 
+impl Serialization {
+    pub fn diagram(&self, key: Key<Diagram>) -> Diagram {
+        self.diagrams[&key].rehydrate(self)
+    }
+}
+
 impl Default for Serialization {
     fn default() -> Self {
         Serialization {
@@ -225,12 +231,19 @@ impl From<Vec<u8>> for Serialization {
 impl From<Signature> for Serialization {
     fn from(signature: Signature) -> Self {
         let mut serialization = Default::default();
-        // let mut sig: Vec<_> = signature.into_iter().collect();
-        // sig.sort_unstable_by_key(|(_, d)| d.dimension());
         for (g, d) in signature.into_iter() {
             d.dehydrate(&mut serialization);
             serialization.signature.insert(g, d.key());
         }
+        serialization
+    }
+}
+
+// Serialization of a 'pointed' signature with a distinguished diagram
+impl From<(Signature, Diagram)> for Serialization {
+    fn from((sig, d): (Signature, Diagram)) -> Self {
+        let mut serialization = Serialization::from(sig);
+        d.dehydrate(&mut serialization);
         serialization
     }
 }

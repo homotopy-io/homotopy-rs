@@ -9,9 +9,13 @@ use std::convert::*;
 use thiserror::Error;
 pub mod homotopy;
 use homotopy::*;
+use serde::{Deserialize, Serialize};
+pub mod serialize;
 use std::cmp::Ordering;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub type Signature = HashMap<Generator, GeneratorInfo>;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
     ToggleDrawer(Drawer),
 
@@ -59,11 +63,13 @@ pub enum Action {
     HighlightAttachment(Option<AttachOption>),
 
     Homotopy(Homotopy),
+
+    Serialize(serialize::Serialize),
 }
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct State {
-    signature: HashMap<Generator, GeneratorInfo>,
+    signature: Signature,
     workspace: Option<Workspace>,
     boundary: Option<SelectedBoundary>,
     drawer: Option<Drawer>,
@@ -140,6 +146,10 @@ impl State {
             Action::HighlightAttachment(option) => self.highlight_attachment(option),
             Action::Homotopy(Homotopy::Expand(homotopy)) => self.homotopy_expansion(homotopy),
             Action::Homotopy(Homotopy::Contract(homotopy)) => self.homotopy_contraction(homotopy),
+            Action::Serialize(serialize::Serialize::Export) => self.export(),
+            Action::Serialize(serialize::Serialize::Import(signature, workspace)) => {
+                self.import(signature, workspace)
+            }
         }
     }
 
@@ -497,6 +507,30 @@ impl State {
 
         Ok(())
     }
+
+    fn export(&self) -> Result<(), ModelError> {
+        let data: serialize::Data = if let Some(ws) = self.workspace.clone() {
+            (self.signature.clone(), ws).into()
+        } else {
+            self.signature.clone().into()
+        };
+        serialize::generate_download(
+            "filename_todo.hom".to_string(),
+            &Into::<Vec<u8>>::into(data).as_slice(),
+        )
+        .expect("failed to generate download");
+        Ok(())
+    }
+
+    fn import(
+        &mut self,
+        signature: Signature,
+        workspace: Option<Workspace>,
+    ) -> Result<(), ModelError> {
+        self.signature = signature;
+        self.workspace = workspace;
+        Ok(())
+    }
 }
 
 impl State {
@@ -504,7 +538,7 @@ impl State {
         self.workspace.as_ref()
     }
 
-    pub fn signature(&self) -> &HashMap<Generator, GeneratorInfo> {
+    pub fn signature(&self) -> &Signature {
         &self.signature
     }
 
@@ -541,7 +575,7 @@ pub enum Drawer {
     User,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct AttachOption {
     pub generator: Generator,
     pub boundary_path: Option<BoundaryPath>,

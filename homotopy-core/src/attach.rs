@@ -1,9 +1,10 @@
 use crate::common::*;
 use crate::diagram::*;
 use crate::rewrite::*;
+use serde::{Deserialize, Serialize};
 use std::convert::*;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct BoundaryPath(pub Boundary, pub usize);
 
 impl BoundaryPath {
