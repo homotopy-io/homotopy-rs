@@ -5,6 +5,7 @@ pub mod contraction;
 pub mod diagram;
 pub mod expansion;
 pub mod factorization;
+pub mod graph;
 pub mod normalization;
 pub mod projection;
 pub mod rewrite;
