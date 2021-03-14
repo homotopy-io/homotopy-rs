@@ -532,7 +532,7 @@ fn drag_to_homotopy(
     // Handle horizontal and vertical drags
     let (prefix, y, x, diagram) = if horizontal {
         let depth = match point.0 {
-            Interior(Singular(x)) => Height::Singular(depths.get(x, point.1)?),
+            Interior(Singular(_)) => Height::Singular(depths.node_depth([point.1, point.0])?),
             _ => return None,
         };
 

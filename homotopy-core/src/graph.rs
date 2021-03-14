@@ -92,8 +92,8 @@ where
 
             // Identity rewrite from target slice
             edges_exploded.push((
-                nodes_index_start + node.size() * 2 + 3,
                 nodes_index_start + node.size() * 2 + 2,
+                nodes_index_start + node.size() * 2 + 1,
                 Rewrite::identity(self.dimension - 1),
             ));
         }
@@ -104,6 +104,7 @@ where
 
         for (source, target, rewrite) in self.edges {
             let rewrite: RewriteN = rewrite.try_into()?;
+
             let source_index = nodes_indices[source];
             let source_size = nodes_indices[source + 1] - source_index;
             let target_index = nodes_indices[target];
