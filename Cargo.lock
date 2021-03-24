@@ -214,6 +214,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d7afe4a420e3fe79967a00898cc1f4db7c8a49a9333a29f8a4bd76a253d5cd04"
 
 [[package]]
+name = "hashconsing"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec4594a62a29e1a867076005a660671a1121de786435b76acad955a59cb72075"
+dependencies = [
+ "lazy_static",
+]
+
+[[package]]
 name = "highway"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -224,6 +233,7 @@ name = "homotopy-core"
 version = "0.1.0"
 dependencies = [
  "cargo-husky",
+ "hashconsing",
  "highway",
  "insta",
  "log",

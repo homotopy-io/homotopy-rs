@@ -3,10 +3,10 @@ use crate::common::*;
 use crate::contraction::*;
 use crate::expansion::*;
 use crate::rewrite::*;
+use hashconsing::{consign, HConsed, HashConsign};
 use std::convert::TryFrom;
 use std::convert::*;
 use std::fmt;
-use std::rc::Rc;
 use thiserror::Error;
 
 #[derive(PartialEq, Eq, Hash, Clone)]
@@ -102,7 +102,9 @@ impl Diagram {
 }
 
 #[derive(PartialEq, Eq, Hash, Clone)]
-pub struct DiagramN(Rc<DiagramInternal>);
+pub struct DiagramN(HConsed<DiagramInternal>);
+
+consign! { let DIAGRAM_FACTORY = consign(37) for DiagramInternal; }
 
 impl DiagramN {
     pub fn new<S, T>(generator: Generator, source: S, target: T) -> Result<Self, NewDiagramError>
@@ -133,7 +135,7 @@ impl DiagramN {
     }
 
     pub(crate) fn new_unsafe(source: Diagram, cospans: Vec<Cospan>) -> Self {
-        DiagramN(Rc::new(DiagramInternal { source, cospans }))
+        DiagramN(DIAGRAM_FACTORY.mk(DiagramInternal { source, cospans }))
     }
 
     /// The dimension of the diagram, which is at least one.
@@ -194,8 +196,8 @@ impl DiagramN {
         }
     }
 
-    pub(crate) fn rewrite_forward(mut self, rewrite: &RewriteN) -> DiagramN {
-        let diagram: &mut DiagramInternal = Rc::make_mut(&mut self.0);
+    pub(crate) fn rewrite_forward(self, rewrite: &RewriteN) -> DiagramN {
+        let mut diagram: DiagramInternal = (*self.0).clone();
         let mut offset: isize = 0;
 
         for cone in rewrite.cones() {
@@ -207,11 +209,11 @@ impl DiagramN {
             offset -= cone.len() as isize - 1;
         }
 
-        DiagramN(self.0)
+        DiagramN(DIAGRAM_FACTORY.mk(diagram))
     }
 
-    pub(crate) fn rewrite_backward(mut self, rewrite: &RewriteN) -> DiagramN {
-        let diagram: &mut DiagramInternal = Rc::make_mut(&mut self.0);
+    pub(crate) fn rewrite_backward(self, rewrite: &RewriteN) -> DiagramN {
+        let mut diagram: DiagramInternal = (*self.0).clone();
 
         for cone in rewrite.cones() {
             let start = cone.index;
@@ -219,7 +221,7 @@ impl DiagramN {
             diagram.cospans.splice(start..stop, cone.source.clone());
         }
 
-        DiagramN(self.0)
+        DiagramN(DIAGRAM_FACTORY.mk(diagram))
     }
 
     pub fn cospans(&self) -> &[Cospan] {

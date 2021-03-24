@@ -5,6 +5,7 @@ authors = ["Lukas Heidemann <lukas@heidemann.me>", "Nick Hu <me@nickhu.co.uk>"]
 edition = "2018"
 
 [dependencies]
+hashconsing = "*"
 highway = "*"
 log = "*"
 petgraph = "*"

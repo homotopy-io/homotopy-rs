@@ -1,11 +1,12 @@
 use crate::common::*;
 use crate::diagram::*;
 
+use hashconsing::{consign, HConsed, HashConsign};
 use std::cmp::Ordering;
 use std::convert::*;
 use std::fmt;
 use std::ops::Range;
-use std::rc::Rc;
+
 use thiserror::Error;
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
@@ -205,7 +206,9 @@ impl Rewrite0 {
 }
 
 #[derive(PartialEq, Eq, Clone, Hash)]
-pub struct RewriteN(Rc<RewriteInternal>);
+pub struct RewriteN(HConsed<RewriteInternal>);
+
+consign! { let REWRITE_FACTORY = consign(37) for RewriteInternal; }
 
 impl fmt::Debug for RewriteN {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -230,7 +233,7 @@ impl RewriteN {
             .filter(|cone| !cone.is_identity())
             .collect();
 
-        RewriteN(Rc::new(RewriteInternal { dimension, cones }))
+        RewriteN(REWRITE_FACTORY.mk(RewriteInternal { dimension, cones }))
     }
 
     pub(crate) fn cones(&self) -> &[Cone] {
