@@ -1,6 +1,7 @@
-use crate::model::GeneratorInfo;
+use crate::model::{Color, GeneratorInfo};
 use homotopy_core::Generator;
 use im::HashMap;
+use palette::Shade;
 use std::fmt::Write;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, Node};
@@ -58,14 +59,14 @@ impl SignatureStylesheet {
                 style,
                 ".{name} {{ fill: {color}; stroke: {color}; }}",
                 name = Self::name(&self.prefix, *generator, "surface"),
-                color = info.color
+                color = Color((info.color.into_format().into_linear().lighten(0.1)).into())
             )
             .unwrap();
             writeln!(
                 style,
                 ".{name} {{ stroke: {color}; }}",
                 name = Self::name(&self.prefix, *generator, "wire"),
-                color = info.color
+                color = Color((info.color.into_format().into_linear().lighten(0.05)).into())
             )
             .unwrap();
             writeln!(

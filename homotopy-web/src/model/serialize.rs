@@ -4,7 +4,7 @@ use homotopy_core::Diagram;
 use im::{HashMap, Vector};
 use wasm_bindgen::JsCast;
 
-use super::{AttachOption, GeneratorInfo, Signature, Workspace};
+use super::{AttachOption, Color, GeneratorInfo, Signature, Workspace};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Serialize {
     Export,
@@ -38,7 +38,7 @@ pub fn generate_download(name: String, data: &[u8]) -> Result<(), wasm_bindgen::
 #[derive(Debug, PartialEq, Eq, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub(crate) struct Data {
     signature: Serialization,
-    generator_info: HashMap<Generator, (String, String)>,
+    generator_info: HashMap<Generator, (String, Color)>,
     workspace: Option<WorkspaceSer>,
 }
 
@@ -53,7 +53,7 @@ struct WorkspaceSer {
 impl From<Signature> for Data {
     fn from(sig: Signature) -> Self {
         let mut stripped: std::collections::HashMap<Generator, Diagram> = Default::default();
-        let mut generator_info: HashMap<Generator, (String, String)> = Default::default();
+        let mut generator_info: HashMap<Generator, (String, Color)> = Default::default();
         for (k, v) in sig.into_iter() {
             stripped.insert(k, v.diagram);
             generator_info.insert(k, (v.name, v.color));
@@ -69,7 +69,7 @@ impl From<Signature> for Data {
 impl From<(Signature, Workspace)> for Data {
     fn from((sig, ws): (Signature, Workspace)) -> Self {
         let mut stripped: std::collections::HashMap<Generator, Diagram> = Default::default();
-        let mut generator_info: HashMap<Generator, (String, String)> = Default::default();
+        let mut generator_info: HashMap<Generator, (String, Color)> = Default::default();
         let k = ws.diagram.key();
         for (k, v) in sig.into_iter() {
             stripped.insert(k, v.diagram);

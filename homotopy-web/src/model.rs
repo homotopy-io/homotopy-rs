@@ -4,14 +4,16 @@ use homotopy_core::diagram::NewDiagramError;
 use homotopy_core::expansion::ExpansionError;
 use homotopy_core::{Diagram, DiagramN};
 use im::{HashMap, Vector};
-use std::collections::BTreeSet;
-use std::convert::*;
+use std::{collections::BTreeSet, ops::Deref};
+use std::{convert::*, fmt::Display};
 use thiserror::Error;
 pub mod homotopy;
 use homotopy::*;
 use serde::{Deserialize, Serialize};
 pub mod serialize;
+use palette::Srgb;
 use std::cmp::Ordering;
+use std::str::FromStr;
 
 pub type Signature = HashMap<Generator, GeneratorInfo>;
 
@@ -89,8 +91,27 @@ impl Default for State {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GeneratorInfo {
     pub name: String,
-    pub color: String,
+    pub color: Color,
     pub diagram: Diagram,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Color(pub(crate) Srgb<u8>);
+impl Eq for Color {}
+
+impl Deref for Color {
+    type Target = Srgb<u8>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl Display for Color {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let (r, g, b) = self.into_components();
+        write!(f, "#{:x}{:x}{:x}", r, g, b)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -160,7 +181,7 @@ impl State {
 
         let info = GeneratorInfo {
             name: format!("Cell {}", id),
-            color: COLORS[id % COLORS.len()].to_owned(),
+            color: Color(Srgb::<u8>::from_str(COLORS[id % COLORS.len()]).unwrap()),
             diagram: generator.into(),
         };
 
@@ -179,7 +200,7 @@ impl State {
 
         let info = GeneratorInfo {
             name: format!("Cell {}", id),
-            color: COLORS[id % COLORS.len()].to_owned(),
+            color: Color(Srgb::<u8>::from_str(COLORS[id % COLORS.len()]).unwrap()),
             diagram: diagram.into(),
         };
 

@@ -17,6 +17,7 @@ wasm-opt = false
 default = ["console_error_panic_hook", "wee_alloc"]
 
 [dependencies]
+palette = { git = "https://github.com/Ogeon/palette", features = ["serializing"] }
 homotopy-core = { path = "../homotopy-core" }
 homotopy-graphics = { path = "../homotopy-graphics" }
 closure = "0.3"
