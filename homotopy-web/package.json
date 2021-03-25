@@ -6,8 +6,8 @@
   "name": "homotopy-web",
   "version": "0.1.0",
   "scripts": {
-    "build": "rimraf dist pkg && webpack",
-    "start": "rimraf dist pkg && webpack serve --host 0.0.0.0 --open --devtool eval-cheap-module-source-map",
+    "build": "rimraf dist pkg && GIT_DESCRIBE=$(git describe --dirty --always --tags) webpack",
+    "start": "rimraf dist pkg && GIT_DESCRIBE=$(git describe --dirty --always --tags) webpack serve --host 0.0.0.0 --open --devtool eval-cheap-module-source-map",
     "test": "cargo test && wasm-pack test --headless"
   },
   "devDependencies": {

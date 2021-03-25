@@ -252,6 +252,9 @@ impl Component for App {
                 </aside>
                 {drawer}
                 {workspace}
+                <span class="version">
+                    {format!("Version: {}", option_env!("GIT_DESCRIBE").unwrap_or(env!("CARGO_PKG_VERSION")))}
+                </span>
             </main>
         }
     }
