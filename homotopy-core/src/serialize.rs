@@ -61,7 +61,7 @@ impl Default for Serialization {
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 enum DiagramSer {
     D0(Generator),
-    DN {
+    Dn {
         source: Key<Diagram>,
         cospans: Vec<CospanSer>,
     },
@@ -70,7 +70,7 @@ enum DiagramSer {
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 enum RewriteSer {
     R0(Option<(Generator, Generator)>),
-    RN {
+    Rn {
         dimension: usize,
         cones: Vec<Key<Cone>>,
     },
@@ -117,7 +117,7 @@ impl Dehydrate for Diagram {
                     .iter()
                     .map(|c| c.dehydrate(serialization))
                     .collect();
-                let ser = DiagramSer::DN {
+                let ser = DiagramSer::Dn {
                     source: n.source().key(),
                     cospans,
                 };
@@ -205,7 +205,7 @@ impl Dehydrate for Rewrite {
                         c.key()
                     })
                     .collect();
-                let rn = RewriteSer::RN {
+                let rn = RewriteSer::Rn {
                     dimension: n.dimension(),
                     cones,
                 };
@@ -262,7 +262,7 @@ impl Rehydrate<Diagram> for DiagramSer {
     fn rehydrate(&self, serialization: &Serialization) -> Diagram {
         match self {
             DiagramSer::D0(g) => Diagram::from(*g),
-            DiagramSer::DN { source, cospans } => DiagramN::new_unsafe(
+            DiagramSer::Dn { source, cospans } => DiagramN::new_unsafe(
                 source.rehydrate(serialization),
                 cospans
                     .iter()
@@ -284,7 +284,7 @@ impl Rehydrate<Rewrite> for RewriteSer {
     fn rehydrate(&self, serialization: &Serialization) -> Rewrite {
         match self {
             RewriteSer::R0(r) => Rewrite0(*r).into(),
-            RewriteSer::RN { dimension, cones } => RewriteN::new(
+            RewriteSer::Rn { dimension, cones } => RewriteN::new(
                 *dimension,
                 cones.iter().map(|c| c.rehydrate(serialization)).collect(),
             )
