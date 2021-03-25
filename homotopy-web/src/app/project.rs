@@ -21,8 +21,8 @@ pub struct Props {
 pub fn project_view(props: &Props) -> Html {
     let export = props.dispatch.reform(|_| Serialize(Export));
     let dispatch = &props.dispatch;
+    let (_, set_reader_task) = use_state(|| None);
     let import: Callback<ChangeData> = Callback::from(closure!(clone dispatch, |evt| {
-        let (_, set_reader_task) = use_state(|| None);
         if let Files(filelist) = evt {
             let file = filelist.get(0).unwrap();
             let callback = Callback::from(
