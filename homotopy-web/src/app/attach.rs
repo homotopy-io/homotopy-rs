@@ -1,4 +1,4 @@
-use crate::model::{Action, AttachOption, GeneratorInfo};
+use crate::model::proof::{Action, AttachOption, GeneratorInfo};
 use homotopy_core::common::*;
 use yew::prelude::*;
 

@@ -1,9 +1,8 @@
 use crate::app::diagram2d::{Diagram1D, Diagram2D, Highlight2D};
 use crate::app::icon::Icon;
 use crate::app::panzoom;
-use crate::model;
-use crate::model::homotopy::Homotopy;
-use crate::model::GeneratorInfo;
+use crate::model::proof::homotopy::Homotopy;
+use crate::model::proof::{Action, GeneratorInfo, Workspace};
 use closure::closure;
 use homotopy_core::common::*;
 use homotopy_core::{Diagram, DiagramN};
@@ -14,8 +13,8 @@ use yew::prelude::*;
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct Props {
-    pub workspace: model::Workspace,
-    pub dispatch: Callback<model::Action>,
+    pub workspace: Workspace,
+    pub dispatch: Callback<Action>,
     pub signature: im::HashMap<Generator, GeneratorInfo>,
 }
 
@@ -37,8 +36,8 @@ impl Component for WorkspaceView {
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
         let panzoom_callback = link.callback(Message::PanZoom);
         let panzoom = panzoom::PanZoom::new(NodeRef::default(), panzoom_callback);
-        let on_select = props.dispatch.reform(model::Action::SelectPoints);
-        let on_homotopy = props.dispatch.reform(model::Action::Homotopy);
+        let on_select = props.dispatch.reform(Action::SelectPoints);
+        let on_homotopy = props.dispatch.reform(Action::Homotopy);
         WorkspaceView {
             props,
             panzoom,
@@ -102,7 +101,7 @@ impl WorkspaceView {
                 html! {
                     <span
                         class="workspace__path-step"
-                        onclick={dispatch.reform(move |_| model::Action::AscendSlice(path_len - index - 1))}
+                        onclick={dispatch.reform(move |_| Action::AscendSlice(path_len - index - 1))}
                     >
                         {step}
                     </span>
@@ -123,7 +122,7 @@ impl WorkspaceView {
             <div class={class}>
                 <span
                     class="workspace__path-home"
-                    onclick={dispatch.reform(move |_| model::Action::AscendSlice(path_len))}
+                    onclick={dispatch.reform(move |_| Action::AscendSlice(path_len))}
                 >
                     <Icon name="menu" />
                 </span>
@@ -183,8 +182,7 @@ impl WorkspaceView {
             Diagram::DiagramN(diagram) => diagram.size(),
         };
 
-        let mut buttons = Vec::new();
-        buttons.push(self.view_slice_button(Boundary::Target.into()));
+        let mut buttons = vec![self.view_slice_button(Boundary::Target.into())];
         buttons.extend(
             (0..(slices * 2 + 1))
                 .rev()
@@ -229,7 +227,7 @@ impl WorkspaceView {
                 class="workspace__slice-button tooltip tooltip--left"
                 data-tooltip={label}
                 style={&button_style}
-                onclick={self.props.dispatch.reform(move |_| model::Action::DescendSlice(index))}
+                onclick={self.props.dispatch.reform(move |_| Action::DescendSlice(index))}
             >
                 <Icon name="arrow_right" />
             </div>

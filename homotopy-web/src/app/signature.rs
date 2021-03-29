@@ -1,4 +1,4 @@
-use crate::model::{Action, GeneratorInfo};
+use crate::model::proof::{Action, GeneratorInfo};
 use homotopy_core::Generator;
 use im::HashMap;
 use yew::prelude::*;

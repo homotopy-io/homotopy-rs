@@ -1,6 +1,6 @@
 use crate::app::signature_stylesheet::SignatureStylesheet;
-use crate::model::homotopy::{Contract, Expand, Homotopy};
-use crate::model::RenderStyle;
+use crate::model::proof::homotopy::{Contract, Expand, Homotopy};
+use crate::model::proof::RenderStyle;
 use euclid::default::{Point2D, Size2D, Transform2D, Vector2D};
 use euclid::Angle;
 use homotopy_core::common::Direction;

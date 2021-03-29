@@ -1,4 +1,4 @@
-use crate::model::{Color, GeneratorInfo};
+use crate::model::proof::{Color, GeneratorInfo};
 use homotopy_core::Generator;
 use im::HashMap;
 use palette::Shade;

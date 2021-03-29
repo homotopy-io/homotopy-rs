@@ -6,11 +6,10 @@ use yew_functional::function_component;
 use yew_functional::use_state;
 use yew_services::{reader::FileData, ReaderService};
 
-use crate::model::{
-    serialize::{Serialize::*, *},
-    Action,
-    Action::*,
-};
+use crate::model::serialize::Data;
+use crate::model::serialize::Serialize::{Export, Import};
+use crate::model::Action;
+use crate::model::Action::Serialize;
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct Props {

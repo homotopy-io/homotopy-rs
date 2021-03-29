@@ -82,35 +82,35 @@ impl SidebarButton {
 const BUTTON_CLEAR: SidebarButton = SidebarButton {
     label: "Clear (C)",
     icon: "clear",
-    action: model::Action::ClearWorkspace,
+    action: model::Action::Proof(model::proof::Action::ClearWorkspace),
     shortcut: Some('c'),
 };
 
 const BUTTON_IDENTITY: SidebarButton = SidebarButton {
     label: "Identity (I)",
     icon: "upgrade",
-    action: model::Action::TakeIdentityDiagram,
+    action: model::Action::Proof(model::proof::Action::TakeIdentityDiagram),
     shortcut: Some('i'),
 };
 
 const BUTTON_SOURCE: SidebarButton = SidebarButton {
     label: "Source (S)",
     icon: "arrow_circle_down",
-    action: model::Action::SetBoundary(Boundary::Source),
+    action: model::Action::Proof(model::proof::Action::SetBoundary(Boundary::Source)),
     shortcut: Some('s'),
 };
 
 const BUTTON_TARGET: SidebarButton = SidebarButton {
     label: "Target (T)",
     icon: "arrow_circle_up",
-    action: model::Action::SetBoundary(Boundary::Target),
+    action: model::Action::Proof(model::proof::Action::SetBoundary(Boundary::Target)),
     shortcut: Some('t'),
 };
 
 const BUTTON_ADD_GENERATOR: SidebarButton = SidebarButton {
     label: "Add Generator (A)",
     icon: "add_circle_outline",
-    action: model::Action::CreateGeneratorZero,
+    action: model::Action::Proof(model::proof::Action::CreateGeneratorZero),
     shortcut: Some('a'),
 };
 
@@ -172,7 +172,7 @@ impl Component for App {
 
         // Install the signature stylesheet
         let mut signature_stylesheet = SignatureStylesheet::new("generator");
-        signature_stylesheet.update(state.signature().clone());
+        signature_stylesheet.update(state.proof.signature().clone());
         signature_stylesheet.mount();
 
         // Install the keyboard listener for shortcuts
@@ -198,7 +198,7 @@ impl Component for App {
                     }
                 }
                 self.signature_stylesheet
-                    .update(self.state.signature().clone());
+                    .update(self.state.proof.signature().clone());
             }
         }
         true
@@ -210,15 +210,15 @@ impl Component for App {
 
     fn view(&self) -> Html {
         let dispatch = &self.dispatch;
-        let signature = self.state.signature();
+        let signature = self.state.proof.signature();
 
-        let workspace = match self.state.workspace() {
+        let workspace = match self.state.proof.workspace() {
             Some(workspace) => {
                 html! {
                     <WorkspaceView
                         workspace={workspace}
                         signature={signature}
-                        dispatch={dispatch}
+                        dispatch={dispatch.reform(model::Action::Proof)}
                     />
                 }
             }
@@ -269,6 +269,7 @@ impl App {
         let dispatch = &self.dispatch;
         let attach_options = self
             .state
+            .proof
             .workspace()
             .map(|workspace| workspace.attach.clone())
             .flatten();
@@ -276,9 +277,9 @@ impl App {
         if let Some(attach_options) = attach_options {
             return html! {
                 <AttachView
-                    dispatch={dispatch}
+                    dispatch={dispatch.reform(model::Action::Proof)}
                     options={attach_options}
-                    signature={self.state.signature()}
+                    signature={self.state.proof.signature()}
                 />
             };
         }
@@ -292,8 +293,8 @@ impl App {
             Some(Drawer::Signature) => {
                 html! {
                     <SignatureView
-                        signature={self.state.signature()}
-                        dispatch={dispatch}
+                        signature={self.state.proof.signature()}
+                        dispatch={dispatch.reform(model::Action::Proof)}
                     />
                 }
             }
