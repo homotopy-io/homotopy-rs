@@ -81,9 +81,9 @@ impl ActionRegion {
     }
 }
 
-impl Into<Simplex> for &ActionRegion {
-    fn into(self) -> Simplex {
-        match self {
+impl From<&ActionRegion> for Simplex {
+    fn from(ar: &ActionRegion) -> Self {
+        match ar {
             ActionRegion::Surface(ps, _) => Simplex::Surface(*ps),
             ActionRegion::Wire(ps, _) => Simplex::Wire(*ps),
             ActionRegion::Point(ps, _) => Simplex::Point(*ps),
@@ -117,7 +117,7 @@ impl GraphicElement {
             Wire(g, path, mask) => {
                 let path = path.transformed(transform);
                 let mask = mask
-                    .into_iter()
+                    .iter()
                     .map(|mask| mask.transformed(transform))
                     .collect();
                 Wire(*g, path, mask)

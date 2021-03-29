@@ -33,9 +33,9 @@ impl Fill {
     }
 }
 
-impl Into<Shape> for Fill {
-    fn into(self) -> Shape {
-        Shape::Fill(self)
+impl From<Fill> for Shape {
+    fn from(f: Fill) -> Self {
+        Self::Fill(f)
     }
 }
 
@@ -120,9 +120,9 @@ fn distance_to_line_segment(point: Point, from: Point, to: Point) -> f32 {
     }
 }
 
-impl Into<Shape> for Stroke {
-    fn into(self) -> Shape {
-        Shape::Stroke(self)
+impl From<Stroke> for Shape {
+    fn from(s: Stroke) -> Self {
+        Self::Stroke(s)
     }
 }
 
@@ -142,9 +142,9 @@ impl Circle {
     }
 }
 
-impl Into<Shape> for Circle {
-    fn into(self) -> Shape {
-        Shape::Circle(self)
+impl From<Circle> for Shape {
+    fn from(c: Circle) -> Self {
+        Self::Circle(c)
     }
 }
 
