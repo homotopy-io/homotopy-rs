@@ -67,7 +67,7 @@ impl Degeneracy {
         let target: &DiagramN = target.try_into().unwrap();
 
         let rewrite_simple =
-            RewriteN::make_degeneracy(source.dimension(), source.cospans(), &trivial);
+            RewriteN::make_degeneracy(source.dimension(), target.cospans(), &trivial);
         let middle = source.clone().rewrite_forward(&rewrite_simple);
         let middle_slices: Vec<_> = middle.slices().collect();
         let target_slices: Vec<_> = target.slices().collect();

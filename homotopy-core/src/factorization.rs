@@ -59,109 +59,81 @@ impl Iterator for MonotoneSequences {
 /// Given `Rewrite`s A -f> C <g- B, find some `Rewrite` A -h> B which factorises f = g ∘ h
 // modulo trivial cases, this works by guessing a monotone function to underly h, and then recurse
 // down dimensions (as in the 0-dimensional case, the only of the rewrite is the monotone function)
-fn factorize(
+pub fn factorize(
     f: Rewrite,
     g: Rewrite,
     source: Diagram,
     target: Diagram,
 ) -> Result<Rewrite, FactorizationError> {
+    // Simple special cases
     if g.is_identity() {
-        Ok(f)
-    } else if f == g {
-        Ok(Rewrite::identity(f.dimension()))
-    } else {
-        match (f, g, source, target) {
-            (
-                Rewrite::Rewrite0(Rewrite0(Some((fs, ft)))),
-                Rewrite::Rewrite0(Rewrite0(Some((gs, gt)))),
-                Diagram::Diagram0(s),
-                Diagram::Diagram0(t),
-            ) if fs == s && ft == gt && gs == t => Ok(Rewrite::from(Rewrite0(Some((fs, gs))))),
-            (
-                Rewrite::RewriteN(fr),
-                Rewrite::RewriteN(gr),
-                Diagram::DiagramN(s),
-                Diagram::DiagramN(t),
-            ) if fr.dimension() == gr.dimension() => {
-                // get the singular levels in the source of r which aren't tips of identity spans
-                let sources = |r: &RewriteN| {
-                    let mut sources = HashSet::new();
-                    let mut offset = 0;
-                    for cone in r.cones() {
-                        sources.extend((cone.index..(cone.index + cone.len())).map(|i| i + offset));
-                        offset += 1 - cone.len();
-                    }
-                    sources
-                };
-                let f_height = *fr.targets().iter().max().unwrap();
-                let g_height = *gr.targets().iter().max().unwrap();
-                if g_height < f_height {
-                    return Err(FactorizationError::Codomain);
-                }
-                let f_mono: Vec<usize> = (0..f_height - 1).map(|i| fr.singular_image(i)).collect();
-                let g_mono: Vec<usize> = (0..g_height - 1).map(|i| gr.singular_image(i)).collect();
-                // iterator to guess a monotone function underlying h
-                let mut mss = MonotoneSequences::new(
-                    // number of singular levels of B
-                    *sources(&gr).iter().max().unwrap(),
-                    // number of singular levels of C
-                    g_height,
-                );
-                mss.find_map(|ms| {
-                    if
-                    // if the monotone sequence hits a singular level which is
-                    // the tip of an identity span, then we can skip it
-                    !ms.iter().copied().collect::<HashSet<_>>().is_subset(&sources(&gr))
+        return Ok(f);
+    }
 
-                    // check that this monotone composes with that of g to get that of f
-                    || (0 .. f_height - 1).map(|i| g_mono[ms[i]]).collect::<Vec<_>>() != f_mono
-                    {
-                        None
-                    } else {
-                        // recurse on each monotone component
-                        let mut cone_slices: Vec<Vec<Rewrite>> = Vec::new();
-                        let mut sources: Vec<Cospan> = Vec::new();
-                        let mut targets: Vec<Cospan> = Vec::new();
-                        let mut cur: Option<Vec<Rewrite>> = None;
-                        for (si, ti) in ms.iter().enumerate() {
-                            let sub_s = s.slice(Height::Singular(si))?;
-                            let sub_t = t.slice(Height::Singular(*ti))?;
-                            let slice =
-                                factorize(fr.slice(si), gr.slice(*ti), sub_s, sub_t).ok()?;
-                            if !slice.is_identity() {
-                                sources.push(s.cospans()[si].clone());
-                                match &mut cur {
-                                    Some(slices) => slices.push(slice),
-                                    None => {
-                                        cur = Some(vec![slice]);
-                                        targets.push(t.cospans()[*ti].clone())
-                                    }
-                                }
-                            } else {
-                                if let Some(slices) = cur {
-                                    cone_slices.push(slices)
-                                }
-                                cur = None
-                            }
-                        }
-                        if let Some(slices) = cur {
-                            cone_slices.push(slices)
-                        }
-                        Some(
-                            RewriteN::from_slices(fr.dimension(), &sources, &targets, cone_slices)
-                                .into(),
-                        )
-                    }
-                })
-                .ok_or(FactorizationError::Failed)
+    if f == g {
+        return Ok(Rewrite::identity(f.dimension()));
+    }
+
+    // General cases
+    match (f, g, source, target) {
+        (
+            Rewrite::Rewrite0(Rewrite0(Some((fs, ft)))),
+            Rewrite::Rewrite0(Rewrite0(Some((gs, gt)))),
+            Diagram::Diagram0(s),
+            Diagram::Diagram0(t),
+        ) if fs == s && ft == gt && gs == t => Ok(Rewrite::from(Rewrite0(Some((fs, gs))))),
+        (
+            Rewrite::RewriteN(fr),
+            Rewrite::RewriteN(gr),
+            Diagram::DiagramN(s),
+            Diagram::DiagramN(t),
+        ) if fr.dimension() == gr.dimension() => {
+            let f_height = fr.singular_image(s.size());
+            let g_height = gr.singular_image(t.size());
+
+            if g_height < f_height {
+                return Err(FactorizationError::Codomain);
             }
 
-            // ideally, we would check for matching codomains in the n-rewrite
-            // case also, but this requires threading A through the function
-            (Rewrite::Rewrite0(_), Rewrite::Rewrite0(_), _, _) => Err(FactorizationError::Codomain),
+            let f_mono: Vec<usize> = (0..s.size()).map(|i| fr.singular_image(i)).collect();
+            let g_mono: Vec<usize> = (0..t.size()).map(|i| gr.singular_image(i)).collect();
 
-            (x, y, _, _) => Err(FactorizationError::Dimension(x.dimension(), y.dimension())),
+            // iterator to guess a monotone function underlying h
+            MonotoneSequences::new(s.size(), t.size() - 1)
+                .find_map(|h_mono| {
+                    // Check that this monotone composes with that of g to get that of f.
+                    if (0..s.size()).map(|i| &g_mono[h_mono[i]]).ne(f_mono.iter()) {
+                        return None;
+                    }
+
+                    // Recurse on each monotone component
+                    let mut cone_slices: Vec<Vec<Rewrite>> = vec![vec![]; t.size()];
+
+                    for (si, ti) in h_mono.iter().enumerate() {
+                        let sub_s = s.slice(Height::Singular(si))?;
+                        let sub_t = t.slice(Height::Singular(*ti))?;
+                        let slice = factorize(fr.slice(si), gr.slice(*ti), sub_s, sub_t).ok()?;
+                        cone_slices[*ti].push(slice);
+                    }
+
+                    Some(
+                        RewriteN::from_slices(
+                            fr.dimension(),
+                            s.cospans(),
+                            t.cospans(),
+                            cone_slices,
+                        )
+                        .into(),
+                    )
+                })
+                .ok_or(FactorizationError::Failed)
         }
+
+        // ideally, we would check for matching codomains in the n-rewrite
+        // case also, but this requires threading A through the function
+        (Rewrite::Rewrite0(_), Rewrite::Rewrite0(_), _, _) => Err(FactorizationError::Codomain),
+
+        (x, y, _, _) => Err(FactorizationError::Dimension(x.dimension(), y.dimension())),
     }
 }
 

@@ -1,7 +1,7 @@
-use crate::attach::*;
-use crate::common::*;
 use crate::diagram::*;
 use crate::rewrite::*;
+use crate::{attach::*, factorization::factorize};
+use crate::{common::*, normalization::normalize_singular};
 use std::cmp::Ordering;
 use std::convert::*;
 use thiserror::Error;
@@ -295,11 +295,47 @@ fn expand_recursive(
         .ok_or(ExpansionError::OutOfBounds)?;
 
     let recursive = expand_in_path(&slice, rest, direction)?;
-
-    // TODO: Try to perform factorisation, else insert bubble
-
     let target_cospan = &diagram.cospans()[height];
 
+    // Try to perform factorisation
+    let factorized = || -> Option<Rewrite> {
+        let forward = factorize(
+            target_cospan.forward.clone(),
+            recursive.clone(),
+            diagram.slice(Height::Regular(height)).unwrap(),
+            slice.clone().rewrite_backward(&recursive),
+        )
+        .ok()?;
+
+        let backward = factorize(
+            target_cospan.backward.clone(),
+            recursive.clone(),
+            diagram.slice(Height::Regular(height + 1)).unwrap(),
+            slice.clone().rewrite_backward(&recursive),
+        )
+        .ok()?;
+
+        let expansion_rewrite = RewriteN::new(
+            diagram.dimension(),
+            vec![Cone {
+                index: height,
+                source: vec![Cospan { forward, backward }],
+                target: target_cospan.clone(),
+                slices: vec![recursive.clone()],
+            }],
+        );
+
+        let expansion_preimage = diagram.clone().rewrite_backward(&expansion_rewrite);
+        let normalization_rewrite = normalize_singular(&expansion_preimage.into());
+
+        Some(Rewrite::compose(normalization_rewrite, expansion_rewrite.into()).unwrap())
+    }();
+
+    if let Some(factorized) = factorized {
+        return Ok(factorized);
+    }
+
+    // Insert a bubble
     Ok(RewriteN::new(
         diagram.dimension(),
         vec![Cone {
