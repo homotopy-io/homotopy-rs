@@ -1,6 +1,4 @@
-use std::collections::HashSet;
-
-use crate::{Cospan, Rewrite};
+use crate::Rewrite;
 use crate::{Diagram, Rewrite0};
 use crate::{Height, RewriteN};
 use thiserror::Error;
