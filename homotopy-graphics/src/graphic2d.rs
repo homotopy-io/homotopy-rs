@@ -1,9 +1,9 @@
 use crate::geometry::{Circle, Fill, Point, Shape, Stroke};
 use crate::layout2d::Layout;
 use euclid::default::Transform2D;
-use homotopy_core::common::*;
 use homotopy_core::complex::Simplex;
 use homotopy_core::projection::Generators;
+use homotopy_core::{common::*, projection::Depths};
 use lyon_path::Path;
 use petgraph::unionfind::UnionFind;
 use seahash::SeaHasher;
@@ -101,7 +101,7 @@ pub enum GraphicElement {
     /// A surface given by a closed path to be filled.
     Surface(Generator, Path),
     /// A wire given by a path to be stroked.
-    Wire(Generator, Path),
+    Wire(Generator, Path, Vec<Path>),
     /// A point that is drawn as a circle.
     Point(Generator, Point),
 }
@@ -114,7 +114,14 @@ impl GraphicElement {
         use GraphicElement::*;
         match self {
             Surface(g, path) => Surface(*g, path.transformed(transform)),
-            Wire(g, path) => Wire(*g, path.transformed(transform)),
+            Wire(g, path, mask) => {
+                let path = path.transformed(transform);
+                let mask = mask
+                    .into_iter()
+                    .map(|mask| mask.transformed(transform))
+                    .collect();
+                Wire(*g, path, mask)
+            }
             Point(g, point) => Point(*g, transform.transform_point(*point)),
         }
     }
@@ -123,7 +130,7 @@ impl GraphicElement {
         use GraphicElement::*;
         match self {
             Surface(generator, _) => *generator,
-            Wire(generator, _) => *generator,
+            Wire(generator, _, _) => *generator,
             Point(generator, _) => *generator,
         }
     }
@@ -135,7 +142,12 @@ impl GraphicElement {
     ///
     /// This function can panic or produce undefined results if the simplicial complex, the layout
     /// and the projected generators have not come from the same diagram.
-    pub fn build(complex: &[Simplex], layout: &Layout, generators: &Generators) -> Vec<Self> {
+    pub fn build(
+        complex: &[Simplex],
+        layout: &Layout,
+        generators: &Generators,
+        depths: &Depths,
+    ) -> Vec<Self> {
         let mut wire_elements = Vec::new();
         let mut surface_elements = Vec::new();
         let mut point_elements = Vec::new();
@@ -153,9 +165,20 @@ impl GraphicElement {
                 }
                 Simplex::Wire(ps) => {
                     let generator = generators.get(ps[0].0, ps[0].1).unwrap();
+
+                    let mask = match depths.edge_depth([ps[0].1, ps[0].0], [ps[1].1, ps[1].0]) {
+                        Some(depth) => depths
+                            .edges_above(depth, [ps[1].1, ps[1].0])
+                            .into_iter()
+                            .map(|s| make_path(&[(s[1], s[0]), ps[1]], false, layout))
+                            .collect(),
+                        None => vec![],
+                    };
+
                     wire_elements.push(GraphicElement::Wire(
                         generator,
                         make_path(ps, false, layout),
+                        mask,
                     ));
                 }
                 Simplex::Point([p]) => {

@@ -11,6 +11,7 @@ use crate::graph::GraphBuilder;
 use crate::rewrite::RewriteN;
 use petgraph::{
     graph::{DiGraph, NodeIndex},
+    visit::EdgeRef,
     EdgeDirection,
 };
 use serde::Serialize;
@@ -116,6 +117,21 @@ impl Depths {
         let to = *self.coord_to_node.get(&to)?;
         let edge = self.graph.edges_connecting(from, to).next()?;
         *edge.weight()
+    }
+
+    pub fn edges_above(&self, depth: usize, to: [SliceIndex; 2]) -> Vec<[SliceIndex; 2]> {
+        let to = match self.coord_to_node.get(&to) {
+            Some(to) => *to,
+            None => return vec![],
+        };
+
+        self.graph
+            .edges_directed(to, EdgeDirection::Incoming)
+            .filter_map(|e| match e.weight() {
+                Some(d) if d < &depth => self.graph.node_weight(e.source()).cloned(),
+                _ => None,
+            })
+            .collect()
     }
 }
 

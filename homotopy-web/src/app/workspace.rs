@@ -164,6 +164,7 @@ impl WorkspaceView {
                     <div class="workspace__diagram" style={self.diagram_style()}>
                         <Diagram2D
                             diagram={diagram.clone()}
+                            id="workspace__diagram"
                             on_select={self.on_select.clone()}
                             on_homotopy={self.on_homotopy.clone()}
                             highlight={highlight}

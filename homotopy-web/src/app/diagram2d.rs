@@ -29,6 +29,7 @@ pub struct Diagram2D {
 #[derive(Clone, PartialEq, Properties)]
 pub struct Props2D {
     pub diagram: DiagramN,
+    pub id: String,
     #[prop_or_default]
     pub style: RenderStyle,
     #[prop_or_default]
@@ -81,7 +82,8 @@ impl PreparedDiagram {
         let generators = Generators::new(&diagram);
         let layout = Layout::new(diagram.clone(), 2000).unwrap();
         let complex = make_complex(&diagram);
-        let graphic = GraphicElement::build(&complex, &layout, &generators);
+        let depths = Depths::new(&diagram);
+        let graphic = GraphicElement::build(&complex, &layout, &generators, &depths);
         let actions = ActionRegion::build(&complex, &layout);
 
         let dimensions = layout
@@ -250,7 +252,7 @@ impl Component for Diagram2D {
                 onmousemove={on_mouse_move}
                 ref={self.node_ref.clone()}
             >
-                {self.diagram.graphic.iter().map(|e| self.view_element(e)).collect::<Html>()}
+                {self.diagram.graphic.iter().enumerate().map(|(i, e)| self.view_element(i, e)).collect::<Html>()}
                 {self.view_highlight()}
             </svg>
         }
@@ -277,7 +279,7 @@ impl Diagram2D {
     }
 
     /// Creates the SVG elements for the diagram.
-    fn view_element(&self, element: &GraphicElement) -> Html {
+    fn view_element(&self, index: usize, element: &GraphicElement) -> Html {
         let generator = element.generator();
 
         match element {
@@ -288,11 +290,54 @@ impl Diagram2D {
                     <path d={path} class={class} stroke-width={1} />
                 }
             }
-            GraphicElement::Wire(_, path) => {
+            GraphicElement::Wire(_, path, mask) => {
                 let class = SignatureStylesheet::name("generator", generator, "wire");
                 let path = path_to_svg(path.transformed(&self.diagram.transform));
-                html! {
-                    <path d={path} class={class} stroke-width={self.props.style.wire_thickness} fill="none" />
+
+                if mask.is_empty() {
+                    html! {
+                        <path
+                            d={path}
+                            class={class}
+                            stroke-width={self.props.style.wire_thickness}
+                            fill="none"
+                        />
+                    }
+                } else {
+                    let mask_paths: Html = mask
+                        .iter()
+                        .map(|mask_path| {
+                            html! {
+                                <path
+                                    d={path_to_svg(mask_path.transformed(&self.diagram.transform))}
+                                    stroke-width={self.props.style.wire_thickness * 2.0}
+                                    fill="none"
+                                    stroke="black"
+                                    stroke-linecap="round"
+                                />
+                            }
+                        })
+                        .collect();
+
+                    let mask_id = format!("{}-mask-{}", self.props.id, index);
+
+                    html! {
+                        <>
+                            <defs>
+                                <mask maskUnits="userSpaceOnUse" id={mask_id.clone()}>
+                                    <rect width="100%" height="100%" fill="white" />
+                                    {mask_paths}
+                                </mask>
+                            </defs>
+                            <path
+                                d={path}
+                                class={class}
+                                stroke-width={self.props.style.wire_thickness}
+                                fill="none"
+                                mask={format!("url(#{})", mask_id)}
+                            />
+                        </>
+                    }
                 }
             }
             GraphicElement::Point(_, point) => {
