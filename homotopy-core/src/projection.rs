@@ -5,7 +5,7 @@
 //! In order to avoid potentially costly recomputations and accidental quadratic complexity when a
 //! diagram is traversed again for every point, the analyses are performed for the entire diagram
 //! at once and the results are cached for efficient random-access retrieval.
-use crate::common::*;
+use crate::common::{Boundary, Generator, SliceIndex};
 use crate::diagram::DiagramN;
 use crate::graph::GraphBuilder;
 use crate::rewrite::RewriteN;
@@ -15,7 +15,10 @@ use petgraph::{
     EdgeDirection,
 };
 use serde::Serialize;
-use std::{collections::HashMap, convert::*};
+use std::{
+    collections::HashMap,
+    convert::{Into, TryFrom},
+};
 
 /// Diagram analysis that determines the generator displayed at any point in the 2-dimensional
 /// projection of a diagram. Currently this is the first maximum-dimensional generator, but will
@@ -31,7 +34,7 @@ impl Generators {
         }
 
         // TODO: Projection
-        Generators(
+        Self(
             diagram
                 .slices()
                 .map(|slice| {
@@ -93,12 +96,11 @@ impl Depths {
         for (source, target, rewrite) in &graph_builder.edges {
             let depth = <&RewriteN>::try_from(rewrite)
                 .ok()
-                .map(|r| r.targets().last().cloned())
-                .flatten();
+                .and_then(|r| r.targets().last().cloned());
             graph.add_edge((*source as u32).into(), (*target as u32).into(), depth);
         }
 
-        Depths {
+        Self {
             graph,
             coord_to_node,
         }

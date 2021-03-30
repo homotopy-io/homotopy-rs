@@ -1,7 +1,7 @@
-use std::convert::*;
+use std::convert::Into;
 use thiserror::Error;
 pub mod proof;
-use proof::*;
+use proof::{AttachOption, Color, GeneratorInfo, Proof, Signature, Workspace};
 pub mod serialize;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -47,13 +47,12 @@ impl State {
     }
 
     fn export(&self) -> Result<(), ModelError> {
-        let data: serialize::Data = if let Some(ws) = self.proof.workspace.clone() {
-            (self.proof.signature.clone(), ws).into()
-        } else {
-            self.proof.signature.clone().into()
-        };
+        let data: serialize::Data = self.proof.workspace.clone().map_or_else(
+            || self.proof.signature.clone().into(),
+            |ws| (self.proof.signature.clone(), ws).into(),
+        );
         serialize::generate_download(
-            "filename_todo.hom".to_string(),
+            &"filename_todo.hom",
             &Into::<Vec<u8>>::into(data).as_slice(),
         )
         .map_err(ModelError::ExportError)
@@ -61,7 +60,7 @@ impl State {
 
     fn import(&mut self, signature: Signature, workspace: Option<Workspace>) {
         self.proof.signature = signature;
-        self.proof.workspace = workspace
+        self.proof.workspace = workspace;
     }
 
     pub fn drawer(&self) -> Option<Drawer> {

@@ -1,9 +1,9 @@
-use crate::common::*;
-use crate::diagram::*;
-use crate::rewrite::*;
+use crate::common::{Height, SingularHeight};
+use crate::diagram::{Diagram, DiagramN};
+use crate::rewrite::{Cospan, Rewrite, RewriteN};
 use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::convert::*;
+use std::convert::{Into, TryFrom, TryInto};
 use std::rc::Rc;
 
 /// A degeneracy map which keeps track of a subset of identity levels in a diagram.
@@ -19,18 +19,18 @@ enum Degeneracy {
 }
 
 impl Degeneracy {
-    fn new(trivial: Vec<SingularHeight>, slices: Vec<Rc<Degeneracy>>) -> Self {
+    fn new(trivial: Vec<SingularHeight>, slices: Vec<Rc<Self>>) -> Self {
         if trivial.is_empty() && slices.iter().all(|slice| slice.is_identity()) {
-            Degeneracy::Identity
+            Self::Identity
         } else {
-            Degeneracy::Degeneracy(trivial, slices)
+            Self::Degeneracy(trivial, slices)
         }
     }
 
     fn singular_preimage(&self, i: SingularHeight) -> Height {
         match self {
-            Degeneracy::Identity => Height::Singular(i),
-            Degeneracy::Degeneracy(trivial, _) => {
+            Self::Identity => Height::Singular(i),
+            Self::Degeneracy(trivial, _) => {
                 for (count, trivial) in trivial.iter().enumerate() {
                     match trivial.cmp(&i) {
                         Ordering::Less => {}
@@ -46,8 +46,8 @@ impl Degeneracy {
 
     fn is_identity(&self) -> bool {
         match self {
-            Degeneracy::Identity => true,
-            Degeneracy::Degeneracy(_, _) => false,
+            Self::Identity => true,
+            Self::Degeneracy(_, _) => false,
         }
     }
 
@@ -59,8 +59,8 @@ impl Degeneracy {
         assert_eq!(source.dimension(), target.dimension());
 
         let (trivial, slices) = match self {
-            Degeneracy::Identity => return Rewrite::identity(source.dimension()),
-            Degeneracy::Degeneracy(trivial, slices) => (trivial, slices),
+            Self::Identity => return Rewrite::identity(source.dimension()),
+            Self::Degeneracy(trivial, slices) => (trivial, slices),
         };
 
         let source: &DiagramN = source.try_into().unwrap();
@@ -88,15 +88,15 @@ impl Degeneracy {
             rewrite_slices,
         );
 
-        RewriteN::compose(rewrite_simple, rewrite_parallel)
+        RewriteN::compose(&rewrite_simple, &rewrite_parallel)
             .unwrap()
             .into()
     }
 
     fn slice_into(&self, target_height: SingularHeight) -> &Self {
         match self {
-            Degeneracy::Identity => &Degeneracy::Identity,
-            Degeneracy::Degeneracy(_, slices) => &slices[target_height],
+            Self::Identity => &Self::Identity,
+            Self::Degeneracy(_, slices) => &slices[target_height],
         }
     }
 }
@@ -128,7 +128,7 @@ impl SinkArrow {
         preimage
     }
 
-    fn slices_into(&self, target_height: SingularHeight) -> Vec<(SingularHeight, SinkArrow)> {
+    fn slices_into(&self, target_height: SingularHeight) -> Vec<(SingularHeight, Self)> {
         let rewrite: &RewriteN = (&self.rewrite).try_into().unwrap();
         let source = <&DiagramN>::try_from(&self.source).ok().unwrap();
         let middle = <&DiagramN>::try_from(&self.middle).ok().unwrap();
@@ -146,7 +146,7 @@ impl SinkArrow {
             let slice_source = source.slice(Height::Singular(source_height)).unwrap();
             slices.push((
                 source_height,
-                SinkArrow {
+                Self {
                     source: slice_source,
                     rewrite: slice_rewrite,
                     middle: slice_middle,
@@ -196,6 +196,8 @@ fn normalize_relative<R>(diagram: &Diagram, sink: &[SinkArrow], mut normalize_re
 where
     R: FnMut(&Diagram) -> (Diagram, Rc<Degeneracy>) + Copy,
 {
+    use Height::{Regular, Singular};
+
     // Base case for 0-dimensional diagrams.
     let diagram = match diagram {
         Diagram::Diagram0(_) => {
@@ -209,8 +211,6 @@ where
         Diagram::DiagramN(d) => d,
     };
 
-    use Height::*;
-
     let slices: Vec<_> = diagram.slices().collect();
 
     let mut degeneracies: HashMap<Height, Rc<Degeneracy>> = HashMap::new();
@@ -218,7 +218,7 @@ where
     let mut regular: Vec<Diagram> = Vec::new();
 
     // Normalize the regular levels
-    for height in 0..diagram.size() + 1 {
+    for height in 0..=diagram.size() {
         let slice = &slices[Regular(height).to_int()];
         let (normalized, degeneracy) = normalize_regular(slice);
         regular.push(normalized);
@@ -226,7 +226,7 @@ where
     }
 
     // The diagram can not be normalised any further if one map in the sink is an identity rewrite.
-    if sink.iter().any(|input| input.is_identity()) {
+    if sink.iter().any(SinkArrow::is_identity) {
         return Output {
             degeneracy: Rc::new(Degeneracy::Identity),
             factors: sink.iter().map(|input| input.rewrite.clone()).collect(),
@@ -284,8 +284,7 @@ where
     let trivial: Vec<SingularHeight> = (0..diagram.size())
         .filter(|target_height| {
             roles[*target_height].iter().all(|f| match f {
-                Factor::Forward(_) => factors[f].is_identity(),
-                Factor::Backward(_) => factors[f].is_identity(),
+                Factor::Forward(_) | Factor::Backward(_) => factors[f].is_identity(),
                 Factor::Slice(_, _) => false,
             })
         })

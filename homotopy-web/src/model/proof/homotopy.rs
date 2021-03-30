@@ -1,4 +1,4 @@
-use homotopy_core::common::*;
+use homotopy_core::common::{Direction, SingularHeight, SliceIndex};
 use homotopy_core::contraction::Bias;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

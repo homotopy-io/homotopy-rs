@@ -5,16 +5,16 @@ use insta::*;
 #[test]
 fn assoc() {
     let x = Diagram::from(Generator::new(0, 0));
-    let f = DiagramN::new(Generator::new(1, 1), x.clone(), x.clone()).unwrap();
-    let ff = f.attach(f.clone(), Boundary::Target, &[]).unwrap();
-    let m = DiagramN::new(Generator::new(2, 2), ff.clone(), f.clone()).unwrap();
-    let left = m.attach(m.clone(), Boundary::Source, &[0]).unwrap();
-    let right = m.attach(m.clone(), Boundary::Source, &[1]).unwrap();
+    let f = DiagramN::new(Generator::new(1, 1), x.clone(), x).unwrap();
+    let ff = f.attach(&f, Boundary::Target, &[]).unwrap();
+    let m = DiagramN::new(Generator::new(2, 2), ff, f).unwrap();
+    let left = m.attach(&m, Boundary::Source, &[0]).unwrap();
+    let right = m.attach(&m, Boundary::Source, &[1]).unwrap();
     let assoc = DiagramN::new(Generator::new(3, 3), left.clone(), right.clone()).unwrap();
 
-    assert_json_snapshot!("assoc_left", Layout::new(left, 100).unwrap());
-    assert_json_snapshot!("assoc_right", Layout::new(right, 100).unwrap());
-    assert_json_snapshot!("assoc_projected", Layout::new(assoc, 100).unwrap());
+    assert_json_snapshot!("assoc_left", Layout::new(&left, 100).unwrap());
+    assert_json_snapshot!("assoc_right", Layout::new(&right, 100).unwrap());
+    assert_json_snapshot!("assoc_projected", Layout::new(&assoc, 100).unwrap());
 }
 
 #[test]
@@ -22,5 +22,5 @@ fn scalar() {
     let x = Diagram::from(Generator::new(0, 0));
     let s = DiagramN::new(Generator::new(2, 2), x.identity(), x.identity()).unwrap();
 
-    assert_json_snapshot!(Layout::new(s, 100).unwrap());
+    assert_json_snapshot!(Layout::new(&s, 100).unwrap());
 }

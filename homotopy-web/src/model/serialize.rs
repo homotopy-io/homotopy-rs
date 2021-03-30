@@ -1,5 +1,5 @@
-use homotopy_core::common::*;
-use homotopy_core::serialize::*;
+use homotopy_core::common::{Generator, SliceIndex};
+use homotopy_core::serialize::{Key, Keyed, Serialization};
 use homotopy_core::Diagram;
 use im::{HashMap, Vector};
 use wasm_bindgen::JsCast;
@@ -11,7 +11,7 @@ pub enum Serialize {
     Import(Box<(Signature, Option<Workspace>)>),
 }
 
-pub fn generate_download(name: String, data: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
+pub fn generate_download(name: &str, data: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
     let val: js_sys::Uint8Array = data.into();
     let mut options = web_sys::BlobPropertyBag::new();
     options.type_("application/msgpack");
@@ -54,11 +54,11 @@ impl From<Signature> for Data {
     fn from(sig: Signature) -> Self {
         let mut stripped: std::collections::HashMap<Generator, Diagram> = Default::default();
         let mut generator_info: HashMap<Generator, (String, Color)> = Default::default();
-        for (k, v) in sig.into_iter() {
+        for (k, v) in sig {
             stripped.insert(k, v.diagram);
             generator_info.insert(k, (v.name, v.color));
         }
-        Data {
+        Self {
             signature: Serialization::from(stripped),
             generator_info,
             workspace: None,
@@ -71,11 +71,11 @@ impl From<(Signature, Workspace)> for Data {
         let mut stripped: std::collections::HashMap<Generator, Diagram> = Default::default();
         let mut generator_info: HashMap<Generator, (String, Color)> = Default::default();
         let k = ws.diagram.key();
-        for (k, v) in sig.into_iter() {
+        for (k, v) in sig {
             stripped.insert(k, v.diagram);
             generator_info.insert(k, (v.name, v.color));
         }
-        Data {
+        Self {
             signature: Serialization::from((stripped, ws.diagram)),
             generator_info,
             workspace: Some(WorkspaceSer {
@@ -90,17 +90,13 @@ impl From<(Signature, Workspace)> for Data {
 
 impl From<Data> for (Signature, Option<Workspace>) {
     fn from(data: Data) -> Self {
-        let workspace: Option<Workspace> = if let Some(ws) = data.workspace {
-            let d = data.signature.diagram(ws.diagram);
-            Some(Workspace {
-                diagram: d,
-                path: ws.path,
-                attach: ws.attach,
-                highlight: ws.highlight,
-            })
-        } else {
-            None
-        };
+        let signature = &data.signature;
+        let workspace: Option<Workspace> = data.workspace.map(|ws| Workspace {
+            diagram: signature.diagram(&ws.diagram),
+            path: ws.path,
+            attach: ws.attach,
+            highlight: ws.highlight,
+        });
         let sig: std::collections::HashMap<Generator, Diagram> = data.signature.into();
         let gi = data.generator_info;
         (

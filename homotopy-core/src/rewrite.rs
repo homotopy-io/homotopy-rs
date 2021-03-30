@@ -1,9 +1,9 @@
-use crate::common::*;
-use crate::diagram::*;
+use crate::common::{DimensionError, Generator, SingularHeight};
+use crate::diagram::Diagram;
 
 use hashconsing::{consign, HConsed, HashConsign};
 use std::cmp::Ordering;
-use std::convert::*;
+use std::convert::{From, Into, TryFrom};
 use std::fmt;
 use std::ops::Range;
 
@@ -19,7 +19,7 @@ impl Cospan {
     pub(crate) fn pad(&self, embedding: &[usize]) -> Self {
         let forward = self.forward.pad(embedding);
         let backward = self.backward.pad(embedding);
-        Cospan { forward, backward }
+        Self { forward, backward }
     }
 
     pub fn is_identity(&self) -> bool {
@@ -36,21 +36,21 @@ pub enum Rewrite {
 impl fmt::Debug for Rewrite {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Rewrite::RewriteN(r) => r.fmt(f),
-            Rewrite::Rewrite0(r) => r.fmt(f),
+            Self::RewriteN(r) => r.fmt(f),
+            Self::Rewrite0(r) => r.fmt(f),
         }
     }
 }
 
 impl From<RewriteN> for Rewrite {
     fn from(r: RewriteN) -> Self {
-        Rewrite::RewriteN(r)
+        Self::RewriteN(r)
     }
 }
 
 impl From<Rewrite0> for Rewrite {
     fn from(r: Rewrite0) -> Self {
-        Rewrite::Rewrite0(r)
+        Self::Rewrite0(r)
     }
 }
 
@@ -97,7 +97,7 @@ impl Rewrite {
     }
 
     pub fn dimension(&self) -> usize {
-        use Rewrite::*;
+        use Rewrite::{Rewrite0, RewriteN};
         match self {
             Rewrite0(_) => 0,
             RewriteN(r) => r.dimension(),
@@ -105,7 +105,7 @@ impl Rewrite {
     }
 
     pub fn is_identity(&self) -> bool {
-        use Rewrite::*;
+        use Rewrite::{Rewrite0, RewriteN};
         match self {
             Rewrite0(r) => r.is_identity(),
             RewriteN(r) => r.is_identity(),
@@ -113,22 +113,22 @@ impl Rewrite {
     }
 
     pub(crate) fn pad(&self, embedding: &[usize]) -> Self {
-        use Rewrite::*;
+        use Rewrite::{Rewrite0, RewriteN};
         match self {
             Rewrite0(r) => Rewrite0(*r),
             RewriteN(r) => RewriteN(r.pad(embedding)),
         }
     }
 
-    pub fn compose(f: Rewrite, g: Rewrite) -> Result<Rewrite, CompositionError> {
+    pub fn compose(f: Self, g: Self) -> Result<Self, CompositionError> {
         match (f, g) {
-            (Rewrite::Rewrite0(f), Rewrite::Rewrite0(g)) => Ok(Rewrite0::compose(f, g)?.into()),
-            (Rewrite::RewriteN(f), Rewrite::RewriteN(g)) => Ok(RewriteN::compose(f, g)?.into()),
+            (Self::Rewrite0(f), Self::Rewrite0(g)) => Ok(Rewrite0::compose(f, g)?.into()),
+            (Self::RewriteN(f), Self::RewriteN(g)) => Ok(RewriteN::compose(&f, &g)?.into()),
             (f, g) => Err(CompositionError::Dimension(f.dimension(), g.dimension())),
         }
     }
 
-    pub fn cone_over_generator(generator: Generator, base: Diagram) -> Rewrite {
+    pub fn cone_over_generator(generator: Generator, base: Diagram) -> Self {
         match base {
             Diagram::Diagram0(base) => Rewrite0::new(base, generator).into(),
             Diagram::DiagramN(base) => RewriteN::new(
@@ -139,11 +139,11 @@ impl Rewrite {
                     slices: base
                         .singular_slices()
                         .into_iter()
-                        .map(|slice| Rewrite::cone_over_generator(generator, slice))
+                        .map(|slice| Self::cone_over_generator(generator, slice))
                         .collect(),
                     target: Cospan {
-                        forward: Rewrite::cone_over_generator(generator, base.source()),
-                        backward: Rewrite::cone_over_generator(generator, base.target()),
+                        forward: Self::cone_over_generator(generator, base.source()),
+                        backward: Self::cone_over_generator(generator, base.target()),
                     },
                 }],
             )
@@ -167,14 +167,14 @@ impl fmt::Debug for Rewrite0 {
 impl Rewrite0 {
     pub fn new(source: Generator, target: Generator) -> Self {
         if source == target {
-            Rewrite0(None)
+            Self(None)
         } else {
-            Rewrite0(Some((source, target)))
+            Self(Some((source, target)))
         }
     }
 
     pub fn identity() -> Self {
-        Rewrite0(None)
+        Self(None)
     }
 
     pub fn is_identity(&self) -> bool {
@@ -192,15 +192,15 @@ impl Rewrite0 {
     pub fn compose(f: Self, g: Self) -> Result<Self, CompositionError> {
         match (f.0, g.0) {
             (Some((f_s, f_t)), Some((g_s, g_t))) => {
-                if f_t != g_s {
-                    Err(CompositionError::Incompatible)
+                if f_t == g_s {
+                    Ok(Self(Some((f_s, g_t))))
                 } else {
-                    Ok(Rewrite0(Some((f_s, g_t))))
+                    Err(CompositionError::Incompatible)
                 }
             }
             (Some(_), None) => Ok(f),
             (None, Some(_)) => Ok(g),
-            (None, None) => Ok(Rewrite0(None)),
+            (None, None) => Ok(Self(None)),
         }
     }
 }
@@ -233,7 +233,7 @@ impl RewriteN {
             .filter(|cone| !cone.is_identity())
             .collect();
 
-        RewriteN(REWRITE_FACTORY.mk(RewriteInternal { dimension, cones }))
+        Self(REWRITE_FACTORY.mk(RewriteInternal { dimension, cones }))
     }
 
     pub(crate) fn cones(&self) -> &[Cone] {
@@ -246,11 +246,11 @@ impl RewriteN {
             .iter()
             .map(|cone| cone.pad(embedding))
             .collect();
-        RewriteN::new(self.dimension(), cones)
+        Self::new(self.dimension(), cones)
     }
 
     pub fn identity(dimension: usize) -> Self {
-        RewriteN::new(dimension, Vec::new())
+        Self::new(dimension, Vec::new())
     }
 
     pub fn is_identity(&self) -> bool {
@@ -273,7 +273,7 @@ impl RewriteN {
             })
             .collect();
 
-        RewriteN::new(dimension, cones)
+        Self::new(dimension, cones)
     }
 
     pub fn from_slices(
@@ -281,7 +281,7 @@ impl RewriteN {
         source_cospans: &[Cospan],
         target_cospans: &[Cospan],
         slices: Vec<Vec<Rewrite>>,
-    ) -> RewriteN {
+    ) -> Self {
         let mut cones = Vec::new();
         let mut index = 0;
 
@@ -296,7 +296,7 @@ impl RewriteN {
             index += size;
         }
 
-        RewriteN::new(dimension, cones)
+        Self::new(dimension, cones)
     }
 
     pub fn dimension(&self) -> usize {
@@ -335,11 +335,12 @@ impl RewriteN {
         self.cones()
             .iter()
             .find(|cone| cone.index <= height && height < cone.index + cone.len())
-            .map(|cone| cone.slices[height - cone.index].clone())
-            .unwrap_or_else(|| Rewrite::identity(self.dimension() - 1))
+            .map_or(Rewrite::identity(self.dimension() - 1), |cone| {
+                cone.slices[height - cone.index].clone()
+            })
     }
 
-    pub fn compose(f: RewriteN, g: RewriteN) -> Result<RewriteN, CompositionError> {
+    pub fn compose(f: &Self, g: &Self) -> Result<Self, CompositionError> {
         if f.dimension() != g.dimension() {
             return Err(CompositionError::Dimension(f.dimension(), g.dimension()));
         }
@@ -405,7 +406,7 @@ impl RewriteN {
             }
         }
 
-        Ok(RewriteN::new(f.dimension(), cones))
+        Ok(Self::new(f.dimension(), cones))
     }
 
     pub fn singular_image(&self, index: usize) -> usize {
@@ -522,7 +523,7 @@ impl Cone {
                 let source = self.source.iter().map(|c| c.pad(rest)).collect();
                 let target = self.target.pad(rest);
                 let slices = self.slices.iter().map(|r| r.pad(rest)).collect();
-                Cone {
+                Self {
                     index,
                     source,
                     target,

@@ -8,7 +8,7 @@ mod workspace;
 use crate::model;
 use crate::model::Drawer;
 use attach::AttachView;
-use homotopy_core::*;
+use homotopy_core::Boundary;
 use project::ProjectView;
 use signature::SignatureView;
 use signature_stylesheet::SignatureStylesheet;
@@ -34,7 +34,7 @@ pub mod icon {
         type Properties = Props;
 
         fn create(props: Self::Properties, _link: ComponentLink<Self>) -> Self {
-            Icon { props }
+            Self { props }
         }
 
         fn update(&mut self, _msg: Self::Message) -> ShouldRender {
@@ -62,7 +62,7 @@ pub struct SidebarButton {
 }
 
 impl SidebarButton {
-    pub fn view(&self, dispatch: Callback<model::Action>) -> Html {
+    pub fn view(&self, dispatch: &Callback<model::Action>) -> Html {
         let action = self.action.clone();
 
         html! {
@@ -177,9 +177,9 @@ impl Component for App {
 
         // Install the keyboard listener for shortcuts
         // TODO: Remove these when App is destroyed.
-        App::install_keyboard_shortcuts(dispatch.clone());
+        Self::install_keyboard_shortcuts(dispatch.clone());
 
-        App {
+        Self {
             dispatch,
             state,
             signature_stylesheet,
@@ -222,7 +222,7 @@ impl Component for App {
                     />
                 }
             }
-            _ => {
+            None => {
                 // TODO: Show onboarding info if workspace and signature is empty
                 html! {
                     <content class="workspace workspace--empty">
@@ -238,16 +238,16 @@ impl Component for App {
                 <aside class="sidebar">
                     <img src="/logo.svg" class="sidebar__logo" />
                     <nav class="sidebar__nav">
-                        {BUTTON_PROJECT.view(dispatch.clone())}
-                        {BUTTON_SIGNATURE.view(dispatch.clone())}
-                        {BUTTON_USER.view(dispatch.clone())}
+                        {BUTTON_PROJECT.view(dispatch)}
+                        {BUTTON_SIGNATURE.view(dispatch)}
+                        {BUTTON_USER.view(dispatch)}
                     </nav>
                     <nav class="sidebar__tools">
-                        {BUTTON_ADD_GENERATOR.view(dispatch.clone())}
-                        {BUTTON_SOURCE.view(dispatch.clone())}
-                        {BUTTON_TARGET.view(dispatch.clone())}
-                        {BUTTON_IDENTITY.view(dispatch.clone())}
-                        {BUTTON_CLEAR.view(dispatch.clone())}
+                        {BUTTON_ADD_GENERATOR.view(dispatch)}
+                        {BUTTON_SOURCE.view(dispatch)}
+                        {BUTTON_TARGET.view(dispatch)}
+                        {BUTTON_IDENTITY.view(dispatch)}
+                        {BUTTON_CLEAR.view(dispatch)}
                     </nav>
                 </aside>
                 {drawer}
@@ -271,8 +271,7 @@ impl App {
             .state
             .proof
             .workspace()
-            .map(|workspace| workspace.attach.clone())
-            .flatten();
+            .and_then(|workspace| workspace.attach.clone());
 
         if let Some(attach_options) = attach_options {
             return html! {
@@ -298,8 +297,7 @@ impl App {
                     />
                 }
             }
-            Some(Drawer::User) => Default::default(),
-            None => Default::default(),
+            Some(Drawer::User) | None => Default::default(),
         }
     }
 

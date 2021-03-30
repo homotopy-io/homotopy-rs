@@ -1,4 +1,4 @@
-use crate::common::*;
+use crate::common::{Boundary, Height, SliceIndex};
 use crate::diagram::DiagramN;
 use crate::rewrite::RewriteN;
 use std::convert::TryInto;
@@ -16,9 +16,9 @@ pub enum Simplex {
 impl Simplex {
     pub fn first(&self) -> Coordinate {
         match self {
-            Simplex::Surface(p) => p[0],
-            Simplex::Wire(p) => p[0],
-            Simplex::Point(p) => p[0],
+            Self::Surface(p) => p[0],
+            Self::Wire(p) => p[0],
+            Self::Point(p) => p[0],
         }
     }
 }
@@ -29,9 +29,9 @@ impl IntoIterator for Simplex {
 
     fn into_iter(self) -> Self::IntoIter {
         match self {
-            Simplex::Surface(p) => p.to_vec().into_iter(),
-            Simplex::Wire(p) => p.to_vec().into_iter(),
-            Simplex::Point(p) => p.to_vec().into_iter(),
+            Self::Surface(p) => p.to_vec().into_iter(),
+            Self::Wire(p) => p.to_vec().into_iter(),
+            Self::Point(p) => p.to_vec().into_iter(),
         }
     }
 }
@@ -41,7 +41,7 @@ impl IntoIterator for Simplex {
 
 /// Generate a 2-dimensional simplicial complex for a diagram.
 pub fn make_complex(diagram: &DiagramN) -> Vec<Simplex> {
-    use Height::*;
+    use Height::{Regular, Singular};
     let mut complex = Vec::new();
 
     let slices: Vec<DiagramN> = diagram
@@ -117,7 +117,7 @@ fn generate_cell(
     rewrite: &RewriteN,
     complex: &mut Vec<Simplex>,
 ) {
-    use Height::*;
+    use Height::{Regular, Singular};
 
     let rxs = rewrite.singular_preimage(sx);
 
@@ -166,7 +166,7 @@ fn generate_rewrite(
     rewrite: &RewriteN,
     complex: &mut Vec<Simplex>,
 ) {
-    use Height::*;
+    use Height::Regular;
 
     // Interior
     for x in 0..ss.size() {

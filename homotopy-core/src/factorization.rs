@@ -14,8 +14,8 @@ pub struct MonotoneSequences {
 }
 
 impl MonotoneSequences {
-    pub fn new(len: usize, max: usize) -> MonotoneSequences {
-        MonotoneSequences {
+    pub fn new(len: usize, max: usize) -> Self {
+        Self {
             cur: None,
             end: len - 1,
             len,
@@ -34,19 +34,19 @@ impl Iterator for MonotoneSequences {
                 self.cur = Some([0].repeat(self.len));
             }
             Some(seq) => {
-                if seq != &[self.max].repeat(self.len) {
+                if seq == &[self.max].repeat(self.len) {
+                    self.cur = None;
+                } else {
                     seq[self.end] += 1; // increment last non-max digit
                     if seq[self.end] == self.max {
-                        self.end = self.end.saturating_sub(1) // maintain invariant
+                        self.end = self.end.saturating_sub(1); // maintain invariant
                     } else {
                         for i in (self.end + 1)..self.len {
                             // set all values to the right to it
-                            seq[i] = seq[self.end]
+                            seq[i] = seq[self.end];
                         }
-                        self.end = self.len - 1 // maintain invariant
+                        self.end = self.len - 1; // maintain invariant
                     }
-                } else {
-                    self.cur = None
                 }
             }
         }

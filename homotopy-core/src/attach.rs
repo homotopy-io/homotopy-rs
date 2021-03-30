@@ -1,23 +1,23 @@
-use crate::common::*;
-use crate::diagram::*;
-use crate::rewrite::*;
+use crate::common::{Boundary, Height, SliceIndex};
+use crate::diagram::{Diagram, DiagramN};
+use crate::rewrite::Cospan;
 use serde::{Deserialize, Serialize};
-use std::convert::*;
+use std::convert::{From, Into, TryInto};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct BoundaryPath(pub Boundary, pub usize);
 
 impl BoundaryPath {
-    pub fn split(path: &[SliceIndex]) -> (Option<BoundaryPath>, Vec<Height>) {
-        use SliceIndex::*;
+    pub fn split(path: &[SliceIndex]) -> (Option<Self>, Vec<Height>) {
+        use SliceIndex::{Boundary, Interior};
 
-        let mut boundary_path: Option<BoundaryPath> = None;
+        let mut boundary_path: Option<Self> = None;
         let mut interior = Vec::new();
 
         for height in path.iter().rev() {
             match (&mut boundary_path, height) {
                 (Some(bp), _) => bp.1 += 1,
-                (None, Boundary(b)) => boundary_path = Some(BoundaryPath(*b, 0)),
+                (None, Boundary(b)) => boundary_path = Some(Self(*b, 0)),
                 (None, Interior(h)) => interior.insert(0, *h),
             }
         }
@@ -35,11 +35,13 @@ impl BoundaryPath {
         diagram.slice(self.0)
     }
 
+    #[allow(clippy::inline_always)]
     #[inline(always)]
     pub fn boundary(&self) -> Boundary {
         self.0
     }
 
+    #[allow(clippy::inline_always)]
     #[inline(always)]
     pub fn depth(&self) -> usize {
         self.1
@@ -48,21 +50,21 @@ impl BoundaryPath {
 
 impl From<Boundary> for BoundaryPath {
     fn from(boundary: Boundary) -> Self {
-        BoundaryPath(boundary, 0)
+        Self(boundary, 0)
     }
 }
 
-pub fn attach<F, E>(diagram: DiagramN, path: BoundaryPath, build: F) -> Result<DiagramN, E>
+pub fn attach<F, E>(diagram: &DiagramN, path: &BoundaryPath, build: F) -> Result<DiagramN, E>
 where
     F: FnOnce(Diagram) -> Result<Vec<Cospan>, E>,
 {
-    let (diagram, _) = attach_worker(diagram, path, build)?;
+    let (diagram, _) = attach_worker(&diagram, &path, build)?;
     Ok(diagram)
 }
 
 fn attach_worker<F, E>(
-    diagram: DiagramN,
-    path: BoundaryPath,
+    diagram: &DiagramN,
+    path: &BoundaryPath,
     build: F,
 ) -> Result<(DiagramN, usize), E>
 where
@@ -93,7 +95,8 @@ where
 
         BoundaryPath(boundary, depth) => {
             let source: DiagramN = diagram.source().try_into().unwrap();
-            let (source, offset) = attach_worker(source, BoundaryPath(boundary, depth - 1), build)?;
+            let (source, offset) =
+                attach_worker(&source, &BoundaryPath(*boundary, depth - 1), build)?;
 
             let cospans = match boundary {
                 Boundary::Source => {

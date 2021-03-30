@@ -1,11 +1,14 @@
-use crate::attach::*;
-use crate::common::*;
-use crate::contraction::*;
-use crate::expansion::*;
-use crate::rewrite::*;
+use crate::attach::{attach, BoundaryPath};
+use crate::common::{
+    Boundary, DimensionError, Direction, Generator, Height, RegularHeight, SingularHeight,
+    SliceIndex,
+};
+use crate::contraction::{contract, Bias};
+use crate::expansion::{expand, ExpansionError};
+use crate::rewrite::{Cospan, Rewrite, RewriteN};
 use hashconsing::{consign, HConsed, HashConsign};
 use std::convert::TryFrom;
-use std::convert::*;
+use std::convert::{From, Into, TryInto};
 use std::fmt;
 use thiserror::Error;
 
@@ -17,7 +20,7 @@ pub enum Diagram {
 
 impl Diagram {
     pub fn to_generator(&self) -> Option<Generator> {
-        use Diagram::*;
+        use Diagram::{Diagram0, DiagramN};
         match self {
             Diagram0(g) => Some(*g),
             DiagramN(_) => None,
@@ -25,7 +28,7 @@ impl Diagram {
     }
 
     pub fn max_generator(&self) -> Generator {
-        use Diagram::*;
+        use Diagram::{Diagram0, DiagramN};
         match self {
             Diagram0(g) => *g,
             DiagramN(d) => d.max_generator(),
@@ -33,7 +36,7 @@ impl Diagram {
     }
 
     pub fn dimension(&self) -> usize {
-        use Diagram::*;
+        use Diagram::{Diagram0, DiagramN};
         match self {
             Diagram0(_) => 0,
             DiagramN(d) => d.dimension(),
@@ -44,8 +47,8 @@ impl Diagram {
         DiagramN::new_unsafe(self.clone(), vec![])
     }
 
-    pub fn embeds(&self, diagram: &Diagram, embedding: &[usize]) -> bool {
-        use Diagram::*;
+    pub fn embeds(&self, diagram: &Self, embedding: &[usize]) -> bool {
+        use Diagram::{Diagram0, DiagramN};
         match (self, diagram) {
             (Diagram0(g0), Diagram0(g1)) => g0 == g1,
             (Diagram0(_), DiagramN(_)) => false,
@@ -53,8 +56,8 @@ impl Diagram {
         }
     }
 
-    pub fn embeddings(&self, diagram: &Diagram) -> Embeddings {
-        use Diagram::*;
+    pub fn embeddings(&self, diagram: &Self) -> Embeddings {
+        use Diagram::{Diagram0, DiagramN};
         match (self, diagram) {
             (Diagram0(g0), Diagram0(g1)) if g0 == g1 => {
                 Embeddings(Box::new(std::iter::once(vec![])))
@@ -64,9 +67,9 @@ impl Diagram {
         }
     }
 
-    pub(crate) fn rewrite_forward(self, rewrite: &Rewrite) -> Diagram {
-        use Diagram::*;
-        use Rewrite::*;
+    pub(crate) fn rewrite_forward(self, rewrite: &Rewrite) -> Self {
+        use Diagram::{Diagram0, DiagramN};
+        use Rewrite::{Rewrite0, RewriteN};
         match self {
             Diagram0(_) => match &rewrite {
                 Rewrite0(r) => match r.target() {
@@ -82,9 +85,9 @@ impl Diagram {
         }
     }
 
-    pub(crate) fn rewrite_backward(self, rewrite: &Rewrite) -> Diagram {
-        use Diagram::*;
-        use Rewrite::*;
+    pub(crate) fn rewrite_backward(self, rewrite: &Rewrite) -> Self {
+        use Diagram::{Diagram0, DiagramN};
+        use Rewrite::{Rewrite0, RewriteN};
         match self {
             Diagram0(_) => match &rewrite {
                 Rewrite0(r) => match r.source() {
@@ -131,11 +134,11 @@ impl DiagramN {
             backward: Rewrite::cone_over_generator(generator, target),
         };
 
-        Ok(DiagramN::new_unsafe(source, vec![cospan]))
+        Ok(Self::new_unsafe(source, vec![cospan]))
     }
 
     pub(crate) fn new_unsafe(source: Diagram, cospans: Vec<Cospan>) -> Self {
-        DiagramN(DIAGRAM_FACTORY.mk(DiagramInternal { source, cospans }))
+        Self(DIAGRAM_FACTORY.mk(DiagramInternal { source, cospans }))
     }
 
     /// The dimension of the diagram, which is at least one.
@@ -196,7 +199,7 @@ impl DiagramN {
         }
     }
 
-    pub(crate) fn rewrite_forward(self, rewrite: &RewriteN) -> DiagramN {
+    pub(crate) fn rewrite_forward(self, rewrite: &RewriteN) -> Self {
         let mut diagram: DiagramInternal = (*self.0).clone();
         let mut offset: isize = 0;
 
@@ -209,10 +212,10 @@ impl DiagramN {
             offset -= cone.len() as isize - 1;
         }
 
-        DiagramN(DIAGRAM_FACTORY.mk(diagram))
+        Self(DIAGRAM_FACTORY.mk(diagram))
     }
 
-    pub(crate) fn rewrite_backward(self, rewrite: &RewriteN) -> DiagramN {
+    pub(crate) fn rewrite_backward(self, rewrite: &RewriteN) -> Self {
         let mut diagram: DiagramInternal = (*self.0).clone();
 
         for cone in rewrite.cones() {
@@ -221,7 +224,7 @@ impl DiagramN {
             diagram.cospans.splice(start..stop, cone.source.clone());
         }
 
-        DiagramN(DIAGRAM_FACTORY.mk(diagram))
+        Self(DIAGRAM_FACTORY.mk(diagram))
     }
 
     pub fn cospans(&self) -> &[Cospan] {
@@ -230,7 +233,7 @@ impl DiagramN {
 
     /// Check if [diagram] embeds into this diagram via the specified [embedding].
     pub fn embeds(&self, diagram: &Diagram, embedding: &[usize]) -> bool {
-        use Diagram::*;
+        use Diagram::{Diagram0, DiagramN};
 
         let (regular, rest) = match embedding.split_first() {
             Some((regular, rest)) => (*regular, rest),
@@ -249,7 +252,7 @@ impl DiagramN {
         match diagram {
             Diagram0(_) => slice.embeds(diagram, rest),
             DiagramN(d) => {
-                use std::cmp::Ordering::*;
+                use std::cmp::Ordering::{Equal, Greater, Less};
                 match d.dimension().cmp(&self.dimension()) {
                     Greater => false,
                     Less => slice.embeds(diagram, rest),
@@ -271,7 +274,7 @@ impl DiagramN {
         match self.dimension().cmp(&diagram.dimension()) {
             Ordering::Less => Embeddings(Box::new(std::iter::empty())),
             Ordering::Equal => {
-                let diagram = DiagramN::try_from(diagram.clone()).unwrap();
+                let diagram = Self::try_from(diagram.clone()).unwrap();
                 let embeddings = self.embeddings_slice(diagram.source());
                 let haystack = self.clone();
                 Embeddings(Box::new(embeddings.filter(move |embedding| {
@@ -318,7 +321,7 @@ impl DiagramN {
             .unwrap()
     }
 
-    pub fn identity(&self) -> DiagramN {
+    pub fn identity(&self) -> Self {
         Diagram::from(self.clone()).identity()
     }
 
@@ -327,15 +330,16 @@ impl DiagramN {
         path: &[SliceIndex],
         height: SingularHeight,
         bias: Option<Bias>,
-    ) -> Option<DiagramN> {
+    ) -> Option<Self> {
         let (boundary_path, interior_path) = BoundaryPath::split(path);
 
-        match boundary_path {
-            Some(boundary_path) => contract(self, boundary_path, &interior_path, height, bias),
-            None => {
+        if let Some(boundary_path) = boundary_path {
+            contract(self, &boundary_path, &interior_path, height, bias)
+        } else {
+            {
                 let result = contract(
                     &self.identity(),
-                    Boundary::Target.into(),
+                    &Boundary::Target.into(),
                     &interior_path,
                     height,
                     bias,
@@ -349,15 +353,16 @@ impl DiagramN {
         &self,
         path: &[SliceIndex],
         direction: Direction,
-    ) -> Result<DiagramN, ExpansionError> {
+    ) -> Result<Self, ExpansionError> {
         let (boundary_path, interior_path) = BoundaryPath::split(path);
 
-        match boundary_path {
-            Some(boundary_path) => expand(self, boundary_path, &interior_path, direction),
-            None => {
+        if let Some(boundary_path) = boundary_path {
+            expand(self, &boundary_path, &interior_path, direction)
+        } else {
+            {
                 let result = expand(
                     &self.identity(),
-                    Boundary::Target.into(),
+                    &Boundary::Target.into(),
                     &interior_path,
                     direction,
                 )?;
@@ -371,24 +376,24 @@ impl DiagramN {
     /// Attach a [diagram] to this diagram at the specified [boundary] and the given [embedding].
     pub fn attach(
         &self,
-        diagram: DiagramN,
+        diagram: &Self,
         boundary: Boundary,
         embedding: &[usize],
-    ) -> Result<DiagramN, AttachmentError> {
+    ) -> Result<Self, AttachmentError> {
         let depth = self
             .dimension()
             .checked_sub(diagram.dimension())
             .ok_or_else(|| AttachmentError::Dimension(diagram.dimension(), self.dimension()))?;
 
-        attach(self.clone(), BoundaryPath(boundary, depth), |slice| {
-            if !slice.embeds(&diagram.slice(boundary.flip()).unwrap(), embedding) {
-                Err(AttachmentError::Incompatible)
-            } else {
+        attach(self, &BoundaryPath(boundary, depth), |slice| {
+            if slice.embeds(&diagram.slice(boundary.flip()).unwrap(), embedding) {
                 Ok(diagram
                     .cospans()
                     .iter()
                     .map(|c| c.pad(&embedding))
                     .collect())
+            } else {
+                Err(AttachmentError::Incompatible)
             }
         })
     }
@@ -403,21 +408,21 @@ impl fmt::Debug for DiagramN {
 impl fmt::Debug for Diagram {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Diagram::Diagram0(generator) => f.debug_tuple("Diagram0").field(generator).finish(),
-            Diagram::DiagramN(diagram) => diagram.fmt(f),
+            Self::Diagram0(generator) => f.debug_tuple("Diagram0").field(generator).finish(),
+            Self::DiagramN(diagram) => diagram.fmt(f),
         }
     }
 }
 
 impl From<DiagramN> for Diagram {
     fn from(diagram: DiagramN) -> Self {
-        Diagram::DiagramN(diagram)
+        Self::DiagramN(diagram)
     }
 }
 
 impl From<Generator> for Diagram {
     fn from(generator: Generator) -> Self {
-        Diagram::Diagram0(generator)
+        Self::Diagram0(generator)
     }
 }
 
@@ -478,7 +483,7 @@ pub struct Slices {
 
 impl Slices {
     fn new(diagram: &DiagramN) -> Self {
-        Slices {
+        Self {
             current: Some(diagram.source()),
             direction: Direction::Forward,
             cospans: diagram.cospans().iter().rev().cloned().collect(),
@@ -567,7 +572,7 @@ mod test {
     use super::*;
     use std::error::Error;
 
-    fn assert_point_ids<D>(diagram: D, points: &[(&[usize], usize)])
+    fn assert_point_ids<D>(diagram: &D, points: &[(&[usize], usize)])
     where
         D: Into<Diagram> + Clone,
     {
@@ -588,16 +593,16 @@ mod test {
 
     #[test]
     fn associativity_points() -> Result<(), Box<dyn Error>> {
-        use Boundary::*;
+        use Boundary::{Source, Target};
 
         let x = Diagram::from(Generator::new(0, 0));
-        let f = DiagramN::new(Generator::new(1, 1), x.clone(), x.clone())?;
-        let ff = f.attach(f.clone(), Target, &[])?;
-        let m = DiagramN::new(Generator::new(2, 2), ff.clone(), f.clone())?;
-        let left = m.attach(m.clone(), Source, &[0])?;
+        let f = DiagramN::new(Generator::new(1, 1), x.clone(), x)?;
+        let ff = f.attach(&f, Target, &[])?;
+        let m = DiagramN::new(Generator::new(2, 2), ff, f)?;
+        let left = m.attach(&m, Source, &[0])?;
 
         assert_point_ids(
-            left,
+            &left,
             &[
                 (&[0, 0], 0),
                 (&[0, 1], 1),

@@ -1,9 +1,15 @@
-use crate::diagram::*;
-use crate::rewrite::*;
-use crate::{attach::*, factorization::factorize};
-use crate::{common::*, normalization::normalize_singular};
+use crate::diagram::{Diagram, DiagramN};
+use crate::rewrite::{Cone, Cospan, Rewrite, RewriteN};
+use crate::{
+    attach::{attach, BoundaryPath},
+    factorization::factorize,
+};
+use crate::{
+    common::{Boundary, Direction, Height, RegularHeight, SingularHeight},
+    normalization::normalize_singular,
+};
 use std::cmp::Ordering;
-use std::convert::*;
+use std::convert::{Into, TryInto};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -26,11 +32,11 @@ pub enum ExpansionError {
 
 pub fn expand(
     diagram: &DiagramN,
-    boundary_path: BoundaryPath,
+    boundary_path: &BoundaryPath,
     interior_path: &[Height],
     direction: Direction,
 ) -> Result<DiagramN, ExpansionError> {
-    attach(diagram.clone(), boundary_path.clone(), |slice| {
+    attach(diagram, boundary_path, |slice| {
         let expand: Rewrite = expand_in_path(&slice, interior_path, direction)?;
         let identity = Rewrite::identity(slice.dimension());
         Ok(vec![match boundary_path.boundary() {
@@ -51,7 +57,7 @@ pub fn expand_in_path(
     location: &[Height],
     direction: Direction,
 ) -> Result<Rewrite, ExpansionError> {
-    use Height::*;
+    use Height::{Regular, Singular};
 
     match location.split_first() {
         _ if diagram.dimension() < location.len() => Err(ExpansionError::OutOfBounds),
@@ -94,8 +100,8 @@ fn expand_base_singular(
         Direction::Forward => {
             let expansion = expand_cospan(
                 h1,
-                cospan.forward.clone().try_into().unwrap(),
-                cospan.backward.clone().try_into().unwrap(),
+                &cospan.forward.clone().try_into().unwrap(),
+                &cospan.backward.clone().try_into().unwrap(),
             )?;
 
             let cone = Cone {
@@ -122,8 +128,8 @@ fn expand_base_singular(
         Direction::Backward => {
             let expansion = expand_cospan(
                 h1,
-                cospan.backward.clone().try_into().unwrap(),
-                cospan.forward.clone().try_into().unwrap(),
+                &cospan.backward.clone().try_into().unwrap(),
+                &cospan.forward.clone().try_into().unwrap(),
             )?;
 
             let cone = Cone {
@@ -157,8 +163,8 @@ struct ExpandedCospan {
 
 fn expand_cospan(
     height: SingularHeight,
-    forward: RewriteN,
-    backward: RewriteN,
+    forward: &RewriteN,
+    backward: &RewriteN,
 ) -> Result<ExpandedCospan, ExpansionError> {
     let forward_targets = forward.targets();
     let backward_targets = backward.targets();
@@ -195,12 +201,8 @@ fn expand_cospan(
         .map(|(_, c)| c.len() as isize - 1)
         .sum();
 
-    let forward_offset = forward_index
-        .map(|i| forward.cones()[i].len() as isize - 1)
-        .unwrap_or(0);
-    let backward_offset = backward_index
-        .map(|i| backward.cones()[i].len() as isize - 1)
-        .unwrap_or(0);
+    let forward_offset = forward_index.map_or(0, |i| forward.cones()[i].len() as isize - 1);
+    let backward_offset = backward_index.map_or(0, |i| backward.cones()[i].len() as isize - 1);
 
     let new_forward0 = match forward_index {
         None => forward.clone(),
@@ -253,7 +255,7 @@ fn expand_cospan(
     };
 
     let new_slice1 = match backward_index {
-        None => backward,
+        None => backward.clone(),
         Some(index) => RewriteN::new(
             backward.dimension(),
             backward

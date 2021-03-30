@@ -4,9 +4,9 @@ use crate::app::panzoom;
 use crate::model::proof::homotopy::Homotopy;
 use crate::model::proof::{Action, GeneratorInfo, Workspace};
 use closure::closure;
-use homotopy_core::common::*;
+use homotopy_core::common::{Boundary, Generator, Height, SliceIndex};
 use homotopy_core::{Diagram, DiagramN};
-use std::convert::*;
+use std::convert::{Into, TryFrom, TryInto};
 use yew::prelude::*;
 
 // TODO: Workspace rerendering when panzoom is changed needs to be smoother.
@@ -35,10 +35,10 @@ impl Component for WorkspaceView {
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
         let panzoom_callback = link.callback(Message::PanZoom);
-        let panzoom = panzoom::PanZoom::new(NodeRef::default(), panzoom_callback);
+        let panzoom = panzoom::PanZoom::new(NodeRef::default(), &panzoom_callback);
         let on_select = props.dispatch.reform(Action::SelectPoints);
         let on_homotopy = props.dispatch.reform(Action::Homotopy);
-        WorkspaceView {
+        Self {
             props,
             panzoom,
             on_select,
@@ -235,7 +235,7 @@ impl WorkspaceView {
     }
 
     fn highlight_2d(&self) -> Option<Highlight2D> {
-        use Height::*;
+        use Height::Regular;
 
         let option = self.props.workspace.highlight.as_ref()?;
 

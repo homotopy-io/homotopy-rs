@@ -1,14 +1,17 @@
-use homotopy_core::attach::BoundaryPath;
-use homotopy_core::common::*;
+use homotopy_core::common::{Boundary, Direction, Generator, Height, RegularHeight, SliceIndex};
 use homotopy_core::diagram::NewDiagramError;
 use homotopy_core::expansion::ExpansionError;
+use homotopy_core::{attach::BoundaryPath, common::DimensionError};
 use homotopy_core::{Diagram, DiagramN};
 use im::{HashMap, Vector};
 use std::{collections::BTreeSet, ops::Deref};
-use std::{convert::*, fmt::Display};
+use std::{
+    convert::{Into, TryFrom, TryInto},
+    fmt::Display,
+};
 use thiserror::Error;
 pub mod homotopy;
-use homotopy::*;
+use homotopy::{Contract, Expand, Homotopy};
 
 use palette::Srgb;
 use serde::{Deserialize, Serialize};
@@ -124,7 +127,7 @@ pub enum ModelError {
     #[error("selected a generator that is not in the signature")]
     UnknownGeneratorSelected,
     #[error("tried to descend into an invalid diagram slice")]
-    InvalidSlice,
+    InvalidSlice(#[from] DimensionError),
     #[error("error while performing expansion")]
     ExpansionError(#[from] ExpansionError),
     #[error("error while performing contraction")]
@@ -164,7 +167,7 @@ impl Proof {
                 Ok(())
             }
             Action::Attach(option) => {
-                self.attach(option);
+                self.attach(&option);
                 Ok(())
             }
             Action::HighlightAttachment(option) => {
@@ -215,13 +218,12 @@ impl Proof {
             .iter()
             .map(|(generator, _)| generator.id)
             .max()
-            .map(|id| id + 1)
-            .unwrap_or(0)
+            .map_or(0, |id| id + 1)
     }
 
     /// Handler for [Action::SetBoundary].
     fn set_boundary(&mut self, boundary: Boundary) -> Result<(), ModelError> {
-        use Boundary::*;
+        use Boundary::{Source, Target};
 
         match (&self.workspace, &self.boundary) {
             (Some(workspace), Some(selected)) => {
@@ -249,7 +251,7 @@ impl Proof {
                     boundary,
                     diagram: workspace.diagram.clone(),
                 });
-                self.workspace = None
+                self.workspace = None;
             }
             _ => {}
         };
@@ -274,12 +276,12 @@ impl Proof {
 
     /// Handler for [Action::ClearWorkspace].
     fn clear_workspace(&mut self) {
-        self.workspace = None
+        self.workspace = None;
     }
 
     /// Handler for [Action::ClearBoundary].
     fn clear_boundary(&mut self) {
-        self.boundary = None
+        self.boundary = None;
     }
 
     /// Handler for [Action::SelectGenerator].
@@ -326,9 +328,9 @@ impl Proof {
             let mut part = workspace.diagram.clone();
             for height in &path {
                 part = DiagramN::try_from(part)
-                    .map_err(|_| ModelError::InvalidSlice)?
+                    .map_err(ModelError::InvalidSlice)?
                     .slice(*height)
-                    .ok_or(ModelError::InvalidSlice)?;
+                    .ok_or(ModelError::InvalidSlice(DimensionError))?;
             }
 
             // Update workspace
@@ -353,22 +355,20 @@ impl Proof {
 
         let mut matches: BTreeSet<AttachOption> = BTreeSet::new();
 
-        for point in selected.into_iter() {
+        for point in selected {
             let (boundary_path, point) = BoundaryPath::split(&point);
 
             let haystack = match &boundary_path {
                 None => workspace.diagram.clone(),
                 Some(boundary_path) => DiagramN::try_from(workspace.diagram.clone())
                     .ok()
-                    .map(|diagram| boundary_path.follow(&diagram))
-                    .flatten()
+                    .and_then(|diagram| boundary_path.follow(&diagram))
                     .unwrap(),
             };
 
             let boundary: Boundary = boundary_path
                 .clone()
-                .map(|bp| bp.boundary())
-                .unwrap_or(Boundary::Target);
+                .map_or(Boundary::Target, |bp| bp.boundary());
 
             for (generator, info) in self.signature.iter() {
                 if info.diagram.dimension() == haystack.dimension() + 1 {
@@ -395,18 +395,18 @@ impl Proof {
             Ordering::Less => {
                 let workspace = self.workspace.as_mut().unwrap();
                 workspace.attach = None;
-                workspace.highlight = None
+                workspace.highlight = None;
             }
-            Ordering::Equal => self.attach(matches.into_iter().next().unwrap()),
+            Ordering::Equal => self.attach(&matches.into_iter().next().unwrap()),
             Ordering::Greater => {
                 let workspace = self.workspace.as_mut().unwrap();
                 workspace.attach = Some(matches.into_iter().collect());
-                workspace.highlight = None
+                workspace.highlight = None;
             }
         }
     }
 
-    fn attach(&mut self, option: AttachOption) {
+    fn attach(&mut self, option: &AttachOption) {
         if let Some(workspace) = &mut self.workspace {
             // TODO: Better error handling, although none of these errors should occur
             let diagram: DiagramN = workspace.diagram.clone().try_into().unwrap();
@@ -422,11 +422,11 @@ impl Proof {
 
             let result = match &option.boundary_path {
                 Some(bp) => diagram
-                    .attach(generator, bp.boundary(), &embedding)
+                    .attach(&generator, bp.boundary(), &embedding)
                     .unwrap(),
                 None => diagram
                     .identity()
-                    .attach(generator, Boundary::Target, &embedding)
+                    .attach(&generator, Boundary::Target, &embedding)
                     .unwrap(),
             };
 
@@ -489,7 +489,7 @@ impl Proof {
                         panic!("Contracting off the edge of the diagram.");
                     }
 
-                    let bias = homotopy.bias.map(|bias| bias.flip());
+                    let bias = homotopy.bias.map(homotopy_core::Bias::flip);
                     (homotopy.height - 1, bias)
                 }
             };
@@ -513,7 +513,7 @@ impl Proof {
         &self.signature
     }
 
-    pub fn render_style(&self) -> RenderStyle {
+    pub fn render_style() -> RenderStyle {
         RenderStyle::default()
     }
 }
@@ -527,7 +527,7 @@ pub struct RenderStyle {
 
 impl Default for RenderStyle {
     fn default() -> Self {
-        RenderStyle {
+        Self {
             scale: 40.0,
             wire_thickness: 8.0,
             point_radius: 6.0,
@@ -554,7 +554,7 @@ const COLORS: &[&str] = &[
 ];
 
 fn contains_point(diagram: Diagram, point: &[Height], embedding: &[RegularHeight]) -> bool {
-    use Diagram::*;
+    use Diagram::{Diagram0, DiagramN};
 
     match (point.split_first(), diagram) {
         (None, _) => true,

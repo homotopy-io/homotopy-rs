@@ -3,7 +3,10 @@ use crate::layout2d::Layout;
 use euclid::default::Transform2D;
 use homotopy_core::complex::Simplex;
 use homotopy_core::projection::Generators;
-use homotopy_core::{common::*, projection::Depths};
+use homotopy_core::{
+    common::{Generator, Height, SliceIndex},
+    projection::Depths,
+};
 use lyon_path::Path;
 use petgraph::unionfind::UnionFind;
 use seahash::SeaHasher;
@@ -29,7 +32,7 @@ pub enum ActionRegion {
 impl ActionRegion {
     /// Apply an affine coordinate transformation to the region.
     pub fn transformed(&self, transform: &Transform2D<f32>) -> Self {
-        use ActionRegion::*;
+        use ActionRegion::{Point, Surface, Wire};
         match self {
             Surface(cs, path) => Surface(*cs, path.transformed(transform)),
             Wire(cs, path) => Wire(*cs, path.transformed(transform)),
@@ -53,15 +56,15 @@ impl ActionRegion {
             match simplex {
                 Simplex::Surface(ps) => {
                     let path = make_path(ps, true, layout);
-                    region_surfaces.push(ActionRegion::Surface(*ps, path));
+                    region_surfaces.push(Self::Surface(*ps, path));
                 }
                 Simplex::Wire(ps) => {
                     let path = make_path(ps, false, layout);
-                    region_wires.push(ActionRegion::Wire(*ps, path));
+                    region_wires.push(Self::Wire(*ps, path));
                 }
                 Simplex::Point([p]) => {
                     let center = layout.get(p.0, p.1).unwrap();
-                    region_points.push(ActionRegion::Point([*p], center));
+                    region_points.push(Self::Point([*p], center));
                 }
             }
         }
@@ -84,9 +87,9 @@ impl ActionRegion {
 impl From<&ActionRegion> for Simplex {
     fn from(ar: &ActionRegion) -> Self {
         match ar {
-            ActionRegion::Surface(ps, _) => Simplex::Surface(*ps),
-            ActionRegion::Wire(ps, _) => Simplex::Wire(*ps),
-            ActionRegion::Point(ps, _) => Simplex::Point(*ps),
+            ActionRegion::Surface(ps, _) => Self::Surface(*ps),
+            ActionRegion::Wire(ps, _) => Self::Wire(*ps),
+            ActionRegion::Point(ps, _) => Self::Point(*ps),
         }
     }
 }
@@ -111,7 +114,7 @@ type FastHashMap<K, V> = HashMap<K, V, std::hash::BuildHasherDefault<SeaHasher>>
 impl GraphicElement {
     /// Apply an affine coordinate transformation to the element.
     pub fn transformed(&self, transform: &Transform2D<f32>) -> Self {
-        use GraphicElement::*;
+        use GraphicElement::{Point, Surface, Wire};
         match self {
             Surface(g, path) => Surface(*g, path.transformed(transform)),
             Wire(g, path, mask) => {
@@ -127,11 +130,9 @@ impl GraphicElement {
     }
 
     pub fn generator(&self) -> Generator {
-        use GraphicElement::*;
+        use GraphicElement::{Point, Surface, Wire};
         match self {
-            Surface(generator, _) => *generator,
-            Wire(generator, _, _) => *generator,
-            Point(generator, _) => *generator,
+            Surface(generator, _) | Wire(generator, _, _) | Point(generator, _) => *generator,
         }
     }
 
@@ -175,28 +176,18 @@ impl GraphicElement {
                         None => vec![],
                     };
 
-                    wire_elements.push(GraphicElement::Wire(
-                        generator,
-                        make_path(ps, false, layout),
-                        mask,
-                    ));
+                    wire_elements.push(Self::Wire(generator, make_path(ps, false, layout), mask));
                 }
                 Simplex::Point([p]) => {
                     let generator = generators.get(p.0, p.1).unwrap();
-                    point_elements.push(GraphicElement::Point(
-                        generator,
-                        layout.get(p.0, p.1).unwrap(),
-                    ));
+                    point_elements.push(Self::Point(generator, layout.get(p.0, p.1).unwrap()));
                 }
             }
         }
 
         for (generator, surfaces) in grouped_surfaces {
             for merged in merge_surfaces(surfaces.into_iter()) {
-                surface_elements.push(GraphicElement::Surface(
-                    generator,
-                    make_path(&merged, true, layout),
-                ));
+                surface_elements.push(Self::Surface(generator, make_path(&merged, true, layout)));
             }
         }
 
@@ -316,8 +307,8 @@ fn make_path_segment(
     layout: &Layout,
     builder: &mut lyon_path::Builder,
 ) {
-    use self::Height::*;
-    use self::SliceIndex::*;
+    use self::Height::{Regular, Singular};
+    use self::SliceIndex::Interior;
 
     let layout_start = layout.get(start.0, start.1).unwrap();
     let layout_end = layout.get(end.0, end.1).unwrap();

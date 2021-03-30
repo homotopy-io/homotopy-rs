@@ -1,10 +1,10 @@
-use crate::common::*;
-use crate::diagram::*;
+use crate::common::{Generator, Height, SingularHeight};
+use crate::diagram::{Diagram, DiagramN};
 use crate::normalization::normalize;
-use crate::rewrite::*;
+use crate::rewrite::{Cone, Cospan, Rewrite, RewriteN};
 use std::collections::HashMap;
+use std::convert::Into;
 use std::convert::TryInto;
-use std::convert::*;
 use std::rc::Rc;
 use thiserror::Error;
 
@@ -131,25 +131,25 @@ enum Embedding {
 
 impl Embedding {
     /// Construct an embedding which contains precisely one singular point.
-    fn from_point(point: &[SingularHeight]) -> Embedding {
-        let mut embedding = Embedding::Zero;
+    fn from_point(point: &[SingularHeight]) -> Self {
+        let mut embedding = Self::Zero;
 
         for &height in point.iter().rev() {
-            embedding = Embedding::Singular(height, vec![Rc::new(embedding)]);
+            embedding = Self::Singular(height, vec![Rc::new(embedding)]);
         }
 
         embedding
     }
 
-    fn preimage(&self, rewrite: &Rewrite) -> Embedding {
+    fn preimage(&self, rewrite: &Rewrite) -> Self {
         match self {
-            Embedding::Zero => Embedding::Zero,
-            Embedding::Regular(height, slice) => {
+            Self::Zero => Self::Zero,
+            Self::Regular(height, slice) => {
                 let rewrite: &RewriteN = rewrite.try_into().unwrap();
                 let preimage_height = rewrite.regular_image(*height);
-                Embedding::Regular(preimage_height, slice.clone())
+                Self::Regular(preimage_height, slice.clone())
             }
-            Embedding::Singular(height, slices) => {
+            Self::Singular(height, slices) => {
                 let rewrite: &RewriteN = rewrite.try_into().unwrap();
                 let preimage_height = rewrite.regular_image(*height);
                 let preimage_slices: Vec<_> = slices
@@ -167,12 +167,12 @@ impl Embedding {
 
                 if preimage_slices.is_empty() {
                     let cospan = &rewrite.cone_over_target(*height).unwrap().target;
-                    Embedding::Regular(
+                    Self::Regular(
                         preimage_height,
                         Rc::new(slices[*height].preimage(&cospan.forward)),
                     )
                 } else {
-                    Embedding::Singular(preimage_height, preimage_slices)
+                    Self::Singular(preimage_height, preimage_slices)
                 }
             }
         }
@@ -273,6 +273,8 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
 
 #[cfg(test)]
 mod test {
+    use crate::Boundary;
+
     use super::*;
 
     #[test]
@@ -283,11 +285,11 @@ mod test {
         let a = Generator::new(3, 3);
 
         let f_d = DiagramN::new(f, x, x).unwrap();
-        let ff_d = f_d.attach(f_d.clone(), Boundary::Target, &[]).unwrap();
+        let ff_d = f_d.attach(&f_d, Boundary::Target, &[]).unwrap();
         let m_d = DiagramN::new(m, ff_d, f_d.clone()).unwrap();
-        let left_d = m_d.attach(m_d.clone(), Boundary::Source, &[0]).unwrap();
-        let right_d = m_d.attach(m_d.clone(), Boundary::Source, &[1]).unwrap();
-        let a_d = DiagramN::new(a, left_d.clone(), right_d.clone()).unwrap();
+        let left_d = m_d.attach(&m_d, Boundary::Source, &[0]).unwrap();
+        let right_d = m_d.attach(&m_d, Boundary::Source, &[1]).unwrap();
+        let a_d = DiagramN::new(a, left_d, right_d).unwrap();
 
         let mut signature = HashMap::<Generator, Diagram>::new();
         signature.insert(x, x.into());

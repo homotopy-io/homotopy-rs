@@ -11,9 +11,9 @@ use homotopy_core::rewrite::RewriteN;
 use homotopy_core::{Boundary, DiagramN, Generator, Height, SliceIndex};
 use homotopy_graphics::geometry;
 use homotopy_graphics::geometry::path_to_svg;
-use homotopy_graphics::graphic2d::*;
+use homotopy_graphics::graphic2d::{ActionRegion, GraphicElement};
 use homotopy_graphics::layout2d::Layout;
-use std::convert::*;
+use std::convert::{From, Into, TryInto};
 use std::f32::consts::PI;
 use web_sys::Element;
 use yew::prelude::*;
@@ -49,6 +49,7 @@ pub struct Highlight2D {
 // TODO: Drag callbacks in props
 // TODO: Highlights in props
 
+#[allow(clippy::pub_enum_variant_names)]
 pub enum Message2D {
     OnMouseDown(Point2D<f32>),
     OnMouseMove(Point2D<f32>),
@@ -76,11 +77,11 @@ struct PreparedDiagram {
 }
 
 impl PreparedDiagram {
-    fn new(diagram: DiagramN, style: RenderStyle) -> Self {
+    fn new(diagram: &DiagramN, style: RenderStyle) -> Self {
         assert!(diagram.dimension() >= 2);
 
         let generators = Generators::new(&diagram);
-        let layout = Layout::new(diagram.clone(), 2000).unwrap();
+        let layout = Layout::new(&diagram, 2000).unwrap();
         let complex = make_complex(&diagram);
         let depths = Depths::new(&diagram);
         let graphic = GraphicElement::build(&complex, &layout, &generators, &depths);
@@ -108,7 +109,7 @@ impl PreparedDiagram {
 
         let depths = Depths::new(&diagram);
 
-        PreparedDiagram {
+        Self {
             graphic,
             actions,
             depths,
@@ -124,10 +125,10 @@ impl Component for Diagram2D {
     type Properties = Props2D;
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let diagram = PreparedDiagram::new(props.diagram.clone(), props.style);
+        let diagram = PreparedDiagram::new(&props.diagram, props.style);
         let node_ref = NodeRef::default();
         let drag_start = Default::default();
-        Diagram2D {
+        Self {
             props,
             diagram,
             link,
@@ -161,7 +162,7 @@ impl Component for Diagram2D {
 
                     let homotopy = drag_to_homotopy(
                         angle,
-                        simplex,
+                        &simplex,
                         self.props.diagram.clone(),
                         &self.diagram.depths,
                     );
@@ -184,7 +185,7 @@ impl Component for Diagram2D {
                     if let Some(simplex) = self.simplex_at(point) {
                         self.props
                             .on_select
-                            .emit(simplex.into_iter().map(|(x, y)| vec![y, x]).collect())
+                            .emit(simplex.into_iter().map(|(x, y)| vec![y, x]).collect());
                     }
                 }
                 false
@@ -194,14 +195,14 @@ impl Component for Diagram2D {
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
         if (self.props.diagram != props.diagram) || (self.props.style != props.style) {
-            self.diagram = PreparedDiagram::new(props.diagram.clone(), props.style);
+            self.diagram = PreparedDiagram::new(&props.diagram, props.style);
             self.props = props;
             true
-        } else if self.props != props {
-            self.props = props;
-            true
-        } else {
+        } else if self.props == props {
             false
+        } else {
+            self.props = props;
+            true
         }
     }
 
@@ -285,14 +286,14 @@ impl Diagram2D {
         match element {
             GraphicElement::Surface(_, path) => {
                 let class = SignatureStylesheet::name("generator", generator, "surface");
-                let path = path_to_svg(path.transformed(&self.diagram.transform));
+                let path = path_to_svg(&path.transformed(&self.diagram.transform));
                 html! {
                     <path d={path} class={class} stroke-width={1} />
                 }
             }
             GraphicElement::Wire(_, path, mask) => {
                 let class = SignatureStylesheet::name("generator", generator, "wire");
-                let path = path_to_svg(path.transformed(&self.diagram.transform));
+                let path = path_to_svg(&path.transformed(&self.diagram.transform));
 
                 if mask.is_empty() {
                     html! {
@@ -309,7 +310,7 @@ impl Diagram2D {
                         .map(|mask_path| {
                             html! {
                                 <path
-                                    d={path_to_svg(mask_path.transformed(&self.diagram.transform))}
+                                    d={path_to_svg(&mask_path.transformed(&self.diagram.transform))}
                                     stroke-width={self.props.style.wire_thickness * 2.0}
                                     fill="none"
                                     stroke="black"
@@ -414,7 +415,7 @@ impl Component for Diagram1D {
     type Properties = Props1D;
 
     fn create(props: Self::Properties, _link: ComponentLink<Self>) -> Self {
-        Diagram1D { props }
+        Self { props }
     }
 
     fn update(&mut self, _msg: Self::Message) -> ShouldRender {
@@ -422,11 +423,11 @@ impl Component for Diagram1D {
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        if self.props != props {
+        if self.props == props {
+            false
+        } else {
             self.props = props;
             true
-        } else {
-            false
         }
     }
 
@@ -495,8 +496,8 @@ impl Diagram1D {
     }
 
     fn to_y(&self, index: SliceIndex) -> f32 {
-        use self::Boundary::*;
-        use self::SliceIndex::*;
+        use self::Boundary::{Source, Target};
+        use self::SliceIndex::{Boundary, Interior};
 
         let scale = self.props.style.scale;
         let size = self.dimensions();
@@ -561,12 +562,12 @@ impl Diagram1D {
 
 fn drag_to_homotopy(
     angle: Angle<f32>,
-    simplex: Simplex,
+    simplex: &Simplex,
     diagram: DiagramN,
     depths: &Depths,
 ) -> Option<Homotopy> {
-    use Height::*;
-    use SliceIndex::*;
+    use Height::{Regular, Singular};
+    use SliceIndex::{Boundary, Interior};
 
     let abs_radians = angle.radians.abs();
     let horizontal = !(PI / 4.0..(3.0 * PI) / 4.0).contains(&abs_radians);
@@ -631,9 +632,10 @@ fn drag_to_homotopy(
             direction,
         }))
     } else {
-        let bias = Some(match abs_radians < PI / 2.0 {
-            true => Bias::Higher,
-            false => Bias::Lower,
+        let bias = Some(if abs_radians < PI / 2.0 {
+            Bias::Higher
+        } else {
+            Bias::Lower
         });
 
         let height = match y {

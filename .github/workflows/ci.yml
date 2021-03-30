@@ -55,7 +55,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: beta # TODO: back to stable when next release comes (2021-05-06)
           target: wasm32-unknown-unknown
           override: true
           components: rustfmt, clippy

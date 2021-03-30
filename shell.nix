@@ -7,10 +7,9 @@ with pkgs;
 mkShell {
   buildInputs = [
     nodejs_latest
-    rust-analyzer # the one from Mozilla is slightly broken https://github.com/mozilla/nixpkgs-mozilla/issues/238
     (moz_nixpkgs.latest.rustChannels.stable.rust.override {
       targets = ["wasm32-unknown-unknown"];
-      # extensions = ["rust-src"];
+      extensions = ["rust-src"];
     })
     gcc wabt wasm-bindgen-cli wasm-pack
   ];

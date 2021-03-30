@@ -1,9 +1,9 @@
 use crate::geometry::Point;
-use homotopy_core::common::*;
-use homotopy_core::diagram::*;
-use homotopy_core::rewrite::*;
+use homotopy_core::common::{Boundary, Height, SliceIndex};
+use homotopy_core::diagram::DiagramN;
+use homotopy_core::rewrite::RewriteN;
 use serde::Serialize;
-use std::convert::*;
+use std::convert::{Into, TryFrom, TryInto};
 use thiserror::Error;
 
 #[derive(Debug)]
@@ -11,6 +11,8 @@ struct Constraint(Vec<(usize, usize)>, (usize, usize));
 
 impl Constraint {
     fn build(diagram: &DiagramN) -> Vec<Self> {
+        use Height::{Regular, Singular};
+
         let mut constraints = Vec::new();
         let cospans = diagram.cospans();
         let slices: Vec<_> = diagram.slices().collect();
@@ -23,10 +25,8 @@ impl Constraint {
             let singular: &DiagramN = (&slices[i * 2 + 1]).try_into().unwrap();
             let regular1: &DiagramN = (&slices[i * 2 + 2]).try_into().unwrap();
 
-            use Height::*;
-
             constraints.extend((0..singular.size()).map(|x| {
-                Constraint(
+                Self(
                     forward
                         .singular_preimage(x)
                         .map(|xp| (Singular(xp).to_int(), Regular(i).to_int()))
@@ -36,7 +36,7 @@ impl Constraint {
             }));
 
             constraints.extend((0..singular.size()).map(|x| {
-                Constraint(
+                Self(
                     backward
                         .singular_preimage(x)
                         .map(|xp| (Singular(xp).to_int(), Regular(i + 1).to_int()))
@@ -45,8 +45,8 @@ impl Constraint {
                 )
             }));
 
-            constraints.extend((0..regular0.size() + 1).map(|x| {
-                Constraint(
+            constraints.extend((0..=regular0.size()).map(|x| {
+                Self(
                     forward
                         .regular_preimage(x)
                         .map(|xp| (Regular(xp).to_int(), Singular(i).to_int()))
@@ -55,8 +55,8 @@ impl Constraint {
                 )
             }));
 
-            constraints.extend((0..regular1.size() + 1).map(|x| {
-                Constraint(
+            constraints.extend((0..=regular1.size()).map(|x| {
+                Self(
                     backward
                         .regular_preimage(x)
                         .map(|xp| (Regular(xp).to_int(), Singular(i).to_int()))
@@ -126,7 +126,7 @@ pub struct Solver {
 }
 
 impl Solver {
-    pub fn new(diagram: DiagramN) -> Result<Self, Error> {
+    pub fn new(diagram: &DiagramN) -> Result<Self, Error> {
         if diagram.dimension() < 2 {
             return Err(Error::Dimension);
         }
@@ -147,7 +147,7 @@ impl Solver {
             .filter(|c| !c.0.is_empty())
             .collect();
 
-        Ok(Solver {
+        Ok(Self {
             positions,
             constraints,
         })
@@ -200,7 +200,7 @@ impl Solver {
         max_steps
     }
 
-    pub fn finish(self) -> Layout {
+    fn finish(self) -> Layout {
         Layout {
             width: self.positions.width(),
             positions: self.positions.0,
@@ -218,7 +218,7 @@ impl Layout {
     /// Solve for a diagram's layout with a given maximum number of iterations.
     ///
     /// Expects diagrams of dimension two or higher.
-    pub fn new(diagram: DiagramN, max_steps: usize) -> Result<Layout, Error> {
+    pub fn new(diagram: &DiagramN, max_steps: usize) -> Result<Self, Error> {
         let mut solver = Solver::new(diagram)?;
         solver.solve(max_steps);
         Ok(solver.finish())

@@ -21,7 +21,7 @@ impl Component for SignatureView {
     type Properties = Props;
 
     fn create(props: Self::Properties, _link: ComponentLink<Self>) -> Self {
-        SignatureView { props }
+        Self { props }
     }
 
     fn update(&mut self, _msg: Self::Message) -> ShouldRender {

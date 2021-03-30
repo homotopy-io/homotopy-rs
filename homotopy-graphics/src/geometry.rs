@@ -16,7 +16,7 @@ pub struct Fill {
 impl Fill {
     pub fn new(path: Path) -> Self {
         let bounds = fast_bounding_rect(path.into_iter());
-        Fill { path, bounds }
+        Self { path, bounds }
     }
 
     pub fn contains_point(&self, point: Point, tolerance: f32) -> bool {
@@ -47,11 +47,11 @@ pub struct Stroke {
 
 impl Stroke {
     pub fn new(path: Path, width: f32) -> Self {
-        Stroke { path, width }
+        Self { path, width }
     }
 
     pub fn contains_point(&self, point: Point, tolerance: f32) -> bool {
-        for event in self.path.into_iter() {
+        for event in &self.path {
             use lyon_path::Event;
             match event {
                 Event::Begin { .. } => {}
@@ -134,7 +134,7 @@ pub struct Circle {
 
 impl Circle {
     pub fn new(center: Point, radius: f32) -> Self {
-        Circle { center, radius }
+        Self { center, radius }
     }
 
     pub fn contains_point(&self, point: Point) -> bool {
@@ -148,10 +148,10 @@ impl From<Circle> for Shape {
     }
 }
 
-pub fn path_to_svg(path: Path) -> String {
+pub fn path_to_svg(path: &Path) -> String {
     let mut svg = String::new();
 
-    for event in path.into_iter() {
+    for event in path {
         use lyon_path::Event;
         match event {
             Event::Begin { at } => {

@@ -1,5 +1,5 @@
 use crate::model::proof::{Action, AttachOption, GeneratorInfo};
-use homotopy_core::common::*;
+use homotopy_core::common::Generator;
 use yew::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Properties)]
@@ -21,7 +21,7 @@ impl Component for AttachView {
     type Properties = Props;
 
     fn create(props: Self::Properties, _link: ComponentLink<Self>) -> Self {
-        AttachView { props }
+        Self { props }
     }
 
     fn update(&mut self, _msg: Self::Message) -> ShouldRender {

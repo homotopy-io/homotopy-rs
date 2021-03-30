@@ -1,6 +1,6 @@
 use closure::closure;
 
-use yew::html::ChangeData::*;
+use yew::html::ChangeData::Files;
 use yew::prelude::*;
 use yew_functional::function_component;
 use yew_functional::use_state;
@@ -29,11 +29,11 @@ pub fn project_view(props: &Props) -> Html {
                     let data: Data = fd.content.into();
                     let (signature, workspace) = data.into();
                     dispatch.emit(Serialize(Import((signature, workspace).into())));
-                    set_reader_task(None)
+                    set_reader_task(None);
                 }),
             );
             let task = ReaderService::read_file(file, callback).expect("failed to read file");
-            set_reader_task(Some(task))
+            set_reader_task(Some(task));
         }
     }));
     html! {

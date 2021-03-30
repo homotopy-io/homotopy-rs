@@ -1,13 +1,13 @@
-use crate::attach::*;
-use crate::common::*;
-use crate::diagram::*;
+use crate::attach::{attach, BoundaryPath};
+use crate::common::{Boundary, Height, SingularHeight};
+use crate::diagram::{Diagram, DiagramN};
 use crate::normalization;
-use crate::rewrite::*;
+use crate::rewrite::{Cone, Cospan, Rewrite, Rewrite0, RewriteN};
 use petgraph::algo::tarjan_scc;
 use petgraph::graphmap::{DiGraphMap, GraphMap};
 use petgraph::unionfind::UnionFind;
 use std::collections::HashMap;
-use std::convert::*;
+use std::convert::{Into, TryFrom, TryInto};
 use std::hash::Hash;
 
 #[derive(Debug, Clone)]
@@ -30,15 +30,15 @@ pub enum Bias {
 impl Bias {
     pub fn flip(self) -> Self {
         match self {
-            Bias::Higher => Bias::Lower,
-            Bias::Lower => Bias::Higher,
+            Self::Higher => Self::Lower,
+            Self::Lower => Self::Higher,
         }
     }
 }
 
 pub fn contract(
     diagram: &DiagramN,
-    boundary_path: BoundaryPath,
+    boundary_path: &BoundaryPath,
     interior_path: &[Height],
     height: SingularHeight,
     bias: Option<Bias>,
@@ -53,7 +53,8 @@ pub fn contract(
         return None;
     }
 
-    let result: Result<_, ()> = attach(diagram.clone(), boundary_path.clone(), |slice| {
+    let result: Result<_, ()> = attach(diagram, boundary_path, |slice| {
+        #[allow(clippy::map_err_ignore)] // TODO when not using Result<_, ()>
         let slice = slice.try_into().map_err(|_| ())?;
         let contract = contract_in_path(&slice, interior_path, height, bias).ok_or(())?;
         let singular = slice.rewrite_forward(&contract);
@@ -191,7 +192,7 @@ fn colimit(
             || diagram.dimension() != dimension
             || forward.dimension() != dimension
         {
-            panic!()
+            panic!();
         }
     }
 
@@ -233,25 +234,21 @@ fn colimit_base(
 
     components.dedup();
 
-    if components.len() == 1 {
-        Some(
-            diagrams
-                .iter()
-                .map(|(diagram, _)| {
-                    Rewrite0::new(diagram.to_generator().unwrap(), max_generator).into()
-                })
-                .collect(),
-        )
-    } else {
-        None
-    }
+    (components.len() == 1).then(|| {
+        diagrams
+            .iter()
+            .map(|(diagram, _)| {
+                Rewrite0::new(diagram.to_generator().unwrap(), max_generator).into()
+            })
+            .collect()
+    })
 }
 
 fn colimit_recursive(
     diagrams: &[(Diagram, BiasValue)],
     spans: &[(usize, Span, usize)],
 ) -> Option<Vec<Rewrite>> {
-    use Height::*;
+    use Height::{Regular, Singular};
     let mut span_slices: HashMap<(Node, Node), Vec<Span>> = HashMap::new();
     let mut diagram_slices: HashMap<Node, Diagram> = HashMap::new();
     let mut node_to_cospan: HashMap<Node, Cospan> = HashMap::new();

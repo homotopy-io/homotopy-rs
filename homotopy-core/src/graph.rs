@@ -1,7 +1,7 @@
-use crate::common::*;
-use crate::diagram::*;
-use crate::rewrite::*;
-use std::convert::*;
+use crate::common::{Boundary, DimensionError, Height, SliceIndex};
+use crate::diagram::{Diagram, DiagramN};
+use crate::rewrite::{Rewrite, RewriteN};
+use std::convert::{Into, TryInto};
 
 #[derive(Debug, Clone)]
 pub struct GraphBuilder<K> {
@@ -12,7 +12,7 @@ pub struct GraphBuilder<K> {
 
 impl<K> GraphBuilder<K> {
     pub fn new(key: K, diagram: Diagram) -> Self {
-        GraphBuilder {
+        Self {
             dimension: diagram.dimension(),
             nodes: vec![(key, diagram)],
             edges: vec![],
@@ -28,11 +28,11 @@ where
     where
         F: Fn(SliceIndex, K) -> R + Copy,
     {
+        use Height::{Regular, Singular};
+
         if self.dimension == 0 {
             return Err(DimensionError);
         }
-
-        use Height::*;
 
         let mut nodes_exploded: Vec<(R, Diagram)> = Vec::new();
         let mut edges_exploded: Vec<(usize, usize, Rewrite)> = Vec::new();

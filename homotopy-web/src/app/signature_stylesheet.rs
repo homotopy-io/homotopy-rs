@@ -17,7 +17,7 @@ pub struct SignatureStylesheet {
 
 impl SignatureStylesheet {
     pub fn new(prefix: impl Into<String>) -> Self {
-        SignatureStylesheet {
+        Self {
             signature: Default::default(),
             element: document().create_element("style").unwrap(),
             prefix: prefix.into(),

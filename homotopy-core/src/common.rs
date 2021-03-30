@@ -1,7 +1,7 @@
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::cmp::Ordering;
 use std::fmt;
-use thiserror::*;
+use thiserror::Error;
 
 #[derive(PartialEq, Eq, Copy, Clone, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct Generator {
@@ -11,7 +11,7 @@ pub struct Generator {
 
 impl Generator {
     pub fn new(id: usize, dimension: usize) -> Self {
-        Generator { id, dimension }
+        Self { id, dimension }
     }
 }
 
@@ -32,8 +32,8 @@ pub enum Boundary {
 impl Boundary {
     pub fn flip(self) -> Self {
         match self {
-            Boundary::Source => Boundary::Target,
-            Boundary::Target => Boundary::Source,
+            Self::Source => Self::Target,
+            Self::Target => Self::Source,
         }
     }
 }
@@ -51,16 +51,16 @@ pub enum Height {
 impl Height {
     pub fn to_int(self) -> usize {
         match self {
-            Height::Regular(i) => i * 2,
-            Height::Singular(i) => i * 2 + 1,
+            Self::Regular(i) => i * 2,
+            Self::Singular(i) => i * 2 + 1,
         }
     }
 
-    pub fn from_int(h: usize) -> Height {
+    pub fn from_int(h: usize) -> Self {
         if h % 2 == 0 {
-            Height::Regular(h / 2)
+            Self::Regular(h / 2)
         } else {
-            Height::Singular((h - 1) / 2)
+            Self::Singular((h - 1) / 2)
         }
     }
 }
@@ -91,7 +91,7 @@ impl<'de> Deserialize<'de> for Height {
     where
         D: Deserializer<'de>,
     {
-        Ok(Height::from_int(u32::deserialize(deserializer)? as usize))
+        Ok(Self::from_int(u32::deserialize(deserializer)? as usize))
     }
 }
 
@@ -105,9 +105,9 @@ pub enum SliceIndex {
 impl SliceIndex {
     pub fn to_int(self, size: usize) -> isize {
         match self {
-            SliceIndex::Boundary(Boundary::Source) => -1,
-            SliceIndex::Boundary(Boundary::Target) => size as isize * 2 + 1,
-            SliceIndex::Interior(height) => height.to_int() as isize,
+            Self::Boundary(Boundary::Source) => -1,
+            Self::Boundary(Boundary::Target) => size as isize * 2 + 1,
+            Self::Interior(height) => height.to_int() as isize,
         }
     }
 
@@ -131,16 +131,15 @@ impl Ord for SliceIndex {
     /// assert!(Interior(Regular(10)) < Boundary(Target));
     /// ```
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        use self::Boundary::*;
-        use SliceIndex::*;
+        use self::Boundary::{Source, Target};
+        use SliceIndex::{Boundary, Interior};
         match (self, other) {
-            (Boundary(Source), Boundary(Source)) => Ordering::Equal,
-            (Boundary(Source), _) => Ordering::Less,
-            (Interior(_), Boundary(Source)) => Ordering::Greater,
+            (Boundary(Source), Boundary(Source)) | (Boundary(Target), Boundary(Target)) => {
+                Ordering::Equal
+            }
+            (Boundary(Source), _) | (Interior(_), Boundary(Target)) => Ordering::Less,
+            (Interior(_), Boundary(Source)) | (Boundary(Target), _) => Ordering::Greater,
             (Interior(x), Interior(y)) => x.cmp(y),
-            (Interior(_), Boundary(Target)) => Ordering::Less,
-            (Boundary(Target), Boundary(Target)) => Ordering::Equal,
-            (Boundary(Target), _) => Ordering::Greater,
         }
     }
 }
@@ -153,13 +152,13 @@ impl PartialOrd for SliceIndex {
 
 impl From<Height> for SliceIndex {
     fn from(height: Height) -> Self {
-        SliceIndex::Interior(height)
+        Self::Interior(height)
     }
 }
 
 impl From<Boundary> for SliceIndex {
     fn from(boundary: Boundary) -> Self {
-        SliceIndex::Boundary(boundary)
+        Self::Boundary(boundary)
     }
 }
 

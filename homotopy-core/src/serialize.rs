@@ -13,7 +13,7 @@ pub struct Key<K>(u128, PhantomData<K>);
 
 impl<K> From<u128> for Key<K> {
     fn from(k: u128) -> Self {
-        Key(k, PhantomData)
+        Self(k, PhantomData)
     }
 }
 
@@ -27,7 +27,7 @@ impl<K, H: Hash> Keyed<Key<K>> for H {
         let mut h = HighwayHasher::default();
         self.hash(&mut h);
         let hash = h.finalize128();
-        ((hash[1] as u128 + (hash[0] as u128)) << 64).into()
+        ((u128::from(hash[1]) + u128::from(hash[0])) << 64).into()
     }
 }
 
@@ -41,14 +41,14 @@ pub struct Serialization {
 }
 
 impl Serialization {
-    pub fn diagram(&self, key: Key<Diagram>) -> Diagram {
-        self.diagrams[&key].rehydrate(self)
+    pub fn diagram(&self, key: &Key<Diagram>) -> Diagram {
+        self.diagrams[key].rehydrate(self)
     }
 }
 
 impl Default for Serialization {
     fn default() -> Self {
-        Serialization {
+        Self {
             version: 0,
             diagrams: Default::default(),
             rewrites: Default::default(),
@@ -104,13 +104,13 @@ impl Dehydrate for Diagram {
             return s.clone();
         }
         match self {
-            Diagram::Diagram0(g) => {
+            Self::Diagram0(g) => {
                 if let Some(old) = serialization.diagrams.insert(k, DiagramSer::D0(*g)) {
-                    assert_eq!(old, DiagramSer::D0(*g))
+                    assert_eq!(old, DiagramSer::D0(*g));
                 }
                 DiagramSer::D0(*g)
             }
-            Diagram::DiagramN(n) => {
+            Self::DiagramN(n) => {
                 n.source().dehydrate(serialization);
                 let cospans = n
                     .cospans()
@@ -178,22 +178,22 @@ impl Dehydrate for Rewrite {
             return s.clone();
         }
         match self {
-            Rewrite::Rewrite0(Rewrite0(None)) => {
+            Self::Rewrite0(Rewrite0(None)) => {
                 if let Some(old) = serialization.rewrites.insert(k, RewriteSer::R0(None)) {
-                    assert_eq!(old, RewriteSer::R0(None))
+                    assert_eq!(old, RewriteSer::R0(None));
                 }
                 RewriteSer::R0(None)
             }
-            Rewrite::Rewrite0(Rewrite0(Some((x, y)))) => {
+            Self::Rewrite0(Rewrite0(Some((x, y)))) => {
                 if let Some(old) = serialization
                     .rewrites
                     .insert(k, RewriteSer::R0(Some((*x, *y))))
                 {
-                    assert_eq!(old, RewriteSer::R0(Some((*x, *y))))
+                    assert_eq!(old, RewriteSer::R0(Some((*x, *y))));
                 }
                 RewriteSer::R0(Some((*x, *y)))
             }
-            Rewrite::RewriteN(n) => {
+            Self::RewriteN(n) => {
                 if let Some(s) = serialization.rewrites.get(&k) {
                     return s.clone();
                 }
@@ -231,7 +231,7 @@ impl From<Vec<u8>> for Serialization {
 impl From<Signature> for Serialization {
     fn from(signature: Signature) -> Self {
         let mut serialization = Default::default();
-        for (g, d) in signature.into_iter() {
+        for (g, d) in signature {
             d.dehydrate(&mut serialization);
             serialization.signature.insert(g, d.key());
         }
@@ -242,7 +242,7 @@ impl From<Signature> for Serialization {
 // Serialization of a 'pointed' signature with a distinguished diagram
 impl From<(Signature, Diagram)> for Serialization {
     fn from((sig, d): (Signature, Diagram)) -> Self {
-        let mut serialization = Serialization::from(sig);
+        let mut serialization = Self::from(sig);
         d.dehydrate(&mut serialization);
         serialization
     }
@@ -261,8 +261,8 @@ impl Rehydrate<Diagram> for Key<Diagram> {
 impl Rehydrate<Diagram> for DiagramSer {
     fn rehydrate(&self, serialization: &Serialization) -> Diagram {
         match self {
-            DiagramSer::D0(g) => Diagram::from(*g),
-            DiagramSer::Dn { source, cospans } => DiagramN::new_unsafe(
+            Self::D0(g) => Diagram::from(*g),
+            Self::Dn { source, cospans } => DiagramN::new_unsafe(
                 source.rehydrate(serialization),
                 cospans
                     .iter()
@@ -283,8 +283,8 @@ impl Rehydrate<Rewrite> for Key<Rewrite> {
 impl Rehydrate<Rewrite> for RewriteSer {
     fn rehydrate(&self, serialization: &Serialization) -> Rewrite {
         match self {
-            RewriteSer::R0(r) => Rewrite0(*r).into(),
-            RewriteSer::Rn { dimension, cones } => RewriteN::new(
+            Self::R0(r) => Rewrite0(*r).into(),
+            Self::Rn { dimension, cones } => RewriteN::new(
                 *dimension,
                 cones.iter().map(|c| c.rehydrate(serialization)).collect(),
             )
@@ -329,8 +329,8 @@ impl Rehydrate<Cone> for ConeSer {
 
 impl From<Serialization> for Signature {
     fn from(ser: Serialization) -> Self {
-        let mut signature: Signature = Default::default();
-        for (g, d) in ser.signature.iter() {
+        let mut signature: Self = Default::default();
+        for (g, d) in &ser.signature {
             signature.insert(*g, d.rehydrate(&ser));
         }
         signature

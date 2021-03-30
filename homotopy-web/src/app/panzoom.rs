@@ -32,20 +32,20 @@ pub struct PanZoom {
 }
 
 impl PanZoom {
-    pub fn new(node_ref: NodeRef, callback: Callback<Message>) -> Self {
+    pub fn new(node_ref: NodeRef, callback: &Callback<Message>) -> Self {
         let on_mouse_down = Callback::from(closure!(clone callback, |e: MouseEvent| {
             e.prevent_default();
             if e.alt_key() {
-                let x = e.client_x() as f64;
-                let y = e.client_y() as f64;
+                let x = f64::from(e.client_x());
+                let y = f64::from(e.client_y());
                 callback.emit(Message::MouseDown((x, y).into()));
             }
         }));
 
         let on_mouse_move = Callback::from(closure!(clone callback, |e: MouseEvent| {
             e.prevent_default();
-            let x = e.client_x() as f64;
-            let y = e.client_y() as f64;
+            let x = f64::from(e.client_x());
+            let y = f64::from(e.client_y());
             callback.emit(Message::MouseMove((x, y).into()));
         }));
 
@@ -58,8 +58,8 @@ impl PanZoom {
             if e.alt_key() {
                 e.prevent_default();
                 let rect = bounding_rect(&node_ref);
-                let x = e.client_x() as f64 - rect.left();
-                let y = e.client_y() as f64 - rect.top();
+                let x = f64::from(e.client_x()) - rect.left();
+                let y = f64::from(e.client_y()) - rect.top();
                 let delta = e.delta_y();
                 callback.emit(Message::MouseWheel((x, y).into(), delta));
             }
@@ -79,7 +79,7 @@ impl PanZoom {
                 callback.emit(Message::TouchUpdate(touches));
             }));
 
-        PanZoom {
+        Self {
             node_ref,
             on_mouse_down,
             on_mouse_move,
@@ -193,6 +193,7 @@ impl PanZoom {
     }
 }
 
+#[allow(clippy::inline_always)]
 #[inline(always)]
 fn bounding_rect(node_ref: &NodeRef) -> DomRect {
     node_ref
@@ -201,6 +202,7 @@ fn bounding_rect(node_ref: &NodeRef) -> DomRect {
         .get_bounding_client_rect()
 }
 
+#[allow(clippy::inline_always)]
 #[inline(always)]
 fn read_touch_list<'a>(
     touch_list: &'a TouchList,
@@ -213,8 +215,8 @@ fn read_touch_list<'a>(
         .flat_map(move |i| touch_list.item(i))
         .map(move |touch| {
             let finger = touch.identifier();
-            let x = touch.client_x() as f64 - rect_left;
-            let y = touch.client_y() as f64 - rect_top;
+            let x = f64::from(touch.client_x()) - rect_left;
+            let y = f64::from(touch.client_y()) - rect_top;
             (finger, (x, y).into())
         })
 }
