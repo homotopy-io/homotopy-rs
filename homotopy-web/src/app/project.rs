@@ -28,7 +28,7 @@ pub fn project_view(props: &Props) -> Html {
                 closure!(clone dispatch, clone set_reader_task, |fd: FileData| {
                     let data: Data = fd.content.into();
                     let (signature, workspace) = data.into();
-                    dispatch.emit(Serialize(Import(signature, workspace)));
+                    dispatch.emit(Serialize(Import((signature, workspace).into())));
                     set_reader_task(None)
                 }),
             );

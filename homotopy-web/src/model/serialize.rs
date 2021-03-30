@@ -8,7 +8,7 @@ use super::{AttachOption, Color, GeneratorInfo, Signature, Workspace};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Serialize {
     Export,
-    Import(Signature, Option<Workspace>),
+    Import(Box<(Signature, Option<Workspace>)>),
 }
 
 pub fn generate_download(name: String, data: &[u8]) -> Result<(), wasm_bindgen::JsValue> {

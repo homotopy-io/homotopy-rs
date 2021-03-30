@@ -109,10 +109,10 @@ impl PreparedDiagram {
         let depths = Depths::new(&diagram);
 
         PreparedDiagram {
-            layout,
-            depths,
             graphic,
             actions,
+            depths,
+            layout,
             dimensions,
             transform,
         }
@@ -129,9 +129,9 @@ impl Component for Diagram2D {
         let drag_start = Default::default();
         Diagram2D {
             props,
+            diagram,
             link,
             node_ref,
-            diagram,
             drag_start,
         }
     }

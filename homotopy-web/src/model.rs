@@ -23,24 +23,27 @@ impl State {
     /// Update the state in response to an [Action].
     pub fn update(&mut self, action: Action) -> Result<(), ModelError> {
         match action {
-            Action::ToggleDrawer(drawer) => self.toggle_drawer(drawer),
+            Action::ToggleDrawer(drawer) => {
+                self.toggle_drawer(drawer);
+                Ok(())
+            }
             Action::Serialize(serialize::Serialize::Export) => self.export(),
-            Action::Serialize(serialize::Serialize::Import(signature, workspace)) => {
-                self.import(signature, workspace)
+            Action::Serialize(serialize::Serialize::Import(data)) => {
+                let (signature, workspace) = *data;
+                self.import(signature, workspace);
+                Ok(())
             }
             Action::Proof(action) => self.proof.update(action).map_err(|e| e.into()),
         }
     }
 
     /// Handler for [Action::ToggleDrawer].
-    fn toggle_drawer(&mut self, drawer: Drawer) -> Result<(), ModelError> {
+    fn toggle_drawer(&mut self, drawer: Drawer) {
         if self.drawer == Some(drawer) {
             self.drawer = None;
         } else {
             self.drawer = Some(drawer);
         }
-
-        Ok(())
     }
 
     fn export(&self) -> Result<(), ModelError> {
@@ -53,18 +56,12 @@ impl State {
             "filename_todo.hom".to_string(),
             &Into::<Vec<u8>>::into(data).as_slice(),
         )
-        .expect("failed to generate download");
-        Ok(())
+        .map_err(ModelError::ExportError)
     }
 
-    fn import(
-        &mut self,
-        signature: Signature,
-        workspace: Option<Workspace>,
-    ) -> Result<(), ModelError> {
+    fn import(&mut self, signature: Signature, workspace: Option<Workspace>) {
         self.proof.signature = signature;
-        self.proof.workspace = workspace;
-        Ok(())
+        self.proof.workspace = workspace
     }
 
     pub fn drawer(&self) -> Option<Drawer> {
@@ -74,6 +71,8 @@ impl State {
 
 #[derive(Debug, Error)]
 pub enum ModelError {
+    #[error("export failed")]
+    ExportError(wasm_bindgen::JsValue),
     #[error(transparent)]
     ProofError(#[from] proof::ModelError),
 }

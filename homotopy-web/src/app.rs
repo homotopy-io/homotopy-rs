@@ -180,8 +180,8 @@ impl Component for App {
         App::install_keyboard_shortcuts(dispatch.clone());
 
         App {
-            state,
             dispatch,
+            state,
             signature_stylesheet,
         }
     }
