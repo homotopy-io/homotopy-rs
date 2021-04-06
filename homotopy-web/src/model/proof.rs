@@ -118,6 +118,8 @@ pub enum Action {
     HighlightAttachment(Option<AttachOption>),
 
     Homotopy(Homotopy),
+
+    Imported,
 }
 
 #[derive(Debug, Error)]
@@ -136,14 +138,14 @@ pub enum ModelError {
 
 impl Proof {
     /// Update the state in response to an [Action].
-    pub fn update(&mut self, action: Action) -> Result<(), ModelError> {
+    pub fn update(&mut self, action: &Action) -> Result<(), ModelError> {
         match action {
             Action::CreateGeneratorZero => {
                 self.create_generator_zero();
                 Ok(())
             }
             Action::RemoveGenerator(_) => unimplemented!(),
-            Action::SetBoundary(boundary) => self.set_boundary(boundary),
+            Action::SetBoundary(boundary) => self.set_boundary(*boundary),
             Action::TakeIdentityDiagram => {
                 self.take_identity_diagram();
                 Ok(())
@@ -156,12 +158,12 @@ impl Proof {
                 self.clear_boundary();
                 Ok(())
             }
-            Action::SelectGenerator(generator) => self.select_generator(generator),
+            Action::SelectGenerator(generator) => self.select_generator(*generator),
             Action::AscendSlice(count) => {
-                self.ascend_slice(count);
+                self.ascend_slice(*count);
                 Ok(())
             }
-            Action::DescendSlice(slice) => self.descend_slice(slice),
+            Action::DescendSlice(slice) => self.descend_slice(*slice),
             Action::SelectPoints(points) => {
                 self.select_points(points);
                 Ok(())
@@ -171,11 +173,12 @@ impl Proof {
                 Ok(())
             }
             Action::HighlightAttachment(option) => {
-                self.highlight_attachment(option);
+                self.highlight_attachment(option.clone());
                 Ok(())
             }
             Action::Homotopy(Homotopy::Expand(homotopy)) => self.homotopy_expansion(homotopy),
             Action::Homotopy(Homotopy::Contract(homotopy)) => self.homotopy_contraction(homotopy),
+            Action::Imported => Ok(()),
         }
     }
 
@@ -343,7 +346,7 @@ impl Proof {
     }
 
     /// Handler for [Action::SelectPoint].
-    fn select_points(&mut self, selected: Vec<Vec<SliceIndex>>) {
+    fn select_points(&mut self, selected: &[Vec<SliceIndex>]) {
         if selected.is_empty() {
             return;
         }
@@ -452,13 +455,13 @@ impl Proof {
         }
     }
 
-    fn homotopy_expansion(&mut self, homotopy: Expand) -> Result<(), ModelError> {
+    fn homotopy_expansion(&mut self, homotopy: &Expand) -> Result<(), ModelError> {
         if let Some(workspace) = &mut self.workspace {
             let diagram: DiagramN = workspace.diagram.clone().try_into().unwrap();
 
             let location = {
                 let mut location: Vec<_> = workspace.path.iter().cloned().collect();
-                location.extend(homotopy.location);
+                location.extend(homotopy.location.clone());
                 location
             };
 
@@ -470,14 +473,14 @@ impl Proof {
         Ok(())
     }
 
-    fn homotopy_contraction(&mut self, homotopy: Contract) -> Result<(), ModelError> {
+    fn homotopy_contraction(&mut self, homotopy: &Contract) -> Result<(), ModelError> {
         // TODO: Proper errors
 
         if let Some(workspace) = &mut self.workspace {
             let diagram: DiagramN = workspace.diagram.clone().try_into().unwrap();
             let location = {
                 let mut location: Vec<_> = workspace.path.iter().cloned().collect();
-                location.extend(homotopy.location);
+                location.extend(homotopy.location.clone());
                 location
             };
 

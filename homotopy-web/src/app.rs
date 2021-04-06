@@ -5,10 +5,13 @@ mod project;
 mod signature;
 mod signature_stylesheet;
 mod workspace;
-use crate::model;
 use crate::model::Drawer;
+use crate::model::{self, history};
 use attach::AttachView;
-use homotopy_core::Boundary;
+use homotopy_core::{
+    Boundary,
+    Direction::{Backward, Forward},
+};
 use project::ProjectView;
 use signature::SignatureView;
 use signature_stylesheet::SignatureStylesheet;
@@ -79,6 +82,20 @@ impl SidebarButton {
 
 // TODO: Automatically add shortcut name to label
 
+const BUTTON_UNDO: SidebarButton = SidebarButton {
+    label: "Undo (U)",
+    icon: "undo",
+    action: model::Action::History(history::Action::Move(history::Direction::Linear(Backward))),
+    shortcut: Some('u'),
+};
+
+const BUTTON_REDO: SidebarButton = SidebarButton {
+    label: "Redo",
+    icon: "redo",
+    action: model::Action::History(history::Action::Move(history::Direction::Linear(Forward))),
+    shortcut: None,
+};
+
 const BUTTON_CLEAR: SidebarButton = SidebarButton {
     label: "Clear (C)",
     icon: "clear",
@@ -136,6 +153,8 @@ const BUTTON_USER: SidebarButton = SidebarButton {
 };
 
 const BUTTONS: &[&SidebarButton] = &[
+    &BUTTON_UNDO,
+    &BUTTON_REDO,
     &BUTTON_CLEAR,
     &BUTTON_IDENTITY,
     &BUTTON_SOURCE,
@@ -172,7 +191,7 @@ impl Component for App {
 
         // Install the signature stylesheet
         let mut signature_stylesheet = SignatureStylesheet::new("generator");
-        signature_stylesheet.update(state.proof.signature().clone());
+        signature_stylesheet.update(state.proof().signature().clone());
         signature_stylesheet.mount();
 
         // Install the keyboard listener for shortcuts
@@ -198,7 +217,7 @@ impl Component for App {
                     }
                 }
                 self.signature_stylesheet
-                    .update(self.state.proof.signature().clone());
+                    .update(self.state.proof().signature().clone());
             }
         }
         true
@@ -210,9 +229,10 @@ impl Component for App {
 
     fn view(&self) -> Html {
         let dispatch = &self.dispatch;
-        let signature = self.state.proof.signature();
+        let proof = self.state.proof();
+        let signature = proof.signature();
 
-        let workspace = match self.state.proof.workspace() {
+        let workspace = match self.state.proof().workspace() {
             Some(workspace) => {
                 html! {
                     <WorkspaceView
@@ -243,6 +263,8 @@ impl Component for App {
                         {BUTTON_USER.view(dispatch)}
                     </nav>
                     <nav class="sidebar__tools">
+                        {BUTTON_UNDO.view(dispatch)}
+                        {BUTTON_REDO.view(dispatch)}
                         {BUTTON_ADD_GENERATOR.view(dispatch)}
                         {BUTTON_SOURCE.view(dispatch)}
                         {BUTTON_TARGET.view(dispatch)}
@@ -269,7 +291,7 @@ impl App {
         let dispatch = &self.dispatch;
         let attach_options = self
             .state
-            .proof
+            .proof()
             .workspace()
             .and_then(|workspace| workspace.attach.clone());
 
@@ -278,7 +300,7 @@ impl App {
                 <AttachView
                     dispatch={dispatch.reform(model::Action::Proof)}
                     options={attach_options}
-                    signature={self.state.proof.signature()}
+                    signature={self.state.proof().signature()}
                 />
             };
         }
@@ -292,7 +314,7 @@ impl App {
             Some(Drawer::Signature) => {
                 html! {
                     <SignatureView
-                        signature={self.state.proof.signature()}
+                        signature={self.state.proof().signature()}
                         dispatch={dispatch.reform(model::Action::Proof)}
                     />
                 }

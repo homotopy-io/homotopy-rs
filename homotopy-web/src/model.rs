@@ -1,7 +1,10 @@
-use std::convert::Into;
+use std::{cell::Ref, convert::Into};
 use thiserror::Error;
 pub mod proof;
 use proof::{AttachOption, Color, GeneratorInfo, Proof, Signature, Workspace};
+
+use self::history::History;
+pub mod history;
 pub mod serialize;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -10,16 +13,23 @@ pub enum Action {
 
     Proof(proof::Action),
 
+    History(history::Action),
+
     Serialize(serialize::Serialize),
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct State {
-    pub(crate) proof: Proof,
+    history: History,
     drawer: Option<Drawer>,
 }
 
 impl State {
+    /// Get the proof data
+    pub(super) fn proof(&self) -> Ref<Proof> {
+        self.history.current()
+    }
+
     /// Update the state in response to an [Action].
     pub fn update(&mut self, action: Action) -> Result<(), ModelError> {
         match action {
@@ -27,13 +37,29 @@ impl State {
                 self.toggle_drawer(drawer);
                 Ok(())
             }
+            Action::Proof(action) => {
+                let mut proof = self.proof().clone();
+                proof.update(&action).map_err(ModelError::from)?;
+                self.history.add(action, proof);
+                Ok(())
+            }
+            Action::History(history::Action::Move(dir)) => {
+                use homotopy_core::Direction::{Backward, Forward};
+                match dir {
+                    history::Direction::Linear(Forward) => {
+                        self.history.redo().map_err(ModelError::from)
+                    }
+                    history::Direction::Linear(Backward) => {
+                        self.history.undo().map_err(ModelError::from)
+                    }
+                }
+            }
             Action::Serialize(serialize::Serialize::Export) => self.export(),
             Action::Serialize(serialize::Serialize::Import(data)) => {
                 let (signature, workspace) = *data;
                 self.import(signature, workspace);
                 Ok(())
             }
-            Action::Proof(action) => self.proof.update(action).map_err(|e| e.into()),
         }
     }
 
@@ -47,20 +73,22 @@ impl State {
     }
 
     fn export(&self) -> Result<(), ModelError> {
-        let data: serialize::Data = self.proof.workspace.clone().map_or_else(
-            || self.proof.signature.clone().into(),
-            |ws| (self.proof.signature.clone(), ws).into(),
+        let data: serialize::Data = self.proof().workspace.clone().map_or_else(
+            || self.proof().signature.clone().into(),
+            |ws| (self.proof().signature.clone(), ws).into(),
         );
         serialize::generate_download(
             &"filename_todo.hom",
             &Into::<Vec<u8>>::into(data).as_slice(),
         )
-        .map_err(ModelError::ExportError)
+        .map_err(ModelError::Export)
     }
 
     fn import(&mut self, signature: Signature, workspace: Option<Workspace>) {
-        self.proof.signature = signature;
-        self.proof.workspace = workspace;
+        let mut proof: Proof = Default::default();
+        proof.signature = signature;
+        proof.workspace = workspace;
+        self.history.add(proof::Action::Imported, proof);
     }
 
     pub fn drawer(&self) -> Option<Drawer> {
@@ -71,9 +99,11 @@ impl State {
 #[derive(Debug, Error)]
 pub enum ModelError {
     #[error("export failed")]
-    ExportError(wasm_bindgen::JsValue),
+    Export(wasm_bindgen::JsValue),
     #[error(transparent)]
-    ProofError(#[from] proof::ModelError),
+    Proof(#[from] proof::ModelError),
+    #[error(transparent)]
+    History(#[from] history::HistoryError),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
