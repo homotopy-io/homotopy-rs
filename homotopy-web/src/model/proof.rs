@@ -20,8 +20,10 @@ use palette::Srgb;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::str::FromStr;
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Color(pub(crate) Srgb<u8>);
+
 impl Eq for Color {}
 
 impl Deref for Color {
@@ -461,6 +463,8 @@ impl Proof {
     }
 
     fn homotopy_expansion(&mut self, homotopy: &Expand) -> Result<(), ModelError> {
+        let signature = &self.signature;
+        let signature = |g| signature.get(&g).map(|gi| &gi.diagram);
         if let Some(workspace) = &mut self.workspace {
             let diagram: DiagramN = workspace.diagram.clone().try_into().unwrap();
 
@@ -470,7 +474,26 @@ impl Proof {
                 location
             };
 
-            workspace.diagram = diagram.expand(&location, homotopy.direction)?.into();
+            let (boundary_path, interior_path) = BoundaryPath::split(&location);
+
+            match boundary_path {
+                Some(boundary_path) => {
+                    let expanded = diagram
+                        .expand(&boundary_path, &interior_path, homotopy.direction)?
+                        .into();
+                    typecheck(&expanded, signature)?;
+                    workspace.diagram = expanded;
+                }
+                None => {
+                    let expanded = diagram.identity().expand(
+                        &Boundary::Target.into(),
+                        &interior_path,
+                        homotopy.direction,
+                    )?;
+                    typecheck(&expanded.clone().into(), signature)?;
+                    workspace.diagram = expanded.target();
+                }
+            }
 
             // TODO: Update path appropriately
         }
@@ -482,6 +505,8 @@ impl Proof {
         // TODO: Proper errors
 
         let signature = &self.signature;
+        let signature = |g| signature.get(&g).map(|gi| &gi.diagram);
+
         if let Some(workspace) = &mut self.workspace {
             let diagram: DiagramN = workspace.diagram.clone().try_into().unwrap();
             let location = {
@@ -503,16 +528,31 @@ impl Proof {
                 }
             };
 
-            workspace.diagram = {
-                let contractum = diagram
-                    .contract(&location, height, bias)
-                    .ok_or(ModelError::ContractionError)?
-                    .into();
-                // TODO: this typechecks only the result of contraction, rather than the
-                // contraction rewrite
-                typecheck(&contractum, |g| signature.get(&g).map(|gi| &gi.diagram))
-                    .map_err(ModelError::from)?;
-                contractum
+            let (boundary_path, interior_path) = BoundaryPath::split(&location);
+
+            match boundary_path {
+                Some(boundary_path) => {
+                    let contractum = diagram
+                        .contract(&boundary_path, &interior_path, height, bias)
+                        .ok_or(ModelError::ContractionError)?
+                        .into();
+                    typecheck(&contractum, signature).map_err(|err| {
+                        log::error!("{}", err);
+                        err
+                    })?;
+                    workspace.diagram = contractum;
+                }
+                None => {
+                    let contractum = diagram
+                        .identity()
+                        .contract(&Boundary::Target.into(), &interior_path, height, bias)
+                        .ok_or(ModelError::ContractionError)?;
+                    typecheck(&contractum.clone().into(), signature).map_err(|err| {
+                        log::error!("{}", err);
+                        err
+                    })?;
+                    workspace.diagram = contractum.target();
+                }
             }
 
             // TODO: Update path appropriately.

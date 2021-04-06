@@ -36,43 +36,39 @@ impl Bias {
     }
 }
 
-pub fn contract(
-    diagram: &DiagramN,
-    boundary_path: &BoundaryPath,
-    interior_path: &[Height],
-    height: SingularHeight,
-    bias: Option<Bias>,
-) -> Option<DiagramN> {
-    // TODO: Clean this up. This has some duplication and is very similar to the
-    // logic for attaching diagrams.
-    // TODO: Think of a better API for this.
-    // TODO: Replace Option with Result and proper errors
-    // TODO: Perform type checking
+impl DiagramN {
+    pub fn contract(
+        &self,
+        boundary_path: &BoundaryPath,
+        interior_path: &[Height],
+        height: SingularHeight,
+        bias: Option<Bias>,
+    ) -> Option<Self> {
+        if boundary_path.1 >= self.dimension() {
+            return None;
+        }
 
-    if boundary_path.1 >= diagram.dimension() {
-        return None;
+        let result: Result<_, ()> = attach(self, boundary_path, |slice| {
+            #[allow(clippy::map_err_ignore)] // TODO when not using Result<_, ()>
+            let slice = slice.try_into().map_err(|_| ())?;
+            let contract = contract_in_path(&slice, interior_path, height, bias).ok_or(())?;
+            let singular = slice.rewrite_forward(&contract);
+            let normalize = normalization::normalize_singular(&singular.into());
+
+            Ok(vec![match boundary_path.0 {
+                Boundary::Source => Cospan {
+                    forward: normalize,
+                    backward: contract.into(),
+                },
+                Boundary::Target => Cospan {
+                    forward: contract.into(),
+                    backward: normalize,
+                },
+            }])
+        });
+
+        result.ok()
     }
-
-    let result: Result<_, ()> = attach(diagram, boundary_path, |slice| {
-        #[allow(clippy::map_err_ignore)] // TODO when not using Result<_, ()>
-        let slice = slice.try_into().map_err(|_| ())?;
-        let contract = contract_in_path(&slice, interior_path, height, bias).ok_or(())?;
-        let singular = slice.rewrite_forward(&contract);
-        let normalize = normalization::normalize_singular(&singular.into());
-
-        Ok(vec![match boundary_path.0 {
-            Boundary::Source => Cospan {
-                forward: normalize,
-                backward: contract.into(),
-            },
-            Boundary::Target => Cospan {
-                forward: contract.into(),
-                backward: normalize,
-            },
-        }])
-    });
-
-    result.ok()
 }
 
 fn contract_base(
@@ -234,14 +230,18 @@ fn colimit_base(
 
     components.dedup();
 
-    (components.len() == 1).then(|| {
-        diagrams
-            .iter()
-            .map(|(diagram, _)| {
-                Rewrite0::new(diagram.to_generator().unwrap(), max_generator).into()
-            })
-            .collect()
-    })
+    if components.len() == 1 {
+        Some(
+            diagrams
+                .iter()
+                .map(|(diagram, _)| {
+                    Rewrite0::new(diagram.to_generator().unwrap(), max_generator).into()
+                })
+                .collect(),
+        )
+    } else {
+        None
+    }
 }
 
 fn colimit_recursive(

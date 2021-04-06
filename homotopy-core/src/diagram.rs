@@ -3,8 +3,6 @@ use crate::common::{
     Boundary, DimensionError, Direction, Generator, Height, RegularHeight, SingularHeight,
     SliceIndex,
 };
-use crate::contraction::{contract, Bias};
-use crate::expansion::{expand, ExpansionError};
 use crate::rewrite::{Cospan, Rewrite, RewriteN};
 use hashconsing::{consign, HConsed, HashConsign};
 use std::convert::TryFrom;
@@ -325,51 +323,27 @@ impl DiagramN {
         Diagram::from(self.clone()).identity()
     }
 
-    pub fn contract(
-        &self,
-        path: &[SliceIndex],
-        height: SingularHeight,
-        bias: Option<Bias>,
-    ) -> Option<Self> {
-        let (boundary_path, interior_path) = BoundaryPath::split(path);
+    // pub fn expand(
+    //     &self,
+    //     path: &[SliceIndex],
+    //     direction: Direction,
+    // ) -> Result<Self, ExpansionError> {
+    //     let (boundary_path, interior_path) = BoundaryPath::split(path);
 
-        if let Some(boundary_path) = boundary_path {
-            contract(self, &boundary_path, &interior_path, height, bias)
-        } else {
-            {
-                let result = contract(
-                    &self.identity(),
-                    &Boundary::Target.into(),
-                    &interior_path,
-                    height,
-                    bias,
-                )?;
-                Some(result.target().try_into().unwrap())
-            }
-        }
-    }
-
-    pub fn expand(
-        &self,
-        path: &[SliceIndex],
-        direction: Direction,
-    ) -> Result<Self, ExpansionError> {
-        let (boundary_path, interior_path) = BoundaryPath::split(path);
-
-        if let Some(boundary_path) = boundary_path {
-            expand(self, &boundary_path, &interior_path, direction)
-        } else {
-            {
-                let result = expand(
-                    &self.identity(),
-                    &Boundary::Target.into(),
-                    &interior_path,
-                    direction,
-                )?;
-                Ok(result.target().try_into().unwrap())
-            }
-        }
-    }
+    //     if let Some(boundary_path) = boundary_path {
+    //         expand(self, &boundary_path, &interior_path, direction)
+    //     } else {
+    //         {
+    //             let result = expand(
+    //                 &self.identity(),
+    //                 &Boundary::Target.into(),
+    //                 &interior_path,
+    //                 direction,
+    //             )?;
+    //             Ok(result.target().try_into().unwrap())
+    //         }
+    //     }
+    // }
 
     // TODO: This needs better documentation
 
@@ -401,7 +375,7 @@ impl DiagramN {
 
 impl fmt::Debug for DiagramN {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
+        self.0.get().fmt(f)
     }
 }
 

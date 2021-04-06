@@ -30,26 +30,28 @@ pub enum ExpansionError {
     SmoothingNotImplemented,
 }
 
-pub fn expand(
-    diagram: &DiagramN,
-    boundary_path: &BoundaryPath,
-    interior_path: &[Height],
-    direction: Direction,
-) -> Result<DiagramN, ExpansionError> {
-    attach(diagram, boundary_path, |slice| {
-        let expand: Rewrite = expand_in_path(&slice, interior_path, direction)?;
-        let identity = Rewrite::identity(slice.dimension());
-        Ok(vec![match boundary_path.boundary() {
-            Boundary::Source => Cospan {
-                forward: expand,
-                backward: identity,
-            },
-            Boundary::Target => Cospan {
-                forward: identity,
-                backward: expand,
-            },
-        }])
-    })
+impl DiagramN {
+    pub fn expand(
+        &self,
+        boundary_path: &BoundaryPath,
+        interior_path: &[Height],
+        direction: Direction,
+    ) -> Result<DiagramN, ExpansionError> {
+        attach(self, boundary_path, |slice| {
+            let expand: Rewrite = expand_in_path(&slice, interior_path, direction)?;
+            let identity = Rewrite::identity(slice.dimension());
+            Ok(vec![match boundary_path.boundary() {
+                Boundary::Source => Cospan {
+                    forward: expand,
+                    backward: identity,
+                },
+                Boundary::Target => Cospan {
+                    forward: identity,
+                    backward: expand,
+                },
+            }])
+        })
+    }
 }
 
 pub fn expand_in_path(

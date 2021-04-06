@@ -114,6 +114,13 @@ impl SinkArrow {
         self.degeneracy.is_identity() && self.rewrite.is_identity()
     }
 
+    /// Converts the sink arrow to a rewrite under the assumption that its degeneracy map is
+    /// globular. The assumption of globularity is not checked.
+    fn to_rewrite(&self) -> Rewrite {
+        let degeneracy = self.degeneracy.to_rewrite(&self.source, &self.middle);
+        Rewrite::compose(degeneracy, self.rewrite.clone()).unwrap()
+    }
+
     fn singular_preimage(&self, target_height: SingularHeight) -> Vec<SingularHeight> {
         let mut preimage = Vec::new();
         let rewrite: &RewriteN = (&self.rewrite).try_into().unwrap();
@@ -226,10 +233,14 @@ where
     }
 
     // The diagram can not be normalised any further if one map in the sink is an identity rewrite.
+    //
+    // As the factors we can use the sink maps themselves; in the case where there is an identity
+    // arrow in the sink, all non-identity arrows should at least be globular, so we can convert
+    // them to rewrites.
     if sink.iter().any(SinkArrow::is_identity) {
         return Output {
             degeneracy: Rc::new(Degeneracy::Identity),
-            factors: sink.iter().map(|input| input.rewrite.clone()).collect(),
+            factors: sink.iter().map(|input| input.to_rewrite()).collect(),
             diagram: diagram.clone().into(),
         };
     }

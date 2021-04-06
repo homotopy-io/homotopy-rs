@@ -212,7 +212,7 @@ consign! { let REWRITE_FACTORY = consign(37) for RewriteInternal; }
 
 impl fmt::Debug for RewriteN {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
+        self.0.get().fmt(f)
     }
 }
 
