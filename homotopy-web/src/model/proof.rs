@@ -1,7 +1,10 @@
-use homotopy_core::common::{Boundary, Direction, Generator, Height, RegularHeight, SliceIndex};
-use homotopy_core::diagram::NewDiagramError;
 use homotopy_core::expansion::ExpansionError;
 use homotopy_core::{attach::BoundaryPath, common::DimensionError};
+use homotopy_core::{
+    common::{Boundary, Direction, Generator, Height, RegularHeight, SliceIndex},
+    typecheck::typecheck,
+};
+use homotopy_core::{diagram::NewDiagramError, typecheck::TypeError};
 use homotopy_core::{Diagram, DiagramN};
 use im::{HashMap, Vector};
 use std::{collections::BTreeSet, ops::Deref};
@@ -134,6 +137,8 @@ pub enum ModelError {
     ExpansionError(#[from] ExpansionError),
     #[error("error while performing contraction")]
     ContractionError,
+    #[error("error while performing typechecking")]
+    TypecheckingError(#[from] TypeError),
 }
 
 impl Proof {
@@ -476,6 +481,7 @@ impl Proof {
     fn homotopy_contraction(&mut self, homotopy: &Contract) -> Result<(), ModelError> {
         // TODO: Proper errors
 
+        let signature = &self.signature;
         if let Some(workspace) = &mut self.workspace {
             let diagram: DiagramN = workspace.diagram.clone().try_into().unwrap();
             let location = {
@@ -497,10 +503,17 @@ impl Proof {
                 }
             };
 
-            workspace.diagram = diagram
-                .contract(&location, height, bias)
-                .ok_or(ModelError::ContractionError)?
-                .into();
+            workspace.diagram = {
+                let contractum = diagram
+                    .contract(&location, height, bias)
+                    .ok_or(ModelError::ContractionError)?
+                    .into();
+                // TODO: this typechecks only the result of contraction, rather than the
+                // contraction rewrite
+                typecheck(&contractum, |g| signature.get(&g).map(|gi| &gi.diagram))
+                    .map_err(ModelError::from)?;
+                contractum
+            }
 
             // TODO: Update path appropriately.
         }

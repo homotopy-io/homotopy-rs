@@ -21,9 +21,9 @@ pub enum TypeError {
     IllTyped,
 }
 
-pub fn typecheck<S>(diagram: &Diagram, signature: S) -> Result<(), TypeError>
+pub fn typecheck<'a, S>(diagram: &Diagram, signature: S) -> Result<(), TypeError>
 where
-    S: Fn(Generator) -> Option<Diagram> + Copy,
+    S: Fn(Generator) -> Option<&'a Diagram> + Copy,
 {
     let diagram = match diagram {
         Diagram::Diagram0(g) => {
@@ -297,6 +297,6 @@ mod test {
         signature.insert(m, m_d.into());
         signature.insert(a, a_d.clone().into());
 
-        typecheck(&a_d.into(), |generator| signature.get(&generator).cloned()).unwrap();
+        typecheck(&a_d.into(), |generator| signature.get(&generator)).unwrap();
     }
 }
