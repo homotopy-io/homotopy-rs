@@ -100,7 +100,7 @@ impl History {
         } else {
             // fresh action
             Tree::from(self.current.clone()).push(Snapshot::new(Some(action), proof));
-            let child = self.current.borrow().children.first().unwrap().clone();
+            let child = self.current.borrow().children.last().unwrap().clone();
             self.current = child;
         }
     }
@@ -121,7 +121,7 @@ impl History {
             .current
             .borrow()
             .children
-            .first()
+            .last()
             .cloned()
             .ok_or(HistoryError::Redo)?;
         self.current = next;
