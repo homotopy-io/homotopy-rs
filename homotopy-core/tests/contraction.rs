@@ -36,21 +36,25 @@ fn scalar() {
 }
 
 #[test]
+#[allow(clippy::many_single_char_names)]
 fn beads() {
     let x = Diagram::from(Generator::new(0, 0));
     let f = DiagramN::new(Generator::new(1, 1), x.clone(), x.clone()).unwrap();
     let a = DiagramN::new(Generator::new(2, 2), f.clone(), f.clone()).unwrap();
     let b = DiagramN::new(Generator::new(3, 2), f.clone(), f.clone()).unwrap();
+    let c = DiagramN::new(Generator::new(4, 2), f.clone(), f.clone()).unwrap();
 
     let diagram = a
         .attach(&f, Boundary::Target, &[])
         .unwrap()
         .attach(&b, Boundary::Target, &[1])
+        .unwrap()
+        .attach(&c, Boundary::Target, &[0])
         .unwrap();
 
     let contracted = diagram
         .identity()
-        .contract(&Boundary::Target.into(), &[], 0, None)
+        .contract(&Boundary::Target.into(), &[], 1, None)
         .unwrap();
 
     let mut signature = HashMap::<Generator, Diagram>::new();
@@ -58,5 +62,6 @@ fn beads() {
     signature.insert(f.max_generator(), f.into());
     signature.insert(a.max_generator(), a.into());
     signature.insert(b.max_generator(), b.into());
+    signature.insert(c.max_generator(), c.into());
     typecheck(&contracted.into(), |generator| signature.get(&generator)).unwrap();
 }

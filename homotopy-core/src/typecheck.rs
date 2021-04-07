@@ -50,10 +50,10 @@ where
                 &slices[Height::Regular(i).to_int()],
                 &target_embedding.preimage(&cospan.forward),
             );
+
             let forward = restrict_rewrite(&cospan.forward, &target_embedding);
             let backward = restrict_rewrite(&cospan.backward, &target_embedding);
             let restricted = DiagramN::new_unsafe(source, vec![Cospan { forward, backward }]);
-
             let signature_diagram =
                 signature(generator).ok_or(TypeError::UnknownGenerator(generator))?;
 
@@ -157,7 +157,7 @@ impl Embedding {
                     .enumerate()
                     .flat_map(|(target_height, slice)| {
                         rewrite
-                            .singular_preimage(target_height)
+                            .singular_preimage(target_height + height)
                             .map(|source_height| {
                                 Rc::new(slice.preimage(&rewrite.slice(source_height)))
                             })
