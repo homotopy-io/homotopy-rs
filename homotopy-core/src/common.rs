@@ -1,6 +1,6 @@
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::cmp::Ordering;
 use std::fmt;
+use std::{cmp::Ordering, iter::FusedIterator};
 use thiserror::Error;
 
 #[derive(PartialEq, Eq, Copy, Clone, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -103,6 +103,11 @@ pub enum SliceIndex {
 }
 
 impl SliceIndex {
+    /// Create an iterator over all slice indices in a diagram of a specified size.
+    pub fn for_size(size: usize) -> SliceIndexIterator {
+        SliceIndexIterator::new(size)
+    }
+
     pub fn to_int(self, size: usize) -> isize {
         match self {
             Self::Boundary(Boundary::Source) => -1,
@@ -161,6 +166,43 @@ impl From<Boundary> for SliceIndex {
         Self::Boundary(boundary)
     }
 }
+
+pub struct SliceIndexIterator {
+    size: usize,
+    next: Option<SliceIndex>,
+}
+
+impl SliceIndexIterator {
+    pub fn new(size: usize) -> Self {
+        Self {
+            size,
+            next: Some(SliceIndex::Boundary(Boundary::Source)),
+        }
+    }
+}
+
+impl Iterator for SliceIndexIterator {
+    type Item = SliceIndex;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        use self::Boundary::{Source, Target};
+        use Height::{Regular, Singular};
+        use SliceIndex::{Boundary, Interior};
+
+        let next = match self.next {
+            Some(Boundary(Source)) => Some(Height::Regular(0).into()),
+            Some(Boundary(Target)) => None,
+            Some(Interior(Regular(i))) if i >= self.size => Some(Boundary(Target)),
+            Some(Interior(Regular(i))) => Some(Interior(Singular(i))),
+            Some(Interior(Singular(i))) => Some(Interior(Regular(i + 1))),
+            None => None,
+        };
+
+        std::mem::replace(&mut self.next, next)
+    }
+}
+
+impl FusedIterator for SliceIndexIterator {}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Direction {

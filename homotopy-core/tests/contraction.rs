@@ -43,9 +43,9 @@ fn beads() {
     let b = DiagramN::new(Generator::new(3, 2), f.clone(), f.clone()).unwrap();
 
     let diagram = a
-        .attach(&f.clone(), Boundary::Target, &[])
+        .attach(&f, Boundary::Target, &[])
         .unwrap()
-        .attach(&b.clone(), Boundary::Target, &[1])
+        .attach(&b, Boundary::Target, &[1])
         .unwrap();
 
     let contracted = diagram
@@ -54,9 +54,9 @@ fn beads() {
         .unwrap();
 
     let mut signature = HashMap::<Generator, Diagram>::new();
-    signature.insert(x.max_generator(), x.into());
+    signature.insert(x.max_generator(), x);
     signature.insert(f.max_generator(), f.into());
-    signature.insert(a.max_generator(), a.clone().into());
-    signature.insert(b.max_generator(), b.clone().into());
+    signature.insert(a.max_generator(), a.into());
+    signature.insert(b.max_generator(), b.into());
     typecheck(&contracted.into(), |generator| signature.get(&generator)).unwrap();
 }

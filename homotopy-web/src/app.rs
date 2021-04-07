@@ -18,41 +18,17 @@ use signature_stylesheet::SignatureStylesheet;
 use wasm_bindgen::JsCast;
 use workspace::WorkspaceView;
 use yew::prelude::*;
+use yew_functional::function_component;
 
-pub mod icon {
-    use yew::prelude::*;
-    use yewtil::NeqAssign;
+#[derive(Debug, Clone, PartialEq, Properties)]
+pub struct IconProps {
+    pub name: String,
+}
 
-    #[derive(Debug, Clone, PartialEq, Properties)]
-    pub struct Props {
-        pub name: String,
-    }
-
-    pub struct Icon {
-        props: Props,
-    }
-
-    impl Component for Icon {
-        type Message = ();
-        type Properties = Props;
-
-        fn create(props: Self::Properties, _link: ComponentLink<Self>) -> Self {
-            Self { props }
-        }
-
-        fn update(&mut self, _msg: Self::Message) -> ShouldRender {
-            false
-        }
-
-        fn change(&mut self, props: Self::Properties) -> ShouldRender {
-            self.props.neq_assign(props)
-        }
-
-        fn view(&self) -> Html {
-            html! {
-                <i class="material-icons md-light">{&self.props.name}</i>
-            }
-        }
+#[function_component(Icon)]
+pub fn icon(props: &IconProps) -> Html {
+    html! {
+        <i class="material-icons md-light">{&props.name}</i>
     }
 }
 
@@ -164,8 +140,6 @@ const BUTTONS: &[&SidebarButton] = &[
     &BUTTON_SIGNATURE,
     &BUTTON_USER,
 ];
-
-use icon::Icon;
 
 #[derive(Default, Clone, Debug, PartialEq, Properties)]
 pub struct Props {}

@@ -43,6 +43,7 @@
     clippy::too_many_lines,
     clippy::unimplemented,
     clippy::unreachable,
+    clippy::shadow_unrelated,
 )]
 #![recursion_limit = "1024"]
 mod app;

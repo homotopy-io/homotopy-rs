@@ -476,23 +476,20 @@ impl Proof {
 
             let (boundary_path, interior_path) = BoundaryPath::split(&location);
 
-            match boundary_path {
-                Some(boundary_path) => {
-                    let expanded = diagram
-                        .expand(&boundary_path, &interior_path, homotopy.direction)?
-                        .into();
-                    typecheck(&expanded, signature)?;
-                    workspace.diagram = expanded;
-                }
-                None => {
-                    let expanded = diagram.identity().expand(
-                        &Boundary::Target.into(),
-                        &interior_path,
-                        homotopy.direction,
-                    )?;
-                    typecheck(&expanded.clone().into(), signature)?;
-                    workspace.diagram = expanded.target();
-                }
+            if let Some(boundary_path) = boundary_path {
+                let expanded = diagram
+                    .expand(&boundary_path, &interior_path, homotopy.direction)?
+                    .into();
+                typecheck(&expanded, signature)?;
+                workspace.diagram = expanded;
+            } else {
+                let expanded = diagram.identity().expand(
+                    &Boundary::Target.into(),
+                    &interior_path,
+                    homotopy.direction,
+                )?;
+                typecheck(&expanded.clone().into(), signature)?;
+                workspace.diagram = expanded.target();
             }
 
             // TODO: Update path appropriately
@@ -530,29 +527,26 @@ impl Proof {
 
             let (boundary_path, interior_path) = BoundaryPath::split(&location);
 
-            match boundary_path {
-                Some(boundary_path) => {
-                    let contractum = diagram
-                        .contract(&boundary_path, &interior_path, height, bias)
-                        .ok_or(ModelError::ContractionError)?
-                        .into();
-                    typecheck(&contractum, signature).map_err(|err| {
-                        log::error!("{}", err);
-                        err
-                    })?;
-                    workspace.diagram = contractum;
-                }
-                None => {
-                    let contractum = diagram
-                        .identity()
-                        .contract(&Boundary::Target.into(), &interior_path, height, bias)
-                        .ok_or(ModelError::ContractionError)?;
-                    typecheck(&contractum.clone().into(), signature).map_err(|err| {
-                        log::error!("{}", err);
-                        err
-                    })?;
-                    workspace.diagram = contractum.target();
-                }
+            if let Some(boundary_path) = boundary_path {
+                let contractum = diagram
+                    .contract(&boundary_path, &interior_path, height, bias)
+                    .ok_or(ModelError::ContractionError)?
+                    .into();
+                typecheck(&contractum, signature).map_err(|err| {
+                    log::error!("{}", err);
+                    err
+                })?;
+                workspace.diagram = contractum;
+            } else {
+                let contractum = diagram
+                    .identity()
+                    .contract(&Boundary::Target.into(), &interior_path, height, bias)
+                    .ok_or(ModelError::ContractionError)?;
+                typecheck(&contractum.clone().into(), signature).map_err(|err| {
+                    log::error!("{}", err);
+                    err
+                })?;
+                workspace.diagram = contractum.target();
             }
 
             // TODO: Update path appropriately.

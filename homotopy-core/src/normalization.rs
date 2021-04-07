@@ -240,7 +240,7 @@ where
     if sink.iter().any(SinkArrow::is_identity) {
         return Output {
             degeneracy: Rc::new(Degeneracy::Identity),
-            factors: sink.iter().map(|input| input.to_rewrite()).collect(),
+            factors: sink.iter().map(SinkArrow::to_rewrite).collect(),
             diagram: diagram.clone().into(),
         };
     }

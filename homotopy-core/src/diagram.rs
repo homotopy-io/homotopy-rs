@@ -1,12 +1,11 @@
 use crate::attach::{attach, BoundaryPath};
 use crate::common::{
-    Boundary, DimensionError, Direction, Generator, Height, RegularHeight, SingularHeight,
-    SliceIndex,
+    Boundary, DimensionError, Direction, Generator, Height, RegularHeight, SliceIndex,
 };
 use crate::rewrite::{Cospan, Rewrite, RewriteN};
 use hashconsing::{consign, HConsed, HashConsign};
 use std::convert::TryFrom;
-use std::convert::{From, Into, TryInto};
+use std::convert::{From, Into};
 use std::fmt;
 use thiserror::Error;
 
@@ -544,6 +543,7 @@ pub enum AttachmentError {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::convert::TryInto;
     use std::error::Error;
 
     fn assert_point_ids<D>(diagram: &D, points: &[(&[usize], usize)])

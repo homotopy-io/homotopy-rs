@@ -36,7 +36,7 @@ impl DiagramN {
         boundary_path: &BoundaryPath,
         interior_path: &[Height],
         direction: Direction,
-    ) -> Result<DiagramN, ExpansionError> {
+    ) -> Result<Self, ExpansionError> {
         attach(self, boundary_path, |slice| {
             let expand: Rewrite = expand_in_path(&slice, interior_path, direction)?;
             let identity = Rewrite::identity(slice.dimension());
