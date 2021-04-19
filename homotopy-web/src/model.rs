@@ -40,6 +40,11 @@ impl State {
             Action::Proof(action) => {
                 let mut proof = self.proof().clone();
                 proof.update(&action).map_err(ModelError::from)?;
+
+                if action == proof::Action::CreateGeneratorZero && self.drawer.is_none() {
+                    self.drawer = Some(Drawer::Signature);
+                };
+
                 self.history.add(action, proof);
                 Ok(())
             }
