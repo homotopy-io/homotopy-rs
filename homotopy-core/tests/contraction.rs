@@ -65,3 +65,30 @@ fn beads() {
     signature.insert(c.max_generator(), c.into());
     typecheck(&contracted.into(), |generator| signature.get(&generator)).unwrap();
 }
+
+// Crash in contraction
+
+#[test]
+#[allow(clippy::many_single_char_names)]
+fn stacks() {
+    let x = Diagram::from(Generator::new(0, 0));
+    let f = DiagramN::new(Generator::new(1, 2), x.identity(), x.identity()).unwrap();
+    let m = DiagramN::new(Generator::new(2, 3), f.clone(), x.identity().identity()).unwrap();
+
+    let diagram = m
+        .attach(&f, Boundary::Target, &[])
+        .unwrap()
+        .attach(&m, Boundary::Target, &[])
+        .unwrap();
+
+    let contracted = diagram
+        .identity()
+        .contract(&Boundary::Target.into(), &[], 0, None)
+        .unwrap();
+
+    let mut signature = HashMap::<Generator, Diagram>::new();
+    signature.insert(x.max_generator(), x);
+    signature.insert(f.max_generator(), f.into());
+    signature.insert(m.max_generator(), m.into());
+    typecheck(&contracted.into(), |generator| signature.get(&generator)).unwrap();
+}

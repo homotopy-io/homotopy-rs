@@ -261,7 +261,7 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
                 };
 
                 restricted_cones.push(Cone {
-                    index: cone.index - height,
+                    index: cone.index - rewrite.regular_image(*height),
                     slices: restricted_slices,
                     source: restricted_source,
                     target: restricted_target,
