@@ -66,8 +66,6 @@ fn beads() {
     typecheck(&contracted.into(), |generator| signature.get(&generator)).unwrap();
 }
 
-// Crash in contraction
-
 #[test]
 #[allow(clippy::many_single_char_names)]
 fn stacks() {
