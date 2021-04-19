@@ -273,12 +273,11 @@ impl Proof {
     fn take_identity_diagram(&mut self) {
         match &mut self.workspace {
             Some(workspace) => {
-                workspace.diagram = workspace.diagram.identity().into();
-
-                // TODO: Figure out what to do with the path in all cases
-                if workspace.diagram.dimension() >= 2 {
-                    workspace.path.push_back(Boundary::Target.into());
+                if workspace.diagram.dimension() + workspace.path.len() >= 2 {
+                    workspace.path.push_front(Boundary::Target.into());
                 }
+
+                workspace.diagram = workspace.diagram.identity().into();
             }
             None => {}
         }
