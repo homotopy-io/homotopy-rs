@@ -319,7 +319,8 @@ impl App {
     fn install_keyboard_shortcuts(dispatch: Callback<model::Action>) {
         let onkeypress =
             wasm_bindgen::closure::Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
-                let key = event.key().chars().next().unwrap();
+                let key: char = event.key().chars().next().unwrap();
+                let key = key.to_ascii_lowercase();
                 let button = BUTTONS.iter().find(|button| button.shortcut == Some(key));
 
                 if let Some(button) = button {
