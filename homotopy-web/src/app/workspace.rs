@@ -180,12 +180,18 @@ fn highlight_2d(
 
     match &attach_option.boundary_path {
         None => {
-            let target: DiagramN = needle.target().try_into().unwrap();
+            // Note: An empty boundary path implies that `needle` is one dimension
+            // higher than the currently displayed diagram. Since this function
+            // computes highlights for 2d diagrams, the `needle` diagram is at
+            // least three-dimensional.
+            let needle_s: DiagramN = needle.source().try_into().unwrap();
+            let needle_st: DiagramN = needle_s.target().try_into().unwrap();
+
             Some(Highlight2D {
                 from: [Regular(embedding[0]).into(), Regular(embedding[1]).into()],
                 to: [
-                    Regular(embedding[0] + target.size()).into(),
-                    Regular(embedding[1] + needle.size()).into(),
+                    Regular(embedding[0] + needle_st.size()).into(),
+                    Regular(embedding[1] + needle_s.size()).into(),
                 ],
             })
         }
@@ -201,9 +207,10 @@ fn highlight_2d(
                 to: [Regular(embedding[0] + size).into(), bp.boundary().into()],
             })
         }
-        Some(bp) => Some(Highlight2D {
-            from: [bp.boundary().into(), Boundary::Source.into()],
-            to: [bp.boundary().into(), Boundary::Target.into()],
-        }),
+        Some(bp) =>
+            Some(Highlight2D {
+                from: [bp.boundary().into(), Boundary::Source.into()],
+                to: [bp.boundary().into(), Boundary::Target.into()],
+            })
     }
 }
