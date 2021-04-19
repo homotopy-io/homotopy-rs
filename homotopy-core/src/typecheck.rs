@@ -169,7 +169,7 @@ impl Embedding {
                     let cospan = &rewrite.cone_over_target(*height).unwrap().target;
                     Self::Regular(
                         preimage_height,
-                        Rc::new(slices[*height].preimage(&cospan.forward)),
+                        Rc::new(slices[0].preimage(&cospan.forward)),
                     )
                 } else {
                     Self::Singular(preimage_height, preimage_slices)
