@@ -104,6 +104,8 @@ pub enum ModelError {
     Proof(#[from] proof::ModelError),
     #[error(transparent)]
     History(#[from] history::HistoryError),
+    #[error("internal error")]
+    Internal,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

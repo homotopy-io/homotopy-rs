@@ -15,6 +15,7 @@ use homotopy_core::{
 use project::ProjectView;
 use signature::SignatureView;
 use signature_stylesheet::SignatureStylesheet;
+use std::panic;
 use wasm_bindgen::JsCast;
 use workspace::WorkspaceView;
 use yew::prelude::*;
@@ -183,8 +184,26 @@ impl Component for App {
         match msg {
             Message::Dispatch(action) => {
                 log::info!("Received action: {:?}", action);
-                match self.state.update(action) {
-                    Ok(()) => {}
+
+                let result = panic::catch_unwind({
+                    let mut state = self.state.clone();
+                    panic::AssertUnwindSafe(move || -> Result<_, model::ModelError> {
+                        state.update(action)?;
+                        Ok(state)
+                    })
+                });
+
+                // Map panics to internal model errors
+                let result = match result {
+                    Ok(inner) => inner,
+                    Err(_) => Err(model::ModelError::Internal),
+                };
+
+                match result {
+                    Ok(state) => {
+                        // Commit update
+                        self.state = state;
+                    }
                     Err(error) => {
                         // TODO: Display a toast
                         log::error!("Error occured: {}", error);
