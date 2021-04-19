@@ -188,10 +188,10 @@ fn highlight_2d(
             let needle_st: DiagramN = needle_s.target().try_into().unwrap();
 
             Some(Highlight2D {
-                from: [Regular(embedding[0]).into(), Regular(embedding[1]).into()],
+                from: [Regular(embedding[1]).into(), Regular(embedding[0]).into()],
                 to: [
-                    Regular(embedding[0] + needle_st.size()).into(),
-                    Regular(embedding[1] + needle_s.size()).into(),
+                    Regular(embedding[1] + needle_st.size()).into(),
+                    Regular(embedding[0] + needle_s.size()).into(),
                 ],
             })
         }
