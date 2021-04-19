@@ -207,10 +207,9 @@ fn highlight_2d(
                 to: [Regular(embedding[0] + size).into(), bp.boundary().into()],
             })
         }
-        Some(bp) =>
-            Some(Highlight2D {
-                from: [bp.boundary().into(), Boundary::Source.into()],
-                to: [bp.boundary().into(), Boundary::Target.into()],
-            })
+        Some(bp) => Some(Highlight2D {
+            from: [bp.boundary().into(), Boundary::Source.into()],
+            to: [bp.boundary().into(), Boundary::Target.into()],
+        }),
     }
 }
