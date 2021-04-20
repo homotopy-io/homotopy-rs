@@ -5,8 +5,8 @@
 //! In order to avoid potentially costly recomputations and accidental quadratic complexity when a
 //! diagram is traversed again for every point, the analyses are performed for the entire diagram
 //! at once and the results are cached for efficient random-access retrieval.
-use crate::diagram::DiagramN;
 use crate::graph::GraphBuilder;
+use crate::{diagram::DiagramN, Diagram};
 
 use crate::{
     common::{Boundary, Generator, SliceIndex},
@@ -14,7 +14,7 @@ use crate::{
 };
 use petgraph::{
     graph::{DiGraph, NodeIndex},
-    visit::{EdgeRef, Topo, Walker},
+    visit::{EdgeRef, IntoNodeReferences, Topo, Walker},
     EdgeDirection,
 };
 use serde::Serialize;
@@ -69,7 +69,7 @@ impl Generators {
 /// Diagram analysis that finds the depth of cells in the 2-dimensional projection of a diagram.
 #[derive(Debug, Clone)]
 pub struct Depths {
-    graph: DiGraph<[SliceIndex; 2], Rewrite>,
+    graph: DiGraph<([SliceIndex; 2], Diagram), Rewrite>,
     coord_to_node: HashMap<[SliceIndex; 2], NodeIndex<u32>>,
     edge_depths: Vec<Option<usize>>,
     node_depths: Vec<Option<usize>>,
@@ -81,26 +81,14 @@ impl Depths {
             panic!();
         }
 
-        let graph_builder = GraphBuilder::new((), diagram.clone().into())
+        let graph = GraphBuilder::new((), diagram.clone().into())
             .explode(|y, ()| y)
             .unwrap()
             .explode(|x, y| [y, x])
-            .unwrap();
+            .unwrap()
+            .build();
 
-        let mut graph = DiGraph::<[SliceIndex; 2], Rewrite>::with_capacity(
-            graph_builder.nodes.len(),
-            graph_builder.edges.len(),
-        );
-
-        let mut coord_to_node: HashMap<[SliceIndex; 2], NodeIndex<u32>> = HashMap::new();
-
-        for (coords, _) in graph_builder.nodes {
-            coord_to_node.insert(coords, graph.add_node(coords));
-        }
-
-        for (source, target, rewrite) in graph_builder.edges {
-            graph.add_edge((source as u32).into(), (target as u32).into(), rewrite);
-        }
+        let coord_to_node = graph.node_references().map(|n| (n.1 .0, n.0)).collect();
 
         let mut edge_depths: Vec<Option<usize>> = [None].repeat(graph.edge_count());
         let mut node_depths: Vec<Option<usize>> = [None].repeat(graph.node_count());
@@ -151,7 +139,7 @@ impl Depths {
         self.graph
             .edges_directed(to, EdgeDirection::Incoming)
             .filter_map(|e| match self.edge_depths[e.id().index()] {
-                Some(d) if d < depth => self.graph.node_weight(e.source()).cloned(),
+                Some(d) if d < depth => self.graph.node_weight(e.source()).map(|e| e.0),
                 _ => None,
             })
             .collect()

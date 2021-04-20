@@ -1,3 +1,5 @@
+use petgraph::Graph;
+
 use crate::common::{Boundary, DimensionError, Height, SliceIndex};
 use crate::diagram::{Diagram, DiagramN};
 use crate::rewrite::{Rewrite, RewriteN};
@@ -17,6 +19,25 @@ impl<K> GraphBuilder<K> {
             nodes: vec![(key, diagram)],
             edges: vec![],
         }
+    }
+}
+
+impl<K> GraphBuilder<K> {
+    pub fn build(self) -> Graph<(K, Diagram), Rewrite> {
+        let mut graph: Graph<(K, Diagram), Rewrite> =
+            Graph::with_capacity(self.nodes.len(), self.edges.len());
+
+        for node in self.nodes {
+            graph.add_node(node);
+        }
+
+        for (source, target, rewrite) in self.edges {
+            let source = (source as u32).into();
+            let target = (target as u32).into();
+            graph.add_edge(source, target, rewrite);
+        }
+
+        graph
     }
 }
 
