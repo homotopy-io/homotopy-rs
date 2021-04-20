@@ -122,12 +122,12 @@ const BUTTON_SIGNATURE: SidebarButton = SidebarButton {
     shortcut: None,
 };
 
-const BUTTON_USER: SidebarButton = SidebarButton {
-    label: "User",
-    icon: "perm_identity",
-    action: model::Action::ToggleDrawer(model::Drawer::User),
-    shortcut: None,
-};
+// const BUTTON_USER: SidebarButton = SidebarButton {
+//     label: "User",
+//     icon: "perm_identity",
+//     action: model::Action::ToggleDrawer(model::Drawer::User),
+//     shortcut: None,
+// };
 
 const BUTTONS: &[&SidebarButton] = &[
     &BUTTON_UNDO,
@@ -139,7 +139,6 @@ const BUTTONS: &[&SidebarButton] = &[
     &BUTTON_ADD_GENERATOR,
     &BUTTON_PROJECT,
     &BUTTON_SIGNATURE,
-    &BUTTON_USER,
 ];
 
 #[derive(Default, Clone, Debug, PartialEq, Properties)]
@@ -253,7 +252,7 @@ impl Component for App {
                     <nav class="sidebar__nav">
                         {BUTTON_PROJECT.view(dispatch)}
                         {BUTTON_SIGNATURE.view(dispatch)}
-                        {BUTTON_USER.view(dispatch)}
+                        // {BUTTON_USER.view(dispatch)}
                     </nav>
                     <nav class="sidebar__tools">
                         {BUTTON_UNDO.view(dispatch)}
