@@ -636,10 +636,10 @@ fn drag_to_homotopy(
             direction,
         }))
     } else {
-        let bias = if horizontal || abs_radians < PI / 2.0 {
-            Bias::Higher
-        } else {
+        let bias = if horizontal || abs_radians >= PI / 2.0 {
             Bias::Lower
+        } else {
+            Bias::Higher
         };
 
         let bias = Some(bias);

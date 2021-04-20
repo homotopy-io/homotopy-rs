@@ -41,6 +41,7 @@
     clippy::too_many_lines,
     clippy::multiple_inherent_impl,
     clippy::shadow_unrelated,
+    clippy::match_on_vec_items,
 )]
 
 pub mod attach;

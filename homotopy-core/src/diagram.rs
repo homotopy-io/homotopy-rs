@@ -312,10 +312,11 @@ impl DiagramN {
     /// Determine the first maximum-dimensional generator.
     pub fn max_generator(&self) -> Generator {
         // TODO: This can be done more efficiently by looking at the parts
-        self.slices()
-            .map(|slice| slice.max_generator())
-            .max_by_key(|generator| generator.dimension)
-            .unwrap()
+        max_first_by_key(
+            self.slices().map(|slice| slice.max_generator()),
+            |generator| generator.dimension,
+        )
+        .unwrap()
     }
 
     pub fn identity(&self) -> Self {
@@ -538,6 +539,24 @@ pub enum AttachmentError {
 
     #[error("failed to attach incompatible diagrams")]
     Incompatible,
+}
+
+fn max_first_by_key<I, T, R, F>(iterator: I, to_key: F) -> Option<T>
+where
+    I: IntoIterator<Item = T>,
+    R: Ord,
+    F: Fn(&T) -> R,
+{
+    let mut max = None;
+
+    for value in iterator {
+        max = match max {
+            Some(prev) if to_key(&value) <= to_key(&prev) => Some(prev),
+            _ => Some(value),
+        }
+    }
+
+    max
 }
 
 #[cfg(test)]
