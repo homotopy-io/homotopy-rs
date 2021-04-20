@@ -38,10 +38,10 @@ impl Component for SignatureView {
     }
 
     fn view(&self) -> Html {
-        let generators: Html = self
-            .props
-            .signature
-            .iter()
+        let mut generators: Vec<_> = self.props.signature.iter().collect();
+        generators.sort_by_key(|(generator, info)| (generator.dimension, &info.name));
+        let generators: Html = generators
+            .into_iter()
             .map(|(generator, info)| self.view_generator(*generator, info))
             .collect();
 
