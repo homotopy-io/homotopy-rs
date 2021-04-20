@@ -125,16 +125,68 @@ impl SliceIndex {
             Height::from_int(h as usize).into()
         }
     }
-}
 
-impl Ord for SliceIndex {
+    /// The next slice in a diagram of a given size.
+    ///
+    /// # Examples
+    ///
     /// ```
-    /// # use homotopy_core::common::Boundary::*;
     /// # use homotopy_core::common::SliceIndex::*;
     /// # use homotopy_core::common::Height::*;
-    /// assert!(Boundary(Source) < Interior(Regular(0)));
-    /// assert!(Interior(Regular(10)) < Boundary(Target));
+    /// # use homotopy_core::common::Boundary::*;
+    /// assert_eq!(Boundary(Source).next(1), Some(Interior(Regular(0))));
+    /// assert_eq!(Interior(Regular(0)).next(1), Some(Interior(Singular(0))));
+    /// assert_eq!(Interior(Singular(0)).next(1), Some(Interior(Regular(1))));
+    /// assert_eq!(Interior(Regular(1)).next(1), Some(Boundary(Target)));
+    /// assert_eq!(Boundary(Target).next(1), None);
     /// ```
+    pub fn next(self, size: usize) -> Option<Self> {
+        use Height::{Regular, Singular};
+
+        match self {
+            Self::Boundary(Boundary::Source) => Some(Regular(0).into()),
+            Self::Interior(Regular(i)) if i == size => Some(Boundary::Target.into()),
+            Self::Interior(Regular(i)) => Some(Singular(i).into()),
+            Self::Interior(Singular(i)) => Some(Regular(i + 1).into()),
+            Self::Boundary(Boundary::Target) => None,
+        }
+    }
+
+    /// The previous slice in a diagram of a given size.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use homotopy_core::common::SliceIndex::*;
+    /// # use homotopy_core::common::Height::*;
+    /// # use homotopy_core::common::Boundary::*;
+    /// assert_eq!(Boundary(Source).prev(1), None);
+    /// assert_eq!(Interior(Regular(0)).prev(1), Some(Boundary(Source)));
+    /// assert_eq!(Interior(Singular(0)).prev(1), Some(Interior(Regular(0))));
+    /// assert_eq!(Interior(Regular(1)).prev(1), Some(Interior(Singular(0))));
+    /// assert_eq!(Boundary(Target).prev(1), Some(Interior(Regular(1))));
+    /// ```
+    pub fn prev(self, size: usize) -> Option<Self> {
+        use Height::{Regular, Singular};
+
+        match self {
+            Self::Boundary(Boundary::Source) => None,
+            Self::Interior(Regular(i)) if i == 0 => Some(Boundary::Source.into()),
+            Self::Interior(Regular(i)) => Some(Singular(i - 1).into()),
+            Self::Interior(Singular(i)) => Some(Regular(i).into()),
+            Self::Boundary(Boundary::Target) => Some(Regular(size).into()),
+        }
+    }
+}
+
+/// ```
+/// # use homotopy_core::common::Boundary::*;
+/// # use homotopy_core::common::SliceIndex::*;
+/// # use homotopy_core::common::Height::*;
+/// assert!(Boundary(Source) < Interior(Regular(0)));
+/// assert!(Interior(Regular(10)) < Boundary(Target));
+/// ```
+impl Ord for SliceIndex {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         use self::Boundary::{Source, Target};
         use SliceIndex::{Boundary, Interior};
@@ -169,14 +221,18 @@ impl From<Boundary> for SliceIndex {
 
 pub struct SliceIndexIterator {
     size: usize,
-    next: Option<SliceIndex>,
+    start: SliceIndex,
+    stop: SliceIndex,
+    done: bool,
 }
 
 impl SliceIndexIterator {
     pub fn new(size: usize) -> Self {
         Self {
             size,
-            next: Some(SliceIndex::Boundary(Boundary::Source)),
+            start: Boundary::Source.into(),
+            stop: Boundary::Target.into(),
+            done: false,
         }
     }
 }
@@ -185,20 +241,31 @@ impl Iterator for SliceIndexIterator {
     type Item = SliceIndex;
 
     fn next(&mut self) -> Option<Self::Item> {
-        use self::Boundary::{Source, Target};
-        use Height::{Regular, Singular};
-        use SliceIndex::{Boundary, Interior};
+        if self.done {
+            None
+        } else {
+            self.done = self.start == self.stop;
+            let next = self
+                .start
+                .next(self.size)
+                .unwrap_or(SliceIndex::Boundary(Boundary::Target));
+            Some(std::mem::replace(&mut self.start, next))
+        }
+    }
+}
 
-        let next = match self.next {
-            Some(Boundary(Source)) => Some(Height::Regular(0).into()),
-            Some(Boundary(Target)) => None,
-            Some(Interior(Regular(i))) if i >= self.size => Some(Boundary(Target)),
-            Some(Interior(Regular(i))) => Some(Interior(Singular(i))),
-            Some(Interior(Singular(i))) => Some(Interior(Regular(i + 1))),
-            None => None,
-        };
-
-        std::mem::replace(&mut self.next, next)
+impl DoubleEndedIterator for SliceIndexIterator {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        if self.done {
+            None
+        } else {
+            self.done = self.start == self.stop;
+            let next = self
+                .stop
+                .prev(self.size)
+                .unwrap_or(SliceIndex::Boundary(Boundary::Source));
+            Some(std::mem::replace(&mut self.stop, next))
+        }
     }
 }
 

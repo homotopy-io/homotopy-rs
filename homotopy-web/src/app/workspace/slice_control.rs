@@ -34,15 +34,10 @@ pub fn slice_control(props: &SliceControlProps) -> Html {
         }
     };
 
-    let buttons: Html = {
-        // TODO: the slice index iterator should be reversible so we avoid the allocation
-        let mut buttons: Vec<Html> = SliceIndex::for_size(props.number_slices)
-            .map(slice_button)
-            .collect();
-
-        buttons.reverse();
-        buttons.into_iter().collect()
-    };
+    let buttons: Html = SliceIndex::for_size(props.number_slices)
+        .map(slice_button)
+        .rev()
+        .collect();
 
     let style = format!(
         r#"
