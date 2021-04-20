@@ -44,6 +44,7 @@
     clippy::unimplemented,
     clippy::unreachable,
     clippy::shadow_unrelated,
+    clippy::match_same_arms,
 )]
 #![recursion_limit = "1024"]
 mod app;

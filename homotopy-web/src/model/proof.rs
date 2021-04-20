@@ -516,7 +516,8 @@ impl Proof {
                 Direction::Backward => {
                     if homotopy.height == 0 {
                         // TODO: Show an error
-                        panic!("Contracting off the edge of the diagram.");
+                        log::info!("Contracting off the edge of the diagram.");
+                        return Ok(());
                     }
 
                     let bias = homotopy.bias.map(homotopy_core::Bias::flip);

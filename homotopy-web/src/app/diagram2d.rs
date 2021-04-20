@@ -572,8 +572,12 @@ fn drag_to_homotopy(
     let abs_radians = angle.radians.abs();
     let horizontal = !(PI / 4.0..(3.0 * PI) / 4.0).contains(&abs_radians);
 
-    // TODO: Find correct drag point in the presence of boundaries
-    let point = simplex.first();
+    let point = match simplex {
+        Simplex::Surface([p0, _, _]) => p0,
+        Simplex::Wire([_, p1 @ (_, Boundary(_))]) => p1,
+        Simplex::Wire([p0, _]) => p0,
+        Simplex::Point([p0]) => p0,
+    };
 
     // Handle horizontal and vertical drags
     let (prefix, y, x, diagram) = if horizontal {

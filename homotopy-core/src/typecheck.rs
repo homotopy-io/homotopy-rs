@@ -195,7 +195,7 @@ fn restrict_diagram(diagram: &Diagram, embedding: &Embedding) -> Diagram {
             let diagram: &DiagramN = diagram.try_into().unwrap();
             assert!(diagram.size() >= height + slices.len());
             let source = restrict_diagram(
-                &diagram.source(),
+                &diagram.slice(Height::Regular(*height)).unwrap(),
                 &slices[0].preimage(&diagram.cospans()[*height].forward),
             );
             let cospans = diagram.cospans()[*height..*height + slices.len()]
