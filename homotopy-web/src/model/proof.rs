@@ -133,6 +133,8 @@ pub enum Action {
 
     Homotopy(Homotopy),
 
+    Theorem,
+
     Imported,
 }
 
@@ -144,6 +146,8 @@ pub enum ModelError {
     UnknownGeneratorSelected,
     #[error("tried to descend into an invalid diagram slice")]
     InvalidSlice(#[from] DimensionError),
+    #[error("invalid action")]
+    InvalidAction,
     #[error("error while performing expansion")]
     ExpansionError(#[from] ExpansionError),
     #[error("error while performing contraction")]
@@ -198,6 +202,7 @@ impl Proof {
             }
             Action::Homotopy(Homotopy::Expand(homotopy)) => self.homotopy_expansion(homotopy),
             Action::Homotopy(Homotopy::Contract(homotopy)) => self.homotopy_contraction(homotopy),
+            Action::Theorem => self.theorem(),
             Action::Imported => Ok(()),
         }
     }
@@ -207,13 +212,7 @@ impl Proof {
         let id = self.create_generator_id();
         let generator = Generator::new(id, 0);
 
-        let info = GeneratorInfo {
-            name: format!("Cell {}", id),
-            color: Color(Srgb::<u8>::from_str(COLORS[id % COLORS.len()]).unwrap()),
-            diagram: generator.into(),
-        };
-
-        self.signature.insert(generator, info);
+        self.signature_insert(id, generator, generator);
     }
 
     fn create_generator(
@@ -225,6 +224,15 @@ impl Proof {
         let generator = Generator::new(id, source.dimension() + 1);
         let diagram = DiagramN::new(generator, source, target)?;
 
+        self.signature_insert(id, generator, diagram);
+
+        Ok(())
+    }
+
+    fn signature_insert<D>(&mut self, id: usize, generator: Generator, diagram: D)
+    where
+        D: Into<Diagram>,
+    {
         let info = GeneratorInfo {
             name: format!("Cell {}", id),
             color: Color(Srgb::<u8>::from_str(COLORS[id % COLORS.len()]).unwrap()),
@@ -232,8 +240,6 @@ impl Proof {
         };
 
         self.signature.insert(generator, info);
-
-        Ok(())
     }
 
     fn create_generator_id(&self) -> usize {
@@ -284,13 +290,13 @@ impl Proof {
         // remove from the workspace
         if let Some(ws) = &self.workspace {
             if ws.diagram.generators().contains(generator) {
-                self.workspace = None;
+                self.clear_workspace();
             }
         }
         // remove from the boundary
         if let Some(b) = &self.boundary {
             if b.diagram.generators().contains(generator) {
-                self.boundary = None;
+                self.clear_boundary();
             }
         }
     }
@@ -528,6 +534,32 @@ impl Proof {
         if let Some(workspace) = &mut self.workspace {
             workspace.highlight = option;
         }
+    }
+
+    /// Handler for [Action::Theorem].
+    fn theorem(&mut self) -> Result<(), ModelError> {
+        let diagram: DiagramN = self
+            .workspace
+            .as_ref()
+            .ok_or(ModelError::InvalidAction)?
+            .diagram
+            .clone()
+            .try_into()
+            .map_err(|_dimerr| ModelError::InvalidAction)?;
+
+        // new generator of singular height 1 from source to target of current diagram
+        let singleton_id = self.create_generator_id();
+        let singleton_generator = Generator::new(singleton_id, diagram.dimension());
+        let singleton_diagram =
+            DiagramN::new(singleton_generator, diagram.source(), diagram.target())?;
+        self.signature_insert(singleton_id, singleton_generator, singleton_diagram.clone());
+
+        // rewrite from singleton to original diagram
+        self.create_generator(Diagram::from(singleton_diagram), diagram.into())?;
+
+        self.clear_workspace();
+
+        Ok(())
     }
 
     fn homotopy_expansion(&mut self, homotopy: &Expand) -> Result<(), ModelError> {

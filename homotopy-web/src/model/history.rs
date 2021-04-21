@@ -105,6 +105,10 @@ impl History {
         }
     }
 
+    pub fn can_undo(&self) -> bool {
+        self.current.borrow().parent.strong_count() > 0
+    }
+
     pub fn undo(&mut self) -> Result<(), HistoryError> {
         let prev = self
             .current
@@ -114,6 +118,10 @@ impl History {
             .ok_or(HistoryError::Undo)?;
         self.current = prev;
         Ok(())
+    }
+
+    pub fn can_redo(&self) -> bool {
+        !self.current.borrow().children.is_empty()
     }
 
     pub fn redo(&mut self) -> Result<(), HistoryError> {

@@ -30,6 +30,14 @@ impl State {
         self.history.current()
     }
 
+    pub(super) fn can_undo(&self) -> bool {
+        self.history.can_undo()
+    }
+
+    pub(super) fn can_redo(&self) -> bool {
+        self.history.can_redo()
+    }
+
     /// Update the state in response to an [Action].
     pub fn update(&mut self, action: Action) -> Result<(), ModelError> {
         match action {

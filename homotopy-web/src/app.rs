@@ -32,17 +32,27 @@ pub struct SidebarButton {
 }
 
 impl SidebarButton {
-    pub fn view(&self, dispatch: &Callback<model::Action>) -> Html {
-        let action = self.action.clone();
-
-        html! {
-            <div
-                class="sidebar__button tooltip tooltip--right"
-                onclick={dispatch.reform(move |_| action.clone())}
-                data-tooltip={self.label}
-            >
-                <Icon name={self.icon} />
-            </div>
+    pub fn view(&self, dispatch: &Callback<model::Action>, visible: bool) -> Html {
+        if visible {
+            let action = self.action.clone();
+            html! {
+                <div
+                    class="sidebar__button tooltip tooltip--right"
+                    onclick={dispatch.reform(move |_| action.clone())}
+                    data-tooltip={self.label}
+                >
+                    <Icon name={self.icon} />
+                </div>
+            }
+        } else {
+            html! {
+                <div
+                    class="sidebar__button"
+                    style="visibility: hidden;"
+                >
+                    <Icon name={self.icon} />
+                </div>
+            }
         }
     }
 }
@@ -98,6 +108,13 @@ const BUTTON_ADD_GENERATOR: SidebarButton = SidebarButton {
     shortcut: Some('a'),
 };
 
+const BUTTON_THEOREM: SidebarButton = SidebarButton {
+    label: "Theorem",
+    icon: "title",
+    action: model::Action::Proof(model::proof::Action::Theorem),
+    shortcut: None,
+};
+
 const BUTTON_PROJECT: SidebarButton = SidebarButton {
     label: "Project",
     icon: "info",
@@ -122,6 +139,7 @@ const BUTTON_SIGNATURE: SidebarButton = SidebarButton {
 const BUTTONS: &[&SidebarButton] = &[
     &BUTTON_UNDO,
     &BUTTON_REDO,
+    &BUTTON_THEOREM,
     &BUTTON_CLEAR,
     &BUTTON_IDENTITY,
     &BUTTON_SOURCE,
@@ -240,18 +258,19 @@ impl Component for App {
                 <aside class="sidebar">
                     <img src="/logo.svg" class="sidebar__logo" />
                     <nav class="sidebar__nav">
-                        {BUTTON_PROJECT.view(dispatch)}
-                        {BUTTON_SIGNATURE.view(dispatch)}
+                        {BUTTON_PROJECT.view(dispatch, true)}
+                        {BUTTON_SIGNATURE.view(dispatch, true)}
                         // {BUTTON_USER.view(dispatch)}
                     </nav>
                     <nav class="sidebar__tools">
-                        {BUTTON_UNDO.view(dispatch)}
-                        {BUTTON_REDO.view(dispatch)}
-                        {BUTTON_ADD_GENERATOR.view(dispatch)}
-                        {BUTTON_SOURCE.view(dispatch)}
-                        {BUTTON_TARGET.view(dispatch)}
-                        {BUTTON_IDENTITY.view(dispatch)}
-                        {BUTTON_CLEAR.view(dispatch)}
+                        {BUTTON_UNDO.view(dispatch, self.state.can_undo())}
+                        {BUTTON_REDO.view(dispatch, self.state.can_redo())}
+                        {BUTTON_THEOREM.view(dispatch, proof.workspace().map_or(false, |ws| ws.diagram.dimension() > 0))}
+                        {BUTTON_ADD_GENERATOR.view(dispatch, true)}
+                        {BUTTON_SOURCE.view(dispatch, proof.workspace().is_some())}
+                        {BUTTON_TARGET.view(dispatch, proof.workspace().is_some())}
+                        {BUTTON_IDENTITY.view(dispatch, proof.workspace().is_some())}
+                        {BUTTON_CLEAR.view(dispatch, proof.workspace().is_some())}
                     </nav>
                 </aside>
                 {drawer}
