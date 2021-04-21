@@ -2,4 +2,4 @@
 
 `cargo build`
 
-Master branch hosted live here: https://homotopy.zrho.me/
+Master branch hosted live here: https://beta.homotopy.io/
