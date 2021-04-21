@@ -429,6 +429,11 @@ impl Proof {
         let mut matches: BTreeSet<AttachOption> = BTreeSet::new();
 
         for point in selected {
+            let point = {
+                let mut point_with_path: Vec<SliceIndex> = workspace.path.iter().copied().collect();
+                point_with_path.extend(point.iter().copied());
+                point_with_path
+            };
             let (boundary_path, point) = BoundaryPath::split(&point);
 
             let haystack = match &boundary_path {

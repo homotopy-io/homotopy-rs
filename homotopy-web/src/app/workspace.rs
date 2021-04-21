@@ -5,7 +5,10 @@ use crate::app::diagram2d::{Diagram1D, Diagram2D, Highlight2D};
 use crate::app::panzoom;
 use crate::model::proof::homotopy::Homotopy;
 use crate::model::proof::{Action, Signature, Workspace};
-use homotopy_core::common::{Boundary, Height, SliceIndex};
+use homotopy_core::{
+    attach::BoundaryPath,
+    common::{Boundary, Height, SliceIndex},
+};
 use homotopy_core::{Diagram, DiagramN};
 
 use path_control::PathControl;
@@ -173,10 +176,24 @@ fn highlight_2d(workspace: &Workspace, signature: &Signature) -> Option<Highligh
 
     let info = signature.get(&attach_option.generator).unwrap();
     let needle: DiagramN = info.diagram.clone().try_into().unwrap();
-    let embedding = &attach_option.embedding;
 
-    match &attach_option.boundary_path {
+    let mut boundary_path = attach_option.boundary_path.clone();
+    let mut embedding = attach_option.embedding.clone();
+
+    if let Some(BoundaryPath(boundary, depth)) = boundary_path {
+        if depth >= workspace.path.len() {
+            boundary_path = Some(BoundaryPath(boundary, depth - workspace.path.len()));
+        } else {
+            boundary_path = None;
+            embedding = embedding.skip(workspace.path.len() - depth - 1);
+        }
+    } else {
+        embedding = embedding.skip(workspace.path.len());
+    }
+
+    match boundary_path {
         None => {
+            assert_eq!(embedding.len(), 2);
             // Note: An empty boundary path implies that `needle` is one dimension
             // higher than the currently displayed diagram. Since this function
             // computes highlights for 2d diagrams, the `needle` diagram is at
@@ -193,6 +210,7 @@ fn highlight_2d(workspace: &Workspace, signature: &Signature) -> Option<Highligh
             })
         }
         Some(bp) if bp.depth() == 0 => {
+            assert_eq!(embedding.len(), 1);
             let slice: DiagramN = needle
                 .slice(bp.boundary().flip())
                 .unwrap()
@@ -204,9 +222,12 @@ fn highlight_2d(workspace: &Workspace, signature: &Signature) -> Option<Highligh
                 to: [Regular(embedding[0] + size).into(), bp.boundary().into()],
             })
         }
-        Some(bp) => Some(Highlight2D {
-            from: [bp.boundary().into(), Boundary::Source.into()],
-            to: [bp.boundary().into(), Boundary::Target.into()],
-        }),
+        Some(bp) => {
+            assert_eq!(embedding.len(), 0);
+            Some(Highlight2D {
+                from: [bp.boundary().into(), Boundary::Source.into()],
+                to: [bp.boundary().into(), Boundary::Target.into()],
+            })
+        }
     }
 }
