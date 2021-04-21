@@ -620,7 +620,13 @@ fn drag_to_homotopy(
         }
     };
 
-    let direction = if angle.radians <= 0.0 {
+    let direction = if horizontal {
+        if (0.5 * PI..1.5 * PI).contains(&angle.radians) {
+            Direction::Backward
+        } else {
+            Direction::Forward
+        }
+    } else if angle.radians <= 0.0 {
         Direction::Forward
     } else {
         Direction::Backward
