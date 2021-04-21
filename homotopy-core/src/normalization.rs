@@ -66,8 +66,7 @@ impl Degeneracy {
         let source: &DiagramN = source.try_into().unwrap();
         let target: &DiagramN = target.try_into().unwrap();
 
-        let rewrite_simple =
-            RewriteN::make_degeneracy(source.dimension(), target.cospans(), &trivial);
+        let rewrite_simple = RewriteN::make_degeneracy(source.dimension(), &trivial);
         let middle = source.clone().rewrite_forward(&rewrite_simple);
         let middle_slices: Vec<_> = middle.slices().collect();
         let target_slices: Vec<_> = target.slices().collect();
@@ -110,17 +109,6 @@ struct SinkArrow {
 }
 
 impl SinkArrow {
-    fn is_identity(&self) -> bool {
-        self.degeneracy.is_identity() && self.rewrite.is_identity()
-    }
-
-    /// Converts the sink arrow to a rewrite under the assumption that its degeneracy map is
-    /// globular. The assumption of globularity is not checked.
-    fn to_rewrite(&self) -> Rewrite {
-        let degeneracy = self.degeneracy.to_rewrite(&self.source, &self.middle);
-        Rewrite::compose(degeneracy, self.rewrite.clone()).unwrap()
-    }
-
     fn singular_preimage(&self, target_height: SingularHeight) -> Vec<SingularHeight> {
         let mut preimage = Vec::new();
         let rewrite: &RewriteN = (&self.rewrite).try_into().unwrap();
@@ -230,19 +218,6 @@ where
         let (normalized, degeneracy) = normalize_regular(slice);
         regular.push(normalized);
         degeneracies.insert(Regular(height), degeneracy);
-    }
-
-    // The diagram can not be normalised any further if one map in the sink is an identity rewrite.
-    //
-    // As the factors we can use the sink maps themselves; in the case where there is an identity
-    // arrow in the sink, all non-identity arrows should at least be globular, so we can convert
-    // them to rewrites.
-    if sink.iter().any(SinkArrow::is_identity) {
-        return Output {
-            degeneracy: Rc::new(Degeneracy::Identity),
-            factors: sink.iter().map(SinkArrow::to_rewrite).collect(),
-            diagram: diagram.clone().into(),
-        };
     }
 
     // Construct the subproblems

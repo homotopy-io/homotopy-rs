@@ -257,18 +257,17 @@ impl RewriteN {
         self.0.cones.is_empty()
     }
 
-    pub(crate) fn make_degeneracy(
-        dimension: usize,
-        target_cospans: &[Cospan],
-        trivial_heights: &[SingularHeight],
-    ) -> Self {
+    pub(crate) fn make_degeneracy(dimension: usize, trivial_heights: &[SingularHeight]) -> Self {
         let cones = trivial_heights
             .iter()
             .enumerate()
             .map(|(i, height)| Cone {
                 index: height - i,
                 source: vec![],
-                target: target_cospans[*height].clone(),
+                target: Cospan {
+                    forward: Rewrite::identity(dimension - 1),
+                    backward: Rewrite::identity(dimension - 1),
+                },
                 slices: vec![],
             })
             .collect();
