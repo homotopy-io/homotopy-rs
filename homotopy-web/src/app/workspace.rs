@@ -193,7 +193,6 @@ fn highlight_2d(workspace: &Workspace, signature: &Signature) -> Option<Highligh
 
     match boundary_path {
         None => {
-            assert_eq!(embedding.len(), 2);
             // Note: An empty boundary path implies that `needle` is one dimension
             // higher than the currently displayed diagram. Since this function
             // computes highlights for 2d diagrams, the `needle` diagram is at
@@ -210,7 +209,6 @@ fn highlight_2d(workspace: &Workspace, signature: &Signature) -> Option<Highligh
             })
         }
         Some(bp) if bp.depth() == 0 => {
-            assert_eq!(embedding.len(), 1);
             let slice: DiagramN = needle
                 .slice(bp.boundary().flip())
                 .unwrap()
@@ -222,12 +220,9 @@ fn highlight_2d(workspace: &Workspace, signature: &Signature) -> Option<Highligh
                 to: [Regular(embedding[0] + size).into(), bp.boundary().into()],
             })
         }
-        Some(bp) => {
-            assert_eq!(embedding.len(), 0);
-            Some(Highlight2D {
-                from: [bp.boundary().into(), Boundary::Source.into()],
-                to: [bp.boundary().into(), Boundary::Target.into()],
-            })
-        }
+        Some(bp) => Some(Highlight2D {
+            from: [bp.boundary().into(), Boundary::Source.into()],
+            to: [bp.boundary().into(), Boundary::Target.into()],
+        }),
     }
 }
