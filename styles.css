@@ -282,8 +282,15 @@ body, html {
   border: 1px solid var(--generator-color-border);
 }
 
+.signature__generator-edit {
+  padding: var(--space-0);
+}
+
 @media (pointer: fine) {
-  .signature__generator:hover {
+  .signature__generator-name:hover {
+    background: var(--drawer-selected);
+  }
+  .signature__generator-edit:hover {
     background: var(--drawer-selected);
   }
 }
@@ -356,3 +363,5 @@ input.visually-hidden:focus + label {
 input.visually-hidden:focus-within + label {
   outline: thin dotted;
 }
+
+input { width:100%; }
