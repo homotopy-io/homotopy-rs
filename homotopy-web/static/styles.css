@@ -114,11 +114,10 @@ body, html {
   z-index: 10;
   display: flex;
   align-items: stretch;
-  transition: opacity 0.2s;
 }
 
 .workspace__path--empty {
-  opacity: 0;
+  display: none;
 }
 
 .workspace__path-step, .workspace__path-home {
