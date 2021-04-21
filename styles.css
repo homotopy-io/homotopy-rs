@@ -74,7 +74,7 @@ body, html {
 .sidebar__button {
   font-size: var(--sidebar-icon-size);
   user-select: none;
-  cursor: pointer; 
+  cursor: pointer;
   padding: var(--space-1);
   text-align: center;
 }
