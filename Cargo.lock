@@ -342,8 +342,7 @@ dependencies = [
 [[package]]
 name = "im"
 version = "15.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "111c1983f3c5bb72732df25cddacee9b546d08325fb584b5ebd38148be7b0246"
+source = "git+https://github.com/bodil/im-rs#3f4e01a43254fe228d1ce64e47dfaf4edc8f4f19"
 dependencies = [
  "bitmaps",
  "rand_core",

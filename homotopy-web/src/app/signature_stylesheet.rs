@@ -1,6 +1,6 @@
-use crate::model::proof::{Color, GeneratorInfo};
+use crate::model::proof::{Color, Signature};
 use homotopy_core::Generator;
-use im::HashMap;
+
 use palette::Shade;
 use std::fmt::Write;
 use wasm_bindgen::JsCast;
@@ -10,7 +10,7 @@ use web_sys::{Element, Node};
 // stylesheet API to change the colors more granularly.
 
 pub struct SignatureStylesheet {
-    signature: HashMap<Generator, GeneratorInfo>,
+    signature: Signature,
     element: Element,
     prefix: String,
 }
@@ -81,7 +81,7 @@ impl SignatureStylesheet {
         style
     }
 
-    pub fn update(&mut self, signature: HashMap<Generator, GeneratorInfo>) {
+    pub fn update(&mut self, signature: Signature) {
         if signature != self.signature {
             self.signature = signature;
             self.element.set_inner_html(&self.style());

@@ -1,12 +1,12 @@
-use crate::model::proof::{Action, AttachOption, GeneratorInfo};
-use homotopy_core::common::Generator;
+use crate::model::proof::{Action, AttachOption, Signature};
+
 use yew::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Properties)]
 pub struct Props {
     pub dispatch: Callback<Action>,
     pub options: im::Vector<AttachOption>,
-    pub signature: im::HashMap<Generator, GeneratorInfo>,
+    pub signature: Signature,
 }
 
 #[derive(Debug, Clone)]

@@ -6,7 +6,7 @@ use homotopy_core::{
 };
 use homotopy_core::{diagram::NewDiagramError, typecheck::TypeError};
 use homotopy_core::{Diagram, DiagramN};
-use im::{HashMap, Vector};
+use im::{ordmap, OrdMap, Vector};
 use std::{collections::BTreeSet, ops::Deref};
 use std::{
     convert::{Into, TryFrom, TryInto},
@@ -54,7 +54,7 @@ pub enum GeneratorEdit {
     Recolor(Color),
 }
 
-pub type Signature = HashMap<Generator, GeneratorInfo>;
+pub type Signature = OrdMap<Generator, GeneratorInfo>;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Workspace {
@@ -160,8 +160,11 @@ impl Proof {
                 self.create_generator_zero();
                 Ok(())
             }
-            Action::EditGenerator(gen, edit) => self.edit_generator(gen, edit.clone()),
-            Action::RemoveGenerator(_) => unimplemented!(),
+            Action::EditGenerator(generator, edit) => self.edit_generator(generator, edit.clone()),
+            Action::RemoveGenerator(generator) => {
+                self.remove_generator(generator);
+                Ok(())
+            }
             Action::SetBoundary(boundary) => self.set_boundary(*boundary),
             Action::TakeIdentityDiagram => {
                 self.take_identity_diagram();
@@ -241,6 +244,7 @@ impl Proof {
             .map_or(0, |id| id + 1)
     }
 
+    /// Handler for [Action::EditGenerator].
     fn edit_generator(
         &mut self,
         generator: &Generator,
@@ -259,6 +263,36 @@ impl Proof {
             }
         }
         Ok(())
+    }
+
+    /// Handler for [Action::RemoveGenerator].
+    fn remove_generator(&mut self, generator: &Generator) {
+        // remove from the signature
+        let mut remove: Signature =
+            ordmap! {*generator => self.signature.get(generator).unwrap().clone()};
+        let dimension = generator.dimension;
+        for (g, info) in self.signature.range(
+            Generator::new(std::usize::MIN, dimension + 1)
+                ..=Generator::new(std::usize::MAX, std::usize::MAX),
+        ) {
+            if info.diagram.generators().contains(generator) {
+                remove.insert(*g, info.clone());
+            }
+        }
+        let remaining = self.signature.clone().relative_complement(remove);
+        self.signature = remaining;
+        // remove from the workspace
+        if let Some(ws) = &self.workspace {
+            if ws.diagram.generators().contains(generator) {
+                self.workspace = None;
+            }
+        }
+        // remove from the boundary
+        if let Some(b) = &self.boundary {
+            if b.diagram.generators().contains(generator) {
+                self.boundary = None;
+            }
+        }
     }
 
     /// Handler for [Action::SetBoundary].

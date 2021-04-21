@@ -4,9 +4,9 @@ use crate::common::{
 };
 use crate::rewrite::{Cospan, Rewrite, RewriteN};
 use hashconsing::{consign, HConsed, HashConsign};
-use std::convert::TryFrom;
 use std::convert::{From, Into};
 use std::fmt;
+use std::{collections::HashSet, convert::TryFrom};
 use thiserror::Error;
 
 #[derive(PartialEq, Eq, Hash, Clone)]
@@ -30,6 +30,35 @@ impl Diagram {
             Diagram0(g) => *g,
             DiagramN(d) => d.max_generator(),
         }
+    }
+
+    /// Returns all the generators mentioned by this diagram.
+    pub fn generators(&self) -> HashSet<Generator> {
+        use Diagram::{Diagram0, DiagramN};
+        fn add_generators(
+            diagram: &Diagram,
+            generators: &mut HashSet<Generator>,
+            visited: &mut HashSet<Diagram>,
+        ) {
+            match diagram {
+                Diagram0(g) => {
+                    generators.insert(*g);
+                    visited.insert(diagram.clone());
+                }
+                DiagramN(d) => {
+                    for slice in d.slices() {
+                        if !visited.contains(&slice) {
+                            add_generators(&slice, generators, visited);
+                            visited.insert(slice);
+                        }
+                    }
+                }
+            }
+        }
+        let mut gs: HashSet<Generator> = Default::default();
+        let mut visited: HashSet<Self> = Default::default();
+        add_generators(self, &mut gs, &mut visited);
+        gs
     }
 
     pub fn dimension(&self) -> usize {

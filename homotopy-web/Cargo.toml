@@ -53,7 +53,8 @@ console_error_panic_hook = { version = "*", optional = true }
 # compared to the default allocator's ~10K. However, it is slower than the default
 # allocator, so it's not enabled by default.
 wee_alloc = { version = "*", optional = true }
-im = { version = "*", features = ["serde"] }
+# need latest git version because of https://github.com/bodil/im-rs/issues/143
+im = { git = "https://github.com/bodil/im-rs", features = ["serde"] }
 arrayvec = "0.5"
 
 # The `web-sys` crate allows you to interact with the various browser APIs,

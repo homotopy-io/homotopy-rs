@@ -1,20 +1,20 @@
 use crate::app::Icon;
-use crate::model::proof::{Action, GeneratorEdit, GeneratorInfo};
+use crate::model::proof::{Action, GeneratorEdit, GeneratorInfo, Signature};
 use homotopy_core::Generator;
 use im::HashMap;
 use yew::prelude::*;
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct Props {
-    pub signature: HashMap<Generator, GeneratorInfo>,
+    pub signature: Signature,
     pub dispatch: Callback<Action>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Message {
+    Done(Generator),
     Edit(Generator),
     Rename(Generator, String),
-    Done(Generator),
 }
 
 pub struct SignatureView {
@@ -40,10 +40,6 @@ impl Component for SignatureView {
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             Message::Edit(generator) => self.editing.push(generator),
-            Message::Rename(generator, name) => {
-                self.renames.insert(generator, name);
-                return false;
-            }
             Message::Done(generator) => {
                 let dispatch = &self.props.dispatch;
                 for (g, n) in self.renames.iter() {
@@ -54,6 +50,10 @@ impl Component for SignatureView {
                 self.renames.retain(|g, _| g != &generator);
                 self.editing.retain(|g| g != &generator);
             }
+            Message::Rename(generator, name) => {
+                self.renames.insert(generator, name);
+                return false;
+            }
         }
         true
     }
@@ -62,6 +62,8 @@ impl Component for SignatureView {
         if self.props == props {
             false
         } else {
+            self.renames.retain(|g, _| props.signature.contains_key(g));
+            self.editing.retain(|g| props.signature.contains_key(g));
             self.props = props;
             true
         }
@@ -108,6 +110,8 @@ impl Component for SignatureView {
 
 impl SignatureView {
     fn edit_generator(&self, generator: Generator, info: &GeneratorInfo) -> Html {
+        let dispatch = &self.props.dispatch;
+
         html! {
             <li
                 class="signature__generator"
@@ -128,6 +132,12 @@ impl SignatureView {
                 />
                 <span class="signature__generator-dimension">
                     {info.diagram.dimension()}
+                </span>
+                <span
+                    class="signature__generator-edit"
+                    onclick=dispatch.reform(move |_| Action::RemoveGenerator(generator))
+                >
+                    <Icon name={"delete"} />
                 </span>
                 <span
                     class="signature__generator-edit"
@@ -154,7 +164,7 @@ impl SignatureView {
                 />
                 <span
                     class="signature__generator-name"
-                    onclick={dispatch.reform(move |_| Action::SelectGenerator(generator))}
+                    onclick=dispatch.reform(move |_| Action::SelectGenerator(generator))
                 >
                     {&info.name}
                 </span>

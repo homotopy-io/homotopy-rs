@@ -5,13 +5,13 @@ use thiserror::Error;
 
 #[derive(PartialEq, Eq, Copy, Clone, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct Generator {
-    pub id: usize,
     pub dimension: usize,
+    pub id: usize,
 }
 
 impl Generator {
     pub fn new(id: usize, dimension: usize) -> Self {
-        Self { id, dimension }
+        Self { dimension, id }
     }
 }
 

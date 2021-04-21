@@ -4,10 +4,10 @@ mod slice_control;
 use crate::app::diagram2d::{Diagram1D, Diagram2D, Highlight2D};
 use crate::app::panzoom;
 use crate::model::proof::homotopy::Homotopy;
-use crate::model::proof::{Action, GeneratorInfo, Workspace};
-use homotopy_core::common::{Boundary, Generator, Height, SliceIndex};
+use crate::model::proof::{Action, Signature, Workspace};
+use homotopy_core::common::{Boundary, Height, SliceIndex};
 use homotopy_core::{Diagram, DiagramN};
-use im::HashMap;
+
 use path_control::PathControl;
 use slice_control::SliceControl;
 use std::convert::{Into, TryFrom, TryInto};
@@ -19,7 +19,7 @@ use yew::prelude::*;
 pub struct Props {
     pub workspace: Workspace,
     pub dispatch: Callback<Action>,
-    pub signature: im::HashMap<Generator, GeneratorInfo>,
+    pub signature: Signature,
 }
 
 pub enum Message {
@@ -166,10 +166,7 @@ impl WorkspaceView {
     }
 }
 
-fn highlight_2d(
-    workspace: &Workspace,
-    signature: &HashMap<Generator, GeneratorInfo>,
-) -> Option<Highlight2D> {
+fn highlight_2d(workspace: &Workspace, signature: &Signature) -> Option<Highlight2D> {
     use Height::Regular;
 
     let attach_option = workspace.highlight.as_ref()?;
