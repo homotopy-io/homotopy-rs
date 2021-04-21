@@ -1,4 +1,5 @@
-use crate::model::proof::{Action, GeneratorInfo};
+use crate::app::Icon;
+use crate::model::proof::{Action, GeneratorEdit, GeneratorInfo};
 use homotopy_core::Generator;
 use im::HashMap;
 use yew::prelude::*;
@@ -10,22 +11,51 @@ pub struct Props {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Message {}
+pub enum Message {
+    Edit(Generator),
+    Rename(Generator, String),
+    Done(Generator),
+}
 
 pub struct SignatureView {
+    link: ComponentLink<Self>,
     props: Props,
+    editing: Vec<Generator>,
+    renames: HashMap<Generator, String>,
 }
 
 impl Component for SignatureView {
     type Message = Message;
     type Properties = Props;
 
-    fn create(props: Self::Properties, _link: ComponentLink<Self>) -> Self {
-        Self { props }
+    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
+        Self {
+            link,
+            props,
+            editing: Default::default(),
+            renames: Default::default(),
+        }
     }
 
-    fn update(&mut self, _msg: Self::Message) -> ShouldRender {
-        false
+    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+        match msg {
+            Message::Edit(generator) => self.editing.push(generator),
+            Message::Rename(generator, name) => {
+                self.renames.insert(generator, name);
+                return false;
+            }
+            Message::Done(generator) => {
+                let dispatch = &self.props.dispatch;
+                for (g, n) in self.renames.iter() {
+                    if n != &self.props.signature[g].name {
+                        dispatch.emit(Action::EditGenerator(*g, GeneratorEdit::Rename(n.clone())));
+                    }
+                }
+                self.renames.retain(|g, _| g != &generator);
+                self.editing.retain(|g| g != &generator);
+            }
+        }
+        true
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
@@ -40,9 +70,17 @@ impl Component for SignatureView {
     fn view(&self) -> Html {
         let mut generators: Vec<_> = self.props.signature.iter().collect();
         generators.sort_by_key(|(generator, info)| (generator.dimension, &info.name));
-        let generators: Html = generators
-            .into_iter()
-            .map(|(generator, info)| self.view_generator(*generator, info))
+        let generators: Html = self
+            .props
+            .signature
+            .iter()
+            .map(|(generator, info)| {
+                if self.editing.contains(generator) {
+                    self.edit_generator(*generator, info)
+                } else {
+                    self.view_generator(*generator, info)
+                }
+            })
             .collect();
 
         // TODO: Order?
@@ -69,23 +107,65 @@ impl Component for SignatureView {
 }
 
 impl SignatureView {
+    fn edit_generator(&self, generator: Generator, info: &GeneratorInfo) -> Html {
+        html! {
+            <li
+                class="signature__generator"
+            >
+                <span
+                    class="signature__generator-color"
+                    style={format!("background: {}", info.color)}
+                />
+                <input type="text" value={
+                        self.renames.get(&generator).map_or(&info.name, |name| name)
+                    }
+                    oninput=self.link.callback(move |e: InputData| {
+                        Message::Rename(generator, e.value)
+                    })
+                    onkeypress=Callback::from(move |e: KeyboardEvent| {
+                        e.stop_propagation();
+                    })
+                />
+                <span class="signature__generator-dimension">
+                    {info.diagram.dimension()}
+                </span>
+                <span
+                    class="signature__generator-edit"
+                    onclick=self.link.callback(move |_| {
+                        Message::Done(generator)
+                    })
+                >
+                    <Icon name={"done"} />
+                </span>
+            </li>
+        }
+    }
+
     fn view_generator(&self, generator: Generator, info: &GeneratorInfo) -> Html {
         let dispatch = &self.props.dispatch;
 
         html! {
             <li
                 class="signature__generator"
-                onclick={dispatch.reform(move |_| Action::SelectGenerator(generator))}
             >
                 <span
                     class="signature__generator-color"
                     style={format!("background: {}", info.color)}
                 />
-                <span class="signature__generator-name">
+                <span
+                    class="signature__generator-name"
+                    onclick={dispatch.reform(move |_| Action::SelectGenerator(generator))}
+                >
                     {&info.name}
                 </span>
                 <span class="signature__generator-dimension">
                     {info.diagram.dimension()}
+                </span>
+                <span
+                    class="signature__generator-edit"
+                    onclick=self.link.callback(move |_| Message::Edit(generator))
+                >
+                    <Icon name={"edit"} />
                 </span>
             </li>
         }

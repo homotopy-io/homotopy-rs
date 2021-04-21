@@ -1,5 +1,6 @@
 mod attach;
 mod diagram2d;
+mod icon;
 mod panzoom;
 mod project;
 mod signature;
@@ -12,26 +13,15 @@ use homotopy_core::{
     Boundary,
     Direction::{Backward, Forward},
 };
+use icon::Icon;
 use project::ProjectView;
 use signature::SignatureView;
 use signature_stylesheet::SignatureStylesheet;
 use std::panic;
 use wasm_bindgen::JsCast;
 use workspace::WorkspaceView;
+
 use yew::prelude::*;
-use yew_functional::function_component;
-
-#[derive(Debug, Clone, PartialEq, Properties)]
-pub struct IconProps {
-    pub name: String,
-}
-
-#[function_component(Icon)]
-pub fn icon(props: &IconProps) -> Html {
-    html! {
-        <i class="material-icons md-light">{&props.name}</i>
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct SidebarButton {

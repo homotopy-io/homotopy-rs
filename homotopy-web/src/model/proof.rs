@@ -48,6 +48,12 @@ pub struct GeneratorInfo {
     pub diagram: Diagram,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum GeneratorEdit {
+    Rename(String),
+    Recolor(Color),
+}
+
 pub type Signature = HashMap<Generator, GeneratorInfo>;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -81,6 +87,9 @@ pub struct Proof {
 pub enum Action {
     /// Create a new generator of dimension zero.
     CreateGeneratorZero,
+
+    /// Update the information attached to a generator. Currently: name, colour.
+    EditGenerator(Generator, GeneratorEdit),
 
     /// Remove a generator from the signature. All generators in the signature that depend on the
     /// generator that is to be removed will be removed as well recursively. If the workspace
@@ -151,6 +160,7 @@ impl Proof {
                 self.create_generator_zero();
                 Ok(())
             }
+            Action::EditGenerator(gen, edit) => self.edit_generator(gen, edit.clone()),
             Action::RemoveGenerator(_) => unimplemented!(),
             Action::SetBoundary(boundary) => self.set_boundary(*boundary),
             Action::TakeIdentityDiagram => {
@@ -229,6 +239,26 @@ impl Proof {
             .map(|(generator, _)| generator.id)
             .max()
             .map_or(0, |id| id + 1)
+    }
+
+    fn edit_generator(
+        &mut self,
+        generator: &Generator,
+        edit: GeneratorEdit,
+    ) -> Result<(), ModelError> {
+        let info = self
+            .signature
+            .get_mut(generator)
+            .ok_or(ModelError::UnknownGeneratorSelected)?;
+        match edit {
+            GeneratorEdit::Rename(name) => {
+                info.name = name;
+            }
+            GeneratorEdit::Recolor(color) => {
+                info.color = color;
+            }
+        }
+        Ok(())
     }
 
     /// Handler for [Action::SetBoundary].
