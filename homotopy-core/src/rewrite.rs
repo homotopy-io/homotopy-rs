@@ -345,6 +345,8 @@ impl RewriteN {
         }
 
         let mut offset = 0;
+        let mut delayed_offset = 0;
+
         let mut f_cones: Vec<Cone> = f.cones().iter().rev().cloned().collect();
         let mut g_cones: Vec<Cone> = g.cones().iter().rev().cloned().collect();
         let mut cones: Vec<Cone> = Vec::new();
@@ -356,6 +358,8 @@ impl RewriteN {
                 (None, Some(g_cone)) => {
                     let mut cone: Cone = g_cone.clone();
                     cone.index = (cone.index as isize + offset) as usize;
+                    offset += delayed_offset;
+                    delayed_offset = 0;
                     cones.push(cone);
                 }
                 (Some(f_cone), Some(g_cone)) => {
@@ -365,6 +369,8 @@ impl RewriteN {
                         let mut cone = g_cone.clone();
                         cone.index = (cone.index as isize + offset) as usize;
                         cones.push(cone);
+                        offset += delayed_offset;
+                        delayed_offset = 0;
                         f_cones.push(f_cone);
                     } else if index < 0 {
                         cones.push(f_cone.clone());
@@ -393,6 +399,8 @@ impl RewriteN {
                                 .collect::<Result<Vec<_>, _>>()?,
                         );
                         slices.extend(g_cone.slices[index + 1..].iter().cloned());
+
+                        delayed_offset -= 1 - f_cone.len() as isize;
 
                         g_cones.push(Cone {
                             index: g_cone.index,
@@ -605,6 +613,63 @@ mod test {
                 Cospan {
                     forward: Rewrite0::new(x, f).into(),
                     backward: Rewrite0::new(x, f).into(),
+                },
+                Cospan {
+                    forward: Rewrite0::new(x, h).into(),
+                    backward: Rewrite0::new(x, h).into(),
+                },
+            ],
+            vec![vec![], vec![]],
+        );
+
+        let actual = RewriteN::compose(&first, &second).unwrap();
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn rewrite_compose_2() {
+        let x = Generator::new(0, 0);
+        let f = Generator::new(1, 1);
+        let g = Generator::new(2, 1);
+        let h = Generator::new(3, 1);
+
+        let first = RewriteN::from_slices(
+            1,
+            &[],
+            &[Cospan {
+                forward: Rewrite0::new(x, f).into(),
+                backward: Rewrite0::new(x, f).into(),
+            }],
+            vec![vec![]],
+        );
+
+        let second = RewriteN::from_slices(
+            1,
+            &[Cospan {
+                forward: Rewrite0::new(x, f).into(),
+                backward: Rewrite0::new(x, f).into(),
+            }],
+            &[
+                Cospan {
+                    forward: Rewrite0::new(x, g).into(),
+                    backward: Rewrite0::new(x, g).into(),
+                },
+                Cospan {
+                    forward: Rewrite0::new(x, h).into(),
+                    backward: Rewrite0::new(x, h).into(),
+                },
+            ],
+            vec![vec![Rewrite0::new(f, g).into()], vec![]],
+        );
+
+        let expected = RewriteN::from_slices(
+            1,
+            &[],
+            &[
+                Cospan {
+                    forward: Rewrite0::new(x, g).into(),
+                    backward: Rewrite0::new(x, g).into(),
                 },
                 Cospan {
                     forward: Rewrite0::new(x, h).into(),
