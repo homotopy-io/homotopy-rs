@@ -35,6 +35,16 @@ impl BoundaryPath {
         diagram.slice(self.0)
     }
 
+    pub fn follow_shallow(&self, diagram: &DiagramN) -> Option<Diagram> {
+        let mut diagram = diagram.clone();
+
+        for _ in 0..self.1 {
+            diagram = diagram.source().try_into().ok()?;
+        }
+
+        Some(diagram.into())
+    }
+
     #[allow(clippy::inline_always)]
     #[inline(always)]
     pub fn boundary(&self) -> Boundary {

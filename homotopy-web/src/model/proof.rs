@@ -1,4 +1,5 @@
 use homotopy_core::expansion::ExpansionError;
+use homotopy_core::typecheck;
 use homotopy_core::{attach::BoundaryPath, common::DimensionError};
 use homotopy_core::{
     common::{Boundary, Direction, Generator, Height, RegularHeight, SliceIndex},
@@ -577,18 +578,25 @@ impl Proof {
             let (boundary_path, interior_path) = BoundaryPath::split(&location);
 
             if let Some(boundary_path) = boundary_path {
-                let expanded = diagram
-                    .expand(&boundary_path, &interior_path, homotopy.direction)?
-                    .into();
-                typecheck(&expanded, signature)?;
-                workspace.diagram = expanded;
+                let expanded =
+                    diagram.expand(&boundary_path, &interior_path, homotopy.direction)?;
+                typecheck(
+                    &boundary_path.follow_shallow(&expanded).unwrap(),
+                    signature,
+                    typecheck::Mode::Shallow,
+                )?;
+                workspace.diagram = expanded.into();
             } else {
                 let expanded = diagram.identity().expand(
                     &Boundary::Target.into(),
                     &interior_path,
                     homotopy.direction,
                 )?;
-                typecheck(&expanded.clone().into(), signature)?;
+                typecheck(
+                    &expanded.clone().into(),
+                    signature,
+                    typecheck::Mode::Shallow,
+                )?;
                 workspace.diagram = expanded.target();
             }
 
@@ -631,19 +639,28 @@ impl Proof {
             if let Some(boundary_path) = boundary_path {
                 let contractum = diagram
                     .contract(&boundary_path, &interior_path, height, bias)
-                    .ok_or(ModelError::ContractionError)?
-                    .into();
-                typecheck(&contractum, signature).map_err(|err| {
+                    .ok_or(ModelError::ContractionError)?;
+                typecheck(
+                    &boundary_path.follow_shallow(&contractum).unwrap(),
+                    signature,
+                    typecheck::Mode::Shallow,
+                )
+                .map_err(|err| {
                     log::error!("{}", err);
                     err
                 })?;
-                workspace.diagram = contractum;
+                workspace.diagram = contractum.into();
             } else {
                 let contractum = diagram
                     .identity()
                     .contract(&Boundary::Target.into(), &interior_path, height, bias)
                     .ok_or(ModelError::ContractionError)?;
-                typecheck(&contractum.clone().into(), signature).map_err(|err| {
+                typecheck(
+                    &contractum.clone().into(),
+                    signature,
+                    typecheck::Mode::Shallow,
+                )
+                .map_err(|err| {
                     log::error!("{}", err);
                     err
                 })?;

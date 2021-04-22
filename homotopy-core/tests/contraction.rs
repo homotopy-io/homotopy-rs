@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use homotopy_core::typecheck::typecheck;
+use homotopy_core::typecheck::{typecheck, Mode};
 use homotopy_core::*;
 use insta::*;
 
@@ -63,7 +63,12 @@ fn beads() {
     signature.insert(a.max_generator(), a.into());
     signature.insert(b.max_generator(), b.into());
     signature.insert(c.max_generator(), c.into());
-    typecheck(&contracted.into(), |generator| signature.get(&generator)).unwrap();
+    typecheck(
+        &contracted.into(),
+        |generator| signature.get(&generator),
+        Mode::Deep,
+    )
+    .unwrap();
 }
 
 #[test]
@@ -88,5 +93,10 @@ fn stacks() {
     signature.insert(x.max_generator(), x);
     signature.insert(f.max_generator(), f.into());
     signature.insert(m.max_generator(), m.into());
-    typecheck(&contracted.into(), |generator| signature.get(&generator)).unwrap();
+    typecheck(
+        &contracted.into(),
+        |generator| signature.get(&generator),
+        Mode::Deep,
+    )
+    .unwrap();
 }

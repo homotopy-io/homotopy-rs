@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use homotopy_core::typecheck::typecheck;
+use homotopy_core::typecheck::{typecheck, Mode};
 use homotopy_core::*;
 
 #[test]
@@ -36,5 +36,10 @@ fn matchsticks() {
         )
         .unwrap();
 
-    typecheck(&expanded.into(), |generator| signature.get(&generator)).unwrap();
+    typecheck(
+        &expanded.into(),
+        |generator| signature.get(&generator),
+        Mode::Deep,
+    )
+    .unwrap();
 }

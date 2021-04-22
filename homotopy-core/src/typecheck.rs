@@ -21,7 +21,13 @@ pub enum TypeError {
     IllTyped,
 }
 
-pub fn typecheck<'a, S>(diagram: &Diagram, signature: S) -> Result<(), TypeError>
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Mode {
+    Deep,
+    Shallow,
+}
+
+pub fn typecheck<'a, S>(diagram: &Diagram, signature: S, mode: Mode) -> Result<(), TypeError>
 where
     S: Fn(Generator) -> Option<&'a Diagram> + Copy,
 {
@@ -36,7 +42,9 @@ where
         Diagram::DiagramN(d) => d,
     };
 
-    typecheck(&diagram.source(), signature)?;
+    if Mode::Deep == mode {
+        typecheck(&diagram.source(), signature, mode)?;
+    }
 
     let slices: Vec<_> = diagram.slices().collect();
 
@@ -299,6 +307,11 @@ mod test {
         signature.insert(m, m_d.into());
         signature.insert(a, a_d.clone().into());
 
-        typecheck(&a_d.into(), |generator| signature.get(&generator)).unwrap();
+        typecheck(
+            &a_d.into(),
+            |generator| signature.get(&generator),
+            Mode::Deep,
+        )
+        .unwrap();
     }
 }
