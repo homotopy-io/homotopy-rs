@@ -134,6 +134,8 @@ pub enum Action {
 
     Homotopy(Homotopy),
 
+    Restrict,
+
     Theorem,
 
     Imported,
@@ -203,6 +205,7 @@ impl Proof {
             }
             Action::Homotopy(Homotopy::Expand(homotopy)) => self.homotopy_expansion(homotopy),
             Action::Homotopy(Homotopy::Contract(homotopy)) => self.homotopy_contraction(homotopy),
+            Action::Restrict => self.restrict(),
             Action::Theorem => self.theorem(),
             Action::Imported => Ok(()),
         }
@@ -535,6 +538,28 @@ impl Proof {
         if let Some(workspace) = &mut self.workspace {
             workspace.highlight = option;
         }
+    }
+
+    /// Handler for [Action::Restrict].
+    fn restrict(&mut self) -> Result<(), ModelError> {
+        for ws in self.workspace.iter_mut() {
+            let mut diagram = ws.diagram.clone();
+            for height in &ws.path {
+                matches!(height, SliceIndex::Interior(Height::Regular(_)))
+                    .then(|| ())
+                    .ok_or(ModelError::InvalidAction)?;
+                diagram = DiagramN::try_from(diagram)
+                    .map_err(ModelError::InvalidSlice)?
+                    .slice(*height)
+                    .ok_or(ModelError::InvalidSlice(DimensionError))?;
+            }
+            ws.diagram = diagram;
+            ws.path = Default::default();
+            ws.attach = Default::default();
+            ws.highlight = Default::default();
+        }
+
+        Ok(())
     }
 
     /// Handler for [Action::Theorem].

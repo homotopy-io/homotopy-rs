@@ -12,6 +12,7 @@ use attach::AttachView;
 use homotopy_core::{
     Boundary,
     Direction::{Backward, Forward},
+    Height, SliceIndex,
 };
 use icon::Icon;
 use project::ProjectView;
@@ -108,6 +109,13 @@ const BUTTON_ADD_GENERATOR: SidebarButton = SidebarButton {
     shortcut: Some('a'),
 };
 
+const BUTTON_RESTRICT: SidebarButton = SidebarButton {
+    label: "Restrict",
+    icon: "find_replace",
+    action: model::Action::Proof(model::proof::Action::Restrict),
+    shortcut: None,
+};
+
 const BUTTON_THEOREM: SidebarButton = SidebarButton {
     label: "Theorem",
     icon: "title",
@@ -139,6 +147,7 @@ const BUTTON_SIGNATURE: SidebarButton = SidebarButton {
 const BUTTONS: &[&SidebarButton] = &[
     &BUTTON_UNDO,
     &BUTTON_REDO,
+    &BUTTON_RESTRICT,
     &BUTTON_THEOREM,
     &BUTTON_CLEAR,
     &BUTTON_IDENTITY,
@@ -265,6 +274,7 @@ impl Component for App {
                     <nav class="sidebar__tools">
                         {BUTTON_UNDO.view(dispatch, self.state.can_undo())}
                         {BUTTON_REDO.view(dispatch, self.state.can_redo())}
+                        {BUTTON_RESTRICT.view(dispatch, proof.workspace().map_or(false, |ws| !ws.path.is_empty() && ws.path.iter().all(|s| matches!(s, SliceIndex::Interior(Height::Regular(_))))))}
                         {BUTTON_THEOREM.view(dispatch, proof.workspace().map_or(false, |ws| ws.diagram.dimension() > 0))}
                         {BUTTON_ADD_GENERATOR.view(dispatch, true)}
                         {BUTTON_SOURCE.view(dispatch, proof.workspace().is_some())}
