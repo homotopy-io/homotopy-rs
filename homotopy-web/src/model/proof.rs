@@ -698,6 +698,10 @@ impl Proof {
         Ok(())
     }
 
+    pub fn boundary(&self) -> Option<&SelectedBoundary> {
+        self.boundary.as_ref()
+    }
+
     pub fn workspace(&self) -> Option<&Workspace> {
         self.workspace.as_ref()
     }

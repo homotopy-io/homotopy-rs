@@ -9,6 +9,7 @@ mod workspace;
 use crate::model::Drawer;
 use crate::model::{self, history};
 use attach::AttachView;
+use homotopy_core::diagram::globularity;
 use homotopy_core::{
     Boundary,
     Direction::{Backward, Forward},
@@ -279,8 +280,16 @@ impl Component for App {
                         {BUTTON_RESTRICT.view(dispatch, proof.workspace().map_or(false, |ws| !ws.path.is_empty() && ws.path.iter().all(|s| matches!(s, SliceIndex::Interior(Height::Regular(_))))))}
                         {BUTTON_THEOREM.view(dispatch, proof.workspace().map_or(false, |ws| ws.diagram.dimension() > 0))}
                         {BUTTON_ADD_GENERATOR.view(dispatch, true)}
-                        {BUTTON_SOURCE.view(dispatch, proof.workspace().is_some())}
-                        {BUTTON_TARGET.view(dispatch, proof.workspace().is_some())}
+                        {BUTTON_SOURCE.view(dispatch, proof.workspace().is_some()
+                            && proof.boundary().map_or(true, |b|
+                                b.boundary != Boundary::Target || globularity(&b.diagram, &proof.workspace().unwrap().diagram)
+                            )
+                        )}
+                        {BUTTON_TARGET.view(dispatch, proof.workspace().is_some()
+                            && proof.boundary().map_or(true, |b|
+                                b.boundary != Boundary::Source || globularity(&b.diagram, &proof.workspace().unwrap().diagram)
+                            )
+                        )}
                         {BUTTON_IDENTITY.view(dispatch, proof.workspace().is_some())}
                         {BUTTON_CLEAR.view(dispatch, proof.workspace().is_some())}
                     </nav>

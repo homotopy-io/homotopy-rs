@@ -130,6 +130,19 @@ impl Diagram {
     }
 }
 
+pub fn globularity(s: &Diagram, t: &Diagram) -> bool {
+    match (s.dimension(), t.dimension()) {
+        (0, 0) => true,
+        (i, j) => {
+            i == j && {
+                let s: &DiagramN = <&DiagramN>::try_from(s).unwrap();
+                let t: &DiagramN = <&DiagramN>::try_from(t).unwrap();
+                s.source() == t.source() && s.target() == t.target()
+            }
+        }
+    }
+}
+
 #[derive(PartialEq, Eq, Hash, Clone)]
 pub struct DiagramN(HConsed<DiagramInternal>);
 
