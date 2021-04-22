@@ -265,7 +265,9 @@ impl Component for App {
         html! {
             <main class="app">
                 <aside class="sidebar">
-                    <img src="/logo.svg" class="sidebar__logo" />
+                    <a href="https://ncatlab.org/nlab/show/homotopy.io">
+                        <img src="/logo.svg" class="sidebar__logo" />
+                    </a>
                     <nav class="sidebar__nav">
                         {BUTTON_PROJECT.view(dispatch, true)}
                         {BUTTON_SIGNATURE.view(dispatch, true)}
