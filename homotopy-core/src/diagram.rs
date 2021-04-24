@@ -239,31 +239,31 @@ impl DiagramN {
     }
 
     pub(crate) fn rewrite_forward(self, rewrite: &RewriteN) -> Self {
-        let mut diagram: DiagramInternal = (*self.0).clone();
+        let mut cospans = self.cospans().to_vec();
         let mut offset: isize = 0;
 
         for cone in rewrite.cones() {
             let start = (cone.index as isize + offset) as usize;
             let stop = (cone.index as isize + cone.len() as isize + offset) as usize;
-            diagram
-                .cospans
-                .splice(start..stop, vec![cone.target.clone()]);
+            assert_eq!(&cospans[start..stop], &cone.source);
+            cospans.splice(start..stop, vec![cone.target.clone()]);
             offset -= cone.len() as isize - 1;
         }
 
-        Self(DIAGRAM_FACTORY.mk(diagram))
+        Self::new_unsafe(self.source(), cospans)
     }
 
     pub(crate) fn rewrite_backward(self, rewrite: &RewriteN) -> Self {
-        let mut diagram: DiagramInternal = (*self.0).clone();
+        let mut cospans = self.cospans().to_vec();
 
         for cone in rewrite.cones() {
             let start = cone.index;
             let stop = cone.index + 1;
-            diagram.cospans.splice(start..stop, cone.source.clone());
+            assert_eq!(&cospans[start], &cone.target);
+            cospans.splice(start..stop, cone.source.clone());
         }
 
-        Self(DIAGRAM_FACTORY.mk(diagram))
+        Self::new_unsafe(self.source(), cospans)
     }
 
     pub fn cospans(&self) -> &[Cospan] {

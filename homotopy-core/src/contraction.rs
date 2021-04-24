@@ -269,7 +269,7 @@ fn colimit_recursive(
 
         for height in 1..diagram.size() {
             let slice = slices[Regular(height).to_int()].clone();
-            let backward = cospans[height].backward.clone();
+            let backward = cospans[height - 1].backward.clone();
             let forward = cospans[height].forward.clone();
 
             span_slices
@@ -294,6 +294,9 @@ fn colimit_recursive(
             let target_node = Node(*target, forward.singular_image(height));
 
             let span = Span(backward.slice(height), slice, forward.slice(height));
+
+            assert!(delta.contains_node(source_node));
+            assert!(delta.contains_node(target_node));
 
             span_slices
                 .entry((source_node, target_node))
