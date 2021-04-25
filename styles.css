@@ -258,31 +258,39 @@ body, html {
 }
 
 .signature__generator {
-  padding: var(--space-1);
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: stretch;
   cursor: pointer;
 }
 
 .signature__generator-name {
-  padding: var(--space-0);
+  padding: var(--space-1);
   flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.signature__generator-name-input {
+  padding: var(--space-1);
+  border: none;
+  background: transparent;
 }
 
 .signature__generator-dimension {
-  padding: var(--space-0);
+  padding: var(--space-1);
+  display: flex;
+  align-items: center;
 }
 
 .signature__generator-color {
-  padding: var(--space-0);
-  margin: var(--space-0);
-  border-radius: calc(var(--space-0));
-  border: 1px solid var(--generator-color-border);
+  padding-left: var(--space-1);
 }
 
 .signature__generator-edit {
   padding: var(--space-0);
+  display: flex;
+  align-items: center;
 }
 
 @media (pointer: fine) {
@@ -313,23 +321,21 @@ body, html {
 }
 
 .attach__option {
-  padding: var(--space-1);
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: stretch;
   cursor: pointer;
 }
 
 .attach__option-name {
-  padding: var(--space-0);
+  padding: var(--space-1);
   flex: 1;
+  display: flex;
+  align-items: center;
 }
 
 .attach__option-color {
-  padding: var(--space-0);
-  margin: var(--space-0);
-  border-radius: calc(var(--space-0));
-  border: 1px solid var(--generator-color-border);
+  padding-left: var(--space-1);
 }
 
 @media (pointer: fine) {
