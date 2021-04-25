@@ -241,7 +241,7 @@ fn normalize_relative(
 
     let mut degeneracies: HashMap<Height, Rc<Degeneracy>> = HashMap::new();
     let mut factors: HashMap<Factor, Rewrite> = HashMap::new();
-    let mut regular: Vec<Diagram> = Vec::new();
+    let mut regular: Vec<Diagram> = Vec::with_capacity(diagram.size() + 1);
 
     // Short circuit for singular normalization when there is an identity in the sink. We can not
     // perform this optimization that simply in the case of full normalization since we do not

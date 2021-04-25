@@ -221,6 +221,10 @@ fn restrict_diagram(diagram: &Diagram, embedding: &Embedding) -> Diagram {
 
 /// Restrict a rewrite to the preimage over the a subdiagram of the target.
 fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
+    if rewrite.is_identity() {
+        return rewrite.clone();
+    }
+
     match embedding {
         Embedding::Zero => {
             assert_eq!(rewrite.dimension(), 0);

@@ -268,7 +268,7 @@ impl Hash for RewriteInternal {
 }
 
 impl RewriteN {
-    pub(crate) fn new(dimension: usize, cones: Vec<Cone>) -> Self {
+    pub(crate) fn new(dimension: usize, mut cones: Vec<Cone>) -> Self {
         if dimension == 0 {
             panic!("Can not create RewriteN of dimension zero.");
         }
@@ -276,10 +276,7 @@ impl RewriteN {
         // Remove all identity cones. This is not only important to reduce memory consumption, but
         // it allows us the check if the rewrite is an identity by shallowly checking if it has any
         // cones.
-        let cones: Vec<Cone> = cones
-            .into_iter()
-            .filter(|cone| !cone.is_identity())
-            .collect();
+        cones.retain(|cone| !cone.is_identity());
 
         // Precompute the first maximum-dimensional generator in the rewrite's source.
         let max_generator_source = first_max_generator(
