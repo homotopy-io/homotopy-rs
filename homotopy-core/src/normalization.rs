@@ -1,10 +1,10 @@
 use crate::common::{Height, SingularHeight};
 use crate::diagram::{Diagram, DiagramN};
 use crate::rewrite::{Cospan, Rewrite, RewriteN};
-use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::convert::{Into, TryFrom, TryInto};
 use std::rc::Rc;
+use std::{cell::RefCell, cmp::Ordering};
 
 /// A degeneracy map which keeps track of a subset of identity levels in a diagram.
 ///
@@ -109,6 +109,19 @@ struct SinkArrow {
 }
 
 impl SinkArrow {
+    /// Checks whether the sink arrow is an identity under the assumption that
+    /// the degeneracy map is globular.
+    fn is_identity(&self) -> bool {
+        self.degeneracy.is_identity() && self.rewrite.is_identity()
+    }
+
+    /// Converts the sink arrow to a rewrite under the assumption that the
+    /// degeneracy map is globular.
+    fn to_rewrite(&self) -> Rewrite {
+        let degeneracy = self.degeneracy.to_rewrite(&self.source, &self.middle);
+        Rewrite::compose(degeneracy, self.rewrite.clone()).unwrap()
+    }
+
     fn singular_preimage(&self, target_height: SingularHeight) -> Vec<SingularHeight> {
         let mut preimage = Vec::new();
         let rewrite: &RewriteN = (&self.rewrite).try_into().unwrap();
@@ -154,50 +167,40 @@ impl SinkArrow {
     }
 }
 
-trait RegularNormalizer {
-    fn normalize_regular(&mut self, diagram: &Diagram) -> (Diagram, Rc<Degeneracy>);
+#[derive(Debug, Clone)]
+enum RegularNormalizer {
+    Cached(RefCell<HashMap<Diagram, (Diagram, Rc<Degeneracy>)>>),
+    Trivial,
 }
 
-///
-/// Normalizes regular slices and caches the result. This regular normalizer is used by
-/// the `normalize` function which fully normalizes a diagram.
-///
-#[derive(Debug, Clone, Default)]
-struct CachedRegularNormalizer(HashMap<Diagram, (Diagram, Rc<Degeneracy>)>);
+impl RegularNormalizer {
+    fn normalize_regular(&self, diagram: &Diagram) -> (Diagram, Rc<Degeneracy>) {
+        match self {
+            RegularNormalizer::Cached(cache) => {
+                if let Some(cached) = cache.borrow().get(diagram) {
+                    return cached.clone();
+                }
 
-impl RegularNormalizer for CachedRegularNormalizer {
-    fn normalize_regular(&mut self, diagram: &Diagram) -> (Diagram, Rc<Degeneracy>) {
-        if let Some(cached) = self.0.get(diagram) {
-            return cached.clone();
+                let output = normalize_relative(diagram, &[], self);
+                let output = (output.diagram, output.degeneracy);
+                cache.borrow_mut().insert(diagram.clone(), output.clone());
+                output
+            }
+            RegularNormalizer::Trivial => (diagram.clone(), Rc::new(Degeneracy::Identity)),
         }
-
-        let output = normalize_relative(diagram, &[], self);
-        let output = (output.diagram, output.degeneracy);
-        self.0.insert(diagram.clone(), output.clone());
-        output
     }
-}
 
-///
-/// Acts as the identity on regular slices. This is used by `normalize_singular` which normalizes
-/// the singular slices but leaves the regular slices as they were.
-///
-#[derive(Debug, Clone, Default)]
-struct TrivialRegularNormalizer;
-
-impl RegularNormalizer for TrivialRegularNormalizer {
-    fn normalize_regular(&mut self, diagram: &Diagram) -> (Diagram, Rc<Degeneracy>) {
-        (diagram.clone(), Rc::new(Degeneracy::Identity))
+    fn new_cached() -> Self {
+        Self::Cached(Default::default())
     }
 }
 
 pub fn normalize(diagram: &Diagram) -> Diagram {
-    let mut cache = CachedRegularNormalizer::default();
-    normalize_relative(diagram, &[], &mut cache).diagram
+    normalize_relative(diagram, &[], &RegularNormalizer::new_cached()).diagram
 }
 
 pub fn normalize_singular(diagram: &Diagram) -> Rewrite {
-    let output = normalize_relative(diagram, &[], &mut TrivialRegularNormalizer::default());
+    let output = normalize_relative(diagram, &[], &RegularNormalizer::Trivial);
     output.degeneracy.to_rewrite(&output.diagram, diagram)
 }
 
@@ -214,14 +217,11 @@ enum Factor {
     Slice(usize, SingularHeight),
 }
 
-fn normalize_relative<R>(
+fn normalize_relative(
     diagram: &Diagram,
     sink: &[SinkArrow],
-    regular_normalizer: &mut R,
-) -> Output
-where
-    R: RegularNormalizer,
-{
+    regular_normalizer: &RegularNormalizer,
+) -> Output {
     use Height::{Regular, Singular};
 
     // Base case for 0-dimensional diagrams.
@@ -242,6 +242,23 @@ where
     let mut degeneracies: HashMap<Height, Rc<Degeneracy>> = HashMap::new();
     let mut factors: HashMap<Factor, Rewrite> = HashMap::new();
     let mut regular: Vec<Diagram> = Vec::new();
+
+    // Short circuit for singular normalization when there is an identity in the sink. We can not
+    // perform this optimization that simply in the case of full normalization since we do not
+    // track the regular slices of the degeneracies.
+    //
+    // TODO: The regular slice of the degeneracy maps for full normalisation are always the
+    // normalising degeneracies, so we can reconstruct the regular slices of the degeneracy to
+    // perform this optimization.
+    if let RegularNormalizer::Trivial = regular_normalizer {
+        if sink.iter().any(SinkArrow::is_identity) {
+            return Output {
+                factors: sink.iter().map(SinkArrow::to_rewrite).collect(),
+                degeneracy: Rc::new(Degeneracy::Identity),
+                diagram: diagram.clone().into(),
+            };
+        }
+    }
 
     // Normalize the regular levels
     for height in 0..=diagram.size() {
