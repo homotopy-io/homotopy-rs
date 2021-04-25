@@ -1,11 +1,15 @@
-use crate::attach::{attach, BoundaryPath};
 use crate::common::{
     Boundary, DimensionError, Direction, Generator, Height, RegularHeight, SliceIndex,
 };
 use crate::rewrite::{Cospan, Rewrite, RewriteN};
+use crate::{
+    attach::{attach, BoundaryPath},
+    util::first_max_generator,
+};
 use hashconsing::{consign, HConsed, HashConsign};
 use std::convert::{From, Into};
 use std::fmt;
+use std::hash::Hash;
 use std::{collections::HashSet, convert::TryFrom};
 use thiserror::Error;
 
@@ -353,12 +357,10 @@ impl DiagramN {
 
     /// Determine the first maximum-dimensional generator.
     pub fn max_generator(&self) -> Generator {
-        // TODO: This can be done more efficiently by looking at the parts
-        max_first_by_key(
-            self.slices().map(|slice| slice.max_generator()),
-            |generator| generator.dimension,
-        )
-        .unwrap()
+        let source = std::iter::once(self.source().max_generator());
+        let cospans = self.cospans().iter().flat_map(Cospan::max_generator);
+        let generators = source.chain(cospans);
+        first_max_generator(generators, Some(self.dimension())).unwrap()
     }
 
     pub fn identity(&self) -> Self {
@@ -475,10 +477,23 @@ impl TryFrom<Diagram> for Generator {
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Clone)]
+#[derive(Eq, Clone)]
 struct DiagramInternal {
     source: Diagram,
     cospans: Vec<Cospan>,
+}
+
+impl PartialEq for DiagramInternal {
+    fn eq(&self, other: &Self) -> bool {
+        self.source == other.source && self.cospans == other.cospans
+    }
+}
+
+impl Hash for DiagramInternal {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.source.hash(state);
+        self.cospans.hash(state);
+    }
 }
 
 impl fmt::Debug for DiagramInternal {
@@ -581,24 +596,6 @@ pub enum AttachmentError {
 
     #[error("failed to attach incompatible diagrams")]
     Incompatible,
-}
-
-fn max_first_by_key<I, T, R, F>(iterator: I, to_key: F) -> Option<T>
-where
-    I: IntoIterator<Item = T>,
-    R: Ord,
-    F: Fn(&T) -> R,
-{
-    let mut max = None;
-
-    for value in iterator {
-        max = match max {
-            Some(prev) if to_key(&value) <= to_key(&prev) => Some(prev),
-            _ => Some(value),
-        }
-    }
-
-    max
 }
 
 #[cfg(test)]

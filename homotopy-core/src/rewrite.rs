@@ -1,10 +1,14 @@
-use crate::common::{DimensionError, Generator, SingularHeight};
-use crate::diagram::Diagram;
+use crate::{
+    common::{DimensionError, Generator, SingularHeight},
+    Boundary,
+};
+use crate::{diagram::Diagram, util::first_max_generator};
 
 use hashconsing::{consign, HConsed, HashConsign};
 use std::cmp::Ordering;
 use std::convert::{From, Into, TryFrom};
 use std::fmt;
+use std::hash::Hash;
 use std::ops::Range;
 
 use thiserror::Error;
@@ -24,6 +28,17 @@ impl Cospan {
 
     pub fn is_identity(&self) -> bool {
         self.forward.is_identity() && self.backward.is_identity()
+    }
+
+    pub(crate) fn max_generator(&self) -> Option<Generator> {
+        let generators = [
+            self.forward.max_generator(Boundary::Source),
+            self.forward.max_generator(Boundary::Target),
+            self.backward.max_generator(Boundary::Target),
+            self.backward.max_generator(Boundary::Source),
+        ];
+
+        first_max_generator(generators.iter().copied().flatten(), None)
     }
 }
 
@@ -150,6 +165,13 @@ impl Rewrite {
             .into(),
         }
     }
+
+    pub(crate) fn max_generator(&self, boundary: Boundary) -> Option<Generator> {
+        match self {
+            Rewrite::Rewrite0(r) => r.max_generator(boundary),
+            Rewrite::RewriteN(r) => r.max_generator(boundary),
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Hash)]
@@ -166,6 +188,7 @@ impl fmt::Debug for Rewrite0 {
 
 impl Rewrite0 {
     pub fn new(source: Generator, target: Generator) -> Self {
+        assert!(source.dimension <= target.dimension);
         if source == target {
             Self(None)
         } else {
@@ -203,6 +226,13 @@ impl Rewrite0 {
             (None, None) => Ok(Self(None)),
         }
     }
+
+    pub(crate) fn max_generator(&self, boundary: Boundary) -> Option<Generator> {
+        match boundary {
+            Boundary::Source => self.source(),
+            Boundary::Target => self.target(),
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Clone, Hash)]
@@ -216,10 +246,25 @@ impl fmt::Debug for RewriteN {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Hash)]
+#[derive(Eq, Clone)]
 struct RewriteInternal {
     dimension: usize,
     cones: Vec<Cone>,
+    max_generator_source: Option<Generator>,
+    max_generator_target: Option<Generator>,
+}
+
+impl PartialEq for RewriteInternal {
+    fn eq(&self, other: &Self) -> bool {
+        self.dimension == other.dimension && self.cones == other.cones
+    }
+}
+
+impl Hash for RewriteInternal {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.dimension.hash(state);
+        self.cones.hash(state);
+    }
 }
 
 impl RewriteN {
@@ -228,12 +273,35 @@ impl RewriteN {
             panic!("Can not create RewriteN of dimension zero.");
         }
 
-        let cones = cones
+        // Remove all identity cones. This is not only important to reduce memory consumption, but
+        // it allows us the check if the rewrite is an identity by shallowly checking if it has any
+        // cones.
+        let cones: Vec<Cone> = cones
             .into_iter()
             .filter(|cone| !cone.is_identity())
             .collect();
 
-        Self(REWRITE_FACTORY.mk(RewriteInternal { dimension, cones }))
+        // Precompute the first maximum-dimensional generator in the rewrite's source.
+        let max_generator_source = first_max_generator(
+            cones
+                .iter()
+                .flat_map(|cone| &cone.source)
+                .flat_map(Cospan::max_generator),
+            None,
+        );
+
+        // Precompute the first maximum-dimensional generator in the rewrite's target.
+        let max_generator_target = first_max_generator(
+            cones.iter().flat_map(|cone| cone.target.max_generator()),
+            None,
+        );
+
+        Self(REWRITE_FACTORY.mk(RewriteInternal {
+            dimension,
+            cones,
+            max_generator_source,
+            max_generator_target,
+        }))
     }
 
     pub(crate) fn cones(&self) -> &[Cone] {
@@ -491,6 +559,13 @@ impl RewriteN {
 
         let start = (index as isize + offset) as usize;
         start..(start + 1)
+    }
+
+    pub(crate) fn max_generator(&self, boundary: Boundary) -> Option<Generator> {
+        match boundary {
+            Boundary::Source => self.0.max_generator_source,
+            Boundary::Target => self.0.max_generator_target,
+        }
     }
 }
 
