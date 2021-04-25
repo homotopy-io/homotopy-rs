@@ -15,7 +15,7 @@ use homotopy_core::{
     Direction::{Backward, Forward},
     Height, SliceIndex,
 };
-use icon::Icon;
+use icon::{Icon, IconSize};
 use project::ProjectView;
 use signature::SignatureView;
 use signature_stylesheet::SignatureStylesheet;
@@ -43,7 +43,7 @@ impl SidebarButton {
                     onclick={dispatch.reform(move |_| action.clone())}
                     data-tooltip={self.label}
                 >
-                    <Icon name={self.icon} />
+                    <Icon name={self.icon} size={IconSize::Icon24} />
                 </div>
             }
         } else {
@@ -52,7 +52,7 @@ impl SidebarButton {
                     class="sidebar__button"
                     style="visibility: hidden;"
                 >
-                    <Icon name={self.icon} />
+                    <Icon name={self.icon} size={IconSize::Icon24} />
                 </div>
             }
         }

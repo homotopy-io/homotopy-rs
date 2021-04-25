@@ -90,7 +90,7 @@ impl AttachView {
                     class="attach__option-color"
                     style={format!("background: {}", info.color)}
                 />
-                <span class="attach__name-name">
+                <span class="attach__option-name">
                     {&info.name}
                 </span>
             </li>

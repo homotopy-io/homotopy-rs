@@ -1,4 +1,4 @@
-use crate::app::Icon;
+use crate::app::{Icon, IconSize};
 use homotopy_core::{Boundary, Height, SliceIndex};
 use im::Vector;
 use yew::prelude::*;
@@ -51,7 +51,7 @@ pub fn path_control(props: &PathControlProps) -> Html {
                 class="workspace__path-home"
                 onclick={props.ascend_slice.reform(move |_| path_len)}
             >
-                <Icon name="menu" />
+                <Icon name="menu" size={IconSize::Icon24} />
             </span>
             {step_buttons}
         </div>

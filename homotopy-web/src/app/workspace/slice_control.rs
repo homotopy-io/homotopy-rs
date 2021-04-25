@@ -1,4 +1,4 @@
-use crate::app::Icon;
+use crate::app::{Icon, IconSize};
 use homotopy_core::{Boundary, Height, SliceIndex};
 use yew::prelude::*;
 use yew_functional::function_component;
@@ -29,7 +29,7 @@ pub fn slice_control(props: &SliceControlProps) -> Html {
                 style={&style}
                 onclick={props.descend_slice.reform(move |_| index)}
             >
-                <Icon name="arrow_right" />
+                <Icon name="arrow_right" size={IconSize::Icon24} />
             </div>
         }
     };

@@ -1,4 +1,4 @@
-use crate::app::Icon;
+use crate::app::{Icon, IconSize};
 use crate::model::proof::{Action, GeneratorEdit, GeneratorInfo, Signature};
 use homotopy_core::Generator;
 use im::HashMap;
@@ -120,7 +120,10 @@ impl SignatureView {
                     class="signature__generator-color"
                     style={format!("background: {}", info.color)}
                 />
-                <input type="text" value={
+                <input
+                    type="text"
+                    class="signature__generator-name-input"
+                    value={
                         self.renames.get(&generator).map_or(&info.name, |name| name)
                     }
                     oninput=self.link.callback(move |e: InputData| {
@@ -137,7 +140,7 @@ impl SignatureView {
                     class="signature__generator-edit"
                     onclick=dispatch.reform(move |_| Action::RemoveGenerator(generator))
                 >
-                    <Icon name={"delete"} />
+                    <Icon name={"delete"} size={IconSize::Icon18} />
                 </span>
                 <span
                     class="signature__generator-edit"
@@ -145,7 +148,7 @@ impl SignatureView {
                         Message::Done(generator)
                     })
                 >
-                    <Icon name={"done"} />
+                    <Icon name={"done"} size={IconSize::Icon18} />
                 </span>
             </li>
         }
@@ -175,7 +178,7 @@ impl SignatureView {
                     class="signature__generator-edit"
                     onclick=self.link.callback(move |_| Message::Edit(generator))
                 >
-                    <Icon name={"edit"} />
+                    <Icon name={"edit"} size={IconSize::Icon18} />
                 </span>
             </li>
         }
