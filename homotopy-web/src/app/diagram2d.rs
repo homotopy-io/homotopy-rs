@@ -572,15 +572,15 @@ fn drag_to_homotopy(
     let abs_radians = angle.radians.abs();
     let horizontal = !(PI / 4.0..(3.0 * PI) / 4.0).contains(&abs_radians);
 
-    let point = match simplex {
-        Simplex::Surface([p0, _, _]) => p0,
-        Simplex::Wire([_, p1 @ (_, Boundary(_))]) => p1,
-        Simplex::Wire([p0, _]) => p0,
-        Simplex::Point([p0]) => p0,
+    let (point, boundary) = match simplex {
+        Simplex::Surface([p0, _, _]) => (p0, false),
+        Simplex::Wire([_, p1 @ (_, Boundary(_))]) => (p1, true),
+        Simplex::Wire([p0, _]) => (p0, false),
+        Simplex::Point([p0]) => (p0, false),
     };
 
     // Handle horizontal and vertical drags
-    let (prefix, y, x, diagram) = if horizontal {
+    let (prefix, y, x, diagram) = if horizontal || boundary {
         let depth = match point.0 {
             Interior(Singular(_)) => Height::Singular(depths.node_depth([point.1, point.0])?),
             _ => return None,
@@ -620,11 +620,11 @@ fn drag_to_homotopy(
         }
     };
 
-    let direction = if horizontal {
-        if (0.5 * PI..1.5 * PI).contains(&angle.radians) {
-            Direction::Backward
-        } else {
+    let direction = if horizontal || boundary {
+        if (-0.5 * PI..0.5 * PI).contains(&angle.radians) {
             Direction::Forward
+        } else {
+            Direction::Backward
         }
     } else if angle.radians <= 0.0 {
         Direction::Forward
@@ -642,7 +642,7 @@ fn drag_to_homotopy(
             direction,
         }))
     } else {
-        let bias = if horizontal || abs_radians >= PI / 2.0 {
+        let bias = if horizontal || boundary || abs_radians >= PI / 2.0 {
             Bias::Lower
         } else {
             Bias::Higher
