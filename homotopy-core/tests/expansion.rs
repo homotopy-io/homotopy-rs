@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-
+use homotopy_core::signature::SignatureBuilder;
 use homotopy_core::typecheck::{typecheck, Mode};
 use homotopy_core::*;
 
@@ -8,22 +7,17 @@ use homotopy_core::*;
 fn matchsticks() {
     use Height::*;
 
-    let x = Diagram::from(Generator::new(0, 0));
-    let f = DiagramN::new(Generator::new(1, 1), x.clone(), x.clone()).unwrap();
-    let up = DiagramN::new(Generator::new(2, 2), f.clone(), x.identity()).unwrap();
-    let down = DiagramN::new(Generator::new(3, 2), x.identity(), f.clone()).unwrap();
+    let mut sig = SignatureBuilder::new();
 
-    let mut signature = HashMap::<Generator, Diagram>::new();
-    signature.insert(x.max_generator(), x);
-    signature.insert(f.max_generator(), f.into());
-    signature.insert(up.max_generator(), up.clone().into());
-    signature.insert(down.max_generator(), down.clone().into());
-
+    let x = sig.add_zero();
+    let f = sig.add(x.clone(), x.clone()).unwrap();
+    let up = sig.add(f.clone(), x.identity()).unwrap();
+    let down = sig.add(x.identity(), f).unwrap();
     let diagram = up.attach(&down, Boundary::Target, &[]).unwrap();
 
     let contracted = diagram
         .identity()
-        .contract(&Boundary::Target.into(), &[], 0, Some(Bias::Lower))
+        .contract(&Boundary::Target.into(), &[], 0, Some(Bias::Lower), &sig)
         .unwrap()
         .target();
 
@@ -33,13 +27,9 @@ fn matchsticks() {
             &Boundary::Target.into(),
             &[Singular(0), Singular(1)],
             Direction::Forward,
+            &sig,
         )
         .unwrap();
 
-    typecheck(
-        &expanded.into(),
-        |generator| signature.get(&generator),
-        Mode::Deep,
-    )
-    .unwrap();
+    typecheck(&expanded.into(), &sig, Mode::Deep).unwrap();
 }

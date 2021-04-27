@@ -1,5 +1,4 @@
-use crate::diagram::{Diagram, DiagramN};
-use crate::rewrite::{Cone, Cospan, Rewrite, RewriteN};
+use crate::typecheck::typecheck_cospan;
 use crate::{
     attach::{attach, BoundaryPath},
     factorization::factorize,
@@ -7,6 +6,14 @@ use crate::{
 use crate::{
     common::{Boundary, Direction, Height, RegularHeight, SingularHeight},
     normalization::normalize_singular,
+};
+use crate::{
+    diagram::{Diagram, DiagramN},
+    typecheck::TypeError,
+};
+use crate::{
+    rewrite::{Cone, Cospan, Rewrite, RewriteN},
+    signature::Signature,
 };
 use std::cmp::Ordering;
 use std::convert::{Into, TryInto};
@@ -28,19 +35,26 @@ pub enum ExpansionError {
 
     #[error("smoothing is not yet implemented")]
     SmoothingNotImplemented,
+
+    #[error("expansion is ill-typed")]
+    IllTyped(#[from] TypeError),
 }
 
 impl DiagramN {
-    pub fn expand(
+    pub fn expand<S>(
         &self,
         boundary_path: &BoundaryPath,
         interior_path: &[Height],
         direction: Direction,
-    ) -> Result<Self, ExpansionError> {
+        signature: &S,
+    ) -> Result<Self, ExpansionError>
+    where
+        S: Signature,
+    {
         attach(self, boundary_path, |slice| {
             let expand: Rewrite = expand_in_path(&slice, interior_path, direction)?;
             let identity = Rewrite::identity(slice.dimension());
-            Ok(vec![match boundary_path.boundary() {
+            let cospan = match boundary_path.boundary() {
                 Boundary::Source => Cospan {
                     forward: expand,
                     backward: identity,
@@ -49,7 +63,11 @@ impl DiagramN {
                     forward: identity,
                     backward: expand,
                 },
-            }])
+            };
+
+            typecheck_cospan(slice, cospan.clone(), boundary_path.boundary(), signature)?;
+
+            Ok(vec![cospan])
         })
     }
 }

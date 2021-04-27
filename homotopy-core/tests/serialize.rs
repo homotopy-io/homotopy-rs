@@ -1,13 +1,13 @@
+use homotopy_core::serialize::*;
 use homotopy_core::*;
-use homotopy_core::{serialize::*, typecheck::Signature};
 use insta::*;
 
 mod common;
 
 #[test]
 fn serialization() {
-    let empty_ser: Serialization = Default::default();
-    let empty_sig: Signature = Default::default();
+    let empty_ser = Serialization::default();
+    let empty_sig = Signature::default();
     assert_eq!(empty_ser, empty_sig.into());
 
     // test for stability

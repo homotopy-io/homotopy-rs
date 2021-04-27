@@ -56,6 +56,7 @@ pub mod normalization;
 pub mod projection;
 pub mod rewrite;
 pub mod serialize;
+pub mod signature;
 pub mod typecheck;
 mod util;
 

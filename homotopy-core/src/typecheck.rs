@@ -1,7 +1,13 @@
-use crate::common::{Generator, Height, SingularHeight};
-use crate::diagram::{Diagram, DiagramN};
 use crate::normalization::normalize;
 use crate::rewrite::{Cone, Cospan, Rewrite, RewriteN};
+use crate::{
+    common::{Generator, Height, SingularHeight},
+    Boundary,
+};
+use crate::{
+    diagram::{Diagram, DiagramN},
+    signature::Signature,
+};
 use std::collections::HashMap;
 use std::convert::Into;
 use std::convert::TryInto;
@@ -9,8 +15,6 @@ use std::rc::Rc;
 use thiserror::Error;
 
 type Point = Vec<SingularHeight>;
-
-pub type Signature = HashMap<Generator, Diagram>;
 
 #[derive(Debug, Error)]
 pub enum TypeError {
@@ -27,9 +31,9 @@ pub enum Mode {
     Shallow,
 }
 
-pub fn typecheck<'a, S>(diagram: &Diagram, signature: S, mode: Mode) -> Result<(), TypeError>
+pub fn typecheck<S>(diagram: &Diagram, signature: &S, mode: Mode) -> Result<(), TypeError>
 where
-    S: Fn(Generator) -> Option<&'a Diagram> + Copy,
+    S: Signature,
 {
     let diagram = match diagram {
         Diagram::Diagram0(g) => {
@@ -62,8 +66,9 @@ where
             let forward = restrict_rewrite(&cospan.forward, &target_embedding);
             let backward = restrict_rewrite(&cospan.backward, &target_embedding);
             let restricted = DiagramN::new_unsafe(source, vec![Cospan { forward, backward }]);
-            let signature_diagram =
-                signature(generator).ok_or(TypeError::UnknownGenerator(generator))?;
+            let signature_diagram = signature
+                .generator(generator)
+                .ok_or(TypeError::UnknownGenerator(generator))?;
 
             let restricted = normalize(&restricted.into());
             let mut signature_diagram = normalize(&signature_diagram);
@@ -79,6 +84,29 @@ where
     }
 
     Ok(())
+}
+
+pub fn typecheck_cospan<S>(
+    slice: Diagram,
+    cospan: Cospan,
+    boundary: Boundary,
+    signature: &S,
+) -> Result<(), TypeError>
+where
+    S: Signature,
+{
+    let source = match boundary {
+        Boundary::Source => slice
+            .rewrite_forward(&cospan.backward)
+            .rewrite_backward(&cospan.forward),
+        Boundary::Target => slice,
+    };
+
+    typecheck(
+        &DiagramN::new_unsafe(source, vec![cospan]).into(),
+        signature,
+        Mode::Shallow,
+    )
 }
 
 fn target_points(rewrites: &[Rewrite]) -> Vec<(Point, Generator)> {
@@ -287,35 +315,22 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
 
 #[cfg(test)]
 mod test {
-    use crate::Boundary;
+    use crate::signature::SignatureBuilder;
 
     use super::*;
 
     #[test]
     fn associativity() {
-        let x = Generator::new(0, 0);
-        let f = Generator::new(1, 1);
-        let m = Generator::new(2, 2);
-        let a = Generator::new(3, 3);
+        let mut sig = SignatureBuilder::new();
 
-        let f_d = DiagramN::new(f, x, x).unwrap();
-        let ff_d = f_d.attach(&f_d, Boundary::Target, &[]).unwrap();
-        let m_d = DiagramN::new(m, ff_d, f_d.clone()).unwrap();
-        let left_d = m_d.attach(&m_d, Boundary::Source, &[0]).unwrap();
-        let right_d = m_d.attach(&m_d, Boundary::Source, &[1]).unwrap();
-        let a_d = DiagramN::new(a, left_d, right_d).unwrap();
+        let x = sig.add_zero();
+        let f = sig.add(x.clone(), x.clone()).unwrap();
+        let ff = f.attach(&f, Boundary::Target, &[]).unwrap();
+        let m = sig.add(ff, f.clone()).unwrap();
+        let left = m.attach(&m, Boundary::Source, &[0]).unwrap();
+        let right = m.attach(&m, Boundary::Source, &[1]).unwrap();
+        let a = sig.add(left, right).unwrap();
 
-        let mut signature = HashMap::<Generator, Diagram>::new();
-        signature.insert(x, x.into());
-        signature.insert(f, f_d.into());
-        signature.insert(m, m_d.into());
-        signature.insert(a, a_d.clone().into());
-
-        typecheck(
-            &a_d.into(),
-            |generator| signature.get(&generator),
-            Mode::Deep,
-        )
-        .unwrap();
+        typecheck(&a.into(), &sig, Mode::Deep).unwrap();
     }
 }

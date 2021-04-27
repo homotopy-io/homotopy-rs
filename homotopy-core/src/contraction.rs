@@ -1,14 +1,24 @@
-use crate::attach::{attach, BoundaryPath};
-use crate::common::{Boundary, Height, SingularHeight};
-use crate::diagram::{Diagram, DiagramN};
 use crate::normalization;
 use crate::rewrite::{Cone, Cospan, Rewrite, Rewrite0, RewriteN};
+use crate::{
+    attach::{attach, BoundaryPath},
+    typecheck::TypeError,
+};
+use crate::{
+    common::{Boundary, Height, SingularHeight},
+    typecheck::typecheck_cospan,
+};
+use crate::{
+    diagram::{Diagram, DiagramN},
+    signature::Signature,
+};
 use petgraph::algo::tarjan_scc;
 use petgraph::graphmap::{DiGraphMap, GraphMap};
 use petgraph::unionfind::UnionFind;
 use std::collections::HashMap;
 use std::convert::{Into, TryFrom, TryInto};
 use std::hash::Hash;
+use thiserror::Error;
 
 #[derive(Debug, Clone)]
 struct Span(Rewrite, Diagram, Rewrite);
@@ -36,26 +46,39 @@ impl Bias {
     }
 }
 
+#[derive(Debug, Error)]
+pub enum ContractionError {
+    #[error("contraction invalid")]
+    Invalid,
+    #[error("contraction ambiguous")]
+    Ambiguous,
+    #[error("contraction fails to typecheck")]
+    IllTyped(#[from] TypeError),
+}
+
 impl DiagramN {
-    pub fn contract(
+    pub fn contract<S>(
         &self,
         boundary_path: &BoundaryPath,
         interior_path: &[Height],
         height: SingularHeight,
         bias: Option<Bias>,
-    ) -> Option<Self> {
+        signature: &S,
+    ) -> Result<Self, ContractionError>
+    where
+        S: Signature,
+    {
         if boundary_path.1 >= self.dimension() {
-            return None;
+            return Err(ContractionError::Invalid);
         }
 
-        let result: Result<_, ()> = attach(self, boundary_path, |slice| {
-            #[allow(clippy::map_err_ignore)] // TODO when not using Result<_, ()>
-            let slice = slice.try_into().map_err(|_| ())?;
-            let contract = contract_in_path(&slice, interior_path, height, bias).ok_or(())?;
-            let singular = slice.rewrite_forward(&contract);
+        attach(self, boundary_path, |slice| {
+            let slice = slice.try_into().map_err(|_d| ContractionError::Invalid)?;
+            let contract = contract_in_path(&slice, interior_path, height, bias)?;
+            let singular = slice.clone().rewrite_forward(&contract);
             let normalize = normalization::normalize_singular(&singular.into());
 
-            Ok(vec![match boundary_path.0 {
+            let cospan = match boundary_path.boundary() {
                 Boundary::Source => Cospan {
                     forward: normalize,
                     backward: contract.into(),
@@ -64,10 +87,17 @@ impl DiagramN {
                     forward: contract.into(),
                     backward: normalize,
                 },
-            }])
-        });
+            };
 
-        result.ok()
+            typecheck_cospan(
+                slice.into(),
+                cospan.clone(),
+                boundary_path.boundary(),
+                signature,
+            )?;
+
+            Ok(vec![cospan])
+        })
     }
 }
 
@@ -75,16 +105,22 @@ fn contract_base(
     diagram: &DiagramN,
     height: SingularHeight,
     bias: Option<Bias>,
-) -> Option<RewriteN> {
+) -> Result<RewriteN, ContractionError> {
     let slices: Vec<_> = diagram.slices().collect();
     let cospans = diagram.cospans();
 
-    let cospan0 = cospans.get(height)?;
-    let cospan1 = cospans.get(height + 1)?;
+    let cospan0 = cospans.get(height).ok_or(ContractionError::Invalid)?;
+    let cospan1 = cospans.get(height + 1).ok_or(ContractionError::Invalid)?;
 
-    let singular0 = slices.get(height * 2 + 1)?;
-    let regular = slices.get(height * 2 + 2)?;
-    let singular1 = slices.get(height * 2 + 3)?;
+    let singular0 = slices
+        .get(height * 2 + 1)
+        .ok_or(ContractionError::Invalid)?;
+    let regular = slices
+        .get(height * 2 + 2)
+        .ok_or(ContractionError::Invalid)?;
+    let singular1 = slices
+        .get(height * 2 + 3)
+        .ok_or(ContractionError::Invalid)?;
 
     let span = Span(
         cospan0.backward.clone(),
@@ -116,7 +152,7 @@ fn contract_base(
         }],
     );
 
-    Some(rewrite)
+    Ok(rewrite)
 }
 
 fn contract_in_path(
@@ -124,14 +160,19 @@ fn contract_in_path(
     path: &[Height],
     height: SingularHeight,
     bias: Option<Bias>,
-) -> Option<RewriteN> {
+) -> Result<RewriteN, ContractionError> {
     match path.split_first() {
         None => contract_base(diagram, height, bias),
         Some((step, rest)) => {
-            let slice: DiagramN = diagram.slice(*step)?.try_into().ok()?;
+            let slice: DiagramN = diagram
+                .slice(*step)
+                .ok_or(ContractionError::Invalid)?
+                .try_into()
+                .ok()
+                .ok_or(ContractionError::Invalid)?;
             let rewrite = contract_in_path(&slice, rest, height, bias)?;
             match step {
-                Height::Regular(i) => Some(RewriteN::new(
+                Height::Regular(i) => Ok(RewriteN::new(
                     diagram.dimension(),
                     vec![Cone {
                         index: *i,
@@ -145,7 +186,7 @@ fn contract_in_path(
                 )),
                 Height::Singular(i) => {
                     let source_cospan = &diagram.cospans()[*i];
-                    Some(RewriteN::new(
+                    Ok(RewriteN::new(
                         diagram.dimension(),
                         vec![Cone {
                             index: *i,
@@ -174,7 +215,7 @@ fn contract_in_path(
 fn colimit(
     diagrams: &[(Diagram, BiasValue)],
     spans: &[(usize, Span, usize)],
-) -> Option<Vec<Rewrite>> {
+) -> Result<Vec<Rewrite>, ContractionError> {
     let dimension = diagrams[0].0.dimension();
 
     for diagram in diagrams {
@@ -202,7 +243,7 @@ fn colimit(
 fn colimit_base(
     diagrams: &[(Diagram, BiasValue)],
     spans: &[(usize, Span, usize)],
-) -> Option<Vec<Rewrite>> {
+) -> Result<Vec<Rewrite>, ContractionError> {
     let mut union_find = UnionFind::new(diagrams.len());
 
     for (source, Span(_, diagram, _), target) in spans {
@@ -231,23 +272,21 @@ fn colimit_base(
     components.dedup();
 
     if components.len() == 1 {
-        Some(
-            diagrams
-                .iter()
-                .map(|(diagram, _)| {
-                    Rewrite0::new(diagram.to_generator().unwrap(), max_generator).into()
-                })
-                .collect(),
-        )
+        Ok(diagrams
+            .iter()
+            .map(|(diagram, _)| {
+                Rewrite0::new(diagram.to_generator().unwrap(), max_generator).into()
+            })
+            .collect())
     } else {
-        None
+        Err(ContractionError::Invalid)
     }
 }
 
 fn colimit_recursive(
     diagrams: &[(Diagram, BiasValue)],
     spans: &[(usize, Span, usize)],
-) -> Option<Vec<Rewrite>> {
+) -> Result<Vec<Rewrite>, ContractionError> {
     use Height::{Regular, Singular};
     let mut span_slices: HashMap<(Node, Node), Vec<Span>> = HashMap::new();
     let mut diagram_slices: HashMap<Node, Diagram> = HashMap::new();
@@ -380,7 +419,7 @@ fn colimit_recursive(
     };
 
     if !is_strictly_increasing(&components_sorted, |scc| scc_to_priority[scc]) {
-        return None;
+        return Err(ContractionError::Ambiguous);
     }
 
     let component_to_index: HashMap<Component, usize> = components_sorted
@@ -473,7 +512,7 @@ fn colimit_recursive(
         )));
     }
 
-    Some(rewrites)
+    Ok(rewrites)
 }
 
 fn is_strictly_increasing<T, K, F>(slice: &[T], key: F) -> bool

@@ -2,10 +2,7 @@ use highway::{HighwayHash, HighwayHasher};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, hash::Hash, marker::PhantomData};
 
-use crate::{
-    rewrite::Cone, typecheck::Signature, Cospan, Diagram, DiagramN, Generator, Rewrite, Rewrite0,
-    RewriteN,
-};
+use crate::{rewrite::Cone, Cospan, Diagram, DiagramN, Generator, Rewrite, Rewrite0, RewriteN};
 
 // Phantom key type
 #[derive(Debug, PartialEq, Eq, Hash, Copy, Clone, Serialize, Deserialize)]
@@ -30,6 +27,8 @@ impl<K, H: Hash> Keyed<Key<K>> for H {
         ((u128::from(hash[1]) + u128::from(hash[0])) << 64).into()
     }
 }
+
+pub type Signature = HashMap<Generator, Diagram>;
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct Serialization {
