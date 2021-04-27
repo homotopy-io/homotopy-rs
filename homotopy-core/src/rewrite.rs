@@ -1,5 +1,6 @@
 use crate::{
     common::{DimensionError, Generator, SingularHeight},
+    util::CachedCell,
     Boundary,
 };
 use crate::{diagram::Diagram, util::first_max_generator};
@@ -250,12 +251,12 @@ impl fmt::Debug for RewriteN {
     }
 }
 
-#[derive(Eq, Clone)]
+#[derive(Clone)]
 struct RewriteInternal {
     dimension: usize,
     cones: Vec<Cone>,
-    max_generator_source: Option<Generator>,
-    max_generator_target: Option<Generator>,
+    max_generator_source: CachedCell<Option<Generator>>,
+    max_generator_target: CachedCell<Option<Generator>>,
 }
 
 impl PartialEq for RewriteInternal {
@@ -263,6 +264,8 @@ impl PartialEq for RewriteInternal {
         self.dimension == other.dimension && self.cones == other.cones
     }
 }
+
+impl Eq for RewriteInternal {}
 
 impl Hash for RewriteInternal {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
@@ -282,27 +285,12 @@ impl RewriteN {
         // cones.
         cones.retain(|cone| !cone.is_identity());
 
-        // Precompute the first maximum-dimensional generator in the rewrite's source.
-        let max_generator_source = first_max_generator(
-            cones
-                .iter()
-                .flat_map(|cone| &cone.source)
-                .flat_map(Cospan::max_generator),
-            None,
-        );
-
-        // Precompute the first maximum-dimensional generator in the rewrite's target.
-        let max_generator_target = first_max_generator(
-            cones.iter().flat_map(|cone| cone.target.max_generator()),
-            None,
-        );
-
         Self(REWRITE_FACTORY.with(|factory| {
             factory.borrow_mut().mk(RewriteInternal {
                 dimension,
                 cones,
-                max_generator_source,
-                max_generator_target,
+                max_generator_source: CachedCell::new(),
+                max_generator_target: CachedCell::new(),
             })
         }))
     }
@@ -566,8 +554,23 @@ impl RewriteN {
 
     pub(crate) fn max_generator(&self, boundary: Boundary) -> Option<Generator> {
         match boundary {
-            Boundary::Source => self.0.max_generator_source,
-            Boundary::Target => self.0.max_generator_target,
+            Boundary::Source => self.0.max_generator_source.compute(|| {
+                first_max_generator(
+                    self.cones()
+                        .iter()
+                        .flat_map(|cone| &cone.source)
+                        .flat_map(Cospan::max_generator),
+                    None,
+                )
+            }),
+            Boundary::Target => self.0.max_generator_target.compute(|| {
+                first_max_generator(
+                    self.cones()
+                        .iter()
+                        .flat_map(|cone| cone.target.max_generator()),
+                    None,
+                )
+            }),
         }
     }
 }
