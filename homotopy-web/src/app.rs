@@ -9,7 +9,7 @@ mod workspace;
 use crate::model::Drawer;
 use crate::model::{self, history};
 use attach::AttachView;
-use homotopy_core::diagram::globularity;
+use homotopy_core::{diagram::globularity, Direction};
 use homotopy_core::{
     Boundary,
     Direction::{Backward, Forward},
@@ -346,22 +346,30 @@ impl App {
     }
 
     fn install_keyboard_shortcuts(dispatch: Callback<model::Action>) {
-        let onkeypress =
+        let onkeyup =
             wasm_bindgen::closure::Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
-                let key: char = event.key().chars().next().unwrap();
-                let key = key.to_ascii_lowercase();
-                let button = BUTTONS.iter().find(|button| button.shortcut == Some(key));
+                let key = event.key().to_ascii_lowercase();
+                let button = BUTTONS.iter().find(|button| match button.shortcut {
+                    Some(shortcut) => shortcut.to_string() == key,
+                    None => false,
+                });
 
                 if let Some(button) = button {
                     dispatch.emit(button.action.clone());
+                } else if key == "arrowup" {
+                    dispatch.emit(model::proof::Action::SwitchSlice(Direction::Backward).into());
+                } else if key == "arrowdown" {
+                    dispatch.emit(model::proof::Action::SwitchSlice(Direction::Forward).into());
+                } else if key == "arrowleft" {
+                    dispatch.emit(model::proof::Action::AscendSlice(1).into());
                 }
             }) as Box<dyn FnMut(_)>);
 
         web_sys::window()
             .unwrap()
-            .add_event_listener_with_callback("keypress", onkeypress.as_ref().unchecked_ref())
+            .add_event_listener_with_callback("keyup", onkeyup.as_ref().unchecked_ref())
             .unwrap();
 
-        onkeypress.forget();
+        onkeyup.forget();
     }
 }

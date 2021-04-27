@@ -13,7 +13,7 @@ use homotopy_core::{Diagram, DiagramN};
 
 use path_control::PathControl;
 use slice_control::SliceControl;
-use std::convert::{Into, TryFrom, TryInto};
+use std::convert::{Into, TryInto};
 use yew::prelude::*;
 
 // TODO: Workspace rerendering when panzoom is changed needs to be smoother.
@@ -111,11 +111,7 @@ impl Component for WorkspaceView {
 impl WorkspaceView {
     fn visible_diagram(&self) -> Diagram {
         // TODO: This should not be recomputed every view
-        let mut diagram = self.props.workspace.diagram.clone();
-        for index in self.props.workspace.path.iter() {
-            diagram = DiagramN::try_from(diagram).unwrap().slice(*index).unwrap();
-        }
-        diagram
+        self.props.workspace.visible_diagram()
     }
 
     fn view_diagram(&self) -> Html {

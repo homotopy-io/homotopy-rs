@@ -66,6 +66,19 @@ impl Workspace {
     pub fn visible_dimension(&self) -> usize {
         self.diagram.dimension() - self.path.len()
     }
+
+    pub fn visible_diagram(&self) -> Diagram {
+        let mut diagram = self.diagram.clone();
+
+        for index in &self.path {
+            match diagram {
+                Diagram::Diagram0(_) => return diagram,
+                Diagram::DiagramN(d) => diagram = d.slice(*index).unwrap(),
+            }
+        }
+
+        diagram
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -122,6 +135,9 @@ pub enum Action {
     /// diagram in the workspace, nothing happens. If the slice does not exist, an error will be
     /// shown.
     DescendSlice(SliceIndex),
+
+    /// Switch between adjacent slices in the currently selected diagram in the workspace.
+    SwitchSlice(Direction),
 
     SelectPoints(Vec<Vec<SliceIndex>>),
 
@@ -188,6 +204,10 @@ impl Proof {
                 Ok(())
             }
             Action::DescendSlice(slice) => self.descend_slice(*slice),
+            Action::SwitchSlice(direction) => {
+                self.switch_slice(*direction);
+                Ok(())
+            }
             Action::SelectPoints(points) => {
                 self.select_points(points);
                 Ok(())
@@ -420,6 +440,24 @@ impl Proof {
         }
 
         Ok(())
+    }
+
+    /// Handler for [Action::SwitchSlice].
+    fn switch_slice(&mut self, direction: Direction) {
+        if let Some(workspace) = &mut self.workspace {
+            let slice = match workspace.path.pop_back() {
+                None => return,
+                Some(slice) => slice,
+            };
+
+            let diagram = match workspace.visible_diagram() {
+                Diagram::Diagram0(_) => unreachable!(),
+                Diagram::DiagramN(d) => d,
+            };
+
+            let next_slice = slice.step(diagram.size(), direction).unwrap_or(slice);
+            workspace.path.push_back(next_slice);
+        }
     }
 
     /// Handler for [Action::SelectPoint].

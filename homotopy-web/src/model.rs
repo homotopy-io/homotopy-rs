@@ -18,6 +18,24 @@ pub enum Action {
     Serialize(serialize::Serialize),
 }
 
+impl From<proof::Action> for Action {
+    fn from(action: proof::Action) -> Self {
+        Self::Proof(action)
+    }
+}
+
+impl From<history::Action> for Action {
+    fn from(action: history::Action) -> Self {
+        Self::History(action)
+    }
+}
+
+impl From<serialize::Serialize> for Action {
+    fn from(action: serialize::Serialize) -> Self {
+        Self::Serialize(action)
+    }
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct State {
     history: History,

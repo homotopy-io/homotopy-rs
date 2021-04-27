@@ -177,6 +177,13 @@ impl SliceIndex {
             Self::Boundary(Boundary::Target) => Some(Regular(size).into()),
         }
     }
+
+    pub fn step(self, size: usize, direction: Direction) -> Option<Self> {
+        match direction {
+            Direction::Forward => self.next(size),
+            Direction::Backward => self.prev(size),
+        }
+    }
 }
 
 /// ```
