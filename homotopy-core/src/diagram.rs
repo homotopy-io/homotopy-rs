@@ -6,10 +6,13 @@ use crate::{
     attach::{attach, BoundaryPath},
     util::first_max_generator,
 };
-use hashconsing::{consign, HConsed, HashConsign};
-use std::convert::{From, Into};
+use hashconsing::{HConsed, HConsign, HashConsign};
 use std::fmt;
 use std::hash::Hash;
+use std::{
+    cell::RefCell,
+    convert::{From, Into},
+};
 use std::{collections::HashSet, convert::TryFrom};
 use thiserror::Error;
 
@@ -150,7 +153,9 @@ pub fn globularity(s: &Diagram, t: &Diagram) -> bool {
 #[derive(PartialEq, Eq, Hash, Clone)]
 pub struct DiagramN(HConsed<DiagramInternal>);
 
-consign! { let DIAGRAM_FACTORY = consign(37) for DiagramInternal; }
+thread_local! {
+    static DIAGRAM_FACTORY: RefCell<HConsign<DiagramInternal>> = RefCell::new(HConsign::with_capacity(37));
+}
 
 impl DiagramN {
     pub fn new<S, T>(generator: Generator, source: S, target: T) -> Result<Self, NewDiagramError>
@@ -181,7 +186,10 @@ impl DiagramN {
     }
 
     pub(crate) fn new_unsafe(source: Diagram, cospans: Vec<Cospan>) -> Self {
-        Self(DIAGRAM_FACTORY.mk(DiagramInternal { source, cospans }))
+        Self(
+            DIAGRAM_FACTORY
+                .with(|factory| factory.borrow_mut().mk(DiagramInternal { source, cospans })),
+        )
     }
 
     /// The dimension of the diagram, which is at least one.

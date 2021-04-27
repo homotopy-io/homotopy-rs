@@ -4,12 +4,12 @@ use crate::{
 };
 use crate::{diagram::Diagram, util::first_max_generator};
 
-use hashconsing::{consign, HConsed, HashConsign};
-use std::cmp::Ordering;
+use hashconsing::{HConsed, HConsign, HashConsign};
 use std::convert::{From, Into, TryFrom};
 use std::fmt;
 use std::hash::Hash;
 use std::ops::Range;
+use std::{cell::RefCell, cmp::Ordering};
 
 use thiserror::Error;
 
@@ -238,7 +238,11 @@ impl Rewrite0 {
 #[derive(PartialEq, Eq, Clone, Hash)]
 pub struct RewriteN(HConsed<RewriteInternal>);
 
-consign! { let REWRITE_FACTORY = consign(37) for RewriteInternal; }
+// consign! { let REWRITE_FACTORY = consign(37) for RewriteInternal; }
+
+thread_local! {
+    static REWRITE_FACTORY: RefCell<HConsign<RewriteInternal>> = RefCell::new(HConsign::with_capacity(37));
+}
 
 impl fmt::Debug for RewriteN {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -293,11 +297,13 @@ impl RewriteN {
             None,
         );
 
-        Self(REWRITE_FACTORY.mk(RewriteInternal {
-            dimension,
-            cones,
-            max_generator_source,
-            max_generator_target,
+        Self(REWRITE_FACTORY.with(|factory| {
+            factory.borrow_mut().mk(RewriteInternal {
+                dimension,
+                cones,
+                max_generator_source,
+                max_generator_target,
+            })
         }))
     }
 
