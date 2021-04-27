@@ -6,11 +6,15 @@ use crate::{
 use crate::{diagram::Diagram, util::first_max_generator};
 
 use hashconsing::{HConsed, HConsign, HashConsign};
-use std::convert::{From, Into, TryFrom};
+use rustc_hash::FxHasher;
 use std::fmt;
 use std::hash::Hash;
 use std::ops::Range;
 use std::{cell::RefCell, cmp::Ordering};
+use std::{
+    convert::{From, Into, TryFrom},
+    hash::BuildHasherDefault,
+};
 
 use thiserror::Error;
 
@@ -241,8 +245,10 @@ pub struct RewriteN(HConsed<RewriteInternal>);
 
 // consign! { let REWRITE_FACTORY = consign(37) for RewriteInternal; }
 
+type Hasher = BuildHasherDefault<FxHasher>;
+
 thread_local! {
-    static REWRITE_FACTORY: RefCell<HConsign<RewriteInternal>> = RefCell::new(HConsign::with_capacity(37));
+    static REWRITE_FACTORY: RefCell<HConsign<RewriteInternal, Hasher>> = RefCell::new(HConsign::with_capacity_and_hasher(37, Hasher::default()));
 }
 
 impl fmt::Debug for RewriteN {

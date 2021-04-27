@@ -7,13 +7,14 @@ use crate::{
     util::first_max_generator,
 };
 use hashconsing::{HConsed, HConsign, HashConsign};
-use std::fmt;
+use rustc_hash::FxHasher;
 use std::hash::Hash;
 use std::{
     cell::RefCell,
     convert::{From, Into},
 };
 use std::{collections::HashSet, convert::TryFrom};
+use std::{fmt, hash::BuildHasherDefault};
 use thiserror::Error;
 
 #[derive(PartialEq, Eq, Hash, Clone)]
@@ -153,8 +154,10 @@ pub fn globularity(s: &Diagram, t: &Diagram) -> bool {
 #[derive(PartialEq, Eq, Hash, Clone)]
 pub struct DiagramN(HConsed<DiagramInternal>);
 
+type Hasher = BuildHasherDefault<FxHasher>;
+
 thread_local! {
-    static DIAGRAM_FACTORY: RefCell<HConsign<DiagramInternal>> = RefCell::new(HConsign::with_capacity(37));
+    static DIAGRAM_FACTORY: RefCell<HConsign<DiagramInternal, Hasher>> = RefCell::new(HConsign::with_capacity_and_hasher(37, Hasher::default()));
 }
 
 impl DiagramN {
