@@ -1,6 +1,6 @@
 ---
 source: homotopy-core/tests/contraction.rs
-expression: "diagram.identity().contract(&Boundary::Target.into(), &[], 0,\n                            Some(Bias::Lower)).unwrap().target()"
+expression: "d.identity().contract(&Boundary::Target.into(), &[], 0, Some(Bias::Lower),\n                      &sig).unwrap().target()"
 
 ---
 DiagramN {
@@ -17,33 +17,37 @@ DiagramN {
                 cones: [
                     Cone {
                         index: 0,
-                        source: [],
-                        target: Cospan {
-                            forward: Rewrite0(
-                                0:0,
-                                1:2,
-                            ),
-                            backward: Rewrite0(
-                                0:0,
-                                1:2,
-                            ),
+                        internal: ConeInternal {
+                            source: [],
+                            target: Cospan {
+                                forward: Rewrite0(
+                                    0:0,
+                                    1:2,
+                                ),
+                                backward: Rewrite0(
+                                    0:0,
+                                    1:2,
+                                ),
+                            },
+                            slices: [],
                         },
-                        slices: [],
                     },
                     Cone {
                         index: 0,
-                        source: [],
-                        target: Cospan {
-                            forward: Rewrite0(
-                                0:0,
-                                2:2,
-                            ),
-                            backward: Rewrite0(
-                                0:0,
-                                2:2,
-                            ),
+                        internal: ConeInternal {
+                            source: [],
+                            target: Cospan {
+                                forward: Rewrite0(
+                                    0:0,
+                                    2:2,
+                                ),
+                                backward: Rewrite0(
+                                    0:0,
+                                    2:2,
+                                ),
+                            },
+                            slices: [],
                         },
-                        slices: [],
                     },
                 ],
             },
@@ -52,33 +56,37 @@ DiagramN {
                 cones: [
                     Cone {
                         index: 0,
-                        source: [],
-                        target: Cospan {
-                            forward: Rewrite0(
-                                0:0,
-                                1:2,
-                            ),
-                            backward: Rewrite0(
-                                0:0,
-                                1:2,
-                            ),
+                        internal: ConeInternal {
+                            source: [],
+                            target: Cospan {
+                                forward: Rewrite0(
+                                    0:0,
+                                    1:2,
+                                ),
+                                backward: Rewrite0(
+                                    0:0,
+                                    1:2,
+                                ),
+                            },
+                            slices: [],
                         },
-                        slices: [],
                     },
                     Cone {
                         index: 0,
-                        source: [],
-                        target: Cospan {
-                            forward: Rewrite0(
-                                0:0,
-                                2:2,
-                            ),
-                            backward: Rewrite0(
-                                0:0,
-                                2:2,
-                            ),
+                        internal: ConeInternal {
+                            source: [],
+                            target: Cospan {
+                                forward: Rewrite0(
+                                    0:0,
+                                    2:2,
+                                ),
+                                backward: Rewrite0(
+                                    0:0,
+                                    2:2,
+                                ),
+                            },
+                            slices: [],
                         },
-                        slices: [],
                     },
                 ],
             },

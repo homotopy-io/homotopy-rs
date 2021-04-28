@@ -202,7 +202,7 @@ impl Embedding {
                     .collect();
 
                 if preimage_slices.is_empty() {
-                    let cospan = &rewrite.cone_over_target(*height).unwrap().target;
+                    let cospan = &rewrite.cone_over_target(*height).unwrap().internal.target;
                     Self::Regular(
                         preimage_height,
                         Rc::new(slices[0].preimage(&cospan.forward)),
@@ -276,17 +276,19 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
                 let cone = rewrite.cone_over_target(target_height).unwrap();
 
                 let restricted_slices: Vec<_> = cone
+                    .internal
                     .slices
                     .iter()
                     .map(|cone_slice| restrict_rewrite(cone_slice, embedding_slice))
                     .collect();
 
                 let restricted_source: Vec<_> = cone
+                    .internal
                     .source
                     .iter()
                     .enumerate()
                     .map(|(i, cospan)| {
-                        let embedding = embedding_slice.preimage(&cone.slices[i]);
+                        let embedding = embedding_slice.preimage(&cone.internal.slices[i]);
                         let forward = restrict_rewrite(&cospan.forward, &embedding);
                         let backward = restrict_rewrite(&cospan.backward, &embedding);
                         Cospan { forward, backward }
@@ -295,17 +297,17 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
 
                 let restricted_target = {
                     let slice = embedding_slice;
-                    let forward = restrict_rewrite(&cone.target.forward, &slice);
-                    let backward = restrict_rewrite(&cone.target.backward, &slice);
+                    let forward = restrict_rewrite(&cone.internal.target.forward, &slice);
+                    let backward = restrict_rewrite(&cone.internal.target.backward, &slice);
                     Cospan { forward, backward }
                 };
 
-                restricted_cones.push(Cone {
-                    index: cone.index - rewrite.regular_image(*height),
-                    slices: restricted_slices,
-                    source: restricted_source,
-                    target: restricted_target,
-                });
+                restricted_cones.push(Cone::new(
+                    cone.index - rewrite.regular_image(*height),
+                    restricted_source,
+                    restricted_target,
+                    restricted_slices,
+                ));
             }
 
             RewriteN::new(rewrite.dimension(), restricted_cones).into()

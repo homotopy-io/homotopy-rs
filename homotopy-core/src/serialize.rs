@@ -71,7 +71,7 @@ enum RewriteSer {
     R0(Option<(Generator, Generator)>),
     Rn {
         dimension: usize,
-        cones: Vec<Key<Cone>>,
+        cones: Vec<(usize, Key<Cone>)>,
     },
 }
 
@@ -83,7 +83,6 @@ struct CospanSer {
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 struct ConeSer {
-    index: usize,
     source: Vec<CospanSer>,
     target: CospanSer,
     slices: Vec<Key<Rewrite>>,
@@ -146,15 +145,16 @@ impl Dehydrate for Cone {
     fn dehydrate(&self, serialization: &mut Serialization) -> Self::Dehydrated {
         let k = self.key();
         let ser = ConeSer {
-            index: self.index,
             source: self
+                .internal
                 .source
                 .iter()
                 .map(|s| s.dehydrate(serialization))
                 .collect(),
-            target: self.target.dehydrate(serialization),
+            target: self.internal.target.dehydrate(serialization),
             slices: {
-                self.slices
+                self.internal
+                    .slices
                     .iter()
                     .map(|s| {
                         s.dehydrate(serialization);
@@ -201,7 +201,7 @@ impl Dehydrate for Rewrite {
                     .iter()
                     .map(|c| {
                         c.dehydrate(serialization);
-                        c.key()
+                        (c.index, c.key())
                     })
                     .collect();
                 let rn = RewriteSer::Rn {
@@ -301,28 +301,28 @@ impl Rehydrate<Cospan> for CospanSer {
     }
 }
 
-impl Rehydrate<Cone> for Key<Cone> {
+impl Rehydrate<Cone> for (usize, Key<Cone>) {
     fn rehydrate(&self, serialization: &Serialization) -> Cone {
-        serialization.cones[self].rehydrate(serialization)
+        (self.0, serialization.cones[&self.1].clone()).rehydrate(serialization)
     }
 }
 
-impl Rehydrate<Cone> for ConeSer {
+impl Rehydrate<Cone> for (usize, ConeSer) {
     fn rehydrate(&self, serialization: &Serialization) -> Cone {
-        Cone {
-            index: self.index,
-            source: self
+        Cone::new(
+            self.0,
+            self.1
                 .source
                 .iter()
                 .map(|s| s.rehydrate(serialization))
                 .collect(),
-            target: self.target.rehydrate(serialization),
-            slices: self
+            self.1.target.rehydrate(serialization),
+            self.1
                 .slices
                 .iter()
                 .map(|s| s.rehydrate(serialization))
                 .collect(),
-        }
+        )
     }
 }
 

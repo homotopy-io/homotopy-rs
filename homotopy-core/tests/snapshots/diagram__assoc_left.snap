@@ -1,6 +1,6 @@
 ---
 source: homotopy-core/tests/diagram.rs
-expression: "common::example_assoc().source()"
+expression: "examples::associator().1.source()"
 
 ---
 DiagramN {
@@ -48,48 +48,50 @@ DiagramN {
                 cones: [
                     Cone {
                         index: 0,
-                        source: [
-                            Cospan {
+                        internal: ConeInternal {
+                            source: [
+                                Cospan {
+                                    forward: Rewrite0(
+                                        0:0,
+                                        1:1,
+                                    ),
+                                    backward: Rewrite0(
+                                        0:0,
+                                        1:1,
+                                    ),
+                                },
+                                Cospan {
+                                    forward: Rewrite0(
+                                        0:0,
+                                        1:1,
+                                    ),
+                                    backward: Rewrite0(
+                                        0:0,
+                                        1:1,
+                                    ),
+                                },
+                            ],
+                            target: Cospan {
                                 forward: Rewrite0(
                                     0:0,
-                                    1:1,
+                                    2:2,
                                 ),
                                 backward: Rewrite0(
                                     0:0,
-                                    1:1,
+                                    2:2,
                                 ),
                             },
-                            Cospan {
-                                forward: Rewrite0(
-                                    0:0,
+                            slices: [
+                                Rewrite0(
                                     1:1,
+                                    2:2,
                                 ),
-                                backward: Rewrite0(
-                                    0:0,
+                                Rewrite0(
                                     1:1,
+                                    2:2,
                                 ),
-                            },
-                        ],
-                        target: Cospan {
-                            forward: Rewrite0(
-                                0:0,
-                                2:2,
-                            ),
-                            backward: Rewrite0(
-                                0:0,
-                                2:2,
-                            ),
+                            ],
                         },
-                        slices: [
-                            Rewrite0(
-                                1:1,
-                                2:2,
-                            ),
-                            Rewrite0(
-                                1:1,
-                                2:2,
-                            ),
-                        ],
                     },
                 ],
             },
@@ -98,34 +100,36 @@ DiagramN {
                 cones: [
                     Cone {
                         index: 0,
-                        source: [
-                            Cospan {
+                        internal: ConeInternal {
+                            source: [
+                                Cospan {
+                                    forward: Rewrite0(
+                                        0:0,
+                                        1:1,
+                                    ),
+                                    backward: Rewrite0(
+                                        0:0,
+                                        1:1,
+                                    ),
+                                },
+                            ],
+                            target: Cospan {
                                 forward: Rewrite0(
                                     0:0,
-                                    1:1,
+                                    2:2,
                                 ),
                                 backward: Rewrite0(
                                     0:0,
-                                    1:1,
+                                    2:2,
                                 ),
                             },
-                        ],
-                        target: Cospan {
-                            forward: Rewrite0(
-                                0:0,
-                                2:2,
-                            ),
-                            backward: Rewrite0(
-                                0:0,
-                                2:2,
-                            ),
+                            slices: [
+                                Rewrite0(
+                                    1:1,
+                                    2:2,
+                                ),
+                            ],
                         },
-                        slices: [
-                            Rewrite0(
-                                1:1,
-                                2:2,
-                            ),
-                        ],
                     },
                 ],
             },
@@ -136,48 +140,50 @@ DiagramN {
                 cones: [
                     Cone {
                         index: 0,
-                        source: [
-                            Cospan {
+                        internal: ConeInternal {
+                            source: [
+                                Cospan {
+                                    forward: Rewrite0(
+                                        0:0,
+                                        1:1,
+                                    ),
+                                    backward: Rewrite0(
+                                        0:0,
+                                        1:1,
+                                    ),
+                                },
+                                Cospan {
+                                    forward: Rewrite0(
+                                        0:0,
+                                        1:1,
+                                    ),
+                                    backward: Rewrite0(
+                                        0:0,
+                                        1:1,
+                                    ),
+                                },
+                            ],
+                            target: Cospan {
                                 forward: Rewrite0(
                                     0:0,
-                                    1:1,
+                                    2:2,
                                 ),
                                 backward: Rewrite0(
                                     0:0,
-                                    1:1,
+                                    2:2,
                                 ),
                             },
-                            Cospan {
-                                forward: Rewrite0(
-                                    0:0,
+                            slices: [
+                                Rewrite0(
                                     1:1,
+                                    2:2,
                                 ),
-                                backward: Rewrite0(
-                                    0:0,
+                                Rewrite0(
                                     1:1,
+                                    2:2,
                                 ),
-                            },
-                        ],
-                        target: Cospan {
-                            forward: Rewrite0(
-                                0:0,
-                                2:2,
-                            ),
-                            backward: Rewrite0(
-                                0:0,
-                                2:2,
-                            ),
+                            ],
                         },
-                        slices: [
-                            Rewrite0(
-                                1:1,
-                                2:2,
-                            ),
-                            Rewrite0(
-                                1:1,
-                                2:2,
-                            ),
-                        ],
                     },
                 ],
             },
@@ -186,34 +192,36 @@ DiagramN {
                 cones: [
                     Cone {
                         index: 0,
-                        source: [
-                            Cospan {
+                        internal: ConeInternal {
+                            source: [
+                                Cospan {
+                                    forward: Rewrite0(
+                                        0:0,
+                                        1:1,
+                                    ),
+                                    backward: Rewrite0(
+                                        0:0,
+                                        1:1,
+                                    ),
+                                },
+                            ],
+                            target: Cospan {
                                 forward: Rewrite0(
                                     0:0,
-                                    1:1,
+                                    2:2,
                                 ),
                                 backward: Rewrite0(
                                     0:0,
-                                    1:1,
+                                    2:2,
                                 ),
                             },
-                        ],
-                        target: Cospan {
-                            forward: Rewrite0(
-                                0:0,
-                                2:2,
-                            ),
-                            backward: Rewrite0(
-                                0:0,
-                                2:2,
-                            ),
+                            slices: [
+                                Rewrite0(
+                                    1:1,
+                                    2:2,
+                                ),
+                            ],
                         },
-                        slices: [
-                            Rewrite0(
-                                1:1,
-                                2:2,
-                            ),
-                        ],
                     },
                 ],
             },

@@ -124,13 +124,9 @@ fn expand_base_singular(
                 &cospan.backward.clone().try_into().unwrap(),
             )?;
 
-            let cone = Cone {
-                index: h0,
-                slices: vec![
-                    expansion.slices[0].clone().into(),
-                    expansion.slices[1].clone().into(),
-                ],
-                source: vec![
+            let cone = Cone::new(
+                h0,
+                vec![
                     Cospan {
                         forward: expansion.rewrites[0].clone().into(),
                         backward: expansion.rewrites[1].clone().into(),
@@ -140,8 +136,12 @@ fn expand_base_singular(
                         backward: expansion.rewrites[3].clone().into(),
                     },
                 ],
-                target: cospan.clone(),
-            };
+                cospan.clone(),
+                vec![
+                    expansion.slices[0].clone().into(),
+                    expansion.slices[1].clone().into(),
+                ],
+            );
 
             Ok(RewriteN::new(diagram.dimension(), vec![cone]).into())
         }
@@ -152,13 +152,9 @@ fn expand_base_singular(
                 &cospan.forward.clone().try_into().unwrap(),
             )?;
 
-            let cone = Cone {
-                index: h0,
-                slices: vec![
-                    expansion.slices[1].clone().into(),
-                    expansion.slices[0].clone().into(),
-                ],
-                source: vec![
+            let cone = Cone::new(
+                h0,
+                vec![
                     Cospan {
                         forward: expansion.rewrites[3].clone().into(),
                         backward: expansion.rewrites[2].clone().into(),
@@ -168,8 +164,12 @@ fn expand_base_singular(
                         backward: expansion.rewrites[0].clone().into(),
                     },
                 ],
-                target: cospan.clone(),
-            };
+                cospan.clone(),
+                vec![
+                    expansion.slices[1].clone().into(),
+                    expansion.slices[0].clone().into(),
+                ],
+            );
 
             Ok(RewriteN::new(diagram.dimension(), vec![cone]).into())
         }
@@ -339,12 +339,12 @@ fn expand_recursive(
 
         let expansion_rewrite = RewriteN::new(
             diagram.dimension(),
-            vec![Cone {
-                index: height,
-                source: vec![Cospan { forward, backward }],
-                target: target_cospan.clone(),
-                slices: vec![recursive.clone()],
-            }],
+            vec![Cone::new(
+                height,
+                vec![Cospan { forward, backward }],
+                target_cospan.clone(),
+                vec![recursive.clone()],
+            )],
         );
 
         let expansion_preimage = diagram.clone().rewrite_backward(&expansion_rewrite);
@@ -360,9 +360,9 @@ fn expand_recursive(
     // Insert a bubble
     Ok(RewriteN::new(
         diagram.dimension(),
-        vec![Cone {
-            index: height,
-            source: vec![
+        vec![Cone::new(
+            height,
+            vec![
                 Cospan {
                     forward: target_cospan.forward.clone(),
                     backward: recursive.clone(),
@@ -372,12 +372,12 @@ fn expand_recursive(
                     backward: target_cospan.backward.clone(),
                 },
             ],
-            target: target_cospan.clone(),
-            slices: vec![
+            target_cospan.clone(),
+            vec![
                 Rewrite::identity(diagram.dimension() - 1),
                 Rewrite::identity(diagram.dimension() - 1),
             ],
-        }],
+        )],
     )
     .into())
 }

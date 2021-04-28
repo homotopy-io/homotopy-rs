@@ -260,8 +260,8 @@ impl DiagramN {
         for cone in rewrite.cones() {
             let start = (cone.index as isize + offset) as usize;
             let stop = (cone.index as isize + cone.len() as isize + offset) as usize;
-            assert_eq!(&cospans[start..stop], &cone.source);
-            cospans.splice(start..stop, vec![cone.target.clone()]);
+            assert_eq!(&cospans[start..stop], &cone.internal.source);
+            cospans.splice(start..stop, vec![cone.internal.target.clone()]);
             offset -= cone.len() as isize - 1;
         }
 
@@ -274,8 +274,8 @@ impl DiagramN {
         for cone in rewrite.cones() {
             let start = cone.index;
             let stop = cone.index + 1;
-            assert_eq!(&cospans[start], &cone.target);
-            cospans.splice(start..stop, cone.source.clone());
+            assert_eq!(&cospans[start], &cone.internal.target);
+            cospans.splice(start..stop, cone.internal.source.clone());
         }
 
         Self::new_unsafe(self.source(), cospans)

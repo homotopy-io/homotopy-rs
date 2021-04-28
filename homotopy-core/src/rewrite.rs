@@ -153,19 +153,18 @@ impl Rewrite {
             Diagram::Diagram0(base) => Rewrite0::new(base, generator).into(),
             Diagram::DiagramN(base) => RewriteN::new(
                 base.dimension(),
-                vec![Cone {
-                    index: 0,
-                    source: base.cospans().to_vec(),
-                    slices: base
-                        .singular_slices()
-                        .into_iter()
-                        .map(|slice| Self::cone_over_generator(generator, slice))
-                        .collect(),
-                    target: Cospan {
+                vec![Cone::new(
+                    0,
+                    base.cospans().to_vec(),
+                    Cospan {
                         forward: Self::cone_over_generator(generator, base.source()),
                         backward: Self::cone_over_generator(generator, base.target()),
                     },
-                }],
+                    base.singular_slices()
+                        .into_iter()
+                        .map(|slice| Self::cone_over_generator(generator, slice))
+                        .collect(),
+                )],
             )
             .into(),
         }
@@ -326,14 +325,16 @@ impl RewriteN {
         let cones = trivial_heights
             .iter()
             .enumerate()
-            .map(|(i, height)| Cone {
-                index: height - i,
-                source: vec![],
-                target: Cospan {
-                    forward: Rewrite::identity(dimension - 1),
-                    backward: Rewrite::identity(dimension - 1),
-                },
-                slices: vec![],
+            .map(|(i, height)| {
+                Cone::new(
+                    height - i,
+                    vec![],
+                    Cospan {
+                        forward: Rewrite::identity(dimension - 1),
+                        backward: Rewrite::identity(dimension - 1),
+                    },
+                    vec![],
+                )
             })
             .collect();
 
@@ -351,12 +352,12 @@ impl RewriteN {
 
         for (target, cone_slices) in slices.into_iter().enumerate() {
             let size = cone_slices.len();
-            cones.push(Cone {
-                source: source_cospans[index..index + size].to_vec(),
-                target: target_cospans[target].clone(),
-                slices: cone_slices,
+            cones.push(Cone::new(
                 index,
-            });
+                source_cospans[index..index + size].to_vec(),
+                target_cospans[target].clone(),
+                cone_slices,
+            ));
             index += size;
         }
 
@@ -400,7 +401,7 @@ impl RewriteN {
             .iter()
             .find(|cone| cone.index <= height && height < cone.index + cone.len())
             .map_or(Rewrite::identity(self.dimension() - 1), |cone| {
-                cone.slices[height - cone.index].clone()
+                cone.internal.slices[height - cone.index].clone()
             })
     }
 
@@ -444,35 +445,36 @@ impl RewriteN {
                     } else {
                         let index = index as usize;
 
-                        if f_cone.target != g_cone.source[index] {
+                        if f_cone.internal.target != g_cone.internal.source[index] {
                             return Err(CompositionError::Incompatible);
                         }
 
                         let mut source = vec![];
-                        source.extend(g_cone.source[..index].iter().cloned());
-                        source.extend(f_cone.source.iter().cloned());
-                        source.extend(g_cone.source[index + 1..].iter().cloned());
+                        source.extend(g_cone.internal.source[..index].iter().cloned());
+                        source.extend(f_cone.internal.source.iter().cloned());
+                        source.extend(g_cone.internal.source[index + 1..].iter().cloned());
 
-                        let g_slice = &g_cone.slices[index];
+                        let g_slice = &g_cone.internal.slices[index];
                         let mut slices = vec![];
-                        slices.extend(g_cone.slices[..index].iter().cloned());
+                        slices.extend(g_cone.internal.slices[..index].iter().cloned());
                         slices.extend(
                             f_cone
+                                .internal
                                 .slices
                                 .iter()
                                 .map(|f_slice| Rewrite::compose(f_slice.clone(), g_slice.clone()))
                                 .collect::<Result<Vec<_>, _>>()?,
                         );
-                        slices.extend(g_cone.slices[index + 1..].iter().cloned());
+                        slices.extend(g_cone.internal.slices[index + 1..].iter().cloned());
 
                         delayed_offset -= 1 - f_cone.len() as isize;
 
-                        g_cones.push(Cone {
-                            index: g_cone.index,
+                        g_cones.push(Cone::new(
+                            g_cone.index,
                             source,
-                            target: g_cone.target.clone(),
+                            g_cone.internal.target.clone(),
                             slices,
-                        });
+                        ));
                     }
                 }
             }
@@ -564,7 +566,7 @@ impl RewriteN {
                 first_max_generator(
                     self.cones()
                         .iter()
-                        .flat_map(|cone| &cone.source)
+                        .flat_map(|cone| &cone.internal.source)
                         .flat_map(Cospan::max_generator),
                     None,
                 )
@@ -573,7 +575,7 @@ impl RewriteN {
                 first_max_generator(
                     self.cones()
                         .iter()
-                        .flat_map(|cone| cone.target.max_generator()),
+                        .flat_map(|cone| cone.internal.target.max_generator()),
                     None,
                 )
             }),
@@ -590,39 +592,69 @@ impl fmt::Debug for RewriteInternal {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(PartialEq, Eq, Clone, Hash)]
 pub(crate) struct Cone {
     pub(crate) index: usize,
+    pub(crate) internal: HConsed<ConeInternal>,
+}
+
+impl fmt::Debug for Cone {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Cone")
+            .field("index", &self.index)
+            .field("internal", &self.internal.get())
+            .finish()
+    }
+}
+
+thread_local! {
+    static CONE_FACTORY: RefCell<HConsign<ConeInternal, Hasher>> = RefCell::new(HConsign::with_capacity_and_hasher(37, Hasher::default()));
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+pub(crate) struct ConeInternal {
     pub(crate) source: Vec<Cospan>,
     pub(crate) target: Cospan,
     pub(crate) slices: Vec<Rewrite>,
 }
 
 impl Cone {
+    pub(crate) fn new(
+        index: usize,
+        source: Vec<Cospan>,
+        target: Cospan,
+        slices: Vec<Rewrite>,
+    ) -> Self {
+        Self {
+            index,
+            internal: CONE_FACTORY.with(|factory| {
+                factory.borrow_mut().mk(ConeInternal {
+                    source,
+                    target,
+                    slices,
+                })
+            }),
+        }
+    }
     pub(crate) fn is_identity(&self) -> bool {
-        self.slices.len() == 1
-            && self.source.len() == 1
-            && self.source[0] == self.target
-            && self.slices[0].is_identity()
+        self.internal.slices.len() == 1
+            && self.internal.source.len() == 1
+            && self.internal.source[0] == self.internal.target
+            && self.internal.slices[0].is_identity()
     }
 
     pub(crate) fn len(&self) -> usize {
-        self.source.len()
+        self.internal.source.len()
     }
 
     pub(crate) fn pad(&self, embedding: &[usize]) -> Self {
         match embedding.split_first() {
             Some((offset, rest)) => {
                 let index = self.index + offset;
-                let source = self.source.iter().map(|c| c.pad(rest)).collect();
-                let target = self.target.pad(rest);
-                let slices = self.slices.iter().map(|r| r.pad(rest)).collect();
-                Self {
-                    index,
-                    source,
-                    target,
-                    slices,
-                }
+                let source = self.internal.source.iter().map(|c| c.pad(rest)).collect();
+                let target = self.internal.target.pad(rest);
+                let slices = self.internal.slices.iter().map(|r| r.pad(rest)).collect();
+                Self::new(index, source, target, slices)
             }
             None => self.clone(),
         }

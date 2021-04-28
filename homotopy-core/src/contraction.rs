@@ -141,15 +141,15 @@ fn contract_base(
 
     let rewrite = RewriteN::new(
         diagram.dimension(),
-        vec![Cone {
-            index: height,
-            target: Cospan {
+        vec![Cone::new(
+            height,
+            vec![cospan0.clone(), cospan1.clone()],
+            Cospan {
                 forward: Rewrite::compose(cospan0.forward.clone(), result[0].clone()).unwrap(),
                 backward: Rewrite::compose(cospan1.backward.clone(), result[1].clone()).unwrap(),
             },
-            source: vec![cospan0.clone(), cospan1.clone()],
-            slices: result,
-        }],
+            result,
+        )],
     );
 
     Ok(rewrite)
@@ -174,24 +174,24 @@ fn contract_in_path(
             match step {
                 Height::Regular(i) => Ok(RewriteN::new(
                     diagram.dimension(),
-                    vec![Cone {
-                        index: *i,
-                        source: vec![],
-                        target: Cospan {
+                    vec![Cone::new(
+                        *i,
+                        vec![],
+                        Cospan {
                             forward: rewrite.clone().into(),
                             backward: rewrite.into(),
                         },
-                        slices: vec![],
-                    }],
+                        vec![],
+                    )],
                 )),
                 Height::Singular(i) => {
                     let source_cospan = &diagram.cospans()[*i];
                     Ok(RewriteN::new(
                         diagram.dimension(),
-                        vec![Cone {
-                            index: *i,
-                            source: vec![source_cospan.clone()],
-                            target: Cospan {
+                        vec![Cone::new(
+                            *i,
+                            vec![source_cospan.clone()],
+                            Cospan {
                                 forward: Rewrite::compose(
                                     source_cospan.forward.clone(),
                                     rewrite.clone().into(),
@@ -203,8 +203,8 @@ fn contract_in_path(
                                 )
                                 .unwrap(),
                             },
-                            slices: vec![rewrite.into()],
-                        }],
+                            vec![rewrite.into()],
+                        )],
                     ))
                 }
             }
