@@ -129,7 +129,7 @@ impl SignatureView {
                     oninput=self.link.callback(move |e: InputData| {
                         Message::Rename(generator, e.value)
                     })
-                    onkeypress=Callback::from(move |e: KeyboardEvent| {
+                    onkeyup=Callback::from(move |e: KeyboardEvent| {
                         e.stop_propagation();
                     })
                 />
