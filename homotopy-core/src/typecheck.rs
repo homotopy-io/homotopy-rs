@@ -8,9 +8,12 @@ use crate::{
     diagram::{Diagram, DiagramN},
     signature::Signature,
 };
+use rustc_hash::FxHasher;
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::convert::Into;
 use std::convert::TryInto;
+use std::hash::BuildHasherDefault;
 use std::rc::Rc;
 use thiserror::Error;
 
@@ -29,6 +32,12 @@ pub enum TypeError {
 pub enum Mode {
     Deep,
     Shallow,
+}
+
+type Hasher = BuildHasherDefault<FxHasher>;
+
+thread_local! {
+    static RESTRICT_CACHE: RefCell<HashMap<(Rewrite, Embedding), Rewrite, Hasher>> = RefCell::new(HashMap::default());
 }
 
 pub fn typecheck<S>(diagram: &Diagram, signature: &S, mode: Mode) -> Result<(), TypeError>
@@ -82,6 +91,8 @@ where
             }
         }
     }
+
+    RESTRICT_CACHE.with(|cache| cache.borrow_mut().clear());
 
     Ok(())
 }
@@ -158,10 +169,10 @@ fn target_points(rewrites: &[Rewrite]) -> Vec<(Point, Generator)> {
     targets
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum Embedding {
-    Regular(usize, Rc<Embedding>),
-    Singular(usize, Vec<Rc<Embedding>>),
+    Regular(usize, Rc<Self>),
+    Singular(usize, Vec<Rc<Self>>),
     Zero,
 }
 
@@ -253,6 +264,17 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
         return rewrite.clone();
     }
 
+    let cached = RESTRICT_CACHE.with(|cache| {
+        cache
+            .borrow()
+            .get(&(rewrite.clone(), embedding.clone()))
+            .cloned()
+    });
+
+    if let Some(cached) = cached {
+        return cached;
+    }
+
     match embedding {
         Embedding::Zero => {
             assert_eq!(rewrite.dimension(), 0);
@@ -310,7 +332,17 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
                 ));
             }
 
-            RewriteN::new(rewrite.dimension(), restricted_cones).into()
+            let restricted_rewrite: Rewrite =
+                RewriteN::new(rewrite.dimension(), restricted_cones).into();
+
+            RESTRICT_CACHE.with(|cache| {
+                cache.borrow_mut().insert(
+                    (rewrite.clone().into(), embedding.clone()),
+                    restricted_rewrite.clone(),
+                )
+            });
+
+            restricted_rewrite
         }
     }
 }
