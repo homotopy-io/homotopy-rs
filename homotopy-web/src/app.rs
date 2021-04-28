@@ -111,17 +111,17 @@ const BUTTON_ADD_GENERATOR: SidebarButton = SidebarButton {
 };
 
 const BUTTON_RESTRICT: SidebarButton = SidebarButton {
-    label: "Restrict",
+    label: "Restrict (R)",
     icon: "find_replace",
     action: model::Action::Proof(model::proof::Action::Restrict),
     shortcut: Some('r'),
 };
 
 const BUTTON_THEOREM: SidebarButton = SidebarButton {
-    label: "Theorem",
+    label: "Theorem (H)",
     icon: "title",
     action: model::Action::Proof(model::proof::Action::Theorem),
-    shortcut: None,
+    shortcut: Some('h'),
 };
 
 const BUTTON_PROJECT: SidebarButton = SidebarButton {
