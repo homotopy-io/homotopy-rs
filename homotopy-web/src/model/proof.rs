@@ -473,13 +473,25 @@ impl Proof {
 
         let mut matches: BTreeSet<AttachOption> = BTreeSet::new();
 
-        for point in selected {
-            let point = {
+        let selected_with_path: Vec<_> = selected
+            .iter()
+            .map(|point| {
                 let mut point_with_path: Vec<SliceIndex> = workspace.path.iter().copied().collect();
                 point_with_path.extend(point.iter().copied());
                 point_with_path
-            };
+            })
+            .collect();
+
+        let attach_on_boundary = selected_with_path
+            .iter()
+            .any(|point| BoundaryPath::split(&point).0.is_some());
+
+        for point in selected_with_path {
             let (boundary_path, point) = BoundaryPath::split(&point);
+
+            if boundary_path.is_none() && attach_on_boundary {
+                continue;
+            }
 
             let haystack = match &boundary_path {
                 None => workspace.diagram.clone(),
