@@ -204,7 +204,12 @@ impl Component for App {
             Message::Dispatch(action) => {
                 log::info!("Received action: {:?}", action);
 
-                match self.state.update(action, self.dispatch.clone()) {
+                let time_start = performance();
+                let result = self.state.update(action, self.dispatch.clone());
+                let time_stop = performance();
+                log::info!("State update took {}ms.", time_stop - time_start);
+
+                match result {
                     Ok(()) => {}
                     Err(error) => {
                         // TODO: Display a toast
@@ -364,4 +369,8 @@ impl App {
 
         onkeyup.forget();
     }
+}
+
+fn performance() -> f64 {
+    web_sys::window().unwrap().performance().unwrap().now()
 }
