@@ -49,6 +49,7 @@ pub mod common;
 pub mod complex;
 pub mod contraction;
 pub mod diagram;
+pub mod examples;
 pub mod expansion;
 pub mod factorization;
 pub mod graph;
