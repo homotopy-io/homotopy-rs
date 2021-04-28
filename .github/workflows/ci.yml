@@ -131,7 +131,7 @@ jobs:
       - uses: Swatinem/rust-cache@v1
 
       - name: Run cargo bench
-        run: cargo bench | tee output.txt
+        run: CARGO_HUSKY_DONT_INSTALL_HOOKS=true cargo bench | tee output.txt
 
       - name: Store benchmark result
         uses: jasonwilliams/github-action-benchmark@v1
