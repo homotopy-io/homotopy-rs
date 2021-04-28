@@ -131,13 +131,13 @@ jobs:
       - uses: Swatinem/rust-cache@v1
 
       - name: Run cargo bench
-        run: cargo bench --bench bench -- --output-format bencher | tee output.txt
+        run: cargo bench | tee output.txt
 
       - name: Store benchmark result
-        uses: rhysd/github-action-benchmark@v1
+        uses: jasonwilliams/github-action-benchmark@v1
         with:
           name: Rust Benchmark
-          tool: 'cargo'
+          tool: 'criterion'
           output-file-path: output.txt
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
