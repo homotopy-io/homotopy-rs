@@ -1,5 +1,6 @@
 use crate::normalization;
 use crate::rewrite::{Cone, Cospan, Rewrite, Rewrite0, RewriteN};
+use crate::util::FastHashMap;
 use crate::{
     attach::{attach, BoundaryPath},
     typecheck::TypeError,
@@ -12,10 +13,10 @@ use crate::{
     diagram::{Diagram, DiagramN},
     signature::Signature,
 };
-use petgraph::algo::tarjan_scc;
 use petgraph::graphmap::{DiGraphMap, GraphMap};
 use petgraph::unionfind::UnionFind;
-use std::collections::HashMap;
+use petgraph::{algo::tarjan_scc, graph::NodeIndex};
+use petgraph::{graph::DiGraph, visit::EdgeRef};
 use std::convert::{Into, TryFrom, TryInto};
 use std::hash::Hash;
 use thiserror::Error;
@@ -288,11 +289,12 @@ fn colimit_recursive(
     spans: &[(usize, Span, usize)],
 ) -> Result<Vec<Rewrite>, ContractionError> {
     use Height::{Regular, Singular};
-    let mut span_slices: HashMap<(Node, Node), Vec<Span>> = HashMap::new();
-    let mut diagram_slices: HashMap<Node, Diagram> = HashMap::new();
-    let mut node_to_cospan: HashMap<Node, Cospan> = HashMap::new();
+    let mut span_slices: FastHashMap<(Node, Node), Vec<Span>> = FastHashMap::default();
+    let mut diagram_slices: FastHashMap<Node, Diagram> = FastHashMap::default();
+    let mut node_to_cospan: FastHashMap<Node, Cospan> = FastHashMap::default();
 
-    let mut delta: DiGraphMap<Node, ()> = GraphMap::new();
+    let mut delta: DiGraph<Node, ()> = DiGraph::new();
+    let mut node_to_index: FastHashMap<Node, NodeIndex<u32>> = FastHashMap::default();
 
     // Explode the input diagrams into their singular slices and the spans between them.
     for (key, (diagram, _)) in diagrams.iter().enumerate() {
@@ -301,9 +303,11 @@ fn colimit_recursive(
         let cospans = diagram.cospans();
 
         for height in 0..diagram.size() {
-            delta.add_node(Node(key, height));
-            diagram_slices.insert(Node(key, height), slices[Singular(height).to_int()].clone());
-            node_to_cospan.insert(Node(key, height), cospans[height].clone());
+            let node = Node(key, height);
+            let index = delta.add_node(node);
+            node_to_index.insert(node, index);
+            diagram_slices.insert(node, slices[Singular(height).to_int()].clone());
+            node_to_cospan.insert(node, cospans[height].clone());
         }
 
         for height in 1..diagram.size() {
@@ -315,7 +319,10 @@ fn colimit_recursive(
                 .entry((Node(key, height - 1), Node(key, height)))
                 .or_default()
                 .push(Span(backward, slice, forward));
-            delta.add_edge(Node(key, height - 1), Node(key, height), ());
+
+            let source_index = node_to_index[&Node(key, height - 1)];
+            let target_index = node_to_index[&Node(key, height)];
+            delta.add_edge(source_index, target_index, ());
         }
     }
 
@@ -334,24 +341,32 @@ fn colimit_recursive(
 
             let span = Span(backward.slice(height), slice, forward.slice(height));
 
-            assert!(delta.contains_node(source_node));
-            assert!(delta.contains_node(target_node));
+            let source_index = node_to_index[&source_node];
+            let target_index = node_to_index[&target_node];
 
             span_slices
                 .entry((source_node, target_node))
                 .or_default()
                 .push(span);
-            delta.add_edge(source_node, target_node, ());
-            delta.add_edge(target_node, source_node, ());
+            delta.add_edge(source_index, target_index, ());
+            delta.add_edge(target_index, source_index, ());
         }
     }
 
     // Get the strongly connected components of the delta graph in topological order.
-    let mut scc_to_nodes = tarjan_scc(&delta);
-    scc_to_nodes.reverse();
+    let scc_to_nodes: Vec<Vec<Node>> = tarjan_scc(&delta)
+        .into_iter()
+        .rev()
+        .map(|indices| {
+            indices
+                .into_iter()
+                .map(|index| *delta.node_weight(index).unwrap())
+                .collect()
+        })
+        .collect();
 
     // Associate to every node its component
-    let node_to_scc: HashMap<Node, Component> = scc_to_nodes
+    let node_to_scc: FastHashMap<Node, Component> = scc_to_nodes
         .iter()
         .enumerate()
         .flat_map(|(i, nodes)| nodes.iter().map(move |node| (*node, Component(i))))
@@ -359,15 +374,15 @@ fn colimit_recursive(
 
     // Contract the graph to a DAG
     let mut scc_graph: DiGraphMap<Component, ()> = GraphMap::new();
-    let mut scc_spans: HashMap<Component, Vec<(Node, Span, Node)>> = HashMap::new();
+    let mut scc_spans: FastHashMap<Component, Vec<(Node, Span, Node)>> = FastHashMap::default();
 
     for scc in 0..scc_to_nodes.len() {
         scc_graph.add_node(Component(scc));
     }
 
-    for (s, t, _) in delta.all_edges() {
-        let s = node_to_scc[&s];
-        let t = node_to_scc[&t];
+    for e in delta.edge_references() {
+        let s = node_to_scc[delta.node_weight(e.source()).unwrap()];
+        let t = node_to_scc[delta.node_weight(e.target()).unwrap()];
 
         if s != t {
             scc_graph.add_edge(s, t, ());
@@ -389,10 +404,11 @@ fn colimit_recursive(
     }
 
     // Linearize the DAG if possible.
-    let scc_to_priority: HashMap<Component, (usize, BiasValue)> = {
+    let scc_to_priority: FastHashMap<Component, (usize, BiasValue)> = {
         // This bit relies on the topological order of the strongly connected components
         // to compute the shortest distance from a root.
-        let mut scc_to_priority: HashMap<Component, (usize, BiasValue)> = HashMap::new();
+        let mut scc_to_priority: FastHashMap<Component, (usize, BiasValue)> =
+            FastHashMap::default();
 
         for (scc, _) in scc_to_nodes.iter().enumerate() {
             let distance = scc_graph
@@ -422,14 +438,14 @@ fn colimit_recursive(
         return Err(ContractionError::Ambiguous);
     }
 
-    let component_to_index: HashMap<Component, usize> = components_sorted
+    let component_to_index: FastHashMap<Component, usize> = components_sorted
         .iter()
         .enumerate()
         .map(|(index, scc)| (*scc, index))
         .collect();
 
     // Solve the recursive subproblems
-    let mut rewrite_slices: HashMap<Node, Rewrite> = HashMap::new();
+    let mut rewrite_slices: FastHashMap<Node, Rewrite> = FastHashMap::default();
 
     for component in scc_graph.nodes() {
         let nodes = &scc_to_nodes[component.0];
@@ -459,7 +475,7 @@ fn colimit_recursive(
     }
 
     // Assemble cospans of the target diagram
-    let mut cospans: Vec<Cospan> = Vec::new();
+    let mut cospans: Vec<Cospan> = Vec::with_capacity(components_sorted.len());
 
     for component in &components_sorted {
         // Sort the nodes. This will assure that the forward rewrite into the first node

@@ -1,4 +1,6 @@
-use std::cell::Cell;
+use std::{cell::Cell, collections::HashMap, hash::BuildHasherDefault};
+
+use rustc_hash::FxHasher;
 
 use crate::common::Generator;
 
@@ -67,3 +69,6 @@ where
         Self::new()
     }
 }
+
+pub type Hasher = BuildHasherDefault<FxHasher>;
+pub type FastHashMap<K, V> = HashMap<K, V, Hasher>;

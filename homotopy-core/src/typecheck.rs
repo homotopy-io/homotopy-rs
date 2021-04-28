@@ -1,4 +1,3 @@
-use crate::normalization::normalize;
 use crate::rewrite::{Cone, Cospan, Rewrite, RewriteN};
 use crate::{
     common::{Generator, Height, SingularHeight},
@@ -8,12 +7,11 @@ use crate::{
     diagram::{Diagram, DiagramN},
     signature::Signature,
 };
-use rustc_hash::FxHasher;
+use crate::{normalization::normalize, util::FastHashMap};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::convert::Into;
 use std::convert::TryInto;
-use std::hash::BuildHasherDefault;
 use std::rc::Rc;
 use thiserror::Error;
 
@@ -34,10 +32,8 @@ pub enum Mode {
     Shallow,
 }
 
-type Hasher = BuildHasherDefault<FxHasher>;
-
 thread_local! {
-    static RESTRICT_CACHE: RefCell<HashMap<(Rewrite, Embedding), Rewrite, Hasher>> = RefCell::new(HashMap::default());
+    static RESTRICT_CACHE: RefCell<FastHashMap<(Rewrite, Embedding), Rewrite>> = RefCell::new(FastHashMap::default());
 }
 
 pub fn typecheck<S>(diagram: &Diagram, signature: &S, mode: Mode) -> Result<(), TypeError>

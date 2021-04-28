@@ -1,20 +1,20 @@
-use crate::common::{
-    Boundary, DimensionError, Direction, Generator, Height, RegularHeight, SliceIndex,
-};
 use crate::rewrite::{Cospan, Rewrite, RewriteN};
 use crate::{
     attach::{attach, BoundaryPath},
     util::first_max_generator,
 };
+use crate::{
+    common::{Boundary, DimensionError, Direction, Generator, Height, RegularHeight, SliceIndex},
+    util::Hasher,
+};
 use hashconsing::{HConsed, HConsign, HashConsign};
-use rustc_hash::FxHasher;
+use std::fmt;
 use std::hash::Hash;
 use std::{
     cell::RefCell,
     convert::{From, Into},
 };
 use std::{collections::HashSet, convert::TryFrom};
-use std::{fmt, hash::BuildHasherDefault};
 use thiserror::Error;
 
 #[derive(PartialEq, Eq, Hash, Clone)]
@@ -153,8 +153,6 @@ pub fn globularity(s: &Diagram, t: &Diagram) -> bool {
 
 #[derive(PartialEq, Eq, Hash, Clone)]
 pub struct DiagramN(HConsed<DiagramInternal>);
-
-type Hasher = BuildHasherDefault<FxHasher>;
 
 thread_local! {
     static DIAGRAM_FACTORY: RefCell<HConsign<DiagramInternal, Hasher>> = RefCell::new(HConsign::with_capacity_and_hasher(37, Hasher::default()));

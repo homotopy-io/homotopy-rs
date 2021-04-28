@@ -5,17 +5,13 @@ use crate::{
 };
 use crate::{diagram::Diagram, util::first_max_generator};
 
+use crate::util::Hasher;
 use hashconsing::{HConsed, HConsign, HashConsign};
-use rustc_hash::FxHasher;
+use std::convert::{From, Into, TryFrom};
 use std::fmt;
 use std::hash::Hash;
 use std::ops::Range;
 use std::{cell::RefCell, cmp::Ordering};
-use std::{
-    convert::{From, Into, TryFrom},
-    hash::BuildHasherDefault,
-};
-
 use thiserror::Error;
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
@@ -243,8 +239,6 @@ impl Rewrite0 {
 pub struct RewriteN(HConsed<RewriteInternal>);
 
 // consign! { let REWRITE_FACTORY = consign(37) for RewriteInternal; }
-
-type Hasher = BuildHasherDefault<FxHasher>;
 
 thread_local! {
     static REWRITE_FACTORY: RefCell<HConsign<RewriteInternal, Hasher>> = RefCell::new(HConsign::with_capacity_and_hasher(37, Hasher::default()));
