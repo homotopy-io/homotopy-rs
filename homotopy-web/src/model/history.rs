@@ -54,7 +54,7 @@ impl Snapshot {
 }
 
 #[derive(Debug, Clone)]
-pub(super) struct History {
+pub struct History {
     start: Tree<Snapshot>,
     current: NodeRef<Snapshot>,
 }

@@ -36,6 +36,7 @@ yewtil = { git = "https://github.com/yewstack/yew" }
 # The `wasm-bindgen` crate provides the bare minimum functionality needed
 # to interact with JavaScript.
 wasm-bindgen = { version = "0.2.45", features = ["serde-serialize"] }
+gloo-timers = "0.2.1"
 
 wasm-logger = "*"
 log = "*"

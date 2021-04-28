@@ -351,6 +351,28 @@ body, html {
   color: red;
 }
 
+/* Toaster */
+.toaster {
+  position: absolute;
+  bottom: 20px;
+  right: 0px;
+  width: 300px;
+}
+
+.toaster__toast {
+  padding: var(--space-1);
+  margin: var(--space-1);
+}
+
+.toaster__toast--error {
+  background: #c0392b;
+  color: white;
+}
+
+.toaster__toast--success {
+  background: #27ae60;
+}
+
 /* https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#using_a_label_element_to_trigger_a_hidden_file_input_element */
 
 .visually-hidden {

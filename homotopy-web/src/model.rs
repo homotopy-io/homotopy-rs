@@ -1,21 +1,24 @@
+use im::Vector;
 use std::{cell::Ref, convert::Into};
 use thiserror::Error;
+use yew::Callback;
 pub mod proof;
+use self::history::History;
+use gloo_timers::callback::Timeout;
 use proof::{AttachOption, Color, GeneratorInfo, Proof, Signature, Workspace};
 
-use self::history::History;
 pub mod history;
 pub mod serialize;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
     ToggleDrawer(Drawer),
-
     Proof(proof::Action),
-
     History(history::Action),
-
-    Serialize(serialize::Serialize),
+    ImportProof(Box<(Signature, Option<Workspace>)>),
+    ExportProof,
+    ShowToast(Toast),
+    RemoveToast(usize),
 }
 
 impl From<proof::Action> for Action {
@@ -30,16 +33,11 @@ impl From<history::Action> for Action {
     }
 }
 
-impl From<serialize::Serialize> for Action {
-    fn from(action: serialize::Serialize) -> Self {
-        Self::Serialize(action)
-    }
-}
-
 #[derive(Debug, Clone, Default)]
 pub struct State {
-    history: History,
-    drawer: Option<Drawer>,
+    pub history: History,
+    pub drawer: Option<Drawer>,
+    pub toaster: Toaster,
 }
 
 impl State {
@@ -57,12 +55,16 @@ impl State {
     }
 
     /// Update the state in response to an [Action].
-    pub fn update(&mut self, action: Action) -> Result<(), ModelError> {
+    pub fn update(&mut self, action: Action, dispatch: Callback<Action>) -> Result<(), ModelError> {
         match action {
             Action::ToggleDrawer(drawer) => {
-                self.toggle_drawer(drawer);
-                Ok(())
+                if self.drawer == Some(drawer) {
+                    self.drawer = None;
+                } else {
+                    self.drawer = Some(drawer);
+                }
             }
+
             Action::Proof(action) => {
                 let mut proof = self.proof().clone();
                 proof.update(&action).map_err(ModelError::from)?;
@@ -72,54 +74,57 @@ impl State {
                 };
 
                 self.history.add(action, proof);
-                Ok(())
             }
+
             Action::History(history::Action::Move(dir)) => {
                 use homotopy_core::Direction::{Backward, Forward};
                 match dir {
                     history::Direction::Linear(Forward) => {
-                        self.history.redo().map_err(ModelError::from)
+                        self.history.redo()?;
                     }
                     history::Direction::Linear(Backward) => {
-                        self.history.undo().map_err(ModelError::from)
+                        self.history.undo()?;
                     }
-                }
+                };
             }
-            Action::Serialize(serialize::Serialize::Export) => self.export(),
-            Action::Serialize(serialize::Serialize::Import(data)) => {
+
+            Action::ExportProof => {
+                let data: serialize::Data = self.proof().workspace.clone().map_or_else(
+                    || self.proof().signature.clone().into(),
+                    |ws| (self.proof().signature.clone(), ws).into(),
+                );
+                serialize::generate_download(
+                    &"filename_todo.hom",
+                    &Into::<Vec<u8>>::into(data).as_slice(),
+                )
+                .map_err(ModelError::Export)?;
+            }
+
+            Action::ImportProof(data) => {
                 let (signature, workspace) = *data;
-                self.import(signature, workspace);
-                Ok(())
+                let mut proof: Proof = Default::default();
+                proof.signature = signature;
+                proof.workspace = workspace;
+                self.history.add(proof::Action::Imported, proof);
+            }
+
+            Action::ShowToast(toast) => {
+                let next_id = self.toaster.next_id;
+                self.toaster.next_id = next_id + 1;
+                self.toaster.toasts.push_back((next_id, toast));
+
+                Timeout::new(1500, {
+                    move || dispatch.emit(Action::RemoveToast(next_id))
+                })
+                .forget();
+            }
+
+            Action::RemoveToast(id) => {
+                self.toaster.toasts.retain(|(toast_id, _)| *toast_id != id);
             }
         }
-    }
 
-    /// Handler for [Action::ToggleDrawer].
-    fn toggle_drawer(&mut self, drawer: Drawer) {
-        if self.drawer == Some(drawer) {
-            self.drawer = None;
-        } else {
-            self.drawer = Some(drawer);
-        }
-    }
-
-    fn export(&self) -> Result<(), ModelError> {
-        let data: serialize::Data = self.proof().workspace.clone().map_or_else(
-            || self.proof().signature.clone().into(),
-            |ws| (self.proof().signature.clone(), ws).into(),
-        );
-        serialize::generate_download(
-            &"filename_todo.hom",
-            &Into::<Vec<u8>>::into(data).as_slice(),
-        )
-        .map_err(ModelError::Export)
-    }
-
-    fn import(&mut self, signature: Signature, workspace: Option<Workspace>) {
-        let mut proof: Proof = Default::default();
-        proof.signature = signature;
-        proof.workspace = workspace;
-        self.history.add(proof::Action::Imported, proof);
+        Ok(())
     }
 
     pub fn drawer(&self) -> Option<Drawer> {
@@ -144,4 +149,33 @@ pub enum Drawer {
     Project,
     Signature,
     User,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Toaster {
+    pub toasts: Vector<(ToastId, Toast)>,
+    pub next_id: usize,
+}
+
+impl Default for Toaster {
+    fn default() -> Self {
+        Self {
+            toasts: Default::default(),
+            next_id: 0,
+        }
+    }
+}
+
+type ToastId = usize;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Toast {
+    pub message: String,
+    pub kind: ToastKind,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ToastKind {
+    Success,
+    Error,
 }

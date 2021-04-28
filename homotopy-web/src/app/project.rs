@@ -7,9 +7,7 @@ use yew_functional::use_state;
 use yew_services::{reader::FileData, ReaderService};
 
 use crate::model::serialize::Data;
-use crate::model::serialize::Serialize::{Export, Import};
 use crate::model::Action;
-use crate::model::Action::Serialize;
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct Props {
@@ -18,7 +16,7 @@ pub struct Props {
 
 #[function_component(ProjectView)]
 pub fn project_view(props: &Props) -> Html {
-    let export = props.dispatch.reform(|_| Serialize(Export));
+    let export = props.dispatch.reform(|_| Action::ExportProof);
     let dispatch = &props.dispatch;
     let (_, set_reader_task) = use_state(|| None);
     let import: Callback<ChangeData> = Callback::from(closure!(clone dispatch, |evt| {
@@ -28,7 +26,7 @@ pub fn project_view(props: &Props) -> Html {
                 closure!(clone dispatch, clone set_reader_task, |fd: FileData| {
                     let data: Data = fd.content.into();
                     let (signature, workspace) = data.into();
-                    dispatch.emit(Serialize(Import((signature, workspace).into())));
+                    dispatch.emit(Action::ImportProof((signature, workspace).into()));
                     set_reader_task(None);
                 }),
             );

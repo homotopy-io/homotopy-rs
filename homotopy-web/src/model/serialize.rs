@@ -1,15 +1,9 @@
+use super::{AttachOption, Color, GeneratorInfo, Signature, Workspace};
 use homotopy_core::common::{Generator, SliceIndex};
 use homotopy_core::serialize::{Key, Keyed, Serialization};
 use homotopy_core::Diagram;
 use im::{HashMap, Vector};
 use wasm_bindgen::JsCast;
-
-use super::{AttachOption, Color, GeneratorInfo, Signature, Workspace};
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Serialize {
-    Export,
-    Import(Box<(Signature, Option<Workspace>)>),
-}
 
 pub fn generate_download(name: &str, data: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
     let val: js_sys::Uint8Array = data.into();

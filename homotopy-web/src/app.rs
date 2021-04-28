@@ -5,6 +5,7 @@ mod panzoom;
 mod project;
 mod signature;
 mod signature_stylesheet;
+mod toasts;
 mod workspace;
 use crate::model::Drawer;
 use crate::model::{self, history};
@@ -16,10 +17,11 @@ use homotopy_core::{
     Height, SliceIndex,
 };
 use icon::{Icon, IconSize};
+use model::{Toast, ToastKind};
 use project::ProjectView;
 use signature::SignatureView;
 use signature_stylesheet::SignatureStylesheet;
-use std::panic;
+use toasts::Toaster;
 use wasm_bindgen::JsCast;
 use workspace::WorkspaceView;
 
@@ -202,27 +204,14 @@ impl Component for App {
             Message::Dispatch(action) => {
                 log::info!("Received action: {:?}", action);
 
-                let result = panic::catch_unwind({
-                    let mut state = self.state.clone();
-                    panic::AssertUnwindSafe(move || -> Result<_, model::ModelError> {
-                        state.update(action)?;
-                        Ok(state)
-                    })
-                });
-
-                // Map panics to internal model errors
-                let result = match result {
-                    Ok(inner) => inner,
-                    Err(_) => Err(model::ModelError::Internal),
-                };
-
-                match result {
-                    Ok(state) => {
-                        // Commit update
-                        self.state = state;
-                    }
+                match self.state.update(action, self.dispatch.clone()) {
+                    Ok(()) => {}
                     Err(error) => {
                         // TODO: Display a toast
+                        self.dispatch.emit(model::Action::ShowToast(Toast {
+                            message: format!("{}", error),
+                            kind: ToastKind::Error,
+                        }));
                         log::error!("Error occured: {}", error);
                     }
                 }
@@ -261,8 +250,6 @@ impl Component for App {
             }
         };
 
-        let drawer = self.drawer();
-
         html! {
             <main class="app">
                 <aside class="sidebar">
@@ -298,8 +285,9 @@ impl Component for App {
                         {BUTTON_CLEAR.view(dispatch, proof.workspace().is_some())}
                     </nav>
                 </aside>
-                {drawer}
+                {self.drawer()}
                 {workspace}
+                <Toaster toasts={self.state.toaster.toasts.clone()} />
                 <span class="version">
                     {format!("Version: {}", option_env!("GIT_DESCRIBE").unwrap_or(env!("CARGO_PKG_VERSION")))}
                 </span>
