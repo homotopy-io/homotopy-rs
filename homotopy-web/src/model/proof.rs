@@ -580,9 +580,10 @@ impl Proof {
         for ws in self.workspace.iter_mut() {
             let mut diagram = ws.diagram.clone();
             for height in &ws.path {
-                matches!(height, SliceIndex::Interior(Height::Regular(_)))
-                    .then(|| ())
-                    .ok_or(ModelError::InvalidAction)?;
+                (matches!(height, SliceIndex::Boundary(_))
+                    || matches!(height, SliceIndex::Interior(Height::Regular(_))))
+                .then(|| ())
+                .ok_or(ModelError::InvalidAction)?;
                 diagram = DiagramN::try_from(diagram)
                     .map_err(ModelError::InvalidSlice)?
                     .slice(*height)

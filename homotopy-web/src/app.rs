@@ -114,7 +114,7 @@ const BUTTON_RESTRICT: SidebarButton = SidebarButton {
     label: "Restrict",
     icon: "find_replace",
     action: model::Action::Proof(model::proof::Action::Restrict),
-    shortcut: None,
+    shortcut: Some('r'),
 };
 
 const BUTTON_THEOREM: SidebarButton = SidebarButton {
@@ -277,7 +277,11 @@ impl Component for App {
                     <nav class="sidebar__tools">
                         {BUTTON_UNDO.view(dispatch, self.state.can_undo())}
                         {BUTTON_REDO.view(dispatch, self.state.can_redo())}
-                        {BUTTON_RESTRICT.view(dispatch, proof.workspace().map_or(false, |ws| !ws.path.is_empty() && ws.path.iter().all(|s| matches!(s, SliceIndex::Interior(Height::Regular(_))))))}
+                        {BUTTON_RESTRICT.view(dispatch, proof.workspace().map_or(false, |ws|
+                             !ws.path.is_empty()
+                          && ws.path.iter().all(|s|
+                                  matches!(s, SliceIndex::Boundary(_))
+                               || matches!(s, SliceIndex::Interior(Height::Regular(_))))))}
                         {BUTTON_THEOREM.view(dispatch, proof.workspace().map_or(false, |ws| ws.diagram.dimension() > 0))}
                         {BUTTON_ADD_GENERATOR.view(dispatch, true)}
                         {BUTTON_SOURCE.view(dispatch, proof.workspace().is_some()
