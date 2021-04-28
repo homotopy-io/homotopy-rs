@@ -87,3 +87,31 @@ pub fn matchsticks() -> (impl Signature, DiagramN) {
     let down = sig.add(x.identity(), f).unwrap();
     (sig, up.attach(&down, Boundary::Target, &[]).unwrap())
 }
+
+// | |    ...    |
+// | |    ...    e
+// | |    ...    |
+// | | (n times) |
+// | |    ...    |
+// | e    ...    |
+// | |    ...    |
+// e |    ...    |
+// | |    ...    |
+pub fn bead_series(n: usize) -> (impl Signature, DiagramN) {
+    let mut sig = SignatureBuilder::new();
+
+    let x = sig.add_zero();
+    let f = sig.add(x.clone(), x).unwrap();
+    let e = sig.add(f.clone(), f.clone()).unwrap();
+
+    let mut res = e.clone();
+    for i in 1..n {
+        res = res
+            .attach(&f, Boundary::Target, &[])
+            .unwrap()
+            .attach(&e, Boundary::Target, &[i])
+            .unwrap();
+    }
+
+    (sig, res)
+}

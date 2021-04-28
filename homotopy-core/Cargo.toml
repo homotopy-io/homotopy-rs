@@ -16,6 +16,11 @@ thiserror = "*"
 
 [dev-dependencies]
 cargo-husky = { features = ["precommit-hook", "run-cargo-check", "run-cargo-test", "run-cargo-fmt", "run-cargo-clippy"], version = "*" }
+criterion = "*"
 insta = "*"
 quickcheck = "*"
 quickcheck_macros = "*"
+
+[[bench]]
+name = "bench"
+harness = false
