@@ -209,6 +209,8 @@ impl Component for App {
                 let time_stop = performance();
                 log::info!("State update took {}ms.", time_stop - time_start);
 
+                homotopy_core::collect_garbage();
+
                 match result {
                     Ok(()) => {}
                     Err(error) => {

@@ -14,7 +14,7 @@ crate-type = ["cdylib", "rlib"]
 wasm-opt = false
 
 [features]
-default = ["console_error_panic_hook", "wee_alloc"]
+default = ["console_error_panic_hook"]
 
 [dependencies]
 palette = { git = "https://github.com/Ogeon/palette", features = ["serializing"] }
@@ -49,11 +49,6 @@ thiserror = "*"
 # all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
 # code size when deploying.
 console_error_panic_hook = { version = "*", optional = true }
-
-# `wee_alloc` is a tiny allocator for wasm that is only ~1K in code size
-# compared to the default allocator's ~10K. However, it is slower than the default
-# allocator, so it's not enabled by default.
-wee_alloc = { version = "*", optional = true }
 # need latest git version because of https://github.com/bodil/im-rs/issues/143
 im = { git = "https://github.com/bodil/im-rs", features = ["serde"] }
 arrayvec = "0.5"

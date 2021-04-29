@@ -212,7 +212,7 @@ fn read_touch_list<'a>(
     let (rect_left, rect_top) = (rect.left(), rect.top());
 
     (0..touch_list.length())
-        .flat_map(move |i| touch_list.item(i))
+        .filter_map(move |i| touch_list.item(i))
         .map(move |touch| {
             let finger = touch.identifier();
             let x = f64::from(touch.client_x()) - rect_left;

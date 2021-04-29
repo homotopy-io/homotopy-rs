@@ -59,9 +59,9 @@ impl Generators {
         };
 
         match x {
-            SliceIndex::Boundary(Boundary::Source) => slice.first().cloned(),
-            SliceIndex::Boundary(Boundary::Target) => slice.last().cloned(),
-            SliceIndex::Interior(height) => slice.get(height.to_int()).cloned(),
+            SliceIndex::Boundary(Boundary::Source) => slice.first().copied(),
+            SliceIndex::Boundary(Boundary::Target) => slice.last().copied(),
+            SliceIndex::Interior(height) => slice.get(height.to_int()).copied(),
         }
     }
 }
@@ -102,7 +102,7 @@ impl Depths {
                         node_depths[edge.source().index()].map(|d| r.singular_image(d));
                     edge_depths[edge.id().index()] = edge_depth;
 
-                    let target_depth = r.targets().first().cloned();
+                    let target_depth = r.targets().first().copied();
                     node_depth = min_defined(min_defined(node_depth, edge_depth), target_depth);
                 };
             }

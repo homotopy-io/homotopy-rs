@@ -193,6 +193,10 @@ impl DiagramN {
         )
     }
 
+    pub(crate) fn collect_garbage() {
+        DIAGRAM_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
+    }
+
     /// The dimension of the diagram, which is at least one.
     pub fn dimension(&self) -> usize {
         self.0.source.dimension() + 1
@@ -367,7 +371,7 @@ impl DiagramN {
     /// Determine the first maximum-dimensional generator.
     pub fn max_generator(&self) -> Generator {
         let source = std::iter::once(self.source().max_generator());
-        let cospans = self.cospans().iter().flat_map(Cospan::max_generator);
+        let cospans = self.cospans().iter().filter_map(Cospan::max_generator);
         let generators = source.chain(cospans);
         first_max_generator(generators, Some(self.dimension())).unwrap()
     }
@@ -375,28 +379,6 @@ impl DiagramN {
     pub fn identity(&self) -> Self {
         Diagram::from(self.clone()).identity()
     }
-
-    // pub fn expand(
-    //     &self,
-    //     path: &[SliceIndex],
-    //     direction: Direction,
-    // ) -> Result<Self, ExpansionError> {
-    //     let (boundary_path, interior_path) = BoundaryPath::split(path);
-
-    //     if let Some(boundary_path) = boundary_path {
-    //         expand(self, &boundary_path, &interior_path, direction)
-    //     } else {
-    //         {
-    //             let result = expand(
-    //                 &self.identity(),
-    //                 &Boundary::Target.into(),
-    //                 &interior_path,
-    //                 direction,
-    //             )?;
-    //             Ok(result.target().try_into().unwrap())
-    //         }
-    //     }
-    // }
 
     // TODO: This needs better documentation
 

@@ -553,7 +553,7 @@ impl Proof {
                 .clone()
                 .try_into()
                 .unwrap();
-            let embedding: Vec<_> = option.embedding.iter().cloned().collect();
+            let embedding: Vec<_> = option.embedding.iter().copied().collect();
 
             let result = match &option.boundary_path {
                 Some(bp) => diagram
@@ -643,7 +643,7 @@ impl Proof {
             let diagram: DiagramN = workspace.diagram.clone().try_into().unwrap();
 
             let location = {
-                let mut location: Vec<_> = workspace.path.iter().cloned().collect();
+                let mut location: Vec<_> = workspace.path.iter().copied().collect();
                 location.extend(homotopy.location.clone());
                 location
             };
@@ -683,7 +683,7 @@ impl Proof {
         if let Some(workspace) = &mut self.workspace {
             let diagram: DiagramN = workspace.diagram.clone().try_into().unwrap();
             let location = {
-                let mut location: Vec<_> = workspace.path.iter().cloned().collect();
+                let mut location: Vec<_> = workspace.path.iter().copied().collect();
                 location.extend(homotopy.location.clone());
                 location
             };

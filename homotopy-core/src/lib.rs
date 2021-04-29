@@ -65,3 +65,9 @@ pub use common::{Boundary, Direction, Generator, Height, SliceIndex};
 pub use contraction::Bias;
 pub use diagram::{Diagram, DiagramN};
 pub use rewrite::{Cospan, Rewrite, Rewrite0, RewriteN};
+
+pub fn collect_garbage() {
+    DiagramN::collect_garbage();
+    RewriteN::collect_garbage();
+    rewrite::Cone::collect_garbage();
+}

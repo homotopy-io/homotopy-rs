@@ -108,7 +108,7 @@ impl Positions {
             .iter()
             .map(|row| row.last().unwrap())
             .max_by_key(|x| (**x * 100.0).floor() as usize)
-            .cloned()
+            .copied()
             .unwrap()
     }
 }

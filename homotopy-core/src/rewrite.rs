@@ -294,6 +294,10 @@ impl RewriteN {
         }))
     }
 
+    pub(crate) fn collect_garbage() {
+        REWRITE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
+    }
+
     pub(crate) fn cones(&self) -> &[Cone] {
         &self.0.cones
     }
@@ -561,7 +565,7 @@ impl RewriteN {
                     self.cones()
                         .iter()
                         .flat_map(|cone| &cone.internal.source)
-                        .flat_map(Cospan::max_generator),
+                        .filter_map(Cospan::max_generator),
                     None,
                 )
             }),
@@ -569,7 +573,7 @@ impl RewriteN {
                 first_max_generator(
                     self.cones()
                         .iter()
-                        .flat_map(|cone| cone.internal.target.max_generator()),
+                        .filter_map(|cone| cone.internal.target.max_generator()),
                     None,
                 )
             }),
@@ -630,6 +634,11 @@ impl Cone {
             }),
         }
     }
+
+    pub(crate) fn collect_garbage() {
+        CONE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
+    }
+
     pub(crate) fn is_identity(&self) -> bool {
         self.internal.slices.len() == 1
             && self.internal.source.len() == 1
