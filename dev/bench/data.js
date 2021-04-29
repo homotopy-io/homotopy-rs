@@ -99,15 +99,15 @@ window.BENCHMARK_DATA = {
           },
           {
             "name": "contract high dimensions/8",
-            "value": 2.0605,
-            "range": "+/- 0.011",
-            "unit": "s"
+            "value": 2060.5,
+            "range": "+/- 11",
+            "unit": "ms"
           },
           {
             "name": "contract high dimensions/9",
-            "value": 15.69,
-            "range": "+/- 0.071",
-            "unit": "s"
+            "value": 15690,
+            "range": "+/- 71",
+            "unit": "ms"
           },
           {
             "name": "expand matchsticks/expand",
@@ -219,15 +219,15 @@ window.BENCHMARK_DATA = {
           },
           {
             "name": "contract high dimensions/8",
-            "value": 2.2825,
-            "range": "+/- 0.015",
-            "unit": "s"
+            "value": 2282.5,
+            "range": "+/- 15",
+            "unit": "ms"
           },
           {
             "name": "contract high dimensions/9",
-            "value": 16.896,
-            "range": "+/- 0.142",
-            "unit": "s"
+            "value": 16896,
+            "range": "+/- 142",
+            "unit": "ms"
           },
           {
             "name": "expand matchsticks/expand",
