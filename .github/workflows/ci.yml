@@ -106,6 +106,15 @@ jobs:
           npm install
           npm run build
 
+      - name: Checkout historical benchmarking data
+        uses: actions/checkout@v2
+        with:
+          ref: gh-pages
+          path: olddist
+
+      - name: Merge historical benchmarking data
+        run: mv olddist/dev homotopy-web/dist/dev
+
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@4.0.0
         with:
@@ -115,7 +124,7 @@ jobs:
   benchmark:
     name: Benchmark
     runs-on: ubuntu-latest
-    needs: [check, test]
+    needs: [build-and-deploy]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -134,7 +143,7 @@ jobs:
         run: CARGO_HUSKY_DONT_INSTALL_HOOKS=true cargo bench | tee output.txt
 
       - name: Store benchmark result
-        uses: jasonwilliams/github-action-benchmark@v1
+        uses: NickHu/github-action-benchmark@v1
         with:
           name: Rust Benchmark
           tool: 'criterion'
