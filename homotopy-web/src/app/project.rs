@@ -25,8 +25,7 @@ pub fn project_view(props: &Props) -> Html {
             let callback = Callback::from(
                 closure!(clone dispatch, clone set_reader_task, |fd: FileData| {
                     let data: Data = fd.content.into();
-                    let (signature, workspace) = data.into();
-                    dispatch.emit(Action::ImportProof((signature, workspace).into()));
+                    dispatch.emit(Action::ImportProof(data.into()));
                     set_reader_task(None);
                 }),
             );

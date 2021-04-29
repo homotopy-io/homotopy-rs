@@ -15,7 +15,7 @@ pub enum Action {
     ToggleDrawer(Drawer),
     Proof(proof::Action),
     History(history::Action),
-    ImportProof(Box<(Signature, Option<Workspace>)>),
+    ImportProof(Box<serialize::Data>),
     ExportProof,
     ShowToast(Toast),
     RemoveToast(usize),
@@ -101,7 +101,7 @@ impl State {
             }
 
             Action::ImportProof(data) => {
-                let (signature, workspace) = *data;
+                let (signature, workspace) = (*data).into();
                 let mut proof: Proof = Default::default();
                 proof.signature = signature;
                 proof.workspace = workspace;

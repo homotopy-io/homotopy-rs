@@ -29,11 +29,17 @@ pub fn generate_download(name: &str, data: &[u8]) -> Result<(), wasm_bindgen::Js
     web_sys::Url::revoke_object_url(&url)
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Default, serde::Serialize, serde::Deserialize)]
-pub(crate) struct Data {
+#[derive(PartialEq, Eq, Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct Data {
     signature: Serialization,
     generator_info: HashMap<Generator, (String, Color)>,
     workspace: Option<WorkspaceSer>,
+}
+
+impl std::fmt::Debug for Data {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Data").finish()
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, serde::Serialize, serde::Deserialize)]
