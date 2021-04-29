@@ -13,9 +13,12 @@ use crate::{
     diagram::{Diagram, DiagramN},
     signature::Signature,
 };
-use petgraph::graphmap::{DiGraphMap, GraphMap};
+use petgraph::graph::NodeIndex;
 use petgraph::unionfind::UnionFind;
-use petgraph::{algo::tarjan_scc, graph::NodeIndex};
+use petgraph::{
+    algo::kosaraju_scc,
+    graphmap::{DiGraphMap, GraphMap},
+};
 use petgraph::{graph::DiGraph, visit::EdgeRef};
 use std::convert::{Into, TryFrom, TryInto};
 use std::hash::Hash;
@@ -354,7 +357,7 @@ fn colimit_recursive(
     }
 
     // Get the strongly connected components of the delta graph in topological order.
-    let scc_to_nodes: Vec<Vec<Node>> = tarjan_scc(&delta)
+    let scc_to_nodes: Vec<Vec<Node>> = kosaraju_scc(&delta)
         .into_iter()
         .rev()
         .map(|indices| {
