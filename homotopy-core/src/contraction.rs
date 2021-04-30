@@ -1,4 +1,3 @@
-use crate::normalization;
 use crate::rewrite::{Cone, Cospan, Rewrite, Rewrite0, RewriteN};
 use crate::util::FastHashMap;
 use crate::{
@@ -13,6 +12,7 @@ use crate::{
     diagram::{Diagram, DiagramN},
     signature::Signature,
 };
+use crate::{normalization, util::FastHashSet};
 use petgraph::graph::NodeIndex;
 use petgraph::unionfind::UnionFind;
 use petgraph::{
@@ -24,8 +24,14 @@ use std::convert::{Into, TryFrom, TryInto};
 use std::hash::Hash;
 use thiserror::Error;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct Span(Rewrite, Diagram, Rewrite);
+
+impl Span {
+    fn is_identity(&self) -> bool {
+        self.0.is_identity() && self.2.is_identity()
+    }
+}
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy, Hash, PartialOrd, Ord)]
 struct Node(usize, usize);
@@ -240,7 +246,7 @@ fn colimit(
     if dimension == 0 {
         colimit_base(diagrams, spans)
     } else {
-        colimit_recursive(diagrams, spans)
+        colimit_recursive_simplify(diagrams, spans)
     }
 }
 
@@ -287,6 +293,80 @@ fn colimit_base(
     }
 }
 
+/// Solve the recursive step of the contraction algorithm by simplifying the problem first and then
+/// calling `colimit_recursive_simplify`. The simplification step identitifies diagrams that are
+/// connected with an identity span.
+fn colimit_recursive_simplify(
+    diagrams: &[(Diagram, BiasValue)],
+    spans: &[(usize, Span, usize)],
+) -> Result<Vec<Rewrite>, ContractionError> {
+    // If every span consists just of identities then also all diagrams must be equal
+    // so we can just return the identity rewrite for all of them.
+    if spans.iter().all(|span| span.1.is_identity()) {
+        let dimension = diagrams[0].0.dimension();
+        return Ok((0..diagrams.len())
+            .map(|_| Rewrite::identity(dimension))
+            .collect());
+    }
+
+    // Simplify the problem by treating diagrams that are connected by an identity span as the
+    // same. Also keep track of how the index of a diagram in the original problem maps to an
+    // index of a diagram in the simplified one.
+    let (diagrams_simplified, original_to_simplified) = {
+        let mut canonical_index = UnionFind::<usize>::new(diagrams.len());
+        let mut biases: Vec<BiasValue> = diagrams.iter().map(|(_, bias)| *bias).collect();
+
+        for (source, span, target) in spans {
+            if span.is_identity() {
+                let source_bias = biases[canonical_index.find(*source)];
+                let target_bias = biases[canonical_index.find(*target)];
+                canonical_index.union(*source, *target);
+                biases[canonical_index.find(*source)] = std::cmp::min(source_bias, target_bias);
+            }
+        }
+
+        let mut diagrams_simplified = Vec::with_capacity(diagrams.len());
+        let mut original_to_simplified: Vec<Option<usize>> =
+            (0..diagrams.len()).map(|_| None).collect();
+
+        for i in 0..diagrams.len() {
+            if i == canonical_index.find(i) {
+                original_to_simplified[i] = Some(diagrams_simplified.len());
+                diagrams_simplified.push((diagrams[i].0.clone(), biases[i]));
+            }
+        }
+
+        let original_to_simplified = move |original_index| {
+            original_to_simplified[canonical_index.find(original_index)].unwrap()
+        };
+        (diagrams_simplified, original_to_simplified)
+    };
+
+    // Update the spans so that their indices reference diagrams in the simplified problem
+    // and filter out the identity spans. At this point there can be a lot of duplicate spans
+    // so the problem can be further simplified by deduplifying.
+    let spans_simplified: Vec<(usize, Span, usize)> = {
+        let mut spans_dedup: FastHashSet<(usize, Span, usize)> = FastHashSet::default();
+
+        spans
+            .iter()
+            .filter(|(_, span, _)| !span.is_identity())
+            .cloned()
+            .map(|(s, span, t)| (original_to_simplified(s), span, original_to_simplified(t)))
+            .filter(|e| spans_dedup.insert(e.clone()))
+            .collect()
+    };
+
+    // Solve the simplified problem.
+    let solution = colimit_recursive(&diagrams_simplified, &spans_simplified)?;
+
+    // Translate the solution of the simplified problem to a solution of the original one.
+    Ok((0..diagrams.len())
+        .map(|i| solution[original_to_simplified(i)].clone())
+        .collect())
+}
+
+/// Solve the recursive step of the contraction algorithm.
 fn colimit_recursive(
     diagrams: &[(Diagram, BiasValue)],
     spans: &[(usize, Span, usize)],
@@ -510,7 +590,7 @@ fn colimit_recursive(
     );
 
     // Assemble the rewrites
-    let mut rewrites: Vec<Rewrite> = Vec::new();
+    let mut rewrites: Vec<Rewrite> = Vec::with_capacity(diagrams.len());
 
     for (key, diagram) in diagrams.iter().enumerate() {
         let diagram: &DiagramN = (&diagram.0).try_into().unwrap();

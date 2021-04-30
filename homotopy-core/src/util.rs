@@ -1,4 +1,4 @@
-use std::{cell::Cell, collections::HashMap, hash::BuildHasherDefault};
+use std::{cell::Cell, collections::HashMap, collections::HashSet, hash::BuildHasherDefault};
 
 use rustc_hash::FxHasher;
 
@@ -72,3 +72,4 @@ where
 
 pub type Hasher = BuildHasherDefault<FxHasher>;
 pub type FastHashMap<K, V> = HashMap<K, V, Hasher>;
+pub type FastHashSet<K> = HashSet<K, Hasher>;
