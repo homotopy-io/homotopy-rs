@@ -14,7 +14,7 @@ use std::ops::Range;
 use std::{cell::RefCell, cmp::Ordering};
 use thiserror::Error;
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
 pub struct Cospan {
     pub forward: Rewrite,
     pub backward: Rewrite,
@@ -43,7 +43,7 @@ impl Cospan {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Hash)]
+#[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
 pub enum Rewrite {
     Rewrite0(Rewrite0),
     RewriteN(RewriteN),
@@ -174,7 +174,7 @@ impl Rewrite {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
 pub struct Rewrite0(pub(crate) Option<(Generator, Generator)>);
 
 impl fmt::Debug for Rewrite0 {
@@ -235,7 +235,7 @@ impl Rewrite0 {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Hash)]
+#[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
 pub struct RewriteN(HConsed<RewriteInternal>);
 
 // consign! { let REWRITE_FACTORY = consign(37) for RewriteInternal; }

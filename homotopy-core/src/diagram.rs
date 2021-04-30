@@ -17,7 +17,7 @@ use std::{
 use std::{collections::HashSet, convert::TryFrom};
 use thiserror::Error;
 
-#[derive(PartialEq, Eq, Hash, Clone)]
+#[derive(PartialEq, Eq, Hash, Clone, PartialOrd, Ord)]
 pub enum Diagram {
     Diagram0(Generator),
     DiagramN(DiagramN),
@@ -151,7 +151,7 @@ pub fn globularity(s: &Diagram, t: &Diagram) -> bool {
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Clone)]
+#[derive(PartialEq, Eq, Hash, Clone, PartialOrd, Ord)]
 pub struct DiagramN(HConsed<DiagramInternal>);
 
 thread_local! {
