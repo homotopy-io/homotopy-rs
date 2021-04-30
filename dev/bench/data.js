@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1619698731066,
+  "lastUpdate": 1619792534670,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -1079,6 +1079,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 39.716,
             "range": "+/- 0.737",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "lukas@heidemann.me",
+            "name": "Lukas Heidemann",
+            "username": "zrho"
+          },
+          "committer": {
+            "email": "lukas@heidemann.me",
+            "name": "Lukas Heidemann",
+            "username": "zrho"
+          },
+          "distinct": true,
+          "id": "2d04c8707f6af3ddc953a2556a8ddca3c68e1630",
+          "message": "Simplify recursive contraction problems.\n\nThe recursive calls to the colimit computation in the contraction\nprocedure often receive problems with a lot of identity spans; these\nproblems can be simplified which leads to considerable performance\nincreases in some cases.",
+          "timestamp": "2021-04-30T16:08:05+02:00",
+          "tree_id": "f0b115f71b6cbad6225c8ccf816041199f9f16c1",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/2d04c8707f6af3ddc953a2556a8ddca3c68e1630"
+        },
+        "date": 1619792522620,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 14.953,
+            "range": "+/- 0.201",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 15.62,
+            "range": "+/- 0.432",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 132.9,
+            "range": "+/- 4.260",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 146.09,
+            "range": "+/- 3.770",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 133.04,
+            "range": "+/- 3.470",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 150.84,
+            "range": "+/- 2.830",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 111.52,
+            "range": "+/- 2.200",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 797.62,
+            "range": "+/- 12.500",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.267,
+            "range": "+/- 0.049",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 11.13,
+            "range": "+/- 0.188",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 32.789,
+            "range": "+/- 0.883",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 94.055,
+            "range": "+/- 1.810",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 263.12,
+            "range": "+/- 3.300",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 693.84,
+            "range": "+/- 6.170",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 3.4699,
+            "range": "+/- 0.065",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 36.67,
+            "range": "+/- 0.557",
             "unit": "us"
           }
         ]
