@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1619792534670,
+  "lastUpdate": 1619796287977,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -1199,6 +1199,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 36.67,
             "range": "+/- 0.557",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "lukas@heidemann.me",
+            "name": "Lukas Heidemann",
+            "username": "zrho"
+          },
+          "committer": {
+            "email": "lukas@heidemann.me",
+            "name": "Lukas Heidemann",
+            "username": "zrho"
+          },
+          "distinct": true,
+          "id": "f3306f41db18828ff7ef0ca52d3f20786297c351",
+          "message": "Added ordering instances to diagrams and rewrites.\n\nThe ordering does not have any semantic meaning but could be used to\ncanonicalise subproblems through sorting. The ordering is determined by\nthe hash consing id and is not meant to be stable across runs.",
+          "timestamp": "2021-04-30T17:07:23+02:00",
+          "tree_id": "d90252505c09a4c504c720a98ad9638d3ccdb501",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/f3306f41db18828ff7ef0ca52d3f20786297c351"
+        },
+        "date": 1619796274298,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 16.727,
+            "range": "+/- 0.368",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 17.457,
+            "range": "+/- 0.436",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 134.89,
+            "range": "+/- 1.830",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 152.7,
+            "range": "+/- 2.290",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 138.14,
+            "range": "+/- 2.350",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 166.35,
+            "range": "+/- 2.040",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 121.81,
+            "range": "+/- 1.830",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 821.94,
+            "range": "+/- 18.120",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.2844,
+            "range": "+/- 0.045",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 10.962,
+            "range": "+/- 0.176",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 33.314,
+            "range": "+/- 0.300",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 96.337,
+            "range": "+/- 0.774",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 270.04,
+            "range": "+/- 1.500",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 731.63,
+            "range": "+/- 4.390",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 3.6988,
+            "range": "+/- 0.049",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 39.096,
+            "range": "+/- 0.416",
             "unit": "us"
           }
         ]
