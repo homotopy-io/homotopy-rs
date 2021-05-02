@@ -6,6 +6,7 @@ mod project;
 mod signature;
 mod signature_stylesheet;
 mod toasts;
+mod util;
 mod workspace;
 use crate::model::Drawer;
 use crate::model::{self, history};

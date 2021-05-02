@@ -1,9 +1,8 @@
+use super::util::{bounding_rect, read_touch_list, Finger};
 use closure::closure;
 use euclid::default::{Point2D, Vector2D};
-use web_sys::{DomRect, Element, TouchList};
 use yew::prelude::*;
 
-pub type Finger = i32;
 type Point = Point2D<f64>;
 type Vector = Vector2D<f64>;
 
@@ -191,32 +190,4 @@ impl PanZoom {
     pub fn on_touch_update(&self) -> Callback<TouchEvent> {
         self.on_touch_update.clone()
     }
-}
-
-#[allow(clippy::inline_always)]
-#[inline(always)]
-fn bounding_rect(node_ref: &NodeRef) -> DomRect {
-    node_ref
-        .cast::<Element>()
-        .unwrap()
-        .get_bounding_client_rect()
-}
-
-#[allow(clippy::inline_always)]
-#[inline(always)]
-fn read_touch_list<'a>(
-    touch_list: &'a TouchList,
-    node_ref: &NodeRef,
-) -> impl Iterator<Item = (Finger, Point)> + 'a {
-    let rect = bounding_rect(node_ref);
-    let (rect_left, rect_top) = (rect.left(), rect.top());
-
-    (0..touch_list.length())
-        .filter_map(move |i| touch_list.item(i))
-        .map(move |touch| {
-            let finger = touch.identifier();
-            let x = f64::from(touch.client_x()) - rect_left;
-            let y = f64::from(touch.client_y()) - rect_top;
-            (finger, (x, y).into())
-        })
 }

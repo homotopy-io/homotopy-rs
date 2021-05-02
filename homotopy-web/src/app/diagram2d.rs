@@ -1,3 +1,4 @@
+use super::util::{read_touch_list_abs, Finger};
 use crate::app::signature_stylesheet::SignatureStylesheet;
 use crate::model::proof::homotopy::{Contract, Expand, Homotopy};
 use crate::model::proof::RenderStyle;
@@ -54,6 +55,8 @@ pub enum Message2D {
     OnMouseDown(Point2D<f32>),
     OnMouseMove(Point2D<f32>),
     OnMouseUp,
+    OnTouchUpdate(Vec<(Finger, Point2D<f32>)>),
+    OnTouchMove(Vec<(Finger, Point2D<f32>)>),
 }
 
 /// The computed properties of a diagram that are potentially expensive to compute but can be
@@ -144,49 +147,24 @@ impl Component for Diagram2D {
                 false
             }
             Message2D::OnMouseMove(point) => {
-                if let Some(start) = self.drag_start {
-                    let diff: Vector2D<f32> = point - start;
-                    let distance = self.props.style.scale * 0.5;
-
-                    if diff.square_length() < distance * distance {
-                        return false;
-                    }
-
-                    let angle = diff.angle_from_x_axis();
-                    self.drag_start = None;
-
-                    let simplex = match self.simplex_at(start) {
-                        Some(simplex) => simplex,
-                        None => return false,
-                    };
-
-                    let homotopy = drag_to_homotopy(
-                        angle,
-                        &simplex,
-                        self.props.diagram.clone(),
-                        &self.diagram.depths,
-                    );
-
-                    if let Some(homotopy) = homotopy {
-                        log::info!("Homotopy: {:?}", homotopy);
-                        self.props.on_homotopy.emit(homotopy);
-                    } else {
-                        log::info!("No homotopy");
-                    }
-                }
+                self.pointer_move(point);
                 false
             }
             Message2D::OnMouseUp => {
-                // If the mouse button is released without having travelled a distance great enough
-                // to indicate a drag, it should be interpreted as a click.  This is preferrable to
-                // a separate onclick handler since drags aren't interpreted as clicks anymore.
-                if let Some(point) = self.drag_start {
+                self.pointer_stop();
+                false
+            }
+            Message2D::OnTouchUpdate(touches) => {
+                if self.drag_start.is_none() && touches.len() == 1 {
+                    self.drag_start = Some(touches[0].1);
+                } else if touches.is_empty() {
                     self.drag_start = None;
-                    if let Some(simplex) = self.simplex_at(point) {
-                        self.props
-                            .on_select
-                            .emit(simplex.into_iter().map(|(x, y)| vec![y, x]).collect());
-                    }
+                }
+                false
+            }
+            Message2D::OnTouchMove(touches) => {
+                if touches.len() == 1 {
+                    self.pointer_move(touches[0].1);
                 }
                 false
             }
@@ -238,6 +216,26 @@ impl Component for Diagram2D {
             })
         };
 
+        let on_touch_move = {
+            let link = self.link.clone();
+            Callback::from(move |e: TouchEvent| {
+                let touches = read_touch_list_abs(&e.touches())
+                    .map(|(finger, point)| (finger, point.cast()))
+                    .collect();
+                link.send_message(Message2D::OnTouchMove(touches));
+            })
+        };
+
+        let on_touch_update = {
+            let link = self.link.clone();
+            Callback::from(move |e: TouchEvent| {
+                let touches = read_touch_list_abs(&e.touches())
+                    .map(|(finger, point)| (finger, point.cast()))
+                    .collect();
+                link.send_message(Message2D::OnTouchUpdate(touches));
+            })
+        };
+
         // TODO: Do not redraw diagram when highlight changes!
         // TODO: Do not redraw diagram for drags.
 
@@ -251,6 +249,10 @@ impl Component for Diagram2D {
                 onmousedown={on_mouse_down}
                 onmouseup={on_mouse_up}
                 onmousemove={on_mouse_move}
+                ontouchmove={on_touch_move}
+                ontouchstart={on_touch_update}
+                ontouchend={on_touch_update.clone()}
+                ontouchcancel={on_touch_update.clone()}
                 ref={self.node_ref.clone()}
             >
                 {self.diagram.graphic.iter().enumerate().map(|(i, e)| self.view_element(i, e)).collect::<Html>()}
@@ -392,6 +394,53 @@ impl Diagram2D {
             .iter()
             .find(|(_, shape)| shape.contains_point(point, 0.01))
             .map(|(simplex, _)| simplex.clone())
+    }
+
+    fn pointer_move(&mut self, point: Point2D<f32>) {
+        if let Some(start) = self.drag_start {
+            let diff: Vector2D<f32> = point - start;
+            let distance = self.props.style.scale * 0.5;
+
+            if diff.square_length() < distance * distance {
+                return;
+            }
+
+            let angle = diff.angle_from_x_axis();
+            self.drag_start = None;
+
+            let simplex = match self.simplex_at(start) {
+                Some(simplex) => simplex,
+                None => return,
+            };
+
+            let homotopy = drag_to_homotopy(
+                angle,
+                &simplex,
+                self.props.diagram.clone(),
+                &self.diagram.depths,
+            );
+
+            if let Some(homotopy) = homotopy {
+                log::info!("Homotopy: {:?}", homotopy);
+                self.props.on_homotopy.emit(homotopy);
+            } else {
+                log::info!("No homotopy");
+            }
+        }
+    }
+
+    fn pointer_stop(&mut self) {
+        // If the mouse button is released without having travelled a distance great enough
+        // to indicate a drag, it should be interpreted as a click.  This is preferrable to
+        // a separate onclick handler since drags aren't interpreted as clicks anymore.
+        if let Some(point) = self.drag_start {
+            self.drag_start = None;
+            if let Some(simplex) = self.simplex_at(point) {
+                self.props
+                    .on_select
+                    .emit(simplex.into_iter().map(|(x, y)| vec![y, x]).collect());
+            }
+        }
     }
 }
 
