@@ -12,7 +12,7 @@ use std::{cell::RefCell, cmp::Ordering};
 /// boundaries. Since we only normalize globular diagrams however, the regular slices of any
 /// degeneracy map that we construct are determined by the regular slices of the target diagram.
 /// Therefore this data type only stores the singular slices of any degeneracy map.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum Degeneracy {
     Identity,
     Degeneracy(Vec<SingularHeight>, Vec<Rc<Degeneracy>>),
@@ -100,7 +100,7 @@ impl Degeneracy {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct SinkArrow {
     source: Diagram,
     degeneracy: Rc<Degeneracy>,
@@ -178,6 +178,7 @@ pub fn normalize_singular(diagram: &Diagram) -> Rewrite {
     output.degeneracy.to_rewrite(&output.diagram, diagram)
 }
 
+#[derive(Debug, Clone)]
 struct Output {
     factors: Vec<Rewrite>,
     degeneracy: Rc<Degeneracy>,
@@ -192,7 +193,7 @@ enum Factor {
 }
 
 thread_local! {
-    static NORMALIZATION_CACHE: RefCell<FastHashMap<DiagramN, (DiagramN, Rc<Degeneracy>)>> = RefCell::new(FastHashMap::default());
+    static NORMALIZATION_CACHE: RefCell<FastHashMap<(DiagramN, Vec<SinkArrow>), Output>> = RefCell::new(FastHashMap::default());
 }
 
 fn normalize_relative(diagram: &Diagram, sink: &[SinkArrow], mode: NormalizationMode) -> Output {
@@ -211,15 +212,13 @@ fn normalize_relative(diagram: &Diagram, sink: &[SinkArrow], mode: Normalization
         Diagram::DiagramN(d) => d,
     };
 
-    if sink.is_empty() {
-        if let Some(cached) = NORMALIZATION_CACHE.with(|cache| cache.borrow().get(diagram).cloned())
-        {
-            return Output {
-                factors: vec![],
-                degeneracy: cached.1,
-                diagram: cached.0.into(),
-            };
-        }
+    if let Some(cached) = NORMALIZATION_CACHE.with(|cache| {
+        cache
+            .borrow()
+            .get(&(diagram.clone(), sink.to_vec()))
+            .cloned()
+    }) {
+        return cached;
     }
 
     // Short circuit for singular normalization when there is an identity in the sink. We can not
@@ -361,18 +360,17 @@ fn normalize_relative(diagram: &Diagram, sink: &[SinkArrow], mode: Normalization
             .collect(),
     ));
 
-    if sink.is_empty() {
-        NORMALIZATION_CACHE.with(|cache| {
-            cache.borrow_mut().insert(
-                diagram.clone(),
-                (normalized_diagram.clone(), degeneracy.clone()),
-            )
-        });
-    }
-
-    Output {
+    let output = Output {
         factors: normalized_factors,
         diagram: normalized_diagram.into(),
         degeneracy,
-    }
+    };
+
+    NORMALIZATION_CACHE.with(|cache| {
+        cache
+            .borrow_mut()
+            .insert((diagram.clone(), sink.to_vec()), output.clone())
+    });
+
+    output
 }
