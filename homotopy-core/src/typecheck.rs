@@ -1,4 +1,6 @@
+use crate::normalization::normalize;
 use crate::rewrite::{Cone, Cospan, Rewrite, RewriteN};
+use crate::util::FastHashMap;
 use crate::{
     common::{Generator, Height, SingularHeight},
     Boundary,
@@ -7,7 +9,6 @@ use crate::{
     diagram::{Diagram, DiagramN},
     signature::Signature,
 };
-use crate::{normalization::normalize, util::FastHashMap};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::convert::Into;
@@ -40,6 +41,17 @@ pub fn typecheck<S>(diagram: &Diagram, signature: &S, mode: Mode) -> Result<(), 
 where
     S: Signature,
 {
+    if !check_dimension(diagram.clone()) {
+        return Err(TypeError::IllTyped);
+    }
+
+    typecheck_worker(diagram, signature, mode)
+}
+
+fn typecheck_worker<S>(diagram: &Diagram, signature: &S, mode: Mode) -> Result<(), TypeError>
+where
+    S: Signature,
+{
     let diagram = match diagram {
         Diagram::Diagram0(g) => {
             if g.dimension == 0 {
@@ -52,7 +64,7 @@ where
     };
 
     if Mode::Deep == mode {
-        typecheck(&diagram.source(), signature, mode)?;
+        typecheck_worker(&diagram.source(), signature, mode)?;
     }
 
     let slices: Vec<_> = diagram.slices().collect();
@@ -341,6 +353,42 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
             restricted_rewrite
         }
     }
+}
+
+fn check_dimension(diagram: Diagram) -> bool {
+    fn worker(
+        diagram: Diagram,
+        max_dimension: usize,
+        checked: &mut FastHashMap<DiagramN, usize>,
+    ) -> bool {
+        match diagram {
+            Diagram::Diagram0(generator) => generator.dimension <= max_dimension,
+            Diagram::DiagramN(diagram) => {
+                if checked
+                    .get(&diagram)
+                    .map_or(false, |checked| *checked <= max_dimension)
+                {
+                    return true;
+                }
+
+                if !diagram
+                    .slices()
+                    .enumerate()
+                    .all(|(i, slice)| worker(slice, max_dimension + i % 2, checked))
+                {
+                    return false;
+                }
+
+                checked.insert(diagram, max_dimension);
+                true
+            }
+        }
+    }
+
+    // We cache the smallest dimension at which we have checked a diagram. Whenever we check a
+    // diagram at a smaller dimension we can short circuit.
+    let mut checked: FastHashMap<DiagramN, usize> = FastHashMap::default();
+    worker(diagram, 0, &mut checked)
 }
 
 #[cfg(test)]
