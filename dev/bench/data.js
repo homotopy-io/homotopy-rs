@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1619957146354,
+  "lastUpdate": 1619959360932,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -1559,6 +1559,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 41.861,
             "range": "+/- 0.253",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "lukas@heidemann.me",
+            "name": "Lukas Heidemann",
+            "username": "zrho"
+          },
+          "committer": {
+            "email": "lukas@heidemann.me",
+            "name": "Lukas Heidemann",
+            "username": "zrho"
+          },
+          "distinct": true,
+          "id": "f6451b2f3f4609bf8667c3d55582be52f89433d2",
+          "message": "Performance improvements in normalization.\n\nUsing the cached normalizations we can check if a diagram is normalised,\nwhich we can use to check if an arrow in the sink is an identity in full\nnormalisation. This way we can short-circuit when there is an identity\narrow in the sink for full normalisation as well.",
+          "timestamp": "2021-05-02T14:30:20+02:00",
+          "tree_id": "cf50967e52fd59f865c23b7790d63a9b1fb06e78",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/f6451b2f3f4609bf8667c3d55582be52f89433d2"
+        },
+        "date": 1619959350176,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 13.205,
+            "range": "+/- 0.452",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 13.589,
+            "range": "+/- 0.453",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 110.99,
+            "range": "+/- 3.260",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 125.48,
+            "range": "+/- 2.780",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 116.1,
+            "range": "+/- 4.060",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 126.32,
+            "range": "+/- 3.750",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 89.295,
+            "range": "+/- 2.953",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 560.44,
+            "range": "+/- 9.760",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.2953,
+            "range": "+/- 0.041",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 7.7083,
+            "range": "+/- 0.163",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 23.247,
+            "range": "+/- 0.355",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 64.173,
+            "range": "+/- 0.866",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 196.07,
+            "range": "+/- 4.980",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 522.99,
+            "range": "+/- 10.100",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 6.8284,
+            "range": "+/- 0.149",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 34.489,
+            "range": "+/- 0.573",
             "unit": "us"
           }
         ]
