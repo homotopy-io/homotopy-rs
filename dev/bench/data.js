@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1619959360932,
+  "lastUpdate": 1619960366698,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -1679,6 +1679,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 34.489,
             "range": "+/- 0.573",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "lukas@heidemann.me",
+            "name": "Lukas Heidemann",
+            "username": "zrho"
+          },
+          "committer": {
+            "email": "lukas@heidemann.me",
+            "name": "Lukas Heidemann",
+            "username": "zrho"
+          },
+          "distinct": true,
+          "id": "820cb7b724d90fdf52e66e1174c849fb42d14c2f",
+          "message": "More performance for normalization.\n\nIt turns out we can even cache normalization results when the sink is\nnot empty.",
+          "timestamp": "2021-05-02T14:49:02+02:00",
+          "tree_id": "76739ccb099afaf5f158ea82442d116a987e8d09",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/820cb7b724d90fdf52e66e1174c849fb42d14c2f"
+        },
+        "date": 1619960355768,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 12.354,
+            "range": "+/- 0.155",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 12.712,
+            "range": "+/- 0.149",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 96.44,
+            "range": "+/- 0.951",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 115.26,
+            "range": "+/- 1.340",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 95.92,
+            "range": "+/- 1.105",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 131.61,
+            "range": "+/- 1.480",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 84.245,
+            "range": "+/- 0.947",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 559.46,
+            "range": "+/- 6.960",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.2434,
+            "range": "+/- 0.024",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 6.8652,
+            "range": "+/- 0.053",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 18.106,
+            "range": "+/- 0.202",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 44.45,
+            "range": "+/- 0.412",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 104.54,
+            "range": "+/- 0.860",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 240.12,
+            "range": "+/- 1.680",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 6.8312,
+            "range": "+/- 0.078",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 37.277,
+            "range": "+/- 0.478",
             "unit": "us"
           }
         ]
