@@ -7,46 +7,69 @@ use yew_functional::function_component;
 #[derive(Debug, Clone, PartialEq, Properties)]
 pub struct PathControlProps {
     pub path: Vector<SliceIndex>,
+    pub dimension: usize,
     pub ascend_slice: Callback<usize>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Step {
+    SliceIndex(SliceIndex),
+    View,
+    Projection,
 }
 
 #[function_component(PathControl)]
 pub fn path_control(props: &PathControlProps) -> Html {
     let path_len = props.path.len();
 
-    let step_button = |index: usize, slice: SliceIndex| -> Html {
-        let label = match slice {
-            SliceIndex::Boundary(Boundary::Source) => "S".to_owned(),
-            SliceIndex::Boundary(Boundary::Target) => "T".to_owned(),
-            SliceIndex::Interior(Height::Singular(h)) => format!("s{}", h),
-            SliceIndex::Interior(Height::Regular(h)) => format!("r{}", h),
+    let step_button = |index: usize, step: Step| -> Html {
+        let label = match step {
+            Step::SliceIndex(slice) => match slice {
+                SliceIndex::Boundary(Boundary::Source) => "S".to_owned(),
+                SliceIndex::Boundary(Boundary::Target) => "T".to_owned(),
+                SliceIndex::Interior(Height::Singular(h)) => format!("S{}", h),
+                SliceIndex::Interior(Height::Regular(h)) => format!("T{}", h),
+            },
+            Step::View => "V".to_owned(),
+            Step::Projection => "P".to_owned(),
         };
+
+        let ascend_slice = props.ascend_slice.clone();
+
+        let onclick = Callback::from(move |_| {
+            if index < path_len {
+                ascend_slice.emit(path_len - index - 1);
+            }
+        });
 
         html! {
             <span
                 class="workspace__path-step"
-                onclick={props.ascend_slice.reform(move |_| path_len - index - 1)}
+                onclick={onclick}
             >
                 {label}
             </span>
         }
     };
 
-    let step_buttons: Html = props
-        .path
-        .iter()
-        .enumerate()
-        .map(|(index, slice)| step_button(index, *slice))
-        .collect();
-
-    let class = if props.path.is_empty() {
-        "workspace__path workspace__path--empty"
-    } else {
-        "workspace__path"
+    let path = {
+        let mut path = Vec::with_capacity(props.dimension);
+        path.extend(props.path.iter().map(|slice| Step::SliceIndex(*slice)));
+        path.extend(
+            (path.len()..std::cmp::min(path.len() + 2, props.dimension)).map(|_| Step::View),
+        );
+        path.extend((path.len()..props.dimension).map(|_| Step::Projection));
+        path
     };
 
+    let step_buttons: Html = path
+        .into_iter()
+        .enumerate()
+        .map(|(index, step)| step_button(index, step))
+        .collect();
+
     html! {
-        <div class={class}>
+        <div class="workspace__path">
             <span
                 class="workspace__path-home"
                 onclick={props.ascend_slice.reform(move |_| path_len)}

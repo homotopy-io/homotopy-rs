@@ -84,6 +84,7 @@ impl Component for WorkspaceView {
             <PathControl
                 path={self.props.workspace.path.clone()}
                 ascend_slice={self.props.dispatch.reform(Action::AscendSlice)}
+                dimension={self.props.workspace.diagram.dimension()}
             />
         };
 
