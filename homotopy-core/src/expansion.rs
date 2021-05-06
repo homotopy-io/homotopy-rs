@@ -33,6 +33,9 @@ pub enum ExpansionError {
     #[error("can't expand a single component")]
     SingleComponent,
 
+    #[error("no component to expand")]
+    NoComponent,
+
     #[error("smoothing is not yet implemented")]
     SmoothingNotImplemented,
 
@@ -192,9 +195,9 @@ fn expand_cospan(
     let forward_index = forward_targets.iter().position(|t| *t == height);
     let backward_index = backward_targets.iter().position(|t| *t == height);
 
-    // TODO: Why can we make these assertions?
-    assert!(forward_targets.len() + backward_targets.len() != 0);
-    assert!(forward_index.is_some() || backward_index.is_some());
+    if forward_index.is_none() && backward_index.is_none() {
+        return Err(ExpansionError::NoComponent);
+    }
 
     if (forward_targets.len() + backward_targets.len() == 1)
         || (forward_targets.len() == 1
