@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1620058672647,
+  "lastUpdate": 1620339852703,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -2039,6 +2039,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 40.858,
             "range": "+/- 0.885",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "lukas@heidemann.me",
+            "name": "Lukas Heidemann",
+            "username": "zrho"
+          },
+          "committer": {
+            "email": "lukas@heidemann.me",
+            "name": "Lukas Heidemann",
+            "username": "zrho"
+          },
+          "distinct": true,
+          "id": "4b56ae3910fbcb30edc09998073190fa4d6762aa",
+          "message": "Fixed panic in expansion code.\n\nThere was an assertion in the expansion code which I suspected would\nalways hold since the JS version seemed to assume that. In fact this\nassertion can be broken, so we can just return an error in this case to\nprevent a crash.",
+          "timestamp": "2021-05-06T23:59:58+02:00",
+          "tree_id": "d4ab2f9f25f6130cc5c34fb80031d297785b6ddf",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/4b56ae3910fbcb30edc09998073190fa4d6762aa"
+        },
+        "date": 1620339839967,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 12.974,
+            "range": "+/- 0.093",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 13.054,
+            "range": "+/- 0.112",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 103.88,
+            "range": "+/- 1.490",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 118.01,
+            "range": "+/- 0.660",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 99.706,
+            "range": "+/- 0.476",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 134.06,
+            "range": "+/- 0.870",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 92.946,
+            "range": "+/- 0.558",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 604.11,
+            "range": "+/- 10.310",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.3595,
+            "range": "+/- 0.023",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 7.1796,
+            "range": "+/- 0.045",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 19.114,
+            "range": "+/- 0.170",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 47.164,
+            "range": "+/- 0.348",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 110.72,
+            "range": "+/- 0.860",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 252.74,
+            "range": "+/- 1.080",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 7.074,
+            "range": "+/- 0.050",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 37.037,
+            "range": "+/- 0.298",
             "unit": "us"
           }
         ]
