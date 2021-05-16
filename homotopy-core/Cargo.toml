@@ -20,6 +20,7 @@ criterion = { version = "*", features = ["html_reports"] }
 insta = "*"
 quickcheck = "*"
 quickcheck_macros = "*"
+serde_json = "*"
 
 [[bench]]
 name = "bench"

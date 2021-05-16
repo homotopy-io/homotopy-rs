@@ -25,7 +25,8 @@ closure = "0.3"
 js-sys = "*"
 quote = "1.0.7"
 serde = { version = "1.0", features = ["derive"] }
-rmp-serde = { features = ["serde128"], version = "*" } # u128 support is new
+serde_json = "*"
+flate2 = "*"
 syn = "1.0.45"
 # yew = "0.17"
 yew = { git = "https://github.com/yewstack/yew" }

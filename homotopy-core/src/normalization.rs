@@ -15,7 +15,7 @@ use std::{cell::RefCell, cmp::Ordering};
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum Degeneracy {
     Identity,
-    Degeneracy(Vec<SingularHeight>, Vec<Rc<Degeneracy>>),
+    Degeneracy(Vec<SingularHeight>, Vec<Rc<Self>>),
 }
 
 impl Degeneracy {

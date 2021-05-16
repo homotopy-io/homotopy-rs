@@ -12,27 +12,27 @@ pub fn read_touch_list<'a>(
     let rect = bounding_rect(node_ref);
     let (rect_left, rect_top) = (rect.left(), rect.top());
 
-    (0..touch_list.length())
-        .filter_map(move |i| touch_list.item(i))
-        .map(move |touch| {
+    (0..touch_list.length()).filter_map(move |i| {
+        touch_list.item(i).map(|touch| {
             let finger = touch.identifier();
             let x = f64::from(touch.client_x()) - rect_left;
             let y = f64::from(touch.client_y()) - rect_top;
             (finger, (x, y).into())
         })
+    })
 }
 
 pub fn read_touch_list_abs(
     touch_list: &'_ TouchList,
 ) -> impl Iterator<Item = (Finger, Point)> + '_ {
-    (0..touch_list.length())
-        .filter_map(move |i| touch_list.item(i))
-        .map(move |touch| {
+    (0..touch_list.length()).filter_map(move |i| {
+        touch_list.item(i).map(|touch| {
             let finger = touch.identifier();
             let x = f64::from(touch.client_x());
             let y = f64::from(touch.client_y());
             (finger, (x, y).into())
         })
+    })
 }
 
 pub fn bounding_rect(node_ref: &NodeRef) -> DomRect {

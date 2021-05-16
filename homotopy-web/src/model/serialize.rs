@@ -1,14 +1,20 @@
-use super::{AttachOption, Color, GeneratorInfo, Signature, Workspace};
+use std::io::Read;
+
+use super::{Color, GeneratorInfo, Signature, Workspace};
+use flate2::{
+    read::{GzDecoder, GzEncoder},
+    Compression,
+};
 use homotopy_core::common::{Generator, SliceIndex};
-use homotopy_core::serialize::{Key, Keyed, Serialization};
+use homotopy_core::serialize::{Key, Store};
 use homotopy_core::Diagram;
-use im::{HashMap, Vector};
+use im::Vector;
 use wasm_bindgen::JsCast;
 
 pub fn generate_download(name: &str, data: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
     let val: js_sys::Uint8Array = data.into();
     let mut options = web_sys::BlobPropertyBag::new();
-    options.type_("application/msgpack");
+    options.type_("application/gzip");
     let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(
         &js_sys::Array::of1(&val.into()).into(),
         &options,
@@ -22,18 +28,19 @@ pub fn generate_download(name: &str, data: &[u8]) -> Result<(), wasm_bindgen::Js
         .dyn_ref::<web_sys::HtmlElement>()
         .ok_or("failed to create anchor")?;
     a.set_attribute("href", &url)?;
-    a.set_attribute("download", &name)?;
+    a.set_attribute("download", &format!("{}.hom", &name))?;
     body.append_child(&a)?;
     a.click();
     a.remove();
     web_sys::Url::revoke_object_url(&url)
 }
 
-#[derive(PartialEq, Eq, Clone, Default, serde::Serialize, serde::Deserialize)]
-pub struct Data {
-    signature: Serialization,
-    generator_info: HashMap<Generator, (String, Color)>,
-    workspace: Option<WorkspaceSer>,
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
+struct Data {
+    version: usize,
+    store: Store,
+    signature: Vec<GeneratorData>,
+    workspace: Option<WorkspaceData>,
 }
 
 impl std::fmt::Debug for Data {
@@ -42,89 +49,82 @@ impl std::fmt::Debug for Data {
     }
 }
 
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+struct GeneratorData {
+    name: String,
+    generator: Generator,
+    color: Color,
+    diagram: Key<Diagram>,
+}
+
 #[derive(Debug, PartialEq, Eq, Clone, serde::Serialize, serde::Deserialize)]
-struct WorkspaceSer {
+struct WorkspaceData {
     diagram: Key<Diagram>,
     path: Vector<SliceIndex>,
-    attach: Option<Vector<AttachOption>>,
-    highlight: Option<AttachOption>,
 }
 
-impl From<Signature> for Data {
-    fn from(sig: Signature) -> Self {
-        let mut stripped: std::collections::HashMap<Generator, Diagram> = Default::default();
-        let mut generator_info: HashMap<Generator, (String, Color)> = Default::default();
-        for (k, v) in sig {
-            stripped.insert(k, v.diagram);
-            generator_info.insert(k, (v.name, v.color));
-        }
-        Self {
-            signature: Serialization::from(stripped),
-            generator_info,
-            workspace: None,
-        }
-    }
-}
+pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> {
+    let mut data = Data {
+        version: 0,
+        store: Store::new(),
+        signature: Default::default(),
+        workspace: Default::default(),
+    };
 
-impl From<(Signature, Workspace)> for Data {
-    fn from((sig, ws): (Signature, Workspace)) -> Self {
-        let mut stripped: std::collections::HashMap<Generator, Diagram> = Default::default();
-        let mut generator_info: HashMap<Generator, (String, Color)> = Default::default();
-        let k = ws.diagram.key();
-        for (k, v) in sig {
-            stripped.insert(k, v.diagram);
-            generator_info.insert(k, (v.name, v.color));
-        }
-        Self {
-            signature: Serialization::from((stripped, ws.diagram)),
-            generator_info,
-            workspace: Some(WorkspaceSer {
-                diagram: k,
-                path: ws.path,
-                attach: ws.attach,
-                highlight: ws.highlight,
-            }),
-        }
-    }
-}
-
-impl From<Data> for (Signature, Option<Workspace>) {
-    fn from(data: Data) -> Self {
-        let signature = &data.signature;
-        let workspace: Option<Workspace> = data.workspace.map(|ws| Workspace {
-            diagram: signature.diagram(&ws.diagram),
-            path: ws.path,
-            attach: ws.attach,
-            highlight: ws.highlight,
+    for (generator, info) in signature {
+        // Since we iterate over an `OrdMap` the vector is sorted by the generator id.
+        data.signature.push(GeneratorData {
+            generator,
+            diagram: data.store.pack_diagram(&info.diagram),
+            name: info.name,
+            color: info.color,
         });
-        let sig: std::collections::HashMap<Generator, Diagram> = data.signature.into();
-        let gi = data.generator_info;
-        (
-            sig.into_iter()
-                .map(|(k, v)| {
-                    (
-                        k,
-                        GeneratorInfo {
-                            name: gi[&k].0.clone(),
-                            color: gi[&k].1.clone(),
-                            diagram: v,
-                        },
-                    )
-                })
-                .collect(),
-            workspace,
-        )
     }
+
+    if let Some(workspace) = workspace {
+        data.workspace = Some(WorkspaceData {
+            diagram: data.store.pack_diagram(&workspace.diagram),
+            path: workspace.path,
+        });
+    }
+
+    let json = serde_json::to_string(&data).unwrap();
+    let mut bytes = Vec::new();
+    GzEncoder::new(json.as_bytes(), Compression::fast())
+        .read_to_end(&mut bytes)
+        .unwrap();
+    bytes
 }
 
-impl From<Data> for Vec<u8> {
-    fn from(data: Data) -> Self {
-        rmp_serde::to_vec(&data).unwrap()
-    }
-}
+pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
+    let data: Data = {
+        let mut json = String::new();
+        GzDecoder::new(data).read_to_string(&mut json).ok()?;
+        serde_json::from_str(&json).ok()?
+    };
 
-impl From<Vec<u8>> for Data {
-    fn from(bs: Vec<u8>) -> Self {
-        rmp_serde::from_read_ref(&bs).unwrap()
+    let mut signature = Signature::default();
+    let mut workspace = None;
+
+    for generator_data in data.signature {
+        signature.insert(
+            generator_data.generator,
+            GeneratorInfo {
+                name: generator_data.name,
+                color: generator_data.color,
+                diagram: data.store.unpack_diagram(generator_data.diagram)?,
+            },
+        );
     }
+
+    if let Some(workspace_data) = data.workspace {
+        workspace = Some(Workspace {
+            diagram: data.store.unpack_diagram(workspace_data.diagram)?,
+            path: workspace_data.path,
+            attach: Default::default(),
+            highlight: Default::default(),
+        });
+    }
+
+    Some((signature, workspace))
 }

@@ -3,17 +3,22 @@ use homotopy_core::*;
 use insta::*;
 
 #[test]
-fn serialization() {
-    let empty_ser = Serialization::default();
-    let empty_sig = Signature::default();
-    assert_eq!(empty_ser, empty_sig.into());
+fn serialize_associator() {
+    let (_, diagram) = examples::associator();
 
-    // test for stability
-    let (sb, dn) = examples::associator();
-    let sig = sb.0;
-    let d = Diagram::from(dn);
-    assert_debug_snapshot!(Keyed::<Key<Diagram>>::key(&d));
-    let ser: Serialization = sig.clone().into();
-    let bs = Vec::<u8>::from(ser);
-    assert_eq!(sig, Signature::from(Serialization::from(bs)));
+    let (serialized, key) = {
+        let mut store = Store::new();
+        let key = store.pack_diagram(&diagram.clone().into());
+        let serialized = serde_json::to_string(&store).unwrap();
+        (serialized, key)
+    };
+
+    assert_debug_snapshot!(serialized);
+
+    let deserialized = {
+        let store: Store = serde_json::from_str(&serialized).unwrap();
+        store.unpack_diagram(key).unwrap()
+    };
+
+    assert_eq!(Diagram::from(diagram), deserialized);
 }

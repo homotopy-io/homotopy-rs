@@ -1,11 +1,11 @@
 use im::Vector;
-use std::{cell::Ref, convert::Into};
+use std::cell::Ref;
 use thiserror::Error;
 use yew::Callback;
 pub mod proof;
 use self::history::History;
 use gloo_timers::callback::Timeout;
-use proof::{AttachOption, Color, GeneratorInfo, Proof, Signature, Workspace};
+use proof::{Color, GeneratorInfo, Proof, Signature, Workspace};
 
 pub mod history;
 pub mod serialize;
@@ -15,7 +15,7 @@ pub enum Action {
     ToggleDrawer(Drawer),
     Proof(proof::Action),
     History(history::Action),
-    ImportProof(Box<serialize::Data>),
+    ImportProof(Vec<u8>),
     ExportProof,
     ShowToast(Toast),
     RemoveToast(usize),
@@ -89,19 +89,17 @@ impl State {
             }
 
             Action::ExportProof => {
-                let data: serialize::Data = self.proof().workspace.clone().map_or_else(
-                    || self.proof().signature.clone().into(),
-                    |ws| (self.proof().signature.clone(), ws).into(),
+                let data = serialize::serialize(
+                    self.proof().signature.clone(),
+                    self.proof().workspace.clone(),
                 );
-                serialize::generate_download(
-                    &"filename_todo.hom",
-                    &Into::<Vec<u8>>::into(data).as_slice(),
-                )
-                .map_err(ModelError::Export)?;
+                serialize::generate_download(&"filename_todo", data.as_slice())
+                    .map_err(ModelError::Export)?;
             }
 
             Action::ImportProof(data) => {
-                let (signature, workspace) = (*data).into();
+                let (signature, workspace) =
+                    serialize::deserialize(&data).ok_or(ModelError::Import)?;
                 let mut proof: Proof = Default::default();
                 proof.signature = signature;
                 proof.workspace = workspace;
@@ -136,6 +134,8 @@ impl State {
 pub enum ModelError {
     #[error("export failed")]
     Export(wasm_bindgen::JsValue),
+    #[error("import failed")]
+    Import,
     #[error(transparent)]
     Proof(#[from] proof::ModelError),
     #[error(transparent)]

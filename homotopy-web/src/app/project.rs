@@ -6,7 +6,6 @@ use yew_functional::function_component;
 use yew_functional::use_state;
 use yew_services::{reader::FileData, ReaderService};
 
-use crate::model::serialize::Data;
 use crate::model::Action;
 
 #[derive(Properties, Clone, PartialEq)]
@@ -24,8 +23,7 @@ pub fn project_view(props: &Props) -> Html {
             let file = filelist.get(0).unwrap();
             let callback = Callback::from(
                 closure!(clone dispatch, clone set_reader_task, |fd: FileData| {
-                    let data: Data = fd.content.into();
-                    dispatch.emit(Action::ImportProof(data.into()));
+                    dispatch.emit(Action::ImportProof(fd.content));
                     set_reader_task(None);
                 }),
             );
@@ -45,7 +43,7 @@ pub fn project_view(props: &Props) -> Html {
                 <label for="import">
                     {"Import"}
                 </label>
-                <input type="file" accept="application/msgpack,.hom" class="visually-hidden" id="import" onchange=import/>
+                <input type="file" accept="application/gzip,.hom" class="visually-hidden" id="import" onchange=import/>
             </div>
         </aside>
     }

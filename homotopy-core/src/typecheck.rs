@@ -402,9 +402,9 @@ mod test {
         let mut sig = SignatureBuilder::new();
 
         let x = sig.add_zero();
-        let f = sig.add(x.clone(), x.clone()).unwrap();
+        let f = sig.add(x.clone(), x).unwrap();
         let ff = f.attach(&f, Boundary::Target, &[]).unwrap();
-        let m = sig.add(ff, f.clone()).unwrap();
+        let m = sig.add(ff, f).unwrap();
         let left = m.attach(&m, Boundary::Source, &[0]).unwrap();
         let right = m.attach(&m, Boundary::Source, &[1]).unwrap();
         let a = sig.add(left, right).unwrap();
