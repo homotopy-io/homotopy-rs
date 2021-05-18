@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1620339852703,
+  "lastUpdate": 1621377730703,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -2159,6 +2159,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 37.037,
             "range": "+/- 0.298",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "lukas@heidemann.me",
+            "name": "Lukas Heidemann",
+            "username": "zrho"
+          },
+          "committer": {
+            "email": "lukas@heidemann.me",
+            "name": "Lukas Heidemann",
+            "username": "zrho"
+          },
+          "distinct": true,
+          "id": "7d08c1f0c861660887d10bcf127df37981fd2ab3",
+          "message": "Updated serialization format.\n\nThe hashes that identify diagrams and their parts are now based on the\ndata and not on the id which incidentally has been assigned by the\nhash-consing implementation. Together with sorting this should guarantee\nthat the same diagram serializes to exactly the same string. The\nintegers in those structures that are addressed by their hash are made\nto be u32 instead of usize so that their hash is constant among\narchitectures.\n\nChanged to (gzipped) JSON from messagepack.  JSON is human-readable, so\ndebugging and exploring the file format is simpler.  This already\nuncovered a bug that left half of the 128 bit keys zero, which would not\nhave been clear at all in messagepack.",
+          "timestamp": "2021-05-16T19:38:49+02:00",
+          "tree_id": "462d3145e03e8e64e7458e77488e27c384933dc2",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/7d08c1f0c861660887d10bcf127df37981fd2ab3"
+        },
+        "date": 1621377718127,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 13.409,
+            "range": "+/- 0.640",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 13.179,
+            "range": "+/- 0.235",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 105.16,
+            "range": "+/- 1.570",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 119.01,
+            "range": "+/- 1.230",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 101.26,
+            "range": "+/- 1.620",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 135.72,
+            "range": "+/- 1.230",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 94.611,
+            "range": "+/- 2.173",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 608.86,
+            "range": "+/- 8.650",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.356,
+            "range": "+/- 0.042",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 7.2536,
+            "range": "+/- 0.127",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 19.297,
+            "range": "+/- 0.279",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 47.946,
+            "range": "+/- 0.840",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 112.23,
+            "range": "+/- 0.840",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 261.95,
+            "range": "+/- 2.450",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 7.1362,
+            "range": "+/- 0.075",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 38.038,
+            "range": "+/- 0.457",
             "unit": "us"
           }
         ]
