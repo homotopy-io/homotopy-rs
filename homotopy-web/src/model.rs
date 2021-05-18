@@ -15,7 +15,7 @@ pub enum Action {
     ToggleDrawer(Drawer),
     Proof(proof::Action),
     History(history::Action),
-    ImportProof(Vec<u8>),
+    ImportProof(SerializedData),
     ExportProof,
     ShowToast(Toast),
     RemoveToast(usize),
@@ -30,6 +30,27 @@ impl From<proof::Action> for Action {
 impl From<history::Action> for Action {
     fn from(action: history::Action) -> Self {
         Self::History(action)
+    }
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct SerializedData(Vec<u8>);
+
+impl std::fmt::Debug for SerializedData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SerializedData").finish()
+    }
+}
+
+impl From<Vec<u8>> for SerializedData {
+    fn from(data: Vec<u8>) -> Self {
+        Self(data)
+    }
+}
+
+impl From<SerializedData> for Vec<u8> {
+    fn from(data: SerializedData) -> Self {
+        data.0
     }
 }
 
@@ -99,7 +120,7 @@ impl State {
 
             Action::ImportProof(data) => {
                 let (signature, workspace) =
-                    serialize::deserialize(&data).ok_or(ModelError::Import)?;
+                    serialize::deserialize(&Vec::<u8>::from(data)).ok_or(ModelError::Import)?;
                 let mut proof: Proof = Default::default();
                 proof.signature = signature;
                 proof.workspace = workspace;

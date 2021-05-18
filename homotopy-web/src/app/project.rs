@@ -23,7 +23,7 @@ pub fn project_view(props: &Props) -> Html {
             let file = filelist.get(0).unwrap();
             let callback = Callback::from(
                 closure!(clone dispatch, clone set_reader_task, |fd: FileData| {
-                    dispatch.emit(Action::ImportProof(fd.content));
+                    dispatch.emit(Action::ImportProof(fd.content.into()));
                     set_reader_task(None);
                 }),
             );
