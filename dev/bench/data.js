@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1621377730703,
+  "lastUpdate": 1621448637967,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -2279,6 +2279,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 38.038,
             "range": "+/- 0.457",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "lukas@heidemann.me",
+            "name": "Lukas Heidemann",
+            "username": "zrho"
+          },
+          "committer": {
+            "email": "lukas@heidemann.me",
+            "name": "Lukas Heidemann",
+            "username": "zrho"
+          },
+          "distinct": true,
+          "id": "79cee37e35974c99bfe40d63e2a2143f8fd39508",
+          "message": "More work on the serialization.\n\nSwitched back to msgpack to avoid non-determinism in compression.\n\nWe now make sure to use u32 to hash the length of vectors to avoid\ndifferences across architectures.\n\nKeys are now `[u64;2]` instead of `u128`.",
+          "timestamp": "2021-05-19T20:01:14+02:00",
+          "tree_id": "5c55682b11debd747fca6bfbe1dd30487428f857",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/79cee37e35974c99bfe40d63e2a2143f8fd39508"
+        },
+        "date": 1621448625038,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 13.002,
+            "range": "+/- 0.014",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 13.203,
+            "range": "+/- 0.018",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 100.24,
+            "range": "+/- 0.150",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 117.47,
+            "range": "+/- 0.260",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 96.39,
+            "range": "+/- 0.111",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 134.25,
+            "range": "+/- 0.310",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 86.893,
+            "range": "+/- 0.119",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 581.58,
+            "range": "+/- 0.940",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.2913,
+            "range": "+/- 0.003",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 7.0098,
+            "range": "+/- 0.025",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 18.694,
+            "range": "+/- 0.032",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 46.214,
+            "range": "+/- 0.116",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 109.18,
+            "range": "+/- 0.390",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 255.22,
+            "range": "+/- 0.910",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 7.1445,
+            "range": "+/- 0.016",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 37.662,
+            "range": "+/- 0.075",
             "unit": "us"
           }
         ]
