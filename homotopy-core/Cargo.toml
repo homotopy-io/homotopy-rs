@@ -21,6 +21,7 @@ insta = "*"
 quickcheck = "*"
 quickcheck_macros = "*"
 serde_json = "*"
+base64 = "*"
 
 [[bench]]
 name = "bench"

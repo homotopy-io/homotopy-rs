@@ -9,14 +9,14 @@ fn serialize_associator() {
     let (serialized, key) = {
         let mut store = Store::new();
         let key = store.pack_diagram(&diagram.clone().into());
-        let serialized = serde_json::to_string(&store).unwrap();
+        let serialized = rmp_serde::encode::to_vec_named(&store).unwrap();
         (serialized, key)
     };
 
-    assert_debug_snapshot!(serialized);
+    assert_debug_snapshot!(base64::encode(&serialized));
 
     let deserialized = {
-        let store: Store = serde_json::from_str(&serialized).unwrap();
+        let store: Store = rmp_serde::decode::from_slice(&serialized).unwrap();
         store.unpack_diagram(key).unwrap()
     };
 

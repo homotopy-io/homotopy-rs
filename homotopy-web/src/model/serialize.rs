@@ -1,10 +1,4 @@
-use std::io::Read;
-
 use super::{Color, GeneratorInfo, Signature, Workspace};
-use flate2::{
-    read::{GzDecoder, GzEncoder},
-    Compression,
-};
 use homotopy_core::common::{Generator, SliceIndex};
 use homotopy_core::serialize::{Key, Store};
 use homotopy_core::Diagram;
@@ -88,20 +82,17 @@ pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> 
         });
     }
 
-    let json = serde_json::to_string(&data).unwrap();
-    let mut bytes = Vec::new();
-    GzEncoder::new(json.as_bytes(), Compression::fast())
-        .read_to_end(&mut bytes)
-        .unwrap();
-    bytes
+    rmp_serde::encode::to_vec_named(&data).unwrap()
 }
 
 pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
-    let data: Data = {
-        let mut json = String::new();
-        GzDecoder::new(data).read_to_string(&mut json).ok()?;
-        serde_json::from_str(&json).ok()?
-    };
+    let data: Data = match rmp_serde::decode::from_slice(data) {
+        Err(error) => {
+            log::error!("Error while deserializing: {}", error);
+            None
+        }
+        Ok(data) => Some(data),
+    }?;
 
     let mut signature = Signature::default();
     let mut workspace = None;

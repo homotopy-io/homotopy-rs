@@ -15,8 +15,7 @@ impl<K, H: Hash> Keyed<Key<K>> for H {
     fn key(&self) -> Key<K> {
         let mut h = HighwayHasher::default();
         self.hash(&mut h);
-        let hash = h.finalize128();
-        (u128::from(hash[1]) + (u128::from(hash[0]) << 64)).into()
+        h.finalize128().into()
     }
 }
 
@@ -54,7 +53,6 @@ impl Store {
 
         let serialized = match diagram {
             Diagram::Diagram0(generator) => DiagramSer::D0 {
-                dimension: ZeroU32::default(),
                 generator: *generator,
             },
             Diagram::DiagramN(diagram) => {
@@ -91,12 +89,10 @@ impl Store {
 
         let serialized = match rewrite {
             Rewrite::Rewrite0(Rewrite0(None)) => RewriteSer::R0 {
-                dimension: ZeroU32::default(),
                 source: None,
                 target: None,
             },
             Rewrite::Rewrite0(Rewrite0(Some((x, y)))) => RewriteSer::R0 {
-                dimension: ZeroU32::default(),
                 source: Some(*x),
                 target: Some(*y),
             },
@@ -216,10 +212,9 @@ impl Default for Store {
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
+#[serde(tag = "type")]
 enum DiagramSer {
     D0 {
-        dimension: ZeroU32,
         generator: Generator,
     },
     Dn {
@@ -229,11 +224,10 @@ enum DiagramSer {
     },
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
 enum RewriteSer {
     R0 {
-        dimension: ZeroU32,
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
         source: Option<Generator>,
@@ -245,6 +239,25 @@ enum RewriteSer {
         dimension: NonZeroU32,
         cones: Vec<ConeWithIndexSer>,
     },
+}
+
+#[allow(clippy::derive_hash_xor_eq)]
+impl Hash for RewriteSer {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        match self {
+            RewriteSer::R0 { source, target } => {
+                source.hash(state);
+                target.hash(state);
+            }
+            RewriteSer::Rn { dimension, cones } => {
+                dimension.hash(state);
+                state.write_u32(cones.len() as u32);
+                for cone in cones {
+                    cone.hash(state);
+                }
+            }
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
@@ -259,23 +272,40 @@ struct ConeWithIndexSer {
     cone: Key<Cone>,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 struct ConeSer {
     source: Vec<CospanSer>,
     target: CospanSer,
     slices: Vec<Key<Rewrite>>,
 }
 
+#[allow(clippy::derive_hash_xor_eq)]
+impl Hash for ConeSer {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        state.write_u32(self.source.len() as u32);
+
+        for source in &self.source {
+            source.hash(state);
+        }
+
+        self.target.hash(state);
+
+        for slice in &self.slices {
+            slice.hash(state);
+        }
+    }
+}
+
 // Phantom key type
 #[derive(Debug)]
-pub struct Key<K>(u128, PhantomData<K>);
+pub struct Key<K>([u64; 2], PhantomData<K>);
 
 impl<K> Serialize for Key<K> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
-        serializer.serialize_str(&format!("{:032x}", self.0))
+        <[u64; 2]>::serialize(&self.0, serializer)
     }
 }
 
@@ -284,29 +314,12 @@ impl<'de, K> Deserialize<'de> for Key<K> {
     where
         D: serde::Deserializer<'de>,
     {
-        struct HexVisitor;
-
-        impl<'de> serde::de::Visitor<'de> for HexVisitor {
-            type Value = u128;
-
-            fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-                write!(f, "a hex encoded key")
-            }
-
-            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-            where
-                E: serde::de::Error,
-            {
-                u128::from_str_radix(v, 16).map_err(serde::de::Error::custom)
-            }
-        }
-
-        deserializer.deserialize_string(HexVisitor).map(Self::from)
+        <[u64; 2]>::deserialize(deserializer).map(Self::from)
     }
 }
 
-impl<K> From<u128> for Key<K> {
-    fn from(k: u128) -> Self {
+impl<K> From<[u64; 2]> for Key<K> {
+    fn from(k: [u64; 2]) -> Self {
         Self(k, PhantomData)
     }
 }
@@ -342,42 +355,5 @@ impl<K> Ord for Key<K> {
 impl<K> Hash for Key<K> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.0.hash(state);
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
-struct ZeroU32;
-
-impl Serialize for ZeroU32 {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_u32(0)
-    }
-}
-
-impl<'de> Deserialize<'de> for ZeroU32 {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let number = u32::deserialize(deserializer)?;
-
-        if 0 == number {
-            Ok(ZeroU32)
-        } else {
-            Err(serde::de::Error::invalid_value(
-                serde::de::Unexpected::Unsigned(u64::from(number)),
-                &"zero",
-            ))
-        }
-    }
-}
-
-#[allow(clippy::derive_hash_xor_eq)]
-impl Hash for ZeroU32 {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        state.write_u32(0);
     }
 }
