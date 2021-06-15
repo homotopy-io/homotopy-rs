@@ -1,4 +1,4 @@
-use crate::app::{Icon, IconSize};
+use super::components::{Drawer, Icon, IconSize};
 use crate::model::proof::{Action, GeneratorEdit, GeneratorInfo, Signature};
 use homotopy_core::Generator;
 use im::HashMap;
@@ -92,18 +92,9 @@ impl Component for SignatureView {
         // TODO: Folders/groups
         // TODO: On mobile, drag to the side to delete
         html! {
-            <aside class="signature drawer">
-                <div class="drawer__header">
-                    <span class="drawer__title">
-                        {"Signature"}
-                    </span>
-                </div>
-                <div class="drawer__content">
-                    <ul class="signature__generators">
-                        {generators}
-                    </ul>
-                </div>
-            </aside>
+            <Drawer title="Signature" class="signature">
+                <ul class="signature__generators">{generators}</ul>
+            </Drawer>
         }
     }
 }
