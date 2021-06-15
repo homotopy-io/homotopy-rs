@@ -233,7 +233,7 @@ impl Component for App {
             }
         };
 
-        let can_restrict: Visibility = proof
+        let restrict_visible: Visibility = proof
             .workspace()
             .map_or(false, |ws| {
                 !ws.path.is_empty()
@@ -243,11 +243,11 @@ impl Component for App {
                     })
             })
             .into();
-        let can_theorem: Visibility = proof
+        let theorem_visible: Visibility = proof
             .workspace()
             .map_or(false, |ws| ws.diagram.dimension() > 0)
             .into();
-        let can_source: Visibility = proof
+        let source_visible: Visibility = proof
             .workspace()
             .map_or(false, |ws| {
                 proof.boundary().map_or(true, |b| {
@@ -255,7 +255,7 @@ impl Component for App {
                 })
             })
             .into();
-        let can_target: Visibility = proof
+        let target_visible: Visibility = proof
             .workspace()
             .map_or(false, |ws| {
                 proof.boundary().map_or(true, |b| {
@@ -287,13 +287,11 @@ impl Component for App {
                             dispatch={dispatch}
                             visibility={Visibility::from(self.state.can_redo())}
                         />
-                        <SidebarButton desc={BUTTON_RESTRICT} dispatch={dispatch} visibility={can_restrict} />
-                        <SidebarButton desc={BUTTON_THEOREM} dispatch={dispatch} visibility={can_theorem} />
+                        <SidebarButton desc={BUTTON_RESTRICT} dispatch={dispatch} visibility={restrict_visible} />
+                        <SidebarButton desc={BUTTON_THEOREM} dispatch={dispatch} visibility={theorem_visible} />
                         <SidebarButton desc={BUTTON_ADD_GENERATOR} dispatch={dispatch} />
-                        <SidebarButton desc={BUTTON_THEOREM} dispatch={dispatch} visibility={can_theorem} />
-                        <SidebarButton desc={BUTTON_SOURCE} dispatch={dispatch} visibility={can_source} />
-                        <SidebarButton desc={BUTTON_TARGET} dispatch={dispatch} visibility={can_target} />
-                        <SidebarButton desc={BUTTON_TARGET} dispatch={dispatch} visibility={can_target} />
+                        <SidebarButton desc={BUTTON_SOURCE} dispatch={dispatch} visibility={source_visible} />
+                        <SidebarButton desc={BUTTON_TARGET} dispatch={dispatch} visibility={target_visible} />
                         <SidebarButton
                             desc={BUTTON_IDENTITY}
                             dispatch={dispatch}
