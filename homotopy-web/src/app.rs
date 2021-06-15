@@ -1,25 +1,28 @@
 mod attach;
+mod components;
 mod diagram2d;
-mod icon;
 mod panzoom;
 mod project;
+mod settings;
 mod signature;
 mod signature_stylesheet;
 mod toasts;
 mod util;
 mod workspace;
+
 use crate::model::Drawer;
 use crate::model::{self, history};
 use attach::AttachView;
+use components::*;
 use homotopy_core::{diagram::globularity, Direction};
 use homotopy_core::{
     Boundary,
     Direction::{Backward, Forward},
     Height, SliceIndex,
 };
-use icon::{Icon, IconSize};
 use model::{Toast, ToastKind};
 use project::ProjectView;
+use settings::SettingsView;
 use signature::SignatureView;
 use signature_stylesheet::SignatureStylesheet;
 use toasts::Toaster;
@@ -28,138 +31,110 @@ use workspace::WorkspaceView;
 
 use yew::prelude::*;
 
-#[derive(Debug, Clone)]
-pub struct SidebarButton {
-    label: &'static str,
-    icon: &'static str,
-    action: model::Action,
-    shortcut: Option<char>,
-}
+// TODO: Automatically add shortcut name to label
 
-impl SidebarButton {
-    pub fn view(&self, dispatch: &Callback<model::Action>, visible: bool) -> Html {
-        if visible {
-            let action = self.action.clone();
-            html! {
-                <div
-                    class="sidebar__button tooltip tooltip--right"
-                    onclick={dispatch.reform(move |_| action.clone())}
-                    data-tooltip={self.label}
-                >
-                    <Icon name={self.icon} size={IconSize::Icon24} />
-                </div>
-            }
-        } else {
-            html! {
-                <div
-                    class="sidebar__button"
-                    style="visibility: hidden;"
-                >
-                    <Icon name={self.icon} size={IconSize::Icon24} />
-                </div>
-            }
-        }
+macro_rules! declare_sidebar_buttons {
+    ($(($name:ident, $label:literal, $icon:literal, $shortcut:expr, $action:expr,)),*) => {
+        $(const $name: SidebarButtonDesc = SidebarButtonDesc {
+            label: $label,
+            icon: $icon,
+            action: {$action},
+            shortcut: {$shortcut},
+        };)*
+        const BUTTONS: &[&SidebarButtonDesc] = &[
+            $(&$name),*
+        ];
     }
 }
 
-// TODO: Automatically add shortcut name to label
-
-const BUTTON_UNDO: SidebarButton = SidebarButton {
-    label: "Undo (U)",
-    icon: "undo",
-    action: model::Action::History(history::Action::Move(history::Direction::Linear(Backward))),
-    shortcut: Some('u'),
-};
-
-const BUTTON_REDO: SidebarButton = SidebarButton {
-    label: "Redo",
-    icon: "redo",
-    action: model::Action::History(history::Action::Move(history::Direction::Linear(Forward))),
-    shortcut: None,
-};
-
-const BUTTON_CLEAR: SidebarButton = SidebarButton {
-    label: "Clear (C)",
-    icon: "clear",
-    action: model::Action::Proof(model::proof::Action::ClearWorkspace),
-    shortcut: Some('c'),
-};
-
-const BUTTON_IDENTITY: SidebarButton = SidebarButton {
-    label: "Identity (I)",
-    icon: "upgrade",
-    action: model::Action::Proof(model::proof::Action::TakeIdentityDiagram),
-    shortcut: Some('i'),
-};
-
-const BUTTON_SOURCE: SidebarButton = SidebarButton {
-    label: "Source (S)",
-    icon: "arrow_circle_down",
-    action: model::Action::Proof(model::proof::Action::SetBoundary(Boundary::Source)),
-    shortcut: Some('s'),
-};
-
-const BUTTON_TARGET: SidebarButton = SidebarButton {
-    label: "Target (T)",
-    icon: "arrow_circle_up",
-    action: model::Action::Proof(model::proof::Action::SetBoundary(Boundary::Target)),
-    shortcut: Some('t'),
-};
-
-const BUTTON_ADD_GENERATOR: SidebarButton = SidebarButton {
-    label: "Add Generator (A)",
-    icon: "add_circle_outline",
-    action: model::Action::Proof(model::proof::Action::CreateGeneratorZero),
-    shortcut: Some('a'),
-};
-
-const BUTTON_RESTRICT: SidebarButton = SidebarButton {
-    label: "Restrict (R)",
-    icon: "find_replace",
-    action: model::Action::Proof(model::proof::Action::Restrict),
-    shortcut: Some('r'),
-};
-
-const BUTTON_THEOREM: SidebarButton = SidebarButton {
-    label: "Theorem (H)",
-    icon: "title",
-    action: model::Action::Proof(model::proof::Action::Theorem),
-    shortcut: Some('h'),
-};
-
-const BUTTON_PROJECT: SidebarButton = SidebarButton {
-    label: "Project",
-    icon: "info",
-    action: model::Action::ToggleDrawer(model::Drawer::Project),
-    shortcut: None,
-};
-
-const BUTTON_SIGNATURE: SidebarButton = SidebarButton {
-    label: "Signature",
-    icon: "list",
-    action: model::Action::ToggleDrawer(model::Drawer::Signature),
-    shortcut: None,
-};
-
-// const BUTTON_USER: SidebarButton = SidebarButton {
-//     label: "User",
-//     icon: "perm_identity",
-//     action: model::Action::ToggleDrawer(model::Drawer::User),
-//     shortcut: None,
-// };
-
-const BUTTONS: &[&SidebarButton] = &[
-    &BUTTON_UNDO,
-    &BUTTON_REDO,
-    &BUTTON_RESTRICT,
-    &BUTTON_THEOREM,
-    &BUTTON_CLEAR,
-    &BUTTON_IDENTITY,
-    &BUTTON_SOURCE,
-    &BUTTON_TARGET,
-    &BUTTON_ADD_GENERATOR,
-    &BUTTON_PROJECT,
-    &BUTTON_SIGNATURE,
+declare_sidebar_buttons![
+    (
+        BUTTON_UNDO,
+        "Undo",
+        "undo",
+        Some('u'),
+        model::Action::History(history::Action::Move(history::Direction::Linear(Backward))),
+    ),
+    (
+        BUTTON_REDO,
+        "Redo",
+        "redo",
+        None,
+        model::Action::History(history::Action::Move(history::Direction::Linear(Forward))),
+    ),
+    (
+        BUTTON_CLEAR,
+        "Clear",
+        "clear",
+        Some('c'),
+        model::Action::Proof(model::proof::Action::ClearWorkspace),
+    ),
+    (
+        BUTTON_IDENTITY,
+        "Identity",
+        "upgrade",
+        Some('i'),
+        model::Action::Proof(model::proof::Action::TakeIdentityDiagram),
+    ),
+    (
+        BUTTON_SOURCE,
+        "Source",
+        "arrow_circle_down",
+        Some('s'),
+        model::Action::Proof(model::proof::Action::SetBoundary(Boundary::Source)),
+    ),
+    (
+        BUTTON_TARGET,
+        "Target",
+        "arrow_circle_up",
+        Some('t'),
+        model::Action::Proof(model::proof::Action::SetBoundary(Boundary::Target)),
+    ),
+    (
+        BUTTON_ADD_GENERATOR,
+        "Add Generator",
+        "add_circle_outline",
+        Some('a'),
+        model::Action::Proof(model::proof::Action::CreateGeneratorZero),
+    ),
+    (
+        BUTTON_RESTRICT,
+        "Restrict",
+        "find_replace",
+        Some('r'),
+        model::Action::Proof(model::proof::Action::Restrict),
+    ),
+    (
+        BUTTON_THEOREM,
+        "Theorem",
+        "title",
+        Some('h'),
+        model::Action::Proof(model::proof::Action::Theorem),
+    ),
+    (
+        BUTTON_PROJECT,
+        "Project",
+        "info",
+        None,
+        model::Action::ToggleDrawer(model::Drawer::Project),
+    ),
+    (
+        BUTTON_SIGNATURE,
+        "Signature",
+        "list",
+        None,
+        model::Action::ToggleDrawer(model::Drawer::Signature),
+    ),
+    (
+        BUTTON_SETTINGS,
+        "Settings",
+        "settings",
+        None,
+        model::Action::ToggleDrawer(model::Drawer::Settings),
+    ) //  (
+      //      BUTTON_USER, "User", "perm_identity", None,
+      //      model::Action::ToggleDrawer(model::Drawer::User),
+      //  )
 ];
 
 #[derive(Default, Clone, Debug, PartialEq, Properties)]
@@ -258,6 +233,37 @@ impl Component for App {
             }
         };
 
+        let can_restrict: Visibility = proof
+            .workspace()
+            .map_or(false, |ws| {
+                !ws.path.is_empty()
+                    && ws.path.iter().all(|s| {
+                        matches!(s, SliceIndex::Boundary(_))
+                            || matches!(s, SliceIndex::Interior(Height::Regular(_)))
+                    })
+            })
+            .into();
+        let can_theorem: Visibility = proof
+            .workspace()
+            .map_or(false, |ws| ws.diagram.dimension() > 0)
+            .into();
+        let can_source: Visibility = proof
+            .workspace()
+            .map_or(false, |ws| {
+                proof.boundary().map_or(true, |b| {
+                    b.boundary != Boundary::Target || globularity(&b.diagram, &ws.diagram)
+                })
+            })
+            .into();
+        let can_target: Visibility = proof
+            .workspace()
+            .map_or(false, |ws| {
+                proof.boundary().map_or(true, |b| {
+                    b.boundary != Boundary::Source || globularity(&b.diagram, &ws.diagram)
+                })
+            })
+            .into();
+
         html! {
             <main class="app">
                 <aside class="sidebar">
@@ -265,32 +271,39 @@ impl Component for App {
                         <img src="/logo.svg" class="sidebar__logo" />
                     </a>
                     <nav class="sidebar__nav">
-                        {BUTTON_PROJECT.view(dispatch, true)}
-                        {BUTTON_SIGNATURE.view(dispatch, true)}
-                        // {BUTTON_USER.view(dispatch)}
+                        <SidebarButton desc={BUTTON_PROJECT} dispatch={dispatch} />
+                        <SidebarButton desc={BUTTON_SETTINGS} dispatch={dispatch} />
+                        <SidebarButton desc={BUTTON_SIGNATURE} dispatch={dispatch} />
+                        // <SidebarButton desc={BUTTON_USER} dispatch={dispatch} />
                     </nav>
                     <nav class="sidebar__tools">
-                        {BUTTON_UNDO.view(dispatch, self.state.can_undo())}
-                        {BUTTON_REDO.view(dispatch, self.state.can_redo())}
-                        {BUTTON_RESTRICT.view(dispatch, proof.workspace().map_or(false, |ws|
-                             !ws.path.is_empty()
-                          && ws.path.iter().all(|s|
-                                  matches!(s, SliceIndex::Boundary(_))
-                               || matches!(s, SliceIndex::Interior(Height::Regular(_))))))}
-                        {BUTTON_THEOREM.view(dispatch, proof.workspace().map_or(false, |ws| ws.diagram.dimension() > 0))}
-                        {BUTTON_ADD_GENERATOR.view(dispatch, true)}
-                        {BUTTON_SOURCE.view(dispatch, proof.workspace().is_some()
-                            && proof.boundary().map_or(true, |b|
-                                b.boundary != Boundary::Target || globularity(&b.diagram, &proof.workspace().unwrap().diagram)
-                            )
-                        )}
-                        {BUTTON_TARGET.view(dispatch, proof.workspace().is_some()
-                            && proof.boundary().map_or(true, |b|
-                                b.boundary != Boundary::Source || globularity(&b.diagram, &proof.workspace().unwrap().diagram)
-                            )
-                        )}
-                        {BUTTON_IDENTITY.view(dispatch, proof.workspace().is_some())}
-                        {BUTTON_CLEAR.view(dispatch, proof.workspace().is_some())}
+                        <SidebarButton
+                            desc={BUTTON_UNDO}
+                            dispatch={dispatch}
+                            visibility={Visibility::from(self.state.can_undo())}
+                        />
+                        <SidebarButton
+                            desc={BUTTON_REDO}
+                            dispatch={dispatch}
+                            visibility={Visibility::from(self.state.can_redo())}
+                        />
+                        <SidebarButton desc={BUTTON_RESTRICT} dispatch={dispatch} visibility={can_restrict} />
+                        <SidebarButton desc={BUTTON_THEOREM} dispatch={dispatch} visibility={can_theorem} />
+                        <SidebarButton desc={BUTTON_ADD_GENERATOR} dispatch={dispatch} />
+                        <SidebarButton desc={BUTTON_THEOREM} dispatch={dispatch} visibility={can_theorem} />
+                        <SidebarButton desc={BUTTON_SOURCE} dispatch={dispatch} visibility={can_source} />
+                        <SidebarButton desc={BUTTON_TARGET} dispatch={dispatch} visibility={can_target} />
+                        <SidebarButton desc={BUTTON_TARGET} dispatch={dispatch} visibility={can_target} />
+                        <SidebarButton
+                            desc={BUTTON_IDENTITY}
+                            dispatch={dispatch}
+                            visibility={Visibility::from(proof.workspace().is_some())}
+                        />
+                        <SidebarButton
+                            desc={BUTTON_CLEAR}
+                            dispatch={dispatch}
+                            visibility={Visibility::from(proof.workspace().is_some())}
+                        />
                     </nav>
                 </aside>
                 {self.drawer()}
@@ -339,6 +352,11 @@ impl App {
                         signature={self.state.proof().signature()}
                         dispatch={dispatch.reform(model::Action::Proof)}
                     />
+                }
+            }
+            Some(Drawer::Settings) => {
+                html! {
+                    <SettingsView />
                 }
             }
             Some(Drawer::User) | None => Default::default(),

@@ -169,6 +169,7 @@ pub enum ModelError {
 pub enum Drawer {
     Project,
     Signature,
+    Settings,
     User,
 }
 

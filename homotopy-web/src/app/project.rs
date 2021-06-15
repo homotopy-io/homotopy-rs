@@ -8,6 +8,8 @@ use yew_services::{reader::FileData, ReaderService};
 
 use crate::model::Action;
 
+use super::components::Drawer;
+
 #[derive(Properties, Clone, PartialEq)]
 pub struct Props {
     pub dispatch: Callback<Action>,
@@ -32,19 +34,12 @@ pub fn project_view(props: &Props) -> Html {
         }
     }));
     html! {
-        <aside class="project drawer">
-            <div class="drawer__header">
-                <span class="drawer__title">
-                    {"Project"}
-                </span>
-            </div>
-            <div class="drawer__content">
-                <button onclick=export>{"Export"}</button>
+        <Drawer title="Project" class="project">
+            <button onclick=export>{"Export"}</button>
                 <label for="import">
                     {"Import"}
                 </label>
                 <input type="file" accept="application/gzip,.hom" class="visually-hidden" id="import" onchange=import/>
-            </div>
-        </aside>
+        </Drawer>
     }
 }
