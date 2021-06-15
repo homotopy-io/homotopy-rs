@@ -33,7 +33,7 @@ pub fn sidebar_button(props: &SidebarButtonProps) -> Html {
                 if let Some(shortcut) = props.desc.shortcut {
                     format!("{} ({})", props.desc.label, shortcut.to_uppercase())
                 } else {
-                    props.desc.label.to_string()
+                    props.desc.label.to_owned()
                 }
             }
             style={&format!("{}", props.visibility)}

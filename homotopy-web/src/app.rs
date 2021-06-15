@@ -13,7 +13,7 @@ mod workspace;
 use crate::model::Drawer;
 use crate::model::{self, history};
 use attach::AttachView;
-use components::*;
+use components::{Icon, IconSize, SidebarButton, SidebarButtonDesc, Visibility};
 use homotopy_core::{diagram::globularity, Direction};
 use homotopy_core::{
     Boundary,

@@ -22,9 +22,9 @@ impl fmt::Display for Visibility {
 impl From<bool> for Visibility {
     fn from(b: bool) -> Self {
         if b {
-            Visibility::Visible
+            Self::Visible
         } else {
-            Visibility::Hidden
+            Self::Hidden
         }
     }
 }

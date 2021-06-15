@@ -333,7 +333,6 @@ impl Proof {
                         boundary,
                         diagram: workspace.diagram.clone(),
                     });
-                    self.workspace = None;
                 } else {
                     let (source, target) = match boundary {
                         Source => (workspace.diagram.clone(), selected.diagram.clone()),
@@ -344,8 +343,8 @@ impl Proof {
                         .map_err(ModelError::IncompatibleBoundaries)?;
 
                     self.boundary = None;
-                    self.workspace = None;
                 }
+                self.workspace = None;
             }
             (Some(workspace), None) => {
                 self.boundary = Some(SelectedBoundary {
