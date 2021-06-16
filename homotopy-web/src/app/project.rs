@@ -6,9 +6,8 @@ use yew_functional::function_component;
 use yew_functional::use_state;
 use yew_services::{reader::FileData, ReaderService};
 
+use crate::components::Drawer;
 use crate::model::Action;
-
-use super::components::Drawer;
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct Props {

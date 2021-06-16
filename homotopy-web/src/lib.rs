@@ -48,6 +48,7 @@
 )]
 #![recursion_limit = "1024"]
 mod app;
+mod components;
 pub mod model;
 
 use wasm_bindgen::prelude::*;
