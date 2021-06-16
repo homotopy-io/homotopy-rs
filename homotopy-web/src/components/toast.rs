@@ -36,6 +36,14 @@ macro_rules! declare_toast_kinds {
                 );
             })*
         }
+
+        impl ToasterLink for WeakComponentLink<Toaster> {
+            $(fn $method<S: AsRef<str>>(&self, msg: S) {
+                if let Some(ref toaster) = *self.borrow() {
+                    toaster.$method(msg);
+                }
+            })*
+        }
     }
 }
 

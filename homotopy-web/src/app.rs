@@ -193,9 +193,7 @@ impl Component for App {
                 match result {
                     Ok(()) => {}
                     Err(error) => {
-                        if let Some(ref toaster) = *self.toaster.borrow() {
-                            toaster.toast_error(format!("{}", error));
-                        }
+                        self.toaster.toast_error(format!("{}", error));
                         log::error!("Error occured: {}", error);
                     }
                 }
