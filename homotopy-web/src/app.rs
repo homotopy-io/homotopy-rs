@@ -8,10 +8,8 @@ mod signature_stylesheet;
 mod util;
 mod workspace;
 
-use crate::components::{
-    Icon, IconSize, SidebarButton, SidebarButtonDesc, Toaster, ToasterLink, Visibility,
-    WeakComponentLink,
-};
+use crate::components::toast::{Toast, ToastAgent, Toaster};
+use crate::components::{Icon, IconSize, SidebarButton, SidebarButtonDesc, Visibility};
 use crate::model::Drawer;
 use crate::model::{self, history};
 
@@ -29,9 +27,8 @@ use signature_stylesheet::SignatureStylesheet;
 use wasm_bindgen::JsCast;
 use workspace::WorkspaceView;
 
+use yew::agent::Dispatcher;
 use yew::prelude::*;
-
-// TODO: Automatically add shortcut name to label
 
 macro_rules! declare_sidebar_buttons {
     ($(($name:ident, $label:literal, $icon:literal, $shortcut:expr, $action:expr,),)*) => {
@@ -150,7 +147,7 @@ pub struct App {
     dispatch: Callback<model::Action>,
     state: model::State,
     signature_stylesheet: SignatureStylesheet,
-    toaster: WeakComponentLink<Toaster>,
+    toaster: Dispatcher<ToastAgent>,
 }
 
 impl Component for App {
@@ -174,33 +171,31 @@ impl Component for App {
             dispatch,
             state,
             signature_stylesheet,
-            toaster: WeakComponentLink::default(),
+            toaster: ToastAgent::dispatcher(),
         }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
-        match msg {
-            Message::Dispatch(action) => {
-                log::info!("Received action: {:?}", action);
+        let Message::Dispatch(action) = msg;
 
-                let time_start = performance();
-                let result = self.state.update(action);
-                let time_stop = performance();
-                log::info!("State update took {}ms.", time_stop - time_start);
+        log::info!("Received action: {:?}", action);
 
-                homotopy_core::collect_garbage();
+        let time_start = performance();
+        let result = self.state.update(action);
+        let time_stop = performance();
+        log::info!("State update took {}ms.", time_stop - time_start);
 
-                match result {
-                    Ok(()) => {}
-                    Err(error) => {
-                        self.toaster.toast_error(format!("{}", error));
-                        log::error!("Error occured: {}", error);
-                    }
-                }
-                self.signature_stylesheet
-                    .update(self.state.proof().signature().clone());
+        homotopy_core::collect_garbage();
+
+        match result {
+            Ok(()) => {}
+            Err(error) => {
+                self.toaster.send(Toast::error(format!("{}", error)));
+                log::error!("Error occured: {}", error);
             }
         }
+        self.signature_stylesheet
+            .update(self.state.proof().signature().clone());
         true
     }
 
@@ -304,7 +299,7 @@ impl Component for App {
                     </nav>
                 </aside>
                 {self.drawer()}
-                <Toaster weak_link={self.toaster.clone()} />
+                <Toaster />
                 {workspace}
                 <span class="version">
                     {format!("Version: {}", option_env!("GIT_DESCRIBE").unwrap_or(env!("CARGO_PKG_VERSION")))}
