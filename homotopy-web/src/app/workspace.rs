@@ -2,6 +2,7 @@ mod path_control;
 mod slice_control;
 
 use crate::app::diagram2d::{Diagram1D, Diagram2D, Highlight2D};
+use crate::app::diagram3d::{Diagram3D};
 use crate::app::panzoom;
 use crate::model::proof::homotopy::Homotopy;
 use crate::model::proof::{Action, Signature, Workspace};
@@ -130,6 +131,35 @@ impl WorkspaceView {
                             on_select={self.on_select.clone()}
                         />
                     </div>
+                }
+            }
+            Diagram::DiagramN(diagram) if diagram.dimension() == 2 => {
+                let highlight = highlight_2d(&self.props.workspace, &self.props.signature);
+
+                html! {
+                    <div class="workspace__diagram" style={self.diagram_style()}>
+                        <Diagram2D
+                            diagram={diagram.clone()}
+                            id="workspace__diagram"
+                            on_select={self.on_select.clone()}
+                            on_homotopy={self.on_homotopy.clone()}
+                            highlight={highlight}
+                        />
+                    </div>
+                }
+            }
+            Diagram::DiagramN(diagram) if diagram.dimension() == 3 => {
+                html! {
+                    <div class="workspace__diagram" style={self.diagram_style()}>
+                        <Diagram3D
+                            diagram={diagram.clone()}
+                        />
+                    </div>
+                }
+            }
+            Diagram::DiagramN(diagram) if diagram.dimension() == 4 => {
+                html! {
+                    <div>{"todo: 4-dimensional diagram"}</div>
                 }
             }
             Diagram::DiagramN(diagram) => {

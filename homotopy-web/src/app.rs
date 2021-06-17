@@ -1,6 +1,7 @@
 mod attach;
 mod components;
 mod diagram2d;
+mod diagram3d;
 mod panzoom;
 mod project;
 mod settings;
@@ -178,8 +179,7 @@ impl Component for App {
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             Message::Dispatch(action) => {
-                log::info!("Received action: {:?}", action);
-
+                log::info!("Received an action: {:?}", action);
                 let time_start = performance();
                 let result = self.state.update(action, self.dispatch.clone());
                 let time_stop = performance();
