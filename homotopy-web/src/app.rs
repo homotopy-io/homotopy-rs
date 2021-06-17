@@ -9,6 +9,7 @@ use crate::model;
 
 mod attach;
 mod diagram2d;
+mod diagram3d;
 mod project;
 mod settings;
 mod sidebar;
