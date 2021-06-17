@@ -8,10 +8,10 @@ mod signature_stylesheet;
 mod util;
 mod workspace;
 
-use crate::components::Visibility;
-use crate::components::toast::{Toast, ToastAgent, Toaster};
 use crate::components::icon::{Icon, IconSize};
 use crate::components::sidebar::{SidebarButton, SidebarButtonDesc};
+use crate::components::toast::{Toast, ToastAgent, Toaster};
+use crate::components::Visibility;
 
 use crate::model::Drawer;
 use crate::model::{self, history};

@@ -374,6 +374,7 @@ body, html {
   width: 100%;
   animation: toast__inner 2500ms ease-in-out 0s 1 forwards;
   padding: var(--space-1);
+  box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.2);
   box-sizing: border-box;
 }
 
@@ -389,8 +390,14 @@ body, html {
 @keyframes toast__inner {
   0% { opacity: 0; }
   20% { opacity: 1; }
-  80% { left: 0; }
-  100% { left: calc(300px + var(--space-2)); }
+  80% {
+    opacity: 1;
+    left: 0;
+  }
+  100% {
+    opacity: 0;
+    left: calc(300px + var(--space-2));
+  }
 }
 
 /* https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#using_a_label_element_to_trigger_a_hidden_file_input_element */
