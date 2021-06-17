@@ -6,7 +6,7 @@ use yew_functional::function_component;
 use yew_functional::use_state;
 use yew_services::{reader::FileData, ReaderService};
 
-use crate::components::Drawer;
+use crate::components::drawer::Drawer;
 use crate::model::Action;
 
 #[derive(Properties, Clone, PartialEq)]

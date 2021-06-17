@@ -30,7 +30,9 @@ impl Agent for ToastAgent {
     }
 
     fn connected(&mut self, id: HandlerId) {
-        self.handlers.insert(id);
+        if id.is_respondable() {
+            self.handlers.insert(id);
+        }
     }
 
     fn disconnected(&mut self, id: HandlerId) {

@@ -8,8 +8,11 @@ mod signature_stylesheet;
 mod util;
 mod workspace;
 
+use crate::components::Visibility;
 use crate::components::toast::{Toast, ToastAgent, Toaster};
-use crate::components::{Icon, IconSize, SidebarButton, SidebarButtonDesc, Visibility};
+use crate::components::icon::{Icon, IconSize};
+use crate::components::sidebar::{SidebarButton, SidebarButtonDesc};
+
 use crate::model::Drawer;
 use crate::model::{self, history};
 
@@ -299,7 +302,7 @@ impl Component for App {
                     </nav>
                 </aside>
                 {self.drawer()}
-                <Toaster />
+                <Toaster timeout={3000} />
                 {workspace}
                 <span class="version">
                     {format!("Version: {}", option_env!("GIT_DESCRIBE").unwrap_or(env!("CARGO_PKG_VERSION")))}

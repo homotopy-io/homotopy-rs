@@ -1,7 +1,7 @@
 use yew::prelude::*;
 use yew_functional::function_component;
 
-use crate::components::Drawer;
+use crate::components::drawer::Drawer;
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct Props {}

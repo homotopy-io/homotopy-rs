@@ -1,4 +1,6 @@
-use crate::components::{Drawer, Icon, IconSize};
+use crate::components::drawer::Drawer;
+use crate::components::icon::{Icon, IconSize};
+
 use crate::model::proof::{Action, GeneratorEdit, GeneratorInfo, Signature};
 use homotopy_core::Generator;
 use im::HashMap;

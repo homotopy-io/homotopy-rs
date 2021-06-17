@@ -1,5 +1,3 @@
-use std::collections::VecDeque;
-
 use gloo_timers::callback::Timeout;
 use yew::prelude::*;
 
@@ -19,7 +17,8 @@ pub enum ToasterMsg {
 pub struct Toaster {
     props: ToasterProps,
     link: ComponentLink<Self>,
-    toasts: VecDeque<Toast>,
+    toasts: Vec<Toast>,
+    animating: usize,
     _bridge: Box<dyn Bridge<ToastAgent>>,
 }
 
@@ -32,7 +31,8 @@ impl Component for Toaster {
         Self {
             props,
             link,
-            toasts: VecDeque::new(),
+            toasts: vec![],
+            animating: 0,
             _bridge: bridge,
         }
     }
@@ -44,7 +44,11 @@ impl Component for Toaster {
             .map(|props| {
                 let class = format!("toaster__toast toaster__toast--{}", props.kind);
                 html! {
-                    <div class={class}>{props.message.clone()}</div>
+                    <div class={class}>
+                        <div class="toaster__toast__inner">
+                            {props.message.clone()}
+                        </div>
+                    </div>
                 }
             })
             .collect();
@@ -59,20 +63,28 @@ impl Component for Toaster {
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             ToasterMsg::Toast(props) => {
-                self.toasts.push_back(props);
+                self.animating += 1;
+                self.toasts.push(props);
                 {
                     let link = self.link.clone();
                     Timeout::new(self.props.timeout, move || {
                         link.send_message(ToasterMsg::Clear);
                     })
                     .forget();
+                    true
                 }
             }
+            ToasterMsg::Clear if self.animating > 1 => {
+                self.animating -= 1;
+                false
+            }
             ToasterMsg::Clear => {
-                self.toasts.pop_front();
+                // Batch clear toasts when none are left animating
+                self.animating = 0;
+                self.toasts.clear();
+                true
             }
         }
-        true
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {

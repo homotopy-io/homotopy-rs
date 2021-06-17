@@ -2,7 +2,7 @@ use yew::prelude::*;
 use yew_functional::function_component;
 
 use super::common::Visibility;
-use super::{Icon, IconSize};
+use super::icon::{Icon, IconSize};
 use crate::model;
 
 #[derive(Properties, Clone, PartialEq)]
