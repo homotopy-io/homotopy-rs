@@ -8,8 +8,10 @@ mod signature_stylesheet;
 mod util;
 mod workspace;
 
+use crate::declare_settings;
 use crate::components::icon::{Icon, IconSize};
 use crate::components::sidebar::{SidebarButton, SidebarButtonDesc};
+use crate::components::settings::{Settings, SettingsAgent};
 use crate::components::toast::{Toast, ToastAgent, Toaster};
 use crate::components::Visibility;
 
@@ -30,7 +32,7 @@ use signature_stylesheet::SignatureStylesheet;
 use wasm_bindgen::JsCast;
 use workspace::WorkspaceView;
 
-use yew::agent::Dispatcher;
+use yew::agent::{Bridge, Dispatcher};
 use yew::prelude::*;
 
 macro_rules! declare_sidebar_buttons {
@@ -138,12 +140,24 @@ declare_sidebar_buttons![
     //  )
 ];
 
+declare_settings! {
+    pub struct GlobalSettings {
+        type Key = Setting;
+        type Message = SettingPayload;
+
+        example_toggle: bool;
+    }
+}
+
+pub type AppSettings = SettingsAgent<GlobalSettings>;
+
 #[derive(Default, Clone, Debug, PartialEq, Properties)]
 pub struct Props {}
 
 #[derive(Debug, Clone)]
 pub enum Message {
     Dispatch(model::Action),
+    Setting(SettingPayload),
 }
 
 pub struct App {
@@ -151,6 +165,7 @@ pub struct App {
     state: model::State,
     signature_stylesheet: SignatureStylesheet,
     toaster: Dispatcher<ToastAgent>,
+    settings: Box<dyn Bridge<AppSettings>>,
 }
 
 impl Component for App {
@@ -170,36 +185,50 @@ impl Component for App {
         // TODO: Remove these when App is destroyed.
         Self::install_keyboard_shortcuts(dispatch.clone());
 
+        let mut settings = AppSettings::bridge(link.callback(Message::Setting));
+        settings.send(Settings::Subscribe(Setting::example_toggle));
+
         Self {
             dispatch,
             state,
             signature_stylesheet,
             toaster: ToastAgent::dispatcher(),
+            settings,
         }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
-        let Message::Dispatch(action) = msg;
+        match msg {
+            Message::Dispatch(action) => {
+                log::info!("Received action: {:?}", action);
 
-        log::info!("Received action: {:?}", action);
+                let time_start = performance();
+                let result = self.state.update(action);
+                let time_stop = performance();
+                log::info!("State update took {}ms.", time_stop - time_start);
 
-        let time_start = performance();
-        let result = self.state.update(action);
-        let time_stop = performance();
-        log::info!("State update took {}ms.", time_stop - time_start);
+                homotopy_core::collect_garbage();
 
-        homotopy_core::collect_garbage();
-
-        match result {
-            Ok(()) => {}
-            Err(error) => {
-                self.toaster.send(Toast::error(format!("{}", error)));
-                log::error!("Error occured: {}", error);
+                match result {
+                    Ok(()) => {}
+                    Err(error) => {
+                        self.toaster.send(Toast::error(format!("{}", error)));
+                        log::error!("Error occured: {}", error);
+                    }
+                }
+                self.signature_stylesheet
+                    .update(self.state.proof().signature().clone());
+                true
+            }
+            Message::Setting(SettingPayload::example_toggle(true)) => {
+                self.toaster.send(Toast::success("Toggle on!"));
+                false
+            }
+            Message::Setting(SettingPayload::example_toggle(false)) => {
+                self.toaster.send(Toast::error("Toggle off!"));
+                false
             }
         }
-        self.signature_stylesheet
-            .update(self.state.proof().signature().clone());
-        true
     }
 
     fn change(&mut self, _props: Self::Properties) -> ShouldRender {
