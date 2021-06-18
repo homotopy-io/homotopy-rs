@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 pub type Key = &'static str;
 
@@ -29,7 +29,7 @@ macro_rules! declare_settings {
                 $key: $ty
             ),*
         }
-        
+
         #[derive(Clone)]
         #[allow(non_camel_case_types)]
         $vis enum $msg {
