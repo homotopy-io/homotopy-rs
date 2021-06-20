@@ -51,6 +51,7 @@ pub mod common;
 pub mod complex;
 pub mod contraction;
 pub mod diagram;
+pub mod cubicalise;
 pub mod examples;
 pub mod expansion;
 pub mod factorization;
