@@ -159,7 +159,7 @@ impl WorkspaceView {
             }
             Diagram::DiagramN(diagram) if diagram.dimension() == 4 => {
                 html! {
-                    <div>{"todo: 4-dimensional diagram"}</div>
+                    <div>{"todo: 4-dimensional diagram!"}</div>
                 }
             }
             Diagram::DiagramN(diagram) => {
