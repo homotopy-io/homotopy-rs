@@ -26,6 +26,7 @@ js-sys = "*"
 quote = "1.0.7"
 serde = { version = "1.0", features = ["derive"] }
 syn = "1.0.45"
+paste = "1.0.5"
 rmp-serde = "*"
 # yew = "0.17"
 yew = { git = "https://github.com/yewstack/yew" }

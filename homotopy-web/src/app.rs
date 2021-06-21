@@ -24,7 +24,7 @@ use homotopy_core::{
     Height, SliceIndex,
 };
 use project::ProjectView;
-use settings::SettingsView;
+use settings::{AppSettings, SettingsView};
 use signature::SignatureView;
 use signature_stylesheet::SignatureStylesheet;
 use wasm_bindgen::JsCast;
@@ -151,6 +151,7 @@ pub struct App {
     state: model::State,
     signature_stylesheet: SignatureStylesheet,
     toaster: Dispatcher<ToastAgent>,
+    _settings: AppSettings,
 }
 
 impl Component for App {
@@ -175,31 +176,34 @@ impl Component for App {
             state,
             signature_stylesheet,
             toaster: ToastAgent::dispatcher(),
+            _settings: AppSettings::connect(Callback::noop()),
         }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
-        let Message::Dispatch(action) = msg;
+        match msg {
+            Message::Dispatch(action) => {
+                log::info!("Received action: {:?}", action);
 
-        log::info!("Received action: {:?}", action);
+                let time_start = performance();
+                let result = self.state.update(action);
+                let time_stop = performance();
+                log::info!("State update took {}ms.", time_stop - time_start);
 
-        let time_start = performance();
-        let result = self.state.update(action);
-        let time_stop = performance();
-        log::info!("State update took {}ms.", time_stop - time_start);
+                homotopy_core::collect_garbage();
 
-        homotopy_core::collect_garbage();
-
-        match result {
-            Ok(()) => {}
-            Err(error) => {
-                self.toaster.send(Toast::error(format!("{}", error)));
-                log::error!("Error occured: {}", error);
+                match result {
+                    Ok(()) => {}
+                    Err(error) => {
+                        self.toaster.send(Toast::error(format!("{}", error)));
+                        log::error!("Error occured: {}", error);
+                    }
+                }
+                self.signature_stylesheet
+                    .update(self.state.proof().signature().clone());
+                true
             }
         }
-        self.signature_stylesheet
-            .update(self.state.proof().signature().clone());
-        true
     }
 
     fn change(&mut self, _props: Self::Properties) -> ShouldRender {
