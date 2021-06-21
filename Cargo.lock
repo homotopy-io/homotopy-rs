@@ -626,6 +626,7 @@ dependencies = [
  "criterion",
  "hashconsing",
  "highway",
+ "homotopy-common",
  "insta",
  "itertools",
  "log",

@@ -5,6 +5,7 @@ authors = ["Lukas Heidemann <lukas@heidemann.me>", "Nick Hu <me@nickhu.co.uk>", 
 edition = "2018"
 
 [dependencies]
+homotopy-common = { path = "../homotopy-common" }
 hashconsing = "1.5.0"
 highway = "0.6.4"
 rustc-hash = "1.1.0"
