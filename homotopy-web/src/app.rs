@@ -1,40 +1,40 @@
 mod attach;
-mod components;
 mod diagram2d;
 mod panzoom;
 mod project;
 mod settings;
 mod signature;
 mod signature_stylesheet;
-mod toasts;
 mod util;
 mod workspace;
 
+use crate::components::icon::{Icon, IconSize};
+use crate::components::sidebar::{SidebarButton, SidebarButtonDesc};
+use crate::components::toast::{Toast, ToastAgent, Toaster};
+use crate::components::Visibility;
+
 use crate::model::Drawer;
 use crate::model::{self, history};
+
 use attach::AttachView;
-use components::{Icon, IconSize, SidebarButton, SidebarButtonDesc, Visibility};
 use homotopy_core::{diagram::globularity, Direction};
 use homotopy_core::{
     Boundary,
     Direction::{Backward, Forward},
     Height, SliceIndex,
 };
-use model::{Toast, ToastKind};
 use project::ProjectView;
 use settings::SettingsView;
 use signature::SignatureView;
 use signature_stylesheet::SignatureStylesheet;
-use toasts::Toaster;
 use wasm_bindgen::JsCast;
 use workspace::WorkspaceView;
 
+use yew::agent::Dispatcher;
 use yew::prelude::*;
 
-// TODO: Automatically add shortcut name to label
-
 macro_rules! declare_sidebar_buttons {
-    ($(($name:ident, $label:literal, $icon:literal, $shortcut:expr, $action:expr,)),*) => {
+    ($(($name:ident, $label:literal, $icon:literal, $shortcut:expr, $action:expr,),)*) => {
         $(const $name: SidebarButtonDesc = SidebarButtonDesc {
             label: $label,
             icon: $icon,
@@ -131,10 +131,11 @@ declare_sidebar_buttons![
         "settings",
         None,
         model::Action::ToggleDrawer(model::Drawer::Settings),
-    ) //  (
-      //      BUTTON_USER, "User", "perm_identity", None,
-      //      model::Action::ToggleDrawer(model::Drawer::User),
-      //  )
+    ),
+    //  (
+    //      BUTTON_USER, "User", "perm_identity", None,
+    //      model::Action::ToggleDrawer(model::Drawer::User),
+    //  )
 ];
 
 #[derive(Default, Clone, Debug, PartialEq, Properties)]
@@ -149,6 +150,7 @@ pub struct App {
     dispatch: Callback<model::Action>,
     state: model::State,
     signature_stylesheet: SignatureStylesheet,
+    toaster: Dispatcher<ToastAgent>,
 }
 
 impl Component for App {
@@ -172,36 +174,31 @@ impl Component for App {
             dispatch,
             state,
             signature_stylesheet,
+            toaster: ToastAgent::dispatcher(),
         }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
-        match msg {
-            Message::Dispatch(action) => {
-                log::info!("Received action: {:?}", action);
+        let Message::Dispatch(action) = msg;
 
-                let time_start = performance();
-                let result = self.state.update(action, self.dispatch.clone());
-                let time_stop = performance();
-                log::info!("State update took {}ms.", time_stop - time_start);
+        log::info!("Received action: {:?}", action);
 
-                homotopy_core::collect_garbage();
+        let time_start = performance();
+        let result = self.state.update(action);
+        let time_stop = performance();
+        log::info!("State update took {}ms.", time_stop - time_start);
 
-                match result {
-                    Ok(()) => {}
-                    Err(error) => {
-                        // TODO: Display a toast
-                        self.dispatch.emit(model::Action::ShowToast(Toast {
-                            message: format!("{}", error),
-                            kind: ToastKind::Error,
-                        }));
-                        log::error!("Error occured: {}", error);
-                    }
-                }
-                self.signature_stylesheet
-                    .update(self.state.proof().signature().clone());
+        homotopy_core::collect_garbage();
+
+        match result {
+            Ok(()) => {}
+            Err(error) => {
+                self.toaster.send(Toast::error(format!("{}", error)));
+                log::error!("Error occured: {}", error);
             }
         }
+        self.signature_stylesheet
+            .update(self.state.proof().signature().clone());
         true
     }
 
@@ -305,8 +302,8 @@ impl Component for App {
                     </nav>
                 </aside>
                 {self.drawer()}
+                <Toaster timeout={3000} />
                 {workspace}
-                <Toaster toasts={self.state.toaster.toasts.clone()} />
                 <span class="version">
                     {format!("Version: {}", option_env!("GIT_DESCRIBE").unwrap_or(env!("CARGO_PKG_VERSION")))}
                 </span>

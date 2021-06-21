@@ -1,14 +1,12 @@
-use im::Vector;
 use std::cell::Ref;
 use thiserror::Error;
-use yew::Callback;
-pub mod proof;
-use self::history::History;
-use gloo_timers::callback::Timeout;
-use proof::{Color, GeneratorInfo, Proof, Signature, Workspace};
 
 pub mod history;
+pub mod proof;
 pub mod serialize;
+
+use history::History;
+use proof::{Color, GeneratorInfo, Proof, Signature, Workspace};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
@@ -17,8 +15,6 @@ pub enum Action {
     History(history::Action),
     ImportProof(SerializedData),
     ExportProof,
-    ShowToast(Toast),
-    RemoveToast(usize),
 }
 
 impl From<proof::Action> for Action {
@@ -58,7 +54,6 @@ impl From<SerializedData> for Vec<u8> {
 pub struct State {
     pub history: History,
     pub drawer: Option<Drawer>,
-    pub toaster: Toaster,
 }
 
 impl State {
@@ -75,8 +70,12 @@ impl State {
         self.history.can_redo()
     }
 
+    pub fn drawer(&self) -> Option<Drawer> {
+        self.drawer
+    }
+
     /// Update the state in response to an [Action].
-    pub fn update(&mut self, action: Action, dispatch: Callback<Action>) -> Result<(), ModelError> {
+    pub fn update(&mut self, action: Action) -> Result<(), ModelError> {
         match action {
             Action::ToggleDrawer(drawer) => {
                 if self.drawer == Some(drawer) {
@@ -126,28 +125,9 @@ impl State {
                 proof.workspace = workspace;
                 self.history.add(proof::Action::Imported, proof);
             }
-
-            Action::ShowToast(toast) => {
-                let next_id = self.toaster.next_id;
-                self.toaster.next_id = next_id + 1;
-                self.toaster.toasts.push_back((next_id, toast));
-
-                Timeout::new(1500, {
-                    move || dispatch.emit(Action::RemoveToast(next_id))
-                })
-                .forget();
-            }
-
-            Action::RemoveToast(id) => {
-                self.toaster.toasts.retain(|(toast_id, _)| *toast_id != id);
-            }
         }
 
         Ok(())
-    }
-
-    pub fn drawer(&self) -> Option<Drawer> {
-        self.drawer
     }
 }
 
@@ -171,33 +151,4 @@ pub enum Drawer {
     Signature,
     Settings,
     User,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Toaster {
-    pub toasts: Vector<(ToastId, Toast)>,
-    pub next_id: usize,
-}
-
-impl Default for Toaster {
-    fn default() -> Self {
-        Self {
-            toasts: Default::default(),
-            next_id: 0,
-        }
-    }
-}
-
-type ToastId = usize;
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Toast {
-    pub message: String,
-    pub kind: ToastKind,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum ToastKind {
-    Success,
-    Error,
 }
