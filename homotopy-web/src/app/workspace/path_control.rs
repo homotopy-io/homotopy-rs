@@ -28,7 +28,7 @@ pub fn path_control(props: &PathControlProps) -> Html {
                 SliceIndex::Boundary(Boundary::Source) => "S".to_owned(),
                 SliceIndex::Boundary(Boundary::Target) => "T".to_owned(),
                 SliceIndex::Interior(Height::Singular(h)) => format!("S{}", h),
-                SliceIndex::Interior(Height::Regular(h)) => format!("T{}", h),
+                SliceIndex::Interior(Height::Regular(h)) => format!("R{}", h),
             },
             Step::View => "V".to_owned(),
             Step::Projection => "P".to_owned(),
@@ -74,7 +74,7 @@ pub fn path_control(props: &PathControlProps) -> Html {
                 class="workspace__path-home"
                 onclick={props.ascend_slice.reform(move |_| path_len)}
             >
-                <Icon name="menu" size={IconSize::Icon24} />
+                <Icon name="star" size={IconSize::Icon24} />
             </span>
             {step_buttons}
         </div>
