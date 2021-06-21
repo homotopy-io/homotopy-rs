@@ -39,7 +39,7 @@ pub fn project_view(props: &Props) -> Html {
                 <label for="import">
                     {"Import"}
                 </label>
-                <input type="file" accept="application/gzip,.hom" class="visually-hidden" id="import" onchange=import/>
+                <input type="file" accept="application/msgpack,.hom" class="visually-hidden" id="import" onchange=import/>
         </Drawer>
     }
 }
