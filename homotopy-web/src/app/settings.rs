@@ -1,26 +1,19 @@
 use yew::agent::Dispatcher;
 use yew::prelude::*;
-use web_sys::Element;
 
-use crate::declare_settings;
-use crate::components::toast::{Toast, ToastAgent};
 use crate::components::drawer::Drawer;
-use crate::components::settings::{Settings, SettingsAgent};
+use crate::components::toast::{Toast, ToastAgent};
+use crate::declare_settings;
 
 declare_settings! {
-    pub struct GlobalSettings {
-        type Key = Global;
-        type Message = GlobalMsg;
-
+    pub struct AppSettings {
         example_toggle: bool,
     }
 }
 
-pub type AppSettings = SettingsAgent<GlobalSettings>;
-
 pub enum SettingsMsg {
     Click,
-    Setting(GlobalMsg),
+    Setting(AppSettingsMsg),
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -30,9 +23,9 @@ pub struct SettingsView {
     link: ComponentLink<Self>,
     props: SettingsProps,
     toaster: Dispatcher<ToastAgent>,
-    dispatcher: Dispatcher<AppSettings>,
-    _settings: Box<dyn Bridge<AppSettings>>,
-    toggle_ref: NodeRef,
+    settings: AppSettings,
+    /// Example toggle setting
+    example_toggle: bool,
 }
 
 impl Component for SettingsView {
@@ -40,16 +33,15 @@ impl Component for SettingsView {
     type Message = SettingsMsg;
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let mut settings = AppSettings::bridge(link.callback(SettingsMsg::Setting));
-        settings.send(Settings::Subscribe(Global::example_toggle));
+        let mut settings = AppSettings::connect(link.callback(SettingsMsg::Setting));
+        settings.subscribe(&[AppSettingsKey::example_toggle]);
 
         Self {
             link,
             props,
-            dispatcher: AppSettings::dispatcher(),
-            _settings: settings,
             toaster: ToastAgent::dispatcher(),
-            toggle_ref: NodeRef::default(),
+            settings,
+            example_toggle: false,
         }
     }
 
@@ -61,11 +53,8 @@ impl Component for SettingsView {
             >
                 <input
                     type="checkbox"
-                    ref=self.toggle_ref.clone()
-                    onclick=self.link.callback(|e: MouseEvent| {
-                        e.prevent_default();
-                        SettingsMsg::Click
-                    })
+                    checked=self.example_toggle
+                    onclick=self.link.callback(|_| SettingsMsg::Click)
                 />
             </Drawer>
         }
@@ -75,8 +64,8 @@ impl Component for SettingsView {
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
-            Self::Message::Setting(GlobalMsg::example_toggle(b)) => {
-                self.set(b);
+            Self::Message::Setting(AppSettingsMsg::example_toggle(b)) => {
+                self.example_toggle = b;
                 if b {
                     self.toaster.send(Toast::success("Setting on"));
                 } else {
@@ -84,7 +73,8 @@ impl Component for SettingsView {
                 }
             }
             Self::Message::Click => {
-                self.toggle();
+                self.example_toggle = !self.example_toggle;
+                self.settings.set_example_toggle(self.example_toggle);
             }
         }
         true
@@ -93,23 +83,5 @@ impl Component for SettingsView {
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
         self.props = props;
         false
-    }
-}
-
-impl SettingsView {
-    fn toggle(&mut self) {
-        let toggle = self.toggle_ref.cast::<Element>().unwrap();
-        let updated = !toggle.has_attribute("checked");
-        self.dispatcher
-            .send(Settings::Update(GlobalMsg::example_toggle(updated)));
-    }
-
-    fn set(&mut self, b: bool) {
-        let toggle = self.toggle_ref.cast::<Element>().unwrap();
-        if b {
-            toggle.set_attribute("checked", "").unwrap();
-        } else {
-            toggle.remove_attribute("checked").unwrap();
-        }
     }
 }

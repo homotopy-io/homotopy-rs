@@ -21,7 +21,7 @@ where
 
 impl<S> Agent for SettingsAgent<S>
 where
-    S: KeyStore + 'static
+    S: KeyStore + 'static,
 {
     type Reach = Context<Self>;
     type Message = ();
@@ -73,7 +73,7 @@ where
 
 impl<S> SettingsAgent<S>
 where
-    S: KeyStore + 'static
+    S: KeyStore + 'static,
 {
     fn broadcast(&self, msg: &S::Message) {
         if let Some(handlers) = self.handlers.get(&S::key_of(msg)) {

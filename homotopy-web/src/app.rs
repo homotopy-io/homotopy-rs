@@ -151,7 +151,7 @@ pub struct App {
     state: model::State,
     signature_stylesheet: SignatureStylesheet,
     toaster: Dispatcher<ToastAgent>,
-    _settings: Box<dyn Bridge<AppSettings>>,
+    _settings: AppSettings,
 }
 
 impl Component for App {
@@ -176,7 +176,7 @@ impl Component for App {
             state,
             signature_stylesheet,
             toaster: ToastAgent::dispatcher(),
-            _settings: AppSettings::bridge(Callback::noop()),
+            _settings: AppSettings::connect(Callback::noop()),
         }
     }
 
