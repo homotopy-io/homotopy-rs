@@ -15,18 +15,17 @@ pub struct Props3D {
 
 #[allow(clippy::pub_enum_variant_names)]
 #[derive(Debug)]
-pub enum Message3D {
-}
+pub enum Message3D {}
 
 impl Component for Diagram3D {
     type Message = Message3D;
     type Properties = Props3D;
 
-    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
+    fn create(props: Self::Properties, _: ComponentLink<Self>) -> Self {
         //1. cubicalise the diagram and get the control mesh
         let control_mesh = cubicalise(&props.diagram);
         //2. subdivide the control mesh appropriate number of times (from settings?)
-        let subdivided_mesh = subdivide3(control_mesh);
+        let _subdivided_mesh = subdivide3(control_mesh);
         //3. Turn the subdivided mesh into appropriate representation to render it
         // for 3D case probably the mesh itself is a decent representation.
         Self {
@@ -34,29 +33,18 @@ impl Component for Diagram3D {
         }
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
-        log::info!("Hello, this is msg {:?}", msg);
+    fn update(&mut self, _: Self::Message) -> ShouldRender {
         false
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        if self.props == props {
-            false
-        } else {
-            self.props = props;
-            true
-        }
+        self.props = props;
+        false
     }
 
     fn view(&self) -> Html {
-        log::info!("Hello, view was called");
-
         html! {
             <div>{"todo: 3-dimensional diagram"}</div>
         }
     }
-}
-
-impl Diagram3D {
-
 }
