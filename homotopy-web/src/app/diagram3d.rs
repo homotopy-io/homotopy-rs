@@ -1,6 +1,6 @@
-use yew::prelude::*;
-use homotopy_core::{DiagramN};
 use homotopy_core::cubicalise::cubicalise;
+use homotopy_core::DiagramN;
+use yew::prelude::*;
 
 use homotopy_graphics::subdivide::subdivide3;
 
@@ -28,9 +28,7 @@ impl Component for Diagram3D {
         let _subdivided_mesh = subdivide3(control_mesh);
         //3. Turn the subdivided mesh into appropriate representation to render it
         // for 3D case probably the mesh itself is a decent representation.
-        Self {
-            props
-        }
+        Self { props }
     }
 
     fn update(&mut self, _: Self::Message) -> ShouldRender {
