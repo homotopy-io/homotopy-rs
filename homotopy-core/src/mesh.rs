@@ -21,7 +21,7 @@ pub struct Vertex {
     z: Coordinate,
     t: Coordinate,
     boundary: Dimension,
-    //generator: Generator, should this be represented as an id?
+    // generator: Generator, should this be represented as an id?
 }
 
 /// Represents a cubical surface mesh using an indexed list of vertices and an
@@ -44,14 +44,14 @@ impl Mesh {
         self.vertices.push(vertex)
     }
 
-    pub fn mk_element(&mut self, n: Dimension, verts: &[VertexId]) -> Option<ElementId> {
+    pub fn mk_element(&mut self, n: Dimension, verts: &[VertexId]) -> ElementId {
         match n {
-            0 => Some(self.elements.push(Element::Cube0(verts[0]))),
+            0 => self.elements.push(Element::Cube0(verts[0])),
             n => {
-                let subcube_0 = self.mk_element(n - 1, &verts[..verts.len() / 2])?;
-                let subcube_1 = self.mk_element(n - 1, &verts[verts.len() / 2..])?;
+                let subcube_0 = self.mk_element(n - 1, &verts[..verts.len() / 2]);
+                let subcube_1 = self.mk_element(n - 1, &verts[verts.len() / 2..]);
                 let cube_n = Element::CubeN(CubeN::new(n, subcube_0, subcube_1));
-                Some(self.elements.push(cube_n))
+                self.elements.push(cube_n)
             }
         }
     }

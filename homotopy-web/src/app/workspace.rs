@@ -2,7 +2,7 @@ mod path_control;
 mod slice_control;
 
 use crate::app::diagram2d::{Diagram1D, Diagram2D, Highlight2D};
-use crate::app::diagram3d::{Diagram3D};
+use crate::app::diagram3d::Diagram3D;
 use crate::app::panzoom;
 use crate::model::proof::homotopy::Homotopy;
 use crate::model::proof::{Action, Signature, Workspace};
