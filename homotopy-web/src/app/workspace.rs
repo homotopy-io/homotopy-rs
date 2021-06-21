@@ -150,7 +150,7 @@ impl WorkspaceView {
             }
             Diagram::DiagramN(diagram) if diagram.dimension() == 3 => {
                 html! {
-                    <div class="workspace__diagram" style={self.diagram_style()}>
+                    <div>
                         <Diagram3D
                             diagram={diagram.clone()}
                         />
@@ -159,7 +159,7 @@ impl WorkspaceView {
             }
             Diagram::DiagramN(diagram) if diagram.dimension() == 4 => {
                 html! {
-                    <div>{"todo: 4-dimensional diagram!"}</div>
+                    <div>{"todo: 4-dimensional diagram!!"}</div>
                 }
             }
             Diagram::DiagramN(diagram) => {

@@ -2,6 +2,8 @@ use yew::prelude::*;
 use homotopy_core::{DiagramN};
 use homotopy_core::cubicalise::cubicalise;
 
+use homotopy_graphics::subdivide::subdivide3;
+
 pub struct Diagram3D {
     props: Props3D,
 }
@@ -21,10 +23,12 @@ impl Component for Diagram3D {
     type Properties = Props3D;
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        log::info!("Hello, this is a link {:?}", link);
         //1. cubicalise the diagram and get the control mesh
-        cubicalise(&props.diagram);
-        //2. subdivide the control mesh appropriate number of times
+        let control_mesh = cubicalise(&props.diagram);
+        //2. subdivide the control mesh appropriate number of times (from settings?)
+        let subdivided_mesh = subdivide3(control_mesh);
+        //3. Turn the subdivided mesh into appropriate representation to render it
+        // for 3D case probably the mesh itself is a decent representation.
         Self {
             props
         }
