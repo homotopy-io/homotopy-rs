@@ -43,3 +43,4 @@
 
 pub mod gl;
 pub mod svg;
+pub mod subdivide;
