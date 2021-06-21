@@ -8,10 +8,8 @@ mod signature_stylesheet;
 mod util;
 mod workspace;
 
-use crate::declare_settings;
 use crate::components::icon::{Icon, IconSize};
 use crate::components::sidebar::{SidebarButton, SidebarButtonDesc};
-use crate::components::settings::{Settings, SettingsAgent};
 use crate::components::toast::{Toast, ToastAgent, Toaster};
 use crate::components::Visibility;
 
@@ -26,13 +24,13 @@ use homotopy_core::{
     Height, SliceIndex,
 };
 use project::ProjectView;
-use settings::SettingsView;
+use settings::{AppSettings, SettingsView};
 use signature::SignatureView;
 use signature_stylesheet::SignatureStylesheet;
 use wasm_bindgen::JsCast;
 use workspace::WorkspaceView;
 
-use yew::agent::{Bridge, Dispatcher};
+use yew::agent::Dispatcher;
 use yew::prelude::*;
 
 macro_rules! declare_sidebar_buttons {
@@ -140,24 +138,12 @@ declare_sidebar_buttons![
     //  )
 ];
 
-declare_settings! {
-    pub struct GlobalSettings {
-        type Key = Setting;
-        type Message = SettingPayload;
-
-        example_toggle: bool;
-    }
-}
-
-pub type AppSettings = SettingsAgent<GlobalSettings>;
-
 #[derive(Default, Clone, Debug, PartialEq, Properties)]
 pub struct Props {}
 
 #[derive(Debug, Clone)]
 pub enum Message {
     Dispatch(model::Action),
-    Setting(SettingPayload),
 }
 
 pub struct App {
@@ -165,7 +151,7 @@ pub struct App {
     state: model::State,
     signature_stylesheet: SignatureStylesheet,
     toaster: Dispatcher<ToastAgent>,
-    settings: Box<dyn Bridge<AppSettings>>,
+    _settings: Box<dyn Bridge<AppSettings>>,
 }
 
 impl Component for App {
@@ -185,15 +171,12 @@ impl Component for App {
         // TODO: Remove these when App is destroyed.
         Self::install_keyboard_shortcuts(dispatch.clone());
 
-        let mut settings = AppSettings::bridge(link.callback(Message::Setting));
-        settings.send(Settings::Subscribe(Setting::example_toggle));
-
         Self {
             dispatch,
             state,
             signature_stylesheet,
             toaster: ToastAgent::dispatcher(),
-            settings,
+            _settings: AppSettings::bridge(Callback::noop()),
         }
     }
 
@@ -219,14 +202,6 @@ impl Component for App {
                 self.signature_stylesheet
                     .update(self.state.proof().signature().clone());
                 true
-            }
-            Message::Setting(SettingPayload::example_toggle(true)) => {
-                self.toaster.send(Toast::success("Toggle on!"));
-                false
-            }
-            Message::Setting(SettingPayload::example_toggle(false)) => {
-                self.toaster.send(Toast::error("Toggle off!"));
-                false
             }
         }
     }

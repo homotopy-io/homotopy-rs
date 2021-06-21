@@ -19,7 +19,7 @@ macro_rules! declare_settings {
         type Key = $key_ty:ident;
         type Message = $msg_ty:ident;
         $(
-            $key:ident: $ty:ty;
+            $key:ident: $ty:ty,
         )*
     }) => {
         use serde::{Serialize, Deserialize};
@@ -59,7 +59,7 @@ macro_rules! declare_settings {
                 k: Self::Key,
             ) -> Self::Message{
                 match k {
-                    $(Self::Key::$key => Self::Message::$key(self.$key.clone()),)*
+                    $(Self::Key::$key => Self::Message::$key(self.$key.clone())),*
                 }
             }
 
@@ -71,7 +71,7 @@ macro_rules! declare_settings {
 
             fn key_of(msg: &Self::Message) -> Self::Key {
                 match msg {
-                    $(Self::Message::$key(_) => Self::Key::$key,)*
+                    $(Self::Message::$key(_) => Self::Key::$key),*
                 }
             }
         }
@@ -87,10 +87,10 @@ mod test {
             type Key = ExampleSettingsKey;
             type Message = ExampleSettingsMsg;
 
-            renderer_wireframe: bool;
-            renderer_smoothing: bool;
-            solver_search_depth: u32;
-            global_seed: Vec<u32>;
+            renderer_wireframe: bool,
+            renderer_smoothing: bool,
+            solver_search_depth: u32,
+            global_seed: Vec<u32>,
         }
     }
 
