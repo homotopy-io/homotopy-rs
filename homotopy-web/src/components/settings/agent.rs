@@ -65,7 +65,7 @@ where
     fn connected(&mut self, _: HandlerId) {}
 
     fn disconnected(&mut self, id: HandlerId) {
-        for (_, v) in self.handlers.iter_mut() {
+        for v in self.handlers.values_mut() {
             v.retain(|handler_id| *handler_id != id);
         }
     }
