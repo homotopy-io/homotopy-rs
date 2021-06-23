@@ -77,6 +77,15 @@ macro_rules! declare_settings {
                 }
             }
 
+            impl [<$name KeyStore>] {
+                $(
+                    #[inline(always)]
+                    pub fn [<get_ $key>](&self) -> &$ty {
+                        &self.[<__ $key>] 
+                    }
+                )*
+            }
+
             pub struct $name {
                 dispatcher: yew::agent::Dispatcher<
                     $crate::components::settings::SettingsAgent<[<$name KeyStore>]>
@@ -87,6 +96,10 @@ macro_rules! declare_settings {
             }
 
             impl $name {
+                const ALL: &'static [[<$name Key>]] = &[
+                    $([<$name Key>]::$key),*
+                ];
+
                 pub fn connect(callback: yew::callback::Callback<[<$name Msg>]>) -> Self {
                     use $crate::components::settings::SettingsAgent;
                     use yew::{Bridged, Dispatched};
