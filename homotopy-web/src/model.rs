@@ -1,4 +1,3 @@
-use std::cell::Ref;
 use thiserror::Error;
 
 pub mod history;
@@ -57,9 +56,12 @@ pub struct State {
 }
 
 impl State {
-    /// Get the proof data
-    pub(super) fn proof(&self) -> Ref<Proof> {
-        self.history.current()
+    #[inline]
+    pub(super) fn with_proof<F, U>(&self, f: F) -> U
+    where
+        F: Fn(&Proof) -> U,
+    {
+        self.history.with_proof(f)
     }
 
     pub(super) fn can_undo(&self) -> bool {
@@ -86,7 +88,7 @@ impl State {
             }
 
             Action::Proof(action) => {
-                let mut proof = self.proof().clone();
+                let mut proof = self.with_proof(Clone::clone);
                 proof.update(&action).map_err(ModelError::from)?;
 
                 if action == proof::Action::CreateGeneratorZero && self.drawer.is_none() {
@@ -110,8 +112,8 @@ impl State {
 
             Action::ExportProof => {
                 let data = serialize::serialize(
-                    self.proof().signature.clone(),
-                    self.proof().workspace.clone(),
+                    self.with_proof(|p| p.signature.clone()),
+                    self.with_proof(|p| p.workspace.clone()),
                 );
                 serialize::generate_download(&"filename_todo", data.as_slice())
                     .map_err(ModelError::Export)?;

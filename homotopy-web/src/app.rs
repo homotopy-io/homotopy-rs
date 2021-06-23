@@ -164,7 +164,7 @@ impl Component for App {
 
         // Install the signature stylesheet
         let mut signature_stylesheet = SignatureStylesheet::new("generator");
-        signature_stylesheet.update(state.proof().signature().clone());
+        signature_stylesheet.update(state.with_proof(|p| p.signature().clone()));
         signature_stylesheet.mount();
 
         // Install the keyboard listener for shortcuts
@@ -200,7 +200,7 @@ impl Component for App {
                     }
                 }
                 self.signature_stylesheet
-                    .update(self.state.proof().signature().clone());
+                    .update(self.state.with_proof(|p| p.signature().clone()));
                 true
             }
         }
@@ -212,10 +212,10 @@ impl Component for App {
 
     fn view(&self) -> Html {
         let dispatch = &self.dispatch;
-        let proof = self.state.proof();
+        let proof = self.state.with_proof(Clone::clone);
         let signature = proof.signature();
 
-        let workspace = match self.state.proof().workspace() {
+        let workspace = match proof.workspace() {
             Some(workspace) => {
                 html! {
                     <WorkspaceView
@@ -325,16 +325,14 @@ impl App {
         let dispatch = &self.dispatch;
         let attach_options = self
             .state
-            .proof()
-            .workspace()
-            .and_then(|workspace| workspace.attach.clone());
+            .with_proof(|p| p.workspace().and_then(|workspace| workspace.attach.clone()));
 
         if let Some(attach_options) = attach_options {
             return html! {
                 <AttachView
                     dispatch={dispatch.reform(model::Action::Proof)}
                     options={attach_options}
-                    signature={self.state.proof().signature()}
+                    signature={self.state.with_proof(|p| p.signature().clone())}
                 />
             };
         }
@@ -348,7 +346,7 @@ impl App {
             Some(Drawer::Signature) => {
                 html! {
                     <SignatureView
-                        signature={self.state.proof().signature()}
+                        signature={self.state.with_proof(|p| p.signature().clone())}
                         dispatch={dispatch.reform(model::Action::Proof)}
                     />
                 }
