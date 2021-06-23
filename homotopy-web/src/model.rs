@@ -9,7 +9,6 @@ use proof::{Color, GeneratorInfo, Proof, Signature, Workspace};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
-    ToggleDrawer(Drawer),
     Proof(proof::Action),
     History(history::Action),
     ImportProof(SerializedData),
@@ -52,7 +51,6 @@ impl From<SerializedData> for Vec<u8> {
 #[derive(Debug, Clone, Default)]
 pub struct State {
     pub history: History,
-    pub drawer: Option<Drawer>,
 }
 
 impl State {
@@ -72,28 +70,17 @@ impl State {
         self.history.can_redo()
     }
 
-    pub fn drawer(&self) -> Option<Drawer> {
-        self.drawer
-    }
-
     /// Update the state in response to an [Action].
     pub fn update(&mut self, action: Action) -> Result<(), ModelError> {
         match action {
-            Action::ToggleDrawer(drawer) => {
-                if self.drawer == Some(drawer) {
-                    self.drawer = None;
-                } else {
-                    self.drawer = Some(drawer);
-                }
-            }
-
             Action::Proof(action) => {
                 let mut proof = self.with_proof(Clone::clone);
                 proof.update(&action).map_err(ModelError::from)?;
 
-                if action == proof::Action::CreateGeneratorZero && self.drawer.is_none() {
-                    self.drawer = Some(Drawer::Signature);
-                };
+                // TODO(@doctorn) make this work
+                // if action == proof::Action::CreateGeneratorZero && self.drawer.is_none() {
+                //     self.drawer = Some(Drawer::Signature);
+                // };
 
                 self.history.add(action, proof);
             }

@@ -42,3 +42,6 @@ pub fn sidebar_button(props: &SidebarButtonProps) -> Html {
         </div>
     }
 }
+
+#[derive(Properties, Clone, PartialEq)]
+pub struct SidebarDrawerProps {}
