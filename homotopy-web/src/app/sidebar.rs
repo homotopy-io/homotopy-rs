@@ -113,7 +113,7 @@ impl Component for Sidebar {
                 if let model::Action::Proof(proof::Action::CreateGeneratorZero) = action {
                     if self.open.is_none() {
                         self.link
-                            .send_message(SidebarMsg::Toggle(drawers::NavDrawer::DRAWER_SIGNATURE))
+                            .send_message(SidebarMsg::Toggle(drawers::NavDrawer::DRAWER_SIGNATURE));
                     }
                 }
                 self.props.dispatch.emit(action);
@@ -168,10 +168,8 @@ impl Sidebar {
             };
         }
 
-        if let Some(drawer) = self.open {
-            drawer.view(dispatch, &self.props.proof)
-        } else {
-            Default::default()
-        }
+        self.open
+            .map(|drawer| drawer.view(dispatch, &self.props.proof))
+            .unwrap_or_default()
     }
 }
