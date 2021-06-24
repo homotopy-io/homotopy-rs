@@ -1,6 +1,5 @@
 use yew::prelude::*;
 
-use crate::components::drawer::Drawer;
 use crate::components::settings::KeyStore;
 use crate::declare_settings;
 
@@ -47,16 +46,13 @@ impl Component for SettingsView {
 
     fn view(&self) -> Html {
         html! {
-            <Drawer
-                title="Settings"
-                class="settings"
-            >
+            <>
                 <input
                     type="checkbox"
                     checked=*self.local.get_example_toggle()
                     onclick=self.link.callback(|_| SettingsMsg::Click)
                 />
-            </Drawer>
+            </>
         }
     }
 

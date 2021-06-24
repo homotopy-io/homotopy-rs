@@ -5,7 +5,6 @@ use yew::agent::Dispatcher;
 use yew::prelude::*;
 
 use crate::components::icon::{Icon, IconSize};
-use crate::components::sidebar::{SidebarButton, SidebarButtonDesc};
 use crate::components::toast::{Toast, ToastAgent, Toaster};
 use crate::model;
 
@@ -21,7 +20,7 @@ mod util;
 mod workspace;
 
 use settings::AppSettings;
-use sidebar::{Sidebar, BUTTONS};
+use sidebar::{Sidebar, TOOL_BUTTONS};
 use signature_stylesheet::SignatureStylesheet;
 use workspace::WorkspaceView;
 
@@ -143,13 +142,13 @@ impl App {
         let onkeyup =
             wasm_bindgen::closure::Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
                 let key = event.key().to_ascii_lowercase();
-                let button = BUTTONS.iter().find(|button| match button.shortcut {
+                let button = TOOL_BUTTONS.iter().find(|button| match button.shortcut() {
                     Some(shortcut) => shortcut.to_string() == key,
                     None => false,
                 });
 
                 if let Some(button) = button {
-                    dispatch.emit(button.action.clone());
+                    dispatch.emit(button.action().clone());
                 } else if key == "arrowup" {
                     dispatch.emit(model::proof::Action::SwitchSlice(Direction::Forward).into());
                 } else if key == "arrowdown" {
