@@ -78,11 +78,10 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: -- -D warnings
 
-  build-archive:
-    name: Build Archive
+  build:
+    name: Build
     runs-on: ubuntu-latest
     needs: [check, test]
-    if: github.ref != 'refs/heads/master'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -112,33 +111,22 @@ jobs:
           name: web
           path: homotopy-web/dist/
 
-  build-and-deploy:
-    name: Build and Deploy
+
+  deploy:
+    name: Deploy
     runs-on: ubuntu-latest
-    needs: [check, test]
+    needs: [build]
     if: github.ref == 'refs/heads/master'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
+      - name: Download build artifacts
+        uses: actions/download-artifact@v2
         with:
-          profile: minimal
-          toolchain: stable
-          target: wasm32-unknown-unknown
-          override: true
+          name: web
+          path: homotopy-web/dist
 
-      - uses: Swatinem/rust-cache@v1
-
-      - name: Install wasm-pack
-        uses: jetli/wasm-pack-action@v0.3.0
-
-      - name: Install and Build
-        run: |
-          cd homotopy-web
-          npm install
-          npm run build
       - name: Checkout historical benchmarking data
         uses: actions/checkout@v2
         with:
@@ -157,7 +145,7 @@ jobs:
   benchmark:
     name: Benchmark
     runs-on: ubuntu-latest
-    needs: [build-and-deploy]
+    needs: [build]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
