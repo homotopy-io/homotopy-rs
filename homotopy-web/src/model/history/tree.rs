@@ -5,7 +5,7 @@ declare_idx! {
     pub struct Node = usize;
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct NodeData<T> {
     data: T,
     children: Vec<Node>,
@@ -27,6 +27,11 @@ impl<T> NodeData<T> {
     #[inline]
     pub fn inner_mut(&mut self) -> &mut T {
         &mut self.data
+    }
+
+    #[inline]
+    pub fn into_inner(self) -> T {
+        self.data
     }
 
     #[inline]

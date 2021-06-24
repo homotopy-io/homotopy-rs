@@ -7,8 +7,8 @@ use homotopy_core::{Boundary, Height, SliceIndex};
 use paste::paste;
 
 use crate::components::{Visibility, Visible};
-use crate::model::proof::Proof;
-use crate::model::{self, history};
+use crate::model;
+use crate::model::history::{self, Proof};
 
 use super::{Sidebar, SidebarButton, SidebarMsg};
 
@@ -80,10 +80,7 @@ declare_sidebar_tools! {
         "undo",
         model::Action::History(history::Action::Move(history::Direction::Linear(Backward))),
         Some('u'),
-        |_: &Proof| {
-            // TODO(@doctorn) fix undo visibility
-            Visibility::Visible
-        },
+        |proof: &Proof| proof.can_undo().into(),
     }
 
     BUTTON_REDO {
@@ -91,10 +88,7 @@ declare_sidebar_tools! {
         "redo",
         model::Action::History(history::Action::Move(history::Direction::Linear(Forward))),
         None,
-        |_: &Proof| {
-            // TODO(@doctorn) fix redo visibility
-            Visibility::Visible
-        },
+        |proof: &Proof| proof.can_redo().into(),
     }
 
     BUTTON_RESTRICT {
@@ -130,7 +124,6 @@ declare_sidebar_tools! {
     BUTTON_ADD_GENERATOR {
         "Add Generator",
         "add_circle_outline",
-        // TODO(@doctorn) open signature drawer
         model::Action::Proof(model::proof::Action::CreateGeneratorZero),
         Some('a'),
         |_: &Proof| Visible,

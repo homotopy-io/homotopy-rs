@@ -1,8 +1,10 @@
-use instant::Instant;
 use std::fmt;
+use std::ops::{Deref, DerefMut};
+
+use instant::Instant;
 use thiserror::Error;
 
-use super::Proof;
+use super::proof::ProofState;
 
 mod tree;
 
@@ -21,7 +23,7 @@ pub enum Direction {
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Snapshot {
-    proof: Proof,
+    proof: ProofState,
     timestamp: instant::Instant,
     action: Option<super::proof::Action>,
 }
@@ -36,6 +38,32 @@ impl Default for Snapshot {
     }
 }
 
+pub type Proof = NodeData<Snapshot>;
+
+impl Proof {
+    pub fn can_undo(&self) -> bool {
+        self.parent().is_some()
+    }
+
+    pub fn can_redo(&self) -> bool {
+        !self.is_empty()
+    }
+}
+
+impl Deref for Proof {
+    type Target = ProofState;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner().proof
+    }
+}
+
+impl DerefMut for Proof {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner_mut().proof
+    }
+}
+
 impl fmt::Debug for Snapshot {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "(T{:?}, {:?})", self.timestamp, self.action)
@@ -43,7 +71,7 @@ impl fmt::Debug for Snapshot {
 }
 
 impl Snapshot {
-    fn new(action: Option<super::proof::Action>, proof: Proof) -> Self {
+    fn new(action: Option<super::proof::Action>, proof: ProofState) -> Self {
         Self {
             proof,
             action,
@@ -80,24 +108,16 @@ pub enum HistoryError {
 
 impl History {
     #[inline]
-    pub fn with_current<F, U>(&self, f: F) -> U
-    where
-        F: Fn(&NodeData<Snapshot>) -> U,
-    {
-        self.snapshots.with(self.current, f)
-    }
-
-    #[inline]
     pub fn with_proof<F, U>(&self, f: F) -> U
     where
         F: Fn(&Proof) -> U,
     {
-        self.with_current(|n| f(&n.inner().proof))
+        self.snapshots.with(self.current, f)
     }
 
     pub fn add(&mut self, action: super::proof::Action, proof: Proof) {
         // check if this action has been performed at this state previously
-        let existing = self.with_current(|n| {
+        let existing = self.with_proof(|n| {
             n.children().find(|id| {
                 self.snapshots
                     .with(*id, |n| n.inner().action.as_ref() == Some(&action))
@@ -107,39 +127,30 @@ impl History {
         if let Some(child) = existing {
             // update timestamp and ensure the action was deterministic
             self.snapshots.with_mut(child, |n| {
-                assert_eq!(proof, n.inner().proof);
+                assert_eq!(proof.inner().proof, n.inner().proof);
                 n.inner_mut().touch();
             });
             self.current = child;
         } else {
             // fresh action
-            let child = self
-                .snapshots
-                .push_onto(self.current, Snapshot::new(Some(action), proof));
+            let child = self.snapshots.push_onto(
+                self.current,
+                Snapshot::new(Some(action), proof.into_inner().proof),
+            );
             self.current = child;
         }
     }
 
-    pub fn can_undo(&self) -> bool {
-        self.with_current(|n| n.parent().is_some())
-    }
-
     pub fn undo(&mut self) -> Result<(), HistoryError> {
         let prev = self
-            .with_current(NodeData::parent)
+            .with_proof(NodeData::parent)
             .ok_or(HistoryError::Undo)?;
         self.current = prev;
         Ok(())
     }
 
-    pub fn can_redo(&self) -> bool {
-        !self.with_current(|n| n.is_empty())
-    }
-
     pub fn redo(&mut self) -> Result<(), HistoryError> {
-        let next = self
-            .with_current(NodeData::last)
-            .ok_or(HistoryError::Redo)?;
+        let next = self.with_proof(NodeData::last).ok_or(HistoryError::Redo)?;
         self.current = next;
         Ok(())
     }

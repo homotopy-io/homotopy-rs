@@ -88,7 +88,7 @@ pub struct SelectedBoundary {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct Proof {
+pub struct ProofState {
     pub(super) signature: Signature,
     pub(super) workspace: Option<Workspace>,
     boundary: Option<SelectedBoundary>,
@@ -172,7 +172,7 @@ pub enum ModelError {
     TypecheckingError(#[from] TypeError),
 }
 
-impl Proof {
+impl ProofState {
     /// Update the state in response to an [Action].
     pub fn update(&mut self, action: &Action) -> Result<(), ModelError> {
         match action {

@@ -6,8 +6,7 @@ use crate::app::settings::SettingsView;
 use crate::app::signature::SignatureView;
 
 use crate::components::Visible;
-use crate::model;
-use crate::model::proof::Proof;
+use crate::model::{self, Proof};
 
 use super::{Sidebar, SidebarButton, SidebarDrawer, SidebarMsg};
 

@@ -4,8 +4,7 @@ use yew_functional::function_component;
 use crate::app::attach::AttachView;
 use crate::components::icon::{Icon, IconSize};
 use crate::components::Visibility;
-use crate::model::proof::Proof;
-use crate::model::{self, proof};
+use crate::model::{self, proof, Proof};
 
 mod buttons;
 mod drawers;

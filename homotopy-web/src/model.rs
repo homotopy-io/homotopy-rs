@@ -5,7 +5,9 @@ pub mod proof;
 pub mod serialize;
 
 use history::History;
-use proof::{Color, GeneratorInfo, Proof, Signature, Workspace};
+use proof::{Color, GeneratorInfo, Signature, Workspace};
+
+pub use history::Proof;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
@@ -60,14 +62,6 @@ impl State {
         F: Fn(&Proof) -> U,
     {
         self.history.with_proof(f)
-    }
-
-    pub(super) fn can_undo(&self) -> bool {
-        self.history.can_undo()
-    }
-
-    pub(super) fn can_redo(&self) -> bool {
-        self.history.can_redo()
     }
 
     /// Update the state in response to an [Action].
