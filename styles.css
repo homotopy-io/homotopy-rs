@@ -35,6 +35,7 @@ body, html {
   display: flex;
   flex: 1;
   font-size: 14px;
+  overflow: hidden;
 }
 
 .app {
@@ -354,23 +355,49 @@ body, html {
 /* Toaster */
 .toaster {
   position: absolute;
-  bottom: 20px;
-  right: 0px;
+  bottom: 0;
+  right: 0;
+  padding: var(--space-2);
   width: 300px;
 }
 
 .toaster__toast {
-  padding: var(--space-1);
+  position: relative;
+  width: 300px;
+  min-height: 30px;
   margin: var(--space-1);
 }
 
-.toaster__toast--error {
+.toaster__toast__inner {
+  position: relative;
+  display: block;
+  width: 100%;
+  animation: toast__inner 2500ms ease-in-out 0s 1 forwards;
+  padding: var(--space-1);
+  box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.2);
+  box-sizing: border-box;
+}
+
+.toaster__toast--error .toaster__toast__inner {
   background: #c0392b;
   color: white;
 }
 
-.toaster__toast--success {
+.toaster__toast--success .toaster__toast__inner {
   background: #27ae60;
+}
+
+@keyframes toast__inner {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  80% {
+    opacity: 1;
+    left: 0;
+  }
+  100% {
+    opacity: 0;
+    left: calc(300px + var(--space-2));
+  }
 }
 
 /* https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#using_a_label_element_to_trigger_a_hidden_file_input_element */
