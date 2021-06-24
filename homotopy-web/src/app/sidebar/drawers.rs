@@ -31,13 +31,16 @@ macro_rules! declare_sidebar_drawers {
                 proof: &Proof,
             ) -> Html {
                 match self {
-                    $(NavDrawer::$name => html! {
-                        <SidebarDrawer
-                            title={$title}
-                            class={$class}
-                        >
-                            {($body)(dispatch, proof)}
-                        </SidebarDrawer>
+                    $(NavDrawer::$name => {
+                        let body = $body;
+                        html! {
+                            <SidebarDrawer
+                                title={$title}
+                                class={$class}
+                            >
+                                {body(dispatch, proof)}
+                            </SidebarDrawer>
+                        }
                     }),*
                 }
             }

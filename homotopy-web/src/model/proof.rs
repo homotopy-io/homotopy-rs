@@ -213,7 +213,7 @@ impl ProofState {
                 Ok(())
             }
             Action::Attach(option) => {
-                self.attach(&option);
+                self.attach(option);
                 Ok(())
             }
             Action::HighlightAttachment(option) => {
@@ -483,7 +483,7 @@ impl ProofState {
 
         let attach_on_boundary = selected_with_path
             .iter()
-            .any(|point| BoundaryPath::split(&point).0.is_some());
+            .any(|point| BoundaryPath::split(point).0.is_some());
 
         for point in selected_with_path {
             let (boundary_path, point) = BoundaryPath::split(&point);

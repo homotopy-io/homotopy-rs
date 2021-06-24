@@ -148,7 +148,7 @@ impl App {
                 });
 
                 if let Some(button) = button {
-                    dispatch.emit(button.action().clone());
+                    dispatch.emit(button.action());
                 } else if key == "arrowup" {
                     dispatch.emit(model::proof::Action::SwitchSlice(Direction::Forward).into());
                 } else if key == "arrowdown" {

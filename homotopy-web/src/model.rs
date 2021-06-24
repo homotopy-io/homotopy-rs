@@ -90,7 +90,7 @@ impl State {
                     self.with_proof(|p| p.signature.clone()),
                     self.with_proof(|p| p.workspace.clone()),
                 );
-                serialize::generate_download(&"filename_todo", data.as_slice())
+                serialize::generate_download("filename_todo", data.as_slice())
                     .map_err(ModelError::Export)?;
             }
 

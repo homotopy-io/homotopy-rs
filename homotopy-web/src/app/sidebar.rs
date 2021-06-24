@@ -123,11 +123,11 @@ impl Component for Sidebar {
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        if self.props != props {
+        if self.props == props {
+            false
+        } else {
             self.props = props;
             true
-        } else {
-            false
         }
     }
 

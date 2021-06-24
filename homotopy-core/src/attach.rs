@@ -58,7 +58,7 @@ pub fn attach<F, E>(diagram: &DiagramN, path: &BoundaryPath, build: F) -> Result
 where
     F: FnOnce(Diagram) -> Result<Vec<Cospan>, E>,
 {
-    let (diagram, _) = attach_worker(&diagram, &path, build)?;
+    let (diagram, _) = attach_worker(diagram, path, build)?;
     Ok(diagram)
 }
 

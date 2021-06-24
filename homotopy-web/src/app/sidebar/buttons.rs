@@ -50,7 +50,8 @@ macro_rules! declare_sidebar_tools {
                 $(
                     #[allow(non_snake_case)]
                     fn [<$name _visible>](&self) -> Visibility {
-                        ($enable)(&self.props.proof)
+                        let enable = $enable;
+                        enable(&self.props.proof)
                     }
                 )*
 

@@ -42,16 +42,16 @@ where
     I: Idx,
 {
     #[inline]
-    pub fn new() -> IdxVec<I, T> {
-        IdxVec {
+    pub fn new() -> Self {
+        Self {
             raw: vec![],
             _phantom: PhantomData::default(),
         }
     }
 
     #[inline]
-    pub fn with_capacity(capacity: usize) -> IdxVec<I, T> {
-        IdxVec {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
             raw: Vec::with_capacity(capacity),
             _phantom: PhantomData::default(),
         }
@@ -111,7 +111,7 @@ where
 
     #[inline]
     pub fn clear(&mut self) {
-        self.raw.clear()
+        self.raw.clear();
     }
 }
 
@@ -130,8 +130,8 @@ where
     I: Idx,
 {
     #[inline]
-    fn default() -> IdxVec<I, T> {
-        IdxVec::new()
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -150,7 +150,7 @@ where
     I: Idx,
 {
     fn from_iter<U: IntoIterator<Item = T>>(iter: U) -> Self {
-        let mut idx_vec = IdxVec::new();
+        let mut idx_vec = Self::new();
         for t in iter {
             idx_vec.push(t);
         }

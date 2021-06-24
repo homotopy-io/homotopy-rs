@@ -327,8 +327,8 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
 
                 let restricted_target = {
                     let slice = embedding_slice;
-                    let forward = restrict_rewrite(&cone.internal.target.forward, &slice);
-                    let backward = restrict_rewrite(&cone.internal.target.backward, &slice);
+                    let forward = restrict_rewrite(&cone.internal.target.forward, slice);
+                    let backward = restrict_rewrite(&cone.internal.target.backward, slice);
                     Cospan { forward, backward }
                 };
 

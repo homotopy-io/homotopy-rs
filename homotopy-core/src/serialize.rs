@@ -83,7 +83,7 @@ impl Store {
     }
 
     pub fn pack_rewrite(&mut self, rewrite: &Rewrite) -> Key<Rewrite> {
-        if let Some(key) = self.rewrite_keys.get(&rewrite) {
+        if let Some(key) = self.rewrite_keys.get(rewrite) {
             return *key;
         }
 
