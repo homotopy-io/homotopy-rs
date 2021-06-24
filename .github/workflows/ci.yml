@@ -59,7 +59,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: beta # TODO: back to stable when next release comes (2021-05-06)
+          toolchain: stable
           target: wasm32-unknown-unknown
           override: true
           components: rustfmt, clippy
@@ -118,12 +118,6 @@ jobs:
     needs: [build]
     if: github.ref == 'refs/heads/master'
     steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: web
-          path: homotopy-web/dist
-
       - name: Checkout historical benchmarking data
         uses: actions/checkout@v2
         with:
