@@ -3,6 +3,7 @@
 mod common;
 
 pub mod icon;
+pub mod rawhtml;
 pub mod settings;
 pub mod toast;
 
