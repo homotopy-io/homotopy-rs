@@ -34,10 +34,10 @@ pub fn project_view(props: &Props) -> Html {
     html! {
         <>
             <button onclick=export>{"Export"}</button>
-                <label for="import">
-                    {"Import"}
-                </label>
-                <input type="file" accept="application/msgpack,.hom" class="visually-hidden" id="import" onchange=import/>
+            <label for="import">
+                {"Import"}
+            </label>
+            <input type="file" accept="application/msgpack,.hom" class="visually-hidden" id="import" onchange=import/>
         </>
     }
 }

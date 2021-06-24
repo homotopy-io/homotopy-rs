@@ -93,9 +93,7 @@ impl Component for SignatureView {
         // TODO: Folders/groups
         // TODO: On mobile, drag to the side to delete
         html! {
-            <>
-                <ul class="signature__generators">{generators}</ul>
-            </>
+            <ul class="signature__generators">{generators}</ul>
         }
     }
 }
