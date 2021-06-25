@@ -73,6 +73,11 @@ features = [
   "EventTarget",
   "KeyboardEvent",
   "EventListener",
+  "HtmlCanvasElement",
+  "WebGlBuffer",
+  "WebGlRenderingContext",
+  "WebGlProgram",
+  "WebGlShader",
 ]
 
 # These crates are used for running unit tests.

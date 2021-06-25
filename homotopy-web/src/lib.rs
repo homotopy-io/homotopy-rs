@@ -47,8 +47,11 @@
     clippy::match_same_arms,
 )]
 #![recursion_limit = "1024"]
+
 mod app;
 mod components;
+mod graphics;
+
 pub mod model;
 
 use wasm_bindgen::prelude::*;
