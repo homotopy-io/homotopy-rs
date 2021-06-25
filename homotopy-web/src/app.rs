@@ -16,6 +16,9 @@ mod signature;
 mod signature_stylesheet;
 mod workspace;
 
+// TODO(@doctorn) remove
+mod playground;
+
 use settings::AppSettings;
 use sidebar::Sidebar;
 use signature_stylesheet::SignatureStylesheet;
