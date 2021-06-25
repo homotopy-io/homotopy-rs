@@ -396,11 +396,7 @@ impl DiagramN {
 
         attach(self, &BoundaryPath(boundary, depth), |slice| {
             if slice.embeds(&diagram.slice(boundary.flip()).unwrap(), embedding) {
-                Ok(diagram
-                    .cospans()
-                    .iter()
-                    .map(|c| c.pad(&embedding))
-                    .collect())
+                Ok(diagram.cospans().iter().map(|c| c.pad(embedding)).collect())
             } else {
                 Err(AttachmentError::Incompatible)
             }

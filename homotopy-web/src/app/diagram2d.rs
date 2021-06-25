@@ -83,10 +83,10 @@ impl PreparedDiagram {
     fn new(diagram: &DiagramN, style: RenderStyle) -> Self {
         assert!(diagram.dimension() >= 2);
 
-        let generators = Generators::new(&diagram);
-        let layout = Layout::new(&diagram, 2000).unwrap();
-        let complex = make_complex(&diagram);
-        let depths = Depths::new(&diagram);
+        let generators = Generators::new(diagram);
+        let layout = Layout::new(diagram, 2000).unwrap();
+        let complex = make_complex(diagram);
+        let depths = Depths::new(diagram);
         let graphic = GraphicElement::build(&complex, &layout, &generators, &depths);
         let actions = ActionRegion::build(&complex, &layout);
 
@@ -110,7 +110,7 @@ impl PreparedDiagram {
             })
             .collect();
 
-        let depths = Depths::new(&diagram);
+        let depths = Depths::new(diagram);
 
         Self {
             graphic,

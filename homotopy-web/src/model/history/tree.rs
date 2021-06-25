@@ -1,36 +1,100 @@
-use std::{
-    cell::RefCell,
-    rc::{Rc, Weak},
-};
+use homotopy_core::declare_idx;
+use homotopy_core::idx::IdxVec;
 
-pub(super) type NodeRef<T> = Rc<RefCell<Node<T>>>;
-type WeakNodeRef<T> = Weak<RefCell<Node<T>>>;
-
-#[derive(Debug, Clone, Default)]
-pub(super) struct Node<T> {
-    pub(super) data: T,
-    pub(super) children: Vec<NodeRef<T>>,
-    pub(super) parent: WeakNodeRef<T>,
+declare_idx! {
+    pub struct Node = usize;
 }
 
-#[derive(Debug, Clone, Default)]
-pub(super) struct Tree<T> {
-    pub(super) root: NodeRef<T>,
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct NodeData<T> {
+    data: T,
+    children: Vec<Node>,
+    parent: Option<Node>,
 }
 
-impl<T> Tree<T> {
-    pub fn push(&mut self, data: T) {
-        let node = Rc::new(RefCell::new(Node {
-            data,
-            children: Default::default(),
-            parent: Rc::downgrade(&self.root),
-        }));
-        self.root.borrow_mut().children.push(node);
+#[derive(Debug, Clone)]
+pub struct Tree<T> {
+    nodes: IdxVec<Node, NodeData<T>>,
+    root: Node,
+}
+
+impl<T> NodeData<T> {
+    #[inline]
+    pub fn inner(&self) -> &T {
+        &self.data
+    }
+
+    #[inline]
+    pub fn inner_mut(&mut self) -> &mut T {
+        &mut self.data
+    }
+
+    #[inline]
+    pub fn into_inner(self) -> T {
+        self.data
+    }
+
+    #[inline]
+    pub fn parent(&self) -> Option<Node> {
+        self.parent
+    }
+
+    #[inline]
+    pub fn children(&self) -> impl Iterator<Item = Node> + '_ {
+        self.children.iter().copied()
+    }
+
+    #[inline]
+    pub fn last(&self) -> Option<Node> {
+        self.children.last().copied()
+    }
+
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.children.is_empty()
     }
 }
 
-impl<T> From<NodeRef<T>> for Tree<T> {
-    fn from(root: NodeRef<T>) -> Self {
-        Self { root }
+impl<T> Tree<T> {
+    #[inline]
+    pub fn with<F, U>(&self, node: Node, f: F) -> U
+    where
+        F: Fn(&NodeData<T>) -> U,
+    {
+        f(&self.nodes[node])
+    }
+
+    #[inline]
+    pub fn with_mut<F, U>(&mut self, node: Node, f: F) -> U
+    where
+        F: Fn(&mut NodeData<T>) -> U,
+    {
+        f(&mut self.nodes[node])
+    }
+
+    pub fn push_onto(&mut self, node: Node, t: T) -> Node {
+        let id = self.nodes.push(NodeData {
+            data: t,
+            children: vec![],
+            parent: Some(node),
+        });
+        self.nodes[node].children.push(id);
+        id
+    }
+
+    #[inline]
+    pub fn root(&self) -> Node {
+        self.root
+    }
+}
+
+impl<T> Default for Tree<T>
+where
+    T: Default,
+{
+    fn default() -> Self {
+        let mut nodes = IdxVec::new();
+        let root = nodes.push(Default::default());
+        Self { nodes, root }
     }
 }

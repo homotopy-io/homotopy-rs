@@ -23,7 +23,7 @@ pub fn generate_download(name: &str, data: &[u8]) -> Result<(), wasm_bindgen::Js
         .ok_or("failed to create anchor")?;
     a.set_attribute("href", &url)?;
     a.set_attribute("download", &format!("{}.hom", &name))?;
-    body.append_child(&a)?;
+    body.append_child(a)?;
     a.click();
     a.remove();
     web_sys::Url::revoke_object_url(&url)

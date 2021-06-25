@@ -1,4 +1,3 @@
-use crate::components::drawer::Drawer;
 use crate::components::icon::{Icon, IconSize};
 
 use crate::model::proof::{Action, GeneratorEdit, GeneratorInfo, Signature};
@@ -94,9 +93,7 @@ impl Component for SignatureView {
         // TODO: Folders/groups
         // TODO: On mobile, drag to the side to delete
         html! {
-            <Drawer title="Signature" class="signature">
-                <ul class="signature__generators">{generators}</ul>
-            </Drawer>
+            <ul class="signature__generators">{generators}</ul>
         }
     }
 }

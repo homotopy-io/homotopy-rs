@@ -1,8 +1,6 @@
-use yew::agent::Dispatcher;
 use yew::prelude::*;
 
-use crate::components::drawer::Drawer;
-use crate::components::toast::{Toast, ToastAgent};
+use crate::components::settings::KeyStore;
 use crate::declare_settings;
 
 declare_settings! {
@@ -22,10 +20,10 @@ pub struct SettingsProps {}
 pub struct SettingsView {
     link: ComponentLink<Self>,
     props: SettingsProps,
-    toaster: Dispatcher<ToastAgent>,
     settings: AppSettings,
-    /// Example toggle setting
-    example_toggle: bool,
+    // Maintain a local copy of the global app settings in order to display the current settings
+    // state correctly.
+    local: AppSettingsKeyStore,
 }
 
 impl Component for SettingsView {
@@ -34,29 +32,27 @@ impl Component for SettingsView {
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
         let mut settings = AppSettings::connect(link.callback(SettingsMsg::Setting));
-        settings.subscribe(&[AppSettingsKey::example_toggle]);
+        // So that we can keep our local copy of the global settings up to date,
+        // we're going to need to subscribe to all changes in the global settings state.
+        settings.subscribe(AppSettings::ALL);
 
         Self {
             link,
             props,
-            toaster: ToastAgent::dispatcher(),
             settings,
-            example_toggle: false,
+            local: Default::default(),
         }
     }
 
     fn view(&self) -> Html {
         html! {
-            <Drawer
-                title="Settings"
-                class="settings"
-            >
+            <>
                 <input
                     type="checkbox"
-                    checked=self.example_toggle
+                    checked=*self.local.get_example_toggle()
                     onclick=self.link.callback(|_| SettingsMsg::Click)
                 />
-            </Drawer>
+            </>
         }
     }
 
@@ -64,17 +60,12 @@ impl Component for SettingsView {
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
-            Self::Message::Setting(AppSettingsMsg::example_toggle(b)) => {
-                self.example_toggle = b;
-                if b {
-                    self.toaster.send(Toast::success("Setting on"));
-                } else {
-                    self.toaster.send(Toast::error("Setting off"));
-                }
-            }
+            // If we're notified about a setting change, just thread that through
+            // to our local working copy.
+            Self::Message::Setting(msg) => self.local.set(&msg),
             Self::Message::Click => {
-                self.example_toggle = !self.example_toggle;
-                self.settings.set_example_toggle(self.example_toggle);
+                self.settings
+                    .set_example_toggle(!self.local.get_example_toggle());
             }
         }
         true

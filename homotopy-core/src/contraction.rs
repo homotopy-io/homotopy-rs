@@ -473,8 +473,8 @@ fn colimit_recursive(
     }
 
     for ((s, t), slices) in &span_slices {
-        let s_component = node_to_scc[&s];
-        let t_component = node_to_scc[&t];
+        let s_component = node_to_scc[s];
+        let t_component = node_to_scc[t];
 
         if s_component == t_component {
             for slice in slices {

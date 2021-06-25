@@ -4,21 +4,24 @@ use web_sys::Element;
 use yew::prelude::*;
 
 #[derive(Debug, Clone, Eq, PartialEq, Properties)]
-pub struct RawHTMLProps {
-  pub inner_html: String,
+pub struct RawHtmlProps {
+    pub inner_html: String,
 }
 
-pub struct RawHTML {
-    props: RawHTMLProps,
+pub struct RawHtml {
+    props: RawHtmlProps,
     node_ref: NodeRef,
 }
 
-impl Component for RawHTML {
+impl Component for RawHtml {
     type Message = ();
-    type Properties = RawHTMLProps;
+    type Properties = RawHtmlProps;
 
     fn create(props: Self::Properties, _: ComponentLink<Self>) -> Self {
-        Self { props, node_ref: NodeRef::default() }
+        Self {
+            props,
+            node_ref: NodeRef::default(),
+        }
     }
 
     fn update(&mut self, _: Self::Message) -> ShouldRender {
@@ -26,11 +29,11 @@ impl Component for RawHTML {
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        if self.props != props {
+        if self.props == props {
+            false
+        } else {
             self.props = props;
             true
-        } else {
-            false
         }
     }
 

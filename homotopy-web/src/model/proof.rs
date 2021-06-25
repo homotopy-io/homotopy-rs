@@ -88,7 +88,7 @@ pub struct SelectedBoundary {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct Proof {
+pub struct ProofState {
     pub(super) signature: Signature,
     pub(super) workspace: Option<Workspace>,
     boundary: Option<SelectedBoundary>,
@@ -172,7 +172,7 @@ pub enum ModelError {
     TypecheckingError(#[from] TypeError),
 }
 
-impl Proof {
+impl ProofState {
     /// Update the state in response to an [Action].
     pub fn update(&mut self, action: &Action) -> Result<(), ModelError> {
         match action {
@@ -213,7 +213,7 @@ impl Proof {
                 Ok(())
             }
             Action::Attach(option) => {
-                self.attach(&option);
+                self.attach(option);
                 Ok(())
             }
             Action::HighlightAttachment(option) => {
@@ -483,7 +483,7 @@ impl Proof {
 
         let attach_on_boundary = selected_with_path
             .iter()
-            .any(|point| BoundaryPath::split(&point).0.is_some());
+            .any(|point| BoundaryPath::split(point).0.is_some());
 
         for point in selected_with_path {
             let (boundary_path, point) = BoundaryPath::split(&point);
