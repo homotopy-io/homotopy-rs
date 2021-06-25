@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1624554966612,
+  "lastUpdate": 1624622892676,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -3359,6 +3359,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 33.753,
             "range": "+/- 1.535",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "me@nathancorbyn.com",
+            "name": "Nathan Corbyn",
+            "username": "doctorn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "257dea587177592cf7960bd7a08376db143f0a18",
+          "message": "Extract sidebar from `App` (#101)\n\n* Make settings drawer track global settings state\r\n\r\n* Remove redundant dispatcher\r\n\r\n* Add `IdxVec`\r\n\r\n* Reimplement history tree\r\n\r\n* Extract sidebar (I)\r\n\r\n* Extract sidebar (II)\r\n\r\nFix signature drawer open\r\n\r\n* Make `RawHtml` a component\r\n\r\n* Fix undo and redo visibility\r\n\r\n* `cargo clippy --fix`\r\n\r\n* Placate clippy\r\n\r\n* Fix nits",
+          "timestamp": "2021-06-25T12:59:30+01:00",
+          "tree_id": "16715c9115ab908547d1f446f6abfbe4fcff9616",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/257dea587177592cf7960bd7a08376db143f0a18"
+        },
+        "date": 1624622889872,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 10.935,
+            "range": "+/- 0.013",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 11.03,
+            "range": "+/- 0.013",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 82.544,
+            "range": "+/- 0.026",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 97.835,
+            "range": "+/- 0.101",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 80.341,
+            "range": "+/- 0.063",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 111.79,
+            "range": "+/- 0.030",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 72.644,
+            "range": "+/- 0.034",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 427.3,
+            "range": "+/- 0.210",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 1.8987,
+            "range": "+/- 0.000",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 5.8225,
+            "range": "+/- 0.002",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 15.577,
+            "range": "+/- 0.016",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 38.433,
+            "range": "+/- 0.064",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 91.201,
+            "range": "+/- 0.145",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 211.45,
+            "range": "+/- 0.320",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 5.3543,
+            "range": "+/- 0.003",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 27.507,
+            "range": "+/- 0.012",
             "unit": "us"
           }
         ]
