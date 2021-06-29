@@ -41,6 +41,11 @@
     clippy::too_many_lines,
 )]
 
+pub mod cubicalise;
 pub mod gl;
+pub mod mesh;
+/// Primal subdivision methods in this module follow a preset point order when subdividing elements.
+/// For 2-cubes, 9 points are generated in the order (a). For 3-cubes 27 points are generated in order (b).
+/// <img src="../../images/subdivision_illustration.png"/>
 pub mod subdivide;
 pub mod svg;
