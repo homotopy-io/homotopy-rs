@@ -35,7 +35,7 @@ impl Deref for Color {
 impl Display for Color {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let (r, g, b) = self.into_components();
-        write!(f, "#{:x}{:x}{:x}", r, g, b)
+        write!(f, "#{:02x}{:02x}{:02x}", r, g, b)
     }
 }
 
