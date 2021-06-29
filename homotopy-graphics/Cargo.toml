@@ -5,6 +5,7 @@ authors = ["Lukas Heidemann <lukas@heidemann.me>", "Nathan Corbyn <me@nathancorb
 edition = "2018"
 
 [dependencies]
+homotopy-common = { path = "../homotopy-common" }
 homotopy-core = { path = "../homotopy-core" }
 euclid = "0.22.6"
 lyon_geom = "0.17.4"

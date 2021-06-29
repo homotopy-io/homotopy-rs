@@ -646,6 +646,7 @@ version = "0.1.0"
 dependencies = [
  "cargo-husky",
  "euclid",
+ "homotopy-common",
  "homotopy-core",
  "insta",
  "js-sys",

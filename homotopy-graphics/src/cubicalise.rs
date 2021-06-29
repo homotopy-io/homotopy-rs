@@ -1,4 +1,4 @@
-use crate::*;
+use homotopy_core::DiagramN;
 
 use crate::mesh::{Mesh, Vertex};
 
@@ -42,7 +42,7 @@ pub fn cubicalise(diagram: &DiagramN) -> Mesh {
 
             (&V_COORDS[..], &V_BOUNDS[..])
         }
-        _ => unimplemented!(),
+        _ => panic!(),
     };
 
     let verts: Vec<_> = bounds
@@ -51,10 +51,10 @@ pub fn cubicalise(diagram: &DiagramN) -> Mesh {
         .zip(coords.iter())
         .map(|(bound, coord)| {
             let v = Vertex::new(
-                coord[3] as f64,
-                coord[2] as f64,
-                coord[1] as f64,
-                coord[0] as f64,
+                f64::from(coord[3]),
+                f64::from(coord[2]),
+                f64::from(coord[1]),
+                f64::from(coord[0]),
                 bound,
             );
             mesh.mk_vertex(v)
@@ -74,7 +74,7 @@ pub fn cubicalise(diagram: &DiagramN) -> Mesh {
                 [3, 4, 5, 5],
             ];
 
-            for square in SQUARES.iter() {
+            for square in &SQUARES {
                 let square: Vec<_> = square.iter().map(|index| verts[*index]).collect();
                 mesh.mk_element(2, &square);
             }
@@ -99,13 +99,12 @@ pub fn cubicalise(diagram: &DiagramN) -> Mesh {
                 [4, 10, 5, 11, 6, 12, 6, 12],
             ];
 
-            for square in SQUARES.iter() {
+            for square in &SQUARES {
                 let square: Vec<_> = square.iter().map(|index| verts[*index]).collect();
                 mesh.mk_element(3, &square);
             }
         }
-        _ => unimplemented!(),
+        _ => panic!(),
     }
-
     mesh
 }
