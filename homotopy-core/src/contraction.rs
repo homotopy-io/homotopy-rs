@@ -16,11 +16,12 @@ use crate::{
     attach::{attach, BoundaryPath},
     common::{Boundary, Height, SingularHeight},
     diagram::{Diagram, DiagramN},
+    labelled::Label,
     normalization,
     rewrite::{Cone, Cospan, Rewrite, Rewrite0, RewriteN},
     signature::Signature,
-    typecheck::{typecheck_cospan, TypeError},
-    util::{FastHashMap, FastHashSet},
+    typecheck::TypeError,
+    util::{consistent_assign, FastHashMap, FastHashSet},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -98,12 +99,12 @@ impl DiagramN {
                 },
             };
 
-            typecheck_cospan(
-                slice.into(),
-                cospan.clone(),
-                boundary_path.boundary(),
-                signature,
-            )?;
+            // typecheck_cospan(
+            //     slice.into(),
+            //     cospan.clone(),
+            //     boundary_path.boundary(),
+            //     signature,
+            // )?;
 
             Ok(vec![cospan])
         })
@@ -242,8 +243,10 @@ fn colimit(
     }
 }
 
+/// Solve the base case of the colimit algorithm.
+/// This creates a colimit cone over a collection of 0-spans
 fn colimit_base(
-    diagrams: &[(Diagram, BiasValue)],
+    diagrams: &[(Diagram, BiasValue)], // feet of the colimit cone we want to construct
     spans: &[(usize, Span, usize)],
 ) -> Result<Vec<Rewrite>, ContractionError> {
     let mut union_find = UnionFind::new(diagrams.len());
@@ -274,10 +277,69 @@ fn colimit_base(
     components.dedup();
 
     if components.len() == 1 {
+        // label inference
+        let mut labels: Vec<Option<Option<&Label>>> = vec![None; diagrams.len()];
+
+        // if source == target, the cone leg is degenerate
+        for (i, _) in diagrams
+            .iter()
+            .enumerate()
+            .filter(|(_, (d, _))| d.to_generator().unwrap() == max_generator)
+        {
+            labels[i] = Some(None);
+        }
+
+        for (s, span, t) in spans {
+            // have
+            //  max_generator
+            //   ^ ^
+            // ?/   \?
+            // s     t
+            // ^     ^
+            // l\   /r
+            //   tip
+            match span {
+                Span(l, _tip, r) => {
+                    let l = <&Rewrite0>::try_from(l).map_err(|_| ContractionError::Invalid)?;
+                    let r = <&Rewrite0>::try_from(r).map_err(|_| ContractionError::Invalid)?;
+
+                    if l == r {
+                        consistent_assign(labels.get_mut(*s).unwrap(), None)
+                            .ok_or(ContractionError::Invalid)?;
+                        consistent_assign(labels.get_mut(*t).unwrap(), None)
+                            .ok_or(ContractionError::Invalid)?;
+                    }
+                    if l.degenerate() {
+                        consistent_assign(labels.get_mut(*t).unwrap(), l.label())
+                            .ok_or(ContractionError::Invalid)?;
+                        consistent_assign(labels.get_mut(*s).unwrap(), r.label())
+                            .ok_or(ContractionError::Invalid)?;
+                    }
+                    if r.degenerate() {
+                        consistent_assign(labels.get_mut(*s).unwrap(), r.label())
+                            .ok_or(ContractionError::Invalid)?;
+                        consistent_assign(labels.get_mut(*t).unwrap(), l.label())
+                            .ok_or(ContractionError::Invalid)?;
+                    }
+                }
+            }
+        }
+        let labels: Vec<Option<&Label>> = labels
+            .into_iter()
+            .collect::<Option<_>>()
+            .ok_or(ContractionError::Invalid)?;
+
         Ok(diagrams
             .iter()
-            .map(|(diagram, _)| {
-                Rewrite0::new(diagram.to_generator().unwrap(), max_generator).into()
+            .zip(labels)
+            .map(|((diagram, _), label)| {
+                match label {
+                    Some(l) => {
+                        Rewrite0::new(diagram.to_generator().unwrap(), max_generator, l.clone())
+                    }
+                    None => Rewrite0::identity(),
+                }
+                .into()
             })
             .collect())
     } else {

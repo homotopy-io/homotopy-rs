@@ -1,7 +1,7 @@
 use std::{
     cell::RefCell,
-    collections::HashSet,
-    convert::{From, Into, TryFrom},
+    collections::{HashMap, HashSet},
+    convert::{From, Into, TryFrom, TryInto},
     fmt,
     hash::Hash,
 };
@@ -11,10 +11,10 @@ use thiserror::Error;
 
 use crate::{
     attach::{attach, BoundaryPath},
-    common::{
-        Boundary, DimensionError, Direction, Generator, Height, Mode, RegularHeight, SliceIndex,
-    },
-    rewrite::{Cospan, MalformedRewrite, Rewrite, RewriteN},
+    common::{Boundary, DimensionError, Direction, Generator, Height, RegularHeight, SliceIndex},
+    labelled::{cone_simplices, simplices, Complex, Label, LabelError, Simplex},
+    rewrite::{Cone, Cospan, MalformedRewrite, Rewrite, Rewrite0, RewriteN},
+    typecheck::Mode,
     util::{first_max_generator, Hasher},
 };
 
@@ -113,11 +113,11 @@ impl Diagram {
         use Diagram::{Diagram0, DiagramN};
         match self {
             Diagram0(g) => match &rewrite {
-                Rewrite::Rewrite0(r) => match r.0 {
+                Rewrite::Rewrite0(r) => match &r.0 {
                     None => Ok(self),
-                    Some((source, target)) => {
-                        if g == source {
-                            Ok(Diagram0(target))
+                    Some((source, target, _label)) => {
+                        if g == *source {
+                            Ok(Diagram0(*target))
                         } else {
                             Err(RewritingError::Incompatible)
                         }
@@ -136,11 +136,11 @@ impl Diagram {
         use Diagram::{Diagram0, DiagramN};
         match self {
             Diagram0(g) => match &rewrite {
-                Rewrite::Rewrite0(r) => match r.0 {
+                Rewrite::Rewrite0(r) => match &r.0 {
                     None => Ok(self),
-                    Some((source, target)) => {
-                        if g == target {
-                            Ok(Diagram0(source))
+                    Some((source, target, _label)) => {
+                        if g == *target {
+                            Ok(Diagram0(*source))
                         } else {
                             Err(RewritingError::Incompatible)
                         }
@@ -182,6 +182,8 @@ impl DiagramN {
         S: Into<Diagram>,
         T: Into<Diagram>,
     {
+        use Height::Regular;
+        log::debug!("Calling DiagramN::new");
         let source: Diagram = source.into();
         let target: Diagram = target.into();
 
@@ -197,8 +199,8 @@ impl DiagramN {
         }
 
         let cospan = Cospan {
-            forward: Rewrite::cone_over_generator(generator, source.clone()),
-            backward: Rewrite::cone_over_generator(generator, target),
+            forward: Rewrite::cone_over_generator(generator, source.clone(), vec![Regular(0)]),
+            backward: Rewrite::cone_over_generator(generator, target, vec![Regular(1)]),
         };
 
         Ok(Self::new_unsafe(source, vec![cospan]))
@@ -505,10 +507,120 @@ impl DiagramN {
             if slice.embeds(&diagram.slice(boundary.flip()).unwrap(), embedding) {
                 Ok(diagram.cospans().iter().map(|c| c.pad(embedding)).collect())
             } else {
-                Err(AttachmentError::Incompatible)
+                Err(AttachmentError::IncompatibleAttachment)
             }
         })
     }
+
+    pub fn inverse(&self) -> Result<Self, NewDiagramError> {
+        if let [cs] = self.cospans() {
+            Ok(Self::new_unsafe(
+                self.slices().last().unwrap(),
+                vec![Cospan {
+                    forward: cs.backward.clone(),
+                    backward: cs.forward.clone(),
+                }],
+            ))
+        } else {
+            Err(NewDiagramError::NonInvertible)
+        }
+    }
+
+    // /// Initialise a diagram's labelling in the top dimension only
+    // pub fn label(&self, generator: Generator) -> Result<(), LabelError> {
+    //     assert_eq!(self.size(), 1); // this is a generating diagram
+    //     let cospan = &self.cospans()[0];
+    //     if let (Ok(f0), Ok(b0)) = (
+    //         <&Rewrite0>::try_from(&cospan.forward),
+    //         <&Rewrite0>::try_from(&cospan.backward),
+    //     ) {
+    //         let mut simplices: Complex<Height> = simplices(self.clone().into());
+    //         let center = &generator.label().1[0];
+    //         for n_simplices in &mut simplices {
+    //             // keep only simplices which touch the generator
+    //             n_simplices.retain(|simplex| simplex.last() == Some(center));
+    //         }
+    //         assert!(simplices[1].len() == 2);
+    //         let mut one_simplices: Vec<Simplex<Height>> = simplices.remove(1).into_iter().collect();
+    //         drop(simplices);
+    //         one_simplices.sort();
+    //         let backward = one_simplices.pop().unwrap();
+    //         if let Some(existing) = b0.1.get() {
+    //             if existing != &(generator, backward) {
+    //                 return Err(LabelError::Inconsistent);
+    //             }
+    //         } else {
+    //             b0.1.set((generator, backward)).unwrap();
+    //         }
+    //         let forward = one_simplices.pop().unwrap();
+    //         if let Some(existing) = f0.1.get() {
+    //             if existing != &(generator, forward) {
+    //                 return Err(LabelError::Inconsistent);
+    //             }
+    //         } else {
+    //             f0.1.set((generator, forward)).unwrap();
+    //         }
+    //     } else if let (Ok(f), Ok(b)) = (
+    //         <&RewriteN>::try_from(&cospan.forward),
+    //         <&RewriteN>::try_from(&cospan.backward),
+    //     ) {
+    //         let generate_labels = |cone: &Cone,
+    //                                transform: Box<dyn Fn(Vec<usize>) -> Vec<Height>>|
+    //          -> HashMap<Simplex<usize>, Label> {
+    //             let mut labels: HashMap<Simplex<usize>, Label> = Default::default();
+    //             let cone_simplices: Complex<usize> = cone_simplices(cone.clone());
+    //             for mut cone_n_simplices in cone_simplices {
+    //                 cone_n_simplices
+    //                     .retain(|simplex| simplex.last().unwrap().iter().all(|x| *x == 1));
+    //                 for simplex in cone_n_simplices {
+    //                     let transformed = simplex
+    //                         .iter()
+    //                         .map(|coords| transform(coords.clone()))
+    //                         .collect();
+    //                     labels.insert(simplex, (generator, transformed));
+    //                 }
+    //             }
+    //             labels
+    //         };
+    //         assert_eq!(f.cones().len(), 1);
+    //         assert_eq!(b.cones().len(), 1);
+    //         for cone in f.cones() {
+    //             let labels = generate_labels(
+    //                 &cone,
+    //                 Box::new(|coords| coords.iter().map(|x| Height::from_int(*x)).collect()),
+    //             );
+    //             cone.label(labels)?;
+    //         }
+    //         let fwd: RewriteN = Rewrite::cone_over_generator(generator, self.source())
+    //             .try_into()
+    //             .unwrap();
+    //         for cone in fwd.cones() {
+    //             cone.label(Default::default());
+    //         }
+    //         let bwd: RewriteN = Rewrite::cone_over_generator(generator, self.source())
+    //             .try_into()
+    //             .unwrap();
+    //         assert_eq!(fwd, bwd);
+    //         // for cone in b.cones() {
+    //         //     let labels = generate_labels(
+    //         //         &cone,
+    //         //         Box::new(|mut coords: Vec<usize>| {
+    //         //             // need to reflect along the line y = 1
+    //         //             if let Some((_, elements)) = coords.split_last_mut() {
+    //         //                 for c in elements {
+    //         //                     *c = 2 - *c;
+    //         //                 }
+    //         //             }
+    //         //             coords.iter().map(|x| Height::from_int(*x)).collect()
+    //         //         }),
+    //         //     );
+    //         //     cone.label(labels)?;
+    //         // }
+    //     } else {
+    //         return Err(LabelError::Inconsistent);
+    //     }
+    //     Ok(())
+    // }
 }
 
 impl fmt::Debug for DiagramN {
@@ -674,6 +786,12 @@ impl Iterator for Embeddings {
 
 impl std::iter::FusedIterator for Embeddings {}
 
+impl Default for Embeddings {
+    fn default() -> Self {
+        Self(Box::new(std::iter::empty()))
+    }
+}
+
 #[derive(Debug, Error)]
 pub enum NewDiagramError {
     #[error("non-compatible dimensions when creating diagram")]
@@ -681,6 +799,9 @@ pub enum NewDiagramError {
 
     #[error("can't create diagram with non-globular boundaries")]
     NonGlobular,
+
+    #[error("can't create inverse diagram")]
+    NonInvertible,
 }
 
 #[derive(Debug, Error)]
@@ -689,7 +810,7 @@ pub enum AttachmentError {
     Dimension(usize, usize),
 
     #[error("failed to attach incompatible diagrams")]
-    Incompatible,
+    IncompatibleAttachment,
 }
 
 #[derive(Debug, Error)]

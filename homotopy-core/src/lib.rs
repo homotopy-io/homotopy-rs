@@ -61,6 +61,7 @@ pub mod examples;
 pub mod expansion;
 pub mod factorization;
 pub mod graph;
+pub mod labelled;
 pub mod monotone;
 pub mod normalization;
 pub mod projection;

@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, fmt, ops::Deref, str::FromStr};
+use std::{collections::VecDeque, fmt, num::NonZeroIsize, ops::Deref, str::FromStr};
 
 use homotopy_common::tree::{Node, Tree};
 use homotopy_core::{common::Generator, diagram::NewDiagramError, Diagram, DiagramN};
@@ -85,21 +85,25 @@ impl Signature {
         self.iter().find(|info| info.generator == generator)
     }
 
-    fn next_generator_id(&self) -> usize {
+    fn next_generator_id(&self) -> NonZeroIsize {
         self.iter()
             .map(|info| info.generator.id)
             .max()
-            .map_or(0, |id| id + 1)
+            .map_or(NonZeroIsize::new(1).unwrap(), |id| {
+                NonZeroIsize::new(id.get() + 1).expect("generator id overflowed isize")
+            })
     }
 
-    fn insert<D>(&mut self, id: usize, generator: Generator, diagram: D)
+    fn insert<D>(&mut self, id: NonZeroIsize, generator: Generator, diagram: D)
     where
         D: Into<Diagram>,
     {
         let info = GeneratorInfo {
             generator,
             name: format!("Cell {}", id),
-            color: Color(Srgb::<u8>::from_str(COLORS[id % COLORS.len()]).unwrap()),
+            color: Color(
+                Srgb::<u8>::from_str(COLORS[id.get().unsigned_abs() % COLORS.len()]).unwrap(),
+            ),
             diagram: diagram.into(),
         };
 

@@ -2,6 +2,12 @@ use crate::signature::{Signature, SignatureBuilder};
 #[allow(clippy::wildcard_imports)]
 use crate::*;
 
+//    |       |
+//    m       m
+//   / \     / \
+//  |   | → |   |
+//  m   |   |   m
+// / \  |   |  / \
 pub fn associator() -> (SignatureBuilder, DiagramN) {
     let mut sig = SignatureBuilder::new();
 
@@ -13,6 +19,46 @@ pub fn associator() -> (SignatureBuilder, DiagramN) {
     let right = m.attach(&m, Boundary::Source, &[1]).unwrap();
     let associator = sig.add(left, right).unwrap();
     (sig, associator)
+}
+
+pub fn one_zero_cell() -> (impl Signature, Diagram) {
+    let mut sig = SignatureBuilder::new();
+    let x = sig.add_zero();
+    (sig, x)
+}
+
+// |
+// e
+// |
+pub fn two_endomorphism() -> (impl Signature, DiagramN) {
+    let mut sig = SignatureBuilder::new();
+
+    let space = sig.add_zero();
+    let wire = sig.add(space.clone(), space).unwrap();
+    let e = sig.add(wire.clone(), wire).unwrap();
+    (sig, e)
+}
+
+//  |
+//  m
+// / \
+pub fn two_monoid() -> (impl Signature, DiagramN) {
+    let mut sig = SignatureBuilder::new();
+
+    let space = sig.add_zero();
+    let wire = sig.add(space.clone(), space).unwrap();
+    let wirewire = wire.attach(&wire, Boundary::Target, &[]).unwrap();
+    let m = sig.add(wirewire, wire).unwrap();
+    (sig, m)
+}
+
+//  s
+pub fn scalar() -> (impl Signature, DiagramN) {
+    let mut sig = SignatureBuilder::new();
+
+    let x = sig.add_zero();
+    let s = sig.add(x.identity(), x.identity()).unwrap();
+    (sig, s)
 }
 
 //  t

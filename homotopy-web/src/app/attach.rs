@@ -1,6 +1,9 @@
+use std::convert::TryFrom;
+
+use homotopy_core::DiagramN;
 use yew::prelude::*;
 
-use crate::model::proof::{Action, AttachOption, Signature};
+use crate::model::proof::{Action, AttachOption, GeneratorInfo, Signature};
 
 #[derive(Debug, Clone, PartialEq, Properties)]
 pub struct Props {
@@ -46,7 +49,21 @@ impl AttachView {
             .props
             .signature
             .generator_info(option.generator)
-            .unwrap();
+            .cloned()
+            .unwrap_or_else(|| {
+                let generator = option.generator.inverse();
+                let i = self.props.signature.generator_info(generator).unwrap();
+                let d = DiagramN::try_from(i.diagram.clone())
+                    .expect("conversion to DiagramN failed")
+                    .inverse()
+                    .expect("inversion failed");
+                GeneratorInfo {
+                    generator,
+                    name: format!("{} (inverse)", i.name),
+                    diagram: d.into(),
+                    color: i.color.clone(),
+                }
+            });
 
         let onclick = self.props.dispatch.reform({
             let option = option.clone();

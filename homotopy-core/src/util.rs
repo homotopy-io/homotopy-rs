@@ -1,12 +1,36 @@
 use std::{
     cell::Cell,
     collections::{HashMap, HashSet},
+    fmt::Debug,
     hash::BuildHasherDefault,
 };
 
 use rustc_hash::FxHasher;
 
 use crate::common::Generator;
+
+pub fn agreeing<T: Debug + Eq>(options: Vec<Option<T>>) -> Option<T> {
+    options
+        .into_iter()
+        .reduce(|x, y| match (x, y) {
+            (None, None) => None,
+            (Some(a), Some(b)) => {
+                assert_eq!(a, b);
+                Some(a)
+            }
+            (Some(a), None) | (None, Some(a)) => Some(a),
+        })
+        .flatten()
+}
+
+pub fn consistent_assign<T: Eq>(lhs: &mut Option<T>, rhs: T) -> Option<()> {
+    match lhs {
+        Some(l) if l == &rhs => {}
+        None => *lhs = Some(rhs),
+        _ => return None,
+    }
+    Some(())
+}
 
 pub fn first_max_generator<I>(iterator: I, dimension_cutoff: Option<usize>) -> Option<Generator>
 where

@@ -14,6 +14,7 @@ pub enum Action {
     History(history::Action),
     ImportProof(SerializedData),
     ExportProof,
+    Test,
 }
 
 impl From<proof::Action> for Action {
@@ -105,6 +106,28 @@ impl State {
                 proof.signature = signature;
                 proof.workspace = workspace;
                 self.history.add(proof::Action::Imported, proof);
+            }
+
+            Action::Test => {
+                use std::convert::TryInto;
+
+                use homotopy_core::DiagramN;
+                let result = self.with_proof(|p| {
+                    p.workspace.as_ref().map(|ws| {
+                        let diagram: DiagramN = ws.diagram.clone().try_into().unwrap();
+                        // let mut simplices: Vec<
+                        //     std::collections::HashSet<
+                        //         homotopy_core::labelled::Simplex<homotopy_core::Height>,
+                        //     >,
+                        // > = homotopy_core::labelled::simplices(diagram.into());
+                        // simplices.swap_remove(1);
+                        diagram
+                        // let cs = &diagram.cospans()[0];
+                        // (cs.forward.get_label(), cs.backward.get_label())
+                        // homotopy_core::labelled::simplices(workspace.diagram.clone())
+                    })
+                });
+                log::info!("Test result: {:#?}", result);
             }
         }
 

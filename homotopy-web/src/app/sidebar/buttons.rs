@@ -181,4 +181,12 @@ declare_sidebar_tools! {
         Some('c'),
         |proof: &Proof| proof.workspace().is_some().into(),
     }
+
+    BUTTON_TEST {
+        "Test",
+        "bug_report",
+        model::Action::Test,
+        None,
+        |_: &Proof| Visible,
+    }
 }

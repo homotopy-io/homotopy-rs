@@ -6,8 +6,8 @@ use highway::{HighwayHash, HighwayHasher};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    rewrite::Cone, util::FastHashMap, Cospan, Diagram, DiagramN, Generator, Rewrite, Rewrite0,
-    RewriteN,
+    labelled::Label, rewrite::Cone, util::FastHashMap, Cospan, Diagram, DiagramN, Generator,
+    Rewrite, Rewrite0, RewriteN,
 };
 
 /// Similar to `Hash`, except supposed to be deterministic and shouldn't collide
@@ -92,13 +92,10 @@ impl Store {
         }
 
         let serialized = match rewrite {
-            Rewrite::Rewrite0(Rewrite0(None)) => RewriteSer::R0 {
-                source: None,
-                target: None,
-            },
-            Rewrite::Rewrite0(Rewrite0(Some((x, y)))) => RewriteSer::R0 {
-                source: Some(*x),
-                target: Some(*y),
+            Rewrite::Rewrite0(r0) => RewriteSer::R0 {
+                source: r0.source(),
+                target: r0.target(),
+                label: r0.label().map(|l| l.clone()),
             },
             Rewrite::RewriteN(rewrite) => {
                 let cones = rewrite
@@ -177,10 +174,16 @@ impl Store {
 
     pub fn unpack_rewrite(&self, key: Key<Rewrite>) -> Option<Rewrite> {
         match self.rewrites.get(&key)?.clone() {
-            RewriteSer::R0 { source, target, .. } => match (source, target) {
-                (None, None) => Some(Rewrite0(None).into()),
-                (Some(source), Some(target)) => Some(Rewrite0(Some((source, target))).into()),
-                (None, Some(_)) | (Some(_), None) => None,
+            RewriteSer::R0 {
+                source,
+                target,
+                label,
+            } => match (source, target, label) {
+                (None, None, None) => Some(Rewrite0(None).into()),
+                (Some(source), Some(target), Some(label)) => {
+                    Some(Rewrite0(Some((source, target, label))).into())
+                }
+                _ => None,
             },
             RewriteSer::Rn { dimension, cones } => {
                 let cones = cones
@@ -238,6 +241,9 @@ enum RewriteSer {
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
         target: Option<Generator>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default)]
+        label: Option<Label>,
     },
     Rn {
         dimension: NonZeroU32,
@@ -249,9 +255,14 @@ enum RewriteSer {
 impl Hash for RewriteSer {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         match self {
-            RewriteSer::R0 { source, target } => {
+            RewriteSer::R0 {
+                source,
+                target,
+                label,
+            } => {
                 source.hash(state);
                 target.hash(state);
+                label.hash(state);
             }
             RewriteSer::Rn { dimension, cones } => {
                 dimension.hash(state);

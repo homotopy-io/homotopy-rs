@@ -12,20 +12,13 @@ use crate::{
 pub fn factorize(f: Rewrite, g: Rewrite, source: Diagram, target: Diagram) -> Factorization {
     match (f, g, source, target) {
         (
-            Rewrite::Rewrite0(f),
-            Rewrite::Rewrite0(g),
+            Rewrite::Rewrite0(Rewrite0(Some((fs, ft, _fl)))),
+            Rewrite::Rewrite0(Rewrite0(Some((gs, gt, _gl)))),
             Diagram::Diagram0(s),
             Diagram::Diagram0(t),
-        ) => {
-            assert!(f.source() == None || f.source() == Some(s));
-            assert!(g.source() == None || g.source() == Some(t));
-
-            if s.dimension > t.dimension {
-                Factorization::Factorization0(None)
-            } else {
-                Factorization::Factorization0(Some(Rewrite::from(Rewrite0::new(s, t))))
-            }
-        }
+        ) if fs == s && ft == gt && gs == t => Factorization::Factorization0(Some(Rewrite::from(
+            Rewrite0::new(fs, gs, unimplemented!("this case should always fail")),
+        ))),
         (
             Rewrite::RewriteN(f),
             Rewrite::RewriteN(g),

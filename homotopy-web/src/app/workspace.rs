@@ -1,4 +1,4 @@
-use std::convert::{Into, TryInto};
+use std::convert::{Into, TryFrom, TryInto};
 
 use homotopy_core::{
     attach::BoundaryPath,
@@ -16,7 +16,7 @@ use crate::{
         diagram_svg::{Diagram0D, Diagram1D, Diagram2D, Highlight2D, HighlightKind},
     },
     components::panzoom::PanZoomComponent,
-    model::proof::{homotopy::Homotopy, Action, Signature, Workspace},
+    model::proof::{homotopy::Homotopy, Action, GeneratorInfo, Signature, Workspace},
 };
 
 mod path_control;
@@ -168,12 +168,25 @@ fn highlight_attachment(workspace: &Workspace, signature: &Signature) -> Option<
     use Height::Regular;
 
     let attach_option = workspace.attachment_highlight.as_ref()?;
-    let needle: DiagramN = signature
-        .generator_info(attach_option.generator)?
-        .diagram
-        .clone()
-        .try_into()
-        .unwrap();
+
+    let info = signature
+        .generator_info(attach_option.generator)
+        .cloned()
+        .unwrap_or_else(|| {
+            let generator = attach_option.generator.inverse();
+            let i = signature.generator_info(generator).unwrap();
+            let d = DiagramN::try_from(i.diagram.clone())
+                .expect("conversion to DiagramN failed")
+                .inverse()
+                .expect("inversion failed");
+            GeneratorInfo {
+                generator,
+                name: format!("{} (inverse)", i.name),
+                diagram: d.into(),
+                color: i.color.clone(),
+            }
+        });
+    let needle: DiagramN = info.diagram.clone().try_into().unwrap();
 
     let mut boundary_path = attach_option.boundary_path.clone();
     let mut embedding = attach_option.embedding.clone();

@@ -1,17 +1,35 @@
-use std::{cmp::Ordering, fmt, iter::FusedIterator};
+use std::{cmp::Ordering, fmt, iter::FusedIterator, num::NonZeroIsize};
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use thiserror::Error;
 
+use crate::labelled::Label;
+
 #[derive(PartialEq, Eq, Copy, Clone, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct Generator {
     pub dimension: usize,
-    pub id: usize,
+    pub id: NonZeroIsize,
 }
 
 impl Generator {
-    pub fn new(id: usize, dimension: usize) -> Self {
+    pub fn new(id: NonZeroIsize, dimension: usize) -> Self {
         Self { dimension, id }
+    }
+
+    pub fn label(&self) -> Label {
+        (
+            *self,
+            std::iter::repeat(Height::Singular(0))
+                .take(self.dimension)
+                .collect(),
+        )
+    }
+
+    pub fn inverse(&self) -> Self {
+        Self {
+            dimension: self.dimension,
+            id: NonZeroIsize::new(-self.id.get()).unwrap(),
+        }
     }
 }
 

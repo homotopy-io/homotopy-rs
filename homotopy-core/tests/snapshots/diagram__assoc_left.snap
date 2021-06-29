@@ -13,30 +13,132 @@ DiagramN {
                 forward: Rewrite0(
                     0:0,
                     1:1,
+                    Some(
+                        (
+                            1:1,
+                            [
+                                [
+                                    Regular(
+                                        0,
+                                    ),
+                                ],
+                                [
+                                    Singular(
+                                        0,
+                                    ),
+                                ],
+                            ],
+                        ),
+                    ),
                 ),
                 backward: Rewrite0(
                     0:0,
                     1:1,
+                    Some(
+                        (
+                            1:1,
+                            [
+                                [
+                                    Regular(
+                                        1,
+                                    ),
+                                ],
+                                [
+                                    Singular(
+                                        0,
+                                    ),
+                                ],
+                            ],
+                        ),
+                    ),
                 ),
             },
             GenericCospan {
                 forward: Rewrite0(
                     0:0,
                     1:1,
+                    Some(
+                        (
+                            1:1,
+                            [
+                                [
+                                    Regular(
+                                        0,
+                                    ),
+                                ],
+                                [
+                                    Singular(
+                                        0,
+                                    ),
+                                ],
+                            ],
+                        ),
+                    ),
                 ),
                 backward: Rewrite0(
                     0:0,
                     1:1,
+                    Some(
+                        (
+                            1:1,
+                            [
+                                [
+                                    Regular(
+                                        1,
+                                    ),
+                                ],
+                                [
+                                    Singular(
+                                        0,
+                                    ),
+                                ],
+                            ],
+                        ),
+                    ),
                 ),
             },
             GenericCospan {
                 forward: Rewrite0(
                     0:0,
                     1:1,
+                    Some(
+                        (
+                            1:1,
+                            [
+                                [
+                                    Regular(
+                                        0,
+                                    ),
+                                ],
+                                [
+                                    Singular(
+                                        0,
+                                    ),
+                                ],
+                            ],
+                        ),
+                    ),
                 ),
                 backward: Rewrite0(
                     0:0,
                     1:1,
+                    Some(
+                        (
+                            1:1,
+                            [
+                                [
+                                    Regular(
+                                        1,
+                                    ),
+                                ],
+                                [
+                                    Singular(
+                                        0,
+                                    ),
+                                ],
+                            ],
+                        ),
+                    ),
                 ),
             },
         ],
@@ -54,20 +156,88 @@ DiagramN {
                                     forward: Rewrite0(
                                         0:0,
                                         1:1,
+                                        Some(
+                                            (
+                                                1:1,
+                                                [
+                                                    [
+                                                        Regular(
+                                                            0,
+                                                        ),
+                                                    ],
+                                                    [
+                                                        Singular(
+                                                            0,
+                                                        ),
+                                                    ],
+                                                ],
+                                            ),
+                                        ),
                                     ),
                                     backward: Rewrite0(
                                         0:0,
                                         1:1,
+                                        Some(
+                                            (
+                                                1:1,
+                                                [
+                                                    [
+                                                        Regular(
+                                                            1,
+                                                        ),
+                                                    ],
+                                                    [
+                                                        Singular(
+                                                            0,
+                                                        ),
+                                                    ],
+                                                ],
+                                            ),
+                                        ),
                                     ),
                                 },
                                 GenericCospan {
                                     forward: Rewrite0(
                                         0:0,
                                         1:1,
+                                        Some(
+                                            (
+                                                1:1,
+                                                [
+                                                    [
+                                                        Regular(
+                                                            0,
+                                                        ),
+                                                    ],
+                                                    [
+                                                        Singular(
+                                                            0,
+                                                        ),
+                                                    ],
+                                                ],
+                                            ),
+                                        ),
                                     ),
                                     backward: Rewrite0(
                                         0:0,
                                         1:1,
+                                        Some(
+                                            (
+                                                1:1,
+                                                [
+                                                    [
+                                                        Regular(
+                                                            1,
+                                                        ),
+                                                    ],
+                                                    [
+                                                        Singular(
+                                                            0,
+                                                        ),
+                                                    ],
+                                                ],
+                                            ),
+                                        ),
                                     ),
                                 },
                             ],
@@ -75,20 +245,88 @@ DiagramN {
                                 forward: Rewrite0(
                                     0:0,
                                     2:2,
+                                    Some(
+                                        (
+                                            2:2,
+                                            [
+                                                [
+                                                    Regular(
+                                                        0,
+                                                    ),
+                                                ],
+                                                [
+                                                    Singular(
+                                                        0,
+                                                    ),
+                                                ],
+                                            ],
+                                        ),
+                                    ),
                                 ),
                                 backward: Rewrite0(
                                     0:0,
                                     2:2,
+                                    Some(
+                                        (
+                                            2:2,
+                                            [
+                                                [
+                                                    Regular(
+                                                        1,
+                                                    ),
+                                                ],
+                                                [
+                                                    Singular(
+                                                        0,
+                                                    ),
+                                                ],
+                                            ],
+                                        ),
+                                    ),
                                 ),
                             },
                             slices: [
                                 Rewrite0(
                                     1:1,
                                     2:2,
+                                    Some(
+                                        (
+                                            2:2,
+                                            [
+                                                [
+                                                    Regular(
+                                                        0,
+                                                    ),
+                                                ],
+                                                [
+                                                    Singular(
+                                                        0,
+                                                    ),
+                                                ],
+                                            ],
+                                        ),
+                                    ),
                                 ),
                                 Rewrite0(
                                     1:1,
                                     2:2,
+                                    Some(
+                                        (
+                                            2:2,
+                                            [
+                                                [
+                                                    Regular(
+                                                        0,
+                                                    ),
+                                                ],
+                                                [
+                                                    Singular(
+                                                        0,
+                                                    ),
+                                                ],
+                                            ],
+                                        ),
+                                    ),
                                 ),
                             ],
                         },
@@ -107,10 +345,44 @@ DiagramN {
                                     forward: Rewrite0(
                                         0:0,
                                         1:1,
+                                        Some(
+                                            (
+                                                1:1,
+                                                [
+                                                    [
+                                                        Regular(
+                                                            0,
+                                                        ),
+                                                    ],
+                                                    [
+                                                        Singular(
+                                                            0,
+                                                        ),
+                                                    ],
+                                                ],
+                                            ),
+                                        ),
                                     ),
                                     backward: Rewrite0(
                                         0:0,
                                         1:1,
+                                        Some(
+                                            (
+                                                1:1,
+                                                [
+                                                    [
+                                                        Regular(
+                                                            1,
+                                                        ),
+                                                    ],
+                                                    [
+                                                        Singular(
+                                                            0,
+                                                        ),
+                                                    ],
+                                                ],
+                                            ),
+                                        ),
                                     ),
                                 },
                             ],
@@ -118,16 +390,67 @@ DiagramN {
                                 forward: Rewrite0(
                                     0:0,
                                     2:2,
+                                    Some(
+                                        (
+                                            2:2,
+                                            [
+                                                [
+                                                    Regular(
+                                                        0,
+                                                    ),
+                                                ],
+                                                [
+                                                    Singular(
+                                                        0,
+                                                    ),
+                                                ],
+                                            ],
+                                        ),
+                                    ),
                                 ),
                                 backward: Rewrite0(
                                     0:0,
                                     2:2,
+                                    Some(
+                                        (
+                                            2:2,
+                                            [
+                                                [
+                                                    Regular(
+                                                        1,
+                                                    ),
+                                                ],
+                                                [
+                                                    Singular(
+                                                        0,
+                                                    ),
+                                                ],
+                                            ],
+                                        ),
+                                    ),
                                 ),
                             },
                             slices: [
                                 Rewrite0(
                                     1:1,
                                     2:2,
+                                    Some(
+                                        (
+                                            2:2,
+                                            [
+                                                [
+                                                    Regular(
+                                                        1,
+                                                    ),
+                                                ],
+                                                [
+                                                    Singular(
+                                                        0,
+                                                    ),
+                                                ],
+                                            ],
+                                        ),
+                                    ),
                                 ),
                             ],
                         },
@@ -148,20 +471,88 @@ DiagramN {
                                     forward: Rewrite0(
                                         0:0,
                                         1:1,
+                                        Some(
+                                            (
+                                                1:1,
+                                                [
+                                                    [
+                                                        Regular(
+                                                            0,
+                                                        ),
+                                                    ],
+                                                    [
+                                                        Singular(
+                                                            0,
+                                                        ),
+                                                    ],
+                                                ],
+                                            ),
+                                        ),
                                     ),
                                     backward: Rewrite0(
                                         0:0,
                                         1:1,
+                                        Some(
+                                            (
+                                                1:1,
+                                                [
+                                                    [
+                                                        Regular(
+                                                            1,
+                                                        ),
+                                                    ],
+                                                    [
+                                                        Singular(
+                                                            0,
+                                                        ),
+                                                    ],
+                                                ],
+                                            ),
+                                        ),
                                     ),
                                 },
                                 GenericCospan {
                                     forward: Rewrite0(
                                         0:0,
                                         1:1,
+                                        Some(
+                                            (
+                                                1:1,
+                                                [
+                                                    [
+                                                        Regular(
+                                                            0,
+                                                        ),
+                                                    ],
+                                                    [
+                                                        Singular(
+                                                            0,
+                                                        ),
+                                                    ],
+                                                ],
+                                            ),
+                                        ),
                                     ),
                                     backward: Rewrite0(
                                         0:0,
                                         1:1,
+                                        Some(
+                                            (
+                                                1:1,
+                                                [
+                                                    [
+                                                        Regular(
+                                                            1,
+                                                        ),
+                                                    ],
+                                                    [
+                                                        Singular(
+                                                            0,
+                                                        ),
+                                                    ],
+                                                ],
+                                            ),
+                                        ),
                                     ),
                                 },
                             ],
@@ -169,20 +560,88 @@ DiagramN {
                                 forward: Rewrite0(
                                     0:0,
                                     2:2,
+                                    Some(
+                                        (
+                                            2:2,
+                                            [
+                                                [
+                                                    Regular(
+                                                        0,
+                                                    ),
+                                                ],
+                                                [
+                                                    Singular(
+                                                        0,
+                                                    ),
+                                                ],
+                                            ],
+                                        ),
+                                    ),
                                 ),
                                 backward: Rewrite0(
                                     0:0,
                                     2:2,
+                                    Some(
+                                        (
+                                            2:2,
+                                            [
+                                                [
+                                                    Regular(
+                                                        1,
+                                                    ),
+                                                ],
+                                                [
+                                                    Singular(
+                                                        0,
+                                                    ),
+                                                ],
+                                            ],
+                                        ),
+                                    ),
                                 ),
                             },
                             slices: [
                                 Rewrite0(
                                     1:1,
                                     2:2,
+                                    Some(
+                                        (
+                                            2:2,
+                                            [
+                                                [
+                                                    Regular(
+                                                        0,
+                                                    ),
+                                                ],
+                                                [
+                                                    Singular(
+                                                        0,
+                                                    ),
+                                                ],
+                                            ],
+                                        ),
+                                    ),
                                 ),
                                 Rewrite0(
                                     1:1,
                                     2:2,
+                                    Some(
+                                        (
+                                            2:2,
+                                            [
+                                                [
+                                                    Regular(
+                                                        0,
+                                                    ),
+                                                ],
+                                                [
+                                                    Singular(
+                                                        0,
+                                                    ),
+                                                ],
+                                            ],
+                                        ),
+                                    ),
                                 ),
                             ],
                         },
@@ -201,10 +660,44 @@ DiagramN {
                                     forward: Rewrite0(
                                         0:0,
                                         1:1,
+                                        Some(
+                                            (
+                                                1:1,
+                                                [
+                                                    [
+                                                        Regular(
+                                                            0,
+                                                        ),
+                                                    ],
+                                                    [
+                                                        Singular(
+                                                            0,
+                                                        ),
+                                                    ],
+                                                ],
+                                            ),
+                                        ),
                                     ),
                                     backward: Rewrite0(
                                         0:0,
                                         1:1,
+                                        Some(
+                                            (
+                                                1:1,
+                                                [
+                                                    [
+                                                        Regular(
+                                                            1,
+                                                        ),
+                                                    ],
+                                                    [
+                                                        Singular(
+                                                            0,
+                                                        ),
+                                                    ],
+                                                ],
+                                            ),
+                                        ),
                                     ),
                                 },
                             ],
@@ -212,16 +705,67 @@ DiagramN {
                                 forward: Rewrite0(
                                     0:0,
                                     2:2,
+                                    Some(
+                                        (
+                                            2:2,
+                                            [
+                                                [
+                                                    Regular(
+                                                        0,
+                                                    ),
+                                                ],
+                                                [
+                                                    Singular(
+                                                        0,
+                                                    ),
+                                                ],
+                                            ],
+                                        ),
+                                    ),
                                 ),
                                 backward: Rewrite0(
                                     0:0,
                                     2:2,
+                                    Some(
+                                        (
+                                            2:2,
+                                            [
+                                                [
+                                                    Regular(
+                                                        1,
+                                                    ),
+                                                ],
+                                                [
+                                                    Singular(
+                                                        0,
+                                                    ),
+                                                ],
+                                            ],
+                                        ),
+                                    ),
                                 ),
                             },
                             slices: [
                                 Rewrite0(
                                     1:1,
                                     2:2,
+                                    Some(
+                                        (
+                                            2:2,
+                                            [
+                                                [
+                                                    Regular(
+                                                        1,
+                                                    ),
+                                                ],
+                                                [
+                                                    Singular(
+                                                        0,
+                                                    ),
+                                                ],
+                                            ],
+                                        ),
+                                    ),
                                 ),
                             ],
                         },

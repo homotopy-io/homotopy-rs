@@ -82,7 +82,7 @@ impl Depths {
             panic!();
         }
 
-        let graph = GraphBuilder::new((), diagram.clone().into())
+        let graph = GraphBuilder::<_, Diagram, Rewrite>::new((), diagram.clone().into())
             .explode(|y, ()| y)
             .unwrap()
             .explode(|x, y| [y, x])

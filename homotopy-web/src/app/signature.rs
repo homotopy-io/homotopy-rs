@@ -1,4 +1,8 @@
 use folder::FolderView;
+use homotopy_core::Generator;
+use im::HashMap;
+use palette::Srgb;
+use web_sys::Element;
 use yew::prelude::*;
 use yew_macro::function_component;
 

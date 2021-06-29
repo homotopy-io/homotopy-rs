@@ -440,6 +440,7 @@ impl ProofState {
             let (boundary_path, point) = BoundaryPath::split(&point);
 
             if boundary_path.is_none() && attach_on_boundary {
+                log::debug!("continue");
                 continue;
             }
 
@@ -465,13 +466,52 @@ impl ProofState {
                     matches.extend(
                         haystack
                             .embeddings(&needle)
-                            .filter(|embedding| contains_point(needle.clone(), &point, embedding))
+                            .filter(|embedding| {
+                                log::debug!(
+                                    "filtering needle {:?}, point {:?}, embedding {:?}",
+                                    needle,
+                                    point,
+                                    embedding
+                                );
+                                contains_point(needle.clone(), &point, embedding)
+                            })
                             .map(|embedding| AttachOption {
                                 embedding: embedding.into_iter().collect(),
                                 boundary_path: boundary_path.clone(),
                                 generator: info.generator,
                             }),
                     );
+                    if true
+                    /* TODO: not every generator is invertible */
+                    {
+                        let inverse_needle = /* invertible */
+                            DiagramN::try_from(info.diagram.clone())
+                                .unwrap()
+                                .inverse()
+                                .unwrap()
+                                .slice(boundary.flip())
+                                .unwrap()
+                        ;
+
+                        matches.extend(
+                            haystack
+                                .embeddings(&inverse_needle)
+                                .filter(|embedding| {
+                                    log::debug!(
+                                        "filtering inverse needle {:?}, point {:?}, embedding {:?}",
+                                        needle,
+                                        point,
+                                        embedding
+                                    );
+                                    contains_point(inverse_needle.clone(), &point, embedding)
+                                })
+                                .map(|embedding| AttachOption {
+                                    embedding: embedding.into_iter().collect(),
+                                    boundary_path: boundary_path.clone(),
+                                    generator: info.generator.inverse(),
+                                }),
+                        );
+                    }
                 }
             }
         }
@@ -490,15 +530,28 @@ impl ProofState {
     fn attach(&mut self, option: &AttachOption) {
         if let Some(workspace) = &mut self.workspace {
             // TODO: Better error handling, although none of these errors should occur
+            let signature = &self.signature;
             let diagram: DiagramN = workspace.diagram.clone().try_into().unwrap();
-            let generator: DiagramN = self
-                .signature
-                .generator_info(option.generator)
-                .unwrap()
-                .diagram
-                .clone()
-                .try_into()
-                .unwrap();
+            let generator: DiagramN = signature.generator_info(option.generator).map_or_else(
+                || {
+                    DiagramN::try_from(
+                        signature
+                            .generator_info(option.generator.inverse())
+                            .expect("inverse not found in signature")
+                            .diagram
+                            .clone(),
+                    )
+                    .expect("conversion to DiagramN failed")
+                    .inverse()
+                    .expect("inversion failed")
+                },
+                |info| {
+                    info.diagram
+                        .clone()
+                        .try_into()
+                        .expect("conversion to DiagramN failed")
+                },
+            );
             let embedding: Vec<_> = option.embedding.iter().copied().collect();
 
             let result = match &option.boundary_path {

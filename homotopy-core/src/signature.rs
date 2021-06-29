@@ -1,4 +1,8 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    convert::TryFrom,
+    num::{NonZeroIsize, NonZeroUsize},
+};
 
 use crate::{diagram::NewDiagramError, Diagram, DiagramN, Generator};
 
@@ -29,7 +33,10 @@ impl SignatureBuilder {
     }
 
     pub fn add_zero(&mut self) -> Diagram {
-        let generator = Generator::new(self.0.len(), 0);
+        let generator = Generator::new(
+            NonZeroIsize::try_from(NonZeroUsize::new(self.0.len() + 1).unwrap()).unwrap(),
+            0,
+        );
         self.0.insert(generator, generator.into());
         generator.into()
     }
@@ -41,7 +48,10 @@ impl SignatureBuilder {
     ) -> Result<DiagramN, NewDiagramError> {
         let source: Diagram = source.into();
         let target: Diagram = target.into();
-        let generator = Generator::new(self.0.len(), source.dimension() + 1);
+        let generator = Generator::new(
+            NonZeroIsize::try_from(NonZeroUsize::new(self.0.len() + 1).unwrap()).unwrap(),
+            source.dimension() + 1,
+        );
         let diagram = DiagramN::new(generator, source, target)?;
         self.0.insert(generator, diagram.clone().into());
         Ok(diagram)
