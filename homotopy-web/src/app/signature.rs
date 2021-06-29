@@ -182,7 +182,7 @@ impl SignatureView {
                 >
                     <Icon name={"palette"} size={IconSize::Icon18} />
                 </span>
-                <input 
+                <input
                     type="color"
                     value= {
                         log::info!("value {:?}", info.color);
