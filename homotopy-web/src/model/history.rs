@@ -1,9 +1,14 @@
-mod tree;
-use super::Proof;
+use std::fmt;
+use std::ops::{Deref, DerefMut};
+
 use instant::Instant;
-use std::{cell::Ref, fmt};
 use thiserror::Error;
-use tree::{NodeRef, Tree};
+
+use super::proof::ProofState;
+
+mod tree;
+
+use self::tree::{Node, NodeData, Tree};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
@@ -18,7 +23,7 @@ pub enum Direction {
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Snapshot {
-    proof: Proof,
+    proof: ProofState,
     timestamp: instant::Instant,
     action: Option<super::proof::Action>,
 }
@@ -33,6 +38,32 @@ impl Default for Snapshot {
     }
 }
 
+pub type Proof = NodeData<Snapshot>;
+
+impl Proof {
+    pub fn can_undo(&self) -> bool {
+        self.parent().is_some()
+    }
+
+    pub fn can_redo(&self) -> bool {
+        !self.is_empty()
+    }
+}
+
+impl Deref for Proof {
+    type Target = ProofState;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner().proof
+    }
+}
+
+impl DerefMut for Proof {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner_mut().proof
+    }
+}
+
 impl fmt::Debug for Snapshot {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "(T{:?}, {:?})", self.timestamp, self.action)
@@ -40,7 +71,7 @@ impl fmt::Debug for Snapshot {
 }
 
 impl Snapshot {
-    fn new(action: Option<super::proof::Action>, proof: Proof) -> Self {
+    fn new(action: Option<super::proof::Action>, proof: ProofState) -> Self {
         Self {
             proof,
             action,
@@ -55,15 +86,15 @@ impl Snapshot {
 
 #[derive(Debug, Clone)]
 pub struct History {
-    start: Tree<Snapshot>,
-    current: NodeRef<Snapshot>,
+    snapshots: Tree<Snapshot>,
+    current: Node,
 }
 
 impl Default for History {
     fn default() -> Self {
-        let start: Tree<Snapshot> = Default::default();
-        let current = start.root.clone();
-        Self { start, current }
+        let snapshots: Tree<Snapshot> = Default::default();
+        let current = snapshots.root();
+        Self { snapshots, current }
     }
 }
 
@@ -76,62 +107,50 @@ pub enum HistoryError {
 }
 
 impl History {
-    pub fn current(&self) -> Ref<Proof> {
-        Ref::map(self.current.borrow(), |r| &r.data.proof)
+    #[inline]
+    pub fn with_proof<F, U>(&self, f: F) -> U
+    where
+        F: Fn(&Proof) -> U,
+    {
+        self.snapshots.with(self.current, f)
     }
 
     pub fn add(&mut self, action: super::proof::Action, proof: Proof) {
         // check if this action has been performed at this state previously
-        let existing = self
-            .current
-            .borrow()
-            .children
-            .iter()
-            .cloned()
-            .find(|c| c.borrow().data.action.as_ref() == Some(&action));
+        let existing = self.with_proof(|n| {
+            n.children().find(|id| {
+                self.snapshots
+                    .with(*id, |n| n.inner().action.as_ref() == Some(&action))
+            })
+        });
+
         if let Some(child) = existing {
-            {
-                // update timestamp and ensure the action was deterministic
-                let s = &mut child.borrow_mut().data;
-                assert_eq!(proof, s.proof);
-                s.touch();
-            }
+            // update timestamp and ensure the action was deterministic
+            self.snapshots.with_mut(child, |n| {
+                assert_eq!(proof.inner().proof, n.inner().proof);
+                n.inner_mut().touch();
+            });
             self.current = child;
         } else {
             // fresh action
-            Tree::from(self.current.clone()).push(Snapshot::new(Some(action), proof));
-            let child = self.current.borrow().children.last().unwrap().clone();
+            let child = self.snapshots.push_onto(
+                self.current,
+                Snapshot::new(Some(action), proof.into_inner().proof),
+            );
             self.current = child;
         }
     }
 
-    pub fn can_undo(&self) -> bool {
-        self.current.borrow().parent.strong_count() > 0
-    }
-
     pub fn undo(&mut self) -> Result<(), HistoryError> {
         let prev = self
-            .current
-            .borrow()
-            .parent
-            .upgrade()
+            .with_proof(NodeData::parent)
             .ok_or(HistoryError::Undo)?;
         self.current = prev;
         Ok(())
     }
 
-    pub fn can_redo(&self) -> bool {
-        !self.current.borrow().children.is_empty()
-    }
-
     pub fn redo(&mut self) -> Result<(), HistoryError> {
-        let next = self
-            .current
-            .borrow()
-            .children
-            .last()
-            .cloned()
-            .ok_or(HistoryError::Redo)?;
+        let next = self.with_proof(NodeData::last).ok_or(HistoryError::Redo)?;
         self.current = next;
         Ok(())
     }

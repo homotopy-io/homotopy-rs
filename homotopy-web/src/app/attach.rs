@@ -34,26 +34,8 @@ impl Component for AttachView {
     }
 
     fn view(&self) -> Html {
-        let options: Html = self
-            .props
-            .options
-            .iter()
-            .map(|option| self.view_option(option))
-            .collect();
-
         html! {
-            <aside class="attach drawer">
-                <div class="drawer__header">
-                    <span class="drawer__title">
-                        {"Attach"}
-                    </span>
-                </div>
-                <div class="drawer__content">
-                    <ul class="attach__options">
-                        {options}
-                    </ul>
-                </div>
-            </aside>
+            { for self.props.options.iter().map(|option| self.view_option(option)) }
         }
     }
 }

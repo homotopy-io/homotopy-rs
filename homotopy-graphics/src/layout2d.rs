@@ -142,7 +142,7 @@ impl Solver {
                 .collect(),
         );
 
-        let constraints: Vec<_> = Constraint::build(&diagram)
+        let constraints: Vec<_> = Constraint::build(diagram)
             .into_iter()
             .filter(|c| !c.0.is_empty())
             .collect();

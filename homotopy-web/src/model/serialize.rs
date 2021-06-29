@@ -8,7 +8,7 @@ use wasm_bindgen::JsCast;
 pub fn generate_download(name: &str, data: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
     let val: js_sys::Uint8Array = data.into();
     let mut options = web_sys::BlobPropertyBag::new();
-    options.type_("application/gzip");
+    options.type_("application/msgpack");
     let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(
         &js_sys::Array::of1(&val.into()).into(),
         &options,
@@ -23,7 +23,7 @@ pub fn generate_download(name: &str, data: &[u8]) -> Result<(), wasm_bindgen::Js
         .ok_or("failed to create anchor")?;
     a.set_attribute("href", &url)?;
     a.set_attribute("download", &format!("{}.hom", &name))?;
-    body.append_child(&a)?;
+    body.append_child(a)?;
     a.click();
     a.remove();
     web_sys::Url::revoke_object_url(&url)
