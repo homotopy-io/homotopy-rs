@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1624622892676,
+  "lastUpdate": 1625159721200,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -3479,6 +3479,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 27.507,
             "range": "+/- 0.012",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "akvile.val1206@gmail.com",
+            "name": "Akvilė Valentukonytė",
+            "username": "Akvile1206"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "24ead89ef18056d38b0ec72911f848897ff96853",
+          "message": "Merge pull request #106 from homotopy-io/color\n\nAdded a simple color picker",
+          "timestamp": "2021-07-01T18:06:49+01:00",
+          "tree_id": "aa97a372690c0ec5b4141c62a17899b13179accf",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/24ead89ef18056d38b0ec72911f848897ff96853"
+        },
+        "date": 1625159717954,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 10.881,
+            "range": "+/- 0.014",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 11.085,
+            "range": "+/- 0.011",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 82.86,
+            "range": "+/- 0.065",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 97.797,
+            "range": "+/- 0.052",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 80.282,
+            "range": "+/- 0.038",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 111.6,
+            "range": "+/- 0.030",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 71.832,
+            "range": "+/- 0.031",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 484.03,
+            "range": "+/- 0.250",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 1.9085,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 5.8438,
+            "range": "+/- 0.016",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 15.61,
+            "range": "+/- 0.005",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 38.454,
+            "range": "+/- 0.144",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 91.863,
+            "range": "+/- 0.135",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 213.43,
+            "range": "+/- 0.750",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 6.0011,
+            "range": "+/- 0.004",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 31.229,
+            "range": "+/- 0.015",
             "unit": "us"
           }
         ]
