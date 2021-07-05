@@ -52,29 +52,29 @@ impl<'ctx> Frame<'ctx> {
     }
 
     pub fn render(self) {
-        self.ctx.webgl_ctx.clear_color(0.0, 0.0, 0.0, 1.0);
+        // TODO(@doctorn) this should be customisable
+        self.ctx.webgl_ctx.clear_color(0.0, 0.0, 1.0, 1.0);
         self.ctx.webgl_ctx.clear(
             WebGlRenderingContext::COLOR_BUFFER_BIT | WebGlRenderingContext::DEPTH_BUFFER_BIT,
         );
 
-        for draw in self.draws.into_iter() {
-            let bound = self.ctx.bind(&self.ctx.vertex_buffers[draw.vertex_buffer]);
+        for draw in self.draws.iter() {
             if let Some(program) = draw.program {
                 self.ctx
                     .webgl_ctx
                     .use_program(Some(self.ctx.programs[program].underlying_program()));
             }
 
-            self.ctx.webgl_ctx.enable_vertex_attrib_array(0);
-            self.ctx.webgl_ctx.draw_arrays(
-                WebGlRenderingContext::TRIANGLES,
-                0,
-                self.ctx.vertex_buffers[draw.vertex_buffer].len() as i32,
-            );
-
+            self.ctx.bind(&self.ctx.vertex_buffers[draw.vertex_buffer], |_| {
+                self.ctx.webgl_ctx.enable_vertex_attrib_array(0);
+                self.ctx.webgl_ctx.draw_arrays(
+                    WebGlRenderingContext::TRIANGLES,
+                    0,
+                    self.ctx.vertex_buffers[draw.vertex_buffer].len() as i32,
+                );
+            });
+            
             self.ctx.webgl_ctx.use_program(None);
-            drop(bound);
-
             self.ctx.webgl_ctx.flush();
         }
     }

@@ -16,6 +16,10 @@ mod vertex_buffer;
 use self::shader::{Program, ProgramData, Shader, ShaderData};
 use self::vertex_buffer::{VertexBuffer, VertexBufferData};
 
+pub mod buffer {
+    pub use super::vertex_buffer::VertexBuffer;
+}
+
 #[derive(Error, Debug)]
 pub enum GraphicsError {
     #[error("failed to attach to WebGL context")]

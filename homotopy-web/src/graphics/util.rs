@@ -36,13 +36,20 @@ where
     }
 
     pub(super) fn buffer_data(&self, data: &[Coord]) {
-        let vert_array = unsafe { js_sys::Float32Array::view(data) };
+        // TODO(@doctorn) write safety note
+        //
+        // (just have to be careful we don't allocate memory between `Float32Array::view` and
+        // `buffer_data_with_array_buffer_view`)
+        unsafe {
+            let vert_array = js_sys::Float32Array::view(data);
 
-        self.ctx.webgl_ctx.buffer_data_with_array_buffer_view(
-            T::BUFFER_KIND as u32,
-            &vert_array,
-            WebGlRenderingContext::STATIC_DRAW,
-        );
+            self.ctx.webgl_ctx.buffer_data_with_array_buffer_view(
+                T::BUFFER_KIND as u32,
+                &vert_array,
+                // TODO(@doctorn) investigate other options
+                WebGlRenderingContext::STATIC_DRAW,
+            );
+        }
     }
 }
 
@@ -70,10 +77,12 @@ where
 
 impl GraphicsCtx {
     #[inline]
-    pub fn bind<'a, T>(&'a self, buffer: &'a T) -> BoundBuffer<'a, T>
+    pub fn bind<'a, T, U, F>(&'a self, buffer: &'a T, f: F) -> U
     where
         T: BufferObject,
+        F: FnOnce(&BoundBuffer<'a, T>) -> U,
     {
-        BoundBuffer::bind(self, buffer)
+        let bound = BoundBuffer::bind(self, buffer);
+        f(&bound)
     }
 }

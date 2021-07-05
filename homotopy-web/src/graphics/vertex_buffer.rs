@@ -41,19 +41,19 @@ impl GraphicsCtx {
             len: data.len() / 3,
         };
 
-        let bound = self.bind(&vertex_buffer).buffer_data(data);
+        self.bind(&vertex_buffer, |bound| {
+            bound.buffer_data(data);
 
-        // TODO(@doctorn) this shouldn't be done here
-        self.webgl_ctx.vertex_attrib_pointer_with_i32(
-            0,
-            3,
-            WebGlRenderingContext::FLOAT,
-            false,
-            0,
-            0,
-        );
-
-        drop(bound);
+            // TODO(@doctorn) this shouldn't be done here
+            self.webgl_ctx.vertex_attrib_pointer_with_i32(
+                0,
+                3,
+                WebGlRenderingContext::FLOAT,
+                false,
+                0,
+                0,
+            );
+        });
 
         Ok(self.vertex_buffers.push(vertex_buffer))
     }

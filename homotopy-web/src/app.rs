@@ -9,15 +9,13 @@ use crate::model;
 
 mod attach;
 mod diagram2d;
+mod diagram3d;
 mod project;
 mod settings;
 mod sidebar;
 mod signature;
 mod signature_stylesheet;
 mod workspace;
-
-// TODO(@doctorn) remove
-mod playground;
 
 use settings::AppSettings;
 use sidebar::Sidebar;
@@ -118,9 +116,13 @@ impl Component for App {
             }
             None => {
                 // TODO: Show onboarding info if workspace and signature is empty
+                // html! {
+                //    <content class="workspace workspace--empty">
+                //    </content>
+                // }
+                // TODO(@doctorn) remove
                 html! {
-                    <content class="workspace workspace--empty">
-                    </content>
+                    <diagram3d::Diagram3D />
                 }
             }
         };

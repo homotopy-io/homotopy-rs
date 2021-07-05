@@ -1,7 +1,6 @@
 use yew::callback::Callback;
 use yew::prelude::*;
 
-use crate::app::playground::GraphicsPlayground;
 use crate::app::project::ProjectView;
 use crate::app::settings::SettingsView;
 use crate::app::signature::SignatureView;
@@ -94,16 +93,6 @@ declare_sidebar_drawers! {
                 signature={proof.signature().clone()}
                 dispatch={dispatch.reform(model::Action::Proof)}
             />
-        },
-    }
-
-    // TODO(@doctorn) remove
-    DRAWER_GRAPHICS {
-        "Graphics Test",
-        "graphics",
-        "view_in_ar",
-        |_, _| html! {
-            <GraphicsPlayground />
         },
     }
 }
