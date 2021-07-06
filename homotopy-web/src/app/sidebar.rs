@@ -89,7 +89,8 @@ pub struct Sidebar {
     props: SidebarProps,
     link: ComponentLink<Self>,
     open: Option<drawers::NavDrawer>,
-    _bindings: Option<Closure<dyn FnMut(KeyboardEvent)>>,
+    // Hold onto bindings so that they are dropped when the app is destroyed
+    bindings: Option<Closure<dyn FnMut(KeyboardEvent)>>,
 }
 
 impl Component for Sidebar {
@@ -101,7 +102,7 @@ impl Component for Sidebar {
             props,
             link,
             open: None,
-            _bindings: None,
+            bindings: None,
         };
         sidebar.install_keyboard_shortcuts();
         sidebar
@@ -208,6 +209,6 @@ impl Sidebar {
             .add_event_listener_with_callback("keyup", bindings.as_ref().unchecked_ref())
             .unwrap();
 
-        self._bindings = Some(bindings);
+        self.bindings = Some(bindings);
     }
 }
