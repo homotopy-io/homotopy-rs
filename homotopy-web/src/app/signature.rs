@@ -31,6 +31,7 @@ pub enum Message {
     Color(Generator),
     Rename(Generator, String),
     Recolor(Generator, Color),
+    Noop,
 }
 
 pub struct SignatureView {
@@ -93,6 +94,9 @@ impl Component for SignatureView {
             }
             Message::Recolor(generator, color) => {
                 self.recolors.insert(generator, color);
+                return false;
+            }
+            Message::Noop => {
                 return false;
             }
         }
@@ -188,7 +192,10 @@ impl SignatureView {
                     class="signature__generator"
                 >
                     <span
-                        style={format!("background-color:{}; height:32px", self.recolors.get(&generator).map_or(&info.color, |color| color))}
+                        style={format!(
+                            "background-color:{}; height:32px",
+                            self.recolors.get(&generator).map_or(&info.color, |color| color),
+                        )}
                         ref=color_ref.clone()
                     >
                     <span style="color:black"
@@ -198,36 +205,7 @@ impl SignatureView {
                         <Icon name={"done"} size={IconSize::Icon18} />
                     </span>
                     </span>
-                    <input
-                        type="text"
-                        class="signature__generator-name-input"
-                        value={
-                            self.renames.get(&generator).map_or(&info.name, |name| name)
-                        }
-                        oninput=self.link.callback(move |e: InputData| {
-                            Message::Rename(generator, e.value)
-                        })
-                        onkeyup=Callback::from(move |e: KeyboardEvent| {
-                            e.stop_propagation();
-                        })
-                    />
-                    <span class="signature__generator-dimension">
-                        {info.diagram.dimension()}
-                    </span>
-                    <span
-                        class="signature__generator-edit"
-                        onclick=dispatch.reform(move |_| Action::RemoveGenerator(generator))
-                    >
-                        <Icon name={"delete"} size={IconSize::Icon18} />
-                    </span>
-                    <span
-                        class="signature__generator-edit"
-                        onclick=self.link.callback(move |_| {
-                            Message::Done(generator)
-                        })
-                    >
-                        <Icon name={"done"} size={IconSize::Icon18} />
-                    </span>
+                    {self.edit_generator_name(generator, info)}
                 </li>
                 {buttons}
                 <li
@@ -257,8 +235,6 @@ impl SignatureView {
     }
 
     fn edit_generator(&self, generator: Generator, info: &GeneratorInfo) -> Html {
-        let dispatch = &self.props.dispatch;
-
         html! {
             <li
                 class="signature__generator"
@@ -269,6 +245,16 @@ impl SignatureView {
                 >
                     <Icon name={"palette"} size={IconSize::Icon18} />
                 </span>
+                {self.edit_generator_name(generator, info)}
+            </li>
+        }
+    }
+
+    fn edit_generator_name(&self, generator: Generator, info: &GeneratorInfo) -> Html {
+        let dispatch = &self.props.dispatch;
+
+        html! {
+            <>
                 <input
                     type="text"
                     class="signature__generator-name-input"
@@ -278,8 +264,13 @@ impl SignatureView {
                     oninput=self.link.callback(move |e: InputData| {
                         Message::Rename(generator, e.value)
                     })
-                    onkeyup=Callback::from(move |e: KeyboardEvent| {
+                    onkeyup=self.link.callback(move |e: KeyboardEvent| {
                         e.stop_propagation();
+                        if e.key().to_ascii_lowercase() == "enter" {
+                            Message::Done(generator)
+                        } else {
+                            Message::Noop
+                        }
                     })
                 />
                 <span class="signature__generator-dimension">
@@ -299,7 +290,7 @@ impl SignatureView {
                 >
                     <Icon name={"done"} size={IconSize::Icon18} />
                 </span>
-            </li>
+            </>
         }
     }
 
