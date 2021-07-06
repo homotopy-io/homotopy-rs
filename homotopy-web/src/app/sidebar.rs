@@ -185,24 +185,23 @@ impl Sidebar {
         use homotopy_core::Direction;
 
         let dispatch = self.link.callback(SidebarMsg::Dispatch);
-        let bindings =
-            Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
-                let key = event.key().to_ascii_lowercase();
-                let button = TOOL_BUTTONS.iter().find(|button| match button.shortcut() {
-                    Some(shortcut) => shortcut.to_string() == key,
-                    None => false,
-                });
+        let bindings = Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
+            let key = event.key().to_ascii_lowercase();
+            let button = TOOL_BUTTONS.iter().find(|button| match button.shortcut() {
+                Some(shortcut) => shortcut.to_string() == key,
+                None => false,
+            });
 
-                if let Some(button) = button {
-                    dispatch.emit(button.action());
-                } else if key == "arrowup" {
-                    dispatch.emit(model::proof::Action::SwitchSlice(Direction::Forward).into());
-                } else if key == "arrowdown" {
-                    dispatch.emit(model::proof::Action::SwitchSlice(Direction::Backward).into());
-                } else if key == "arrowleft" {
-                    dispatch.emit(model::proof::Action::AscendSlice(1).into());
-                }
-            }) as Box<dyn FnMut(_)>);
+            if let Some(button) = button {
+                dispatch.emit(button.action());
+            } else if key == "arrowup" {
+                dispatch.emit(model::proof::Action::SwitchSlice(Direction::Forward).into());
+            } else if key == "arrowdown" {
+                dispatch.emit(model::proof::Action::SwitchSlice(Direction::Backward).into());
+            } else if key == "arrowleft" {
+                dispatch.emit(model::proof::Action::AscendSlice(1).into());
+            }
+        }) as Box<dyn FnMut(_)>);
 
         web_sys::window()
             .unwrap()
