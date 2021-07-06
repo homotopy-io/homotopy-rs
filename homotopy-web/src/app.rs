@@ -1,6 +1,3 @@
-use homotopy_core::Direction;
-
-use wasm_bindgen::JsCast;
 use yew::agent::Dispatcher;
 use yew::prelude::*;
 
@@ -20,7 +17,7 @@ mod util;
 mod workspace;
 
 use settings::AppSettings;
-use sidebar::{Sidebar, TOOL_BUTTONS};
+use sidebar::Sidebar;
 use signature_stylesheet::SignatureStylesheet;
 use workspace::WorkspaceView;
 
@@ -52,10 +49,6 @@ impl Component for App {
         let mut signature_stylesheet = SignatureStylesheet::new("generator");
         signature_stylesheet.update(state.with_proof(|p| p.signature().clone()));
         signature_stylesheet.mount();
-
-        // Install the keyboard listener for shortcuts
-        // TODO: Remove these when App is destroyed.
-        Self::install_keyboard_shortcuts(dispatch.clone());
 
         Self {
             dispatch,
@@ -134,36 +127,6 @@ impl Component for App {
 
     fn destroy(&mut self) {
         self.signature_stylesheet.unmount();
-    }
-}
-
-impl App {
-    fn install_keyboard_shortcuts(dispatch: Callback<model::Action>) {
-        let onkeyup =
-            wasm_bindgen::closure::Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
-                let key = event.key().to_ascii_lowercase();
-                let button = TOOL_BUTTONS.iter().find(|button| match button.shortcut() {
-                    Some(shortcut) => shortcut.to_string() == key,
-                    None => false,
-                });
-
-                if let Some(button) = button {
-                    dispatch.emit(button.action());
-                } else if key == "arrowup" {
-                    dispatch.emit(model::proof::Action::SwitchSlice(Direction::Forward).into());
-                } else if key == "arrowdown" {
-                    dispatch.emit(model::proof::Action::SwitchSlice(Direction::Backward).into());
-                } else if key == "arrowleft" {
-                    dispatch.emit(model::proof::Action::AscendSlice(1).into());
-                }
-            }) as Box<dyn FnMut(_)>);
-
-        web_sys::window()
-            .unwrap()
-            .add_event_listener_with_callback("keyup", onkeyup.as_ref().unchecked_ref())
-            .unwrap();
-
-        onkeyup.forget();
     }
 }
 

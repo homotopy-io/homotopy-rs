@@ -1,6 +1,10 @@
 use yew::prelude::*;
 use yew_functional::function_component;
 
+use wasm_bindgen::closure::Closure;
+
+use wasm_bindgen::JsCast;
+
 use crate::app::attach::AttachView;
 use crate::components::icon::{Icon, IconSize};
 use crate::components::Visibility;
@@ -85,6 +89,8 @@ pub struct Sidebar {
     props: SidebarProps,
     link: ComponentLink<Self>,
     open: Option<drawers::NavDrawer>,
+    // Hold onto bindings so that they are dropped when the app is destroyed
+    bindings: Option<Closure<dyn FnMut(KeyboardEvent)>>,
 }
 
 impl Component for Sidebar {
@@ -92,11 +98,14 @@ impl Component for Sidebar {
     type Message = SidebarMsg;
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        Self {
+        let mut sidebar = Self {
             props,
             link,
             open: None,
-        }
+            bindings: None,
+        };
+        sidebar.install_keyboard_shortcuts();
+        sidebar
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
@@ -171,5 +180,35 @@ impl Sidebar {
         self.open
             .map(|drawer| drawer.view(dispatch, &self.props.proof))
             .unwrap_or_default()
+    }
+
+    fn install_keyboard_shortcuts(&mut self) {
+        use homotopy_core::Direction;
+
+        let dispatch = self.link.callback(SidebarMsg::Dispatch);
+        let bindings = Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
+            let key = event.key().to_ascii_lowercase();
+            let button = TOOL_BUTTONS.iter().find(|button| match button.shortcut() {
+                Some(shortcut) => shortcut.to_string() == key,
+                None => false,
+            });
+
+            if let Some(button) = button {
+                dispatch.emit(button.action());
+            } else if key == "arrowup" {
+                dispatch.emit(model::proof::Action::SwitchSlice(Direction::Forward).into());
+            } else if key == "arrowdown" {
+                dispatch.emit(model::proof::Action::SwitchSlice(Direction::Backward).into());
+            } else if key == "arrowleft" {
+                dispatch.emit(model::proof::Action::AscendSlice(1).into());
+            }
+        }) as Box<dyn FnMut(_)>);
+
+        web_sys::window()
+            .unwrap()
+            .add_event_listener_with_callback("keyup", bindings.as_ref().unchecked_ref())
+            .unwrap();
+
+        self.bindings = Some(bindings);
     }
 }
