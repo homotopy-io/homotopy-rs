@@ -1,9 +1,10 @@
 use std::ops::Deref;
+use std::slice;
 
 use js_sys;
 use web_sys::{WebGlBuffer, WebGlRenderingContext};
 
-use super::{Coord, GraphicsCtx};
+use super::{geom, GraphicsCtx};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum BufferKind {
@@ -35,13 +36,14 @@ where
         Self { ctx, buffer }
     }
 
-    pub(super) fn buffer_data(&self, data: &[Coord]) {
+    pub(super) fn buffer_data(&self, data: &[geom::Vertex]) {
         // TODO(@doctorn) write safety note
         //
         // (just have to be careful we don't allocate memory between `Float32Array::view` and
         // `buffer_data_with_array_buffer_view`)
         unsafe {
-            let vert_array = js_sys::Float32Array::view(data);
+            let f32_slice = slice::from_raw_parts(data.as_ptr() as *const f32, data.len() * 3);
+            let vert_array = js_sys::Float32Array::view(f32_slice);
 
             self.ctx.webgl_ctx.buffer_data_with_array_buffer_view(
                 T::BUFFER_KIND as u32,

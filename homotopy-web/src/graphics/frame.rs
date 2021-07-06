@@ -65,15 +65,16 @@ impl<'ctx> Frame<'ctx> {
                     .use_program(Some(self.ctx.programs[program].underlying_program()));
             }
 
-            self.ctx.bind(&self.ctx.vertex_buffers[draw.vertex_buffer], |_| {
-                self.ctx.webgl_ctx.enable_vertex_attrib_array(0);
-                self.ctx.webgl_ctx.draw_arrays(
-                    WebGlRenderingContext::TRIANGLES,
-                    0,
-                    self.ctx.vertex_buffers[draw.vertex_buffer].len() as i32,
-                );
-            });
-            
+            self.ctx
+                .bind(&self.ctx.vertex_buffers[draw.vertex_buffer], |_| {
+                    self.ctx.webgl_ctx.enable_vertex_attrib_array(0);
+                    self.ctx.webgl_ctx.draw_arrays(
+                        WebGlRenderingContext::TRIANGLES,
+                        0,
+                        self.ctx.vertex_buffers[draw.vertex_buffer].len() as i32,
+                    );
+                });
+
             self.ctx.webgl_ctx.use_program(None);
             self.ctx.webgl_ctx.flush();
         }

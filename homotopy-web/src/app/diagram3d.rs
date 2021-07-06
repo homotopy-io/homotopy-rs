@@ -3,7 +3,7 @@ use yew_services::render::RenderTask;
 use yew_services::RenderService;
 
 use crate::graphics::shader::ShaderKind;
-use crate::graphics::{buffer, shader, GraphicsCtx};
+use crate::graphics::{buffer, geom, shader, GraphicsCtx};
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct Props3D {}
@@ -48,7 +48,7 @@ impl Component for Diagram3D {
 
     fn view(&self) -> Html {
         html! {
-            <canvas width="100%" height="100%" ref={self.canvas.clone()}></canvas>
+            <canvas ref={self.canvas.clone()}></canvas>
         }
     }
 
@@ -71,7 +71,11 @@ impl Component for Diagram3D {
         let mut renderer = Renderer {
             program: ctx.link_program(vert_shader, frag_shader).unwrap(),
             triangle: ctx
-                .mk_vertex_buffer(&[-0.7, -0.7, 0.0, 0.7, -0.7, 0.0, 0.0, 0.7, 0.0])
+                .mk_vertex_buffer(&[
+                    geom::Vertex::new(-0.7, -0.7, 0.0),
+                    geom::Vertex::new(0.7, -0.7, 0.0),
+                    geom::Vertex::new(0.0, 0.7, 0.0),
+                ])
                 .unwrap(),
             ctx,
         };

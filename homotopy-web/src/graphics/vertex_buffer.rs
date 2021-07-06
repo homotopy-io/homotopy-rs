@@ -3,7 +3,7 @@ use homotopy_core::declare_idx;
 use web_sys::{WebGlBuffer, WebGlRenderingContext};
 
 use super::util::{BufferKind, BufferObject};
-use super::{Coord, GraphicsCtx, GraphicsError, Result};
+use super::{geom, GraphicsCtx, GraphicsError, Result};
 
 declare_idx! {
     pub struct VertexBuffer = usize;
@@ -31,14 +31,14 @@ impl BufferObject for VertexBufferData {
 }
 
 impl GraphicsCtx {
-    pub fn mk_vertex_buffer(&mut self, data: &[Coord]) -> Result<VertexBuffer> {
+    pub fn mk_vertex_buffer(&mut self, data: &[geom::Vertex]) -> Result<VertexBuffer> {
         let webgl_buffer = self
             .webgl_ctx
             .create_buffer()
             .ok_or(GraphicsError::BufferAllocate)?;
         let vertex_buffer = VertexBufferData {
             webgl_buffer,
-            len: data.len() / 3,
+            len: data.len(),
         };
 
         self.bind(&vertex_buffer, |bound| {

@@ -10,6 +10,7 @@ use homotopy_core::idx::IdxVec;
 mod util;
 
 pub mod frame;
+pub mod geom;
 pub mod shader;
 mod vertex_buffer;
 
@@ -31,8 +32,6 @@ pub enum GraphicsError {
     #[error("failed to link shader program: {0}")]
     ProgramLink(String),
 }
-
-pub type Coord = f32;
 
 pub type Result<T> = std::result::Result<T, GraphicsError>;
 
