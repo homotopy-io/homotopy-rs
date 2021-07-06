@@ -147,7 +147,6 @@ impl Component for SignatureView {
 
 impl SignatureView {
     fn color_generator(&self, generator: Generator, info: &GeneratorInfo) -> Html {
-        let dispatch = &self.props.dispatch;
         let color_ref = NodeRef::default();
         let color_clone = color_ref.clone();
         let picker_ref = NodeRef::default();
