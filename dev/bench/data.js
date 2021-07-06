@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1625159721200,
+  "lastUpdate": 1625597213297,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -3599,6 +3599,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 31.229,
             "range": "+/- 0.015",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "me@nathancorbyn.com",
+            "name": "Nathan Corbyn",
+            "username": "doctorn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "91dc3c8590296ea6121e715ecee9dbdf26c86d7f",
+          "message": "Fix #42 & #105 (#111)\n\n* Make enter complete rename\r\n\r\n* Remove unused variables\r\n\r\n* Make sidebar manage shortcuts\r\n\r\n* `cargo fmt`\r\n\r\n* Placate `clippy`",
+          "timestamp": "2021-07-06T19:38:29+01:00",
+          "tree_id": "a1cfaf9f375dd8278ad0166b59d46ea76e90c22b",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/91dc3c8590296ea6121e715ecee9dbdf26c86d7f"
+        },
+        "date": 1625597209796,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 10.872,
+            "range": "+/- 0.013",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 11.038,
+            "range": "+/- 0.026",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 82.707,
+            "range": "+/- 0.030",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 98.301,
+            "range": "+/- 0.042",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 80.219,
+            "range": "+/- 0.043",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 111.78,
+            "range": "+/- 0.030",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 72.075,
+            "range": "+/- 0.020",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 484.84,
+            "range": "+/- 0.310",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 1.9145,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 5.8383,
+            "range": "+/- 0.005",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 15.628,
+            "range": "+/- 0.031",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 38.508,
+            "range": "+/- 0.063",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 91.099,
+            "range": "+/- 0.283",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 212.64,
+            "range": "+/- 0.900",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 5.9835,
+            "range": "+/- 0.002",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 31.154,
+            "range": "+/- 0.012",
             "unit": "us"
           }
         ]
