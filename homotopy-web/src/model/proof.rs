@@ -757,11 +757,11 @@ impl ProofState {
                     Diagram::DiagramN(d) if d.slice(*index).is_some() => {
                         diagram = d.slice(*index).unwrap();
                     }
-                    _ =>  {
+                    _ => {
                         workspace.path = workspace.path.take(i);
                         return;
-                    }, 
-                } 
+                    }
+                }
             }
         }
     }
