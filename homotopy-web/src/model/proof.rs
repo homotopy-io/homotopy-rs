@@ -667,7 +667,10 @@ impl ProofState {
                 workspace.diagram = expanded.target();
             }
 
-            // TODO: Update path appropriately
+            // FIXME(@doctorn) this is a stand-in for a more sophisticated approach. Ideally, we
+            // would have the path updated such that the image of the slice after the expansion is
+            // visible. For now, we just step back up until we find a valid path.
+            self.unwind_to_valid_path();
         }
 
         Ok(())
@@ -722,7 +725,8 @@ impl ProofState {
                 workspace.diagram = contractum.target();
             }
 
-            // TODO: Update path appropriately.
+            // FIXME(@doctorn) see above
+            self.unwind_to_valid_path();
         }
 
         Ok(())
@@ -742,6 +746,24 @@ impl ProofState {
 
     pub fn render_style() -> RenderStyle {
         RenderStyle::default()
+    }
+
+    pub fn unwind_to_valid_path(&mut self) {
+        if let Some(workspace) = &mut self.workspace {
+            let mut diagram = workspace.diagram.clone();
+
+            for (i, index) in workspace.path.iter().enumerate() {
+                match diagram {
+                    Diagram::DiagramN(d) if d.slice(*index).is_some() => {
+                        diagram = d.slice(*index).unwrap();
+                    }
+                    _ => {
+                        workspace.path = workspace.path.take(i);
+                        return;
+                    }
+                }
+            }
+        }
     }
 }
 
