@@ -59,6 +59,7 @@ arrayvec = "0.5"
 [dependencies.web-sys]
 version = "0.3.22"
 features = [
+  "BeforeUnloadEvent",
   "console",
   "Element",
   "DomRect",

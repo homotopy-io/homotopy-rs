@@ -1,6 +1,8 @@
 use yew::agent::Dispatcher;
 use yew::prelude::*;
 
+use wasm_bindgen::closure::Closure;
+
 use crate::components::icon::{Icon, IconSize};
 use crate::components::toast::{Toast, ToastAgent, Toaster};
 use crate::model;
@@ -35,6 +37,7 @@ pub struct App {
     signature_stylesheet: SignatureStylesheet,
     toaster: Dispatcher<ToastAgent>,
     _settings: AppSettings,
+    before_unload: Option<Closure<dyn FnMut(web_sys::BeforeUnloadEvent)>>,
 }
 
 impl Component for App {
@@ -50,13 +53,16 @@ impl Component for App {
         signature_stylesheet.update(state.with_proof(|p| p.signature().clone()));
         signature_stylesheet.mount();
 
-        Self {
+        let mut app = Self {
             dispatch,
             state,
             signature_stylesheet,
             toaster: ToastAgent::dispatcher(),
             _settings: AppSettings::connect(Callback::noop()),
-        }
+            before_unload: None,
+        };
+        app.install_unload_hook();
+        app
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
@@ -127,6 +133,22 @@ impl Component for App {
 
     fn destroy(&mut self) {
         self.signature_stylesheet.unmount();
+    }
+}
+
+impl App {
+    fn install_unload_hook(&mut self) {
+        use wasm_bindgen::JsCast;
+
+        let before_unload = Closure::wrap(Box::new(move |event: web_sys::BeforeUnloadEvent| {
+            event.set_return_value("Are you sure you want to leave? Unsaved changes will be lost!");
+        }) as Box<dyn FnMut(_)>);
+
+        web_sys::window()
+            .unwrap()
+            .set_onbeforeunload(Some(before_unload.as_ref().unchecked_ref()));
+
+        self.before_unload = Some(before_unload);
     }
 }
 
