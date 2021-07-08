@@ -1,7 +1,7 @@
-use web_sys::WebGlRenderingContext;
+use web_sys::WebGl2RenderingContext;
 
 use super::shader::Program;
-use super::vertex_buffer::VertexBuffer;
+use super::vertex_array::VertexArray;
 use super::GraphicsCtx;
 
 pub struct Frame<'ctx> {
@@ -9,73 +9,46 @@ pub struct Frame<'ctx> {
     draws: Vec<Draw>,
 }
 
-pub struct DrawBuilder<'ctx, 'a> {
-    frame: &'a mut Frame<'ctx>,
-    draw: Draw,
-}
-
 pub struct Draw {
-    program: Option<Program>,
-    vertex_buffer: VertexBuffer,
+    program: Program,
+    vertex_array: VertexArray,
 }
 
 impl Draw {
     #[inline]
-    pub fn new(vertex_buffer: VertexBuffer) -> Self {
+    pub fn new(program: Program, vertex_array: VertexArray) -> Self {
         Self {
-            program: None,
-            vertex_buffer,
+            program,
+            vertex_array,
         }
-    }
-}
-
-impl<'ctx, 'a> DrawBuilder<'ctx, 'a> {
-    #[inline]
-    pub fn with_program(mut self, program: Program) -> Self {
-        self.draw.program = Some(program);
-        self
-    }
-
-    #[inline]
-    pub fn commit(self) {
-        self.frame.draws.push(self.draw);
     }
 }
 
 impl<'ctx> Frame<'ctx> {
     #[inline]
-    pub fn build_draw(&mut self, vertex_buffer: VertexBuffer) -> DrawBuilder<'ctx, '_> {
-        DrawBuilder {
-            frame: self,
-            draw: Draw::new(vertex_buffer),
-        }
+    pub fn draw(&mut self, draw: Draw) {
+        self.draws.push(draw);
     }
 
     pub fn render(self) {
         // TODO(@doctorn) this should be customisable
         self.ctx.webgl_ctx.clear_color(0.0, 0.0, 1.0, 1.0);
         self.ctx.webgl_ctx.clear(
-            WebGlRenderingContext::COLOR_BUFFER_BIT | WebGlRenderingContext::DEPTH_BUFFER_BIT,
+            WebGl2RenderingContext::COLOR_BUFFER_BIT | WebGl2RenderingContext::DEPTH_BUFFER_BIT,
         );
 
         for draw in self.draws.iter() {
-            if let Some(program) = draw.program {
-                self.ctx
-                    .webgl_ctx
-                    .use_program(Some(self.ctx.programs[program].underlying_program()));
-            }
-
-            self.ctx
-                .bind(&self.ctx.vertex_buffers[draw.vertex_buffer], |_| {
+            self.ctx.bind(draw.program, || {
+                self.ctx.bind(draw.vertex_array, || {
                     self.ctx.webgl_ctx.enable_vertex_attrib_array(0);
                     self.ctx.webgl_ctx.draw_arrays(
-                        WebGlRenderingContext::TRIANGLES,
+                        WebGl2RenderingContext::TRIANGLES,
                         0,
-                        self.ctx.vertex_buffers[draw.vertex_buffer].len() as i32,
+                        0, // FIXME(@doctorn) this should be the number of triangles
                     );
                 });
+            });
 
-            self.ctx.webgl_ctx.use_program(None);
             self.ctx.webgl_ctx.flush();
         }
     }

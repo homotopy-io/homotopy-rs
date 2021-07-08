@@ -75,9 +75,11 @@ features = [
   "EventListener",
   "HtmlCanvasElement",
   "WebGlBuffer",
-  "WebGlRenderingContext",
   "WebGlProgram",
+  "WebGl2RenderingContext",
   "WebGlShader",
+  "WebGlUniformLocation",
+  "WebGlVertexArrayObject",
 ]
 
 # These crates are used for running unit tests.

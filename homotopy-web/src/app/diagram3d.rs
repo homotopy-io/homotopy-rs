@@ -2,8 +2,7 @@ use yew::prelude::*;
 use yew_services::render::RenderTask;
 use yew_services::RenderService;
 
-use crate::graphics::shader::ShaderKind;
-use crate::graphics::{buffer, geom, shader, GraphicsCtx};
+use crate::graphics::{buffer, frame, geom, shader, GraphicsCtx};
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct Props3D {}
@@ -19,19 +18,19 @@ pub struct Diagram3D {
 
     // If the render task is dropped, we won't get notified about `requestAnimationFrame()` calls,
     // so store a reference to the task here
-    _render_loop: Option<RenderTask>,
+    render_loop: Option<RenderTask>,
 }
 
 impl Component for Diagram3D {
     type Properties = Props3D;
     type Message = Message3D;
 
-    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
+    fn create(_props: Self::Properties, link: ComponentLink<Self>) -> Self {
         Self {
             link,
             canvas: Default::default(),
             renderer: None,
-            _render_loop: None,
+            render_loop: None,
         }
     }
 
@@ -56,20 +55,14 @@ impl Component for Diagram3D {
         let mut ctx = GraphicsCtx::attach(self.canvas.clone()).unwrap();
 
         let vert_shader = ctx
-            .compile_shader(
-                ShaderKind::Vert,
-                include_str!("../graphics/shaders/vert.glsl"),
-            )
+            .mk_vertex_shader(include_str!("../graphics/shader/vert.glsl"))
             .unwrap();
         let frag_shader = ctx
-            .compile_shader(
-                ShaderKind::Frag,
-                include_str!("../graphics/shaders/frag.glsl"),
-            )
+            .mk_fragment_shader(include_str!("../graphics/shader/frag.glsl"))
             .unwrap();
 
         let mut renderer = Renderer {
-            program: ctx.link_program(vert_shader, frag_shader).unwrap(),
+            program: ctx.mk_program(vert_shader, frag_shader).unwrap(),
             triangle: ctx
                 .mk_vertex_buffer(&[
                     geom::Vertex::new(-0.7, -0.7, 0.0),
@@ -86,7 +79,7 @@ impl Component for Diagram3D {
         if first_render {
             let render_frame = self.link.callback(Message3D::Render);
             let handle = RenderService::request_animation_frame(render_frame);
-            self._render_loop = Some(handle);
+            self.render_loop = Some(handle);
         }
     }
 
@@ -104,14 +97,11 @@ pub struct Renderer {
 impl Renderer {
     fn init(&mut self) {}
 
-    fn update(&mut self, dt: f64) {}
+    fn update(&mut self, _dt: f64) {}
 
     fn render(&self) {
         let mut frame = self.ctx.mk_frame();
-        frame
-            .build_draw(self.triangle)
-            .with_program(self.program)
-            .commit();
+        // frame.draw(frame::Draw::new(self.program, self.triangle));
         frame.render();
     }
 }
