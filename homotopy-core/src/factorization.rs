@@ -86,6 +86,10 @@ pub fn factorize(
             Diagram::DiagramN(s),
             Diagram::DiagramN(t),
         ) if fr.dimension() == gr.dimension() => {
+            if t.size() == 0 && s.size() > 0 {
+                return Err(FactorizationError::Function);
+            }
+
             let f_height = fr.singular_image(s.size());
             let g_height = gr.singular_image(t.size());
 
@@ -145,6 +149,9 @@ pub enum FactorizationError {
 
     #[error("singular level at height {0} is not in both images")]
     Image(usize),
+
+    #[error("codomain is empty, but domain is nonempty, so no function exists")]
+    Function,
 
     #[error("failed to factorize")]
     Failed,
