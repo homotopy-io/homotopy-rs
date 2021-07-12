@@ -4,7 +4,6 @@ use homotopy_core::declare_idx;
 
 use super::{Bindable, GraphicsCtx, GraphicsError, GraphicsObject, Result};
 
-pub mod attrib;
 pub mod uniform;
 
 declare_idx! {

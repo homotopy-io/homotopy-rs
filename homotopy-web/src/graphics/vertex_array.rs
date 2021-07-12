@@ -51,3 +51,10 @@ impl Bindable for VertexArray {
         ctx.webgl_ctx.bind_vertex_array(None);
     }
 }
+
+impl GraphicsCtx {
+    pub fn mk_vertex_array(&mut self) -> Result<VertexArray> {
+        let webgl_vao = self.alloc::<VertexArray>()?;
+        Ok(self.vertex_arrays.push(VertexArrayData { webgl_vao }))
+    }
+}

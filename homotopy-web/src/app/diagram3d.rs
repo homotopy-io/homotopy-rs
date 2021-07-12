@@ -2,7 +2,9 @@ use yew::prelude::*;
 use yew_services::render::RenderTask;
 use yew_services::RenderService;
 
-use crate::graphics::{buffer, frame, geom, shader, GraphicsCtx};
+use crate::graphics::buffer::Buffer;
+use crate::graphics::geom::Vertex;
+use crate::graphics::GraphicsCtx;
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct Props3D {}
@@ -40,6 +42,10 @@ impl Component for Diagram3D {
         if let Some(ref mut renderer) = self.renderer {
             renderer.update(dt);
             renderer.render();
+
+            let render_frame = self.link.callback(Message3D::Render);
+            let handle = RenderService::request_animation_frame(render_frame);
+            self.render_loop = Some(handle);
         }
 
         false
@@ -54,24 +60,11 @@ impl Component for Diagram3D {
     fn rendered(&mut self, first_render: bool) {
         let mut ctx = GraphicsCtx::attach(self.canvas.clone()).unwrap();
 
-        let vert_shader = ctx
-            .mk_vertex_shader(include_str!("../graphics/shader/vert.glsl"))
-            .unwrap();
-        let frag_shader = ctx
-            .mk_fragment_shader(include_str!("../graphics/shader/frag.glsl"))
-            .unwrap();
-
         let mut renderer = Renderer {
-            program: ctx.mk_program(vert_shader, frag_shader).unwrap(),
-            triangle: ctx
-                .mk_vertex_buffer(&[
-                    geom::Vertex::new(-0.7, -0.7, 0.0),
-                    geom::Vertex::new(0.7, -0.7, 0.0),
-                    geom::Vertex::new(0.0, 0.7, 0.0),
-                ])
-                .unwrap(),
             ctx,
+            triangle: None,
         };
+
         renderer.init();
 
         self.renderer = Some(renderer);
@@ -90,18 +83,27 @@ impl Component for Diagram3D {
 
 pub struct Renderer {
     ctx: GraphicsCtx,
-    program: shader::Program,
-    triangle: buffer::VertexBuffer,
+    triangle: Option<Buffer<Vertex>>,
 }
 
 impl Renderer {
-    fn init(&mut self) {}
+    fn init(&mut self) {
+        let mut triangle = Buffer::new(&self.ctx).unwrap();
 
-    fn update(&mut self, _dt: f64) {}
+        triangle.buffer(&[
+            Vertex::new(-0.7, -0.7, 0.0),
+            Vertex::new(0.7, -0.7, 0.0),
+            Vertex::new(0.0, 0.7, 0.0),
+        ]);
+
+        self.triangle = Some(triangle);
+    }
+
+    fn update(&mut self, dt: f64) {}
 
     fn render(&self) {
-        let mut frame = self.ctx.mk_frame();
-        // frame.draw(frame::Draw::new(self.program, self.triangle));
-        frame.render();
+        // let mut frame = self.ctx.mk_frame();
+        // frame.draw(Draw::new(self.program, self.array));
+        // frame.render();
     }
 }

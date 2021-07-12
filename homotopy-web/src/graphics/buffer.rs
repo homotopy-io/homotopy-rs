@@ -1,103 +1,158 @@
+use std::marker::PhantomData;
 use std::slice;
 
-use homotopy_core::declare_idx;
+use euclid::{Vector2D, Vector3D};
 
 use js_sys;
 use web_sys::{WebGl2RenderingContext, WebGlBuffer};
 
-use super::{geom, Bindable, GraphicsCtx, GraphicsError, GraphicsObject, Result};
+use super::{GraphicsCtx, GraphicsError, Result};
 
+#[allow(unused)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum BufferKind {
     Array = WebGl2RenderingContext::ARRAY_BUFFER as isize,
+    ElementArray = WebGl2RenderingContext::ELEMENT_ARRAY_BUFFER as isize,
 }
 
-declare_idx! {
-    pub struct VertexBuffer = usize;
+#[allow(unused)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum BufferUsage {
+    // Static
+    StaticDraw = WebGl2RenderingContext::STATIC_DRAW as isize,
+    StaticRead = WebGl2RenderingContext::STATIC_READ as isize,
+    StaticCopy = WebGl2RenderingContext::STATIC_COPY as isize,
+    // Stream
+    StreamDraw = WebGl2RenderingContext::STREAM_DRAW as isize,
+    StreamRead = WebGl2RenderingContext::STREAM_READ as isize,
+    StreamCopy = WebGl2RenderingContext::STREAM_COPY as isize,
+    // Dynamic
+    DynamicDraw = WebGl2RenderingContext::DYNAMIC_DRAW as isize,
+    DynamicRead = WebGl2RenderingContext::DYNAMIC_READ as isize,
+    DynamicCopy = WebGl2RenderingContext::DYNAMIC_COPY as isize,
 }
 
-pub struct VertexBufferData {
-    webgl_buffer: WebGlBuffer,
+trait UnsafeBufferable: Sized {
+    unsafe fn buffer_to_unchecked<T>(buffer: &mut Buffer<T>, data: &[Self], len: usize);
+}
+
+pub trait Bufferable: Sized {
+    fn buffer_to(buffer: &mut Buffer<Self>, data: &[Self]);
+}
+
+impl Default for BufferKind {
+    fn default() -> Self {
+        BufferKind::Array
+    }
+}
+
+impl Default for BufferUsage {
+    fn default() -> Self {
+        BufferUsage::StaticDraw
+    }
+}
+
+pub struct Buffer<T> {
+    ctx: WebGl2RenderingContext,
+
     kind: BufferKind,
+    usage: BufferUsage,
     len: usize,
+
+    webgl_buffer: WebGlBuffer,
+
+    _phantom: PhantomData<T>,
 }
 
-impl GraphicsObject for VertexBuffer {
-    type Carrier = WebGlBuffer;
-    type Data = VertexBufferData;
+impl<T> Buffer<T> {
+    pub fn new_with_kind_and_usage(
+        ctx: &GraphicsCtx,
+        kind: BufferKind,
+        usage: BufferUsage,
+    ) -> Result<Self> {
+        let webgl_buffer = ctx
+            .webgl_ctx
+            .create_buffer()
+            .ok_or(GraphicsError::Allocate)?;
 
-    #[inline]
-    fn alloc_carrier(ctx: &mut GraphicsCtx) -> Result<Self::Carrier> {
-        ctx.webgl_ctx.create_buffer().ok_or(GraphicsError::Allocate)
-    }
-
-    #[inline]
-    fn dealloc_carrier(self, ctx: &mut GraphicsCtx) {
-        ctx.webgl_ctx.delete_buffer(Some(ctx.carrier_for(self)));
-    }
-
-    #[inline]
-    fn get_data(self, ctx: &GraphicsCtx) -> &Self::Data {
-        &ctx.vertex_buffers[self]
-    }
-
-    #[inline]
-    fn get_carrier(self, ctx: &GraphicsCtx) -> &Self::Carrier {
-        &ctx.vertex_buffers[self].webgl_buffer
-    }
-}
-
-impl Bindable for VertexBuffer {
-    #[inline]
-    fn bind(self, ctx: &GraphicsCtx) {
-        let vertex_buffer = ctx.get(self);
-        ctx.webgl_ctx
-            .bind_buffer(vertex_buffer.kind as u32, Some(&vertex_buffer.webgl_buffer));
-    }
-
-    #[inline]
-    fn release(self, ctx: &GraphicsCtx) {
-        ctx.webgl_ctx.bind_buffer(ctx.get(self).kind as u32, None);
-    }
-}
-
-impl GraphicsCtx {
-    pub fn mk_vertex_buffer(&mut self, data: &[geom::Vertex]) -> Result<VertexBuffer> {
-        let webgl_buffer = self.alloc::<VertexBuffer>()?;
-        let vertex_buffer = self.vertex_buffers.push(VertexBufferData {
+        Ok(Self {
+            ctx: ctx.webgl_ctx.clone(),
+            kind,
+            usage,
+            len: 0,
             webgl_buffer,
-            kind: BufferKind::Array,
-            len: data.len(),
-        });
+            _phantom: Default::default(),
+        })
+    }
 
-        self.bind(vertex_buffer, || {
-            // TODO(@doctorn) write safety note
-            //
-            // (just have to be careful we don't allocate memory between `Float32Array::view` and
-            // `buffer_data_with_array_buffer_view`)
-            unsafe {
-                let f32_slice = slice::from_raw_parts(data.as_ptr() as *const f32, data.len() * 3);
-                let vert_array = js_sys::Float32Array::view(f32_slice);
+    pub fn new(ctx: &GraphicsCtx) -> Result<Self> {
+        Buffer::new_with_kind_and_usage(ctx, Default::default(), Default::default())
+    }
 
-                self.webgl_ctx.buffer_data_with_array_buffer_view(
-                    self.get(vertex_buffer).kind as u32,
-                    &vert_array,
-                    // TODO(@doctorn) investigate other options
-                    WebGl2RenderingContext::STATIC_DRAW,
-                );
-            }
+    pub fn buffer(&mut self, data: &[T])
+    where
+        T: Bufferable,
+    {
+        T::buffer_to(self, data);
+    }
 
-            // TODO(@doctorn) this shouldn't be done here
-            self.webgl_ctx.vertex_attrib_pointer_with_i32(
-                0,
-                3,
-                WebGl2RenderingContext::FLOAT,
-                false,
-                0,
-                0,
+    pub(super) fn bind<F, U>(&self, f: F) -> U
+    where
+        F: FnOnce() -> U,
+    {
+        self.ctx
+            .bind_buffer(self.kind as u32, Some(&self.webgl_buffer));
+        let result = f();
+        self.ctx.bind_buffer(self.kind as u32, None);
+        result
+    }
+}
+
+impl<T> Drop for Buffer<T> {
+    fn drop(&mut self) {
+        self.ctx.delete_buffer(Some(&self.webgl_buffer));
+    }
+}
+
+impl UnsafeBufferable for f32 {
+    unsafe fn buffer_to_unchecked<T>(buffer: &mut Buffer<T>, data: &[f32], len: usize) {
+        buffer.len = len;
+        buffer.bind(|| {
+            let view = js_sys::Float32Array::view(data);
+            buffer.ctx.buffer_data_with_array_buffer_view(
+                buffer.kind as u32,
+                &view,
+                buffer.usage as u32,
             );
         });
+    }
+}
 
-        Ok(vertex_buffer)
+impl Bufferable for f32 {
+    fn buffer_to(buffer: &mut Buffer<Self>, data: &[Self]) {
+        // TODO(@doctorn) safety note
+        unsafe {
+            f32::buffer_to_unchecked(buffer, data, data.len());
+        }
+    }
+}
+
+impl<T> Bufferable for Vector2D<f32, T> {
+    fn buffer_to(buffer: &mut Buffer<Self>, data: &[Self]) {
+        // TODO(@doctorn) safety note
+        unsafe {
+            let f32_slice = slice::from_raw_parts(data.as_ptr() as *const f32, data.len() * 2);
+            f32::buffer_to_unchecked(buffer, f32_slice, data.len());
+        }
+    }
+}
+
+impl<T> Bufferable for Vector3D<f32, T> {
+    fn buffer_to(buffer: &mut Buffer<Self>, data: &[Self]) {
+        // TODO(@doctorn) safety note
+        unsafe {
+            let f32_slice = slice::from_raw_parts(data.as_ptr() as *const f32, data.len() * 3);
+            f32::buffer_to_unchecked(buffer, f32_slice, data.len());
+        }
     }
 }

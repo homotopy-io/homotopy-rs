@@ -40,11 +40,10 @@ impl<'ctx> Frame<'ctx> {
         for draw in self.draws.iter() {
             self.ctx.bind(draw.program, || {
                 self.ctx.bind(draw.vertex_array, || {
-                    self.ctx.webgl_ctx.enable_vertex_attrib_array(0);
                     self.ctx.webgl_ctx.draw_arrays(
                         WebGl2RenderingContext::TRIANGLES,
                         0,
-                        0, // FIXME(@doctorn) this should be the number of triangles
+                        3, // FIXME(@doctorn) this should be the number of vertices
                     );
                 });
             });
