@@ -7,11 +7,11 @@ use thiserror::Error;
 
 pub mod attribute;
 
+pub mod array;
 pub mod buffer;
+pub mod frame;
 pub mod geom;
-// pub mod frame;
-// pub mod shader;
-// pub mod vertex_array;
+pub mod shader;
 
 #[derive(Error, Debug)]
 pub enum GraphicsError {

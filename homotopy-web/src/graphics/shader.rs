@@ -1,194 +1,166 @@
 use web_sys::{WebGl2RenderingContext, WebGlProgram, WebGlShader};
 
-use homotopy_core::declare_idx;
+use super::{GraphicsCtx, GraphicsError, Result};
 
-use super::{Bindable, GraphicsCtx, GraphicsError, GraphicsObject, Result};
-
-pub mod uniform;
-
-declare_idx! {
-    pub struct VertexShader = usize;
-
-    pub struct FragmentShader = usize;
-
-    pub struct Program = usize;
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+pub enum ShaderKind {
+    Vertex = WebGl2RenderingContext::VERTEX_SHADER as isize,
+    Fragment = WebGl2RenderingContext::FRAGMENT_SHADER as isize,
 }
 
-pub(super) struct ShaderData {
+struct UntypedShader {
+    ctx: WebGl2RenderingContext,
     webgl_shader: WebGlShader,
+    kind: ShaderKind,
 }
 
-pub(super) struct ProgramData {
+pub struct VertexShader(UntypedShader);
+pub struct FragmentShader(UntypedShader);
+
+pub struct Program {
+    ctx: WebGl2RenderingContext,
     webgl_program: WebGlProgram,
+    vertex_shader: VertexShader,
+    fragment_shader: FragmentShader,
 }
 
-impl GraphicsObject for VertexShader {
-    type Carrier = WebGlShader;
-    type Data = ShaderData;
+impl UntypedShader {
+    fn compile<S: AsRef<str>>(ctx: &GraphicsCtx, kind: ShaderKind, src: S) -> Result<Self> {
+        let allocated = ctx
+            .webgl_ctx
+            .create_shader(kind as u32)
+            .ok_or(GraphicsError::Allocate)?;
 
-    #[inline]
-    fn alloc_carrier(ctx: &mut GraphicsCtx) -> Result<Self::Carrier> {
-        ctx.webgl_ctx
-            .create_shader(WebGl2RenderingContext::VERTEX_SHADER)
-            .ok_or(GraphicsError::Allocate)
-    }
+        let shader = Self {
+            ctx: ctx.webgl_ctx.clone(),
+            webgl_shader: allocated,
+            kind,
+        };
 
-    #[inline]
-    fn dealloc_carrier(self, ctx: &mut GraphicsCtx) {
-        ctx.webgl_ctx.delete_shader(Some(ctx.carrier_for(self)));
-    }
-
-    #[inline]
-    fn get_data(self, ctx: &GraphicsCtx) -> &Self::Data {
-        &ctx.vert_shaders[self]
-    }
-
-    #[inline]
-    fn get_carrier(self, ctx: &GraphicsCtx) -> &Self::Carrier {
-        &ctx.vert_shaders[self].webgl_shader
-    }
-}
-
-impl GraphicsObject for FragmentShader {
-    type Carrier = WebGlShader;
-    type Data = ShaderData;
-
-    #[inline]
-    fn alloc_carrier(ctx: &mut GraphicsCtx) -> Result<Self::Carrier> {
-        ctx.webgl_ctx
-            .create_shader(WebGl2RenderingContext::FRAGMENT_SHADER)
-            .ok_or(GraphicsError::Allocate)
-    }
-
-    #[inline]
-    fn dealloc_carrier(self, ctx: &mut GraphicsCtx) {
-        ctx.webgl_ctx.delete_shader(Some(ctx.carrier_for(self)));
-    }
-
-    #[inline]
-    fn get_data(self, ctx: &GraphicsCtx) -> &Self::Data {
-        &ctx.frag_shaders[self]
-    }
-
-    #[inline]
-    fn get_carrier(self, ctx: &GraphicsCtx) -> &Self::Carrier {
-        &ctx.frag_shaders[self].webgl_shader
-    }
-}
-
-impl GraphicsObject for Program {
-    type Carrier = WebGlProgram;
-    type Data = ProgramData;
-
-    #[inline]
-    fn alloc_carrier(ctx: &mut GraphicsCtx) -> Result<Self::Carrier> {
-        ctx.webgl_ctx
-            .create_program()
-            .ok_or(GraphicsError::Allocate)
-    }
-
-    #[inline]
-    fn dealloc_carrier(self, ctx: &mut GraphicsCtx) {
-        ctx.webgl_ctx.delete_program(Some(ctx.carrier_for(self)));
-    }
-
-    #[inline]
-    fn get_data(self, ctx: &GraphicsCtx) -> &Self::Data {
-        &ctx.programs[self]
-    }
-
-    #[inline]
-    fn get_carrier(self, ctx: &GraphicsCtx) -> &Self::Carrier {
-        &ctx.programs[self].webgl_program
-    }
-}
-
-impl Bindable for Program {
-    #[inline]
-    fn bind(self, ctx: &GraphicsCtx) {
-        ctx.webgl_ctx.use_program(Some(ctx.carrier_for(self)));
-    }
-
-    #[inline]
-    fn release(self, ctx: &GraphicsCtx) {
-        ctx.webgl_ctx.use_program(None);
-    }
-}
-
-impl GraphicsCtx {
-    pub fn mk_vertex_shader<S: AsRef<str>>(&mut self, source: S) -> Result<VertexShader> {
-        let allocated = self.alloc::<VertexShader>()?;
-        let webgl_shader = self.compile_shader(allocated, source)?;
-
-        Ok(self.vert_shaders.push(ShaderData { webgl_shader }))
-    }
-
-    pub fn mk_fragment_shader<S: AsRef<str>>(&mut self, source: S) -> Result<FragmentShader> {
-        let allocated = self.alloc::<FragmentShader>()?;
-        let webgl_shader = self.compile_shader(allocated, source)?;
-        Ok(self.frag_shaders.push(ShaderData { webgl_shader }))
-    }
-
-    fn compile_shader<S: AsRef<str>>(
-        &mut self,
-        webgl_shader: WebGlShader,
-        source: S,
-    ) -> Result<WebGlShader> {
         // Set shader source
-        self.webgl_ctx.shader_source(&webgl_shader, source.as_ref());
+        shader.ctx.shader_source(&shader.webgl_shader, src.as_ref());
         // Attempt to compile the shader
-        self.webgl_ctx.compile_shader(&webgl_shader);
+        shader.ctx.compile_shader(&shader.webgl_shader);
 
         // Check compilation was successful
-        if self
-            .webgl_ctx
-            .get_shader_parameter(&webgl_shader, WebGl2RenderingContext::COMPILE_STATUS)
+        if shader
+            .ctx
+            .get_shader_parameter(&shader.webgl_shader, WebGl2RenderingContext::COMPILE_STATUS)
             .as_bool()
             .unwrap_or_default()
         {
             // If so, store shader data and move on
-            Ok(webgl_shader)
+            Ok(shader)
         } else {
-            // Quickly delete shader on error
-            self.webgl_ctx.delete_shader(Some(&webgl_shader));
             // And then try to get an error log
             Err(GraphicsError::ShaderCompile(
-                self.webgl_ctx
-                    .get_shader_info_log(&webgl_shader)
+                shader
+                    .ctx
+                    .get_shader_info_log(&shader.webgl_shader)
                     .unwrap_or_else(|| "unknown shader compilation failure".to_owned()),
             ))
         }
     }
 
-    pub fn mk_program(&mut self, vert: VertexShader, frag: FragmentShader) -> Result<Program> {
-        // Allocate program
-        let webgl_program = self.alloc::<Program>()?;
+    #[inline(always)]
+    fn into_vertex_shader(self) -> VertexShader {
+        assert_eq!(self.kind, ShaderKind::Vertex);
+        VertexShader(self)
+    }
+
+    #[inline(always)]
+    fn into_fragment_shader(self) -> FragmentShader {
+        assert_eq!(self.kind, ShaderKind::Fragment);
+        FragmentShader(self)
+    }
+}
+
+impl Drop for UntypedShader {
+    fn drop(&mut self) {
+        self.ctx.delete_shader(Some(&self.webgl_shader));
+    }
+}
+
+impl VertexShader {
+    pub fn compile<S>(ctx: &GraphicsCtx, src: S) -> Result<VertexShader>
+    where
+        S: AsRef<str>,
+    {
+        Ok(UntypedShader::compile(ctx, ShaderKind::Vertex, src)?.into_vertex_shader())
+    }
+}
+
+impl FragmentShader {
+    pub fn compile<S>(ctx: &GraphicsCtx, src: S) -> Result<FragmentShader>
+    where
+        S: AsRef<str>,
+    {
+        Ok(UntypedShader::compile(ctx, ShaderKind::Fragment, src)?.into_fragment_shader())
+    }
+}
+
+impl Program {
+    pub fn link(
+        ctx: &GraphicsCtx,
+        vertex_shader: VertexShader,
+        fragment_shader: FragmentShader,
+    ) -> Result<Program> {
+        let allocated = ctx
+            .webgl_ctx
+            .create_program()
+            .ok_or(GraphicsError::Allocate)?;
+        let program = Self {
+            ctx: ctx.webgl_ctx.clone(),
+            webgl_program: allocated,
+            vertex_shader,
+            fragment_shader,
+        };
 
         // Attach shaders and link
-        self.webgl_ctx
-            .attach_shader(&webgl_program, self.carrier_for(vert));
-        self.webgl_ctx
-            .attach_shader(&webgl_program, self.carrier_for(frag));
-        self.webgl_ctx.link_program(&webgl_program);
+        program.ctx.attach_shader(
+            &program.webgl_program,
+            &program.fragment_shader.0.webgl_shader,
+        );
+        program.ctx.attach_shader(
+            &program.webgl_program,
+            &program.vertex_shader.0.webgl_shader,
+        );
+        program.ctx.link_program(&program.webgl_program);
 
         // Check linking was successful
-        if self
-            .webgl_ctx
-            .get_program_parameter(&webgl_program, WebGl2RenderingContext::LINK_STATUS)
+        if program
+            .ctx
+            .get_program_parameter(&program.webgl_program, WebGl2RenderingContext::LINK_STATUS)
             .as_bool()
             .unwrap_or_default()
         {
             // If so, store program data and move on
-            Ok(self.programs.push(ProgramData { webgl_program }))
+            Ok(program)
         } else {
-            // Quickly delete program on error
-            self.webgl_ctx.delete_program(Some(&webgl_program));
             // Otherwise, try to get an error log
             Err(GraphicsError::ProgramLink(
-                self.webgl_ctx
-                    .get_program_info_log(&webgl_program)
+                program
+                    .ctx
+                    .get_program_info_log(&program.webgl_program)
                     .unwrap_or_else(|| "unknown program link failure".to_owned()),
             ))
         }
+    }
+
+    #[inline(always)]
+    pub(super) fn bind<F, U>(&self, f: F) -> U
+    where
+        F: FnOnce() -> U,
+    {
+        self.ctx.use_program(Some(&self.webgl_program));
+        let result = f();
+        self.ctx.use_program(None);
+        result
+    }
+}
+
+impl Drop for Program {
+    fn drop(&mut self) {
+        self.ctx.delete_program(Some(&self.webgl_program));
     }
 }

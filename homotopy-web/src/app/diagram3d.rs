@@ -2,8 +2,11 @@ use yew::prelude::*;
 use yew_services::render::RenderTask;
 use yew_services::RenderService;
 
+use crate::graphics::array::VertexArray;
 use crate::graphics::buffer::Buffer;
+use crate::graphics::frame::{Draw, Frame};
 use crate::graphics::geom::Vertex;
+use crate::graphics::shader::{FragmentShader, Program, VertexShader};
 use crate::graphics::GraphicsCtx;
 
 #[derive(Clone, PartialEq, Properties)]
@@ -58,11 +61,14 @@ impl Component for Diagram3D {
     }
 
     fn rendered(&mut self, first_render: bool) {
-        let mut ctx = GraphicsCtx::attach(self.canvas.clone()).unwrap();
+        let ctx = GraphicsCtx::attach(self.canvas.clone()).unwrap();
 
         let mut renderer = Renderer {
             ctx,
             triangle: None,
+            colors: None,
+            vertex_array: None,
+            program: None,
         };
 
         renderer.init();
@@ -84,26 +90,52 @@ impl Component for Diagram3D {
 pub struct Renderer {
     ctx: GraphicsCtx,
     triangle: Option<Buffer<Vertex>>,
+    colors: Option<Buffer<Vertex>>,
+    vertex_array: Option<VertexArray>,
+    program: Option<Program>,
 }
 
 impl Renderer {
     fn init(&mut self) {
         let mut triangle = Buffer::new(&self.ctx).unwrap();
-
         triangle.buffer(&[
             Vertex::new(-0.7, -0.7, 0.0),
             Vertex::new(0.7, -0.7, 0.0),
             Vertex::new(0.0, 0.7, 0.0),
         ]);
-
         self.triangle = Some(triangle);
+
+        let mut colors = Buffer::new(&self.ctx).unwrap();
+        colors.buffer(&[
+            Vertex::new(1.0, 0.0, 0.0),
+            Vertex::new(0.0, 1.0, 0.0),
+            Vertex::new(0.0, 0.0, 1.0),
+        ]);
+        self.colors = Some(colors);
+
+        let mut vertex_array = VertexArray::new(&self.ctx).unwrap();
+        vertex_array.attribute(0, self.triangle.as_ref().unwrap());
+        vertex_array.attribute(1, self.colors.as_ref().unwrap());
+        self.vertex_array = Some(vertex_array);
+
+        let program = Program::link(
+            &self.ctx,
+            VertexShader::compile(&self.ctx, include_str!("../graphics/shader/vert.glsl")).unwrap(),
+            FragmentShader::compile(&self.ctx, include_str!("../graphics/shader/frag.glsl"))
+                .unwrap(),
+        )
+        .unwrap();
+        self.program = Some(program);
     }
 
-    fn update(&mut self, dt: f64) {}
+    fn update(&mut self, _dt: f64) {}
 
     fn render(&self) {
-        // let mut frame = self.ctx.mk_frame();
-        // frame.draw(Draw::new(self.program, self.array));
-        // frame.render();
+        let mut frame = Frame::new(&self.ctx);
+        frame.draw(Draw::new(
+            self.program.as_ref().unwrap(),
+            self.vertex_array.as_ref().unwrap(),
+        ));
+        frame.render();
     }
 }

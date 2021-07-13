@@ -32,14 +32,6 @@ pub enum BufferUsage {
     DynamicCopy = WebGl2RenderingContext::DYNAMIC_COPY as isize,
 }
 
-trait UnsafeBufferable: Sized {
-    unsafe fn buffer_to_unchecked<T>(buffer: &mut Buffer<T>, data: &[Self], len: usize);
-}
-
-pub trait Bufferable: Sized {
-    fn buffer_to(buffer: &mut Buffer<Self>, data: &[Self]);
-}
-
 impl Default for BufferKind {
     fn default() -> Self {
         BufferKind::Array
@@ -62,6 +54,14 @@ pub struct Buffer<T> {
     webgl_buffer: WebGlBuffer,
 
     _phantom: PhantomData<T>,
+}
+
+pub unsafe trait UnsafeBufferable: Sized {
+    unsafe fn buffer_to_unchecked<T>(buffer: &mut Buffer<T>, data: &[Self], len: usize);
+}
+
+pub trait Bufferable: Sized {
+    fn buffer_to(buffer: &mut Buffer<Self>, data: &[Self]);
 }
 
 impl<T> Buffer<T> {
@@ -96,6 +96,7 @@ impl<T> Buffer<T> {
         T::buffer_to(self, data);
     }
 
+    #[inline(always)]
     pub(super) fn bind<F, U>(&self, f: F) -> U
     where
         F: FnOnce() -> U,
@@ -114,11 +115,12 @@ impl<T> Drop for Buffer<T> {
     }
 }
 
-impl UnsafeBufferable for f32 {
+unsafe impl UnsafeBufferable for f32 {
     unsafe fn buffer_to_unchecked<T>(buffer: &mut Buffer<T>, data: &[f32], len: usize) {
         buffer.len = len;
         buffer.bind(|| {
             let view = js_sys::Float32Array::view(data);
+            // NOTE no memory can be allocated here or `view` will be invalidated
             buffer.ctx.buffer_data_with_array_buffer_view(
                 buffer.kind as u32,
                 &view,
@@ -130,29 +132,37 @@ impl UnsafeBufferable for f32 {
 
 impl Bufferable for f32 {
     fn buffer_to(buffer: &mut Buffer<Self>, data: &[Self]) {
-        // TODO(@doctorn) safety note
+        // SAFETY the unchecked `impl` does precisely what we would have done here
         unsafe {
             f32::buffer_to_unchecked(buffer, data, data.len());
         }
     }
 }
 
-impl<T> Bufferable for Vector2D<f32, T> {
+impl<T, U> Bufferable for Vector2D<T, U>
+where
+    T: UnsafeBufferable,
+{
     fn buffer_to(buffer: &mut Buffer<Self>, data: &[Self]) {
-        // TODO(@doctorn) safety note
+        // SAFETY we can always view a slice of `Vector2D`s as a slice of `T`s as `Vector2D` is
+        // `#[repr(c)]`
         unsafe {
-            let f32_slice = slice::from_raw_parts(data.as_ptr() as *const f32, data.len() * 2);
-            f32::buffer_to_unchecked(buffer, f32_slice, data.len());
+            let t_slice = slice::from_raw_parts(data.as_ptr() as *const T, data.len() * 2);
+            T::buffer_to_unchecked(buffer, t_slice, data.len());
         }
     }
 }
 
-impl<T> Bufferable for Vector3D<f32, T> {
+impl<T, U> Bufferable for Vector3D<T, U>
+where
+    T: UnsafeBufferable,
+{
     fn buffer_to(buffer: &mut Buffer<Self>, data: &[Self]) {
-        // TODO(@doctorn) safety note
+        // SAFETY we can always view a slice of `Vector3D`s as a slice of `T`s as `Vector3D` is
+        // `#[repr(c)]`
         unsafe {
-            let f32_slice = slice::from_raw_parts(data.as_ptr() as *const f32, data.len() * 3);
-            f32::buffer_to_unchecked(buffer, f32_slice, data.len());
+            let t_slice = slice::from_raw_parts(data.as_ptr() as *const T, data.len() * 3);
+            T::buffer_to_unchecked(buffer, t_slice, data.len());
         }
     }
 }

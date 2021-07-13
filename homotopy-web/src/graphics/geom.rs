@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use euclid::{Transform3D, Vector3D};
 
 pub type Coord = f32;
