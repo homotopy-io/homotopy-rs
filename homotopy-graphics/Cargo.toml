@@ -1,7 +1,7 @@
 [package]
 name = "homotopy-graphics"
 version = "0.1.0"
-authors = ["Lukas Heidemann <lukas@heidemann.me>"]
+authors = ["Lukas Heidemann <lukas@heidemann.me>", "Nathan Corbyn <me@nathancorbyn.com>"]
 edition = "2018"
 
 [dependencies]
@@ -16,6 +16,21 @@ serde_json = "1.0.66"
 petgraph = "0.6.0"
 seahash = "4.1.0"
 log = "0.4.14"
+js-sys = "*"
+yew = { git = "https://github.com/yewstack/yew" }
+wasm-bindgen = "0.2.74"
+
+[dependencies.web-sys]
+version = "0.3.51"
+features = [
+  "HtmlCanvasElement",
+  "WebGlBuffer",
+  "WebGlProgram",
+  "WebGl2RenderingContext",
+  "WebGlShader",
+  "WebGlUniformLocation",
+  "WebGlVertexArrayObject",
+]
 
 [dev-dependencies]
 cargo-husky = { features = ["precommit-hook", "run-cargo-check", "run-cargo-test", "run-cargo-fmt", "run-cargo-clippy"], version = "1.5.0" }

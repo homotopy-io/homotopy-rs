@@ -3,7 +3,7 @@ use euclid::{Vector2D, Vector3D};
 use web_sys::{WebGl2RenderingContext, WebGlVertexArrayObject};
 
 use super::buffer::Buffer;
-use super::{GraphicsCtx, GraphicsError, Result};
+use super::{GlCtx, GlError, Result};
 
 pub struct VertexArray {
     ctx: WebGl2RenderingContext,
@@ -12,11 +12,11 @@ pub struct VertexArray {
 }
 
 impl VertexArray {
-    pub fn new(ctx: &GraphicsCtx) -> Result<Self> {
+    pub fn new(ctx: &GlCtx) -> Result<Self> {
         let webgl_vao = ctx
             .webgl_ctx
             .create_vertex_array()
-            .ok_or(GraphicsError::Allocate)?;
+            .ok_or(GlError::Allocate)?;
 
         Ok(Self {
             ctx: ctx.webgl_ctx.clone(),

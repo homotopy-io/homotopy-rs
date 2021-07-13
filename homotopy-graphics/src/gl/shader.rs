@@ -1,6 +1,6 @@
 use web_sys::{WebGl2RenderingContext, WebGlProgram, WebGlShader};
 
-use super::{GraphicsCtx, GraphicsError, Result};
+use super::{GlCtx, GlError, Result};
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub enum ShaderKind {
@@ -25,11 +25,11 @@ pub struct Program {
 }
 
 impl UntypedShader {
-    fn compile<S: AsRef<str>>(ctx: &GraphicsCtx, kind: ShaderKind, src: S) -> Result<Self> {
+    fn compile<S: AsRef<str>>(ctx: &GlCtx, kind: ShaderKind, src: S) -> Result<Self> {
         let allocated = ctx
             .webgl_ctx
             .create_shader(kind as u32)
-            .ok_or(GraphicsError::Allocate)?;
+            .ok_or(GlError::Allocate)?;
 
         let shader = Self {
             ctx: ctx.webgl_ctx.clone(),
@@ -53,7 +53,7 @@ impl UntypedShader {
             Ok(shader)
         } else {
             // And then try to get an error log
-            Err(GraphicsError::ShaderCompile(
+            Err(GlError::ShaderCompile(
                 shader
                     .ctx
                     .get_shader_info_log(&shader.webgl_shader)
@@ -82,7 +82,7 @@ impl Drop for UntypedShader {
 }
 
 impl VertexShader {
-    pub fn compile<S>(ctx: &GraphicsCtx, src: S) -> Result<VertexShader>
+    pub fn compile<S>(ctx: &GlCtx, src: S) -> Result<VertexShader>
     where
         S: AsRef<str>,
     {
@@ -91,7 +91,7 @@ impl VertexShader {
 }
 
 impl FragmentShader {
-    pub fn compile<S>(ctx: &GraphicsCtx, src: S) -> Result<FragmentShader>
+    pub fn compile<S>(ctx: &GlCtx, src: S) -> Result<FragmentShader>
     where
         S: AsRef<str>,
     {
@@ -101,14 +101,11 @@ impl FragmentShader {
 
 impl Program {
     pub fn link(
-        ctx: &GraphicsCtx,
+        ctx: &GlCtx,
         vertex_shader: VertexShader,
         fragment_shader: FragmentShader,
     ) -> Result<Program> {
-        let allocated = ctx
-            .webgl_ctx
-            .create_program()
-            .ok_or(GraphicsError::Allocate)?;
+        let allocated = ctx.webgl_ctx.create_program().ok_or(GlError::Allocate)?;
         let program = Self {
             ctx: ctx.webgl_ctx.clone(),
             webgl_program: allocated,
@@ -138,7 +135,7 @@ impl Program {
             Ok(program)
         } else {
             // Otherwise, try to get an error log
-            Err(GraphicsError::ProgramLink(
+            Err(GlError::ProgramLink(
                 program
                     .ctx
                     .get_program_info_log(&program.webgl_program)

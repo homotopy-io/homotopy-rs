@@ -1,12 +1,11 @@
 use std::convert::{From, Into, TryInto};
 use std::f32::consts::PI;
 
-use web_sys::Element;
-
-use yew::prelude::*;
-
 use euclid::default::{Point2D, Size2D, Transform2D, Vector2D};
 use euclid::Angle;
+
+use web_sys::Element;
+use yew::prelude::*;
 
 use homotopy_core::common::Direction;
 use homotopy_core::complex::{make_complex, Simplex};
@@ -15,10 +14,10 @@ use homotopy_core::projection::{Depths, Generators};
 use homotopy_core::rewrite::RewriteN;
 use homotopy_core::{Boundary, DiagramN, Generator, Height, SliceIndex};
 
-use homotopy_graphics::geometry;
-use homotopy_graphics::geometry::path_to_svg;
-use homotopy_graphics::graphic2d::{ActionRegion, GraphicElement};
-use homotopy_graphics::layout2d::Layout;
+use homotopy_graphics::svg::geom;
+use homotopy_graphics::svg::geom::path_to_svg;
+use homotopy_graphics::svg::layout::Layout;
+use homotopy_graphics::svg::render::{ActionRegion, GraphicElement};
 
 use crate::app::signature_stylesheet::SignatureStylesheet;
 use crate::model::proof::homotopy::{Contract, Expand, Homotopy};
@@ -77,7 +76,7 @@ pub enum Message2D {
 /// cached if the diagram does not change.
 struct PreparedDiagram {
     graphic: Vec<GraphicElement>,
-    actions: Vec<(Simplex, geometry::Shape)>,
+    actions: Vec<(Simplex, geom::Shape)>,
     depths: Depths,
     layout: Layout,
 

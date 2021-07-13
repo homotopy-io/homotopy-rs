@@ -1,13 +1,13 @@
 use yew::prelude::*;
-use yew_services::render::RenderTask;
-use yew_services::RenderService;
+use yew::services::render::RenderTask;
+use yew::services::RenderService;
 
-use crate::graphics::array::VertexArray;
-use crate::graphics::buffer::Buffer;
-use crate::graphics::frame::{Draw, Frame};
-use crate::graphics::geom::Vertex;
-use crate::graphics::shader::{FragmentShader, Program, VertexShader};
-use crate::graphics::GraphicsCtx;
+use homotopy_graphics::gl::array::VertexArray;
+use homotopy_graphics::gl::buffer::Buffer;
+use homotopy_graphics::gl::frame::{Draw, Frame};
+use homotopy_graphics::gl::geom::Vertex;
+use homotopy_graphics::gl::shader::{FragmentShader, Program, VertexShader};
+use homotopy_graphics::gl::GlCtx;
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct Props3D {}
@@ -56,12 +56,12 @@ impl Component for Diagram3D {
 
     fn view(&self) -> Html {
         html! {
-            <canvas ref={self.canvas.clone()}></canvas>
+            <canvas width=1000 height=1000 ref={self.canvas.clone()}></canvas>
         }
     }
 
     fn rendered(&mut self, first_render: bool) {
-        let ctx = GraphicsCtx::attach(self.canvas.clone()).unwrap();
+        let ctx = GlCtx::attach(self.canvas.clone()).unwrap();
 
         let mut renderer = Renderer {
             ctx,
@@ -88,7 +88,7 @@ impl Component for Diagram3D {
 }
 
 pub struct Renderer {
-    ctx: GraphicsCtx,
+    ctx: GlCtx,
     triangle: Option<Buffer<Vertex>>,
     colors: Option<Buffer<Vertex>>,
     vertex_array: Option<VertexArray>,
@@ -120,9 +120,8 @@ impl Renderer {
 
         let program = Program::link(
             &self.ctx,
-            VertexShader::compile(&self.ctx, include_str!("../graphics/shader/vert.glsl")).unwrap(),
-            FragmentShader::compile(&self.ctx, include_str!("../graphics/shader/frag.glsl"))
-                .unwrap(),
+            VertexShader::compile(&self.ctx, include_str!("../../glsl/vert.glsl")).unwrap(),
+            FragmentShader::compile(&self.ctx, include_str!("../../glsl/frag.glsl")).unwrap(),
         )
         .unwrap();
         self.program = Some(program);

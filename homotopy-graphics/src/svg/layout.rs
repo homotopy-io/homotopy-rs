@@ -1,10 +1,13 @@
-use crate::geometry::Point;
+use std::convert::{Into, TryFrom, TryInto};
+
+use serde::Serialize;
+use thiserror::Error;
+
 use homotopy_core::common::{Boundary, Height, SliceIndex};
 use homotopy_core::diagram::DiagramN;
 use homotopy_core::rewrite::RewriteN;
-use serde::Serialize;
-use std::convert::{Into, TryFrom, TryInto};
-use thiserror::Error;
+
+use crate::svg::geom::Point;
 
 #[derive(Debug)]
 struct Constraint(Vec<(usize, usize)>, (usize, usize));

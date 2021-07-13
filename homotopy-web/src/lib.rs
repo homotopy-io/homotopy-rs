@@ -50,7 +50,6 @@
 
 mod app;
 mod components;
-mod graphics;
 
 pub mod model;
 

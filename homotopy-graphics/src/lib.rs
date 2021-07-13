@@ -42,6 +42,5 @@
     clippy::too_many_lines,
 )]
 
-pub mod geometry;
-pub mod graphic2d;
-pub mod layout2d;
+pub mod gl;
+pub mod svg;

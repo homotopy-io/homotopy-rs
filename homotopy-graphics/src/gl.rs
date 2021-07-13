@@ -5,8 +5,6 @@ use web_sys::{HtmlCanvasElement, WebGl2RenderingContext};
 
 use thiserror::Error;
 
-pub mod attribute;
-
 pub mod array;
 pub mod buffer;
 pub mod frame;
@@ -14,7 +12,7 @@ pub mod geom;
 pub mod shader;
 
 #[derive(Error, Debug)]
-pub enum GraphicsError {
+pub enum GlError {
     #[error("failed to attach to WebGL context")]
     Attachment(&'static str),
     #[error("failed to allocate WebGL object")]
@@ -25,24 +23,24 @@ pub enum GraphicsError {
     ProgramLink(String),
 }
 
-pub type Result<T> = std::result::Result<T, GraphicsError>;
+pub type Result<T> = std::result::Result<T, GlError>;
 
-pub struct GraphicsCtx {
+pub struct GlCtx {
     webgl_ctx: WebGl2RenderingContext,
 }
 
-impl GraphicsCtx {
+impl GlCtx {
     pub fn attach(node_ref: NodeRef) -> Result<Self> {
         let canvas = node_ref.cast::<HtmlCanvasElement>().ok_or_else(|| {
-            GraphicsError::Attachment("supplied node ref does not point to a canvas element")
+            GlError::Attachment("supplied node ref does not point to a canvas element")
         })?;
 
         let webgl_ctx = if let Ok(Some(obj)) = canvas.get_context("webgl2") {
             obj.dyn_into::<WebGl2RenderingContext>().map_err(|_| {
-                GraphicsError::Attachment("failed to cast WebGL context to a rendering context")
+                GlError::Attachment("failed to cast WebGL context to a rendering context")
             })?
         } else {
-            return Err(GraphicsError::Attachment(
+            return Err(GlError::Attachment(
                 "failed to get WebGL context for canvas",
             ));
         };

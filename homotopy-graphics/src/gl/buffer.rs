@@ -6,7 +6,7 @@ use euclid::{Vector2D, Vector3D};
 use js_sys;
 use web_sys::{WebGl2RenderingContext, WebGlBuffer};
 
-use super::{GraphicsCtx, GraphicsError, Result};
+use super::{GlCtx, GlError, Result};
 
 #[allow(unused)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -66,14 +66,11 @@ pub trait Bufferable: Sized {
 
 impl<T> Buffer<T> {
     pub fn new_with_kind_and_usage(
-        ctx: &GraphicsCtx,
+        ctx: &GlCtx,
         kind: BufferKind,
         usage: BufferUsage,
     ) -> Result<Self> {
-        let webgl_buffer = ctx
-            .webgl_ctx
-            .create_buffer()
-            .ok_or(GraphicsError::Allocate)?;
+        let webgl_buffer = ctx.webgl_ctx.create_buffer().ok_or(GlError::Allocate)?;
 
         Ok(Self {
             ctx: ctx.webgl_ctx.clone(),
@@ -85,7 +82,7 @@ impl<T> Buffer<T> {
         })
     }
 
-    pub fn new(ctx: &GraphicsCtx) -> Result<Self> {
+    pub fn new(ctx: &GlCtx) -> Result<Self> {
         Buffer::new_with_kind_and_usage(ctx, Default::default(), Default::default())
     }
 

@@ -2,7 +2,7 @@ use web_sys::WebGl2RenderingContext;
 
 use super::array::VertexArray;
 use super::shader::Program;
-use super::GraphicsCtx;
+use super::GlCtx;
 
 pub struct Frame<'a> {
     ctx: WebGl2RenderingContext,
@@ -26,7 +26,7 @@ impl<'a> Draw<'a> {
 }
 
 impl<'a> Frame<'a> {
-    pub fn new(ctx: &GraphicsCtx) -> Self {
+    pub fn new(ctx: &GlCtx) -> Self {
         Self {
             ctx: ctx.webgl_ctx.clone(),
             draws: vec![],
