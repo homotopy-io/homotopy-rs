@@ -1,12 +1,17 @@
+use std::rc::Rc;
+
 use euclid::{Vector2D, Vector3D};
 
 use web_sys::{WebGl2RenderingContext, WebGlVertexArrayObject};
 
-use super::buffer::Buffer;
+use super::buffer::{Buffer, UntypedBuffer};
 use super::{GlCtx, GlError, Result};
 
 pub struct VertexArray {
     ctx: WebGl2RenderingContext,
+
+    attributes: Vec<Rc<UntypedBuffer>>,
+    len: usize,
 
     webgl_vao: WebGlVertexArrayObject,
 }
@@ -20,6 +25,8 @@ impl VertexArray {
 
         Ok(Self {
             ctx: ctx.webgl_ctx.clone(),
+            attributes: vec![],
+            len: 0,
             webgl_vao,
         })
     }
@@ -38,7 +45,6 @@ impl VertexArray {
 
 impl VertexArray {
     // TODO(@doctorn) this definitely shouldn't be public
-    // FIXME(@doctorn) buffer shouldn't ever be dropped before vertex array
     pub fn attribute<T>(&mut self, loc: u32, src: &Buffer<T>)
     where
         T: Attributable,
@@ -46,14 +52,16 @@ impl VertexArray {
         // TODO(@doctorn) should be able to use locations other than 0,
         // but this is program dependent (need to work out how to support
         // this...)
-        //
-        // if !self.attributes.is_empty() {
-        //     assert_eq!(
-        //         self.len,
-        //         src.len(),
-        //         "buffer does not match length of vertex array"
-        //     );
-        // }
+
+        if !self.attributes.is_empty() {
+            assert_eq!(
+                self.len,
+                src.len(),
+                "buffer does not match length of vertex array"
+            );
+        }
+
+        self.len = src.len();
 
         // bind the VAO
         self.bind(|| {
@@ -67,6 +75,8 @@ impl VertexArray {
                     .vertex_attrib_pointer_with_i32(loc, T::DIMENSION, T::TYPE, false, 0, 0);
             });
         });
+
+        self.attributes.push(src.into_untyped());
     }
 }
 

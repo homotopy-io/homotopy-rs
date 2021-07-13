@@ -65,8 +65,6 @@ impl Component for Diagram3D {
 
         let mut renderer = Renderer {
             ctx,
-            triangle: None,
-            colors: None,
             vertex_array: None,
             program: None,
         };
@@ -89,8 +87,6 @@ impl Component for Diagram3D {
 
 pub struct Renderer {
     ctx: GlCtx,
-    triangle: Option<Buffer<Vertex>>,
-    colors: Option<Buffer<Vertex>>,
     vertex_array: Option<VertexArray>,
     program: Option<Program>,
 }
@@ -103,7 +99,6 @@ impl Renderer {
             Vertex::new(0.7, -0.7, 0.0),
             Vertex::new(0.0, 0.7, 0.0),
         ]);
-        self.triangle = Some(triangle);
 
         let mut colors = Buffer::new(&self.ctx).unwrap();
         colors.buffer(&[
@@ -111,17 +106,16 @@ impl Renderer {
             Vertex::new(0.0, 1.0, 0.0),
             Vertex::new(0.0, 0.0, 1.0),
         ]);
-        self.colors = Some(colors);
 
         let mut vertex_array = VertexArray::new(&self.ctx).unwrap();
-        vertex_array.attribute(0, self.triangle.as_ref().unwrap());
-        vertex_array.attribute(1, self.colors.as_ref().unwrap());
+        vertex_array.attribute(0, &triangle);
+        vertex_array.attribute(1, &colors);
         self.vertex_array = Some(vertex_array);
 
         let program = Program::link(
             &self.ctx,
-            VertexShader::compile(&self.ctx, include_str!("../../glsl/vert.glsl")).unwrap(),
-            FragmentShader::compile(&self.ctx, include_str!("../../glsl/frag.glsl")).unwrap(),
+            &VertexShader::compile(&self.ctx, include_str!("../../glsl/vert.glsl")).unwrap(),
+            &FragmentShader::compile(&self.ctx, include_str!("../../glsl/frag.glsl")).unwrap(),
         )
         .unwrap();
         self.program = Some(program);

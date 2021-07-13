@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use web_sys::{WebGl2RenderingContext, WebGlProgram, WebGlShader};
 
 use super::{GlCtx, GlError, Result};
@@ -14,15 +16,19 @@ struct UntypedShader {
     kind: ShaderKind,
 }
 
-pub struct VertexShader(UntypedShader);
-pub struct FragmentShader(UntypedShader);
+#[derive(Clone)]
+pub struct VertexShader(Rc<UntypedShader>);
+#[derive(Clone)]
+pub struct FragmentShader(Rc<UntypedShader>);
 
-pub struct Program {
+struct ProgramData {
     ctx: WebGl2RenderingContext,
     webgl_program: WebGlProgram,
     vertex_shader: VertexShader,
     fragment_shader: FragmentShader,
 }
+
+pub struct Program(Rc<ProgramData>);
 
 impl UntypedShader {
     fn compile<S: AsRef<str>>(ctx: &GlCtx, kind: ShaderKind, src: S) -> Result<Self> {
@@ -65,13 +71,13 @@ impl UntypedShader {
     #[inline(always)]
     fn into_vertex_shader(self) -> VertexShader {
         assert_eq!(self.kind, ShaderKind::Vertex);
-        VertexShader(self)
+        VertexShader(Rc::new(self))
     }
 
     #[inline(always)]
     fn into_fragment_shader(self) -> FragmentShader {
         assert_eq!(self.kind, ShaderKind::Fragment);
-        FragmentShader(self)
+        FragmentShader(Rc::new(self))
     }
 }
 
@@ -102,15 +108,15 @@ impl FragmentShader {
 impl Program {
     pub fn link(
         ctx: &GlCtx,
-        vertex_shader: VertexShader,
-        fragment_shader: FragmentShader,
+        vertex_shader: &VertexShader,
+        fragment_shader: &FragmentShader,
     ) -> Result<Program> {
         let allocated = ctx.webgl_ctx.create_program().ok_or(GlError::Allocate)?;
-        let program = Self {
+        let program = ProgramData {
             ctx: ctx.webgl_ctx.clone(),
             webgl_program: allocated,
-            vertex_shader,
-            fragment_shader,
+            vertex_shader: vertex_shader.clone(),
+            fragment_shader: fragment_shader.clone(),
         };
 
         // Attach shaders and link
@@ -132,7 +138,7 @@ impl Program {
             .unwrap_or_default()
         {
             // If so, store program data and move on
-            Ok(program)
+            Ok(Program(Rc::new(program)))
         } else {
             // Otherwise, try to get an error log
             Err(GlError::ProgramLink(
@@ -149,14 +155,14 @@ impl Program {
     where
         F: FnOnce() -> U,
     {
-        self.ctx.use_program(Some(&self.webgl_program));
+        self.0.ctx.use_program(Some(&self.0.webgl_program));
         let result = f();
-        self.ctx.use_program(None);
+        self.0.ctx.use_program(None);
         result
     }
 }
 
-impl Drop for Program {
+impl Drop for ProgramData {
     fn drop(&mut self) {
         self.ctx.delete_program(Some(&self.webgl_program));
     }

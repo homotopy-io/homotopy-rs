@@ -1,4 +1,6 @@
+use std::cell::Cell;
 use std::marker::PhantomData;
+use std::rc::Rc;
 use std::slice;
 
 use euclid::{Vector2D, Vector3D};
@@ -44,15 +46,19 @@ impl Default for BufferUsage {
     }
 }
 
-pub struct Buffer<T> {
+pub(super) struct UntypedBuffer {
     ctx: WebGl2RenderingContext,
 
     kind: BufferKind,
     usage: BufferUsage,
-    len: usize,
+
+    len: Cell<usize>,
 
     webgl_buffer: WebGlBuffer,
+}
 
+pub struct Buffer<T> {
+    buffer: Rc<UntypedBuffer>,
     _phantom: PhantomData<T>,
 }
 
@@ -72,12 +78,16 @@ impl<T> Buffer<T> {
     ) -> Result<Self> {
         let webgl_buffer = ctx.webgl_ctx.create_buffer().ok_or(GlError::Allocate)?;
 
-        Ok(Self {
+        let buffer = UntypedBuffer {
             ctx: ctx.webgl_ctx.clone(),
             kind,
             usage,
-            len: 0,
+            len: Cell::new(0),
             webgl_buffer,
+        };
+
+        Ok(Self {
+            buffer: Rc::new(buffer),
             _phantom: Default::default(),
         })
     }
@@ -93,20 +103,31 @@ impl<T> Buffer<T> {
         T::buffer_to(self, data);
     }
 
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.buffer.len.get()
+    }
+
     #[inline(always)]
     pub(super) fn bind<F, U>(&self, f: F) -> U
     where
         F: FnOnce() -> U,
     {
-        self.ctx
-            .bind_buffer(self.kind as u32, Some(&self.webgl_buffer));
+        self.buffer
+            .ctx
+            .bind_buffer(self.buffer.kind as u32, Some(&self.buffer.webgl_buffer));
         let result = f();
-        self.ctx.bind_buffer(self.kind as u32, None);
+        self.buffer.ctx.bind_buffer(self.buffer.kind as u32, None);
         result
+    }
+
+    #[inline]
+    pub(super) fn into_untyped(&self) -> Rc<UntypedBuffer> {
+        Rc::clone(&self.buffer)
     }
 }
 
-impl<T> Drop for Buffer<T> {
+impl Drop for UntypedBuffer {
     fn drop(&mut self) {
         self.ctx.delete_buffer(Some(&self.webgl_buffer));
     }
@@ -114,14 +135,14 @@ impl<T> Drop for Buffer<T> {
 
 unsafe impl UnsafeBufferable for f32 {
     unsafe fn buffer_to_unchecked<T>(buffer: &mut Buffer<T>, data: &[f32], len: usize) {
-        buffer.len = len;
+        buffer.buffer.len.set(len);
         buffer.bind(|| {
             let view = js_sys::Float32Array::view(data);
             // NOTE no memory can be allocated here or `view` will be invalidated
-            buffer.ctx.buffer_data_with_array_buffer_view(
-                buffer.kind as u32,
+            buffer.buffer.ctx.buffer_data_with_array_buffer_view(
+                buffer.buffer.kind as u32,
                 &view,
-                buffer.usage as u32,
+                buffer.buffer.usage as u32,
             );
         });
     }
