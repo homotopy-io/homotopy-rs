@@ -1,8 +1,29 @@
+use std::collections::HashMap;
 use std::rc::Rc;
 
-use web_sys::{WebGl2RenderingContext, WebGlProgram, WebGlShader};
+use euclid::{Transform3D, Vector2D, Vector3D};
+
+use web_sys::{WebGl2RenderingContext, WebGlProgram, WebGlShader, WebGlUniformLocation};
 
 use super::{GlCtx, GlError, Result};
+
+#[macro_export]
+macro_rules! program {
+    (
+        $ctx:expr,
+        $vertex:literal,
+        $fragment:literal,
+        {$($attribute:ident),*$(,)*},
+        {$($uniform:ident),*$(,)*}$(,)*
+    ) => {{
+        $ctx.mk_program(
+            include_str!($vertex),
+            include_str!($fragment),
+            vec![$(stringify!($attribute)),*],
+            vec![$(stringify!($uniform)),*],
+        )
+    }}
+}
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub enum ShaderKind {
@@ -17,17 +38,22 @@ struct UntypedShader {
 }
 
 #[derive(Clone)]
-pub struct VertexShader(Rc<UntypedShader>);
+struct VertexShader(Rc<UntypedShader>);
 #[derive(Clone)]
-pub struct FragmentShader(Rc<UntypedShader>);
+struct FragmentShader(Rc<UntypedShader>);
 
 struct ProgramData {
     ctx: WebGl2RenderingContext,
-    webgl_program: WebGlProgram,
+
     vertex_shader: VertexShader,
     fragment_shader: FragmentShader,
+    attributes: HashMap<&'static str, u32>,
+    uniforms: HashMap<&'static str, WebGlUniformLocation>,
+
+    webgl_program: WebGlProgram,
 }
 
+#[derive(Clone)]
 pub struct Program(Rc<ProgramData>);
 
 impl UntypedShader {
@@ -82,13 +108,14 @@ impl UntypedShader {
 }
 
 impl Drop for UntypedShader {
+    #[inline]
     fn drop(&mut self) {
         self.ctx.delete_shader(Some(&self.webgl_shader));
     }
 }
 
 impl VertexShader {
-    pub fn compile<S>(ctx: &GlCtx, src: S) -> Result<VertexShader>
+    fn compile<S>(ctx: &GlCtx, src: S) -> Result<VertexShader>
     where
         S: AsRef<str>,
     {
@@ -97,7 +124,7 @@ impl VertexShader {
 }
 
 impl FragmentShader {
-    pub fn compile<S>(ctx: &GlCtx, src: S) -> Result<FragmentShader>
+    fn compile<S>(ctx: &GlCtx, src: S) -> Result<FragmentShader>
     where
         S: AsRef<str>,
     {
@@ -106,17 +133,36 @@ impl FragmentShader {
 }
 
 impl Program {
-    pub fn link(
+    fn link(
         ctx: &GlCtx,
         vertex_shader: &VertexShader,
         fragment_shader: &FragmentShader,
+        attributes: Vec<&'static str>,
+        uniforms: Vec<&'static str>,
     ) -> Result<Program> {
+        let attributes = {
+            let mut map = HashMap::new();
+
+            for (i, attribute) in attributes.into_iter().enumerate() {
+                if let Some(_) = map.insert(attribute, i as u32) {
+                    return Err(GlError::ProgramLink(format!(
+                        "duplicate attribute '{}'",
+                        attribute
+                    )));
+                }
+            }
+
+            map
+        };
+
         let allocated = ctx.webgl_ctx.create_program().ok_or(GlError::Allocate)?;
-        let program = ProgramData {
+        let mut program = ProgramData {
             ctx: ctx.webgl_ctx.clone(),
-            webgl_program: allocated,
             vertex_shader: vertex_shader.clone(),
             fragment_shader: fragment_shader.clone(),
+            attributes,
+            uniforms: HashMap::new(),
+            webgl_program: allocated,
         };
 
         // Attach shaders and link
@@ -128,6 +174,14 @@ impl Program {
             &program.webgl_program,
             &program.vertex_shader.0.webgl_shader,
         );
+
+        // Bind the attribute locations
+        for (attribute, i) in program.attributes.iter() {
+            program
+                .ctx
+                .bind_attrib_location(&program.webgl_program, *i, attribute);
+        }
+
         program.ctx.link_program(&program.webgl_program);
 
         // Check linking was successful
@@ -137,7 +191,27 @@ impl Program {
             .as_bool()
             .unwrap_or_default()
         {
-            // If so, store program data and move on
+            // If so, get uniform locations, store program data, and move on
+
+            for uniform in uniforms.into_iter() {
+                let loc = program
+                    .ctx
+                    .get_uniform_location(&program.webgl_program, uniform)
+                    .ok_or_else(|| {
+                        GlError::Uniform(format!(
+                            "couldn't get the location of the uniform '{}'",
+                            uniform,
+                        ))
+                    })?;
+
+                if let Some(_) = program.uniforms.insert(uniform, loc) {
+                    return Err(GlError::ProgramLink(format!(
+                        "duplicate uniform '{}'",
+                        uniform,
+                    )));
+                }
+            }
+
             Ok(Program(Rc::new(program)))
         } else {
             // Otherwise, try to get an error log
@@ -148,6 +222,29 @@ impl Program {
                     .unwrap_or_else(|| "unknown program link failure".to_owned()),
             ))
         }
+    }
+
+    #[inline]
+    pub(super) fn attribute_loc(&self, name: &'static str) -> u32 {
+        assert!(self.0.attributes.contains_key(name));
+        self.0.attributes.get(name).copied().unwrap()
+    }
+
+    #[inline]
+    pub(super) fn uniforms(
+        &self,
+    ) -> impl Iterator<Item = (&'static str, &WebGlUniformLocation)> + '_ {
+        self.0.uniforms.iter().map(|(k, v)| (*k, v))
+    }
+
+    #[inline]
+    pub(super) fn has_uniform(&self, name: &'static str) -> bool {
+        self.0.uniforms.contains_key(name)
+    }
+
+    #[inline]
+    pub(super) fn ctx(&self) -> &WebGl2RenderingContext {
+        &self.0.ctx
     }
 
     #[inline(always)]
@@ -163,7 +260,73 @@ impl Program {
 }
 
 impl Drop for ProgramData {
+    #[inline]
     fn drop(&mut self) {
         self.ctx.delete_program(Some(&self.webgl_program));
+    }
+}
+
+impl GlCtx {
+    #[inline]
+    pub fn mk_program<S, T>(
+        &self,
+        vertex_src: S,
+        fragment_src: T,
+        attributes: Vec<&'static str>,
+        uniforms: Vec<&'static str>,
+    ) -> Result<Program>
+    where
+        S: AsRef<str>,
+        T: AsRef<str>,
+    {
+        Program::link(
+            self,
+            &VertexShader::compile(self, vertex_src)?,
+            &FragmentShader::compile(self, fragment_src)?,
+            attributes,
+            uniforms,
+        )
+    }
+}
+
+pub unsafe trait Uniformable: 'static {
+    fn uniform(&self, ctx: &WebGl2RenderingContext, loc: &WebGlUniformLocation);
+}
+
+unsafe impl Uniformable for f32 {
+    #[inline(always)]
+    fn uniform(&self, ctx: &WebGl2RenderingContext, loc: &WebGlUniformLocation) {
+        ctx.uniform1f(Some(loc), *self)
+    }
+}
+
+unsafe impl<U> Uniformable for Vector2D<f32, U>
+where
+    U: 'static,
+{
+    #[inline(always)]
+    fn uniform(&self, ctx: &WebGl2RenderingContext, loc: &WebGlUniformLocation) {
+        ctx.uniform2f(Some(loc), self.x, self.y)
+    }
+}
+
+unsafe impl<U> Uniformable for Vector3D<f32, U>
+where
+    U: 'static,
+{
+    #[inline(always)]
+    fn uniform(&self, ctx: &WebGl2RenderingContext, loc: &WebGlUniformLocation) {
+        ctx.uniform3f(Some(loc), self.x, self.y, self.z)
+    }
+}
+
+unsafe impl<S, T> Uniformable for Transform3D<f32, S, T>
+where
+    S: 'static,
+    T: 'static,
+{
+    #[inline(always)]
+    fn uniform(&self, ctx: &WebGl2RenderingContext, loc: &WebGlUniformLocation) {
+        ctx.uniform_matrix4fv_with_f32_array(Some(loc), false, &self.to_array())
     }
 }

@@ -4,11 +4,13 @@ use euclid::{Transform3D, Vector3D};
 
 pub type Coord = f32;
 
+pub struct RgbSpace;
 pub struct ModelSpace;
 pub struct WorldSpace;
 pub struct ViewSpace;
 pub struct ScreenSpace;
 
+pub type Color = Vector3D<Coord, RgbSpace>;
 pub type Vertex = Vector3D<Coord, ModelSpace>;
 
 pub type ModelMatrix = Transform3D<Coord, ModelSpace, WorldSpace>;

@@ -1,13 +1,15 @@
+use euclid::Angle;
+
 use yew::prelude::*;
 use yew::services::render::RenderTask;
 use yew::services::RenderService;
 
 use homotopy_graphics::gl::array::VertexArray;
-use homotopy_graphics::gl::buffer::Buffer;
-use homotopy_graphics::gl::frame::{Draw, Frame};
-use homotopy_graphics::gl::geom::Vertex;
-use homotopy_graphics::gl::shader::{FragmentShader, Program, VertexShader};
+use homotopy_graphics::gl::buffer::{BufferKind, ElementBuffer};
+use homotopy_graphics::gl::frame::Frame;
+use homotopy_graphics::gl::geom::{Color, MVPMatrix, Vertex};
 use homotopy_graphics::gl::GlCtx;
+use homotopy_graphics::{draw, program, vertex_array};
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct Props3D {}
@@ -66,7 +68,9 @@ impl Component for Diagram3D {
         let mut renderer = Renderer {
             ctx,
             vertex_array: None,
-            program: None,
+            vertex_array2: None,
+            elements: None,
+            t: 0f32,
         };
 
         renderer.init();
@@ -88,47 +92,100 @@ impl Component for Diagram3D {
 pub struct Renderer {
     ctx: GlCtx,
     vertex_array: Option<VertexArray>,
-    program: Option<Program>,
+    vertex_array2: Option<VertexArray>,
+    elements: Option<ElementBuffer>,
+    t: f32,
 }
 
 impl Renderer {
     fn init(&mut self) {
-        let mut triangle = Buffer::new(&self.ctx).unwrap();
-        triangle.buffer(&[
-            Vertex::new(-0.7, -0.7, 0.0),
-            Vertex::new(0.7, -0.7, 0.0),
-            Vertex::new(0.0, 0.7, 0.0),
-        ]);
+        let triangle = self
+            .ctx
+            .mk_buffer(&[
+                Vertex::new(-0.7, -0.7, 0.0),
+                Vertex::new(0.7, -0.7, 0.0),
+                Vertex::new(0.0, 0.7, 0.0),
+            ])
+            .unwrap();
 
-        let mut colors = Buffer::new(&self.ctx).unwrap();
-        colors.buffer(&[
-            Vertex::new(1.0, 0.0, 0.0),
-            Vertex::new(0.0, 1.0, 0.0),
-            Vertex::new(0.0, 0.0, 1.0),
-        ]);
+        let square = self
+            .ctx
+            .mk_buffer(&[
+                Vertex::new(-1.0, -1.0, 0.0),
+                Vertex::new(-1.0, 1.0, 0.0),
+                Vertex::new(1.0, 1.0, 0.0),
+                Vertex::new(1.0, -1.0, 0.0),
+            ])
+            .unwrap();
 
-        let mut vertex_array = VertexArray::new(&self.ctx).unwrap();
-        vertex_array.attribute(0, &triangle);
-        vertex_array.attribute(1, &colors);
-        self.vertex_array = Some(vertex_array);
+        let colors = self
+            .ctx
+            .mk_buffer(&[
+                Color::new(1.0, 0.0, 0.0),
+                Color::new(0.0, 1.0, 0.0),
+                Color::new(0.0, 0.0, 1.0),
+            ])
+            .unwrap();
 
-        let program = Program::link(
-            &self.ctx,
-            &VertexShader::compile(&self.ctx, include_str!("../../glsl/vert.glsl")).unwrap(),
-            &FragmentShader::compile(&self.ctx, include_str!("../../glsl/frag.glsl")).unwrap(),
+        let colors2 = self
+            .ctx
+            .mk_buffer(&[
+                Color::new(1.0, 0.0, 0.0),
+                Color::new(0.0, 1.0, 0.0),
+                Color::new(0.0, 0.0, 1.0),
+                Color::new(1.0, 1.0, 1.0),
+            ])
+            .unwrap();
+
+        let program = program!(
+            self.ctx,
+            "../../glsl/vert.glsl",
+            "../../glsl/frag.glsl",
+            { position, in_color },
+            { transform }
         )
         .unwrap();
-        self.program = Some(program);
+
+        let vertex_array = vertex_array!(&program, {
+            position: &triangle,
+            in_color: &colors,
+        })
+        .unwrap();
+        self.vertex_array = Some(vertex_array);
+
+        let vertex_array2 = vertex_array!(
+            &program,
+            &self.ctx.mk_element_buffer(&[0, 1, 2, 0, 2, 3]).unwrap(),
+            {
+                position: &square,
+                in_color: &colors2,
+            }
+        ).unwrap();
+        self.vertex_array2 = Some(vertex_array2);
     }
 
-    fn update(&mut self, _dt: f64) {}
+    fn update(&mut self, dt: f64) {
+        self.t = dt as f32;
+    }
 
     fn render(&self) {
         let mut frame = Frame::new(&self.ctx);
-        frame.draw(Draw::new(
-            self.program.as_ref().unwrap(),
-            self.vertex_array.as_ref().unwrap(),
+
+        frame.draw(draw!(self.vertex_array.as_ref().unwrap(), {
+            transform: MVPMatrix::identity(),
+        }));
+        frame.draw(draw!(
+            self.vertex_array2.as_ref().unwrap(),
+            {
+                transform: MVPMatrix::identity().then_rotate(
+                    0.0,
+                    0.0,
+                    1.0,
+                    Angle::radians(self.t / 200.0)
+                ).then_scale(f32::sin(self.t / 170.0), f32::sin(self.t / 170.0), 1.0),
+            }
         ));
+
         frame.render();
     }
 }

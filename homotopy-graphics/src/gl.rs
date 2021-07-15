@@ -21,6 +21,10 @@ pub enum GlError {
     ShaderCompile(String),
     #[error("failed to link shader program: {0}")]
     ProgramLink(String),
+    #[error("failed to bind vertex array attribute: {0}")]
+    BindAttribute(String),
+    #[error("failed to pass uniform value: {0}")]
+    Uniform(String),
 }
 
 pub type Result<T> = std::result::Result<T, GlError>;

@@ -1,34 +1,73 @@
+use std::collections::HashMap;
 use std::rc::Rc;
 
 use euclid::{Vector2D, Vector3D};
 
 use web_sys::{WebGl2RenderingContext, WebGlVertexArrayObject};
 
-use super::buffer::{Buffer, UntypedBuffer};
-use super::{GlCtx, GlError, Result};
+use super::buffer::{Buffer, ElementBuffer, UntypedBuffer};
+use super::shader::Program;
+use super::{GlError, Result};
+
+#[macro_export]
+macro_rules! vertex_array {
+    ($program:expr, {$($attribute:ident : $value:expr),*$(,)*}) => {{
+        $crate::gl::array::VertexArray::new($program)
+            $(.map(|x| x.attribute(stringify!($attribute), $value)))*
+    }};
+
+    ($program:expr, $elements:expr, {$($attribute:ident : $value:expr),*$(,)*}) => {{
+        $crate::gl::array::VertexArray::new_with_elements(
+            $program,
+            Some($elements),
+        )$(.map(|x| x.attribute(stringify!($attribute), $value)))*
+    }}
+}
 
 pub struct VertexArray {
-    ctx: WebGl2RenderingContext,
+    program: Program,
 
-    attributes: Vec<Rc<UntypedBuffer>>,
+    attributes: HashMap<&'static str, Rc<UntypedBuffer>>,
+    elements: Option<ElementBuffer>,
     len: usize,
 
     webgl_vao: WebGlVertexArrayObject,
 }
 
 impl VertexArray {
-    pub fn new(ctx: &GlCtx) -> Result<Self> {
-        let webgl_vao = ctx
-            .webgl_ctx
+    pub fn new_with_elements(program: &Program, elements: Option<&ElementBuffer>) -> Result<Self> {
+        let webgl_vao = program
+            .ctx()
             .create_vertex_array()
             .ok_or(GlError::Allocate)?;
 
         Ok(Self {
-            ctx: ctx.webgl_ctx.clone(),
-            attributes: vec![],
+            program: program.clone(),
+            attributes: HashMap::new(),
+            elements: elements.cloned(),
             len: 0,
             webgl_vao,
         })
+    }
+
+    #[inline]
+    pub fn new(program: &Program) -> Result<Self> {
+        Self::new_with_elements(program, None)
+    }
+
+    #[inline]
+    pub(super) fn len(&self) -> usize {
+        self.len
+    }
+
+    #[inline]
+    pub(super) fn program(&self) -> &Program {
+        &self.program
+    }
+
+    #[inline]
+    pub(super) fn elements(&self) -> Option<&ElementBuffer> {
+        self.elements.as_ref()
     }
 
     #[inline(always)]
@@ -36,23 +75,18 @@ impl VertexArray {
     where
         F: FnOnce() -> U,
     {
-        self.ctx.bind_vertex_array(Some(&self.webgl_vao));
+        self.program.ctx().bind_vertex_array(Some(&self.webgl_vao));
         let result = f();
-        self.ctx.bind_vertex_array(None);
+        self.program.ctx().bind_vertex_array(None);
         result
     }
 }
 
 impl VertexArray {
-    // TODO(@doctorn) this definitely shouldn't be public
-    pub fn attribute<T>(&mut self, loc: u32, src: &Buffer<T>)
+    pub fn attribute<T>(mut self, attribute: &'static str, src: &Buffer<T>) -> Self
     where
         T: Attributable,
     {
-        // TODO(@doctorn) should be able to use locations other than 0,
-        // but this is program dependent (need to work out how to support
-        // this...)
-
         if !self.attributes.is_empty() {
             assert_eq!(
                 self.len,
@@ -61,28 +95,43 @@ impl VertexArray {
             );
         }
 
-        self.len = src.len();
-
+        // get the location of the target attribute
+        let loc = self.program.attribute_loc(attribute);
         // bind the VAO
         self.bind(|| {
             // bind the source buffer
             src.bind(|| {
                 // enable the specified attribute array
-                self.ctx.enable_vertex_attrib_array(loc);
+                self.program.ctx().enable_vertex_attrib_array(loc);
                 // pass on the dimension and type information of the buffer
                 // TODO(@doctorn) stride and offset? (probably not...)
-                self.ctx
-                    .vertex_attrib_pointer_with_i32(loc, T::DIMENSION, T::TYPE, false, 0, 0);
+                self.program.ctx().vertex_attrib_pointer_with_i32(
+                    loc,
+                    T::DIMENSION,
+                    T::TYPE,
+                    false,
+                    0,
+                    0,
+                );
             });
         });
 
-        self.attributes.push(src.into_untyped());
+        // set the length of the buffer to match the length of the source data (this will be a
+        // no-op unless the array is uninitialised)
+        self.len = src.len();
+        // hold a reference to the source data to stop it being dropped
+        self.attributes.insert(attribute, src.into_untyped());
+
+        self
     }
 }
 
 impl Drop for VertexArray {
+    #[inline]
     fn drop(&mut self) {
-        self.ctx.delete_vertex_array(Some(&self.webgl_vao));
+        self.program
+            .ctx()
+            .delete_vertex_array(Some(&self.webgl_vao));
     }
 }
 
