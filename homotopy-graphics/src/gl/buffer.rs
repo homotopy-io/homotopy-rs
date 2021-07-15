@@ -95,22 +95,23 @@ impl GlCtx {
     where
         T: Bufferable,
     {
-        let webgl_buffer = self.webgl_ctx.create_buffer().ok_or(GlError::Allocate)?;
-        let untyped_buffer = UntypedBuffer {
-            ctx: self.webgl_ctx.clone(),
-            kind,
-            usage,
-            len: data.len(),
-            webgl_buffer,
-        };
-
-        let mut buffer = Buffer {
-            buffer: Rc::new(untyped_buffer),
-            _phantom: Default::default(),
-        };
-
+        let mut buffer = Buffer::alloc(self, kind, usage, data.len())?;
         buffer.buffer(data);
+        Ok(buffer)
+    }
 
+    pub unsafe fn mk_buffer_with_kind_and_usage_unchecked<T, U>(
+        &self,
+        kind: BufferKind,
+        usage: BufferUsage,
+        data: &[U],
+        len: usize,
+    ) -> Result<Buffer<T>>
+    where
+        U: UnsafeBufferable,
+    {
+        let mut buffer = Buffer::alloc(self, kind, usage, len)?;
+        buffer.buffer_unchecked(data);
         Ok(buffer)
     }
 
@@ -123,6 +124,19 @@ impl GlCtx {
     }
 
     #[inline]
+    pub unsafe fn mk_buffer_unchecked<T, U>(&self, data: &[U], len: usize) -> Result<Buffer<T>>
+    where
+        U: UnsafeBufferable,
+    {
+        self.mk_buffer_with_kind_and_usage_unchecked(
+            Default::default(),
+            Default::default(),
+            data,
+            len,
+        )
+    }
+
+    #[inline]
     pub fn mk_element_buffer(&self, data: &[u16]) -> Result<ElementBuffer> {
         self.mk_buffer_with_kind_and_usage(BufferKind::ElementArray, BufferUsage::StaticDraw, data)
     }
@@ -132,16 +146,42 @@ impl<T> Buffer<T>
 where
     T: Bufferable,
 {
-    pub fn buffer(&mut self, data: &[T])
-    where
-        T: Bufferable,
-    {
+    #[inline]
+    pub fn buffer(&mut self, data: &[T]) {
         assert_eq!(self.buffer.len, data.len());
         T::buffer_to(self, data);
     }
 }
 
 impl<T> Buffer<T> {
+    #[inline]
+    pub unsafe fn buffer_unchecked<U>(&mut self, data: &[U])
+    where
+        U: UnsafeBufferable,
+    {
+        U::buffer_to_unchecked(self, data);
+    }
+}
+
+impl<T> Buffer<T> {
+    fn alloc(ctx: &GlCtx, kind: BufferKind, usage: BufferUsage, len: usize) -> Result<Self> {
+        let webgl_buffer = ctx.webgl_ctx.create_buffer().ok_or(GlError::Allocate)?;
+        let untyped_buffer = UntypedBuffer {
+            ctx: ctx.webgl_ctx.clone(),
+            kind,
+            usage,
+            len,
+            webgl_buffer,
+        };
+
+        let buffer = Buffer {
+            buffer: Rc::new(untyped_buffer),
+            _phantom: Default::default(),
+        };
+
+        Ok(buffer)
+    }
+
     #[inline]
     pub fn len(&self) -> usize {
         self.buffer.len

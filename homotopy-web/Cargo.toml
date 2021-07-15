@@ -54,6 +54,9 @@ console_error_panic_hook = { version = "0.1.6", optional = true }
 im = { git = "https://github.com/bodil/im-rs", features = ["serde"] }
 arrayvec = "0.7.1"
 
+# TODO(@doctorn) remove
+tobj = "*"
+
 # The `web-sys` crate allows you to interact with the various browser APIs,
 # like the DOM.
 [dependencies.web-sys]

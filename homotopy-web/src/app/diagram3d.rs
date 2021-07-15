@@ -5,9 +5,9 @@ use yew::services::render::RenderTask;
 use yew::services::RenderService;
 
 use homotopy_graphics::gl::array::VertexArray;
-use homotopy_graphics::gl::buffer::{BufferKind, ElementBuffer};
+use homotopy_graphics::gl::buffer::Buffer;
 use homotopy_graphics::gl::frame::Frame;
-use homotopy_graphics::gl::geom::{Color, MVPMatrix, Vertex};
+use homotopy_graphics::gl::geom::{ModelMatrix, ProjectionMatrix, Vertex, ViewMatrix};
 use homotopy_graphics::gl::GlCtx;
 use homotopy_graphics::{draw, program, vertex_array};
 
@@ -64,18 +64,7 @@ impl Component for Diagram3D {
 
     fn rendered(&mut self, first_render: bool) {
         let ctx = GlCtx::attach(self.canvas.clone()).unwrap();
-
-        let mut renderer = Renderer {
-            ctx,
-            vertex_array: None,
-            vertex_array2: None,
-            elements: None,
-            t: 0f32,
-        };
-
-        renderer.init();
-
-        self.renderer = Some(renderer);
+        self.renderer = Some(Renderer::init(ctx));
 
         if first_render {
             let render_frame = self.link.callback(Message3D::Render);
@@ -91,77 +80,72 @@ impl Component for Diagram3D {
 
 pub struct Renderer {
     ctx: GlCtx,
-    vertex_array: Option<VertexArray>,
-    vertex_array2: Option<VertexArray>,
-    elements: Option<ElementBuffer>,
+    rabbit: VertexArray,
     t: f32,
 }
 
 impl Renderer {
-    fn init(&mut self) {
-        let triangle = self
-            .ctx
-            .mk_buffer(&[
-                Vertex::new(-0.7, -0.7, 0.0),
-                Vertex::new(0.7, -0.7, 0.0),
-                Vertex::new(0.0, 0.7, 0.0),
-            ])
-            .unwrap();
+    const BUNNY: &'static [u8] = include_bytes!("../../static/bunny.obj");
 
-        let square = self
-            .ctx
-            .mk_buffer(&[
-                Vertex::new(-1.0, -1.0, 0.0),
-                Vertex::new(-1.0, 1.0, 0.0),
-                Vertex::new(1.0, 1.0, 0.0),
-                Vertex::new(1.0, -1.0, 0.0),
-            ])
-            .unwrap();
-
-        let colors = self
-            .ctx
-            .mk_buffer(&[
-                Color::new(1.0, 0.0, 0.0),
-                Color::new(0.0, 1.0, 0.0),
-                Color::new(0.0, 0.0, 1.0),
-            ])
-            .unwrap();
-
-        let colors2 = self
-            .ctx
-            .mk_buffer(&[
-                Color::new(1.0, 0.0, 0.0),
-                Color::new(0.0, 1.0, 0.0),
-                Color::new(0.0, 0.0, 1.0),
-                Color::new(1.0, 1.0, 1.0),
-            ])
-            .unwrap();
-
-        let program = program!(
-            self.ctx,
-            "../../glsl/vert.glsl",
-            "../../glsl/frag.glsl",
-            { position, in_color },
-            { transform }
+    fn init(ctx: GlCtx) -> Self {
+        let (models, _) = tobj::load_obj_buf(
+            &mut std::io::BufReader::new(Renderer::BUNNY),
+            &tobj::LoadOptions {
+                single_index: true,
+                triangulate: true,
+                ..Default::default()
+            },
+            |_| Err(tobj::LoadError::OpenFileFailed),
         )
         .unwrap();
 
-        let vertex_array = vertex_array!(&program, {
-            position: &triangle,
-            in_color: &colors,
-        })
-        .unwrap();
-        self.vertex_array = Some(vertex_array);
+        let model = models.first().unwrap();
+        let mesh = &model.mesh;
 
-        let vertex_array2 = vertex_array!(
+        let vertices: Buffer<Vertex> = unsafe {
+            ctx.mk_buffer_unchecked(&mesh.positions, mesh.positions.len() / 3)
+                .unwrap()
+        };
+        let normals: Buffer<Vertex> = unsafe {
+            ctx.mk_buffer_unchecked(&mesh.normals, mesh.normals.len() / 3)
+                .unwrap()
+        };
+
+        let indices = ctx
+            .mk_element_buffer(
+                &mesh
+                    .indices
+                    .iter()
+                    .copied()
+                    .map(|x| x as u16)
+                    .collect::<Vec<_>>(),
+            )
+            .unwrap();
+
+        let program = program!(
+            ctx,
+            "../../glsl/vert.glsl",
+            "../../glsl/frag.glsl",
+            { position, normal },
+            { mvp, m_inv }
+        )
+        .unwrap();
+
+        let rabbit = vertex_array!(
             &program,
-            &self.ctx.mk_element_buffer(&[0, 1, 2, 0, 2, 3]).unwrap(),
+            &indices,
             {
-                position: &square,
-                in_color: &colors2,
+                position: &vertices,
+                normal: &normals,
             }
-        ).unwrap();
-        self.vertex_array2 = Some(vertex_array2);
+        )
+        .unwrap();
+
+        Self {
+            ctx,
+            rabbit,
+            t: 0.0,
+        }
     }
 
     fn update(&mut self, dt: f64) {
@@ -171,18 +155,22 @@ impl Renderer {
     fn render(&self) {
         let mut frame = Frame::new(&self.ctx);
 
-        frame.draw(draw!(self.vertex_array.as_ref().unwrap(), {
-            transform: MVPMatrix::identity(),
-        }));
+        let model_matrix = ModelMatrix::scale(0.3, 0.3, 0.3).then_rotate(
+            0.0,
+            1.0,
+            0.0,
+            Angle::radians(self.t * 1e-3),
+        );
+        let view_matrix = ViewMatrix::identity();
+        let projection_matrix = ProjectionMatrix::perspective(5.0);
+        let mvp = model_matrix.then(&view_matrix).then(&projection_matrix);
+        let model_inv = model_matrix.inverse().unwrap();
+
         frame.draw(draw!(
-            self.vertex_array2.as_ref().unwrap(),
+            &self.rabbit,
             {
-                transform: MVPMatrix::identity().then_rotate(
-                    0.0,
-                    0.0,
-                    1.0,
-                    Angle::radians(self.t / 200.0)
-                ).then_scale(f32::sin(self.t / 170.0), f32::sin(self.t / 170.0), 1.0),
+                mvp: mvp,
+                m_inv: model_inv,
             }
         ));
 

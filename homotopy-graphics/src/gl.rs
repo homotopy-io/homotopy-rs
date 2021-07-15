@@ -49,6 +49,8 @@ impl GlCtx {
             ));
         };
 
+        webgl_ctx.enable(WebGl2RenderingContext::DEPTH_TEST);
+
         Ok(Self { webgl_ctx })
     }
 }

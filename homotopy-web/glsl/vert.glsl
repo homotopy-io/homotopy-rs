@@ -2,14 +2,16 @@
 
 precision highp float;
 
-in vec4 position;
-in vec3 in_color;
+in vec3 position;
+in vec3 in_normal;
 
-uniform mat4 transform;
+uniform mat4 mvp;
+uniform mat4 m_inv;
 
-out vec3 out_color;
+out vec3 out_normal;
 
 void main() {
-  out_color = in_color;
-  gl_Position = transform * position;
+  gl_Position = mvp * vec4(position, 1.0);
+
+  out_normal = normalize(mat3(m_inv) * in_normal);
 }
