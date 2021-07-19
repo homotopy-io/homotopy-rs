@@ -44,6 +44,10 @@
     clippy::match_on_vec_items,
 )]
 
+pub mod idx;
+pub mod tree;
+mod util;
+
 pub mod attach;
 pub mod common;
 pub mod complex;
@@ -60,7 +64,6 @@ pub mod rewrite;
 pub mod serialize;
 pub mod signature;
 pub mod typecheck;
-mod util;
 
 pub use common::{Boundary, Direction, Generator, Height, SliceIndex};
 pub use contraction::Bias;
