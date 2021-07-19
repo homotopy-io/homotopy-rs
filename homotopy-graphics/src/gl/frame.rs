@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::ops::{Deref, DerefMut};
 
 use web_sys::WebGl2RenderingContext;
 
@@ -15,7 +16,7 @@ macro_rules! draw {
 }
 
 pub struct Frame<'a> {
-    ctx: WebGl2RenderingContext,
+    ctx: &'a mut GlCtx,
     draws: Vec<Draw<'a>>,
 }
 
@@ -46,11 +47,8 @@ impl<'a> Draw<'a> {
 }
 
 impl<'a> Frame<'a> {
-    pub fn new(ctx: &GlCtx) -> Self {
-        Self {
-            ctx: ctx.webgl_ctx.clone(),
-            draws: vec![],
-        }
+    pub fn new(ctx: &'a mut GlCtx) -> Self {
+        Self { ctx, draws: vec![] }
     }
 
     #[inline]
@@ -59,9 +57,15 @@ impl<'a> Frame<'a> {
     }
 
     pub fn render(self) {
-        // TODO(@doctorn) this should be customisable
-        self.ctx.clear_color(0.0, 0.0, 1.0, 1.0);
-        self.ctx.clear(
+        self.ctx.resize_to_fit();
+
+        self.ctx.webgl_ctx.clear_color(
+            self.ctx.clear_color.x,
+            self.ctx.clear_color.y,
+            self.ctx.clear_color.z,
+            1.0,
+        );
+        self.ctx.webgl_ctx.clear(
             WebGl2RenderingContext::COLOR_BUFFER_BIT | WebGl2RenderingContext::DEPTH_BUFFER_BIT,
         );
 
@@ -78,14 +82,14 @@ impl<'a> Frame<'a> {
                             .uniforms
                             .get(name)
                             .expect(&format!("uniform '{}' is unset", name));
-                        data.uniform(&self.ctx, loc);
+                        data.uniform(&self.ctx.webgl_ctx, loc);
                     }
 
                     if let Some(elements) = draw.vertex_array.elements() {
                         // if we're given an element buffer, bind it and draw the appropriate
                         // number of elements
                         elements.bind(|| {
-                            self.ctx.draw_elements_with_i32(
+                            self.ctx.webgl_ctx.draw_elements_with_i32(
                                 WebGl2RenderingContext::TRIANGLES,
                                 elements.len() as i32,
                                 WebGl2RenderingContext::UNSIGNED_SHORT,
@@ -95,7 +99,7 @@ impl<'a> Frame<'a> {
                     } else {
                         // if no element buffer was provided, assume we're just drawing an array of
                         // triangles
-                        self.ctx.draw_arrays(
+                        self.ctx.webgl_ctx.draw_arrays(
                             WebGl2RenderingContext::TRIANGLES,
                             0,
                             draw.vertex_array.len() as i32,
@@ -105,6 +109,22 @@ impl<'a> Frame<'a> {
             });
         }
 
-        self.ctx.flush();
+        self.ctx.webgl_ctx.flush();
+    }
+}
+
+impl<'a> Deref for Frame<'a> {
+    type Target = GlCtx;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        self.ctx
+    }
+}
+
+impl<'a> DerefMut for Frame<'a> {
+    #[inline]
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.ctx
     }
 }

@@ -11,6 +11,8 @@ pub mod frame;
 pub mod geom;
 pub mod shader;
 
+use geom::Color;
+
 #[derive(Error, Debug)]
 pub enum GlError {
     #[error("failed to attach to WebGL context")]
@@ -31,6 +33,11 @@ pub type Result<T> = std::result::Result<T, GlError>;
 
 pub struct GlCtx {
     webgl_ctx: WebGl2RenderingContext,
+    canvas: HtmlCanvasElement,
+
+    width: u32,
+    height: u32,
+    clear_color: Color,
 }
 
 impl GlCtx {
@@ -51,6 +58,36 @@ impl GlCtx {
 
         webgl_ctx.enable(WebGl2RenderingContext::DEPTH_TEST);
 
-        Ok(Self { webgl_ctx })
+        Ok(Self {
+            webgl_ctx,
+            width: canvas.width(),
+            height: canvas.height(),
+            canvas,
+            clear_color: Default::default(),
+        })
+    }
+
+    #[inline]
+    pub fn set_clear_color(&mut self, color: Color) {
+        self.clear_color = color;
+    }
+
+    fn resize_to(&mut self, width: u32, height: u32) {
+        if width != self.canvas.width() || height != self.canvas.height() {
+            self.canvas.set_width(width);
+            self.canvas.set_height(height);
+
+            self.width = width;
+            self.height = height;
+        }
+
+        self.webgl_ctx.viewport(0, 0, width as i32, height as i32);
+    }
+
+    fn resize_to_fit(&mut self) {
+        let width = self.canvas.client_width();
+        let height = self.canvas.client_height();
+
+        self.resize_to(width as u32, height as u32);
     }
 }

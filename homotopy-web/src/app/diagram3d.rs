@@ -1,4 +1,4 @@
-use euclid::Angle;
+use euclid::{Angle, Vector3D};
 
 use yew::prelude::*;
 use yew::services::render::RenderTask;
@@ -7,7 +7,7 @@ use yew::services::RenderService;
 use homotopy_graphics::gl::array::VertexArray;
 use homotopy_graphics::gl::buffer::Buffer;
 use homotopy_graphics::gl::frame::Frame;
-use homotopy_graphics::gl::geom::{ModelMatrix, ProjectionMatrix, Vertex, ViewMatrix};
+use homotopy_graphics::gl::geom::{Color, ModelMatrix, Vertex, ViewMatrix};
 use homotopy_graphics::gl::GlCtx;
 use homotopy_graphics::{draw, program, vertex_array};
 
@@ -58,12 +58,13 @@ impl Component for Diagram3D {
 
     fn view(&self) -> Html {
         html! {
-            <canvas width=1000 height=1000 ref={self.canvas.clone()}></canvas>
+            <canvas style="width: 100%; height: 100%; display: block" ref={self.canvas.clone()}></canvas>
         }
     }
 
     fn rendered(&mut self, first_render: bool) {
-        let ctx = GlCtx::attach(self.canvas.clone()).unwrap();
+        let mut ctx = GlCtx::attach(self.canvas.clone()).unwrap();
+        ctx.set_clear_color(Color::new(0.1, 0.1, 0.1));
         self.renderer = Some(Renderer::init(ctx));
 
         if first_render {
@@ -152,17 +153,15 @@ impl Renderer {
         self.t = dt as f32;
     }
 
-    fn render(&self) {
-        let mut frame = Frame::new(&self.ctx);
+    fn render(&mut self) {
+        let mut frame = Frame::new(&mut self.ctx);
 
-        let model_matrix = ModelMatrix::scale(0.3, 0.3, 0.3).then_rotate(
-            0.0,
-            1.0,
-            0.0,
-            Angle::radians(self.t * 1e-3),
-        );
+        let model_matrix = ModelMatrix::translation(0.0, -0.5, 0.0)
+            .then_scale(0.3, 0.3, 0.3)
+            .then_rotate(0.0, 1.0, 0.0, Angle::radians(self.t * 1e-3))
+            .then_translate(Vector3D::new(0.0, 0.0, -2.0));
         let view_matrix = ViewMatrix::identity();
-        let projection_matrix = ProjectionMatrix::perspective(5.0);
+        let projection_matrix = frame.perspective(30.0, 0.5, 10.0);
         let mvp = model_matrix.then(&view_matrix).then(&projection_matrix);
         let model_inv = model_matrix.inverse().unwrap();
 
