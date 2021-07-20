@@ -228,6 +228,20 @@ impl ProofState {
         }
     }
 
+    /// Determines if a given [Action] should reset the panzoom state, given the current  [ProofState].
+    pub fn resets_panzoom(&self, action: &Action) -> bool {
+        match *action {
+            Action::RemoveGenerator(ref generator) => self
+                .workspace
+                .as_ref()
+                .map_or(false, |ws| ws.diagram.generators().contains(generator)),
+            Action::SelectGenerator(_) => self.workspace.is_none(),
+            Action::AscendSlice(i) => i > 0,
+            Action::ClearWorkspace | Action::DescendSlice(_) => true,
+            _ => false,
+        }
+    }
+
     /// Handler for [Action::CreateGeneratorZero].
     fn create_generator_zero(&mut self) {
         let id = self.create_generator_id();

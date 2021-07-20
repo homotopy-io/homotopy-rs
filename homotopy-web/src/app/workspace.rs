@@ -60,11 +60,12 @@ impl Component for WorkspaceView {
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        // TODO: Ensure that panzoom is centered initially when the diagram
-        // is changed.
-
-        self.props = props;
-        true
+        if props != self.props {
+            self.props = props;
+            true
+        } else {
+            false
+        }
     }
 
     fn view(&self) -> Html {
