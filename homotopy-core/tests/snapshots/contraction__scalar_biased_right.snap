@@ -11,7 +11,7 @@ DiagramN {
         cospans: [],
     },
     cospans: [
-        Cospan {
+        LabelledCospan {
             forward: RewriteN {
                 dimension: 1,
                 cones: [
@@ -19,7 +19,7 @@ DiagramN {
                         index: 0,
                         internal: ConeInternal {
                             source: [],
-                            target: Cospan {
+                            target: LabelledCospan {
                                 forward: Rewrite0(
                                     0:0,
                                     2:2,
@@ -36,7 +36,7 @@ DiagramN {
                         index: 0,
                         internal: ConeInternal {
                             source: [],
-                            target: Cospan {
+                            target: LabelledCospan {
                                 forward: Rewrite0(
                                     0:0,
                                     1:2,
@@ -50,6 +50,7 @@ DiagramN {
                         },
                     },
                 ],
+                label: (),
             },
             backward: RewriteN {
                 dimension: 1,
@@ -58,7 +59,7 @@ DiagramN {
                         index: 0,
                         internal: ConeInternal {
                             source: [],
-                            target: Cospan {
+                            target: LabelledCospan {
                                 forward: Rewrite0(
                                     0:0,
                                     2:2,
@@ -75,7 +76,7 @@ DiagramN {
                         index: 0,
                         internal: ConeInternal {
                             source: [],
-                            target: Cospan {
+                            target: LabelledCospan {
                                 forward: Rewrite0(
                                     0:0,
                                     1:2,
@@ -89,6 +90,7 @@ DiagramN {
                         },
                     },
                 ],
+                label: (),
             },
         },
     ],

@@ -155,8 +155,8 @@ fn contract_base(
             height,
             vec![cospan0.clone(), cospan1.clone()],
             Cospan {
-                forward: Rewrite::compose(cospan0.forward.clone(), result[0].clone()).unwrap(),
-                backward: Rewrite::compose(cospan1.backward.clone(), result[1].clone()).unwrap(),
+                forward: cospan0.forward.compose(&result[0]).unwrap(),
+                backward: cospan1.backward.compose(&result[1]).unwrap(),
             },
             result,
         )],
@@ -196,22 +196,15 @@ fn contract_in_path(
                 )),
                 Height::Singular(i) => {
                     let source_cospan = &diagram.cospans()[*i];
+                    let rewrite = rewrite.into();
                     Ok(RewriteN::new(
                         diagram.dimension(),
                         vec![Cone::new(
                             *i,
                             vec![source_cospan.clone()],
                             Cospan {
-                                forward: Rewrite::compose(
-                                    source_cospan.forward.clone(),
-                                    rewrite.clone().into(),
-                                )
-                                .unwrap(),
-                                backward: Rewrite::compose(
-                                    source_cospan.backward.clone(),
-                                    rewrite.clone().into(),
-                                )
-                                .unwrap(),
+                                forward: source_cospan.forward.compose(&rewrite).unwrap(),
+                                backward: source_cospan.backward.compose(&rewrite).unwrap(),
                             },
                             vec![rewrite.into()],
                         )],
@@ -570,16 +563,14 @@ fn colimit_recursive(
         let first = nodes.first().unwrap();
         let last = nodes.last().unwrap();
 
-        let forward = Rewrite::compose(
-            node_to_cospan[first].forward.clone(),
-            rewrite_slices[first].clone(),
-        )
-        .unwrap();
-        let backward = Rewrite::compose(
-            node_to_cospan[last].backward.clone(),
-            rewrite_slices[last].clone(),
-        )
-        .unwrap();
+        let forward = node_to_cospan[first]
+            .forward
+            .compose(&rewrite_slices[first])
+            .unwrap();
+        let backward = node_to_cospan[last]
+            .backward
+            .compose(&rewrite_slices[last])
+            .unwrap();
 
         cospans.push(Cospan { forward, backward });
     }
