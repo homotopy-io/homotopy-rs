@@ -58,7 +58,7 @@ where
     cones: Vec<GenericCone<A>>,
     max_generator_source: CachedCell<Option<Generator>>,
     max_generator_target: CachedCell<Option<Generator>>,
-    label: A::Label,
+    payload: A::Payload,
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
@@ -98,7 +98,7 @@ where
 }
 
 pub trait RewriteAllocator: Copy + Eq + Hash + fmt::Debug + Sized {
-    type Label: Composable;
+    type Payload: Composable;
 
     type RewriteCell: Deref<Target = RewriteInternal<Self>> + Clone + Eq + Ord + Hash;
     type ConeCell: Deref<Target = ConeInternal<Self>> + Clone + Eq + Ord + Hash;
@@ -113,7 +113,7 @@ pub trait RewriteAllocator: Copy + Eq + Hash + fmt::Debug + Sized {
 pub trait Composable: Clone + Eq + Hash + fmt::Debug {
     fn compose<A>(f: &GenericRewriteN<A>, g: &GenericRewriteN<A>) -> Self
     where
-        A: RewriteAllocator<Label = Self>;
+        A: RewriteAllocator<Payload = Self>;
 }
 
 impl<A> GenericCospan<A>
@@ -223,7 +223,7 @@ where
 
 impl<A, T> GenericRewrite<A>
 where
-    A: RewriteAllocator<Label = T>,
+    A: RewriteAllocator<Payload = T>,
     T: Default,
 {
     #[inline]
@@ -261,10 +261,10 @@ where
     A: RewriteAllocator,
 {
     #[inline]
-    pub fn identity_with_payload(dimension: usize, label: &A::Label) -> Self {
+    pub fn identity_with_payload(dimension: usize, payload: &A::Payload) -> Self {
         match dimension {
             0 => Rewrite0::identity().into(),
-            _ => GenericRewriteN::identity_with_payload(dimension, label).into(),
+            _ => GenericRewriteN::identity_with_payload(dimension, payload).into(),
         }
     }
 
@@ -382,7 +382,9 @@ where
 {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        self.dimension == other.dimension && self.cones == other.cones && self.label == other.label
+        self.dimension == other.dimension
+            && self.cones == other.cones
+            && self.payload == other.payload
     }
 }
 
@@ -396,13 +398,13 @@ where
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.dimension.hash(state);
         self.cones.hash(state);
-        self.label.hash(state);
+        self.payload.hash(state);
     }
 }
 
 impl<A, T> GenericRewriteN<A>
 where
-    A: RewriteAllocator<Label = T>,
+    A: RewriteAllocator<Payload = T>,
     T: Default,
 {
     pub(crate) fn new(dimension: usize, cones: Vec<GenericCone<A>>) -> Self {
@@ -452,7 +454,7 @@ where
     pub(crate) fn new_with_payload(
         dimension: usize,
         mut cones: Vec<GenericCone<A>>,
-        label: &A::Label,
+        payload: &A::Payload,
     ) -> Self {
         if dimension == 0 {
             panic!("Can not create RewriteN of dimension zero.");
@@ -468,7 +470,7 @@ where
             cones,
             max_generator_source: CachedCell::new(),
             max_generator_target: CachedCell::new(),
-            label: label.clone(),
+            payload: payload.clone(),
         }))
     }
 
@@ -486,12 +488,12 @@ where
             .iter()
             .map(|cone| cone.pad(embedding))
             .collect();
-        Self::new_with_payload(self.dimension(), cones, &self.0.label)
+        Self::new_with_payload(self.dimension(), cones, &self.0.payload)
     }
 
     #[inline]
-    pub fn identity_with_payload(dimension: usize, label: &A::Label) -> Self {
-        Self::new_with_payload(dimension, Vec::new(), label)
+    pub fn identity_with_payload(dimension: usize, payload: &A::Payload) -> Self {
+        Self::new_with_payload(dimension, Vec::new(), payload)
     }
 
     #[inline]
@@ -502,8 +504,8 @@ where
     pub(crate) fn make_degeneracy_with_payloads(
         dimension: usize,
         trivial_heights: &[SingularHeight],
-        label: &A::Label,
-        payloads: impl Fn(usize, usize) -> A::Label,
+        payload: &A::Payload,
+        payloads: impl Fn(usize, usize) -> A::Payload,
     ) -> Self {
         let cones = trivial_heights
             .iter()
@@ -527,7 +529,7 @@ where
             })
             .collect();
 
-        Self::new_with_payload(dimension, cones, label)
+        Self::new_with_payload(dimension, cones, payload)
     }
 
     pub fn from_slices_with_payload(
@@ -535,7 +537,7 @@ where
         source_cospans: &[GenericCospan<A>],
         target_cospans: &[GenericCospan<A>],
         slices: Vec<Vec<GenericRewrite<A>>>,
-        label: &A::Label,
+        payload: &A::Payload,
     ) -> Self {
         let mut cones = Vec::new();
         let mut index = 0;
@@ -551,7 +553,7 @@ where
             index += size;
         }
 
-        Self::new_with_payload(dimension, cones, label)
+        Self::new_with_payload(dimension, cones, payload)
     }
 
     pub fn dimension(&self) -> usize {
@@ -586,12 +588,12 @@ where
         None
     }
 
-    pub fn slice_with_payload(&self, height: usize, label: &A::Label) -> GenericRewrite<A> {
+    pub fn slice_with_payload(&self, height: usize, payload: &A::Payload) -> GenericRewrite<A> {
         self.cones()
             .iter()
             .find(|cone| cone.index <= height && height < cone.index + cone.len())
             .map_or(
-                GenericRewrite::identity_with_payload(self.dimension() - 1, label),
+                GenericRewrite::identity_with_payload(self.dimension() - 1, payload),
                 |cone| cone.internal.slices[height - cone.index].clone(),
             )
     }
@@ -674,7 +676,7 @@ where
         Ok(Self::new_with_payload(
             self.dimension(),
             cones,
-            &A::Label::compose::<A>(self, g),
+            &A::Payload::compose::<A>(self, g),
         ))
     }
 
@@ -786,7 +788,7 @@ where
         f.debug_struct("RewriteN")
             .field("dimension", &self.dimension)
             .field("cones", &self.cones)
-            .field("label", &self.label)
+            .field("payload", &self.payload)
             .finish()
     }
 }
@@ -856,13 +858,13 @@ impl Composable for () {
     #[inline]
     fn compose<A>(_: &GenericRewriteN<A>, _: &GenericRewriteN<A>) -> Self
     where
-        A: RewriteAllocator<Label = Self>,
+        A: RewriteAllocator<Payload = Self>,
     {
     }
 }
 
 impl RewriteAllocator for DefaultAllocator {
-    type Label = ();
+    type Payload = ();
     type RewriteCell = HConsed<RewriteInternal<Self>>;
     type ConeCell = HConsed<ConeInternal<Self>>;
 

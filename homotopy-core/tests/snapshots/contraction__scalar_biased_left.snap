@@ -50,7 +50,7 @@ DiagramN {
                         },
                     },
                 ],
-                label: (),
+                payload: (),
             },
             backward: RewriteN {
                 dimension: 1,
@@ -90,7 +90,7 @@ DiagramN {
                         },
                     },
                 ],
-                label: (),
+                payload: (),
             },
         },
     ],
