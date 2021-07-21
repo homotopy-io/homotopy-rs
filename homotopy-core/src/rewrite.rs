@@ -14,20 +14,22 @@ use crate::util::{first_max_generator, CachedCell, Hasher};
 use crate::Boundary;
 
 thread_local! {
-    static REWRITE_FACTORY: RefCell<HConsign<RewriteInternal<DefaultAllocator>, Hasher>> = RefCell::new(HConsign::with_capacity_and_hasher(37, Hasher::default()));
+    static REWRITE_FACTORY: RefCell<HConsign<RewriteInternal<DefaultAllocator>, Hasher>> =
+        RefCell::new(HConsign::with_capacity_and_hasher(37, Hasher::default()));
 
-    static CONE_FACTORY: RefCell<HConsign<ConeInternal<DefaultAllocator>, Hasher>> = RefCell::new(HConsign::with_capacity_and_hasher(37, Hasher::default()));
+    static CONE_FACTORY: RefCell<HConsign<ConeInternal<DefaultAllocator>, Hasher>> =
+        RefCell::new(HConsign::with_capacity_and_hasher(37, Hasher::default()));
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub struct DefaultAllocator;
 
-pub type Cospan = LabelledCospan<DefaultAllocator>;
+pub type Cospan = GenericCospan<DefaultAllocator>;
 
-pub type Cone = LabelledCone<DefaultAllocator>;
+pub type Cone = GenericCone<DefaultAllocator>;
 
-pub type RewriteN = LabelledRewriteN<DefaultAllocator>;
-pub type Rewrite = LabelledRewrite<DefaultAllocator>;
+pub type RewriteN = GenericRewriteN<DefaultAllocator>;
+pub type Rewrite = GenericRewrite<DefaultAllocator>;
 
 #[derive(Debug, Error)]
 pub enum CompositionError {
@@ -39,12 +41,12 @@ pub enum CompositionError {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
-pub struct LabelledCospan<A>
+pub struct GenericCospan<A>
 where
     A: RewriteAllocator,
 {
-    pub forward: LabelledRewrite<A>,
-    pub backward: LabelledRewrite<A>,
+    pub forward: GenericRewrite<A>,
+    pub backward: GenericRewrite<A>,
 }
 
 #[derive(Clone)]
@@ -53,7 +55,7 @@ where
     A: RewriteAllocator,
 {
     dimension: usize,
-    cones: Vec<LabelledCone<A>>,
+    cones: Vec<GenericCone<A>>,
     max_generator_source: CachedCell<Option<Generator>>,
     max_generator_target: CachedCell<Option<Generator>>,
     label: A::Label,
@@ -63,17 +65,17 @@ where
 pub struct Rewrite0(pub(crate) Option<(Generator, Generator)>);
 
 #[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
-pub struct LabelledRewriteN<A>(A::RewriteCell)
+pub struct GenericRewriteN<A>(A::RewriteCell)
 where
     A: RewriteAllocator;
 
 #[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
-pub enum LabelledRewrite<A>
+pub enum GenericRewrite<A>
 where
     A: RewriteAllocator,
 {
     Rewrite0(Rewrite0),
-    RewriteN(LabelledRewriteN<A>),
+    RewriteN(GenericRewriteN<A>),
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
@@ -81,13 +83,13 @@ pub struct ConeInternal<A>
 where
     A: RewriteAllocator,
 {
-    pub(crate) source: Vec<LabelledCospan<A>>,
-    pub(crate) target: LabelledCospan<A>,
-    pub(crate) slices: Vec<LabelledRewrite<A>>,
+    pub(crate) source: Vec<GenericCospan<A>>,
+    pub(crate) target: GenericCospan<A>,
+    pub(crate) slices: Vec<GenericRewrite<A>>,
 }
 
 #[derive(PartialEq, Eq, Clone, Hash)]
-pub struct LabelledCone<A>
+pub struct GenericCone<A>
 where
     A: RewriteAllocator,
 {
@@ -109,10 +111,12 @@ pub trait RewriteAllocator: Copy + Eq + Hash + fmt::Debug + Sized {
 }
 
 pub trait Composable: Clone + Eq + Hash + fmt::Debug {
-    fn compose(&self, g: &Self) -> Self;
+    fn compose<A>(f: &GenericRewriteN<A>, g: &GenericRewriteN<A>) -> Self
+    where
+        A: RewriteAllocator<Label = Self>;
 }
 
-impl<A> LabelledCospan<A>
+impl<A> GenericCospan<A>
 where
     A: RewriteAllocator,
 {
@@ -140,7 +144,7 @@ where
     }
 }
 
-impl<A> fmt::Debug for LabelledRewrite<A>
+impl<A> fmt::Debug for GenericRewrite<A>
 where
     A: RewriteAllocator,
 {
@@ -153,17 +157,17 @@ where
     }
 }
 
-impl<A> From<LabelledRewriteN<A>> for LabelledRewrite<A>
+impl<A> From<GenericRewriteN<A>> for GenericRewrite<A>
 where
     A: RewriteAllocator,
 {
     #[inline]
-    fn from(r: LabelledRewriteN<A>) -> Self {
+    fn from(r: GenericRewriteN<A>) -> Self {
         Self::RewriteN(r)
     }
 }
 
-impl<A> From<Rewrite0> for LabelledRewrite<A>
+impl<A> From<Rewrite0> for GenericRewrite<A>
 where
     A: RewriteAllocator,
 {
@@ -173,71 +177,71 @@ where
     }
 }
 
-impl<A> TryFrom<LabelledRewrite<A>> for LabelledRewriteN<A>
+impl<A> TryFrom<GenericRewrite<A>> for GenericRewriteN<A>
 where
     A: RewriteAllocator,
 {
     type Error = DimensionError;
 
     #[inline]
-    fn try_from(value: LabelledRewrite<A>) -> Result<Self, Self::Error> {
+    fn try_from(value: GenericRewrite<A>) -> Result<Self, Self::Error> {
         match value {
-            LabelledRewrite::Rewrite0(_) => Err(DimensionError),
-            LabelledRewrite::RewriteN(r) => Ok(r),
+            GenericRewrite::Rewrite0(_) => Err(DimensionError),
+            GenericRewrite::RewriteN(r) => Ok(r),
         }
     }
 }
 
-impl<'a, A> TryFrom<&'a LabelledRewrite<A>> for &'a LabelledRewriteN<A>
+impl<'a, A> TryFrom<&'a GenericRewrite<A>> for &'a GenericRewriteN<A>
 where
     A: RewriteAllocator,
 {
     type Error = DimensionError;
 
     #[inline]
-    fn try_from(value: &'a LabelledRewrite<A>) -> Result<Self, Self::Error> {
+    fn try_from(value: &'a GenericRewrite<A>) -> Result<Self, Self::Error> {
         match value {
-            LabelledRewrite::Rewrite0(_) => Err(DimensionError),
-            LabelledRewrite::RewriteN(r) => Ok(r),
+            GenericRewrite::Rewrite0(_) => Err(DimensionError),
+            GenericRewrite::RewriteN(r) => Ok(r),
         }
     }
 }
 
-impl<A> TryFrom<LabelledRewrite<A>> for Rewrite0
+impl<A> TryFrom<GenericRewrite<A>> for Rewrite0
 where
     A: RewriteAllocator,
 {
     type Error = DimensionError;
 
-    fn try_from(value: LabelledRewrite<A>) -> Result<Self, Self::Error> {
+    fn try_from(value: GenericRewrite<A>) -> Result<Self, Self::Error> {
         match value {
-            LabelledRewrite::Rewrite0(r) => Ok(r),
-            LabelledRewrite::RewriteN(_) => Err(DimensionError),
+            GenericRewrite::Rewrite0(r) => Ok(r),
+            GenericRewrite::RewriteN(_) => Err(DimensionError),
         }
     }
 }
 
-impl<A, T> LabelledRewrite<A>
+impl<A, T> GenericRewrite<A>
 where
     A: RewriteAllocator<Label = T>,
     T: Default,
 {
     #[inline]
     pub fn identity(dimension: usize) -> Self {
-        Self::identity_with_label(dimension, &Default::default())
+        Self::identity_with_payload(dimension, &Default::default())
     }
 }
 
-impl LabelledRewrite<DefaultAllocator> {
+impl GenericRewrite<DefaultAllocator> {
     pub fn cone_over_generator(generator: Generator, base: Diagram) -> Self {
         match base {
             Diagram::Diagram0(base) => Rewrite0::new(base, generator).into(),
-            Diagram::DiagramN(base) => LabelledRewriteN::new(
+            Diagram::DiagramN(base) => GenericRewriteN::new(
                 base.dimension(),
-                vec![LabelledCone::new(
+                vec![GenericCone::new(
                     0,
                     base.cospans().to_vec(),
-                    LabelledCospan {
+                    GenericCospan {
                         forward: Self::cone_over_generator(generator, base.source()),
                         backward: Self::cone_over_generator(generator, base.target()),
                     },
@@ -252,15 +256,15 @@ impl LabelledRewrite<DefaultAllocator> {
     }
 }
 
-impl<A> LabelledRewrite<A>
+impl<A> GenericRewrite<A>
 where
     A: RewriteAllocator,
 {
     #[inline]
-    pub fn identity_with_label(dimension: usize, label: &A::Label) -> Self {
+    pub fn identity_with_payload(dimension: usize, label: &A::Label) -> Self {
         match dimension {
             0 => Rewrite0::identity().into(),
-            _ => LabelledRewriteN::identity_with_label(dimension, label).into(),
+            _ => GenericRewriteN::identity_with_payload(dimension, label).into(),
         }
     }
 
@@ -362,7 +366,7 @@ impl Rewrite0 {
     }
 }
 
-impl<A> fmt::Debug for LabelledRewriteN<A>
+impl<A> fmt::Debug for GenericRewriteN<A>
 where
     A: RewriteAllocator,
 {
@@ -396,13 +400,13 @@ where
     }
 }
 
-impl<A, T> LabelledRewriteN<A>
+impl<A, T> GenericRewriteN<A>
 where
     A: RewriteAllocator<Label = T>,
     T: Default,
 {
-    pub(crate) fn new(dimension: usize, cones: Vec<LabelledCone<A>>) -> Self {
-        Self::new_with_label(dimension, cones, &Default::default())
+    pub(crate) fn new(dimension: usize, cones: Vec<GenericCone<A>>) -> Self {
+        Self::new_with_payload(dimension, cones, &Default::default())
     }
 
     #[inline]
@@ -411,7 +415,7 @@ where
     }
 
     pub(crate) fn make_degeneracy(dimension: usize, trivial_heights: &[SingularHeight]) -> Self {
-        Self::make_degeneracy_with_labelling(
+        Self::make_degeneracy_with_payloads(
             dimension,
             trivial_heights,
             &Default::default(),
@@ -422,11 +426,11 @@ where
     #[inline]
     pub fn from_slices(
         dimension: usize,
-        source_cospans: &[LabelledCospan<A>],
-        target_cospans: &[LabelledCospan<A>],
-        slices: Vec<Vec<LabelledRewrite<A>>>,
+        source_cospans: &[GenericCospan<A>],
+        target_cospans: &[GenericCospan<A>],
+        slices: Vec<Vec<GenericRewrite<A>>>,
     ) -> Self {
-        Self::from_slices_with_label(
+        Self::from_slices_with_payload(
             dimension,
             source_cospans,
             target_cospans,
@@ -436,18 +440,18 @@ where
     }
 
     #[inline]
-    pub fn slice(&self, height: usize) -> LabelledRewrite<A> {
-        self.slice_with_label(height, &Default::default())
+    pub fn slice(&self, height: usize) -> GenericRewrite<A> {
+        self.slice_with_payload(height, &Default::default())
     }
 }
 
-impl<A> LabelledRewriteN<A>
+impl<A> GenericRewriteN<A>
 where
     A: RewriteAllocator,
 {
-    pub(crate) fn new_with_label(
+    pub(crate) fn new_with_payload(
         dimension: usize,
-        mut cones: Vec<LabelledCone<A>>,
+        mut cones: Vec<GenericCone<A>>,
         label: &A::Label,
     ) -> Self {
         if dimension == 0 {
@@ -472,7 +476,7 @@ where
         A::collect_garbage();
     }
 
-    pub(crate) fn cones(&self) -> &[LabelledCone<A>] {
+    pub(crate) fn cones(&self) -> &[GenericCone<A>] {
         &self.0.cones
     }
 
@@ -482,12 +486,12 @@ where
             .iter()
             .map(|cone| cone.pad(embedding))
             .collect();
-        Self::new_with_label(self.dimension(), cones, &self.0.label)
+        Self::new_with_payload(self.dimension(), cones, &self.0.label)
     }
 
     #[inline]
-    pub fn identity_with_label(dimension: usize, label: &A::Label) -> Self {
-        Self::new_with_label(dimension, Vec::new(), label)
+    pub fn identity_with_payload(dimension: usize, label: &A::Label) -> Self {
+        Self::new_with_payload(dimension, Vec::new(), label)
     }
 
     #[inline]
@@ -495,27 +499,27 @@ where
         self.0.cones.is_empty()
     }
 
-    pub(crate) fn make_degeneracy_with_labelling(
+    pub(crate) fn make_degeneracy_with_payloads(
         dimension: usize,
         trivial_heights: &[SingularHeight],
         label: &A::Label,
-        labelling: impl Fn(usize, usize) -> A::Label,
+        payloads: impl Fn(usize, usize) -> A::Label,
     ) -> Self {
         let cones = trivial_heights
             .iter()
             .enumerate()
             .map(|(i, height)| {
-                LabelledCone::new(
+                GenericCone::new(
                     height - i,
                     vec![],
-                    LabelledCospan {
-                        forward: LabelledRewrite::identity_with_label(
+                    GenericCospan {
+                        forward: GenericRewrite::identity_with_payload(
                             dimension - 1,
-                            &labelling(i, *height),
+                            &payloads(i, *height),
                         ),
-                        backward: LabelledRewrite::identity_with_label(
+                        backward: GenericRewrite::identity_with_payload(
                             dimension - 1,
-                            &labelling(i, *height),
+                            &payloads(i, *height),
                         ),
                     },
                     vec![],
@@ -523,14 +527,14 @@ where
             })
             .collect();
 
-        Self::new_with_label(dimension, cones, label)
+        Self::new_with_payload(dimension, cones, label)
     }
 
-    pub fn from_slices_with_label(
+    pub fn from_slices_with_payload(
         dimension: usize,
-        source_cospans: &[LabelledCospan<A>],
-        target_cospans: &[LabelledCospan<A>],
-        slices: Vec<Vec<LabelledRewrite<A>>>,
+        source_cospans: &[GenericCospan<A>],
+        target_cospans: &[GenericCospan<A>],
+        slices: Vec<Vec<GenericRewrite<A>>>,
         label: &A::Label,
     ) -> Self {
         let mut cones = Vec::new();
@@ -538,7 +542,7 @@ where
 
         for (target, cone_slices) in slices.into_iter().enumerate() {
             let size = cone_slices.len();
-            cones.push(LabelledCone::new(
+            cones.push(GenericCone::new(
                 index,
                 source_cospans[index..index + size].to_vec(),
                 target_cospans[target].clone(),
@@ -547,7 +551,7 @@ where
             index += size;
         }
 
-        Self::new_with_label(dimension, cones, label)
+        Self::new_with_payload(dimension, cones, label)
     }
 
     pub fn dimension(&self) -> usize {
@@ -566,7 +570,7 @@ where
         targets
     }
 
-    pub(crate) fn cone_over_target(&self, height: usize) -> Option<&LabelledCone<A>> {
+    pub(crate) fn cone_over_target(&self, height: usize) -> Option<&GenericCone<A>> {
         let mut offset: isize = 0;
 
         for cone in self.cones() {
@@ -582,12 +586,12 @@ where
         None
     }
 
-    pub fn slice_with_label(&self, height: usize, label: &A::Label) -> LabelledRewrite<A> {
+    pub fn slice_with_payload(&self, height: usize, label: &A::Label) -> GenericRewrite<A> {
         self.cones()
             .iter()
             .find(|cone| cone.index <= height && height < cone.index + cone.len())
             .map_or(
-                LabelledRewrite::identity_with_label(self.dimension() - 1, label),
+                GenericRewrite::identity_with_payload(self.dimension() - 1, label),
                 |cone| cone.internal.slices[height - cone.index].clone(),
             )
     }
@@ -600,16 +604,16 @@ where
         let mut offset = 0;
         let mut delayed_offset = 0;
 
-        let mut f_cones: Vec<LabelledCone<A>> = self.cones().iter().rev().cloned().collect();
-        let mut g_cones: Vec<LabelledCone<A>> = g.cones().iter().rev().cloned().collect();
-        let mut cones: Vec<LabelledCone<A>> = Vec::new();
+        let mut f_cones: Vec<GenericCone<A>> = self.cones().iter().rev().cloned().collect();
+        let mut g_cones: Vec<GenericCone<A>> = g.cones().iter().rev().cloned().collect();
+        let mut cones: Vec<GenericCone<A>> = Vec::new();
 
         loop {
             match (f_cones.pop(), g_cones.pop()) {
                 (None, None) => break,
                 (Some(f_cone), None) => cones.push(f_cone.clone()),
                 (None, Some(g_cone)) => {
-                    let mut cone: LabelledCone<A> = g_cone.clone();
+                    let mut cone: GenericCone<A> = g_cone.clone();
                     cone.index = (cone.index as isize + offset) as usize;
                     offset += delayed_offset;
                     delayed_offset = 0;
@@ -656,7 +660,7 @@ where
 
                         delayed_offset -= 1 - f_cone.len() as isize;
 
-                        g_cones.push(LabelledCone::new(
+                        g_cones.push(GenericCone::new(
                             g_cone.index,
                             source,
                             g_cone.internal.target.clone(),
@@ -667,10 +671,10 @@ where
             }
         }
 
-        Ok(Self::new_with_label(
+        Ok(Self::new_with_payload(
             self.dimension(),
             cones,
-            &self.0.label.compose(&g.0.label),
+            &A::Label::compose::<A>(self, g),
         ))
     }
 
@@ -758,7 +762,7 @@ where
                     self.cones()
                         .iter()
                         .flat_map(|cone| &cone.internal.source)
-                        .filter_map(LabelledCospan::max_generator),
+                        .filter_map(GenericCospan::max_generator),
                     None,
                 )
             }),
@@ -787,7 +791,7 @@ where
     }
 }
 
-impl<A> fmt::Debug for LabelledCone<A>
+impl<A> fmt::Debug for GenericCone<A>
 where
     A: RewriteAllocator,
 {
@@ -799,15 +803,15 @@ where
     }
 }
 
-impl<A> LabelledCone<A>
+impl<A> GenericCone<A>
 where
     A: RewriteAllocator,
 {
     pub(crate) fn new(
         index: usize,
-        source: Vec<LabelledCospan<A>>,
-        target: LabelledCospan<A>,
-        slices: Vec<LabelledRewrite<A>>,
+        source: Vec<GenericCospan<A>>,
+        target: GenericCospan<A>,
+        slices: Vec<GenericRewrite<A>>,
     ) -> Self {
         Self {
             index,
@@ -849,7 +853,12 @@ where
 }
 
 impl Composable for () {
-    fn compose(&self, _: &Self) -> Self {}
+    #[inline]
+    fn compose<A>(_: &GenericRewriteN<A>, _: &GenericRewriteN<A>) -> Self
+    where
+        A: RewriteAllocator<Label = Self>,
+    {
+    }
 }
 
 impl RewriteAllocator for DefaultAllocator {

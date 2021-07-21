@@ -9,7 +9,7 @@ DiagramN {
             0:0,
         ),
         cospans: [
-            LabelledCospan {
+            GenericCospan {
                 forward: Rewrite0(
                     0:0,
                     1:1,
@@ -19,7 +19,7 @@ DiagramN {
                     1:1,
                 ),
             },
-            LabelledCospan {
+            GenericCospan {
                 forward: Rewrite0(
                     0:0,
                     1:1,
@@ -29,7 +29,7 @@ DiagramN {
                     1:1,
                 ),
             },
-            LabelledCospan {
+            GenericCospan {
                 forward: Rewrite0(
                     0:0,
                     1:1,
@@ -42,7 +42,7 @@ DiagramN {
         ],
     },
     cospans: [
-        LabelledCospan {
+        GenericCospan {
             forward: RewriteN {
                 dimension: 1,
                 cones: [
@@ -50,7 +50,7 @@ DiagramN {
                         index: 1,
                         internal: ConeInternal {
                             source: [
-                                LabelledCospan {
+                                GenericCospan {
                                     forward: Rewrite0(
                                         0:0,
                                         1:1,
@@ -60,7 +60,7 @@ DiagramN {
                                         1:1,
                                     ),
                                 },
-                                LabelledCospan {
+                                GenericCospan {
                                     forward: Rewrite0(
                                         0:0,
                                         1:1,
@@ -71,7 +71,7 @@ DiagramN {
                                     ),
                                 },
                             ],
-                            target: LabelledCospan {
+                            target: GenericCospan {
                                 forward: Rewrite0(
                                     0:0,
                                     2:2,
@@ -103,7 +103,7 @@ DiagramN {
                         index: 1,
                         internal: ConeInternal {
                             source: [
-                                LabelledCospan {
+                                GenericCospan {
                                     forward: Rewrite0(
                                         0:0,
                                         1:1,
@@ -114,7 +114,7 @@ DiagramN {
                                     ),
                                 },
                             ],
-                            target: LabelledCospan {
+                            target: GenericCospan {
                                 forward: Rewrite0(
                                     0:0,
                                     2:2,
@@ -136,7 +136,7 @@ DiagramN {
                 label: (),
             },
         },
-        LabelledCospan {
+        GenericCospan {
             forward: RewriteN {
                 dimension: 1,
                 cones: [
@@ -144,7 +144,7 @@ DiagramN {
                         index: 0,
                         internal: ConeInternal {
                             source: [
-                                LabelledCospan {
+                                GenericCospan {
                                     forward: Rewrite0(
                                         0:0,
                                         1:1,
@@ -154,7 +154,7 @@ DiagramN {
                                         1:1,
                                     ),
                                 },
-                                LabelledCospan {
+                                GenericCospan {
                                     forward: Rewrite0(
                                         0:0,
                                         1:1,
@@ -165,7 +165,7 @@ DiagramN {
                                     ),
                                 },
                             ],
-                            target: LabelledCospan {
+                            target: GenericCospan {
                                 forward: Rewrite0(
                                     0:0,
                                     2:2,
@@ -197,7 +197,7 @@ DiagramN {
                         index: 0,
                         internal: ConeInternal {
                             source: [
-                                LabelledCospan {
+                                GenericCospan {
                                     forward: Rewrite0(
                                         0:0,
                                         1:1,
@@ -208,7 +208,7 @@ DiagramN {
                                     ),
                                 },
                             ],
-                            target: LabelledCospan {
+                            target: GenericCospan {
                                 forward: Rewrite0(
                                     0:0,
                                     2:2,
