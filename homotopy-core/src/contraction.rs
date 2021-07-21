@@ -206,7 +206,7 @@ fn contract_in_path(
                                 forward: source_cospan.forward.compose(&rewrite).unwrap(),
                                 backward: source_cospan.backward.compose(&rewrite).unwrap(),
                             },
-                            vec![rewrite.into()],
+                            vec![rewrite],
                         )],
                     ))
                 }

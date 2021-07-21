@@ -344,8 +344,8 @@ impl Rewrite0 {
                     Err(CompositionError::Incompatible)
                 }
             }
-            (Some(_), None) => Ok(self.clone()),
-            (None, Some(_)) => Ok(g.clone()),
+            (Some(_), None) => Ok(*self),
+            (None, Some(_)) => Ok(*g),
             (None, None) => Ok(Self(None)),
         }
     }
@@ -800,7 +800,7 @@ where
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Cone")
             .field("index", &self.index)
-            .field("internal", self.internal.deref())
+            .field("internal", &*self.internal)
             .finish()
     }
 }
@@ -826,7 +826,7 @@ where
     }
 
     pub(crate) fn collect_garbage() {
-        A::collect_garbage()
+        A::collect_garbage();
     }
 
     pub(crate) fn is_identity(&self) -> bool {
