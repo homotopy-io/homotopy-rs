@@ -445,6 +445,11 @@ where
     pub fn slice(&self, height: usize) -> GenericRewrite<A> {
         self.slice_with_payload(height, &Default::default())
     }
+
+    #[inline]
+    pub fn payload(&self) -> &A::Payload {
+        &self.0.payload
+    }
 }
 
 impl<A> GenericRewriteN<A>
