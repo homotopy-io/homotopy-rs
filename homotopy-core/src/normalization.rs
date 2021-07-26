@@ -87,9 +87,7 @@ impl Degeneracy {
             rewrite_slices,
         );
 
-        RewriteN::compose(&rewrite_simple, &rewrite_parallel)
-            .unwrap()
-            .into()
+        rewrite_simple.compose(&rewrite_parallel).unwrap().into()
     }
 
     fn slice_into(&self, target_height: SingularHeight) -> &Self {
@@ -113,7 +111,7 @@ impl SinkArrow {
     /// degeneracy map is globular.
     fn to_rewrite(&self) -> Rewrite {
         let degeneracy = self.degeneracy.to_rewrite(&self.source, &self.middle);
-        Rewrite::compose(degeneracy, self.rewrite.clone()).unwrap()
+        degeneracy.compose(&self.rewrite).unwrap()
     }
 
     fn singular_preimage(&self, target_height: SingularHeight) -> Vec<SingularHeight> {

@@ -103,36 +103,34 @@ impl Diagram {
 
     pub(crate) fn rewrite_forward(self, rewrite: &Rewrite) -> Self {
         use Diagram::{Diagram0, DiagramN};
-        use Rewrite::{Rewrite0, RewriteN};
         match self {
             Diagram0(_) => match &rewrite {
-                Rewrite0(r) => match r.target() {
+                Rewrite::Rewrite0(r) => match r.target() {
                     Some(target) => Diagram0(target),
                     None => self,
                 },
-                RewriteN(_) => panic!(),
+                Rewrite::RewriteN(_) => panic!(),
             },
             DiagramN(d) => match &rewrite {
-                Rewrite0(_) => panic!(),
-                RewriteN(r) => DiagramN(d.rewrite_forward(r)),
+                Rewrite::Rewrite0(_) => panic!(),
+                Rewrite::RewriteN(r) => DiagramN(d.rewrite_forward(r)),
             },
         }
     }
 
     pub(crate) fn rewrite_backward(self, rewrite: &Rewrite) -> Self {
         use Diagram::{Diagram0, DiagramN};
-        use Rewrite::{Rewrite0, RewriteN};
         match self {
             Diagram0(_) => match &rewrite {
-                Rewrite0(r) => match r.source() {
+                Rewrite::Rewrite0(r) => match r.source() {
                     Some(source) => Diagram0(source),
                     None => self,
                 },
-                RewriteN(_) => panic!(),
+                Rewrite::RewriteN(_) => panic!(),
             },
             DiagramN(d) => match &rewrite {
-                Rewrite0(_) => panic!(),
-                RewriteN(r) => DiagramN(d.rewrite_backward(r)),
+                Rewrite::Rewrite0(_) => panic!(),
+                Rewrite::RewriteN(r) => DiagramN(d.rewrite_backward(r)),
             },
         }
     }

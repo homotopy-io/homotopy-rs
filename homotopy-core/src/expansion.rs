@@ -353,7 +353,11 @@ fn expand_recursive(
         let expansion_preimage = diagram.clone().rewrite_backward(&expansion_rewrite);
         let normalization_rewrite = normalize_singular(&expansion_preimage.into());
 
-        Some(Rewrite::compose(normalization_rewrite, expansion_rewrite.into()).unwrap())
+        Some(
+            normalization_rewrite
+                .compose(&expansion_rewrite.into())
+                .unwrap(),
+        )
     }();
 
     if let Some(factorized) = factorized {

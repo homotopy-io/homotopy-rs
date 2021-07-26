@@ -1,32 +1,133 @@
-use crate::{
-    common::{DimensionError, Generator, SingularHeight},
-    util::CachedCell,
-    Boundary,
-};
-use crate::{diagram::Diagram, util::first_max_generator};
-
-use crate::util::Hasher;
-use hashconsing::{HConsed, HConsign, HashConsign};
 use std::convert::{From, Into, TryFrom};
 use std::fmt;
 use std::hash::Hash;
-use std::ops::Range;
+use std::ops::{Deref, Range};
 use std::{cell::RefCell, cmp::Ordering};
+
 use thiserror::Error;
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
-pub struct Cospan {
-    pub forward: Rewrite,
-    pub backward: Rewrite,
+use hashconsing::{HConsed, HConsign, HashConsign};
+
+use crate::common::{DimensionError, Generator, SingularHeight};
+use crate::diagram::Diagram;
+use crate::util::{first_max_generator, CachedCell, Hasher};
+use crate::Boundary;
+
+thread_local! {
+    static REWRITE_FACTORY: RefCell<HConsign<RewriteInternal<DefaultAllocator>, Hasher>> =
+        RefCell::new(HConsign::with_capacity_and_hasher(37, Hasher::default()));
+
+    static CONE_FACTORY: RefCell<HConsign<ConeInternal<DefaultAllocator>, Hasher>> =
+        RefCell::new(HConsign::with_capacity_and_hasher(37, Hasher::default()));
 }
 
-impl Cospan {
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+pub struct DefaultAllocator;
+
+pub type Cospan = GenericCospan<DefaultAllocator>;
+
+pub type Cone = GenericCone<DefaultAllocator>;
+
+pub type RewriteN = GenericRewriteN<DefaultAllocator>;
+pub type Rewrite = GenericRewrite<DefaultAllocator>;
+
+#[derive(Debug, Error)]
+pub enum CompositionError {
+    #[error("can't compose rewrites of dimensions {0} and {1}")]
+    Dimension(usize, usize),
+
+    #[error("failed to compose incompatible rewrites")]
+    Incompatible,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
+pub struct GenericCospan<A>
+where
+    A: RewriteAllocator,
+{
+    pub forward: GenericRewrite<A>,
+    pub backward: GenericRewrite<A>,
+}
+
+#[derive(Clone)]
+pub struct RewriteInternal<A>
+where
+    A: RewriteAllocator,
+{
+    dimension: usize,
+    cones: Vec<GenericCone<A>>,
+    max_generator_source: CachedCell<Option<Generator>>,
+    max_generator_target: CachedCell<Option<Generator>>,
+    payload: A::Payload,
+}
+
+#[derive(PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
+pub struct Rewrite0(pub(crate) Option<(Generator, Generator)>);
+
+#[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
+pub struct GenericRewriteN<A>(A::RewriteCell)
+where
+    A: RewriteAllocator;
+
+#[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
+pub enum GenericRewrite<A>
+where
+    A: RewriteAllocator,
+{
+    Rewrite0(Rewrite0),
+    RewriteN(GenericRewriteN<A>),
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+pub struct ConeInternal<A>
+where
+    A: RewriteAllocator,
+{
+    pub(crate) source: Vec<GenericCospan<A>>,
+    pub(crate) target: GenericCospan<A>,
+    pub(crate) slices: Vec<GenericRewrite<A>>,
+}
+
+#[derive(PartialEq, Eq, Clone, Hash)]
+pub struct GenericCone<A>
+where
+    A: RewriteAllocator,
+{
+    pub(crate) index: usize,
+    pub(crate) internal: A::ConeCell,
+}
+
+pub trait RewriteAllocator: Copy + Eq + Hash + fmt::Debug + Sized {
+    type Payload: Composable;
+
+    type RewriteCell: Deref<Target = RewriteInternal<Self>> + Clone + Eq + Ord + Hash;
+    type ConeCell: Deref<Target = ConeInternal<Self>> + Clone + Eq + Ord + Hash;
+
+    fn mk_rewrite(internal: RewriteInternal<Self>) -> Self::RewriteCell;
+
+    fn mk_cone(internal: ConeInternal<Self>) -> Self::ConeCell;
+
+    fn collect_garbage();
+}
+
+pub trait Composable: Clone + Eq + Hash + fmt::Debug {
+    fn compose<A>(f: &GenericRewriteN<A>, g: &GenericRewriteN<A>) -> Self
+    where
+        A: RewriteAllocator<Payload = Self>;
+}
+
+impl<A> GenericCospan<A>
+where
+    A: RewriteAllocator,
+{
+    #[inline]
     pub(crate) fn pad(&self, embedding: &[usize]) -> Self {
         let forward = self.forward.pad(embedding);
         let backward = self.backward.pad(embedding);
         Self { forward, backward }
     }
 
+    #[inline]
     pub fn is_identity(&self) -> bool {
         self.forward.is_identity() && self.backward.is_identity()
     }
@@ -43,13 +144,11 @@ impl Cospan {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
-pub enum Rewrite {
-    Rewrite0(Rewrite0),
-    RewriteN(RewriteN),
-}
-
-impl fmt::Debug for Rewrite {
+impl<A> fmt::Debug for GenericRewrite<A>
+where
+    A: RewriteAllocator,
+{
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::RewriteN(r) => r.fmt(f),
@@ -58,101 +157,91 @@ impl fmt::Debug for Rewrite {
     }
 }
 
-impl From<RewriteN> for Rewrite {
-    fn from(r: RewriteN) -> Self {
+impl<A> From<GenericRewriteN<A>> for GenericRewrite<A>
+where
+    A: RewriteAllocator,
+{
+    #[inline]
+    fn from(r: GenericRewriteN<A>) -> Self {
         Self::RewriteN(r)
     }
 }
 
-impl From<Rewrite0> for Rewrite {
+impl<A> From<Rewrite0> for GenericRewrite<A>
+where
+    A: RewriteAllocator,
+{
+    #[inline]
     fn from(r: Rewrite0) -> Self {
         Self::Rewrite0(r)
     }
 }
 
-impl TryFrom<Rewrite> for RewriteN {
+impl<A> TryFrom<GenericRewrite<A>> for GenericRewriteN<A>
+where
+    A: RewriteAllocator,
+{
     type Error = DimensionError;
 
-    fn try_from(value: Rewrite) -> Result<Self, Self::Error> {
+    #[inline]
+    fn try_from(value: GenericRewrite<A>) -> Result<Self, Self::Error> {
         match value {
-            Rewrite::Rewrite0(_) => Err(DimensionError),
-            Rewrite::RewriteN(r) => Ok(r),
+            GenericRewrite::Rewrite0(_) => Err(DimensionError),
+            GenericRewrite::RewriteN(r) => Ok(r),
         }
     }
 }
 
-impl<'a> TryFrom<&'a Rewrite> for &'a RewriteN {
+impl<'a, A> TryFrom<&'a GenericRewrite<A>> for &'a GenericRewriteN<A>
+where
+    A: RewriteAllocator,
+{
     type Error = DimensionError;
 
-    fn try_from(value: &'a Rewrite) -> Result<Self, Self::Error> {
+    #[inline]
+    fn try_from(value: &'a GenericRewrite<A>) -> Result<Self, Self::Error> {
         match value {
-            Rewrite::Rewrite0(_) => Err(DimensionError),
-            Rewrite::RewriteN(r) => Ok(r),
+            GenericRewrite::Rewrite0(_) => Err(DimensionError),
+            GenericRewrite::RewriteN(r) => Ok(r),
         }
     }
 }
 
-impl TryFrom<Rewrite> for Rewrite0 {
+impl<A> TryFrom<GenericRewrite<A>> for Rewrite0
+where
+    A: RewriteAllocator,
+{
     type Error = DimensionError;
 
-    fn try_from(value: Rewrite) -> Result<Self, Self::Error> {
+    fn try_from(value: GenericRewrite<A>) -> Result<Self, Self::Error> {
         match value {
-            Rewrite::Rewrite0(r) => Ok(r),
-            Rewrite::RewriteN(_) => Err(DimensionError),
+            GenericRewrite::Rewrite0(r) => Ok(r),
+            GenericRewrite::RewriteN(_) => Err(DimensionError),
         }
     }
 }
 
-impl Rewrite {
+impl<A, T> GenericRewrite<A>
+where
+    A: RewriteAllocator<Payload = T>,
+    T: Default,
+{
+    #[inline]
     pub fn identity(dimension: usize) -> Self {
-        if dimension == 0 {
-            Rewrite0::identity().into()
-        } else {
-            RewriteN::identity(dimension).into()
-        }
+        Self::identity_with_payload(dimension, &Default::default())
     }
+}
 
-    pub fn dimension(&self) -> usize {
-        use Rewrite::{Rewrite0, RewriteN};
-        match self {
-            Rewrite0(_) => 0,
-            RewriteN(r) => r.dimension(),
-        }
-    }
-
-    pub fn is_identity(&self) -> bool {
-        use Rewrite::{Rewrite0, RewriteN};
-        match self {
-            Rewrite0(r) => r.is_identity(),
-            RewriteN(r) => r.is_identity(),
-        }
-    }
-
-    pub(crate) fn pad(&self, embedding: &[usize]) -> Self {
-        use Rewrite::{Rewrite0, RewriteN};
-        match self {
-            Rewrite0(r) => Rewrite0(*r),
-            RewriteN(r) => RewriteN(r.pad(embedding)),
-        }
-    }
-
-    pub fn compose(f: Self, g: Self) -> Result<Self, CompositionError> {
-        match (f, g) {
-            (Self::Rewrite0(f), Self::Rewrite0(g)) => Ok(Rewrite0::compose(f, g)?.into()),
-            (Self::RewriteN(f), Self::RewriteN(g)) => Ok(RewriteN::compose(&f, &g)?.into()),
-            (f, g) => Err(CompositionError::Dimension(f.dimension(), g.dimension())),
-        }
-    }
-
+impl GenericRewrite<DefaultAllocator> {
     pub fn cone_over_generator(generator: Generator, base: Diagram) -> Self {
         match base {
             Diagram::Diagram0(base) => Rewrite0::new(base, generator).into(),
-            Diagram::DiagramN(base) => RewriteN::new(
+            Diagram::DiagramN(base) => GenericRewriteN::new(
                 base.dimension(),
-                vec![Cone::new(
+                vec![GenericCone::new(
                     0,
                     base.cospans().to_vec(),
-                    Cospan {
+                    GenericCospan {
                         forward: Self::cone_over_generator(generator, base.source()),
                         backward: Self::cone_over_generator(generator, base.target()),
                     },
@@ -165,17 +254,59 @@ impl Rewrite {
             .into(),
         }
     }
+}
+
+impl<A> GenericRewrite<A>
+where
+    A: RewriteAllocator,
+{
+    #[inline]
+    pub fn identity_with_payload(dimension: usize, payload: &A::Payload) -> Self {
+        match dimension {
+            0 => Rewrite0::identity().into(),
+            _ => GenericRewriteN::identity_with_payload(dimension, payload).into(),
+        }
+    }
+
+    #[inline]
+    pub fn dimension(&self) -> usize {
+        match self {
+            Self::Rewrite0(_) => 0,
+            Self::RewriteN(r) => r.dimension(),
+        }
+    }
+
+    #[inline]
+    pub fn is_identity(&self) -> bool {
+        match self {
+            Self::Rewrite0(r) => r.is_identity(),
+            Self::RewriteN(r) => r.is_identity(),
+        }
+    }
+
+    #[inline]
+    pub fn compose(&self, g: &Self) -> Result<Self, CompositionError> {
+        match (self, g) {
+            (Self::Rewrite0(ref f), Self::Rewrite0(ref g)) => Ok(f.compose(g)?.into()),
+            (Self::RewriteN(ref f), Self::RewriteN(ref g)) => Ok(f.compose(g)?.into()),
+            (f, g) => Err(CompositionError::Dimension(f.dimension(), g.dimension())),
+        }
+    }
 
     pub(crate) fn max_generator(&self, boundary: Boundary) -> Option<Generator> {
         match self {
-            Rewrite::Rewrite0(r) => r.max_generator(boundary),
-            Rewrite::RewriteN(r) => r.max_generator(boundary),
+            Self::Rewrite0(r) => r.max_generator(boundary),
+            Self::RewriteN(r) => r.max_generator(boundary),
+        }
+    }
+
+    pub(crate) fn pad(&self, embedding: &[usize]) -> Self {
+        match *self {
+            Self::Rewrite0(ref r) => Self::Rewrite0(*r),
+            Self::RewriteN(ref r) => Self::RewriteN(r.pad(embedding)),
         }
     }
 }
-
-#[derive(PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
-pub struct Rewrite0(pub(crate) Option<(Generator, Generator)>);
 
 impl fmt::Debug for Rewrite0 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -204,16 +335,8 @@ impl Rewrite0 {
         self.0.is_none()
     }
 
-    pub fn source(&self) -> Option<Generator> {
-        self.0.map(|(source, _)| source)
-    }
-
-    pub fn target(&self) -> Option<Generator> {
-        self.0.map(|(_, target)| target)
-    }
-
-    pub fn compose(f: Self, g: Self) -> Result<Self, CompositionError> {
-        match (f.0, g.0) {
+    pub fn compose(&self, g: &Self) -> Result<Self, CompositionError> {
+        match (self.0, g.0) {
             (Some((f_s, f_t)), Some((g_s, g_t))) => {
                 if f_t == g_s {
                     Ok(Self(Some((f_s, g_t))))
@@ -221,10 +344,18 @@ impl Rewrite0 {
                     Err(CompositionError::Incompatible)
                 }
             }
-            (Some(_), None) => Ok(f),
-            (None, Some(_)) => Ok(g),
+            (Some(_), None) => Ok(*self),
+            (None, Some(_)) => Ok(*g),
             (None, None) => Ok(Self(None)),
         }
+    }
+
+    pub fn source(&self) -> Option<Generator> {
+        self.0.map(|(source, _)| source)
+    }
+
+    pub fn target(&self) -> Option<Generator> {
+        self.0.map(|(_, target)| target)
     }
 
     pub(crate) fn max_generator(&self, boundary: Boundary) -> Option<Generator> {
@@ -235,46 +366,101 @@ impl Rewrite0 {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
-pub struct RewriteN(HConsed<RewriteInternal>);
-
-// consign! { let REWRITE_FACTORY = consign(37) for RewriteInternal; }
-
-thread_local! {
-    static REWRITE_FACTORY: RefCell<HConsign<RewriteInternal, Hasher>> = RefCell::new(HConsign::with_capacity_and_hasher(37, Hasher::default()));
-}
-
-impl fmt::Debug for RewriteN {
+impl<A> fmt::Debug for GenericRewriteN<A>
+where
+    A: RewriteAllocator,
+{
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.get().fmt(f)
+        self.0.fmt(f)
     }
 }
 
-#[derive(Clone)]
-struct RewriteInternal {
-    dimension: usize,
-    cones: Vec<Cone>,
-    max_generator_source: CachedCell<Option<Generator>>,
-    max_generator_target: CachedCell<Option<Generator>>,
-}
-
-impl PartialEq for RewriteInternal {
+impl<A> PartialEq for RewriteInternal<A>
+where
+    A: RewriteAllocator,
+{
+    #[inline]
     fn eq(&self, other: &Self) -> bool {
-        self.dimension == other.dimension && self.cones == other.cones
+        self.dimension == other.dimension
+            && self.cones == other.cones
+            && self.payload == other.payload
     }
 }
 
-impl Eq for RewriteInternal {}
+impl<A> Eq for RewriteInternal<A> where A: RewriteAllocator {}
 
-impl Hash for RewriteInternal {
+impl<A> Hash for RewriteInternal<A>
+where
+    A: RewriteAllocator,
+{
+    #[inline]
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.dimension.hash(state);
         self.cones.hash(state);
+        self.payload.hash(state);
     }
 }
 
-impl RewriteN {
-    pub(crate) fn new(dimension: usize, mut cones: Vec<Cone>) -> Self {
+impl<A, T> GenericRewriteN<A>
+where
+    A: RewriteAllocator<Payload = T>,
+    T: Default,
+{
+    pub(crate) fn new(dimension: usize, cones: Vec<GenericCone<A>>) -> Self {
+        Self::new_with_payload(dimension, cones, &Default::default())
+    }
+
+    #[inline]
+    pub fn identity(dimension: usize) -> Self {
+        Self::new(dimension, Vec::new())
+    }
+
+    pub(crate) fn make_degeneracy(dimension: usize, trivial_heights: &[SingularHeight]) -> Self {
+        Self::make_degeneracy_with_payloads(
+            dimension,
+            trivial_heights,
+            &Default::default(),
+            |_, _| Default::default(),
+        )
+    }
+
+    #[inline]
+    pub fn from_slices(
+        dimension: usize,
+        source_cospans: &[GenericCospan<A>],
+        target_cospans: &[GenericCospan<A>],
+        slices: Vec<Vec<GenericRewrite<A>>>,
+    ) -> Self {
+        Self::from_slices_with_payload(
+            dimension,
+            source_cospans,
+            target_cospans,
+            slices,
+            &Default::default(),
+        )
+    }
+
+    #[inline]
+    pub fn slice(&self, height: usize) -> GenericRewrite<A> {
+        self.slice_with_payload(height, &Default::default())
+    }
+
+    #[inline]
+    pub fn payload(&self) -> &A::Payload {
+        &self.0.payload
+    }
+}
+
+impl<A> GenericRewriteN<A>
+where
+    A: RewriteAllocator,
+{
+    pub(crate) fn new_with_payload(
+        dimension: usize,
+        mut cones: Vec<GenericCone<A>>,
+        payload: &A::Payload,
+    ) -> Self {
         if dimension == 0 {
             panic!("Can not create RewriteN of dimension zero.");
         }
@@ -284,21 +470,20 @@ impl RewriteN {
         // cones.
         cones.retain(|cone| !cone.is_identity());
 
-        Self(REWRITE_FACTORY.with(|factory| {
-            factory.borrow_mut().mk(RewriteInternal {
-                dimension,
-                cones,
-                max_generator_source: CachedCell::new(),
-                max_generator_target: CachedCell::new(),
-            })
+        Self(A::mk_rewrite(RewriteInternal {
+            dimension,
+            cones,
+            max_generator_source: CachedCell::new(),
+            max_generator_target: CachedCell::new(),
+            payload: payload.clone(),
         }))
     }
 
     pub(crate) fn collect_garbage() {
-        REWRITE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
+        A::collect_garbage();
     }
 
-    pub(crate) fn cones(&self) -> &[Cone] {
+    pub(crate) fn cones(&self) -> &[GenericCone<A>] {
         &self.0.cones
     }
 
@@ -308,49 +493,63 @@ impl RewriteN {
             .iter()
             .map(|cone| cone.pad(embedding))
             .collect();
-        Self::new(self.dimension(), cones)
+        Self::new_with_payload(self.dimension(), cones, &self.0.payload)
     }
 
-    pub fn identity(dimension: usize) -> Self {
-        Self::new(dimension, Vec::new())
+    #[inline]
+    pub fn identity_with_payload(dimension: usize, payload: &A::Payload) -> Self {
+        Self::new_with_payload(dimension, Vec::new(), payload)
     }
 
+    #[inline]
     pub fn is_identity(&self) -> bool {
         self.0.cones.is_empty()
     }
 
-    pub(crate) fn make_degeneracy(dimension: usize, trivial_heights: &[SingularHeight]) -> Self {
+    pub(crate) fn make_degeneracy_with_payloads(
+        dimension: usize,
+        trivial_heights: &[SingularHeight],
+        payload: &A::Payload,
+        payloads: impl Fn(usize, usize) -> A::Payload,
+    ) -> Self {
         let cones = trivial_heights
             .iter()
             .enumerate()
             .map(|(i, height)| {
-                Cone::new(
+                GenericCone::new(
                     height - i,
                     vec![],
-                    Cospan {
-                        forward: Rewrite::identity(dimension - 1),
-                        backward: Rewrite::identity(dimension - 1),
+                    GenericCospan {
+                        forward: GenericRewrite::identity_with_payload(
+                            dimension - 1,
+                            &payloads(i, *height),
+                        ),
+                        backward: GenericRewrite::identity_with_payload(
+                            dimension - 1,
+                            &payloads(i, *height),
+                        ),
                     },
                     vec![],
                 )
             })
             .collect();
 
-        Self::new(dimension, cones)
+        Self::new_with_payload(dimension, cones, payload)
     }
 
-    pub fn from_slices(
+    pub fn from_slices_with_payload(
         dimension: usize,
-        source_cospans: &[Cospan],
-        target_cospans: &[Cospan],
-        slices: Vec<Vec<Rewrite>>,
+        source_cospans: &[GenericCospan<A>],
+        target_cospans: &[GenericCospan<A>],
+        slices: Vec<Vec<GenericRewrite<A>>>,
+        payload: &A::Payload,
     ) -> Self {
         let mut cones = Vec::new();
         let mut index = 0;
 
         for (target, cone_slices) in slices.into_iter().enumerate() {
             let size = cone_slices.len();
-            cones.push(Cone::new(
+            cones.push(GenericCone::new(
                 index,
                 source_cospans[index..index + size].to_vec(),
                 target_cospans[target].clone(),
@@ -359,7 +558,7 @@ impl RewriteN {
             index += size;
         }
 
-        Self::new(dimension, cones)
+        Self::new_with_payload(dimension, cones, payload)
     }
 
     pub fn dimension(&self) -> usize {
@@ -378,7 +577,7 @@ impl RewriteN {
         targets
     }
 
-    pub(crate) fn cone_over_target(&self, height: usize) -> Option<&Cone> {
+    pub(crate) fn cone_over_target(&self, height: usize) -> Option<&GenericCone<A>> {
         let mut offset: isize = 0;
 
         for cone in self.cones() {
@@ -394,33 +593,34 @@ impl RewriteN {
         None
     }
 
-    pub fn slice(&self, height: usize) -> Rewrite {
+    pub fn slice_with_payload(&self, height: usize, payload: &A::Payload) -> GenericRewrite<A> {
         self.cones()
             .iter()
             .find(|cone| cone.index <= height && height < cone.index + cone.len())
-            .map_or(Rewrite::identity(self.dimension() - 1), |cone| {
-                cone.internal.slices[height - cone.index].clone()
-            })
+            .map_or(
+                GenericRewrite::identity_with_payload(self.dimension() - 1, payload),
+                |cone| cone.internal.slices[height - cone.index].clone(),
+            )
     }
 
-    pub fn compose(f: &Self, g: &Self) -> Result<Self, CompositionError> {
-        if f.dimension() != g.dimension() {
-            return Err(CompositionError::Dimension(f.dimension(), g.dimension()));
+    pub fn compose(&self, g: &Self) -> Result<Self, CompositionError> {
+        if self.dimension() != g.dimension() {
+            return Err(CompositionError::Dimension(self.dimension(), g.dimension()));
         }
 
         let mut offset = 0;
         let mut delayed_offset = 0;
 
-        let mut f_cones: Vec<Cone> = f.cones().iter().rev().cloned().collect();
-        let mut g_cones: Vec<Cone> = g.cones().iter().rev().cloned().collect();
-        let mut cones: Vec<Cone> = Vec::new();
+        let mut f_cones: Vec<GenericCone<A>> = self.cones().iter().rev().cloned().collect();
+        let mut g_cones: Vec<GenericCone<A>> = g.cones().iter().rev().cloned().collect();
+        let mut cones: Vec<GenericCone<A>> = Vec::new();
 
         loop {
             match (f_cones.pop(), g_cones.pop()) {
                 (None, None) => break,
                 (Some(f_cone), None) => cones.push(f_cone.clone()),
                 (None, Some(g_cone)) => {
-                    let mut cone: Cone = g_cone.clone();
+                    let mut cone: GenericCone<A> = g_cone.clone();
                     cone.index = (cone.index as isize + offset) as usize;
                     offset += delayed_offset;
                     delayed_offset = 0;
@@ -460,14 +660,14 @@ impl RewriteN {
                                 .internal
                                 .slices
                                 .iter()
-                                .map(|f_slice| Rewrite::compose(f_slice.clone(), g_slice.clone()))
+                                .map(|f_slice| f_slice.compose(g_slice))
                                 .collect::<Result<Vec<_>, _>>()?,
                         );
                         slices.extend(g_cone.internal.slices[index + 1..].iter().cloned());
 
                         delayed_offset -= 1 - f_cone.len() as isize;
 
-                        g_cones.push(Cone::new(
+                        g_cones.push(GenericCone::new(
                             g_cone.index,
                             source,
                             g_cone.internal.target.clone(),
@@ -478,7 +678,11 @@ impl RewriteN {
             }
         }
 
-        Ok(Self::new(f.dimension(), cones))
+        Ok(Self::new_with_payload(
+            self.dimension(),
+            cones,
+            &A::Payload::compose::<A>(self, g),
+        ))
     }
 
     pub fn singular_image(&self, index: usize) -> usize {
@@ -565,7 +769,7 @@ impl RewriteN {
                     self.cones()
                         .iter()
                         .flat_map(|cone| &cone.internal.source)
-                        .filter_map(Cospan::max_generator),
+                        .filter_map(GenericCospan::max_generator),
                     None,
                 )
             }),
@@ -581,62 +785,53 @@ impl RewriteN {
     }
 }
 
-impl fmt::Debug for RewriteInternal {
+impl<A> fmt::Debug for RewriteInternal<A>
+where
+    A: RewriteAllocator,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("RewriteN")
             .field("dimension", &self.dimension)
             .field("cones", &self.cones)
+            .field("payload", &self.payload)
             .finish()
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Hash)]
-pub(crate) struct Cone {
-    pub(crate) index: usize,
-    pub(crate) internal: HConsed<ConeInternal>,
-}
-
-impl fmt::Debug for Cone {
+impl<A> fmt::Debug for GenericCone<A>
+where
+    A: RewriteAllocator,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Cone")
             .field("index", &self.index)
-            .field("internal", &self.internal.get())
+            .field("internal", &*self.internal)
             .finish()
     }
 }
 
-thread_local! {
-    static CONE_FACTORY: RefCell<HConsign<ConeInternal, Hasher>> = RefCell::new(HConsign::with_capacity_and_hasher(37, Hasher::default()));
-}
-
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub(crate) struct ConeInternal {
-    pub(crate) source: Vec<Cospan>,
-    pub(crate) target: Cospan,
-    pub(crate) slices: Vec<Rewrite>,
-}
-
-impl Cone {
+impl<A> GenericCone<A>
+where
+    A: RewriteAllocator,
+{
     pub(crate) fn new(
         index: usize,
-        source: Vec<Cospan>,
-        target: Cospan,
-        slices: Vec<Rewrite>,
+        source: Vec<GenericCospan<A>>,
+        target: GenericCospan<A>,
+        slices: Vec<GenericRewrite<A>>,
     ) -> Self {
         Self {
             index,
-            internal: CONE_FACTORY.with(|factory| {
-                factory.borrow_mut().mk(ConeInternal {
-                    source,
-                    target,
-                    slices,
-                })
+            internal: A::mk_cone(ConeInternal {
+                source,
+                target,
+                slices,
             }),
         }
     }
 
     pub(crate) fn collect_garbage() {
-        CONE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
+        A::collect_garbage();
     }
 
     pub(crate) fn is_identity(&self) -> bool {
@@ -664,13 +859,35 @@ impl Cone {
     }
 }
 
-#[derive(Debug, Error)]
-pub enum CompositionError {
-    #[error("can't compose rewrites of dimensions {0} and {1}")]
-    Dimension(usize, usize),
+impl Composable for () {
+    #[inline]
+    fn compose<A>(_: &GenericRewriteN<A>, _: &GenericRewriteN<A>) -> Self
+    where
+        A: RewriteAllocator<Payload = Self>,
+    {
+    }
+}
 
-    #[error("failed to compose incompatible rewrites")]
-    Incompatible,
+impl RewriteAllocator for DefaultAllocator {
+    type Payload = ();
+    type RewriteCell = HConsed<RewriteInternal<Self>>;
+    type ConeCell = HConsed<ConeInternal<Self>>;
+
+    #[inline]
+    fn mk_rewrite(internal: RewriteInternal<Self>) -> Self::RewriteCell {
+        REWRITE_FACTORY.with(|factory| factory.borrow_mut().mk(internal))
+    }
+
+    #[inline]
+    fn mk_cone(internal: ConeInternal<Self>) -> Self::ConeCell {
+        CONE_FACTORY.with(|factory| factory.borrow_mut().mk(internal))
+    }
+
+    #[inline]
+    fn collect_garbage() {
+        REWRITE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
+        CONE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
+    }
 }
 
 #[cfg(test)]
