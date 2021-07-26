@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1625835710077,
+  "lastUpdate": 1627300815738,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -4199,6 +4199,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 31.401,
             "range": "+/- 0.018",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "me@nathancorbyn.com",
+            "name": "Nathan Corbyn",
+            "username": "doctorn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "146dfbc5d2614d566514b06bcb95a05bd3992c5d",
+          "message": "Add extensible data to rewrites (#124)\n\n* Add labels to rewrites\r\n\r\n* Rename `LabelledX` to `GenericX`\r\n\r\n* Rename `LabelledX` to `GenericX`\r\n\r\n* Placate `clippy`\r\n\r\n* Add getter for payloads",
+          "timestamp": "2021-07-26T12:39:17+01:00",
+          "tree_id": "5b1866e1a12e1d51e3d77907724be3aa2e3cbc53",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/146dfbc5d2614d566514b06bcb95a05bd3992c5d"
+        },
+        "date": 1627300810001,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 11.688,
+            "range": "+/- 0.270",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 11.469,
+            "range": "+/- 0.254",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 88.777,
+            "range": "+/- 1.692",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 99.942,
+            "range": "+/- 2.325",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 78.045,
+            "range": "+/- 1.614",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 119.55,
+            "range": "+/- 3.100",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 78.382,
+            "range": "+/- 2.163",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 548.85,
+            "range": "+/- 6.750",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.1479,
+            "range": "+/- 0.035",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 6.5024,
+            "range": "+/- 0.068",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 17.113,
+            "range": "+/- 0.289",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 42.851,
+            "range": "+/- 0.423",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 99.111,
+            "range": "+/- 1.267",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 230.96,
+            "range": "+/- 3.500",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 6.8721,
+            "range": "+/- 0.069",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 36.816,
+            "range": "+/- 0.121",
             "unit": "us"
           }
         ]
