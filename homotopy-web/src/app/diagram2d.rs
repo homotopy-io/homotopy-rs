@@ -666,9 +666,11 @@ impl Component for Diagram0D {
 }
 
 impl Diagram0D {
+    const RADIUS_SCALE: f32 = 3.0;
+
     fn dimensions(&self) -> Size2D<f32> {
         let style = &self.props.style;
-        let dimension = style.point_radius * 2.0;
+        let dimension = style.point_radius * 2.0 * Self::RADIUS_SCALE;
         Size2D::new(dimension, dimension)
     }
 
@@ -680,7 +682,7 @@ impl Diagram0D {
             <circle
                 cx={self.dimensions().width * 0.5}
                 cy={self.dimensions().height * 0.5}
-                r={style.point_radius}
+                r={style.point_radius * Self::RADIUS_SCALE}
                 class={class}
             />
         }
