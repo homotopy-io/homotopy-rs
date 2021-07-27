@@ -40,10 +40,7 @@ pub fn slice_control(props: &SliceControlProps) -> Html {
         .collect();
 
     let style = format!(
-        r#"
-            transform-origin: 0px 0px;
-            transform: translate(0px, {y}px)
-        "#,
+        "transform: translate(0px, calc({y}px - 50%))",
         y = props.translate - (0.5 * 40.0 * props.scale)
     );
 

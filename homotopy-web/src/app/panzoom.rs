@@ -1,7 +1,9 @@
-use super::util::{bounding_rect, read_touch_list, Finger};
 use closure::closure;
-use euclid::default::{Point2D, Vector2D};
 use yew::prelude::*;
+
+use euclid::default::{Point2D, Vector2D};
+
+use super::util::{bounding_rect, read_touch_list, Finger};
 
 type Point = Point2D<f64>;
 type Vector = Vector2D<f64>;
@@ -14,8 +16,10 @@ pub enum Message {
     MouseDown(Point),
     MouseMove(Point),
     MouseUp,
+    Reset,
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct PanZoom {
     translate: Vector,
     scale: f64,
@@ -112,9 +116,10 @@ impl PanZoom {
                 None => false,
             },
             Message::MouseWheel(point, delta) => {
-                let scale = self.scale * if delta < 0.0 { 1.1 } else { 1.0 / 1.1 };
-                self.translate = point - (point - self.translate) * (scale / self.scale);
-                self.scale = scale;
+                let scale = if delta < 0.0 { 1.1 } else { 1.0 / 1.1 };
+                self.translate =
+                    (point + self.translate).to_vector() / (scale * self.scale) - point.to_vector();
+                self.scale *= scale;
                 true
             }
             Message::TouchMove(mut touches) => {
@@ -145,6 +150,11 @@ impl PanZoom {
                 touches.sort_by_key(|(finger, _)| *finger);
                 self.touches = touches;
                 false
+            }
+            Message::Reset => {
+                self.translate = Default::default();
+                self.scale = 1.0;
+                true
             }
         }
     }

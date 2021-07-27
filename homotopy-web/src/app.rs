@@ -21,19 +21,20 @@ mod workspace;
 use settings::AppSettings;
 use sidebar::Sidebar;
 use signature_stylesheet::SignatureStylesheet;
-use workspace::WorkspaceView;
+use workspace::{ViewEvent, WorkspaceView};
 
 #[derive(Default, Clone, Debug, PartialEq, Properties)]
 pub struct Props {}
 
-#[derive(Debug, Clone)]
 pub enum Message {
     Dispatch(model::Action),
+    PanZoom(panzoom::Message),
 }
 
 pub struct App {
-    dispatch: Callback<model::Action>,
+    link: ComponentLink<Self>,
     state: model::State,
+    panzoom: panzoom::PanZoom,
     signature_stylesheet: SignatureStylesheet,
     toaster: Dispatcher<ToastAgent>,
     _settings: AppSettings,
@@ -46,7 +47,6 @@ impl Component for App {
 
     fn create(_props: Self::Properties, link: ComponentLink<Self>) -> Self {
         let state = model::State::default();
-        let dispatch = link.callback(Message::Dispatch);
 
         // Install the signature stylesheet
         let mut signature_stylesheet = SignatureStylesheet::new("generator");
@@ -54,12 +54,13 @@ impl Component for App {
         signature_stylesheet.mount();
 
         let mut app = Self {
-            dispatch,
             state,
+            panzoom: panzoom::PanZoom::new(NodeRef::default(), &link.callback(Message::PanZoom)),
             signature_stylesheet,
             toaster: ToastAgent::dispatcher(),
             _settings: AppSettings::connect(Callback::noop()),
             before_unload: None,
+            link,
         };
         app.install_unload_hook();
         app
@@ -69,6 +70,12 @@ impl Component for App {
         match msg {
             Message::Dispatch(action) => {
                 log::info!("Received action: {:?}", action);
+
+                if let model::Action::Proof(ref action) = action {
+                    if self.state.with_proof(|p| p.resets_panzoom(&action)) {
+                        self.panzoom.update(panzoom::Message::Reset);
+                    }
+                }
 
                 let time_start = performance();
                 let result = self.state.update(action);
@@ -86,8 +93,10 @@ impl Component for App {
                 }
                 self.signature_stylesheet
                     .update(self.state.with_proof(|p| p.signature().clone()));
+
                 true
             }
+            Message::PanZoom(msg) => self.panzoom.update(msg),
         }
     }
 
@@ -96,15 +105,26 @@ impl Component for App {
     }
 
     fn view(&self) -> Html {
-        let dispatch = &self.dispatch;
+        let dispatch = self.link.callback(Message::Dispatch);
         let proof = self.state.with_proof(Clone::clone);
         let signature = proof.signature();
+
+        let view = self
+            .link
+            .callback(Message::PanZoom)
+            .reform(|event: ViewEvent| match event {
+                ViewEvent::ZoomIn => panzoom::Message::MouseWheel(Default::default(), -20.0),
+                ViewEvent::ZoomOut => panzoom::Message::MouseWheel(Default::default(), 20.0),
+                ViewEvent::Reset => panzoom::Message::Reset,
+            });
 
         let workspace = match proof.workspace() {
             Some(workspace) => {
                 html! {
                     <WorkspaceView
                         workspace={workspace}
+                        panzoom={self.panzoom.clone()}
+                        view={view}
                         signature={signature}
                         dispatch={dispatch.reform(model::Action::Proof)}
                     />
