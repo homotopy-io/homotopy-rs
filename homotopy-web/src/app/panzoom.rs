@@ -116,10 +116,10 @@ impl PanZoom {
                 None => false,
             },
             Message::MouseWheel(point, delta) => {
-                let scale = if delta < 0.0 { 1.1 } else { 1.0 / 1.1 };
-                self.translate =
-                    (point + self.translate).to_vector() / (scale * self.scale) - point.to_vector();
-                self.scale *= scale;
+                // FIXME(@doctorn) `point` should be invariant after updating transform
+                let scale = self.scale * if delta < 0.0 { 1.1 } else { 1.0 / 1.1 };
+                self.translate = point - (point - self.translate) * (scale / self.scale);
+                self.scale = scale;
                 true
             }
             Message::TouchMove(mut touches) => {
