@@ -1,5 +1,5 @@
-use yew::prelude::*;
 use closure::closure;
+use yew::prelude::*;
 
 use euclid::default::{Point2D, Vector2D};
 
@@ -19,6 +19,7 @@ pub enum Message {
     Reset,
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct PanZoom {
     translate: Vector,
     scale: f64,
@@ -115,9 +116,10 @@ impl PanZoom {
                 None => false,
             },
             Message::MouseWheel(point, delta) => {
-                let scale = self.scale * if delta < 0.0 { 1.1 } else { 1.0 / 1.1 };
-                self.translate = point - (point - self.translate) * (scale / self.scale);
-                self.scale = scale;
+                let scale = if delta < 0.0 { 1.1 } else { 1.0 / 1.1 };
+                self.translate =
+                    (point + self.translate).to_vector() / (scale * self.scale) - point.to_vector();
+                self.scale *= scale;
                 true
             }
             Message::TouchMove(mut touches) => {

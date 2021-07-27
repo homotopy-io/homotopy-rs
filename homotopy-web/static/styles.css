@@ -14,10 +14,10 @@
   --drawer-border: #e1e1e1;
   --drawer-selected: #d1e4f4;
 
-  --path-background: #ffffff;
-  --path-foreground: #575f66;
-  --path-border: #8A919966;
-  --path-hover: #d1e4f4;
+  --toolbar-background: #ffffff;
+  --toolbar-foreground: #575f66;
+  --toolbar-border: #8A919966;
+  --toolbar-hover: #d1e4f4;
 
   --space-0: 4px;
   --space-1: calc(2 * var(--space-0));
@@ -101,45 +101,49 @@ body, html {
 .workspace__diagram {
   position: absolute;
   z-index: 0;
-}
-
-.workspace__path {
-  position: absolute;
-  background: var(--path-background);
-  color: var(--path-foreground);
-  border: 1px solid var(--path-border);
   left: 50%;
-  transform: translate(-50%, 0);
-  margin: var(--space-0);
-  border-radius: var(--space-0);
+  top: 50%;
+  transform-origin: 50% 50%;
+}
+
+.workspace__toolbar {
+  position: absolute;
+  display: flex;
   z-index: 10;
-  display: flex;
+  right: 0;
+  margin: var(--space-0);
+}
+
+.workspace__toolbar__segment {
+  background: var(--toolbar-background);
+  border: 1px solid var(--toolbar-border);
+  color: var(--toolbar-foreground);
+  border-radius: var(--space-0);
   align-items: stretch;
-}
-
-.workspace__path--empty {
-  display: none;
-}
-
-.workspace__path-step, .workspace__path-home {
-  padding: var(--space-1);
   display: flex;
+}
+
+.workspace__toolbar__button {
+  padding: var(--space-1);
   align-items: center;
+  display: flex;
   cursor: pointer;
 }
 
 @media (pointer: fine) {
-  .workspace__path-step:hover, .workspace__path-home:hover {
-    background: var(--path-hover);
+  .workspace__toolbar__button:hover {
+    background: var(--toolbar-hover);
   }
 }
 
 .workspace__slice-buttons {
   position: absolute;
   right: 0;
+  top: 50%;
   box-sizing: border-box;
   z-index: 5;
   user-select: none;
+  transform-origin: 0px 50%;
 }
 
 .workspace__slice-button {
@@ -350,6 +354,7 @@ body, html {
   bottom: 4px;
   right: 4px;
   color: red;
+  pointer-events: none;
 }
 
 /* Toaster */
@@ -365,6 +370,7 @@ body, html {
   position: relative;
   width: 300px;
   min-height: 30px;
+  z-index: 10000;
   margin: var(--space-1);
 }
 

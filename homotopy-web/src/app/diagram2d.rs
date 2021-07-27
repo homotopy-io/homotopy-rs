@@ -1,23 +1,30 @@
-use super::util::{read_touch_list_abs, Finger};
-use crate::app::signature_stylesheet::SignatureStylesheet;
-use crate::model::proof::homotopy::{Contract, Expand, Homotopy};
-use crate::model::proof::RenderStyle;
+use std::convert::{From, Into, TryInto};
+use std::f32::consts::PI;
+
+use web_sys::Element;
+
+use yew::prelude::*;
+
 use euclid::default::{Point2D, Size2D, Transform2D, Vector2D};
 use euclid::Angle;
+
 use homotopy_core::common::Direction;
 use homotopy_core::complex::{make_complex, Simplex};
 use homotopy_core::contraction::Bias;
 use homotopy_core::projection::{Depths, Generators};
 use homotopy_core::rewrite::RewriteN;
 use homotopy_core::{Boundary, DiagramN, Generator, Height, SliceIndex};
+
 use homotopy_graphics::geometry;
 use homotopy_graphics::geometry::path_to_svg;
 use homotopy_graphics::graphic2d::{ActionRegion, GraphicElement};
 use homotopy_graphics::layout2d::Layout;
-use std::convert::{From, Into, TryInto};
-use std::f32::consts::PI;
-use web_sys::Element;
-use yew::prelude::*;
+
+use crate::app::signature_stylesheet::SignatureStylesheet;
+use crate::model::proof::homotopy::{Contract, Expand, Homotopy};
+use crate::model::proof::RenderStyle;
+
+use super::util::{read_touch_list_abs, Finger};
 
 pub struct Diagram2D {
     props: Props2D,
@@ -604,6 +611,77 @@ impl Diagram1D {
                 r={style.point_radius}
                 class={class}
                 onclick={onclick}
+            />
+        }
+    }
+}
+
+#[derive(Clone, PartialEq, Properties)]
+pub struct Props0D {
+    pub diagram: Generator,
+    #[prop_or_default]
+    pub style: RenderStyle,
+}
+
+pub enum Message0D {}
+
+pub struct Diagram0D {
+    props: Props0D,
+}
+
+impl Component for Diagram0D {
+    type Message = Message0D;
+    type Properties = Props0D;
+
+    fn create(props: Self::Properties, _link: ComponentLink<Self>) -> Self {
+        Self { props }
+    }
+
+    fn update(&mut self, _msg: Self::Message) -> ShouldRender {
+        false
+    }
+
+    fn change(&mut self, props: Self::Properties) -> ShouldRender {
+        if self.props == props {
+            false
+        } else {
+            self.props = props;
+            true
+        }
+    }
+
+    fn view(&self) -> Html {
+        let size = self.dimensions();
+
+        html! {
+            <svg
+                xmlns={"http://www.w3.org/2000/svg"}
+                 width={size.width}
+                 height={size.height}
+            >
+                {self.view_point(self.props.diagram)}
+            </svg>
+        }
+    }
+}
+
+impl Diagram0D {
+    fn dimensions(&self) -> Size2D<f32> {
+        let style = &self.props.style;
+        let dimension = style.point_radius * 2.0;
+        Size2D::new(dimension, dimension)
+    }
+
+    fn view_point(&self, generator: Generator) -> Html {
+        let class = SignatureStylesheet::name("generator", generator, "point");
+        let style = &self.props.style;
+
+        html! {
+            <circle
+                cx={self.dimensions().width * 0.5}
+                cy={self.dimensions().height * 0.5}
+                r={style.point_radius}
+                class={class}
             />
         }
     }

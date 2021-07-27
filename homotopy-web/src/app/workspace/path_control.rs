@@ -1,8 +1,11 @@
-use crate::app::{Icon, IconSize};
-use homotopy_core::{Boundary, Height, SliceIndex};
-use im::Vector;
 use yew::prelude::*;
 use yew_functional::function_component;
+
+use im::Vector;
+
+use homotopy_core::{Boundary, Height, SliceIndex};
+
+use crate::app::{Icon, IconSize};
 
 #[derive(Debug, Clone, PartialEq, Properties)]
 pub struct PathControlProps {
@@ -44,7 +47,7 @@ pub fn path_control(props: &PathControlProps) -> Html {
 
         html! {
             <span
-                class="workspace__path-step"
+                class="workspace__toolbar__button"
                 onclick={onclick}
             >
                 {label}
@@ -69,9 +72,9 @@ pub fn path_control(props: &PathControlProps) -> Html {
         .collect();
 
     html! {
-        <div class="workspace__path">
+        <div class="workspace__toolbar__segment">
             <span
-                class="workspace__path-home"
+                class="workspace__toolbar__button"
                 onclick={props.ascend_slice.reform(move |_| path_len)}
             >
                 <Icon name="star" size={IconSize::Icon24} />

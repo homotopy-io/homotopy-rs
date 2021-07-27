@@ -1,20 +1,25 @@
-mod path_control;
-mod slice_control;
+use std::convert::{Into, TryInto};
 
-use crate::app::diagram2d::{Diagram1D, Diagram2D, Highlight2D};
+use yew::prelude::*;
+
+use homotopy_core::attach::BoundaryPath;
+use homotopy_core::common::{Boundary, Height, SliceIndex};
+use homotopy_core::{Diagram, DiagramN};
+
+use crate::app::diagram2d::{Diagram0D, Diagram1D, Diagram2D, Highlight2D};
 use crate::app::panzoom;
 use crate::model::proof::homotopy::Homotopy;
 use crate::model::proof::{Action, Signature, Workspace};
-use homotopy_core::{
-    attach::BoundaryPath,
-    common::{Boundary, Height, SliceIndex},
-};
-use homotopy_core::{Diagram, DiagramN};
+
+mod path_control;
+mod slice_control;
+mod view_control;
 
 use path_control::PathControl;
 use slice_control::SliceControl;
-use std::convert::{Into, TryInto};
-use yew::prelude::*;
+use view_control::ViewControl;
+
+pub use view_control::ViewEvent;
 
 // TODO: Workspace rerendering when panzoom is changed needs to be smoother.
 
@@ -22,16 +27,15 @@ use yew::prelude::*;
 pub struct Props {
     pub workspace: Workspace,
     pub dispatch: Callback<Action>,
+    pub view: Callback<ViewEvent>,
     pub signature: Signature,
+    pub panzoom: panzoom::PanZoom,
 }
 
-pub enum Message {
-    PanZoom(panzoom::Message),
-}
+pub enum Message {}
 
 pub struct WorkspaceView {
     props: Props,
-    panzoom: panzoom::PanZoom,
     on_select: Callback<Vec<Vec<SliceIndex>>>,
     on_homotopy: Callback<Homotopy>,
 }
@@ -40,23 +44,18 @@ impl Component for WorkspaceView {
     type Message = Message;
     type Properties = Props;
 
-    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let panzoom_callback = link.callback(Message::PanZoom);
-        let panzoom = panzoom::PanZoom::new(NodeRef::default(), &panzoom_callback);
+    fn create(props: Self::Properties, _link: ComponentLink<Self>) -> Self {
         let on_select = props.dispatch.reform(Action::SelectPoints);
         let on_homotopy = props.dispatch.reform(Action::Homotopy);
         Self {
             props,
-            panzoom,
             on_select,
             on_homotopy,
         }
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
-        match msg {
-            Message::PanZoom(msg) => self.panzoom.update(msg),
-        }
+    fn update(&mut self, _: Self::Message) -> ShouldRender {
+        false
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
@@ -73,36 +72,39 @@ impl Component for WorkspaceView {
             Diagram::Diagram0(_) => Default::default(),
             Diagram::DiagramN(d) => html! {
                 <SliceControl
-                    translate={self.panzoom.translate().y}
-                    scale={self.panzoom.scale()}
+                    translate={self.props.panzoom.translate().y}
+                    scale={self.props.panzoom.scale()}
                     number_slices={d.size()}
                     descend_slice={self.props.dispatch.reform(Action::DescendSlice)}
                 />
             },
         };
 
-        let path_control = html! {
-            <PathControl
-                path={self.props.workspace.path.clone()}
-                ascend_slice={self.props.dispatch.reform(Action::AscendSlice)}
-                dimension={self.props.workspace.diagram.dimension()}
-            />
+        let toolbar = html! {
+            <div class="workspace__toolbar">
+                <PathControl
+                    path={self.props.workspace.path.clone()}
+                    ascend_slice={self.props.dispatch.reform(Action::AscendSlice)}
+                    dimension={self.props.workspace.diagram.dimension()}
+                />
+                <ViewControl handler={self.props.view.clone()} />
+            </div>
         };
 
         html! {
             <content
                 class="workspace"
-                onmousemove={self.panzoom.on_mouse_move()}
-                onmouseup={self.panzoom.on_mouse_up()}
-                onmousedown={self.panzoom.on_mouse_down()}
-                onwheel={self.panzoom.on_wheel()}
-                ontouchmove={self.panzoom.on_touch_move()}
-                ontouchstart={self.panzoom.on_touch_update()}
-                ontouchend={self.panzoom.on_touch_update()}
-                ontouchcancel={self.panzoom.on_touch_update()}
-                ref={self.panzoom.node_ref()}
+                onmousemove={self.props.panzoom.on_mouse_move()}
+                onmouseup={self.props.panzoom.on_mouse_up()}
+                onmousedown={self.props.panzoom.on_mouse_down()}
+                onwheel={self.props.panzoom.on_wheel()}
+                ontouchmove={self.props.panzoom.on_touch_move()}
+                ontouchstart={self.props.panzoom.on_touch_update()}
+                ontouchend={self.props.panzoom.on_touch_update()}
+                ontouchcancel={self.props.panzoom.on_touch_update()}
+                ref={self.props.panzoom.node_ref()}
             >
-                {path_control}
+                {toolbar}
                 {slice_buttons}
                 {self.view_diagram()}
             </content>
@@ -118,9 +120,11 @@ impl WorkspaceView {
 
     fn view_diagram(&self) -> Html {
         match self.visible_diagram() {
-            Diagram::Diagram0(_generator) => {
+            Diagram::Diagram0(generator) => {
                 html! {
-                    <div>{"todo: 0-dimensional diagram"}</div>
+                    <div class="workspace__diagram" style={self.diagram_style()}>
+                        <Diagram0D diagram={generator} />
+                    </div>
                 }
             }
             Diagram::DiagramN(diagram) if diagram.dimension() == 1 => {
@@ -152,14 +156,11 @@ impl WorkspaceView {
     }
 
     fn diagram_style(&self) -> String {
-        let translate = self.panzoom.translate();
-        let scale = self.panzoom.scale();
+        let translate = self.props.panzoom.translate();
+        let scale = self.props.panzoom.scale();
 
         format!(
-            r#"
-                transform-origin: 0px 0px;
-                transform: translate({x}px, {y}px) scale({s});
-            "#,
+            "transform: translate(calc({x}px - 50%), calc({y}px - 50%)) scale({s})",
             x = translate.x,
             y = translate.y,
             s = scale
