@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1627398174019,
+  "lastUpdate": 1627417226845,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -4559,6 +4559,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 27.243,
             "range": "+/- 0.014",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "committer": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "distinct": true,
+          "id": "911236469a82c6ea70c96667f3c702050516a875",
+          "message": "Generalise `MonotoneSequences` to allow for constraints in each digit.\nThis allows the direct generation of *composable* underlying monotone\nfunctions in factorization, as opposed to iterating through all valid\nmonotone sequences (which are vastly more numerous).\nFixes #123.",
+          "timestamp": "2021-07-27T21:10:29+01:00",
+          "tree_id": "5b41a1ce23fc1ea90528bb3566ee3ed06ca06a24",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/911236469a82c6ea70c96667f3c702050516a875"
+        },
+        "date": 1627417220735,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 10.761,
+            "range": "+/- 0.016",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 10.978,
+            "range": "+/- 0.018",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 84.01,
+            "range": "+/- 0.437",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 98.394,
+            "range": "+/- 0.070",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 80.198,
+            "range": "+/- 0.028",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 111.18,
+            "range": "+/- 0.040",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 72.474,
+            "range": "+/- 0.066",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 481.72,
+            "range": "+/- 0.210",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 1.8905,
+            "range": "+/- 0.002",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 5.773,
+            "range": "+/- 0.003",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 15.456,
+            "range": "+/- 0.007",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 38.639,
+            "range": "+/- 0.089",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 93.61,
+            "range": "+/- 0.432",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 219.44,
+            "range": "+/- 0.490",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 6.056,
+            "range": "+/- 0.003",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 31.18,
+            "range": "+/- 0.024",
             "unit": "us"
           }
         ]
