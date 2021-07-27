@@ -1,26 +1,38 @@
+use std::{cmp, ops::Range};
+
 use crate::Rewrite;
 use crate::{Diagram, Rewrite0};
 use crate::{Height, RewriteN};
 use thiserror::Error;
 
+/// Given a constraints vector of length $`n`$, this iterator generates all monotone
+/// (non-decreasing) sequences of $`n`$ digits, where each digit satisfies its corresponding
+/// constraint. Each constraint is a `Range<usize>`, a half-open range inclusive below and
+/// exclusive above, specifying the values which the digit with the same index in the output
+/// monotone sequence may take. The order of outputs is lexicographic.
+// this iterator is cyclic, *not* fused
+#[derive(Debug, Clone)]
 pub struct MonotoneSequences {
     cur: Option<Vec<usize>>,
 
-    // invariant: ∀ x ∈ cur(end, len). x = max
+    // invariant: ∀ x ∈ cur[end, len). x maxxed within its range
     end: usize,
-
-    pub len: usize,
-    pub max: usize,
+    constraints: Vec<Range<usize>>, // digit-wise range constraints
 }
 
+#[allow(clippy::len_without_is_empty)]
 impl MonotoneSequences {
-    pub fn new(len: usize, max: usize) -> Self {
+    pub fn new(constraints: Vec<Range<usize>>) -> Self {
         Self {
             cur: None,
-            end: len - 1,
-            len,
-            max,
+            end: constraints.len(),
+            constraints,
         }
+    }
+
+    /// The number of digits in the monotone sequence.
+    pub fn len(&self) -> usize {
+        self.constraints.len()
     }
 }
 
@@ -28,24 +40,53 @@ impl Iterator for MonotoneSequences {
     type Item = Vec<usize>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        let len = self.len();
         match &mut self.cur {
             None => {
-                // first monotone sequence is all 0s
-                self.cur = Some([0].repeat(self.len));
+                // first monotone sequence is range.start for each digit
+                let mut min = Default::default();
+                let mut first = Vec::with_capacity(self.constraints.len());
+                for i in 0..self.constraints.len() {
+                    min = cmp::max(min, self.constraints[i].start);
+                    if min < self.constraints[i].end {
+                        first.push(min);
+                    } else {
+                        return None;
+                    }
+                }
+
+                // maintain invariant
+                self.end = first.len();
+                while self.end > 0 && first[self.end - 1] == self.constraints[self.end - 1].end - 1
+                {
+                    self.end -= 1;
+                }
+
+                self.cur = first.into();
             }
             Some(seq) => {
-                if seq == &[self.max].repeat(self.len) {
+                if self.end == 0 {
                     self.cur = None;
                 } else {
-                    seq[self.end] += 1; // increment last non-max digit
-                    if seq[self.end] == self.max {
-                        self.end = self.end.saturating_sub(1); // maintain invariant
+                    // increment last non-max digit
+                    let l = self.end - 1;
+                    seq[l] = cmp::min(seq[l] + 1, self.constraints[l].end - 1);
+
+                    if seq[l] == self.constraints[l].end - 1 {
+                        // maxxed seq[l] within its range
+                        self.end -= 1; // maintain invariant
                     } else {
-                        for i in (self.end + 1)..self.len {
-                            // set all values to the right to it
-                            seq[i] = seq[self.end];
+                        for i in (self.end)..len {
+                            // preserve monotonicity for all values to the right
+                            seq[i] = cmp::max(seq[l], self.constraints[i].start);
+                            debug_assert!(seq[i] >= seq[l]);
                         }
-                        self.end = self.len - 1; // maintain invariant
+
+                        // maintain invariant
+                        self.end = len;
+                        while seq[self.end - 1] == self.constraints[self.end - 1].end - 1 {
+                            self.end -= 1;
+                        }
                     }
                 }
             }
@@ -97,17 +138,15 @@ pub fn factorize(
                 return Err(FactorizationError::Codomain);
             }
 
-            let f_mono: Vec<usize> = (0..s.size()).map(|i| fr.singular_image(i)).collect();
-            let g_mono: Vec<usize> = (0..t.size()).map(|i| gr.singular_image(i)).collect();
+            // obtain an iterator over all possible monotone sequences which may underly h
+            // ( as f(a) = g(h(a)) ⟹ h(a) ∈ g⁻¹(f(a)) )
+            let constraints: Vec<Range<usize>> = (0..s.size())
+                .map(|i| gr.singular_preimage(fr.singular_image(i)))
+                .collect();
 
-            // iterator to guess a monotone function underlying h
-            MonotoneSequences::new(s.size(), t.size() - 1)
+            // find a particular monotone sequence which works
+            MonotoneSequences::new(constraints)
                 .find_map(|h_mono| {
-                    // Check that this monotone composes with that of g to get that of f.
-                    if (0..s.size()).map(|i| &g_mono[h_mono[i]]).ne(f_mono.iter()) {
-                        return None;
-                    }
-
                     // Recurse on each monotone component
                     let mut cone_slices: Vec<Vec<Rewrite>> = vec![vec![]; t.size()];
 
@@ -163,11 +202,11 @@ mod test {
 
     #[test]
     fn monotone_sequences() {
-        let ms_2_1 = MonotoneSequences::new(2, 1);
-        assert_eq!(ms_2_1.collect::<Vec<_>>(), [[0, 0], [0, 1], [1, 1]]);
-        let ms_3_3 = MonotoneSequences::new(3, 3);
+        let ms_0_1_2 = MonotoneSequences::new(vec![0..2, 0..2]);
+        assert_eq!(ms_0_1_2.collect::<Vec<_>>(), [[0, 0], [0, 1], [1, 1]]);
+        let ms_0_3_3 = MonotoneSequences::new(vec![0..4, 0..4, 0..4]);
         assert_eq!(
-            ms_3_3.collect::<Vec<_>>(),
+            ms_0_3_3.collect::<Vec<_>>(),
             [
                 [0, 0, 0],
                 [0, 0, 1],
@@ -191,6 +230,31 @@ mod test {
                 [3, 3, 3]
             ]
         );
+        let ms_1_3_3 = MonotoneSequences::new(vec![1..4, 0..4, 1..4]);
+        assert_eq!(
+            ms_1_3_3.collect::<Vec<_>>(),
+            [
+                [1, 1, 1],
+                [1, 1, 2],
+                [1, 1, 3],
+                [1, 2, 2],
+                [1, 2, 3],
+                [1, 3, 3],
+                [2, 2, 2],
+                [2, 2, 3],
+                [2, 3, 3],
+                [3, 3, 3]
+            ]
+        );
+        // unsatisfiable constraints
+        let invalid_ms = MonotoneSequences::new(vec![1..2, 0..1]);
+        assert!(invalid_ms.collect::<Vec<_>>().is_empty());
+        // iterator should be cyclic
+        let mut ms_0_0_1 = MonotoneSequences::new(vec![0..1]);
+        dbg!(ms_0_0_1.clone().collect::<Vec<_>>());
+        assert_eq!(ms_0_0_1.next(), Some(vec![0]));
+        assert_eq!(ms_0_0_1.next(), None);
+        assert_eq!(ms_0_0_1.next(), Some(vec![0]));
     }
 
     // TODO: test factorize
