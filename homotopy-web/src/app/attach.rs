@@ -42,7 +42,11 @@ impl Component for AttachView {
 
 impl AttachView {
     pub fn view_option(&self, option: &AttachOption) -> Html {
-        let info = self.props.signature.get(&option.generator).unwrap();
+        let info = self
+            .props
+            .signature
+            .generator_info(option.generator)
+            .unwrap();
 
         let onclick = self.props.dispatch.reform({
             let option = option.clone();

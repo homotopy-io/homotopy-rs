@@ -1,3 +1,6 @@
+use std::collections::VecDeque;
+use std::iter::{FromIterator, FusedIterator};
+use std::mem;
 use std::ops::{Deref, DerefMut, Index};
 
 use crate::declare_idx;
@@ -8,6 +11,7 @@ declare_idx! {
     pub struct Node = usize;
 }
 
+/// [PartialEq] should only be applied to nodes of the same tree
 #[derive(Debug, Clone, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub struct NodeData<T> {
     data: T,
@@ -15,7 +19,7 @@ pub struct NodeData<T> {
     parent: Option<Node>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Tree<T> {
     nodes: IdxVec<Node, NodeData<T>>,
     root: Node,
@@ -35,6 +39,18 @@ impl<T> NodeData<T> {
     #[inline]
     pub fn into_inner(self) -> T {
         self.data
+    }
+
+    #[inline]
+    pub fn map<F, U>(self, f: F) -> NodeData<U>
+    where
+        F: FnOnce(T) -> U,
+    {
+        NodeData {
+            data: f(self.data),
+            children: self.children,
+            parent: self.parent,
+        }
     }
 
     #[inline]
@@ -90,9 +106,21 @@ impl<T> Index<usize> for NodeData<T> {
 
 impl<T> Tree<T> {
     #[inline]
+    pub fn new(root: T) -> Self {
+        let mut nodes = IdxVec::new();
+        let root = nodes.push(NodeData {
+            data: root,
+            parent: None,
+            children: vec![],
+        });
+
+        Self { nodes, root }
+    }
+
+    #[inline]
     pub fn with<F, U>(&self, node: Node, f: F) -> U
     where
-        F: Fn(&NodeData<T>) -> U,
+        F: FnOnce(&NodeData<T>) -> U,
     {
         f(&self.nodes[node])
     }
@@ -100,9 +128,24 @@ impl<T> Tree<T> {
     #[inline]
     pub fn with_mut<F, U>(&mut self, node: Node, f: F) -> U
     where
-        F: Fn(&mut NodeData<T>) -> U,
+        F: FnOnce(&mut NodeData<T>) -> U,
     {
         f(&mut self.nodes[node])
+    }
+
+    /// Removes `node` from the tree. This is done by disconnecting the subtree rooted at `node`
+    /// from the rest of the tree, leaving the underlying data untouched. Thus, attempting to
+    /// remove `self.root()` is a no-op.
+    ///
+    /// A clean-up can be performed by executing a normalisation operation after a removal.
+    /// Doing so will free the memory associated with all disconnected components.
+    #[inline]
+    pub fn remove(&mut self, node: Node) {
+        if let Some(parent) = self.nodes[node].parent {
+            self.nodes[parent].children.retain(|child| *child != node);
+        }
+
+        self.nodes[node].parent = None;
     }
 
     #[inline]
@@ -116,9 +159,188 @@ impl<T> Tree<T> {
         id
     }
 
+    /// Returns an iterator of the ancestors of `node`.
+    #[inline]
+    pub fn ancestors_of(&self, node: Node) -> impl Iterator<Item = Node> + '_ {
+        AncestorIterator {
+            tree: self,
+            current: Some(node),
+        }
+    }
+
+    /// Returns an iterator of the ancestors of `node`.
+    #[inline]
+    pub fn descendents_of(&self, node: Node) -> impl Iterator<Item = Node> + '_ {
+        DescendantsIterator {
+            tree: self,
+            to_visit: {
+                let mut queue = VecDeque::new();
+                queue.push_back(node);
+                queue
+            },
+        }
+    }
+
+    #[inline]
+    pub fn iter(&self) -> impl Iterator<Item = (Node, &NodeData<T>)> + '_ {
+        self.descendents_of(self.root)
+            .map(move |n| (n, &self.nodes[n]))
+    }
+
+    #[inline]
+    pub fn map<F, U>(self, mut f: F) -> Tree<U>
+    where
+        F: FnMut(T) -> U,
+    {
+        Tree {
+            root: self.root,
+            nodes: self.nodes.map(|nd| nd.map(|x| f(x))),
+        }
+    }
+
     #[inline]
     pub fn root(&self) -> Node {
         self.root
+    }
+
+    fn reparent_at(&mut self, node: Node, parent: Node, index: Option<usize>) {
+        // Can't reparent the root
+        assert_ne!(node, self.root);
+        // Don't introduce a cycle
+        assert!(self.ancestors_of(parent).all(|ancestor| ancestor != node));
+
+        if let Some(old_parent) = self.nodes[node].parent {
+            self.nodes[old_parent]
+                .children
+                .retain(|child| *child != node);
+        }
+
+        self.nodes[node].parent = Some(parent);
+        if let Some(index) = index {
+            self.nodes[parent].children.insert(index, node);
+        } else {
+            self.nodes[parent].children.push(node);
+        }
+    }
+
+    #[inline]
+    pub fn reparent_under(&mut self, node: Node, parent: Node) {
+        self.reparent_at(node, parent, None);
+    }
+
+    pub fn reparent_before(&mut self, node: Node, successor: Node) {
+        // Can't be a sibling of the root
+        assert_ne!(node, self.root);
+
+        // Fast return when we're trying to reparent a node next to itself
+        if node == successor {
+            return;
+        }
+
+        if let Some(parent) = self.nodes[successor].parent {
+            let i = self.nodes[parent]
+                .children
+                .iter()
+                .position(|child| *child == successor)
+                .unwrap();
+            self.reparent_at(node, parent, Some(i));
+        }
+    }
+
+    pub fn clean_up(&mut self) {
+        // Allocate temporary storage
+        let mut nodes = IdxVec::new();
+
+        // Exchange working memory with current storage
+        mem::swap(&mut self.nodes, &mut nodes);
+
+        // Update every node from containing a `T` to an `Option<T>` so that we can
+        // `take` the data out later
+        let mut nodes: IdxVec<_, _> = nodes
+            .into_values()
+            .map(|n| n.map(Some))
+            .collect();
+
+        // Initialise a queue for a breadth-first walk (starting at the root)
+        let mut to_visit = VecDeque::new();
+        to_visit.push_back(self.root);
+
+        // For every node in the walk
+        while let Some(node) = to_visit.pop_front() {
+            // Get that node's data in the working memory
+            let node_data = &mut nodes[node];
+            // Add a corresponding node to the cleaned tree
+            let idx = self.nodes.push(NodeData {
+                // Safe to unwrap here because each node will be visited once
+                data: node_data.data.take().unwrap(),
+                // We'll add the children as we perform the rest of the walk, but we
+                // know ahead of time how many we'll need
+                children: Vec::with_capacity(node_data.children.len()),
+                // Copy parent directly (this index will have been updated to be
+                // valid in the cleaned tree in an earlier iteration)
+                parent: node_data.parent,
+            });
+
+            // If the node we just added has a parent, make sure we add it to that
+            // node's list of children.
+            if let Some(parent) = self.nodes[idx].parent {
+                self.nodes[parent].children.push(idx);
+            }
+
+            // Drain all of the children from the node in working memory
+            let children: Vec<_> = nodes[node].children.drain(0..).collect();
+
+            // For each of these children, add them to the back of the queue
+            // and set their parent field to point to the newly created node
+            // in the cleaned tree
+            for child in children {
+                to_visit.push_back(child);
+                nodes[child].parent = Some(idx)
+            }
+        }
+    }
+}
+
+impl<T> Tree<Option<T>> {
+    pub fn transpose(self) -> Option<Tree<T>> {
+        let mut nodes = IdxVec::with_capacity(self.nodes.len());
+        
+        for node in self.nodes.into_values() {
+            nodes.push(NodeData {
+                parent: node.parent,
+                children: node.children,
+                data: node.data?,
+            });
+        }
+
+        Some(Tree {
+            nodes,
+            root: self.root,
+        })
+    }
+}
+
+impl<T> PartialEq for Tree<T>
+where
+    T: PartialEq,
+{
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        // Two trees are identical whenever we can do a breadth-first walk
+        // starting at the root of each in which each pair of nodes we visit have
+        // an identical number of children and their associated data are identical
+        self.iter().zip(other.iter()).all(|((_, lhs), (_, rhs))| {
+            lhs.children.len() == rhs.children.len() && lhs.inner() == rhs.inner()
+        })
+    }
+}
+
+impl<T> Eq for Tree<T> where T: Eq {}
+
+impl<T> AsRef<Tree<T>> for Tree<T> {
+    #[inline]
+    fn as_ref(&self) -> &Tree<T> {
+        self
     }
 }
 
@@ -133,3 +355,62 @@ where
         Self { nodes, root }
     }
 }
+
+impl<T> FromIterator<T> for Tree<T>
+where
+    T: Default,
+{
+    #[inline]
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = T>,
+    {
+        let mut tree = Self::default();
+
+        for item in iter {
+            tree.push_onto(tree.root(), item);
+        }
+
+        tree
+    }
+}
+
+pub struct AncestorIterator<'a, T> {
+    tree: &'a Tree<T>,
+    current: Option<Node>,
+}
+
+impl<'a, T> Iterator for AncestorIterator<'a, T> {
+    type Item = Node;
+
+    #[inline]
+    fn next(&mut self) -> Option<Node> {
+        let node = self.current?;
+        self.current = self.tree.with(node, |n| n.parent());
+        Some(node)
+    }
+}
+
+impl<'a, T> FusedIterator for AncestorIterator<'a, T> {}
+
+pub struct DescendantsIterator<'a, T> {
+    tree: &'a Tree<T>,
+    to_visit: VecDeque<Node>,
+}
+
+impl<'a, T> Iterator for DescendantsIterator<'a, T> {
+    type Item = Node;
+
+    #[inline]
+    fn next(&mut self) -> Option<Node> {
+        let node = self.to_visit.pop_front()?;
+        self.tree.with(node, |n| {
+            for child in n.children() {
+                self.to_visit.push_back(child);
+            }
+        });
+        Some(node)
+    }
+}
+
+impl<'a, T> FusedIterator for DescendantsIterator<'a, T> {}

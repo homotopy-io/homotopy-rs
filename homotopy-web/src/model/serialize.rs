@@ -1,9 +1,13 @@
-use super::{Color, GeneratorInfo, Signature, Workspace};
+use im::Vector;
+use wasm_bindgen::JsCast;
+
+use homotopy_common::tree::Tree;
+
 use homotopy_core::common::{Generator, SliceIndex};
 use homotopy_core::serialize::{Key, Store};
 use homotopy_core::Diagram;
-use im::Vector;
-use wasm_bindgen::JsCast;
+
+use super::{proof::SignatureItem, Color, GeneratorInfo, Signature, Workspace};
 
 pub fn generate_download(name: &str, data: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
     let val: js_sys::Uint8Array = data.into();
@@ -33,7 +37,7 @@ pub fn generate_download(name: &str, data: &[u8]) -> Result<(), wasm_bindgen::Js
 struct Data {
     version: usize,
     store: Store,
-    signature: Vec<GeneratorData>,
+    signature: Tree<SignatureData>,
     workspace: Option<WorkspaceData>,
 }
 
@@ -44,9 +48,21 @@ impl std::fmt::Debug for Data {
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
+enum SignatureData {
+    Folder(String),
+    Item(GeneratorData),
+}
+
+impl Default for SignatureData {
+    fn default() -> Self {
+        Self::Folder("".to_owned())
+    }
+}
+
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 struct GeneratorData {
-    name: String,
     generator: Generator,
+    name: String,
     color: Color,
     diagram: Key<Diagram>,
 }
@@ -65,15 +81,15 @@ pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> 
         workspace: Default::default(),
     };
 
-    for (generator, info) in signature {
-        // Since we iterate over an `OrdMap` the vector is sorted by the generator id.
-        data.signature.push(GeneratorData {
-            generator,
+    data.signature = signature.into_tree().map(|item| match item {
+        SignatureItem::Folder(name) => SignatureData::Folder(name),
+        SignatureItem::Item(info) => SignatureData::Item(GeneratorData {
+            generator: info.generator,
             diagram: data.store.pack_diagram(&info.diagram),
             name: info.name,
             color: info.color,
-        });
-    }
+        }),
+    });
 
     if let Some(workspace) = workspace {
         data.workspace = Some(WorkspaceData {
@@ -93,24 +109,26 @@ pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
         }
         Ok(data) => Some(data),
     }?;
+    let store = data.store;
 
-    let mut signature = Signature::default();
+    let signature = data
+        .signature
+        .map(|s| Some(match s {
+            SignatureData::Folder(name) => SignatureItem::Folder(name),
+            SignatureData::Item(gd) => SignatureItem::Item(GeneratorInfo {
+                generator: gd.generator,
+                name: gd.name,
+                color: gd.color,
+                diagram: store.unpack_diagram(gd.diagram)?,
+            }),
+        }))
+        .transpose()?
+        .into();
+
     let mut workspace = None;
-
-    for generator_data in data.signature {
-        signature.insert(
-            generator_data.generator,
-            GeneratorInfo {
-                name: generator_data.name,
-                color: generator_data.color,
-                diagram: data.store.unpack_diagram(generator_data.diagram)?,
-            },
-        );
-    }
-
     if let Some(workspace_data) = data.workspace {
         workspace = Some(Workspace {
-            diagram: data.store.unpack_diagram(workspace_data.diagram)?,
+            diagram: store.unpack_diagram(workspace_data.diagram)?,
             path: workspace_data.path,
             attach: Default::default(),
             attachment_highlight: Default::default(),

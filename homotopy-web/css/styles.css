@@ -266,11 +266,28 @@ body, html {
 
 /* Signature */
 
+.signature__dropzone {
+  height: 1px;
+}
+
+.signature__dropzone:-moz-drag-over {
+  height: 32px;
+  outline: 1px solid black;
+}
+
+.signature__folder:-moz-drag-over {
+  outline: 1px solid black;
+}
+
 .signature__generators {
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
+}
+
+.signature__generators ul {
+  list-style-type: none;
 }
 
 .signature__generator {

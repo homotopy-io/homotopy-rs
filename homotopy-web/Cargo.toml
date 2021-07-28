@@ -62,6 +62,7 @@ features = [
   "BeforeUnloadEvent",
   "console",
   "Element",
+  "DataTransfer",
   "DomRect",
   "Document",
   "HtmlHeadElement",

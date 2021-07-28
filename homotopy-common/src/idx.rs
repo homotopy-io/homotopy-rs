@@ -89,6 +89,17 @@ where
     }
 
     #[inline]
+    pub fn map<F, U>(self, mut f: F) -> IdxVec<I, U>
+    where
+        F: FnMut(T) -> U,
+    {
+        IdxVec {
+            raw: self.raw.into_iter().map(|x| f(x)).collect(),
+            _phantom: PhantomData::default(),
+        }
+    }
+
+    #[inline]
     pub fn contains_key(&self, index: I) -> bool {
         self.raw.len() < index.index()
     }
@@ -109,6 +120,11 @@ where
     }
 
     #[inline]
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (I, &mut T)> {
+        self.keys().zip(self.values_mut())
+    }
+
+    #[inline]
     pub fn keys(&self) -> impl Iterator<Item = I> {
         (0..self.raw.len()).map(I::new)
     }
@@ -121,6 +137,11 @@ where
     #[inline]
     pub fn values_mut(&mut self) -> impl Iterator<Item = &mut T> {
         self.raw.iter_mut()
+    }
+
+    #[inline]
+    pub fn into_values(self) -> impl Iterator<Item = T> {
+        self.raw.into_iter()
     }
 
     #[inline]

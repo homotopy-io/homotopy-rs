@@ -143,9 +143,12 @@ fn highlight_attachment(workspace: &Workspace, signature: &Signature) -> Option<
     use Height::Regular;
 
     let attach_option = workspace.attachment_highlight.as_ref()?;
-
-    let info = signature.get(&attach_option.generator).unwrap();
-    let needle: DiagramN = info.diagram.clone().try_into().unwrap();
+    let needle: DiagramN = signature
+        .generator_info(attach_option.generator)?
+        .diagram
+        .clone()
+        .try_into()
+        .unwrap();
 
     let mut boundary_path = attach_option.boundary_path.clone();
     let mut embedding = attach_option.embedding.clone();

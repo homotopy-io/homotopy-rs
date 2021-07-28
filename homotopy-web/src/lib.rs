@@ -48,12 +48,12 @@
 )]
 #![recursion_limit = "1024"]
 
+use wasm_bindgen::prelude::*;
+
 mod app;
 mod components;
 
 pub mod model;
-
-use wasm_bindgen::prelude::*;
 
 // This is like the `main` function, except for JavaScript.
 #[wasm_bindgen(start)]

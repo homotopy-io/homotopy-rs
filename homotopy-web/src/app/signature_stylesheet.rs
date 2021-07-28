@@ -1,11 +1,14 @@
-use crate::model::proof::{Color, Signature};
-use homotopy_core::Generator;
+use std::fmt::Write;
 
 use palette::Lighten;
 
-use std::fmt::Write;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, Node};
+
+use homotopy_core::Generator;
+
+use crate::components::document;
+use crate::model::proof::{Color, Signature};
 
 // TODO: Check if there is a performance problem with this. If so, then use the
 // stylesheet API to change the colors more granularly.
@@ -55,25 +58,25 @@ impl SignatureStylesheet {
     fn style(&self) -> String {
         let mut style = String::new();
 
-        for (generator, info) in self.signature.iter() {
+        for info in self.signature.iter() {
             writeln!(
                 style,
                 ".{name} {{ fill: {color}; stroke: {color}; }}",
-                name = Self::name(&self.prefix, *generator, "surface"),
+                name = Self::name(&self.prefix, info.generator, "surface"),
                 color = Color((info.color.into_format().into_linear().lighten(0.1)).into())
             )
             .unwrap();
             writeln!(
                 style,
                 ".{name} {{ stroke: {color}; }}",
-                name = Self::name(&self.prefix, *generator, "wire"),
+                name = Self::name(&self.prefix, info.generator, "wire"),
                 color = Color((info.color.into_format().into_linear().lighten(0.05)).into())
             )
             .unwrap();
             writeln!(
                 style,
                 ".{name} {{ fill: {color}; }}",
-                name = Self::name(&self.prefix, *generator, "point"),
+                name = Self::name(&self.prefix, info.generator, "point"),
                 color = info.color
             )
             .unwrap();
@@ -88,8 +91,4 @@ impl SignatureStylesheet {
             self.element.set_inner_html(&self.style());
         }
     }
-}
-
-fn document() -> web_sys::Document {
-    web_sys::window().unwrap().document().unwrap()
 }
