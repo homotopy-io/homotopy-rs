@@ -45,6 +45,10 @@ pub fn bounding_rect(node_ref: &NodeRef) -> Option<DomRect> {
         .map(|el| el.get_bounding_client_rect())
 }
 
+pub fn document() -> web_sys::Document {
+    web_sys::window().unwrap().document().unwrap()
+}
+
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Visibility {
     Visible,

@@ -124,7 +124,10 @@ impl Component for App {
 
         html! {
             <main class="app">
-                <Sidebar dispatch={dispatch} proof={self.state.with_proof(Clone::clone)}/>
+                <Sidebar
+                    dispatch={dispatch}
+                    proof={self.state.with_proof(Clone::clone)}
+                />
                 <ToasterComponent timeout={3000} />
                 {workspace}
                 <span class="version">

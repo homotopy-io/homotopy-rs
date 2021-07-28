@@ -1,14 +1,11 @@
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::convert::{Into, TryFrom, TryInto};
-use std::fmt::Display;
-use std::ops::Deref;
-use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
-use im::{ordmap, OrdMap, Vector};
-use palette::Srgb;
+use im::Vector;
+
 use thiserror::Error;
 
 use homotopy_core::attach::BoundaryPath;
@@ -22,42 +19,13 @@ use homotopy_core::signature::SignatureClosure;
 use homotopy_core::typecheck::TypeError;
 use homotopy_core::{Diagram, DiagramN};
 
+mod signature;
+
 pub mod homotopy;
 
 use homotopy::{Contract, Expand, Homotopy};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Color(pub(crate) Srgb<u8>);
-
-impl Deref for Color {
-    type Target = Srgb<u8>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl Display for Color {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let (r, g, b) = self.into_components();
-        write!(f, "#{:02x}{:02x}{:02x}", r, g, b)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct GeneratorInfo {
-    pub name: String,
-    pub color: Color,
-    pub diagram: Diagram,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum GeneratorEdit {
-    Rename(String),
-    Recolor(Color),
-}
-
-pub type Signature = OrdMap<Generator, GeneratorInfo>;
+pub use signature::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Workspace {
@@ -160,6 +128,10 @@ pub enum Action {
     Theorem,
 
     Imported,
+
+    EditSignature(SignatureEdit),
+
+    Nothing,
 }
 
 impl Action {
@@ -194,9 +166,9 @@ impl ProofState {
     /// Update the state in response to an [Action].
     pub fn update(&mut self, action: &Action) -> Result<(), ModelError> {
         match action {
-            Action::CreateGeneratorZero => self.create_generator_zero(),
+            Action::CreateGeneratorZero => self.signature.create_generator_zero(),
             Action::EditGenerator(generator, edit) => {
-                self.edit_generator(generator, edit.clone())?;
+                self.signature.edit_generator(*generator, edit.clone())?;
             }
             Action::RemoveGenerator(generator) => self.remove_generator(generator),
             Action::SetBoundary(boundary) => self.set_boundary(*boundary)?,
@@ -217,6 +189,7 @@ impl ProofState {
             }
             Action::Restrict => self.restrict()?,
             Action::Theorem => self.theorem()?,
+            Action::EditSignature(edit) => self.signature.update(edit),
             _ => {}
         }
 
@@ -237,86 +210,10 @@ impl ProofState {
         }
     }
 
-    /// Handler for [Action::CreateGeneratorZero].
-    fn create_generator_zero(&mut self) {
-        let id = self.create_generator_id();
-        let generator = Generator::new(id, 0);
-
-        self.signature_insert(id, generator, generator);
-    }
-
-    fn create_generator(
-        &mut self,
-        source: Diagram,
-        target: Diagram,
-    ) -> Result<(), NewDiagramError> {
-        let id = self.create_generator_id();
-        let generator = Generator::new(id, source.dimension() + 1);
-        let diagram = DiagramN::new(generator, source, target)?;
-
-        self.signature_insert(id, generator, diagram);
-
-        Ok(())
-    }
-
-    fn signature_insert<D>(&mut self, id: usize, generator: Generator, diagram: D)
-    where
-        D: Into<Diagram>,
-    {
-        let info = GeneratorInfo {
-            name: format!("Cell {}", id),
-            color: Color(Srgb::<u8>::from_str(COLORS[id % COLORS.len()]).unwrap()),
-            diagram: diagram.into(),
-        };
-
-        self.signature.insert(generator, info);
-    }
-
-    fn create_generator_id(&self) -> usize {
-        self.signature
-            .iter()
-            .map(|(generator, _)| generator.id)
-            .max()
-            .map_or(0, |id| id + 1)
-    }
-
-    /// Handler for [Action::EditGenerator].
-    fn edit_generator(
-        &mut self,
-        generator: &Generator,
-        edit: GeneratorEdit,
-    ) -> Result<(), ModelError> {
-        let info = self
-            .signature
-            .get_mut(generator)
-            .ok_or(ModelError::UnknownGeneratorSelected)?;
-        match edit {
-            GeneratorEdit::Rename(name) => {
-                info.name = name;
-            }
-            GeneratorEdit::Recolor(color) => {
-                info.color = color;
-            }
-        }
-        Ok(())
-    }
-
     /// Handler for [Action::RemoveGenerator].
     fn remove_generator(&mut self, generator: &Generator) {
-        // remove from the signature
-        let mut remove: Signature =
-            ordmap! {*generator => self.signature.get(generator).unwrap().clone()};
-        let dimension = generator.dimension;
-        for (g, info) in self.signature.range(
-            Generator::new(std::usize::MIN, dimension + 1)
-                ..=Generator::new(std::usize::MAX, std::usize::MAX),
-        ) {
-            if info.diagram.generators().contains(generator) {
-                remove.insert(*g, info.clone());
-            }
-        }
-        let remaining = self.signature.clone().relative_complement(remove);
-        self.signature = remaining;
+        self.signature.remove(*generator);
+
         // remove from the workspace
         if let Some(ws) = &self.workspace {
             if ws.diagram.generators().contains(generator) {
@@ -348,7 +245,8 @@ impl ProofState {
                         Target => (selected.diagram.clone(), workspace.diagram.clone()),
                     };
 
-                    self.create_generator(source, target)
+                    self.signature
+                        .create_generator(source, target)
                         .map_err(ModelError::IncompatibleBoundaries)?;
 
                     self.boundary = None;
@@ -408,7 +306,7 @@ impl ProofState {
 
         let info = self
             .signature
-            .get(&generator)
+            .generator_info(generator)
             .ok_or(ModelError::UnknownGeneratorSelected)?;
 
         self.workspace = Some(Workspace {
@@ -520,7 +418,7 @@ impl ProofState {
                 .clone()
                 .map_or(Boundary::Target, |bp| bp.boundary());
 
-            for (generator, info) in self.signature.iter() {
+            for info in self.signature.iter() {
                 if info.diagram.dimension() == haystack.dimension() + 1 {
                     let needle = DiagramN::try_from(info.diagram.clone())
                         .unwrap()
@@ -534,7 +432,7 @@ impl ProofState {
                             .map(|embedding| AttachOption {
                                 embedding: embedding.into_iter().collect(),
                                 boundary_path: boundary_path.clone(),
-                                generator: *generator,
+                                generator: info.generator,
                             }),
                     );
                 }
@@ -558,7 +456,7 @@ impl ProofState {
             let diagram: DiagramN = workspace.diagram.clone().try_into().unwrap();
             let generator: DiagramN = self
                 .signature
-                .get(&option.generator)
+                .generator_info(option.generator)
                 .unwrap()
                 .diagram
                 .clone()
@@ -636,14 +534,11 @@ impl ProofState {
             .map_err(|_dimerr| ModelError::InvalidAction)?;
 
         // new generator of singular height 1 from source to target of current diagram
-        let singleton_id = self.create_generator_id();
-        let singleton_generator = Generator::new(singleton_id, diagram.dimension());
-        let singleton_diagram =
-            DiagramN::new(singleton_generator, diagram.source(), diagram.target())?;
-        self.signature_insert(singleton_id, singleton_generator, singleton_diagram.clone());
-
+        let singleton = self
+            .signature
+            .create_generator(diagram.source(), diagram.target())?;
         // rewrite from singleton to original diagram
-        self.create_generator(Diagram::from(singleton_diagram), diagram.into())?;
+        self.signature.create_generator(singleton, diagram.into())?;
 
         self.clear_workspace();
 
@@ -652,7 +547,12 @@ impl ProofState {
 
     fn homotopy_expansion(&mut self, homotopy: &Expand) -> Result<(), ModelError> {
         let signature = &self.signature;
-        let signature = SignatureClosure(|g| signature.get(&g).map(|gi| gi.diagram.clone()));
+        let signature = SignatureClosure(|generator| {
+            signature
+                .generator_info(generator)
+                .map(|gi| gi.diagram.clone())
+        });
+
         if let Some(workspace) = &mut self.workspace {
             let diagram: DiagramN = workspace.diagram.clone().try_into().unwrap();
 
@@ -695,7 +595,11 @@ impl ProofState {
         // TODO: Proper errors
 
         let signature = &self.signature;
-        let signature = SignatureClosure(|g| signature.get(&g).map(|gi| gi.diagram.clone()));
+        let signature = SignatureClosure(|generator| {
+            signature
+                .generator_info(generator)
+                .map(|gi| gi.diagram.clone())
+        });
 
         if let Some(workspace) = &mut self.workspace {
             let diagram: DiagramN = workspace.diagram.clone().try_into().unwrap();
@@ -805,17 +709,6 @@ pub struct AttachOption {
     pub boundary_path: Option<BoundaryPath>,
     pub embedding: Vector<usize>,
 }
-
-const COLORS: &[&str] = &[
-    "#2980b9", // belize blue
-    "#c0392b", // pomegranate
-    "#f39c12", // orange
-    "#8e44ad", // wisteria
-    "#27ae60", // nephritis
-    "#f1c40f", // sunflower
-    "#ffffff", // white
-    "#000000", //black
-];
 
 fn contains_point(diagram: Diagram, point: &[Height], embedding: &[RegularHeight]) -> bool {
     use Diagram::{Diagram0, DiagramN};
