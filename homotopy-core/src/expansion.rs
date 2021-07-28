@@ -36,8 +36,11 @@ pub enum ExpansionError {
     #[error("no component to expand")]
     NoComponent,
 
-    #[error("smoothing is not yet implemented")]
-    SmoothingNotImplemented,
+    #[error("singular height must be surrounded by identical rewrites for smoothing")]
+    Unsmoothable,
+
+    #[error("smoothing must result in a diagram which has at least one singular level")]
+    SmoothTooShort,
 
     #[error("expansion is ill-typed: {0}")]
     IllTyped(#[from] TypeError),
@@ -92,14 +95,43 @@ pub fn expand_in_path(
     }
 }
 
+/// Remove a redundant singular level where its incoming rewrites are identical.
+/// This move is algebraically valid (if it typechecks).
 fn expand_base_regular(
-    _diagram: &Diagram,
-    _h0: RegularHeight,
+    diagram: &Diagram,
+    h0: RegularHeight,
     _h1: Height,
-    _direction: Direction,
+    direction: Direction,
 ) -> Result<Rewrite, ExpansionError> {
-    // TODO: Implement smoothing
-    Err(ExpansionError::SmoothingNotImplemented)
+    let diagram = match diagram {
+        Diagram::Diagram0(_) => Err(ExpansionError::OutOfBounds),
+        Diagram::DiagramN(diagram) => Ok(diagram),
+    }?;
+
+    let i = h0
+        - match direction {
+            Direction::Forward => 0,
+            Direction::Backward => 1,
+        }; // cospans[i] needs to be deleted by the smoothing rewrite
+
+    let cs = &diagram.cospans()[i];
+    if cs.forward == cs.backward {
+        (diagram.cospans().len() > 1)
+            .then(|| ())
+            .ok_or(ExpansionError::SmoothTooShort)?;
+        Ok(RewriteN::new(
+            diagram.dimension(),
+            vec![Cone::new(
+                i,
+                Default::default(),
+                cs.clone(),
+                Default::default(),
+            )],
+        )
+        .into())
+    } else {
+        Err(ExpansionError::Unsmoothable)
+    }
 }
 
 fn expand_base_singular(
