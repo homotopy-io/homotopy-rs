@@ -1,42 +1,39 @@
-use yew::agent::Dispatcher;
 use yew::prelude::*;
 
 use wasm_bindgen::closure::Closure;
 
 use crate::components::icon::{Icon, IconSize};
-use crate::components::toast::{Toast, ToastAgent, Toaster};
+use crate::components::panzoom::PanZoom;
+use crate::components::toast::{Toast, Toaster, ToasterComponent};
 use crate::model;
 
 mod attach;
 mod diagram2d;
-mod panzoom;
 mod project;
 mod settings;
 mod sidebar;
 mod signature;
 mod signature_stylesheet;
-mod util;
 mod workspace;
 
 use settings::AppSettings;
 use sidebar::Sidebar;
 use signature_stylesheet::SignatureStylesheet;
-use workspace::{ViewEvent, WorkspaceView};
+use workspace::WorkspaceView;
 
 #[derive(Default, Clone, Debug, PartialEq, Properties)]
 pub struct Props {}
 
 pub enum Message {
     Dispatch(model::Action),
-    PanZoom(panzoom::Message),
 }
 
 pub struct App {
     link: ComponentLink<Self>,
     state: model::State,
-    panzoom: panzoom::PanZoom,
+    panzoom: PanZoom,
     signature_stylesheet: SignatureStylesheet,
-    toaster: Dispatcher<ToastAgent>,
+    toaster: Toaster,
     _settings: AppSettings,
     before_unload: Option<Closure<dyn FnMut(web_sys::BeforeUnloadEvent)>>,
 }
@@ -55,9 +52,9 @@ impl Component for App {
 
         let mut app = Self {
             state,
-            panzoom: panzoom::PanZoom::new(NodeRef::default(), &link.callback(Message::PanZoom)),
+            panzoom: PanZoom::new(),
             signature_stylesheet,
-            toaster: ToastAgent::dispatcher(),
+            toaster: Toaster::new(),
             _settings: AppSettings::connect(Callback::noop()),
             before_unload: None,
             link,
@@ -73,7 +70,7 @@ impl Component for App {
 
                 if let model::Action::Proof(ref action) = action {
                     if self.state.with_proof(|p| p.resets_panzoom(&action)) {
-                        self.panzoom.update(panzoom::Message::Reset);
+                        self.panzoom.reset();
                     }
                 }
 
@@ -87,7 +84,7 @@ impl Component for App {
                 match result {
                     Ok(()) => {}
                     Err(error) => {
-                        self.toaster.send(Toast::error(format!("{}", error)));
+                        self.toaster.toast(Toast::error(format!("{}", error)));
                         log::error!("Error occured: {}", error);
                     }
                 }
@@ -96,7 +93,6 @@ impl Component for App {
 
                 true
             }
-            Message::PanZoom(msg) => self.panzoom.update(msg),
         }
     }
 
@@ -109,22 +105,11 @@ impl Component for App {
         let proof = self.state.with_proof(Clone::clone);
         let signature = proof.signature();
 
-        let view = self
-            .link
-            .callback(Message::PanZoom)
-            .reform(|event: ViewEvent| match event {
-                ViewEvent::ZoomIn => panzoom::Message::MouseWheel(Default::default(), -20.0),
-                ViewEvent::ZoomOut => panzoom::Message::MouseWheel(Default::default(), 20.0),
-                ViewEvent::Reset => panzoom::Message::Reset,
-            });
-
         let workspace = match proof.workspace() {
             Some(workspace) => {
                 html! {
                     <WorkspaceView
                         workspace={workspace}
-                        panzoom={self.panzoom.clone()}
-                        view={view}
                         signature={signature}
                         dispatch={dispatch.reform(model::Action::Proof)}
                     />
@@ -142,7 +127,7 @@ impl Component for App {
         html! {
             <main class="app">
                 <Sidebar dispatch={dispatch} proof={self.state.with_proof(Clone::clone)}/>
-                <Toaster timeout={3000} />
+                <ToasterComponent timeout={3000} />
                 {workspace}
                 <span class="version">
                     {format!("Version: {}", option_env!("GIT_DESCRIBE").unwrap_or(env!("CARGO_PKG_VERSION")))}

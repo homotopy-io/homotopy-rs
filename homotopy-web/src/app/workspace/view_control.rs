@@ -1,43 +1,66 @@
 use yew::prelude::*;
-use yew_functional::function_component;
 
 use crate::app::{Icon, IconSize};
+use crate::components::panzoom::PanZoom;
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum ViewEvent {
+pub struct ViewControl {
+    link: ComponentLink<Self>,
+    panzoom: PanZoom,
+}
+
+pub enum ViewMessage {
     ZoomIn,
     ZoomOut,
     Reset,
 }
 
-#[derive(Debug, Clone, PartialEq, Properties)]
-pub struct ViewControlProps {
-    pub handler: Callback<ViewEvent>,
-}
+impl Component for ViewControl {
+    type Properties = ();
+    type Message = ViewMessage;
 
-#[function_component(ViewControl)]
-pub fn view_control(props: &ViewControlProps) -> Html {
-    html! {
-        <div class="workspace__toolbar__segment">
-            <span
-                class="workspace__toolbar__button"
-                onclick={props.handler.reform(|_| ViewEvent::ZoomIn)}
-            >
-                <Icon name="zoom_in" size={IconSize::Icon24} />
-            </span>
-            <span
-                class="workspace__toolbar__button"
-                onclick={props.handler.reform(|_| ViewEvent::ZoomOut)}
-            >
-                <Icon name="zoom_out" size={IconSize::Icon24} />
-            </span>
-            <span
-                class="workspace__toolbar__button"
-                onclick={props.handler.reform(|_| ViewEvent::Reset)}
-            >
-                <Icon name="filter_center_focus" size={IconSize::Icon24} />
-            </span>
+    fn create(_props: Self::Properties, link: ComponentLink<Self>) -> Self {
+        Self {
+            link,
+            panzoom: PanZoom::new(),
+        }
+    }
 
-        </div>
+    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+        match msg {
+            ViewMessage::ZoomIn => self.panzoom.zoom_in(),
+            ViewMessage::ZoomOut => self.panzoom.zoom_out(),
+            ViewMessage::Reset => self.panzoom.reset(),
+        }
+        false
+    }
+
+    fn view(&self) -> Html {
+        html! {
+            <div class="workspace__toolbar__segment">
+                <span
+                    class="workspace__toolbar__button"
+                    onclick={self.link.callback(|_| ViewMessage::ZoomIn)}
+                >
+                    <Icon name="zoom_in" size={IconSize::Icon24} />
+                </span>
+                <span
+                    class="workspace__toolbar__button"
+                    onclick={self.link.callback(|_| ViewMessage::ZoomOut)}
+                >
+                    <Icon name="zoom_out" size={IconSize::Icon24} />
+                </span>
+                <span
+                    class="workspace__toolbar__button"
+                    onclick={self.link.callback(|_| ViewMessage::Reset)}
+                >
+                    <Icon name="filter_center_focus" size={IconSize::Icon24} />
+                </span>
+
+            </div>
+        }
+    }
+
+    fn change(&mut self, _props: Self::Properties) -> ShouldRender {
+        false
     }
 }

@@ -7,7 +7,7 @@ use homotopy_core::common::{Boundary, Height, SliceIndex};
 use homotopy_core::{Diagram, DiagramN};
 
 use crate::app::diagram2d::{Diagram0D, Diagram1D, Diagram2D, Highlight2D};
-use crate::app::panzoom;
+use crate::components::panzoom::PanZoomComponent;
 use crate::model::proof::homotopy::Homotopy;
 use crate::model::proof::{Action, Signature, Workspace};
 
@@ -19,17 +19,13 @@ use path_control::PathControl;
 use slice_control::SliceControl;
 use view_control::ViewControl;
 
-pub use view_control::ViewEvent;
-
 // TODO: Workspace rerendering when panzoom is changed needs to be smoother.
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct Props {
     pub workspace: Workspace,
     pub dispatch: Callback<Action>,
-    pub view: Callback<ViewEvent>,
     pub signature: Signature,
-    pub panzoom: panzoom::PanZoom,
 }
 
 pub enum Message {}
@@ -72,42 +68,27 @@ impl Component for WorkspaceView {
             Diagram::Diagram0(_) => Default::default(),
             Diagram::DiagramN(d) => html! {
                 <SliceControl
-                    translate={self.props.panzoom.translate().y}
-                    scale={self.props.panzoom.scale()}
                     number_slices={d.size()}
                     descend_slice={self.props.dispatch.reform(Action::DescendSlice)}
                 />
             },
         };
 
-        let toolbar = html! {
-            <div class="workspace__toolbar">
-                <PathControl
-                    path={self.props.workspace.path.clone()}
-                    ascend_slice={self.props.dispatch.reform(Action::AscendSlice)}
-                    dimension={self.props.workspace.diagram.dimension()}
-                />
-                <ViewControl handler={self.props.view.clone()} />
-            </div>
-        };
-
         html! {
-            <content
-                class="workspace"
-                onmousemove={self.props.panzoom.on_mouse_move()}
-                onmouseup={self.props.panzoom.on_mouse_up()}
-                onmousedown={self.props.panzoom.on_mouse_down()}
-                onwheel={self.props.panzoom.on_wheel()}
-                ontouchmove={self.props.panzoom.on_touch_move()}
-                ontouchstart={self.props.panzoom.on_touch_update()}
-                ontouchend={self.props.panzoom.on_touch_update()}
-                ontouchcancel={self.props.panzoom.on_touch_update()}
-                ref={self.props.panzoom.node_ref()}
-            >
-                {toolbar}
+            <div class="workspace">
+                <PanZoomComponent>
+                    {self.view_diagram()}
+                </PanZoomComponent>
                 {slice_buttons}
-                {self.view_diagram()}
-            </content>
+                <div class="workspace__toolbar">
+                    <PathControl
+                        path={self.props.workspace.path.clone()}
+                        ascend_slice={self.props.dispatch.reform(Action::AscendSlice)}
+                        dimension={self.props.workspace.diagram.dimension()}
+                    />
+                    <ViewControl />
+                </div>
+            </div>
         }
     }
 }
@@ -122,49 +103,31 @@ impl WorkspaceView {
         match self.visible_diagram() {
             Diagram::Diagram0(generator) => {
                 html! {
-                    <div class="workspace__diagram" style={self.diagram_style()}>
-                        <Diagram0D diagram={generator} />
-                    </div>
+                    <Diagram0D diagram={generator} />
                 }
             }
             Diagram::DiagramN(diagram) if diagram.dimension() == 1 => {
                 html! {
-                    <div class="workspace__diagram" style={self.diagram_style()}>
-                        <Diagram1D
-                            diagram={diagram.clone()}
-                            on_select={self.on_select.clone()}
-                        />
-                    </div>
+                    <Diagram1D
+                        diagram={diagram.clone()}
+                        on_select={self.on_select.clone()}
+                    />
                 }
             }
             Diagram::DiagramN(diagram) => {
                 let highlight = highlight_2d(&self.props.workspace, &self.props.signature);
 
                 html! {
-                    <div class="workspace__diagram" style={self.diagram_style()}>
-                        <Diagram2D
-                            diagram={diagram.clone()}
-                            id="workspace__diagram"
-                            on_select={self.on_select.clone()}
-                            on_homotopy={self.on_homotopy.clone()}
-                            highlight={highlight}
-                        />
-                    </div>
+                    <Diagram2D
+                        diagram={diagram.clone()}
+                        id="workspace__diagram"
+                        on_select={self.on_select.clone()}
+                        on_homotopy={self.on_homotopy.clone()}
+                        highlight={highlight}
+                    />
                 }
             }
         }
-    }
-
-    fn diagram_style(&self) -> String {
-        let translate = self.props.panzoom.translate();
-        let scale = self.props.panzoom.scale();
-
-        format!(
-            "transform: translate(calc({x}px - 50%), calc({y}px - 50%)) scale({s})",
-            x = translate.x,
-            y = translate.y,
-            s = scale
-        )
     }
 }
 

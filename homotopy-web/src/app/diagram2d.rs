@@ -24,7 +24,7 @@ use crate::app::signature_stylesheet::SignatureStylesheet;
 use crate::model::proof::homotopy::{Contract, Expand, Homotopy};
 use crate::model::proof::RenderStyle;
 
-use super::util::{read_touch_list_abs, Finger};
+use crate::components::{read_touch_list_abs, Finger};
 
 pub struct Diagram2D {
     props: Props2D,
