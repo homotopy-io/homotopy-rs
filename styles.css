@@ -107,7 +107,7 @@ body, html {
 }
 
 .workspace__toolbar {
-  position: absolute;
+  position: fixed;
   display: flex;
   z-index: 10;
   right: 0;
