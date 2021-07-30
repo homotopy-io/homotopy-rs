@@ -139,10 +139,7 @@ impl Component for ToasterComponent {
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         self.state.update(&msg);
-        match msg {
-            ToasterMsg::Clear if self.state.animating > 1 => false,
-            _ => true,
-        }
+        !matches!(msg, ToasterMsg::Clear if self.state.animating > 1)
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
@@ -159,6 +156,6 @@ impl Toaster {
     }
 
     pub fn toast(&mut self, toast: Toast) {
-        self.0.emit(ToasterMsg::Toast(toast))
+        self.0.emit(ToasterMsg::Toast(toast));
     }
 }

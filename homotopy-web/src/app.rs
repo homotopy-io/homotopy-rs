@@ -69,7 +69,7 @@ impl Component for App {
                 log::info!("Received action: {:?}", action);
 
                 if let model::Action::Proof(ref action) = action {
-                    if self.state.with_proof(|p| p.resets_panzoom(&action)) {
+                    if self.state.with_proof(|p| p.resets_panzoom(action)) {
                         self.panzoom.reset();
                     }
                 }

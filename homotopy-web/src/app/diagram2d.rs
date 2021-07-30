@@ -57,6 +57,7 @@ pub struct Highlight2D {
 // TODO: Drag callbacks in props
 // TODO: Highlights in props
 
+#[allow(clippy::enum_variant_names)]
 pub enum Message2D {
     OnMouseDown(Point2D<f32>),
     OnMouseMove(Point2D<f32>),

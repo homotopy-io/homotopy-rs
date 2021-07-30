@@ -107,7 +107,7 @@ impl WorkspaceView {
             Diagram::DiagramN(diagram) if diagram.dimension() == 1 => {
                 html! {
                     <Diagram1D
-                        diagram={diagram.clone()}
+                        diagram={diagram}
                         on_select={self.on_select.clone()}
                     />
                 }
@@ -117,7 +117,7 @@ impl WorkspaceView {
 
                 html! {
                     <Diagram2D
-                        diagram={diagram.clone()}
+                        diagram={diagram}
                         id="workspace__diagram"
                         on_select={self.on_select.clone()}
                         on_homotopy={self.on_homotopy.clone()}

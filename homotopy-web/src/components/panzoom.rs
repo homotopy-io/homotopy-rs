@@ -42,13 +42,12 @@ impl State for PanZoomState {
         match *action {
             PanZoomAction::MouseDown(point) => self.mouse = Some(point),
             PanZoomAction::MouseUp => self.mouse = None,
-            PanZoomAction::MouseMove(next) => match self.mouse {
-                Some(prev) => {
+            PanZoomAction::MouseMove(next) => {
+                if let Some(prev) = self.mouse {
                     self.translate += next - prev;
                     self.mouse = Some(next);
                 }
-                _ => {}
-            },
+            }
             PanZoomAction::MouseWheel(point, delta) => {
                 let scale = self.scale * if delta < 0.0 { 1.1 } else { 1.0 / 1.1 };
                 self.translate = point - (point - self.translate) * (scale / self.scale);
@@ -75,7 +74,7 @@ impl State for PanZoomState {
                 self.translate =
                     average_next - (average_prev - self.translate) * (scale / self.scale);
                 self.scale = scale;
-                self.touches = touches.clone();
+                self.touches = touches;
             }
             PanZoomAction::TouchUpdate(ref touches) => {
                 let mut touches = touches.clone();
@@ -116,7 +115,7 @@ impl Component for PanZoomComponent {
         let delta = Delta::new();
         delta.register(Box::new(move |agent: &DeltaAgent<PanZoomState>, _| {
             let state = agent.state();
-            link.send_message(PanZoomMessage::Delta(state.translate, state.scale))
+            link.send_message(PanZoomMessage::Delta(state.translate, state.scale));
         }));
 
         Self {
@@ -148,7 +147,7 @@ impl Component for PanZoomComponent {
             Callback::from(closure!(|e: MouseEvent| {
                 e.prevent_default();
                 delta.emit(PanZoomAction::MouseMove(
-                    (e.client_x() as f64, e.client_y() as f64).into(),
+                    (f64::from(e.client_x()), f64::from(e.client_y())).into(),
                 ));
             }))
         };
@@ -167,7 +166,7 @@ impl Component for PanZoomComponent {
                 e.prevent_default();
                 if e.alt_key() {
                     delta.emit(PanZoomAction::MouseDown(
-                        (e.client_x() as f64, e.client_y() as f64).into(),
+                        (f64::from(e.client_x()), f64::from(e.client_y())).into(),
                     ));
                 }
             }))
@@ -186,8 +185,8 @@ impl Component for PanZoomComponent {
                     // Offset the observed x and y by half the dimensinos of the panzoom view to
                     // account for centering (not required on mouse moves as that information is
                     // only used relatively)
-                    let x = e.client_x() as f64 - rect.left() - 0.5 * rect.width();
-                    let y = e.client_y() as f64 - rect.top() - 0.5 * rect.height();
+                    let x = f64::from(e.client_x()) - rect.left() - 0.5 * rect.width();
+                    let y = f64::from(e.client_y()) - rect.top() - 0.5 * rect.height();
 
                     delta.emit(PanZoomAction::MouseWheel((x, y).into(), e.delta_y()));
                 }
@@ -225,8 +224,8 @@ impl Component for PanZoomComponent {
                 onwheel={on_wheel}
                 ontouchmove={on_touch_move}
                 ontouchcancel={on_touch_update.clone()}
-                ontouchstart={on_touch_update.clone()}
                 ontouchend={on_touch_update.clone()}
+                ontouchstart={on_touch_update}
                 ref={self.node_ref.clone()}
             >
                 <div class="workspace__diagram" style={style}>
@@ -250,7 +249,7 @@ pub struct PanZoom(Delta<PanZoomState>);
 
 impl PanZoom {
     pub fn new() -> Self {
-        PanZoom(Delta::new())
+        Self(Delta::new())
     }
 
     pub fn zoom_in(&self) {

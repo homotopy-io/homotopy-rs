@@ -30,7 +30,7 @@ impl Component for SliceControl {
         let panzoom = PanZoom::new();
         panzoom.register(Box::new(move |agent: &PanZoomAgent, _| {
             let state = agent.state();
-            link.send_message(SliceControlMsg::Delta(state.translate.y, state.scale))
+            link.send_message(SliceControlMsg::Delta(state.translate.y, state.scale));
         }));
 
         Self {
