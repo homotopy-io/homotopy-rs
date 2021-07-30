@@ -19,10 +19,8 @@ use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::str::FromStr;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Color(pub(crate) Srgb<u8>);
-
-impl Eq for Color {}
 
 impl Deref for Color {
     type Target = Srgb<u8>;
