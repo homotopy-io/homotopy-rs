@@ -104,7 +104,8 @@ fn render_item(props: &Props, node: Node) -> Html {
         };
 
         let element = match item.inner() {
-            SignatureItem::Folder(name) => {
+            SignatureItem::Folder(name, open) => {
+                let icon = if *open { "folder_open" } else { "folder" };
                 html! {
                     <li
                         class="signature__folder"
@@ -113,8 +114,9 @@ fn render_item(props: &Props, node: Node) -> Html {
                         ondragenter={ondragenter}
                         ondrop={ondrop(node)}
                         ondragstart={ondragstart(node)}
+                        onclick={props.dispatch.reform(move |_| Action::EditSignature(SignatureEdit::ToggleFolder(node)))}
                     >
-                        <Icon name={"folder"} size={IconSize::Icon18} />
+                        <Icon name={icon} size={IconSize::Icon18} />
                         {name}
                     </li>
                 }
@@ -162,7 +164,8 @@ fn render_tree(props: &Props, node: Node) -> Html {
             .dispatch
             .reform(into_action(move |from| SignatureEdit::MoveInto(from, node)));
 
-        let children: Html = n
+        let children: Html = if let SignatureItem::Folder(_, true) = n.inner() {
+            n
             .children()
             .map(|child| {
                 html! {
@@ -177,7 +180,10 @@ fn render_tree(props: &Props, node: Node) -> Html {
                     </ul>
                 }
             })
-            .collect();
+            .collect()
+        } else {
+            html! {}
+        };
 
         html! {
             <>
