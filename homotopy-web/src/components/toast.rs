@@ -82,7 +82,6 @@ impl State for ToasterState {
 }
 
 pub struct ToasterComponent {
-    link: ComponentLink<Self>,
     props: ToasterProps,
     _delta: Delta<ToasterState>,
     state: ToasterState,
@@ -95,14 +94,21 @@ impl Component for ToasterComponent {
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
         let delta = Delta::new();
         delta.register({
-            let link = link.clone();
+            let timeout = props.timeout;
             Box::new(move |_, e: &ToasterMsg| {
+                if let ToasterMsg::Toast(_) = e {
+                    let link = link.clone();
+                    Timeout::new(timeout, move || {
+                        link.send_message(ToasterMsg::Clear);
+                    })
+                    .forget();
+                }
+
                 link.send_message(e.clone());
             })
         });
 
         Self {
-            link,
             props,
             _delta: delta,
             state: Default::default(),
@@ -133,18 +139,7 @@ impl Component for ToasterComponent {
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         self.state.update(&msg);
-
         match msg {
-            ToasterMsg::Toast(_) => {
-                let link = self.link.clone();
-
-                Timeout::new(self.props.timeout, move || {
-                    link.send_message(ToasterMsg::Clear);
-                })
-                .forget();
-
-                true
-            }
             ToasterMsg::Clear if self.state.animating > 1 => false,
             _ => true,
         }

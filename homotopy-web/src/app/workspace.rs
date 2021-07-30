@@ -55,9 +55,7 @@ impl Component for WorkspaceView {
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        if props == self.props {
-            false
-        } else {
+        props != self.props && {
             self.props = props;
             true
         }

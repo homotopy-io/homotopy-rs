@@ -17,12 +17,22 @@ pub enum PanZoomAction {
     Reset,
 }
 
-#[derive(Default)]
 pub struct PanZoomState {
     pub translate: Vector,
     pub scale: f64,
     mouse: Option<Point>,
     touches: Vec<(Finger, Point)>,
+}
+
+impl Default for PanZoomState {
+    fn default() -> Self {
+        Self {
+            translate: Default::default(),
+            scale: 1.0,
+            mouse: None,
+            touches: vec![],
+        }
+    }
 }
 
 impl State for PanZoomState {
@@ -40,7 +50,6 @@ impl State for PanZoomState {
                 _ => {}
             },
             PanZoomAction::MouseWheel(point, delta) => {
-                // FIXME(@doctorn) `point` should be invariant after updating transform
                 let scale = self.scale * if delta < 0.0 { 1.1 } else { 1.0 / 1.1 };
                 self.translate = point - (point - self.translate) * (scale / self.scale);
                 self.scale = scale;
@@ -114,7 +123,7 @@ impl Component for PanZoomComponent {
             props,
             node_ref: Default::default(),
             translate: Default::default(),
-            scale: 0.0,
+            scale: 1.0,
             _delta: delta,
         }
     }
@@ -138,9 +147,9 @@ impl Component for PanZoomComponent {
             let delta = Delta::<PanZoomState>::new();
             Callback::from(closure!(|e: MouseEvent| {
                 e.prevent_default();
-                let x = f64::from(e.client_x());
-                let y = f64::from(e.client_y());
-                delta.emit(PanZoomAction::MouseMove((x, y).into()));
+                delta.emit(PanZoomAction::MouseMove(
+                    (e.client_x() as f64, e.client_y() as f64).into(),
+                ));
             }))
         };
 
@@ -157,9 +166,9 @@ impl Component for PanZoomComponent {
             Callback::from(closure!(|e: MouseEvent| {
                 e.prevent_default();
                 if e.alt_key() {
-                    let x = f64::from(e.client_x());
-                    let y = f64::from(e.client_y());
-                    delta.emit(PanZoomAction::MouseDown((x, y).into()));
+                    delta.emit(PanZoomAction::MouseDown(
+                        (e.client_x() as f64, e.client_y() as f64).into(),
+                    ));
                 }
             }))
         };
@@ -167,14 +176,20 @@ impl Component for PanZoomComponent {
         let on_wheel = {
             let delta = Delta::<PanZoomState>::new();
             let node_ref = self.node_ref.clone();
+
             Callback::from(closure!(|e: WheelEvent| {
                 if e.alt_key() {
                     e.prevent_default();
+
                     let rect = bounding_rect(&node_ref);
-                    let x = f64::from(e.client_x()) - rect.left();
-                    let y = f64::from(e.client_y()) - rect.top();
-                    let delta_y = e.delta_y();
-                    delta.emit(PanZoomAction::MouseWheel((x, y).into(), delta_y));
+
+                    // Offset the observed x and y by half the dimensinos of the panzoom view to
+                    // account for centering (not required on mouse moves as that information is
+                    // only used relatively)
+                    let x = e.client_x() as f64 - rect.left() - 0.5 * rect.width();
+                    let y = e.client_y() as f64 - rect.top() - 0.5 * rect.height();
+
+                    delta.emit(PanZoomAction::MouseWheel((x, y).into(), e.delta_y()));
                 }
             }))
         };
@@ -184,8 +199,9 @@ impl Component for PanZoomComponent {
             let node_ref = self.node_ref.clone();
             Callback::from(closure!(|e: TouchEvent| {
                 e.prevent_default();
-                let touches = read_touch_list(&e.touches(), &node_ref).collect();
-                delta.emit(PanZoomAction::TouchMove(touches));
+                delta.emit(PanZoomAction::TouchMove(
+                    read_touch_list(&e.touches(), &node_ref).collect(),
+                ));
             }))
         };
 
@@ -194,8 +210,9 @@ impl Component for PanZoomComponent {
             let node_ref = self.node_ref.clone();
             Callback::from(closure!(|e: TouchEvent| {
                 // e.prevent_default();
-                let touches = read_touch_list(&e.touches(), &node_ref).collect();
-                delta.emit(PanZoomAction::TouchUpdate(touches));
+                delta.emit(PanZoomAction::TouchUpdate(
+                    read_touch_list(&e.touches(), &node_ref).collect(),
+                ));
             }))
         };
 
@@ -238,16 +255,16 @@ impl PanZoom {
 
     pub fn zoom_in(&self) {
         self.0
-            .emit(PanZoomAction::MouseWheel(Default::default(), 20.0))
+            .emit(PanZoomAction::MouseWheel(Default::default(), -20.0));
     }
 
     pub fn zoom_out(&self) {
         self.0
-            .emit(PanZoomAction::MouseWheel(Default::default(), 20.0))
+            .emit(PanZoomAction::MouseWheel(Default::default(), 20.0));
     }
 
     pub fn reset(&self) {
-        self.0.emit(PanZoomAction::Reset)
+        self.0.emit(PanZoomAction::Reset);
     }
 
     pub fn register(&self, callback: DeltaCallback<PanZoomState>) {
