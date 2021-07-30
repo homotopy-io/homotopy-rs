@@ -2,10 +2,12 @@
 
 mod common;
 
+pub mod delta;
 pub mod icon;
+pub mod panzoom;
 pub mod rawhtml;
 pub mod settings;
 pub mod toast;
 
-pub use common::Visibility;
+pub use common::*;
 pub use Visibility::*;

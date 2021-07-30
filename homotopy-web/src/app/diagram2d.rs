@@ -24,7 +24,7 @@ use crate::app::signature_stylesheet::SignatureStylesheet;
 use crate::model::proof::homotopy::{Contract, Expand, Homotopy};
 use crate::model::proof::RenderStyle;
 
-use super::util::{read_touch_list_abs, Finger};
+use crate::components::{read_touch_list_abs, Finger};
 
 pub struct Diagram2D {
     props: Props2D,
@@ -57,7 +57,7 @@ pub struct Highlight2D {
 // TODO: Drag callbacks in props
 // TODO: Highlights in props
 
-#[allow(clippy::pub_enum_variant_names)]
+#[allow(clippy::enum_variant_names)]
 pub enum Message2D {
     OnMouseDown(Point2D<f32>),
     OnMouseMove(Point2D<f32>),
