@@ -96,14 +96,13 @@ jobs:
 
       - uses: Swatinem/rust-cache@v1
 
-      - name: Install wasm-pack
-        uses: jetli/wasm-pack-action@v0.3.0
+      - name: Install trunk
+        uses: jetli/trunk-action@v0.1.0
 
       - name: Install and Build
         run: |
           cd homotopy-web
-          npm install
-          npm run build
+          trunk build
 
       - name: Archive build artifacts
         uses: actions/upload-artifact@v2

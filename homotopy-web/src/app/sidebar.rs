@@ -145,7 +145,7 @@ impl Component for Sidebar {
             <>
                 <aside class="sidebar">
                     <a href="https://ncatlab.org/nlab/show/homotopy.io">
-                        <img src="/logo.svg" class="sidebar__logo" />
+                        <img src="/static/logo.svg" class="sidebar__logo" />
                     </a>
                     {self.nav()}
                     {self.tools()}

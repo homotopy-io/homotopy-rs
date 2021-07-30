@@ -2,13 +2,13 @@
 name = "homotopy-web"
 description = "Web frontend for homotopy.io"
 version = "0.1.0"
-authors = ["Lukas Heidemann <lukas@heidemann.me>", "Nick Hu <me@nickhu.co.uk>"]
+authors = ["Lukas Heidemann <lukas@heidemann.me>", "Nick Hu <me@nickhu.co.uk>", "Nathan Corbyn <me@nathancorbyn.com>"]
 categories = ["wasm"]
 readme = "README.md"
 edition = "2018"
 
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib"]
 
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = false

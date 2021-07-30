@@ -19,14 +19,14 @@
             inherit system overlays;
           };
           nativeBuildInputs = with pkgs; [
-            nodejs_latest
             (
               rust-bin.stable.latest.default.override {
                 targets = [ "wasm32-unknown-unknown" ];
                 extensions = [ "rust-src" ]; # seems to be already included in stable
               }
             )
-            wasm-pack
+            trunk
+            wasm-bindgen-cli
           ];
         in
           {
