@@ -49,13 +49,13 @@ impl std::fmt::Debug for Data {
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 enum SignatureData {
-    Folder(String),
+    Folder(String, bool),
     Item(GeneratorData),
 }
 
 impl Default for SignatureData {
     fn default() -> Self {
-        Self::Folder("".to_owned())
+        Self::Folder("".to_owned(), true)
     }
 }
 
@@ -82,7 +82,7 @@ pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> 
     };
 
     data.signature = signature.into_tree().map(|item| match item {
-        SignatureItem::Folder(name) => SignatureData::Folder(name),
+        SignatureItem::Folder(name, open) => SignatureData::Folder(name, open),
         SignatureItem::Item(info) => SignatureData::Item(GeneratorData {
             generator: info.generator,
             diagram: data.store.pack_diagram(&info.diagram),
@@ -114,7 +114,7 @@ pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
     let signature = data
         .signature
         .map(|s| Some(match s {
-            SignatureData::Folder(name) => SignatureItem::Folder(name),
+            SignatureData::Folder(name, open) => SignatureItem::Folder(name, open),
             SignatureData::Item(gd) => SignatureItem::Item(GeneratorInfo {
                 generator: gd.generator,
                 name: gd.name,
