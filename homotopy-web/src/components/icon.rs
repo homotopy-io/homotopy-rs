@@ -1,5 +1,5 @@
 use yew::prelude::*;
-use yew_functional::function_component;
+use yew_macro::function_component;
 
 #[derive(Debug, Clone, PartialEq, Properties)]
 pub struct Props {

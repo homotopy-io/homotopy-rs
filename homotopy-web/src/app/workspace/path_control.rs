@@ -1,5 +1,5 @@
 use yew::prelude::*;
-use yew_functional::function_component;
+use yew_macro::function_component;
 
 use im::Vector;
 

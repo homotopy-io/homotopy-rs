@@ -40,7 +40,7 @@ impl Component for RawHtml {
     fn view(&self) -> Html {
         // create the parent element and store a reference to it
         html! {
-            <div ref=self.node_ref.clone()/>
+            <div ref={self.node_ref.clone()}/>
         }
     }
 

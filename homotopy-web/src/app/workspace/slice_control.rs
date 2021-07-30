@@ -62,7 +62,7 @@ impl Component for SliceControl {
                 <div
                     class="workspace__slice-button tooltip tooltip--left"
                     data-tooltip={label}
-                    style={&style}
+                    style={style}
                     onclick={self.props.descend_slice.reform(move |_| index)}
                 >
                     <Icon name="arrow_right" size={IconSize::Icon24} />

@@ -156,9 +156,9 @@ impl SignatureView {
                 let b = colors.iter().map(|c| {
                     let (icon, picker) = (color_ref.clone(), picker_ref.clone());
                     html! {
-                        <span style=format!("color:{}", Color(Srgb::new(c[0], c[1], c[2])))
+                        <span style={format!("color:{}", Color(Srgb::new(c[0], c[1], c[2])))}
                             class="signature__generator-edit"
-                            onclick=self.link.callback(move |_| {
+                            onclick={self.link.callback(move |_| {
                                 let color = Color(Srgb::new(c[0], c[1], c[2]));
                                 let s = format!("background-color:{}; height:32px",color);
                                 icon.cast::<Element>().unwrap().set_attribute("style",&s).unwrap();
@@ -167,7 +167,7 @@ impl SignatureView {
                                 p.set_attribute("value", &color.to_string()).unwrap();
                                 p.set_attribute("type", "color").unwrap();
                                 Message::Recolor(generator, Color(Srgb::new(c[0], c[1], c[2])))
-                            })
+                            })}
                         >
                             <Icon name={"circle"} size={IconSize::Icon18} />
                         </span>
@@ -195,11 +195,11 @@ impl SignatureView {
                             "background-color:{}; height:32px",
                             self.recolors.get(&generator).map_or(&info.color, |color| color),
                         )}
-                        ref=color_ref.clone()
+                        ref={color_ref.clone()}
                     >
                     <span style="color:black"
                         class="signature__generator-edit"
-                        onclick=self.link.callback(move |_| Message::DoneColor(generator))
+                        onclick={self.link.callback(move |_| Message::DoneColor(generator))}
                     >
                         <Icon name={"done"} size={IconSize::Icon18} />
                     </span>
@@ -213,12 +213,12 @@ impl SignatureView {
                 >
                     <input
                         style="border:none"
-                        ref=picker_ref.clone()
+                        ref={picker_ref.clone()}
                         type="color"
                         value= {
-                            self.recolors.get(&generator).map_or(&info.color, |color| color)
+                            self.recolors.get(&generator).map_or(info.color.to_string(), std::string::ToString::to_string)
                         }
-                        oninput=self.link.callback(move |e: InputData| {
+                        oninput={self.link.callback(move |e: InputData| {
                             let str = e.value;
                             let r = u8::from_str_radix(&str[1..3], 16).unwrap();
                             let g = u8::from_str_radix(&str[3..5], 16).unwrap();
@@ -226,7 +226,7 @@ impl SignatureView {
                             let s = format!("background-color:{}", str.as_str());
                             color_clone.cast::<Element>().unwrap().set_attribute("style",&s).unwrap();
                             Message::Recolor(generator, Color(Srgb::new(r, g, b)))
-                        })
+                        })}
                     />
                 </li>
             </>
@@ -240,7 +240,7 @@ impl SignatureView {
             >
                 <span style={format!("color:{}", &info.color)}
                     class="signature__generator-edit"
-                    onclick=self.link.callback(move |_| Message::Color(generator))
+                    onclick={self.link.callback(move |_| Message::Color(generator))}
                 >
                     <Icon name={"palette"} size={IconSize::Icon18} />
                 </span>
@@ -258,34 +258,34 @@ impl SignatureView {
                     type="text"
                     class="signature__generator-name-input"
                     value={
-                        self.renames.get(&generator).map_or(&info.name, |name| name)
+                        self.renames.get(&generator).map_or(info.name.clone(), std::clone::Clone::clone)
                     }
-                    oninput=self.link.callback(move |e: InputData| {
+                    oninput={self.link.callback(move |e: InputData| {
                         Message::Rename(generator, e.value)
-                    })
-                    onkeyup=self.link.callback(move |e: KeyboardEvent| {
+                    })}
+                    onkeyup={self.link.callback(move |e: KeyboardEvent| {
                         e.stop_propagation();
                         if e.key().to_ascii_lowercase() == "enter" {
                             Message::Done(generator)
                         } else {
                             Message::Noop
                         }
-                    })
+                    })}
                 />
                 <span class="signature__generator-dimension">
                     {info.diagram.dimension()}
                 </span>
                 <span
                     class="signature__generator-edit"
-                    onclick=dispatch.reform(move |_| Action::RemoveGenerator(generator))
+                    onclick={dispatch.reform(move |_| Action::RemoveGenerator(generator))}
                 >
                     <Icon name={"delete"} size={IconSize::Icon18} />
                 </span>
                 <span
                     class="signature__generator-edit"
-                    onclick=self.link.callback(move |_| {
+                    onclick={self.link.callback(move |_| {
                         Message::Done(generator)
-                    })
+                    })}
                 >
                     <Icon name={"done"} size={IconSize::Icon18} />
                 </span>
@@ -306,7 +306,7 @@ impl SignatureView {
                 />
                 <span
                     class="signature__generator-name"
-                    onclick=dispatch.reform(move |_| Action::SelectGenerator(generator))
+                    onclick={dispatch.reform(move |_| Action::SelectGenerator(generator))}
                 >
                     {&info.name}
                 </span>
@@ -315,7 +315,7 @@ impl SignatureView {
                 </span>
                 <span
                     class="signature__generator-edit"
-                    onclick=self.link.callback(move |_| Message::Edit(generator))
+                    onclick={self.link.callback(move |_| Message::Edit(generator))}
                 >
                     <Icon name={"edit"} size={IconSize::Icon18} />
                 </span>

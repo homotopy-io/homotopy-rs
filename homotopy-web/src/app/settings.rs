@@ -49,8 +49,8 @@ impl Component for SettingsView {
             <>
                 <input
                     type="checkbox"
-                    checked=*self.local.get_example_toggle()
-                    onclick=self.link.callback(|_| SettingsMsg::Click)
+                    checked={*self.local.get_example_toggle()}
+                    onclick={self.link.callback(|_| SettingsMsg::Click)}
                 />
             </>
         }

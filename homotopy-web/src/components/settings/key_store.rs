@@ -87,7 +87,7 @@ macro_rules! declare_settings {
             }
 
             pub struct $name {
-                bridge: Box<dyn yew::agent::Bridge<
+                bridge: Box<dyn yew_agent::Bridge<
                     $crate::components::settings::SettingsAgent<[<$name KeyStore>]>
                 >>,
             }
@@ -99,7 +99,7 @@ macro_rules! declare_settings {
 
                 pub fn connect(callback: yew::callback::Callback<[<$name Msg>]>) -> Self {
                     use $crate::components::settings::SettingsAgent;
-                    use yew::Bridged;
+                    use yew_agent::Bridged;
 
                     let bridge = SettingsAgent::<[<$name KeyStore>]>::bridge(callback);
 

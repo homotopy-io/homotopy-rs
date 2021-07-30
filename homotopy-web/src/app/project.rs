@@ -1,10 +1,9 @@
 use closure::closure;
 
+use yew::functional::use_ref;
 use yew::html::ChangeData::Files;
 use yew::prelude::*;
-use yew_functional::function_component;
-use yew_functional::use_state;
-use yew_services::{reader::FileData, ReaderService};
+use yew_macro::function_component;
 
 use crate::model::Action;
 
@@ -17,27 +16,23 @@ pub struct Props {
 pub fn project_view(props: &Props) -> Html {
     let export = props.dispatch.reform(|_| Action::ExportProof);
     let dispatch = &props.dispatch;
-    let (_, set_reader_task) = use_state(|| None);
+    let reader_task = use_ref(|| None);
     let import: Callback<ChangeData> = Callback::from(closure!(clone dispatch, |evt| {
         if let Files(filelist) = evt {
             let file = filelist.get(0).unwrap();
-            let callback = Callback::from(
-                closure!(clone dispatch, clone set_reader_task, |fd: FileData| {
-                    dispatch.emit(Action::ImportProof(fd.content.into()));
-                    set_reader_task(None);
-                }),
-            );
-            let task = ReaderService::read_file(file, callback).expect("failed to read file");
-            set_reader_task(Some(task));
+            let task = gloo::file::callbacks::read_as_bytes(&file.into(), closure!(clone dispatch, |res| {
+                dispatch.emit(Action::ImportProof(res.expect("failed to read file").into()));
+            }));
+            *reader_task.borrow_mut() = Some(task);
         }
     }));
     html! {
         <>
-            <button onclick=export>{"Export"}</button>
+            <button onclick={export}>{"Export"}</button>
             <label for="import">
                 {"Import"}
             </label>
-            <input type="file" accept="application/msgpack,.hom" class="visually-hidden" id="import" onchange=import/>
+            <input type="file" accept="application/msgpack,.hom" class="visually-hidden" id="import" onchange={import}/>
         </>
     }
 }

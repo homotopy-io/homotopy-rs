@@ -1,7 +1,8 @@
 {
   "contributors": [
     "Lukas Heidemann <lukas@heidemann.me>",
-    "Nick Hu <me@nickhu.co.uk>"
+    "Nick Hu <me@nickhu.co.uk>",
+    "Nathan Corbyn <me@nathancorbyn.com>"
   ],
   "name": "homotopy-web",
   "version": "0.1.0",
@@ -12,7 +13,7 @@
   },
   "devDependencies": {
     "@wasm-tool/wasm-pack-plugin": "^1.3.3",
-    "copy-webpack-plugin": "^7.0.0",
+    "copy-webpack-plugin": "^9.0.1",
     "rimraf": "^3.0.2",
     "webpack": "^5.24.2",
     "webpack-cli": "^4.5.0",

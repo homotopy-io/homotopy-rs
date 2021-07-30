@@ -1,5 +1,5 @@
 use yew::prelude::*;
-use yew_functional::function_component;
+use yew_macro::function_component;
 
 use wasm_bindgen::closure::Closure;
 
@@ -42,7 +42,7 @@ pub fn sidebar_button(props: &SidebarButtonProps) -> Html {
                     props.label.to_owned()
                 }
             }
-            style={&format!("{}", props.visibility)}
+            style={format!("{}", props.visibility)}
         >
             <Icon name={props.icon} size={IconSize::Icon24} />
         </div>
@@ -171,7 +171,7 @@ impl Sidebar {
                     <AttachView
                         dispatch={dispatch.reform(model::Action::Proof)}
                         options={attach_options}
-                        signature={self.props.proof.signature()}
+                        signature={self.props.proof.signature().clone()}
                     />
                 </SidebarDrawer>
             };

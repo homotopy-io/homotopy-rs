@@ -2,7 +2,7 @@
 
 use std::cell::RefCell;
 
-use yew::agent::{Agent, AgentLink, Context, Dispatched, Dispatcher, HandlerId};
+use yew_agent::{Agent, AgentLink, Context, Dispatched, Dispatcher, HandlerId};
 
 pub trait State: Default + Sized + 'static {
     type Action;

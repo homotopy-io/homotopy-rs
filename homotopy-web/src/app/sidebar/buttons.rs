@@ -64,7 +64,7 @@ macro_rules! declare_sidebar_tools {
                                 icon={$icon}
                                 action={SidebarMsg::Dispatch($action)}
                                 shortcut={$shortcut}
-                                dispatch=dispatch
+                                dispatch={dispatch}
                                 visibility={self.[<$name _visible>]()}
                             />)*
                         </nav>

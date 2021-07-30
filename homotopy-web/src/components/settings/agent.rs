@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use yew::worker::{Agent, AgentLink, Context, HandlerId};
+use yew_agent::{Agent, AgentLink, Context, HandlerId};
 
 use super::KeyStore;
 

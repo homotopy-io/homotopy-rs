@@ -1,7 +1,8 @@
 use crate::model::proof::{Color, Signature};
 use homotopy_core::Generator;
 
-use palette::Shade;
+use palette::Lighten;
+
 use std::fmt::Write;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, Node};

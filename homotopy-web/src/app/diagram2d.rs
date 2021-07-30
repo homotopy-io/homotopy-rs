@@ -251,8 +251,8 @@ impl Component for Diagram2D {
         html! {
             <svg
                 xmlns={"http://www.w3.org/2000/svg"}
-                width={size.width}
-                height={size.height}
+                width={size.width.to_string()}
+                height={size.height.to_string()}
                 onmousedown={on_mouse_down}
                 onmouseup={on_mouse_up}
                 onmousemove={on_mouse_move}
@@ -295,21 +295,21 @@ impl Diagram2D {
         match element {
             GraphicElement::Surface(_, path) => {
                 let class = SignatureStylesheet::name("generator", generator, "surface");
-                let path = path_to_svg(&path.transformed(&self.diagram.transform));
+                let path = path_to_svg(&path.clone().transformed(&self.diagram.transform));
                 html! {
                     <path d={path} class={class} stroke-width={1} />
                 }
             }
             GraphicElement::Wire(_, path, mask) => {
                 let class = SignatureStylesheet::name("generator", generator, "wire");
-                let path = path_to_svg(&path.transformed(&self.diagram.transform));
+                let path = path_to_svg(&path.clone().transformed(&self.diagram.transform));
 
                 if mask.is_empty() {
                     html! {
                         <path
                             d={path}
                             class={class}
-                            stroke-width={self.props.style.wire_thickness}
+                            stroke-width={self.props.style.wire_thickness.to_string()}
                             fill="none"
                         />
                     }
@@ -319,8 +319,8 @@ impl Diagram2D {
                         .map(|mask_path| {
                             html! {
                                 <path
-                                    d={path_to_svg(&mask_path.transformed(&self.diagram.transform))}
-                                    stroke-width={self.props.style.wire_thickness * 2.0}
+                                    d={path_to_svg(&mask_path.clone().transformed(&self.diagram.transform))}
+                                    stroke-width={(self.props.style.wire_thickness * 2.0).to_string()}
                                     fill="none"
                                     stroke="black"
                                     stroke-linecap="round"
@@ -342,7 +342,7 @@ impl Diagram2D {
                             <path
                                 d={path}
                                 class={class}
-                                stroke-width={self.props.style.wire_thickness}
+                                stroke-width={self.props.style.wire_thickness.to_string()}
                                 fill="none"
                                 mask={format!("url(#{})", mask_id)}
                             />
@@ -354,7 +354,7 @@ impl Diagram2D {
                 let class = SignatureStylesheet::name("generator", generator, "point");
                 let point = self.diagram.transform.transform_point(*point);
                 html! {
-                    <circle r={self.props.style.point_radius} cx={point.x} cy={point.y} class={class} />
+                    <circle r={self.props.style.point_radius.to_string()} cx={point.x.to_string()} cy={point.y.to_string()} class={class} />
                 }
             }
         }
@@ -533,8 +533,8 @@ impl Component for Diagram1D {
         html! {
             <svg
                 xmlns={"http://www.w3.org/2000/svg"}
-                 width={size.width}
-                 height={size.height}
+                 width={size.width.to_string()}
+                 height={size.height.to_string()}
             >
                 {wires.into_iter().collect::<Html>()}
                 {points.into_iter().collect::<Html>()}
@@ -586,7 +586,7 @@ impl Diagram1D {
             <path
                 d={path}
                 class={class}
-                stroke-width={style.wire_thickness}
+                stroke-width={style.wire_thickness.to_string()}
                 fill="none"
                 onclick={onclick}
             />
@@ -606,9 +606,9 @@ impl Diagram1D {
 
         html! {
             <circle
-                cx={self.dimensions().width * 0.5}
-                cy={self.to_y(point)}
-                r={style.point_radius}
+                cx={(self.dimensions().width * 0.5).to_string()}
+                cy={self.to_y(point).to_string()}
+                r={style.point_radius.to_string()}
                 class={class}
                 onclick={onclick}
             />
@@ -656,8 +656,8 @@ impl Component for Diagram0D {
         html! {
             <svg
                 xmlns={"http://www.w3.org/2000/svg"}
-                 width={size.width}
-                 height={size.height}
+                 width={size.width.to_string()}
+                 height={size.height.to_string()}
             >
                 {self.view_point(self.props.diagram)}
             </svg>
@@ -680,9 +680,9 @@ impl Diagram0D {
 
         html! {
             <circle
-                cx={self.dimensions().width * 0.5}
-                cy={self.dimensions().height * 0.5}
-                r={style.point_radius * Self::RADIUS_SCALE}
+                cx={(self.dimensions().width * 0.5).to_string()}
+                cy={(self.dimensions().height * 0.5).to_string()}
+                r={(style.point_radius * Self::RADIUS_SCALE).to_string()}
                 class={class}
             />
         }

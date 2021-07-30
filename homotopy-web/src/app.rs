@@ -109,8 +109,8 @@ impl Component for App {
             Some(workspace) => {
                 html! {
                     <WorkspaceView
-                        workspace={workspace}
-                        signature={signature}
+                        workspace={workspace.clone()}
+                        signature={signature.clone()}
                         dispatch={dispatch.reform(model::Action::Proof)}
                     />
                 }

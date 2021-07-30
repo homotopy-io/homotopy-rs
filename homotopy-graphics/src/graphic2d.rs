@@ -34,8 +34,8 @@ impl ActionRegion {
     pub fn transformed(&self, transform: &Transform2D<f32>) -> Self {
         use ActionRegion::{Point, Surface, Wire};
         match self {
-            Surface(cs, path) => Surface(*cs, path.transformed(transform)),
-            Wire(cs, path) => Wire(*cs, path.transformed(transform)),
+            Surface(cs, path) => Surface(*cs, path.clone().transformed(transform)),
+            Wire(cs, path) => Wire(*cs, path.clone().transformed(transform)),
             Point(cs, point) => Point(*cs, transform.transform_point(*point)),
         }
     }
@@ -116,12 +116,12 @@ impl GraphicElement {
     pub fn transformed(&self, transform: &Transform2D<f32>) -> Self {
         use GraphicElement::{Point, Surface, Wire};
         match self {
-            Surface(g, path) => Surface(*g, path.transformed(transform)),
+            Surface(g, path) => Surface(*g, path.clone().transformed(transform)),
             Wire(g, path, mask) => {
-                let path = path.transformed(transform);
+                let path = path.clone().transformed(transform);
                 let mask = mask
                     .iter()
-                    .map(|mask| mask.transformed(transform))
+                    .map(|mask| mask.clone().transformed(transform))
                     .collect();
                 Wire(*g, path, mask)
             }
@@ -285,7 +285,7 @@ where
 }
 
 fn make_path(points: &[Coordinate], closed: bool, layout: &Layout) -> Path {
-    let mut builder = Path::builder();
+    let mut builder = Path::svg_builder();
 
     let start = layout.get(points[0].0, points[0].1).unwrap();
     builder.move_to(start);
@@ -305,7 +305,7 @@ fn make_path_segment(
     start: Coordinate,
     end: Coordinate,
     layout: &Layout,
-    builder: &mut lyon_path::Builder,
+    builder: &mut lyon_path::builder::WithSvg<lyon_path::path::Builder>,
 ) {
     use self::Height::{Regular, Singular};
     use self::SliceIndex::Interior;

@@ -54,9 +54,9 @@ macro_rules! declare_sidebar_drawers {
                             label={$title}
                             icon={$icon}
                             action={SidebarMsg::Toggle(NavDrawer::$name)}
-                            shortcut=None
-                            dispatch=self.link.callback(|x| x)
-                            visibility=Visible
+                            shortcut={None}
+                            dispatch={self.link.callback(|x| x)}
+                            visibility={Visible}
                         />)*
                     </nav>
                 }
@@ -90,7 +90,7 @@ declare_sidebar_drawers! {
         "list",
         |dispatch: &Callback<model::Action>, proof: &Proof| html! {
             <SignatureView
-                signature={proof.signature()}
+                signature={proof.signature().clone()}
                 dispatch={dispatch.reform(model::Action::Proof)}
             />
         },
