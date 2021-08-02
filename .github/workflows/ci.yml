@@ -102,7 +102,7 @@ jobs:
       - name: Install and Build
         run: |
           cd homotopy-web
-          trunk build
+          trunk build --release
 
       - name: Archive build artifacts
         uses: actions/upload-artifact@v2
