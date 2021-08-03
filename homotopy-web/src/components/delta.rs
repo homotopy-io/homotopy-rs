@@ -56,7 +56,7 @@ where
             DeltaInput::Emit(msg) => {
                 self.state.update(&msg);
                 for callback in &self.handlers {
-                    callback(self, &msg);
+                    callback(&self, &msg);
                 }
             }
         }

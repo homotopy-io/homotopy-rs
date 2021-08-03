@@ -263,7 +263,7 @@ impl PanZoom {
     }
 
     pub fn reset(&self) {
-        self.0.emit(PanZoomAction::Reset);
+        self.0.emit(PanZoomAction::Reset)
     }
 
     pub fn register(&self, callback: DeltaCallback<PanZoomState>) {
