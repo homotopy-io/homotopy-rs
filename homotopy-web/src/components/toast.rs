@@ -103,6 +103,7 @@ impl Component for ToasterComponent {
                     })
                     .forget();
                 }
+
                 link.send_message(e.clone());
             })
         });

@@ -13,7 +13,7 @@ pub fn read_touch_list<'a>(
     touch_list: &'a TouchList,
     node_ref: &NodeRef,
 ) -> impl Iterator<Item = (Finger, Point)> + 'a {
-    let rect = bounding_rect(node_ref);
+    let rect = bounding_rect(node_ref).unwrap();
     let (rect_left, rect_top) = (rect.left(), rect.top());
 
     (0..touch_list.length()).filter_map(move |i| {
@@ -39,11 +39,10 @@ pub fn read_touch_list_abs(
     })
 }
 
-pub fn bounding_rect(node_ref: &NodeRef) -> DomRect {
+pub fn bounding_rect(node_ref: &NodeRef) -> Option<DomRect> {
     node_ref
         .cast::<Element>()
-        .unwrap()
-        .get_bounding_client_rect()
+        .map(|el| el.get_bounding_client_rect())
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]

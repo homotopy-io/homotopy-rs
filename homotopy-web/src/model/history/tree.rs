@@ -45,6 +45,11 @@ impl<T> NodeData<T> {
     }
 
     #[inline]
+    pub fn children_rev(&self) -> impl Iterator<Item = Node> + '_ {
+        self.children.iter().rev().copied()
+    }
+
+    #[inline]
     pub fn last(&self) -> Option<Node> {
         self.children.last().copied()
     }

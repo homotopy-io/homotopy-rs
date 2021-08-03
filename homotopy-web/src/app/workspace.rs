@@ -6,7 +6,7 @@ use homotopy_core::attach::BoundaryPath;
 use homotopy_core::common::{Boundary, Height, SliceIndex};
 use homotopy_core::{Diagram, DiagramN};
 
-use crate::app::diagram2d::{Diagram0D, Diagram1D, Diagram2D, Highlight2D};
+use crate::app::diagram2d::{Diagram0D, Diagram1D, Diagram2D, Highlight2D, HighlightKind};
 use crate::components::panzoom::PanZoomComponent;
 use crate::model::proof::homotopy::Homotopy;
 use crate::model::proof::{Action, Signature, Workspace};
@@ -34,6 +34,7 @@ pub struct WorkspaceView {
     props: Props,
     on_select: Callback<Vec<Vec<SliceIndex>>>,
     on_homotopy: Callback<Homotopy>,
+    diagram_ref: NodeRef,
 }
 
 impl Component for WorkspaceView {
@@ -47,6 +48,7 @@ impl Component for WorkspaceView {
             props,
             on_select,
             on_homotopy,
+            diagram_ref: Default::default(),
         }
     }
 
@@ -68,13 +70,15 @@ impl Component for WorkspaceView {
                 <SliceControl
                     number_slices={d.size()}
                     descend_slice={self.props.dispatch.reform(Action::DescendSlice)}
+                    diagram_ref={self.diagram_ref.clone()}
+                    on_hover={self.props.dispatch.reform(Action::HighlightSlice)}
                 />
             },
         };
 
         html! {
             <div class="workspace">
-                <PanZoomComponent>
+                <PanZoomComponent on_scroll={self.props.dispatch.reform(Action::SwitchSlice)}>
                     {self.view_diagram()}
                 </PanZoomComponent>
                 {slice_buttons}
@@ -101,7 +105,10 @@ impl WorkspaceView {
         match self.visible_diagram() {
             Diagram::Diagram0(generator) => {
                 html! {
-                    <Diagram0D diagram={generator} />
+                    <Diagram0D
+                        diagram={generator}
+                        ref={self.diagram_ref.clone()}
+                    />
                 }
             }
             Diagram::DiagramN(diagram) if diagram.dimension() == 1 => {
@@ -109,11 +116,13 @@ impl WorkspaceView {
                     <Diagram1D
                         diagram={diagram}
                         on_select={self.on_select.clone()}
+                        ref={self.diagram_ref.clone()}
                     />
                 }
             }
             Diagram::DiagramN(diagram) => {
-                let highlight = highlight_2d(&self.props.workspace, &self.props.signature);
+                let highlight = highlight_attachment(&self.props.workspace, &self.props.signature)
+                    .or_else(|| highlight_slice(&self.props.workspace));
 
                 html! {
                     <Diagram2D
@@ -122,6 +131,7 @@ impl WorkspaceView {
                         on_select={self.on_select.clone()}
                         on_homotopy={self.on_homotopy.clone()}
                         highlight={highlight}
+                        ref={self.diagram_ref.clone()}
                     />
                 }
             }
@@ -129,10 +139,10 @@ impl WorkspaceView {
     }
 }
 
-fn highlight_2d(workspace: &Workspace, signature: &Signature) -> Option<Highlight2D> {
+fn highlight_attachment(workspace: &Workspace, signature: &Signature) -> Option<Highlight2D> {
     use Height::Regular;
 
-    let attach_option = workspace.highlight.as_ref()?;
+    let attach_option = workspace.attachment_highlight.as_ref()?;
 
     let info = signature.get(&attach_option.generator).unwrap();
     let needle: DiagramN = info.diagram.clone().try_into().unwrap();
@@ -166,6 +176,7 @@ fn highlight_2d(workspace: &Workspace, signature: &Signature) -> Option<Highligh
                     Regular(embedding[1] + needle_st.size()).into(),
                     Regular(embedding[0] + needle_s.size()).into(),
                 ],
+                kind: HighlightKind::Attach,
             })
         }
         Some(bp) if bp.depth() == 0 => {
@@ -178,11 +189,23 @@ fn highlight_2d(workspace: &Workspace, signature: &Signature) -> Option<Highligh
             Some(Highlight2D {
                 from: [Regular(embedding[0]).into(), bp.boundary().into()],
                 to: [Regular(embedding[0] + size).into(), bp.boundary().into()],
+                kind: HighlightKind::Attach,
             })
         }
         Some(bp) => Some(Highlight2D {
             from: [bp.boundary().into(), Boundary::Source.into()],
             to: [bp.boundary().into(), Boundary::Target.into()],
+            kind: HighlightKind::Attach,
         }),
     }
+}
+
+fn highlight_slice(workspace: &Workspace) -> Option<Highlight2D> {
+    let slice = workspace.slice_highlight.as_ref()?;
+
+    Some(Highlight2D {
+        from: [Boundary::Source.into(), *slice],
+        to: [Boundary::Target.into(), *slice],
+        kind: HighlightKind::Slice,
+    })
 }

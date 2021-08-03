@@ -1,14 +1,19 @@
 use yew::prelude::*;
 
+use web_sys::Element;
+
 use homotopy_core::{Boundary, Height, SliceIndex};
 
 use crate::app::{Icon, IconSize};
+use crate::components::bounding_rect;
 use crate::components::panzoom::{PanZoom, PanZoomAgent};
 
 #[derive(Debug, Clone, PartialEq, Properties)]
 pub struct SliceControlProps {
     pub number_slices: usize,
     pub descend_slice: Callback<SliceIndex>,
+    pub diagram_ref: NodeRef,
+    pub on_hover: Callback<Option<SliceIndex>>,
 }
 
 pub enum SliceControlMsg {
@@ -20,6 +25,7 @@ pub struct SliceControl {
     _panzoom: PanZoom,
     translate: f64,
     scale: f64,
+    node_ref: NodeRef,
 }
 
 impl Component for SliceControl {
@@ -37,7 +43,8 @@ impl Component for SliceControl {
             props,
             _panzoom: panzoom,
             translate: 0.0,
-            scale: 0.0,
+            scale: 1.0,
+            node_ref: Default::default(),
         }
     }
 
@@ -48,6 +55,27 @@ impl Component for SliceControl {
         true
     }
 
+    fn rendered(&mut self, _first_render: bool) {
+        let height = bounding_rect(&self.props.diagram_ref).unwrap().height();
+
+        let style = format!(
+            r#"
+                transform: translate(0px, calc({y}px - 50%));
+                height: {height}px;
+                min-height: {min_height}px;
+            "#,
+            y = self.translate,
+            height = height,
+            min_height = 24 * (self.props.number_slices * 2 + 3),
+        );
+
+        self.node_ref
+            .cast::<Element>()
+            .unwrap()
+            .set_attribute("style", &style)
+            .unwrap();
+    }
+
     fn view(&self) -> Html {
         let slice_button = |index: SliceIndex| -> Html {
             let label = match index {
@@ -56,13 +84,12 @@ impl Component for SliceControl {
                 SliceIndex::Interior(Height::Regular(i)) => format!("Regular {}", i),
                 SliceIndex::Interior(Height::Singular(i)) => format!("Singular {}", i),
             };
-            let style = format!("height: {height}px;", height = self.scale * 40.0);
 
             html! {
                 <div
                     class="workspace__slice-button tooltip tooltip--left"
                     data-tooltip={label}
-                    style={style}
+                    onmouseenter={self.props.on_hover.reform(move |_| Some(index))}
                     onclick={self.props.descend_slice.reform(move |_| index)}
                 >
                     <Icon name="arrow_right" size={IconSize::Icon24} />
@@ -70,18 +97,17 @@ impl Component for SliceControl {
             }
         };
 
-        let buttons: Html = SliceIndex::for_size(self.props.number_slices)
+        let buttons: Html = SliceIndex::for_size(self.props.number_slices as usize)
             .map(slice_button)
             .rev()
             .collect();
 
-        let style = format!(
-            "transform: translate(0px, calc({y}px - 50%))",
-            y = self.translate - (0.5 * 40.0 * self.scale)
-        );
-
         html! {
-            <div class="workspace__slice-buttons" style={style}>
+            <div
+                class="workspace__slice-buttons"
+                onmouseleave={self.props.on_hover.reform(move |_| None)}
+                ref={self.node_ref.clone()}
+            >
                 {buttons}
             </div>
         }

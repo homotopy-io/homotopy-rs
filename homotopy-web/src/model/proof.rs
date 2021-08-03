@@ -57,7 +57,8 @@ pub struct Workspace {
     pub diagram: Diagram,
     pub path: Vector<SliceIndex>,
     pub attach: Option<Vector<AttachOption>>,
-    pub highlight: Option<AttachOption>,
+    pub attachment_highlight: Option<AttachOption>,
+    pub slice_highlight: Option<SliceIndex>,
 }
 
 impl Workspace {
@@ -143,6 +144,8 @@ pub enum Action {
 
     HighlightAttachment(Option<AttachOption>),
 
+    HighlightSlice(Option<SliceIndex>),
+
     Homotopy(Homotopy),
 
     Restrict,
@@ -150,6 +153,16 @@ pub enum Action {
     Theorem,
 
     Imported,
+}
+
+impl Action {
+    /// Determines if this [Action] is relevant with respect to undo/redo operations.
+    pub fn relevant(&self) -> bool {
+        !matches!(
+            self,
+            Action::HighlightSlice(_) | Action::HighlightAttachment(_)
+        )
+    }
 }
 
 #[derive(Debug, Error)]
@@ -174,56 +187,33 @@ impl ProofState {
     /// Update the state in response to an [Action].
     pub fn update(&mut self, action: &Action) -> Result<(), ModelError> {
         match action {
-            Action::CreateGeneratorZero => {
-                self.create_generator_zero();
-                Ok(())
+            Action::CreateGeneratorZero => self.create_generator_zero(),
+            Action::EditGenerator(generator, edit) => {
+                self.edit_generator(generator, edit.clone())?;
             }
-            Action::EditGenerator(generator, edit) => self.edit_generator(generator, edit.clone()),
-            Action::RemoveGenerator(generator) => {
-                self.remove_generator(generator);
-                Ok(())
+            Action::RemoveGenerator(generator) => self.remove_generator(generator),
+            Action::SetBoundary(boundary) => self.set_boundary(*boundary)?,
+            Action::TakeIdentityDiagram => self.take_identity_diagram(),
+            Action::ClearWorkspace => self.clear_workspace(),
+            Action::ClearBoundary => self.clear_boundary(),
+            Action::SelectGenerator(generator) => self.select_generator(*generator)?,
+            Action::AscendSlice(count) => self.ascend_slice(*count),
+            Action::DescendSlice(slice) => self.descend_slice(*slice)?,
+            Action::SwitchSlice(direction) => self.switch_slice(*direction),
+            Action::SelectPoints(points) => self.select_points(points),
+            Action::Attach(option) => self.attach(option),
+            Action::HighlightAttachment(option) => self.highlight_attachment(option.clone()),
+            Action::HighlightSlice(slice) => self.highlight_slice(*slice),
+            Action::Homotopy(Homotopy::Expand(homotopy)) => self.homotopy_expansion(homotopy)?,
+            Action::Homotopy(Homotopy::Contract(homotopy)) => {
+                self.homotopy_contraction(homotopy)?;
             }
-            Action::SetBoundary(boundary) => self.set_boundary(*boundary),
-            Action::TakeIdentityDiagram => {
-                self.take_identity_diagram();
-                Ok(())
-            }
-            Action::ClearWorkspace => {
-                self.clear_workspace();
-                Ok(())
-            }
-            Action::ClearBoundary => {
-                self.clear_boundary();
-                Ok(())
-            }
-            Action::SelectGenerator(generator) => self.select_generator(*generator),
-            Action::AscendSlice(count) => {
-                self.ascend_slice(*count);
-                Ok(())
-            }
-            Action::DescendSlice(slice) => self.descend_slice(*slice),
-            Action::SwitchSlice(direction) => {
-                self.switch_slice(*direction);
-                Ok(())
-            }
-            Action::SelectPoints(points) => {
-                self.select_points(points);
-                Ok(())
-            }
-            Action::Attach(option) => {
-                self.attach(option);
-                Ok(())
-            }
-            Action::HighlightAttachment(option) => {
-                self.highlight_attachment(option.clone());
-                Ok(())
-            }
-            Action::Homotopy(Homotopy::Expand(homotopy)) => self.homotopy_expansion(homotopy),
-            Action::Homotopy(Homotopy::Contract(homotopy)) => self.homotopy_contraction(homotopy),
-            Action::Restrict => self.restrict(),
-            Action::Theorem => self.theorem(),
-            Action::Imported => Ok(()),
+            Action::Restrict => self.restrict()?,
+            Action::Theorem => self.theorem()?,
+            _ => {}
         }
+
+        Ok(())
     }
 
     /// Determines if a given [Action] should reset the panzoom state, given the current  [ProofState].
@@ -395,6 +385,14 @@ impl ProofState {
         self.boundary = None;
     }
 
+    fn clear_highlights(&mut self) {
+        if let Some(ref mut workspace) = self.workspace {
+            workspace.attach = None;
+            workspace.attachment_highlight = None;
+            workspace.slice_highlight = None;
+        }
+    }
+
     /// Handler for [Action::SelectGenerator].
     fn select_generator(&mut self, generator: Generator) -> Result<(), ModelError> {
         if self.workspace.is_some() {
@@ -410,7 +408,8 @@ impl ProofState {
             diagram: info.diagram.clone(),
             path: Default::default(),
             attach: Default::default(),
-            highlight: Default::default(),
+            attachment_highlight: Default::default(),
+            slice_highlight: Default::default(),
         });
 
         Ok(())
@@ -424,8 +423,7 @@ impl ProofState {
                 count -= 1;
             }
 
-            workspace.attach = None;
-            workspace.highlight = None;
+            self.clear_highlights();
         }
     }
 
@@ -446,8 +444,7 @@ impl ProofState {
 
             // Update workspace
             workspace.path = path;
-            workspace.attach = None;
-            workspace.highlight = None;
+            self.clear_highlights();
         }
 
         Ok(())
@@ -538,16 +535,12 @@ impl ProofState {
         }
 
         match matches.len().cmp(&1) {
-            Ordering::Less => {
-                let workspace = self.workspace.as_mut().unwrap();
-                workspace.attach = None;
-                workspace.highlight = None;
-            }
+            Ordering::Less => self.clear_highlights(),
             Ordering::Equal => self.attach(&matches.into_iter().next().unwrap()),
             Ordering::Greater => {
                 let workspace = self.workspace.as_mut().unwrap();
                 workspace.attach = Some(matches.into_iter().collect());
-                workspace.highlight = None;
+                workspace.attachment_highlight = None;
             }
         }
     }
@@ -576,25 +569,27 @@ impl ProofState {
                     .unwrap(),
             };
 
-            workspace.attach = None;
-            workspace.highlight = None;
-
             // TODO: Figure out what should happen with the slice path
-            match option.boundary_path {
-                Some(_) => {
-                    workspace.diagram = result.into();
-                }
-                None => {
-                    workspace.diagram = result.target();
-                }
-            }
+            workspace.diagram = match option.boundary_path {
+                Some(_) => result.into(),
+                None => result.target(),
+            };
         }
+
+        self.clear_highlights();
     }
 
     /// Handler for [Action::HighlightAttachment].
     fn highlight_attachment(&mut self, option: Option<AttachOption>) {
         if let Some(workspace) = &mut self.workspace {
-            workspace.highlight = option;
+            workspace.attachment_highlight = option;
+        }
+    }
+
+    /// Handler for [Action::HighlightSlice].
+    fn highlight_slice(&mut self, option: Option<SliceIndex>) {
+        if let Some(workspace) = &mut self.workspace {
+            workspace.slice_highlight = option;
         }
     }
 
@@ -615,7 +610,8 @@ impl ProofState {
             ws.diagram = diagram;
             ws.path = Default::default();
             ws.attach = Default::default();
-            ws.highlight = Default::default();
+            ws.attachment_highlight = Default::default();
+            ws.slice_highlight = Default::default();
         }
 
         Ok(())
