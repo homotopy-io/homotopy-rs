@@ -49,9 +49,16 @@ pub struct Props2D {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum HighlightKind {
+    Attach,
+    Slice,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Highlight2D {
     pub from: [SliceIndex; 2],
     pub to: [SliceIndex; 2],
+    pub kind: HighlightKind,
 }
 
 // TODO: Drag callbacks in props
@@ -361,17 +368,22 @@ impl Diagram2D {
     }
 
     fn view_highlight(&self) -> Html {
-        let highlight = match self.props.highlight {
-            Some(highlight) => highlight,
-            None => {
-                return Default::default();
-            }
+        let highlight = if let Some(highlight) = self.props.highlight {
+            highlight
+        } else {
+            return Default::default();
         };
 
-        let padding = self.props.style.scale * 0.25;
+        let padding = match highlight.kind {
+            HighlightKind::Attach => {
+                let padding = self.props.style.scale * 0.25;
+                Vector2D::new(padding, padding)
+            }
+            HighlightKind::Slice => Vector2D::new(0.0, self.props.style.scale * 0.5),
+        };
 
-        let from = self.position(highlight.from) + Vector2D::new(padding, padding);
-        let to = self.position(highlight.to) - Vector2D::new(padding, padding);
+        let from = self.position(highlight.from) + padding;
+        let to = self.position(highlight.to) - padding;
 
         let path = format!(
             "M {from_x} {from_y} L {from_x} {to_y} L {to_x} {to_y} L {to_x} {from_y} Z",
@@ -381,11 +393,13 @@ impl Diagram2D {
             to_y = to.y
         );
 
+        let class = match highlight.kind {
+            HighlightKind::Attach => "diagram-svg__attach-highlight",
+            HighlightKind::Slice => "diagram-svg__slice-highlight",
+        };
+
         html! {
-            <path
-                d={path}
-                class="diagram-svg__highlight"
-            />
+            <path d={path} class={class}/>
         }
     }
 

@@ -1,6 +1,8 @@
 use closure::closure;
 use yew::prelude::*;
 
+use homotopy_core::Direction;
+
 use crate::components::delta::{Delta, DeltaCallback, State};
 use crate::components::{bounding_rect, read_touch_list, Finger, Point, Vector};
 
@@ -92,6 +94,8 @@ impl State for PanZoomState {
 #[derive(Clone, PartialEq, Properties)]
 pub struct PanZoomProps {
     #[prop_or_default]
+    pub on_scroll: Callback<Direction>,
+    #[prop_or_default]
     pub children: Children,
 }
 
@@ -175,12 +179,14 @@ impl Component for PanZoomComponent {
         let on_wheel = {
             let delta = Delta::<PanZoomState>::new();
             let node_ref = self.node_ref.clone();
+            let on_scroll = self.props.on_scroll.clone();
 
             Callback::from(closure!(|e: WheelEvent| {
+                let dy = e.delta_y();
                 if e.alt_key() {
                     e.prevent_default();
 
-                    let rect = bounding_rect(&node_ref);
+                    let rect = bounding_rect(&node_ref).unwrap();
 
                     // Offset the observed x and y by half the dimensinos of the panzoom view to
                     // account for centering (not required on mouse moves as that information is
@@ -188,7 +194,11 @@ impl Component for PanZoomComponent {
                     let x = f64::from(e.client_x()) - rect.left() - 0.5 * rect.width();
                     let y = f64::from(e.client_y()) - rect.top() - 0.5 * rect.height();
 
-                    delta.emit(PanZoomAction::MouseWheel((x, y).into(), e.delta_y()));
+                    delta.emit(PanZoomAction::MouseWheel((x, y).into(), dy));
+                } else if dy > 0.0 {
+                    on_scroll.emit(Direction::Forward);
+                } else {
+                    on_scroll.emit(Direction::Backward);
                 }
             }))
         };
@@ -217,7 +227,7 @@ impl Component for PanZoomComponent {
 
         html! {
             <content
-                class="workspace"
+                class="panzoom"
                 onmousemove={on_mouse_move}
                 onmouseup={on_mouse_up}
                 onmousedown={on_mouse_down}
@@ -228,7 +238,11 @@ impl Component for PanZoomComponent {
                 ontouchstart={on_touch_update}
                 ref={self.node_ref.clone()}
             >
-                <div class="workspace__diagram" style={style}>
+                <div
+                    class="panzoom__inner"
+                    style={style}
+                    ref={self.node_ref.clone()}
+                >
                     { for self.props.children.iter() }
                 </div>
             </content>

@@ -87,6 +87,7 @@ impl Snapshot {
 #[derive(Debug, Clone)]
 pub struct History {
     snapshots: Tree<Snapshot>,
+    overlay: Option<ProofState>,
     current: Node,
 }
 
@@ -94,7 +95,11 @@ impl Default for History {
     fn default() -> Self {
         let snapshots: Tree<Snapshot> = Default::default();
         let current = snapshots.root();
-        Self { snapshots, current }
+        Self {
+            snapshots,
+            overlay: None,
+            current,
+        }
     }
 }
 
@@ -108,7 +113,22 @@ pub enum HistoryError {
 
 impl History {
     #[inline]
+    #[allow(clippy::option_if_let_else)]
     pub fn with_proof<F, U>(&self, f: F) -> U
+    where
+        F: Fn(&Proof) -> U,
+    {
+        if let Some(ref overlay) = self.overlay {
+            let mut overlayed = self.snapshots.with(self.current, Clone::clone);
+            overlayed.inner_mut().proof = overlay.clone();
+            f(&overlayed)
+        } else {
+            self.with_proof_internal(f)
+        }
+    }
+
+    #[inline]
+    pub fn with_proof_internal<F, U>(&self, f: F) -> U
     where
         F: Fn(&Proof) -> U,
     {
@@ -117,7 +137,7 @@ impl History {
 
     pub fn add(&mut self, action: super::proof::Action, proof: Proof) {
         // check if this action has been performed at this state previously
-        let existing = self.with_proof(|n| {
+        let existing = self.with_proof_internal(|n| {
             n.children().find(|id| {
                 self.snapshots
                     .with(*id, |n| n.inner().action.as_ref() == Some(&action))
@@ -131,26 +151,33 @@ impl History {
                 n.inner_mut().touch();
             });
             self.current = child;
-        } else {
+        } else if action.relevant() {
             // fresh action
             let child = self.snapshots.push_onto(
                 self.current,
                 Snapshot::new(Some(action), proof.into_inner().proof),
             );
             self.current = child;
+            self.overlay = None;
+        } else {
+            self.overlay = Some(proof.into_inner().proof);
         }
     }
 
     pub fn undo(&mut self) -> Result<(), HistoryError> {
         let prev = self
-            .with_proof(NodeData::parent)
+            .with_proof_internal(NodeData::parent)
             .ok_or(HistoryError::Undo)?;
+        self.overlay = None;
         self.current = prev;
         Ok(())
     }
 
     pub fn redo(&mut self) -> Result<(), HistoryError> {
-        let next = self.with_proof(NodeData::last).ok_or(HistoryError::Redo)?;
+        let next = self
+            .with_proof_internal(NodeData::last)
+            .ok_or(HistoryError::Redo)?;
+        self.overlay = None;
         self.current = next;
         Ok(())
     }
