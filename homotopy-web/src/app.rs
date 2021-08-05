@@ -81,13 +81,11 @@ impl Component for App {
 
                 homotopy_core::collect_garbage();
 
-                match result {
-                    Ok(()) => {}
-                    Err(error) => {
-                        self.toaster.toast(Toast::error(format!("{}", error)));
-                        log::error!("Error occured: {}", error);
-                    }
+                if let Err(error) = result {
+                    self.toaster.toast(Toast::error(format!("{}", error)));
+                    log::error!("Error occured: {}", error);
                 }
+
                 self.signature_stylesheet
                     .update(self.state.with_proof(|p| p.signature().clone()));
 
