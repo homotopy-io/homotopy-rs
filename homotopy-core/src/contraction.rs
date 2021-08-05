@@ -62,7 +62,7 @@ pub enum ContractionError {
     Invalid,
     #[error("contraction ambiguous")]
     Ambiguous,
-    #[error("contraction fails to typecheck")]
+    #[error("contraction fails to typecheck: {0}")]
     IllTyped(#[from] TypeError),
 }
 

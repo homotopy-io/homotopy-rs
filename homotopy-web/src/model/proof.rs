@@ -1,23 +1,30 @@
-use homotopy_core::common::{Boundary, Direction, Generator, Height, RegularHeight, SliceIndex};
-use homotopy_core::signature::SignatureClosure;
-use homotopy_core::{attach::BoundaryPath, common::DimensionError};
-use homotopy_core::{contraction::ContractionError, expansion::ExpansionError};
-use homotopy_core::{diagram::NewDiagramError, typecheck::TypeError};
-use homotopy_core::{Diagram, DiagramN};
-use im::{ordmap, OrdMap, Vector};
-use std::{collections::BTreeSet, ops::Deref};
-use std::{
-    convert::{Into, TryFrom, TryInto},
-    fmt::Display,
-};
-use thiserror::Error;
-pub mod homotopy;
-use homotopy::{Contract, Expand, Homotopy};
-
-use palette::Srgb;
-use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
+use std::collections::BTreeSet;
+use std::convert::{Into, TryFrom, TryInto};
+use std::fmt::Display;
+use std::ops::Deref;
 use std::str::FromStr;
+
+use serde::{Deserialize, Serialize};
+
+use im::{ordmap, OrdMap, Vector};
+use palette::Srgb;
+use thiserror::Error;
+
+use homotopy_core::attach::BoundaryPath;
+use homotopy_core::common::{
+    Boundary, DimensionError, Direction, Generator, Height, RegularHeight, SliceIndex,
+};
+use homotopy_core::contraction::ContractionError;
+use homotopy_core::diagram::NewDiagramError;
+use homotopy_core::expansion::ExpansionError;
+use homotopy_core::signature::SignatureClosure;
+use homotopy_core::typecheck::TypeError;
+use homotopy_core::{Diagram, DiagramN};
+
+pub mod homotopy;
+
+use homotopy::{Contract, Expand, Homotopy};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Color(pub(crate) Srgb<u8>);
@@ -175,11 +182,11 @@ pub enum ModelError {
     InvalidSlice(#[from] DimensionError),
     #[error("invalid action")]
     InvalidAction,
-    #[error("error while performing expansion")]
+    #[error("error while performing expansion: {0}")]
     ExpansionError(#[from] ExpansionError),
-    #[error("error while performing contraction")]
+    #[error("error while performing contraction: {0}")]
     ContractionError(#[from] ContractionError),
-    #[error("error while performing typechecking")]
+    #[error("error while performing typechecking: {0}")]
     TypecheckingError(#[from] TypeError),
 }
 

@@ -103,17 +103,6 @@ body, html {
   transform-origin: 50% 50%;
 }
 
-.panzoom__sidebar {
-  background-color: blue;
-  position: absolute;
-  z-index: 1;
-  right: 0;
-  top: 50%;
-  width: 40px;
-  height: 100px;
-  transform-origin: 0% 50%;
-}
-
 /* Workspace */
 
 .workspace {

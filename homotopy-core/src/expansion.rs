@@ -39,7 +39,7 @@ pub enum ExpansionError {
     #[error("smoothing is not yet implemented")]
     SmoothingNotImplemented,
 
-    #[error("expansion is ill-typed")]
+    #[error("expansion is ill-typed: {0}")]
     IllTyped(#[from] TypeError),
 }
 
