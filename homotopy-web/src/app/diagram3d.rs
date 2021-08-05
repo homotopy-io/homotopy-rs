@@ -1,8 +1,8 @@
 use euclid::{Angle, Vector3D};
 
 use yew::prelude::*;
-use yew::services::render::RenderTask;
-use yew::services::RenderService;
+
+use gloo::render::{request_animation_frame, AnimationFrame};
 
 use homotopy_graphics::gl::array::VertexArray;
 use homotopy_graphics::gl::buffer::Buffer;
@@ -25,7 +25,7 @@ pub struct Diagram3D {
 
     // If the render task is dropped, we won't get notified about `requestAnimationFrame()` calls,
     // so store a reference to the task here
-    render_loop: Option<RenderTask>,
+    render_loop: Option<AnimationFrame>,
 }
 
 impl Component for Diagram3D {
@@ -48,9 +48,10 @@ impl Component for Diagram3D {
             renderer.update(dt);
             renderer.render();
 
-            let render_frame = self.link.callback(Message3D::Render);
-            let handle = RenderService::request_animation_frame(render_frame);
-            self.render_loop = Some(handle);
+            let link = self.link.clone();
+            let render_frame =
+                request_animation_frame(move |t| link.send_message(Message3D::Render(t)));
+            self.render_loop = Some(render_frame);
         }
 
         false
@@ -68,9 +69,10 @@ impl Component for Diagram3D {
         self.renderer = Some(Renderer::init(ctx));
 
         if first_render {
-            let render_frame = self.link.callback(Message3D::Render);
-            let handle = RenderService::request_animation_frame(render_frame);
-            self.render_loop = Some(handle);
+            let link = self.link.clone();
+            let render_frame =
+                request_animation_frame(move |t| link.send_message(Message3D::Render(t)));
+            self.render_loop = Some(render_frame);
         }
     }
 
