@@ -5,17 +5,18 @@ pub type Monotone = Vec<usize>;
 
 #[derive(Clone, Debug, Hash, Eq, PartialEq)]
 pub struct MonotoneIterator {
-    cur: Option<Vec<usize>>,
+    cur: Option<Monotone>,
     pub strict: bool, // whether the sequences should be *strictly* monotone.
     pub constraints: Vec<Range<usize>>, // element-wise range constraints for the sequences.
 }
 
+#[allow(clippy::len_without_is_empty)]
 impl MonotoneIterator {
-    pub fn new(strict: bool, constraints: Vec<Range<usize>>) -> Self {
+    pub fn new(strict: bool, constraints: &[Range<usize>]) -> Self {
         let len = constraints.len();
 
         // We need to tighten the constraints as the iterator assumes the constraints are tight.
-        let mut tight_constraints = constraints.clone();
+        let mut tight_constraints = constraints.to_owned();
         if len > 1 {
             let mut min = tight_constraints[0].start;
             let mut max = tight_constraints[len - 1].end;
@@ -44,8 +45,9 @@ impl MonotoneIterator {
     }
 }
 
+#[allow(clippy::needless_range_loop)]
 impl Iterator for MonotoneIterator {
-    type Item = Vec<usize>;
+    type Item = Monotone;
 
     fn next(&mut self) -> Option<Self::Item> {
         match &mut self.cur {
@@ -66,7 +68,7 @@ impl Iterator for MonotoneIterator {
                 // Find the last non-maximal element.
                 let mut end = seq.len();
                 while end > 0 && seq[end - 1] == self.constraints[end - 1].end - 1 {
-                    end -= 1
+                    end -= 1;
                 }
 
                 if end == 0 {
@@ -95,6 +97,7 @@ impl Iterator for MonotoneIterator {
     }
 }
 
+#[allow(clippy::needless_range_loop)]
 impl DoubleEndedIterator for MonotoneIterator {
     fn next_back(&mut self) -> Option<Self::Item> {
         match &mut self.cur {
@@ -115,7 +118,7 @@ impl DoubleEndedIterator for MonotoneIterator {
                 // Find the first non-minimal element.
                 let mut start = 0;
                 while start < seq.len() && seq[start] == self.constraints[start].start {
-                    start += 1
+                    start += 1;
                 }
 
                 if start == seq.len() {
@@ -152,13 +155,13 @@ mod test {
 
     #[test]
     fn monotone_sequences() {
-        let iterator0_1_2 = MonotoneIterator::new(false, vec![0..2, 0..2]);
+        let iterator0_1_2 = MonotoneIterator::new(false, &[0..2, 0..2]);
         assert_eq!(iterator0_1_2.collect::<Vec<_>>(), [[0, 0], [0, 1], [1, 1]]);
 
-        let strict_iterator0_1_2 = MonotoneIterator::new(true, vec![0..2, 0..2]);
+        let strict_iterator0_1_2 = MonotoneIterator::new(true, &[0..2, 0..2]);
         assert_eq!(strict_iterator0_1_2.collect::<Vec<_>>(), [[0, 1]]);
 
-        let iterator0_3_3 = MonotoneIterator::new(false, vec![0..4, 0..4, 0..4]);
+        let iterator0_3_3 = MonotoneIterator::new(false, &[0..4, 0..4, 0..4]);
         assert_eq!(
             iterator0_3_3.collect::<Vec<_>>(),
             [
@@ -184,13 +187,13 @@ mod test {
                 [3, 3, 3],
             ]
         );
-        let strict_iterator0_3_3 = MonotoneIterator::new(true, vec![0..4, 0..4, 0..4]);
+        let strict_iterator0_3_3 = MonotoneIterator::new(true, &[0..4, 0..4, 0..4]);
         assert_eq!(
             strict_iterator0_3_3.collect::<Vec<_>>(),
             [[0, 1, 2], [0, 1, 3], [0, 2, 3], [1, 2, 3]]
         );
 
-        let iterator1_3_3 = MonotoneIterator::new(false, vec![1..4, 0..4, 1..4]);
+        let iterator1_3_3 = MonotoneIterator::new(false, &[1..4, 0..4, 1..4]);
         assert_eq!(
             iterator1_3_3.collect::<Vec<_>>(),
             [
@@ -206,11 +209,11 @@ mod test {
                 [3, 3, 3],
             ]
         );
-        let strict_iterator1_3_3 = MonotoneIterator::new(true, vec![1..4, 0..4, 1..4]);
+        let strict_iterator1_3_3 = MonotoneIterator::new(true, &[1..4, 0..4, 1..4]);
         assert_eq!(strict_iterator1_3_3.collect::<Vec<_>>(), [[1, 2, 3]]);
 
         // unsatisfiable constraints
-        let invalid_ms = MonotoneIterator::new(false, vec![1..2, 0..1]);
+        let invalid_ms = MonotoneIterator::new(false, &[1..2, 0..1]);
         assert!(invalid_ms.collect::<Vec<_>>().is_empty());
     }
 }

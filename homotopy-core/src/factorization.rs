@@ -56,7 +56,7 @@ pub fn factorize(
                 .collect();
 
             // find a particular monotone sequence which works
-            MonotoneIterator::new(false, constraints)
+            MonotoneIterator::new(false, &constraints)
                 .find_map(|h_mono| {
                     // Recurse on each monotone component
                     let mut cone_slices: Vec<Vec<Rewrite>> = vec![vec![]; t.size()];
