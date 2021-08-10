@@ -1,9 +1,9 @@
 use std::ops::Range;
 
+use crate::monotone::MonotoneIterator;
 use crate::Rewrite;
 use crate::{Diagram, Rewrite0};
 use crate::{Height, RewriteN};
-use crate::monotone::MonotoneIterator;
 use thiserror::Error;
 
 /// Given `Rewrite`s A -f> C <g- B, find some `Rewrite` A -h> B which factorises f = g ∘ h
