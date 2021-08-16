@@ -285,6 +285,14 @@ where
     }
 
     #[inline]
+    pub fn is_well_formed(&self) -> bool {
+        match self {
+            Self::Rewrite0(_) => true,
+            Self::RewriteN(r) => r.is_well_formed(),
+        }
+    }
+
+    #[inline]
     pub fn compose(&self, g: &Self) -> Result<Self, CompositionError> {
         match (self, g) {
             (Self::Rewrite0(ref f), Self::Rewrite0(ref g)) => Ok(f.compose(g)?.into()),
@@ -504,6 +512,11 @@ where
     #[inline]
     pub fn is_identity(&self) -> bool {
         self.0.cones.is_empty()
+    }
+
+    #[inline]
+    pub fn is_well_formed(&self) -> bool {
+        self.0.cones.iter().all(GenericCone::is_well_formed)
     }
 
     pub(crate) fn make_degeneracy_with_payloads(
@@ -839,6 +852,43 @@ where
             && self.internal.source.len() == 1
             && self.internal.source[0] == self.internal.target
             && self.internal.slices[0].is_identity()
+    }
+
+    pub(crate) fn is_well_formed(&self) -> bool {
+        if self.len() == 0 {
+            self.internal.target.forward == self.internal.target.backward
+        } else {
+            // Check that the squares commute.
+            let len = self.len();
+            let f = self.internal.source[0]
+                .forward
+                .compose(&self.internal.slices[0]);
+            if f.is_err() || f.unwrap() != self.internal.target.forward {
+                return false;
+            }
+            let f = self.internal.source[len - 1]
+                .backward
+                .compose(&self.internal.slices[len - 1]);
+            if f.is_err() || f.unwrap() != self.internal.target.backward {
+                return false;
+            }
+            for i in 0..len - 1 {
+                let f = self.internal.source[i]
+                    .backward
+                    .compose(&self.internal.slices[i]);
+                let g = self.internal.source[i + 1]
+                    .forward
+                    .compose(&self.internal.slices[i + 1]);
+                if f.is_err() || g.is_err() || f.unwrap() != g.unwrap() {
+                    return false;
+                }
+            }
+            // Check that the subslices are well-formed.
+            self.internal
+                .slices
+                .iter()
+                .all(GenericRewrite::is_well_formed)
+        }
     }
 
     pub(crate) fn len(&self) -> usize {

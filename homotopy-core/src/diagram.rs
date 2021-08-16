@@ -81,6 +81,13 @@ impl Diagram {
         DiagramN::new_unsafe(self.clone(), vec![])
     }
 
+    pub fn is_well_formed(&self) -> bool {
+        match self {
+            Self::Diagram0(_) => true,
+            Self::DiagramN(d) => d.is_well_formed(),
+        }
+    }
+
     pub fn embeds(&self, diagram: &Self, embedding: &[usize]) -> bool {
         use Diagram::{Diagram0, DiagramN};
         match (self, diagram) {
@@ -198,6 +205,14 @@ impl DiagramN {
     /// The dimension of the diagram, which is at least one.
     pub fn dimension(&self) -> usize {
         self.0.source.dimension() + 1
+    }
+
+    /// Checks if a diagram is well-formed by checking if all the rewrites are well-formed.
+    pub fn is_well_formed(&self) -> bool {
+        self.0
+            .cospans
+            .iter()
+            .all(|cospan| cospan.forward.is_well_formed() && cospan.backward.is_well_formed())
     }
 
     /// The source boundary of the diagram.
