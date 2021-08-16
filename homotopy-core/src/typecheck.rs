@@ -156,12 +156,19 @@ fn target_points(rewrites: &[Rewrite]) -> Vec<(Point, Generator)> {
     for rewrite in rewrites.iter() {
         let rewrite: RewriteN = rewrite.clone().try_into().unwrap();
         for target_height in rewrite.targets() {
+            let target_rewrites_at_height = target_rewrites
+                .entry(target_height)
+                .or_insert_with(Vec::new);
+
             for source_height in rewrite.singular_preimage(target_height) {
-                target_rewrites
-                    .entry(target_height)
-                    .or_insert_with(Vec::new)
-                    .push(rewrite.slice(source_height));
+                target_rewrites_at_height.push(rewrite.slice(source_height));
             }
+
+            let cone = rewrite.cone_over_target(target_height).unwrap();
+            let cone_target = &cone.internal.target;
+
+            target_rewrites_at_height.push(cone_target.forward.clone());
+            target_rewrites_at_height.push(cone_target.backward.clone());
         }
     }
 
