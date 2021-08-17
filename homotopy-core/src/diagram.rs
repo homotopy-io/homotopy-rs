@@ -81,10 +81,10 @@ impl Diagram {
         DiagramN::new_unsafe(self.clone(), vec![])
     }
 
-    pub fn is_well_formed(&self) -> bool {
+    pub fn check_well_formed(&self) {
         match self {
-            Self::Diagram0(_) => true,
-            Self::DiagramN(d) => d.is_well_formed(),
+            Self::Diagram0(_) => (),
+            Self::DiagramN(d) => d.check_well_formed(),
         }
     }
 
@@ -111,9 +111,12 @@ impl Diagram {
     pub(crate) fn rewrite_forward(self, rewrite: &Rewrite) -> Self {
         use Diagram::{Diagram0, DiagramN};
         match self {
-            Diagram0(_) => match &rewrite {
-                Rewrite::Rewrite0(r) => match r.target() {
-                    Some(target) => Diagram0(target),
+            Diagram0(g) => match &rewrite {
+                Rewrite::Rewrite0(r) => match r.0 {
+                    Some((source, target)) => {
+                        assert_eq!(g, source);
+                        Diagram0(target)
+                    }
                     None => self,
                 },
                 Rewrite::RewriteN(_) => panic!(),
@@ -128,9 +131,12 @@ impl Diagram {
     pub(crate) fn rewrite_backward(self, rewrite: &Rewrite) -> Self {
         use Diagram::{Diagram0, DiagramN};
         match self {
-            Diagram0(_) => match &rewrite {
-                Rewrite::Rewrite0(r) => match r.source() {
-                    Some(source) => Diagram0(source),
+            Diagram0(g) => match &rewrite {
+                Rewrite::Rewrite0(r) => match r.0 {
+                    Some((source, target)) => {
+                        assert_eq!(g, target);
+                        Diagram0(source)
+                    }
                     None => self,
                 },
                 Rewrite::RewriteN(_) => panic!(),
@@ -207,12 +213,22 @@ impl DiagramN {
         self.0.source.dimension() + 1
     }
 
-    /// Checks if a diagram is well-formed by checking if all the rewrites are well-formed.
-    pub fn is_well_formed(&self) -> bool {
-        self.0
-            .cospans
-            .iter()
-            .all(|cospan| cospan.forward.is_well_formed() && cospan.backward.is_well_formed())
+    pub fn check_well_formed(&self) {
+        let mut regular = self.0.source.clone();
+
+        regular.check_well_formed();
+
+        for cospan in &self.0.cospans {
+            cospan.forward.check_well_formed();
+
+            let singular = regular.rewrite_forward(&cospan.forward);
+            singular.check_well_formed();
+
+            cospan.backward.check_well_formed();
+
+            regular = singular.rewrite_backward(&cospan.backward);
+            regular.check_well_formed();
+        }
     }
 
     /// The source boundary of the diagram.
