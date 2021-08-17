@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1629119952022,
+  "lastUpdate": 1629207067761,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -5519,6 +5519,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 91.627,
             "range": "+/- 2.167",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a08a5dc116585b2f22923a1e89706e47a22d7704",
+          "message": "Merge pull request #146 from homotopy-io/monotone\n\nFix monotone sequences iterator",
+          "timestamp": "2021-08-17T14:22:15+01:00",
+          "tree_id": "6f348255af7ea7ae72f09c9688dad7c515d2306b",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/a08a5dc116585b2f22923a1e89706e47a22d7704"
+        },
+        "date": 1629207064965,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 57.264,
+            "range": "+/- 0.042",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 58.379,
+            "range": "+/- 0.040",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 83.351,
+            "range": "+/- 0.034",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 99.395,
+            "range": "+/- 0.059",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 124.41,
+            "range": "+/- 0.060",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 173.27,
+            "range": "+/- 0.050",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 72.38,
+            "range": "+/- 0.053",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 490.02,
+            "range": "+/- 0.190",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 1.9164,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 5.8975,
+            "range": "+/- 0.002",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 15.867,
+            "range": "+/- 0.008",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 40.663,
+            "range": "+/- 0.105",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 107.88,
+            "range": "+/- 0.580",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 309.13,
+            "range": "+/- 1.270",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 58.435,
+            "range": "+/- 0.033",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 84.581,
+            "range": "+/- 0.048",
             "unit": "us"
           }
         ]
