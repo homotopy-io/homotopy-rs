@@ -76,8 +76,8 @@ where
             let mut source = diagram.source();
 
             for cospan in cospans.iter().rev() {
-                source = source.rewrite_forward(&cospan.backward);
-                source = source.rewrite_backward(&cospan.forward);
+                source = source.rewrite_forward(&cospan.backward).unwrap();
+                source = source.rewrite_backward(&cospan.forward).unwrap();
             }
 
             let offset = cospans.len();

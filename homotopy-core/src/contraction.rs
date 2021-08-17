@@ -85,7 +85,7 @@ impl DiagramN {
         attach(self, boundary_path, |slice| {
             let slice = slice.try_into().map_err(|_d| ContractionError::Invalid)?;
             let contract = contract_in_path(&slice, interior_path, height, bias)?;
-            let singular = slice.clone().rewrite_forward(&contract);
+            let singular = slice.clone().rewrite_forward(&contract).unwrap();
             let normalize = normalization::normalize_singular(&singular.into());
 
             let cospan = match boundary_path.boundary() {

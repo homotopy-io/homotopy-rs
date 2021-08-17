@@ -328,7 +328,7 @@ fn expand_recursive(
             target_cospan.forward.clone(),
             recursive.clone(),
             diagram.slice(Height::Regular(height)).unwrap(),
-            slice.clone().rewrite_backward(&recursive),
+            slice.clone().rewrite_backward(&recursive).unwrap(),
         )
         .ok()?;
 
@@ -336,7 +336,7 @@ fn expand_recursive(
             target_cospan.backward.clone(),
             recursive.clone(),
             diagram.slice(Height::Regular(height + 1)).unwrap(),
-            slice.clone().rewrite_backward(&recursive),
+            slice.clone().rewrite_backward(&recursive).unwrap(),
         )
         .ok()?;
 
@@ -350,7 +350,10 @@ fn expand_recursive(
             )],
         );
 
-        let expansion_preimage = diagram.clone().rewrite_backward(&expansion_rewrite);
+        let expansion_preimage = diagram
+            .clone()
+            .rewrite_backward(&expansion_rewrite)
+            .unwrap();
         let normalization_rewrite = normalize_singular(&expansion_preimage.into());
 
         Some(
