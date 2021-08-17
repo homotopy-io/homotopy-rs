@@ -81,10 +81,10 @@ impl Diagram {
         DiagramN::new_unsafe(self.clone(), vec![])
     }
 
-    pub fn check_well_formed(&self) {
+    pub fn is_well_formed(&self) -> bool {
         match self {
-            Self::Diagram0(_) => (),
-            Self::DiagramN(d) => d.check_well_formed(),
+            Self::Diagram0(_) => true,
+            Self::DiagramN(d) => d.is_well_formed(),
         }
     }
 
@@ -219,22 +219,41 @@ impl DiagramN {
         self.0.source.dimension() + 1
     }
 
-    pub fn check_well_formed(&self) {
-        let mut regular = self.0.source.clone();
+    pub fn is_well_formed(&self) -> bool {
+        let mut slice = self.0.source.clone();
 
-        regular.check_well_formed();
+        // Check that the source slice is well-formed.
+        if !slice.is_well_formed() {
+            return false;
+        }
 
         for cospan in &self.0.cospans {
-            cospan.forward.check_well_formed();
+            // Check that the forward rewrite is well-formed.
+            if !cospan.forward.is_well_formed() {
+                return false;
+            }
 
-            let singular = regular.rewrite_forward(&cospan.forward);
-            singular.check_well_formed();
+            // Check that the forward rewrite is compatible with the regular slice.
+            slice = match slice.rewrite_forward(&cospan.forward) {
+                Ok(f) => f,
+                Err(_e) => return false,
+            };
 
-            cospan.backward.check_well_formed();
+            slice.is_well_formed();
 
-            regular = singular.rewrite_backward(&cospan.backward);
-            regular.check_well_formed();
+            // Check that the backward rewrite is well-formed.
+            cospan.backward.is_well_formed();
+
+            // Check that the backward rewrite is compatible with the singular slice.
+            slice = match slice.rewrite_backward(&cospan.backward) {
+                Ok(f) => f,
+                Err(_e) => return false,
+            };
+
+            slice.is_well_formed();
         }
+
+        true
     }
 
     /// The source boundary of the diagram.

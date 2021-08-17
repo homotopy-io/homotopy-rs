@@ -285,10 +285,10 @@ where
     }
 
     #[inline]
-    pub fn check_well_formed(&self) {
+    pub fn is_well_formed(&self) -> bool {
         match self {
-            Self::Rewrite0(_) => (),
-            Self::RewriteN(r) => r.check_well_formed(),
+            Self::Rewrite0(_) => true,
+            Self::RewriteN(r) => r.is_well_formed(),
         }
     }
 
@@ -515,8 +515,8 @@ where
     }
 
     #[inline]
-    pub fn check_well_formed(&self) {
-        self.0.cones.iter().for_each(GenericCone::check_well_formed);
+    pub fn is_well_formed(&self) -> bool {
+        self.0.cones.iter().all(GenericCone::is_well_formed)
     }
 
     pub(crate) fn make_degeneracy_with_payloads(
@@ -854,9 +854,9 @@ where
             && self.internal.slices[0].is_identity()
     }
 
-    pub(crate) fn check_well_formed(&self) {
+    pub(crate) fn is_well_formed(&self) -> bool {
         if self.len() == 0 {
-            assert_eq!(self.internal.target.forward, self.internal.target.backward);
+            self.internal.target.forward == self.internal.target.backward
         } else {
             // Check that the squares commute.
             let len = self.len();
@@ -864,14 +864,16 @@ where
             let f = self.internal.source[0]
                 .forward
                 .compose(&self.internal.slices[0]);
-            assert!(f.is_ok());
-            assert_eq!(f.unwrap(), self.internal.target.forward);
+            if f.is_err() || f.unwrap() != self.internal.target.forward {
+                return false;
+            }
 
             let f = self.internal.source[len - 1]
                 .backward
                 .compose(&self.internal.slices[len - 1]);
-            assert!(f.is_ok());
-            assert_eq!(f.unwrap(), self.internal.target.backward);
+            if f.is_err() || f.unwrap() != self.internal.target.backward {
+                return false;
+            }
 
             for i in 0..len - 1 {
                 let f = self.internal.source[i]
@@ -880,16 +882,16 @@ where
                 let g = self.internal.source[i + 1]
                     .forward
                     .compose(&self.internal.slices[i + 1]);
-                assert!(f.is_ok());
-                assert!(g.is_ok());
-                assert_eq!(f.unwrap(), g.unwrap());
+                if f.is_err() || g.is_err() || f.unwrap() != g.unwrap() {
+                    return false;
+                }
             }
 
             // Check that the subslices are well-formed.
             self.internal
                 .slices
                 .iter()
-                .for_each(GenericRewrite::check_well_formed);
+                .all(GenericRewrite::is_well_formed)
         }
     }
 
