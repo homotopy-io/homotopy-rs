@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1629307699983,
+  "lastUpdate": 1629312318276,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -5999,6 +5999,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 98.288,
             "range": "+/- 1.491",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "me@nathancorbyn.com",
+            "name": "Nathan Corbyn",
+            "username": "doctorn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0e1b47279ab36fd6b6ec55659d2717f9584104e2",
+          "message": "Add WebGL wrapper to `homotopy-graphics` (#152)\n\n* Stage changes\r\n\r\n* Add render pipeline outline\r\n\r\n* Add test renderer\r\n\r\n* Switch buffering to `euclid`\r\n\r\n* Stage changes\r\n\r\n* Switch to new view of buffers\r\n\r\n* Draw a triangle again\r\n\r\n* Move code into `homotopy_graphics`\r\n\r\n* `Rc` everything important\r\n\r\n* Attributes, uniforms & elements\r\n\r\n* Spinning rabbit\r\n\r\n* Move `tree` into `homotopy-core`\r\n\r\n* Move `tree` into `homotopy-core`\r\n\r\n* Projection\r\n\r\n* Remove use of `yew::services`\r\n\r\n* Remove `bunny.obj`",
+          "timestamp": "2021-08-18T19:35:17+01:00",
+          "tree_id": "5e0affb2fb8ccb677206e2cd36e51414527aafa4",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/0e1b47279ab36fd6b6ec55659d2717f9584104e2"
+        },
+        "date": 1629312314111,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 57.282,
+            "range": "+/- 0.038",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 58.615,
+            "range": "+/- 0.087",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 83.556,
+            "range": "+/- 0.098",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 98.64,
+            "range": "+/- 0.036",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 123.41,
+            "range": "+/- 0.040",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 175.29,
+            "range": "+/- 0.050",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 72.575,
+            "range": "+/- 0.028",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 490.81,
+            "range": "+/- 0.250",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 1.925,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 5.8977,
+            "range": "+/- 0.002",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 15.849,
+            "range": "+/- 0.007",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 39.836,
+            "range": "+/- 0.164",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 104.65,
+            "range": "+/- 0.280",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 299.74,
+            "range": "+/- 1.080",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 58.091,
+            "range": "+/- 0.045",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 83.947,
+            "range": "+/- 0.042",
             "unit": "us"
           }
         ]
