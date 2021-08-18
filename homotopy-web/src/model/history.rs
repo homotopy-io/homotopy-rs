@@ -142,15 +142,15 @@ impl History {
         let existing = self.with_proof_internal(|n| {
             n.children().find(|id| {
                 self.snapshots
-                    .with(*id, |n| n.inner().action.as_ref() == Some(&action))
+                    .with(*id, |n| n.action.as_ref() == Some(&action))
             })
         });
 
         if let Some(child) = existing {
             // update timestamp and ensure the action was deterministic
             self.snapshots.with_mut(child, |n| {
-                assert_eq!(proof.inner().proof, n.inner().proof);
-                n.inner_mut().touch();
+                assert_eq!(proof.proof, n.proof);
+                n.touch();
             });
             self.current = child;
         } else if action.relevant() {

@@ -46,13 +46,11 @@ impl Component for SettingsView {
 
     fn view(&self) -> Html {
         html! {
-            <>
-                <input
-                    type="checkbox"
-                    checked={*self.local.get_example_toggle()}
-                    onclick={self.link.callback(|_| SettingsMsg::Click)}
-                />
-            </>
+            <input
+                type="checkbox"
+                checked={*self.local.get_example_toggle()}
+                onclick={self.link.callback(|_| SettingsMsg::Click)}
+            />
         }
     }
 

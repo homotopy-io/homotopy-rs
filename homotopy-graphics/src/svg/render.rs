@@ -1,18 +1,22 @@
-use crate::geometry::{Circle, Fill, Point, Shape, Stroke};
-use crate::layout2d::Layout;
+use std::cmp::Ordering;
+use std::collections::HashMap;
+use std::hash::Hash;
+
 use euclid::default::Transform2D;
+
+use lyon_path::Path;
+use petgraph::unionfind::UnionFind;
+use seahash::SeaHasher;
+
 use homotopy_core::complex::Simplex;
 use homotopy_core::projection::Generators;
 use homotopy_core::{
     common::{Generator, Height, SliceIndex},
     projection::Depths,
 };
-use lyon_path::Path;
-use petgraph::unionfind::UnionFind;
-use seahash::SeaHasher;
-use std::cmp::Ordering;
-use std::collections::HashMap;
-use std::hash::Hash;
+
+use crate::svg::geom::{Circle, Fill, Point, Shape, Stroke};
+use crate::svg::layout::Layout;
 
 type Coordinate = (SliceIndex, SliceIndex);
 

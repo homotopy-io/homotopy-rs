@@ -1,5 +1,5 @@
 use homotopy_core::*;
-use homotopy_graphics::layout2d::*;
+use homotopy_graphics::svg::layout::*;
 use insta::*;
 
 #[test]

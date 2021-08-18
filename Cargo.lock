@@ -646,6 +646,7 @@ dependencies = [
  "euclid",
  "homotopy-core",
  "insta",
+ "js-sys",
  "log",
  "lyon_algorithms",
  "lyon_geom",
@@ -655,6 +656,9 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+ "wasm-bindgen",
+ "web-sys",
+ "yew",
 ]
 
 [[package]]

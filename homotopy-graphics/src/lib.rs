@@ -9,7 +9,6 @@
     clippy::let_underscore_must_use,
     clippy::map_err_ignore,
     clippy::mem_forget,
-    clippy::multiple_inherent_impl,
     clippy::print_stderr,
     clippy::print_stdout,
     clippy::rc_buffer,
@@ -42,6 +41,5 @@
     clippy::too_many_lines,
 )]
 
-pub mod geometry;
-pub mod graphic2d;
-pub mod layout2d;
+pub mod gl;
+pub mod svg;
