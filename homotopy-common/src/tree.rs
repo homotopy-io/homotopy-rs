@@ -1,11 +1,14 @@
-use homotopy_core::declare_idx;
-use homotopy_core::idx::IdxVec;
+use std::ops::{Deref, DerefMut, Index};
+
+use crate::declare_idx;
+use crate::idx::IdxVec;
 
 declare_idx! {
+    #[derive(serde::Serialize, serde::Deserialize)]
     pub struct Node = usize;
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub struct NodeData<T> {
     data: T,
     children: Vec<Node>,
@@ -60,6 +63,31 @@ impl<T> NodeData<T> {
     }
 }
 
+impl<T> Deref for NodeData<T> {
+    type Target = T;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        self.inner()
+    }
+}
+
+impl<T> DerefMut for NodeData<T> {
+    #[inline]
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.inner_mut()
+    }
+}
+
+impl<T> Index<usize> for NodeData<T> {
+    type Output = Node;
+
+    #[inline]
+    fn index(&self, idx: usize) -> &Self::Output {
+        &self.children[idx]
+    }
+}
+
 impl<T> Tree<T> {
     #[inline]
     pub fn with<F, U>(&self, node: Node, f: F) -> U
@@ -77,6 +105,7 @@ impl<T> Tree<T> {
         f(&mut self.nodes[node])
     }
 
+    #[inline]
     pub fn push_onto(&mut self, node: Node, t: T) -> Node {
         let id = self.nodes.push(NodeData {
             data: t,
@@ -97,6 +126,7 @@ impl<T> Default for Tree<T>
 where
     T: Default,
 {
+    #[inline]
     fn default() -> Self {
         let mut nodes = IdxVec::new();
         let root = nodes.push(Default::default());

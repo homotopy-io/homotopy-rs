@@ -27,6 +27,7 @@
 #![allow( // pedantic is too annoying
     clippy::cast_possible_truncation,
     clippy::cast_possible_wrap,
+    clippy::cast_precision_loss,
     clippy::cast_sign_loss,
     clippy::default_trait_access,
     clippy::doc_markdown,
@@ -39,36 +40,8 @@
     clippy::redundant_else,
     clippy::similar_names,
     clippy::too_many_lines,
-    clippy::multiple_inherent_impl,
-    clippy::shadow_unrelated,
-    clippy::match_on_vec_items,
 )]
 
-pub mod attach;
-pub mod common;
-pub mod complex;
-pub mod contraction;
-pub mod diagram;
-pub mod examples;
-pub mod expansion;
-pub mod factorization;
-pub mod graph;
-pub mod monotone;
-pub mod normalization;
-pub mod projection;
-pub mod rewrite;
-pub mod serialize;
-pub mod signature;
-pub mod typecheck;
-mod util;
-
-pub use common::{Boundary, Direction, Generator, Height, SliceIndex};
-pub use contraction::Bias;
-pub use diagram::{Diagram, DiagramN};
-pub use rewrite::{Cospan, Rewrite, Rewrite0, RewriteN};
-
-pub fn collect_garbage() {
-    DiagramN::collect_garbage();
-    RewriteN::collect_garbage();
-    rewrite::Cone::collect_garbage();
-}
+pub mod dense;
+pub mod idx;
+pub mod tree;

@@ -13,27 +13,36 @@ pub trait Idx: 'static + Copy + Eq + Hash + fmt::Debug {
 
 #[macro_export]
 macro_rules! declare_idx {
-    ($vis:vis struct $name:ident = $ty:ident;) => {
-        #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
-        $vis struct $name($ty);
+    (
+        $(
+            $(#[$attrib:meta])*
+            $vis:vis struct $name:ident = $ty:ident;
+        )*
+    ) => {
+        $(
+            $(#[$attrib])*
+            #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+            $vis struct $name($ty);
 
-        impl $crate::idx::Idx for $name {
-            #[inline(always)]
-            fn index(&self) -> usize {
-                self.0.into()
-            }
+            impl $crate::idx::Idx for $name {
+                #[inline(always)]
+                fn index(&self) -> usize {
+                    self.0 as usize
+                }
 
-            #[inline(always)]
-            fn new(index: usize) -> Self {
-                $name($ty::from(index))
+                #[inline(always)]
+                fn new(index: usize) -> Self {
+                    $name(index as $ty)
+                }
             }
-        }
+        )*
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct IdxVec<I, T> {
     raw: Vec<T>,
+    #[serde(skip_serializing, skip_deserializing)]
     _phantom: PhantomData<fn(&I)>,
 }
 
@@ -62,6 +71,11 @@ where
         let index = self.raw.len();
         self.raw.push(elem);
         I::new(index)
+    }
+
+    #[inline]
+    pub fn pop(&mut self) -> Option<T> {
+        self.raw.pop()
     }
 
     #[inline]
@@ -149,6 +163,7 @@ impl<I, T> FromIterator<T> for IdxVec<I, T>
 where
     I: Idx,
 {
+    #[inline]
     fn from_iter<U: IntoIterator<Item = T>>(iter: U) -> Self {
         let mut idx_vec = Self::new();
         for t in iter {
@@ -170,6 +185,7 @@ where
 {
     type Item = (I, T);
 
+    #[inline]
     fn next(&mut self) -> Option<(I, T)> {
         let next = (I::new(self.next_idx), self.iter.next()?);
         self.next_idx += 1;
@@ -184,6 +200,7 @@ where
     type Item = (I, T);
     type IntoIter = IdxVecIterator<I, T>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         IdxVecIterator {
             next_idx: 0,
@@ -201,6 +218,7 @@ where
 {
     type Output = T;
 
+    #[inline]
     fn index(&self, index: I) -> &Self::Output {
         &self.raw[index.index()]
     }
@@ -210,6 +228,7 @@ impl<I, T> IndexMut<I> for IdxVec<I, T>
 where
     I: Idx,
 {
+    #[inline]
     fn index_mut(&mut self, index: I) -> &mut Self::Output {
         &mut self.raw[index.index()]
     }
