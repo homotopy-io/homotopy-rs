@@ -117,7 +117,9 @@ where
     let source = match boundary {
         Boundary::Source => slice
             .rewrite_forward(&cospan.backward)
-            .rewrite_backward(&cospan.forward),
+            .unwrap()
+            .rewrite_backward(&cospan.forward)
+            .unwrap(),
         Boundary::Target => slice,
     };
 

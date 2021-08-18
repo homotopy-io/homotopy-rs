@@ -81,6 +81,13 @@ impl Diagram {
         DiagramN::new_unsafe(self.clone(), vec![])
     }
 
+    pub fn is_well_formed(&self) -> bool {
+        match self {
+            Self::Diagram0(_) => true,
+            Self::DiagramN(d) => d.is_well_formed(),
+        }
+    }
+
     pub fn embeds(&self, diagram: &Self, embedding: &[usize]) -> bool {
         use Diagram::{Diagram0, DiagramN};
         match (self, diagram) {
@@ -101,36 +108,48 @@ impl Diagram {
         }
     }
 
-    pub(crate) fn rewrite_forward(self, rewrite: &Rewrite) -> Self {
+    pub(crate) fn rewrite_forward(self, rewrite: &Rewrite) -> Result<Self, RewritingError> {
         use Diagram::{Diagram0, DiagramN};
         match self {
-            Diagram0(_) => match &rewrite {
-                Rewrite::Rewrite0(r) => match r.target() {
-                    Some(target) => Diagram0(target),
-                    None => self,
+            Diagram0(g) => match &rewrite {
+                Rewrite::Rewrite0(r) => match r.0 {
+                    None => Ok(self),
+                    Some((source, target)) => {
+                        if g == source {
+                            Ok(Diagram0(target))
+                        } else {
+                            Err(RewritingError::Incompatible)
+                        }
+                    }
                 },
-                Rewrite::RewriteN(_) => panic!(),
+                Rewrite::RewriteN(r) => Err(RewritingError::Dimension(0, r.dimension())),
             },
             DiagramN(d) => match &rewrite {
-                Rewrite::Rewrite0(_) => panic!(),
-                Rewrite::RewriteN(r) => DiagramN(d.rewrite_forward(r)),
+                Rewrite::Rewrite0(_) => Err(RewritingError::Dimension(d.dimension(), 0)),
+                Rewrite::RewriteN(r) => d.rewrite_forward(r).map(DiagramN),
             },
         }
     }
 
-    pub(crate) fn rewrite_backward(self, rewrite: &Rewrite) -> Self {
+    pub(crate) fn rewrite_backward(self, rewrite: &Rewrite) -> Result<Self, RewritingError> {
         use Diagram::{Diagram0, DiagramN};
         match self {
-            Diagram0(_) => match &rewrite {
-                Rewrite::Rewrite0(r) => match r.source() {
-                    Some(source) => Diagram0(source),
-                    None => self,
+            Diagram0(g) => match &rewrite {
+                Rewrite::Rewrite0(r) => match r.0 {
+                    None => Ok(self),
+                    Some((source, target)) => {
+                        if g == target {
+                            Ok(Diagram0(source))
+                        } else {
+                            Err(RewritingError::Incompatible)
+                        }
+                    }
                 },
-                Rewrite::RewriteN(_) => panic!(),
+                Rewrite::RewriteN(r) => Err(RewritingError::Dimension(0, r.dimension())),
             },
             DiagramN(d) => match &rewrite {
-                Rewrite::Rewrite0(_) => panic!(),
-                Rewrite::RewriteN(r) => DiagramN(d.rewrite_backward(r)),
+                Rewrite::Rewrite0(_) => Err(RewritingError::Dimension(d.dimension(), 0)),
+                Rewrite::RewriteN(r) => d.rewrite_backward(r).map(DiagramN),
             },
         }
     }
@@ -200,6 +219,43 @@ impl DiagramN {
         self.0.source.dimension() + 1
     }
 
+    pub fn is_well_formed(&self) -> bool {
+        let mut slice = self.0.source.clone();
+
+        // Check that the source slice is well-formed.
+        if !slice.is_well_formed() {
+            return false;
+        }
+
+        for cospan in &self.0.cospans {
+            // Check that the forward rewrite is well-formed.
+            if !cospan.forward.is_well_formed() {
+                return false;
+            }
+
+            // Check that the forward rewrite is compatible with the regular slice.
+            slice = match slice.rewrite_forward(&cospan.forward) {
+                Ok(f) => f,
+                Err(_e) => return false,
+            };
+
+            slice.is_well_formed();
+
+            // Check that the backward rewrite is well-formed.
+            cospan.backward.is_well_formed();
+
+            // Check that the backward rewrite is compatible with the singular slice.
+            slice = match slice.rewrite_backward(&cospan.backward) {
+                Ok(f) => f,
+                Err(_e) => return false,
+            };
+
+            slice.is_well_formed();
+        }
+
+        true
+    }
+
     /// The source boundary of the diagram.
     pub fn source(&self) -> Diagram {
         self.0.source.clone()
@@ -212,8 +268,8 @@ impl DiagramN {
         let mut slice = self.0.source.clone();
 
         for cospan in &self.0.cospans {
-            slice = slice.rewrite_forward(&cospan.forward);
-            slice = slice.rewrite_backward(&cospan.backward);
+            slice = slice.rewrite_forward(&cospan.forward).unwrap();
+            slice = slice.rewrite_backward(&cospan.backward).unwrap();
         }
 
         slice
@@ -229,9 +285,9 @@ impl DiagramN {
         let mut slices = Vec::new();
 
         for cospan in &self.0.cospans {
-            let singular = regular.rewrite_forward(&cospan.forward);
+            let singular = regular.rewrite_forward(&cospan.forward).unwrap();
             slices.push(singular.clone());
-            regular = singular.rewrite_backward(&cospan.backward);
+            regular = singular.rewrite_backward(&cospan.backward).unwrap();
         }
 
         slices
@@ -253,32 +309,50 @@ impl DiagramN {
         }
     }
 
-    pub(crate) fn rewrite_forward(self, rewrite: &RewriteN) -> Self {
+    pub(crate) fn rewrite_forward(self, rewrite: &RewriteN) -> Result<Self, RewritingError> {
+        if self.dimension() != rewrite.dimension() {
+            return Err(RewritingError::Dimension(
+                self.dimension(),
+                rewrite.dimension(),
+            ));
+        }
+
         let mut cospans = self.cospans().to_vec();
         let mut offset: isize = 0;
 
         for cone in rewrite.cones() {
             let start = (cone.index as isize + offset) as usize;
             let stop = (cone.index as isize + cone.len() as isize + offset) as usize;
-            assert_eq!(&cospans[start..stop], &cone.internal.source);
+            if cospans[start..stop] != cone.internal.source {
+                return Err(RewritingError::Incompatible);
+            }
             cospans.splice(start..stop, std::iter::once(cone.internal.target.clone()));
             offset -= cone.len() as isize - 1;
         }
 
-        Self::new_unsafe(self.source(), cospans)
+        Ok(Self::new_unsafe(self.source(), cospans))
     }
 
-    pub(crate) fn rewrite_backward(self, rewrite: &RewriteN) -> Self {
+    pub(crate) fn rewrite_backward(self, rewrite: &RewriteN) -> Result<Self, RewritingError> {
+        if self.dimension() != rewrite.dimension() {
+            return Err(RewritingError::Dimension(
+                self.dimension(),
+                rewrite.dimension(),
+            ));
+        }
+
         let mut cospans = self.cospans().to_vec();
 
         for cone in rewrite.cones() {
             let start = cone.index;
             let stop = cone.index + 1;
-            assert_eq!(&cospans[start], &cone.internal.target);
+            if cospans[start] != cone.internal.target {
+                return Err(RewritingError::Incompatible);
+            }
             cospans.splice(start..stop, cone.internal.source.iter().cloned());
         }
 
-        Self::new_unsafe(self.source(), cospans)
+        Ok(Self::new_unsafe(self.source(), cospans))
     }
 
     pub fn cospans(&self) -> &[Cospan] {
@@ -521,12 +595,12 @@ impl Iterator for Slices {
             Direction::Forward => {
                 let cospan = self.cospans.last().unwrap();
                 self.direction = Direction::Backward;
-                current.clone().rewrite_forward(&cospan.forward)
+                current.clone().rewrite_forward(&cospan.forward).unwrap()
             }
             Direction::Backward => {
                 let cospan = self.cospans.pop().unwrap();
                 self.direction = Direction::Forward;
-                current.clone().rewrite_backward(&cospan.backward)
+                current.clone().rewrite_backward(&cospan.backward).unwrap()
             }
         };
 
@@ -580,6 +654,15 @@ pub enum AttachmentError {
     Dimension(usize, usize),
 
     #[error("failed to attach incompatible diagrams")]
+    Incompatible,
+}
+
+#[derive(Debug, Error)]
+pub enum RewritingError {
+    #[error("can't rewrite diagram of dimension {0} along a rewrite of dimension {1}")]
+    Dimension(usize, usize),
+
+    #[error("failed to rewrite along incompatible rewrite")]
     Incompatible,
 }
 
