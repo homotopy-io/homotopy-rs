@@ -70,7 +70,7 @@ impl VertexArray {
         self.elements.as_ref()
     }
 
-    #[inline(always)]
+    #[inline]
     pub(super) fn bind<F, U>(&self, f: F) -> U
     where
         F: FnOnce() -> U,
@@ -120,7 +120,7 @@ impl VertexArray {
         // no-op unless the array is uninitialised)
         self.len = src.len();
         // hold a reference to the source data to stop it being dropped
-        self.attributes.insert(attribute, src.into_untyped());
+        self.attributes.insert(attribute, src.as_untyped());
 
         self
     }

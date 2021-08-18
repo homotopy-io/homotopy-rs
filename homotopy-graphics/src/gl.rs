@@ -41,10 +41,13 @@ pub struct GlCtx {
 }
 
 impl GlCtx {
-    pub fn attach(node_ref: NodeRef) -> Result<Self> {
-        let canvas = node_ref.cast::<HtmlCanvasElement>().ok_or_else(|| {
-            GlError::Attachment("supplied node ref does not point to a canvas element")
-        })?;
+    #[allow(clippy::map_err_ignore)]
+    pub fn attach(node_ref: &NodeRef) -> Result<Self> {
+        let canvas = node_ref
+            .cast::<HtmlCanvasElement>()
+            .ok_or(GlError::Attachment(
+                "supplied node ref does not point to a canvas element",
+            ))?;
 
         let webgl_ctx = if let Ok(Some(obj)) = canvas.get_context("webgl2") {
             obj.dyn_into::<WebGl2RenderingContext>().map_err(|_| {

@@ -35,13 +35,13 @@ pub enum BufferUsage {
 
 impl Default for BufferKind {
     fn default() -> Self {
-        BufferKind::Array
+        Self::Array
     }
 }
 
 impl Default for BufferUsage {
     fn default() -> Self {
-        BufferUsage::StaticDraw
+        Self::StaticDraw
     }
 }
 
@@ -65,7 +65,7 @@ pub struct Buffer<T> {
 pub type ElementBuffer = Buffer<u16>;
 
 impl UntypedBuffer {
-    #[inline(always)]
+    #[inline]
     pub(super) fn bind<F, U>(&self, f: F) -> U
     where
         F: FnOnce() -> U,
@@ -100,6 +100,9 @@ impl GlCtx {
         Ok(buffer)
     }
 
+    /// # Safety
+    ///
+    /// Assumes that when buffered `data` will have length `len`.
     pub unsafe fn mk_buffer_with_kind_and_usage_unchecked<T, U>(
         &self,
         kind: BufferKind,
@@ -123,6 +126,9 @@ impl GlCtx {
         self.mk_buffer_with_kind_and_usage(Default::default(), Default::default(), data)
     }
 
+    /// # Safety
+    ///
+    /// Assumes that when buffered `data` will have length `len`.
     #[inline]
     pub unsafe fn mk_buffer_unchecked<T, U>(&self, data: &[U], len: usize) -> Result<Buffer<T>>
     where
@@ -154,6 +160,9 @@ where
 }
 
 impl<T> Buffer<T> {
+    /// # Safety
+    ///
+    /// Assumes that when buffered `data` will have length `self.len()`.
     #[inline]
     pub unsafe fn buffer_unchecked<U>(&mut self, data: &[U])
     where
@@ -174,7 +183,7 @@ impl<T> Buffer<T> {
             webgl_buffer,
         };
 
-        let buffer = Buffer {
+        let buffer = Self {
             buffer: Rc::new(untyped_buffer),
             _phantom: Default::default(),
         };
@@ -188,11 +197,16 @@ impl<T> Buffer<T> {
     }
 
     #[inline]
-    pub(super) fn into_untyped(&self) -> Rc<UntypedBuffer> {
+    pub fn is_empty(&self) -> bool {
+        self.buffer.len == 0
+    }
+
+    #[inline]
+    pub(super) fn as_untyped(&self) -> Rc<UntypedBuffer> {
         Rc::clone(&self.buffer)
     }
 
-    #[inline(always)]
+    #[inline]
     pub(super) fn bind<F, U>(&self, f: F) -> U
     where
         F: FnOnce() -> U,
@@ -202,6 +216,9 @@ impl<T> Buffer<T> {
 }
 
 pub unsafe trait UnsafeBufferable: Sized {
+    /// # Safety
+    ///
+    /// Assumes that when buffered `data` will have length `buffer.len()`.
     unsafe fn buffer_to_unchecked<T>(buffer: &mut Buffer<T>, data: &[Self]);
 }
 
@@ -210,7 +227,7 @@ pub trait Bufferable: Sized {
 }
 
 unsafe impl UnsafeBufferable for f32 {
-    unsafe fn buffer_to_unchecked<T>(buffer: &mut Buffer<T>, data: &[f32]) {
+    unsafe fn buffer_to_unchecked<T>(buffer: &mut Buffer<T>, data: &[Self]) {
         buffer.bind(|| {
             let view = js_sys::Float32Array::view(data);
             // NOTE no memory can be allocated here or `view` will be invalidated
@@ -224,7 +241,7 @@ unsafe impl UnsafeBufferable for f32 {
 }
 
 unsafe impl UnsafeBufferable for u16 {
-    unsafe fn buffer_to_unchecked<T>(buffer: &mut Buffer<T>, data: &[u16]) {
+    unsafe fn buffer_to_unchecked<T>(buffer: &mut Buffer<T>, data: &[Self]) {
         buffer.bind(|| {
             let view = js_sys::Uint16Array::view(data);
             // NOTE no memory can be allocated here or `view` will be invalidated
@@ -242,7 +259,7 @@ impl Bufferable for f32 {
         assert_eq!(buffer.len(), data.len());
         // SAFETY the unchecked `impl` does precisely what we would have done here
         unsafe {
-            f32::buffer_to_unchecked(buffer, data);
+            Self::buffer_to_unchecked(buffer, data);
         }
     }
 }
@@ -252,7 +269,7 @@ impl Bufferable for u16 {
         assert_eq!(buffer.len(), data.len());
         // SAFETY the unchecked `impl` does precisely what we would have done here
         unsafe {
-            u16::buffer_to_unchecked(buffer, data);
+            Self::buffer_to_unchecked(buffer, data);
         }
     }
 }
@@ -266,7 +283,7 @@ where
         // SAFETY we can always view a slice of `Vector2D`s as a slice of `T`s as `Vector2D` is
         // `#[repr(c)]`
         unsafe {
-            let t_slice = slice::from_raw_parts(data.as_ptr() as *const T, data.len() * 2);
+            let t_slice = slice::from_raw_parts(data.as_ptr().cast::<T>(), data.len() * 2);
             T::buffer_to_unchecked(buffer, t_slice);
         }
     }
@@ -281,7 +298,7 @@ where
         // SAFETY we can always view a slice of `Vector3D`s as a slice of `T`s as `Vector3D` is
         // `#[repr(c)]`
         unsafe {
-            let t_slice = slice::from_raw_parts(data.as_ptr() as *const T, data.len() * 3);
+            let t_slice = slice::from_raw_parts(data.as_ptr().cast::<T>(), data.len() * 3);
             T::buffer_to_unchecked(buffer, t_slice);
         }
     }

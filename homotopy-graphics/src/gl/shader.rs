@@ -94,13 +94,13 @@ impl UntypedShader {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn into_vertex_shader(self) -> VertexShader {
         assert_eq!(self.kind, ShaderKind::Vertex);
         VertexShader(Rc::new(self))
     }
 
-    #[inline(always)]
+    #[inline]
     fn into_fragment_shader(self) -> FragmentShader {
         assert_eq!(self.kind, ShaderKind::Fragment);
         FragmentShader(Rc::new(self))
@@ -115,7 +115,7 @@ impl Drop for UntypedShader {
 }
 
 impl VertexShader {
-    fn compile<S>(ctx: &GlCtx, src: S) -> Result<VertexShader>
+    fn compile<S>(ctx: &GlCtx, src: S) -> Result<Self>
     where
         S: AsRef<str>,
     {
@@ -124,7 +124,7 @@ impl VertexShader {
 }
 
 impl FragmentShader {
-    fn compile<S>(ctx: &GlCtx, src: S) -> Result<FragmentShader>
+    fn compile<S>(ctx: &GlCtx, src: S) -> Result<Self>
     where
         S: AsRef<str>,
     {
@@ -139,12 +139,12 @@ impl Program {
         fragment_shader: &FragmentShader,
         attributes: Vec<&'static str>,
         uniforms: Vec<&'static str>,
-    ) -> Result<Program> {
+    ) -> Result<Self> {
         let attributes = {
             let mut map = HashMap::new();
 
             for (i, attribute) in attributes.into_iter().enumerate() {
-                if let Some(_) = map.insert(attribute, i as u32) {
+                if map.insert(attribute, i as u32).is_some() {
                     return Err(GlError::ProgramLink(format!(
                         "duplicate attribute '{}'",
                         attribute
@@ -176,7 +176,7 @@ impl Program {
         );
 
         // Bind the attribute locations
-        for (attribute, i) in program.attributes.iter() {
+        for (attribute, i) in &program.attributes {
             program
                 .ctx
                 .bind_attrib_location(&program.webgl_program, *i, attribute);
@@ -192,8 +192,7 @@ impl Program {
             .unwrap_or_default()
         {
             // If so, get uniform locations, store program data, and move on
-
-            for uniform in uniforms.into_iter() {
+            for uniform in uniforms {
                 let loc = program
                     .ctx
                     .get_uniform_location(&program.webgl_program, uniform)
@@ -204,7 +203,7 @@ impl Program {
                         ))
                     })?;
 
-                if let Some(_) = program.uniforms.insert(uniform, loc) {
+                if program.uniforms.insert(uniform, loc).is_some() {
                     return Err(GlError::ProgramLink(format!(
                         "duplicate uniform '{}'",
                         uniform,
@@ -212,7 +211,7 @@ impl Program {
                 }
             }
 
-            Ok(Program(Rc::new(program)))
+            Ok(Self(Rc::new(program)))
         } else {
             // Otherwise, try to get an error log
             Err(GlError::ProgramLink(
@@ -247,7 +246,7 @@ impl Program {
         &self.0.ctx
     }
 
-    #[inline(always)]
+    #[inline]
     pub(super) fn bind<F, U>(&self, f: F) -> U
     where
         F: FnOnce() -> U,
@@ -294,9 +293,9 @@ pub unsafe trait Uniformable: 'static {
 }
 
 unsafe impl Uniformable for f32 {
-    #[inline(always)]
+    #[inline]
     fn uniform(&self, ctx: &WebGl2RenderingContext, loc: &WebGlUniformLocation) {
-        ctx.uniform1f(Some(loc), *self)
+        ctx.uniform1f(Some(loc), *self);
     }
 }
 
@@ -304,9 +303,9 @@ unsafe impl<U> Uniformable for Vector2D<f32, U>
 where
     U: 'static,
 {
-    #[inline(always)]
+    #[inline]
     fn uniform(&self, ctx: &WebGl2RenderingContext, loc: &WebGlUniformLocation) {
-        ctx.uniform2f(Some(loc), self.x, self.y)
+        ctx.uniform2f(Some(loc), self.x, self.y);
     }
 }
 
@@ -314,9 +313,9 @@ unsafe impl<U> Uniformable for Vector3D<f32, U>
 where
     U: 'static,
 {
-    #[inline(always)]
+    #[inline]
     fn uniform(&self, ctx: &WebGl2RenderingContext, loc: &WebGlUniformLocation) {
-        ctx.uniform3f(Some(loc), self.x, self.y, self.z)
+        ctx.uniform3f(Some(loc), self.x, self.y, self.z);
     }
 }
 
@@ -325,8 +324,8 @@ where
     S: 'static,
     T: 'static,
 {
-    #[inline(always)]
+    #[inline]
     fn uniform(&self, ctx: &WebGl2RenderingContext, loc: &WebGlUniformLocation) {
-        ctx.uniform_matrix4fv_with_f32_array(Some(loc), false, &self.to_array())
+        ctx.uniform_matrix4fv_with_f32_array(Some(loc), false, &self.to_array());
     }
 }

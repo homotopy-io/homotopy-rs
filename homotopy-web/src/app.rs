@@ -9,7 +9,6 @@ use crate::model;
 
 mod attach;
 mod diagram2d;
-mod diagram3d;
 mod project;
 mod settings;
 mod sidebar;
@@ -116,13 +115,9 @@ impl Component for App {
             }
             None => {
                 // TODO: Show onboarding info if workspace and signature is empty
-                // html! {
-                //    <content class="workspace workspace--empty">
-                //    </content>
-                // }
-                // TODO(@doctorn) remove
                 html! {
-                    <diagram3d::Diagram3D />
+                    <content class="workspace workspace--empty">
+                    </content>
                 }
             }
         };

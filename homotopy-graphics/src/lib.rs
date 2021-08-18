@@ -9,7 +9,6 @@
     clippy::let_underscore_must_use,
     clippy::map_err_ignore,
     clippy::mem_forget,
-    clippy::multiple_inherent_impl,
     clippy::print_stderr,
     clippy::print_stdout,
     clippy::rc_buffer,

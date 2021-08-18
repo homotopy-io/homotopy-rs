@@ -78,10 +78,13 @@ impl<'a> Frame<'a> {
                 draw.vertex_array.bind(|| {
                     // set all of the uniforms
                     for (name, loc) in draw.vertex_array.program().uniforms() {
-                        let data = draw
-                            .uniforms
-                            .get(name)
-                            .expect(&format!("uniform '{}' is unset", name));
+                        let data = if let Some(data) = draw.uniforms.get(name) {
+                            data
+                        } else {
+                            // an unset uniform is a programmer error, so just panic
+                            panic!("uniform '{}' is unset", name);
+                        };
+
                         data.uniform(&self.ctx.webgl_ctx, loc);
                     }
 
@@ -95,7 +98,7 @@ impl<'a> Frame<'a> {
                                 WebGl2RenderingContext::UNSIGNED_SHORT,
                                 0, // TODO(@doctorn) offset? (probably not...)
                             );
-                        })
+                        });
                     } else {
                         // if no element buffer was provided, assume we're just drawing an array of
                         // triangles
@@ -105,7 +108,7 @@ impl<'a> Frame<'a> {
                             draw.vertex_array.len() as i32,
                         );
                     }
-                })
+                });
             });
         }
 

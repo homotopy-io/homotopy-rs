@@ -44,8 +44,6 @@
     clippy::match_on_vec_items,
 )]
 
-pub mod idx;
-pub mod tree;
 mod util;
 
 pub mod attach;
