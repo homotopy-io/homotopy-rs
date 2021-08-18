@@ -132,6 +132,7 @@ impl<I, T> fmt::Debug for DenseVec<I, T>
 where
     T: fmt::Debug,
 {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.raw.fmt(f)
     }
@@ -139,9 +140,10 @@ where
 
 impl<I, T> Default for DenseVec<I, T>
 where
-    I: Idx {
-        #[inline]
-fn default() -> Self {
-    Self::new()
-}
+    I: Idx,
+{
+    #[inline]
+    fn default() -> Self {
+        Self::new()
     }
+}

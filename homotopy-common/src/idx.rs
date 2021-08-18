@@ -163,6 +163,7 @@ impl<I, T> FromIterator<T> for IdxVec<I, T>
 where
     I: Idx,
 {
+    #[inline]
     fn from_iter<U: IntoIterator<Item = T>>(iter: U) -> Self {
         let mut idx_vec = Self::new();
         for t in iter {
@@ -184,6 +185,7 @@ where
 {
     type Item = (I, T);
 
+    #[inline]
     fn next(&mut self) -> Option<(I, T)> {
         let next = (I::new(self.next_idx), self.iter.next()?);
         self.next_idx += 1;
@@ -198,6 +200,7 @@ where
     type Item = (I, T);
     type IntoIter = IdxVecIterator<I, T>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         IdxVecIterator {
             next_idx: 0,
@@ -215,6 +218,7 @@ where
 {
     type Output = T;
 
+    #[inline]
     fn index(&self, index: I) -> &Self::Output {
         &self.raw[index.index()]
     }
@@ -224,6 +228,7 @@ impl<I, T> IndexMut<I> for IdxVec<I, T>
 where
     I: Idx,
 {
+    #[inline]
     fn index_mut(&mut self, index: I) -> &mut Self::Output {
         &mut self.raw[index.index()]
     }

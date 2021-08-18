@@ -105,6 +105,7 @@ impl<T> Tree<T> {
         f(&mut self.nodes[node])
     }
 
+    #[inline]
     pub fn push_onto(&mut self, node: Node, t: T) -> Node {
         let id = self.nodes.push(NodeData {
             data: t,
@@ -125,6 +126,7 @@ impl<T> Default for Tree<T>
 where
     T: Default,
 {
+    #[inline]
     fn default() -> Self {
         let mut nodes = IdxVec::new();
         let root = nodes.push(Default::default());
