@@ -61,22 +61,26 @@ pub fn factorize(
                     // Recurse on each monotone component
                     let mut cone_slices: Vec<Vec<Rewrite>> = vec![vec![]; t.size()];
 
-                    for (si, ti) in h_mono.iter().enumerate() {
+                    for (si, ti) in h_mono.into_iter().enumerate() {
                         let sub_s = s.slice(Height::Singular(si))?;
-                        let sub_t = t.slice(Height::Singular(*ti))?;
-                        let slice = factorize(fr.slice(si), gr.slice(*ti), sub_s, sub_t).ok()?;
-                        cone_slices[*ti].push(slice);
+                        let sub_t = t.slice(Height::Singular(ti))?;
+                        let slice = factorize(fr.slice(si), gr.slice(ti), sub_s, sub_t).ok()?;
+                        cone_slices[ti].push(slice);
                     }
 
-                    Some(
-                        RewriteN::from_slices(
-                            fr.dimension(),
-                            s.cospans(),
-                            t.cospans(),
-                            cone_slices,
-                        )
-                        .into(),
-                    )
+                    let hr = RewriteN::from_slices(
+                        fr.dimension(),
+                        s.cospans(),
+                        t.cospans(),
+                        cone_slices,
+                    );
+
+                    // TODO(calintat): Think about removing this.
+                    if hr.is_well_formed() {
+                        Some(hr.into())
+                    } else {
+                        None
+                    }
                 })
                 .ok_or(FactorizationError::Failed)
         }
