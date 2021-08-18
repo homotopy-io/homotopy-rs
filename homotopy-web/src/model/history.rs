@@ -4,11 +4,9 @@ use std::ops::{Deref, DerefMut};
 use instant::Instant;
 use thiserror::Error;
 
+use homotopy_common::tree::{Node, NodeData, Tree};
+
 use super::proof::ProofState;
-
-mod tree;
-
-use self::tree::{Node, NodeData, Tree};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
@@ -28,6 +26,20 @@ pub struct Snapshot {
     action: Option<super::proof::Action>,
 }
 
+impl Deref for Snapshot {
+    type Target = ProofState;
+
+    fn deref(&self) -> &Self::Target {
+        &self.proof
+    }
+}
+
+impl DerefMut for Snapshot {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.proof
+    }
+}
+
 impl Default for Snapshot {
     fn default() -> Self {
         Self {
@@ -40,27 +52,19 @@ impl Default for Snapshot {
 
 pub type Proof = NodeData<Snapshot>;
 
-impl Proof {
-    pub fn can_undo(&self) -> bool {
+pub trait UndoState {
+    fn can_undo(&self) -> bool;
+
+    fn can_redo(&self) -> bool;
+}
+
+impl UndoState for Proof {
+    fn can_undo(&self) -> bool {
         self.parent().is_some()
     }
 
-    pub fn can_redo(&self) -> bool {
+    fn can_redo(&self) -> bool {
         !self.is_empty()
-    }
-}
-
-impl Deref for Proof {
-    type Target = ProofState;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner().proof
-    }
-}
-
-impl DerefMut for Proof {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner_mut().proof
     }
 }
 
@@ -112,7 +116,6 @@ pub enum HistoryError {
 }
 
 impl History {
-    #[inline]
     #[allow(clippy::option_if_let_else)]
     pub fn with_proof<F, U>(&self, f: F) -> U
     where
@@ -127,7 +130,6 @@ impl History {
         }
     }
 
-    #[inline]
     pub fn with_proof_internal<F, U>(&self, f: F) -> U
     where
         F: Fn(&Proof) -> U,

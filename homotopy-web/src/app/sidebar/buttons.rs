@@ -8,7 +8,7 @@ use paste::paste;
 
 use crate::components::{Visibility, Visible};
 use crate::model;
-use crate::model::history::{self, Proof};
+use crate::model::history::{self, Proof, UndoState};
 
 use super::{Sidebar, SidebarButton, SidebarMsg};
 

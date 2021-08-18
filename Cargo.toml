@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "homotopy-core",
+  "homotopy-common",
   "homotopy-web",
   "homotopy-graphics",
 ]

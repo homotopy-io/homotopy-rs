@@ -1,11 +1,14 @@
-use homotopy_core::declare_idx;
-use homotopy_core::idx::IdxVec;
+use std::ops::{Deref, DerefMut, Index};
+
+use crate::declare_idx;
+use crate::idx::IdxVec;
 
 declare_idx! {
+    #[derive(serde::Serialize, serde::Deserialize)]
     pub struct Node = usize;
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub struct NodeData<T> {
     data: T,
     children: Vec<Node>,
@@ -57,6 +60,31 @@ impl<T> NodeData<T> {
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.children.is_empty()
+    }
+}
+
+impl<T> Deref for NodeData<T> {
+    type Target = T;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        self.inner()
+    }
+}
+
+impl<T> DerefMut for NodeData<T> {
+    #[inline]
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.inner_mut()
+    }
+}
+
+impl<T> Index<usize> for NodeData<T> {
+    type Output = Node;
+
+    #[inline]
+    fn index(&self, idx: usize) -> &Self::Output {
+        &self.children[idx]
     }
 }
 

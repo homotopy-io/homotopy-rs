@@ -13,27 +13,36 @@ pub trait Idx: 'static + Copy + Eq + Hash + fmt::Debug {
 
 #[macro_export]
 macro_rules! declare_idx {
-    ($vis:vis struct $name:ident = $ty:ident;) => {
-        #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
-        $vis struct $name($ty);
+    (
+        $(
+            $(#[$attrib:meta])*
+            $vis:vis struct $name:ident = $ty:ident;
+        )*
+    ) => {
+        $(
+            $(#[$attrib])*
+            #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+            $vis struct $name($ty);
 
-        impl $crate::idx::Idx for $name {
-            #[inline(always)]
-            fn index(&self) -> usize {
-                self.0.into()
-            }
+            impl $crate::idx::Idx for $name {
+                #[inline(always)]
+                fn index(&self) -> usize {
+                    self.0 as usize
+                }
 
-            #[inline(always)]
-            fn new(index: usize) -> Self {
-                $name($ty::from(index))
+                #[inline(always)]
+                fn new(index: usize) -> Self {
+                    $name(index as $ty)
+                }
             }
-        }
+        )*
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct IdxVec<I, T> {
     raw: Vec<T>,
+    #[serde(skip_serializing, skip_deserializing)]
     _phantom: PhantomData<fn(&I)>,
 }
 
@@ -62,6 +71,11 @@ where
         let index = self.raw.len();
         self.raw.push(elem);
         I::new(index)
+    }
+
+    #[inline]
+    pub fn pop(&mut self) -> Option<T> {
+        self.raw.pop()
     }
 
     #[inline]

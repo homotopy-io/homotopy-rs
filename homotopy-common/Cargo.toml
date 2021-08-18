@@ -1,0 +1,8 @@
+[package]
+name = "homotopy-common"
+version = "0.1.0"
+authors = ["Nathan Corbyn <me@nathancorbyn.com>"]
+edition = "2018"
+
+[dependencies]
+serde = { features = ["derive"], version = "1.0.126" }

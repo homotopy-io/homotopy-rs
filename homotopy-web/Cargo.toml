@@ -19,6 +19,7 @@ default = ["console_error_panic_hook"]
 [dependencies]
 palette = { git = "https://github.com/Ogeon/palette", features = ["serializing"] }
 instant = { version = "0.1.10", features = ["wasm-bindgen"] }
+homotopy-common = { path = "../homotopy-common" }
 homotopy-core = { path = "../homotopy-core" }
 homotopy-graphics = { path = "../homotopy-graphics" }
 closure = "0.3.0"
