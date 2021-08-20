@@ -256,10 +256,7 @@ impl<T> Tree<T> {
 
         // Update every node from containing a `T` to an `Option<T>` so that we can
         // `take` the data out later
-        let mut nodes: IdxVec<_, _> = nodes
-            .into_values()
-            .map(|n| n.map(Some))
-            .collect();
+        let mut nodes: IdxVec<_, _> = nodes.into_values().map(|n| n.map(Some)).collect();
 
         // Initialise a queue for a breadth-first walk (starting at the root)
         let mut to_visit = VecDeque::new();
@@ -295,7 +292,7 @@ impl<T> Tree<T> {
             // in the cleaned tree
             for child in children {
                 to_visit.push_back(child);
-                nodes[child].parent = Some(idx)
+                nodes[child].parent = Some(idx);
             }
         }
     }
@@ -304,7 +301,7 @@ impl<T> Tree<T> {
 impl<T> Tree<Option<T>> {
     pub fn transpose(self) -> Option<Tree<T>> {
         let mut nodes = IdxVec::with_capacity(self.nodes.len());
-        
+
         for node in self.nodes.into_values() {
             nodes.push(NodeData {
                 parent: node.parent,
@@ -336,13 +333,6 @@ where
 }
 
 impl<T> Eq for Tree<T> where T: Eq {}
-
-impl<T> AsRef<Tree<T>> for Tree<T> {
-    #[inline]
-    fn as_ref(&self) -> &Tree<T> {
-        self
-    }
-}
 
 impl<T> Default for Tree<T>
 where
@@ -386,7 +376,7 @@ impl<'a, T> Iterator for AncestorIterator<'a, T> {
     #[inline]
     fn next(&mut self) -> Option<Node> {
         let node = self.current?;
-        self.current = self.tree.with(node, |n| n.parent());
+        self.current = self.tree.with(node, NodeData::parent);
         Some(node)
     }
 }
