@@ -81,7 +81,9 @@ pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> 
         workspace: Default::default(),
     };
 
-    data.signature = signature.into_tree().map(|item| match item {
+    let mut signature = signature.into_tree();
+    signature.clean_up();
+    data.signature = signature.map(|item| match item {
         SignatureItem::Folder(name, open) => SignatureData::Folder(name, open),
         SignatureItem::Item(info) => SignatureData::Item(GeneratorData {
             generator: info.generator,
@@ -113,15 +115,17 @@ pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
 
     let signature = data
         .signature
-        .map(|s| Some(match s {
-            SignatureData::Folder(name, open) => SignatureItem::Folder(name, open),
-            SignatureData::Item(gd) => SignatureItem::Item(GeneratorInfo {
-                generator: gd.generator,
-                name: gd.name,
-                color: gd.color,
-                diagram: store.unpack_diagram(gd.diagram)?,
-            }),
-        }))
+        .map(|s| {
+            Some(match s {
+                SignatureData::Folder(name, open) => SignatureItem::Folder(name, open),
+                SignatureData::Item(gd) => SignatureItem::Item(GeneratorInfo {
+                    generator: gd.generator,
+                    name: gd.name,
+                    color: gd.color,
+                    diagram: store.unpack_diagram(gd.diagram)?,
+                }),
+            })
+        })
         .transpose()?
         .into();
 

@@ -1,5 +1,5 @@
 use homotopy_common::idx::Idx;
-use homotopy_common::tree::{Tree, Node};
+use homotopy_common::tree::{Node, Tree};
 
 use crate::components::icon::{Icon, IconSize};
 use crate::model::proof::{Action, SignatureEdit, SignatureItem};
@@ -27,7 +27,7 @@ where
             .map_or(false, |from| !ancestors.contains(&Node::new(from)))
         {
             e.prevent_default();
-            f(e)
+            f(e);
         }
     })
 }
@@ -165,22 +165,21 @@ fn render_tree(props: &Props, node: Node) -> Html {
             .reform(into_action(move |from| SignatureEdit::MoveInto(from, node)));
 
         let children: Html = if let SignatureItem::Folder(_, true) = n.inner() {
-            n
-            .children()
-            .map(|child| {
-                html! {
-                    <ul>
-                        {render_tree(props, child)}
-                        <li
-                            class="signature__dropzone"
-                            ondragenter={ondragenter_end.clone()}
-                            ondragover={ondragover_end.clone()}
-                            ondrop={ondrop_end.clone()}
-                        />
-                    </ul>
-                }
-            })
-            .collect()
+            n.children()
+                .map(|child| {
+                    html! {
+                        <ul>
+                            {render_tree(props, child)}
+                            <li
+                                class="signature__dropzone"
+                                ondragenter={ondragenter_end.clone()}
+                                ondragover={ondragover_end.clone()}
+                                ondrop={ondrop_end.clone()}
+                            />
+                        </ul>
+                    }
+                })
+                .collect()
         } else {
             html! {}
         };

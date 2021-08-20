@@ -82,16 +82,14 @@ pub struct Signature(Tree<SignatureItem>);
 
 impl Signature {
     pub fn iter(&self) -> impl Iterator<Item = &GeneratorInfo> {
-        self.0.iter().flat_map(|(_, data)| match data.inner() {
+        self.0.iter().filter_map(|(_, data)| match data.inner() {
             SignatureItem::Item(info) => Some(info),
-            _ => None,
+            &SignatureItem::Folder(_, _) => None,
         })
     }
 
     pub fn generator_info(&self, generator: Generator) -> Option<&GeneratorInfo> {
-        self.iter()
-            .filter(|info| info.generator == generator)
-            .next()
+        self.iter().find(|info| info.generator == generator)
     }
 
     fn next_generator_id(&self) -> usize {
@@ -163,7 +161,7 @@ impl Signature {
 
     pub fn remove(&mut self, generator: Generator) {
         if let Some(node) = self.find_node(generator) {
-            self.0.remove(node)
+            self.0.remove(node);
         }
     }
 
@@ -178,11 +176,11 @@ impl Signature {
             SignatureEdit::MoveBefore(from, to) => self.0.reparent_before(*from, *to),
             SignatureEdit::MoveInto(from, to) => self.0.reparent_under(*from, *to),
             SignatureEdit::ToggleFolder(node) => {
-            self.0.with_mut(*node, |n| {
-                if let SignatureItem::Folder(_, b) = n.inner_mut() {
-                    *b = !*b;
-                }
-            });
+                self.0.with_mut(*node, |n| {
+                    if let SignatureItem::Folder(_, b) = n.inner_mut() {
+                        *b = !*b;
+                    }
+                });
             }
         }
     }
