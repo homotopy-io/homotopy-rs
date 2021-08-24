@@ -239,10 +239,14 @@ impl DiagramN {
                 Err(_e) => return false,
             };
 
-            slice.is_well_formed();
+            if !slice.is_well_formed() {
+                return false;
+            }
 
             // Check that the backward rewrite is well-formed.
-            cospan.backward.is_well_formed();
+            if !cospan.backward.is_well_formed() {
+                return false;
+            }
 
             // Check that the backward rewrite is compatible with the singular slice.
             slice = match slice.rewrite_backward(&cospan.backward) {
@@ -250,7 +254,9 @@ impl DiagramN {
                 Err(_e) => return false,
             };
 
-            slice.is_well_formed();
+            if !slice.is_well_formed() {
+                return false;
+            }
         }
 
         true
