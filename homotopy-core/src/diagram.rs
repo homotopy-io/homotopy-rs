@@ -204,10 +204,12 @@ impl DiagramN {
     }
 
     pub(crate) fn new_unsafe(source: Diagram, cospans: Vec<Cospan>) -> Self {
-        Self(
+        let diagram = Self(
             DIAGRAM_FACTORY
                 .with(|factory| factory.borrow_mut().mk(DiagramInternal { source, cospans })),
-        )
+        );
+        debug_assert!(diagram.is_well_formed());
+        diagram
     }
 
     pub(crate) fn collect_garbage() {

@@ -478,13 +478,15 @@ where
         // cones.
         cones.retain(|cone| !cone.is_identity());
 
-        Self(A::mk_rewrite(RewriteInternal {
+        let rewrite = Self(A::mk_rewrite(RewriteInternal {
             dimension,
             cones,
             max_generator_source: CachedCell::new(),
             max_generator_target: CachedCell::new(),
             payload: payload.clone(),
-        }))
+        }));
+        debug_assert!(rewrite.is_well_formed());
+        rewrite
     }
 
     pub(crate) fn collect_garbage() {
