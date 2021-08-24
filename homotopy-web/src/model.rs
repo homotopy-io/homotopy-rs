@@ -97,6 +97,11 @@ impl State {
             Action::ImportProof(data) => {
                 let (signature, workspace) =
                     serialize::deserialize(&Vec::<u8>::from(data)).ok_or(ModelError::Import)?;
+                if let Some(w) = workspace.as_ref() {
+                    if !w.diagram.is_well_formed() {
+                        return Err(ModelError::Import);
+                    }
+                }
                 let mut proof: Proof = Default::default();
                 proof.signature = signature;
                 proof.workspace = workspace;
