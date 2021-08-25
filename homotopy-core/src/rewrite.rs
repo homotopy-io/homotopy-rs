@@ -285,10 +285,10 @@ where
     }
 
     #[inline]
-    pub fn is_well_formed(&self) -> bool {
+    pub fn check_well_formed(&self) -> Result<(), MalformedRewrite> {
         match self {
-            Self::Rewrite0(_) => true,
-            Self::RewriteN(r) => r.is_well_formed(),
+            Self::Rewrite0(_) => Ok(()),
+            Self::RewriteN(r) => r.check_well_formed(),
         }
     }
 
@@ -515,8 +515,55 @@ where
     }
 
     #[inline]
-    pub fn is_well_formed(&self) -> bool {
-        self.0.cones.iter().all(GenericCone::is_well_formed)
+    pub fn check_well_formed(&self) -> Result<(), MalformedRewrite> {
+        for cone in &self.0.cones {
+            if cone.len() == 0 {
+                if cone.internal.target.forward != cone.internal.target.backward {
+                    return Err(MalformedRewrite::NotSingularity(cone.index));
+                }
+            } else {
+                // Check that the subslices are well-formed.
+                for (i, slice) in cone.internal.slices.iter().enumerate() {
+                    slice
+                        .check_well_formed()
+                        .map_err(|e| MalformedRewrite::Slice(i, Box::new(e)))?;
+                }
+
+                // Check that the squares commute.
+                let len = cone.len();
+
+                let f = cone.internal.source[0]
+                    .forward
+                    .compose(&cone.internal.slices[0]);
+                if f.is_err() || f.unwrap() != cone.internal.target.forward {
+                    return Err(MalformedRewrite::NotCommutativeLeft(cone.index));
+                }
+
+                for i in 0..len - 1 {
+                    let f = cone.internal.source[i]
+                        .backward
+                        .compose(&cone.internal.slices[i]);
+                    let g = cone.internal.source[i + 1]
+                        .forward
+                        .compose(&cone.internal.slices[i + 1]);
+                    if f.is_err() || g.is_err() || f.unwrap() != g.unwrap() {
+                        return Err(MalformedRewrite::NotCommutativeMiddle(
+                            cone.index + i,
+                            cone.index + i + 1,
+                        ));
+                    }
+                }
+
+                let f = cone.internal.source[len - 1]
+                    .backward
+                    .compose(&cone.internal.slices[len - 1]);
+                if f.is_err() || f.unwrap() != cone.internal.target.backward {
+                    return Err(MalformedRewrite::NotCommutativeRight(len - 1));
+                }
+            }
+        }
+
+        Ok(())
     }
 
     pub(crate) fn make_degeneracy_with_payloads(
@@ -854,47 +901,6 @@ where
             && self.internal.slices[0].is_identity()
     }
 
-    pub(crate) fn is_well_formed(&self) -> bool {
-        if self.len() == 0 {
-            self.internal.target.forward == self.internal.target.backward
-        } else {
-            // Check that the squares commute.
-            let len = self.len();
-
-            let f = self.internal.source[0]
-                .forward
-                .compose(&self.internal.slices[0]);
-            if f.is_err() || f.unwrap() != self.internal.target.forward {
-                return false;
-            }
-
-            let f = self.internal.source[len - 1]
-                .backward
-                .compose(&self.internal.slices[len - 1]);
-            if f.is_err() || f.unwrap() != self.internal.target.backward {
-                return false;
-            }
-
-            for i in 0..len - 1 {
-                let f = self.internal.source[i]
-                    .backward
-                    .compose(&self.internal.slices[i]);
-                let g = self.internal.source[i + 1]
-                    .forward
-                    .compose(&self.internal.slices[i + 1]);
-                if f.is_err() || g.is_err() || f.unwrap() != g.unwrap() {
-                    return false;
-                }
-            }
-
-            // Check that the subslices are well-formed.
-            self.internal
-                .slices
-                .iter()
-                .all(GenericRewrite::is_well_formed)
-        }
-    }
-
     pub(crate) fn len(&self) -> usize {
         self.internal.source.len()
     }
@@ -942,6 +948,24 @@ impl RewriteAllocator for DefaultAllocator {
         REWRITE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
         CONE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
     }
+}
+
+#[derive(Debug, Error)]
+pub enum MalformedRewrite {
+    #[error("slice {0} is malformed: {1}")]
+    Slice(usize, Box<MalformedRewrite>),
+
+    #[error("slice {0} of target cannot be a singularity.")]
+    NotSingularity(usize),
+
+    #[error("square to the left of slice {0} does not commute.")]
+    NotCommutativeLeft(usize),
+
+    #[error("square to the right of slice {0} does not commute.")]
+    NotCommutativeRight(usize),
+
+    #[error("square between slices {0} and {1} does not commute.")]
+    NotCommutativeMiddle(usize, usize),
 }
 
 #[cfg(test)]

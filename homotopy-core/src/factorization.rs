@@ -76,7 +76,7 @@ pub fn factorize(
                     );
 
                     // TODO(calintat): Think about removing this.
-                    if hr.is_well_formed() {
+                    if hr.check_well_formed().is_ok() {
                         Some(hr.into())
                     } else {
                         None
