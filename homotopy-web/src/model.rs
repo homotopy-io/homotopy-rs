@@ -98,7 +98,7 @@ impl State {
                 let (signature, workspace) =
                     serialize::deserialize(&Vec::<u8>::from(data)).ok_or(ModelError::Import)?;
                 if let Some(w) = workspace.as_ref() {
-                    if !w.diagram.is_well_formed() {
+                    if w.diagram.check_well_formed().is_err() {
                         return Err(ModelError::Import);
                     }
                 }
