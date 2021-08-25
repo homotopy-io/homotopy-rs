@@ -1,7 +1,7 @@
 [package]
 name = "homotopy-core"
 version = "0.1.0"
-authors = ["Lukas Heidemann <lukas@heidemann.me>", "Nick Hu <me@nickhu.co.uk>"]
+authors = ["Lukas Heidemann <lukas@heidemann.me>", "Nick Hu <me@nickhu.co.uk>", "Calin Tataru <calintat@gmail.com>"]
 edition = "2018"
 
 [dependencies]
