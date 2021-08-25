@@ -464,6 +464,7 @@ impl<A> GenericRewriteN<A>
 where
     A: RewriteAllocator,
 {
+    #[allow(clippy::expect_used)]
     pub(crate) fn new_with_payload(
         dimension: usize,
         mut cones: Vec<GenericCone<A>>,
@@ -485,7 +486,9 @@ where
             max_generator_target: CachedCell::new(),
             payload: payload.clone(),
         }));
-        debug_assert!(rewrite.check_well_formed(Mode::Shallow).is_ok());
+        if cfg!(feature = "safety-checks") {
+            rewrite.check_well_formed(Mode::Shallow).expect("Rewrite is malformed");
+        }
         rewrite
     }
 

@@ -23,6 +23,10 @@ quickcheck_macros = "1.0.0"
 serde_json = "1.0.66"
 base64 = "0.13.0"
 
+[features]
+default = ["safety-checks"]
+safety-checks = []
+
 [[bench]]
 name = "bench"
 harness = false

@@ -205,12 +205,15 @@ impl DiagramN {
         Ok(Self::new_unsafe(source, vec![cospan]))
     }
 
+    #[allow(clippy::expect_used)]
     pub(crate) fn new_unsafe(source: Diagram, cospans: Vec<Cospan>) -> Self {
         let diagram = Self(
             DIAGRAM_FACTORY
                 .with(|factory| factory.borrow_mut().mk(DiagramInternal { source, cospans })),
         );
-        debug_assert!(diagram.check_well_formed(Mode::Shallow).is_ok());
+        if cfg!(feature = "safety-checks") {
+            diagram.check_well_formed(Mode::Shallow).expect("Diagram is malformed");
+        }
         diagram
     }
 
