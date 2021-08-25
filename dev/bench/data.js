@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1629820968619,
+  "lastUpdate": 1629889450278,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -6599,6 +6599,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 90.812,
             "range": "+/- 1.597",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "committer": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "distinct": true,
+          "id": "c9a1dc6b6ece6dfdd06e5892152ad4a9efab5f25",
+          "message": "Implement smoothing, where a singular level can be eliminated when it\nis surrounded by identical rewrites. This is triggered by clicking and\ndragging from an adjacent regular level into the singular level.",
+          "timestamp": "2021-08-25T11:54:46+01:00",
+          "tree_id": "8eb47dd9fff9b5a9089ebec16778457b4a9b60aa",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/c9a1dc6b6ece6dfdd06e5892152ad4a9efab5f25"
+        },
+        "date": 1629889445150,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 70.122,
+            "range": "+/- 1.163",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 74.678,
+            "range": "+/- 1.981",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 105.87,
+            "range": "+/- 2.360",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 122.93,
+            "range": "+/- 2.740",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 156.57,
+            "range": "+/- 3.550",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 222.28,
+            "range": "+/- 4.830",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 96.506,
+            "range": "+/- 3.713",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 644.62,
+            "range": "+/- 19.380",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.4648,
+            "range": "+/- 0.046",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 7.837,
+            "range": "+/- 0.146",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 20.219,
+            "range": "+/- 0.367",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 52.356,
+            "range": "+/- 1.157",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 131.28,
+            "range": "+/- 1.680",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 378.66,
+            "range": "+/- 5.940",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 71.793,
+            "range": "+/- 1.779",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 107.68,
+            "range": "+/- 2.530",
             "unit": "us"
           }
         ]
