@@ -108,6 +108,13 @@ fn expand_base_regular(
         Diagram::DiagramN(diagram) => Ok(diagram),
     }?;
 
+    if (h0 == 0 && direction == Direction::Backward)
+        || (h0 == diagram.size() && direction == Direction::Forward)
+        || h0 > diagram.size()
+    {
+        return Err(ExpansionError::OutOfBounds);
+    }
+
     let i = h0
         - match direction {
             Direction::Forward => 0,
