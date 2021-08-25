@@ -16,6 +16,8 @@ use std::convert::TryInto;
 use std::rc::Rc;
 use thiserror::Error;
 
+pub use crate::common::Mode;
+
 type Point = Vec<SingularHeight>;
 
 #[derive(Debug, Error)]
@@ -25,12 +27,6 @@ pub enum TypeError {
 
     #[error("diagram is ill-typed")]
     IllTyped,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Mode {
-    Deep,
-    Shallow,
 }
 
 thread_local! {

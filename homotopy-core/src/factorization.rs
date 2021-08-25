@@ -1,5 +1,6 @@
 use std::ops::Range;
 
+use crate::common::Mode;
 use crate::monotone::MonotoneIterator;
 use crate::Rewrite;
 use crate::{Diagram, Rewrite0};
@@ -76,7 +77,7 @@ pub fn factorize(
                     );
 
                     // TODO(calintat): Think about removing this.
-                    if hr.check_well_formed().is_ok() {
+                    if hr.check_well_formed(Mode::Shallow).is_ok() {
                         Some(hr.into())
                     } else {
                         None
