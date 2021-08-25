@@ -487,7 +487,9 @@ where
             payload: payload.clone(),
         }));
         if cfg!(feature = "safety-checks") {
-            rewrite.check_well_formed(Mode::Shallow).expect("Rewrite is malformed");
+            rewrite
+                .check_well_formed(Mode::Shallow)
+                .expect("Rewrite is malformed");
         }
         rewrite
     }

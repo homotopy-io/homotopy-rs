@@ -212,7 +212,9 @@ impl DiagramN {
                 .with(|factory| factory.borrow_mut().mk(DiagramInternal { source, cospans })),
         );
         if cfg!(feature = "safety-checks") {
-            diagram.check_well_formed(Mode::Shallow).expect("Diagram is malformed");
+            diagram
+                .check_well_formed(Mode::Shallow)
+                .expect("Diagram is malformed");
         }
         diagram
     }
