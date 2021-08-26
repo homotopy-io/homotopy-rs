@@ -4,7 +4,9 @@ use crate::{
     util::first_max_generator,
 };
 use crate::{
-    common::{Boundary, DimensionError, Direction, Generator, Height, RegularHeight, SliceIndex},
+    common::{
+        Boundary, DimensionError, Direction, Generator, Height, Mode, RegularHeight, SliceIndex,
+    },
     util::Hasher,
 };
 use hashconsing::{HConsed, HConsign, HashConsign};
@@ -81,10 +83,10 @@ impl Diagram {
         DiagramN::new_unsafe(self.clone(), vec![])
     }
 
-    pub fn check_well_formed(&self) -> Result<(), MalformedDiagram> {
+    pub fn check_well_formed(&self, mode: Mode) -> Result<(), MalformedDiagram> {
         match self {
             Self::Diagram0(_) => Ok(()),
-            Self::DiagramN(d) => d.check_well_formed(),
+            Self::DiagramN(d) => d.check_well_formed(mode),
         }
     }
 
@@ -203,11 +205,18 @@ impl DiagramN {
         Ok(Self::new_unsafe(source, vec![cospan]))
     }
 
+    #[allow(clippy::expect_used)]
     pub(crate) fn new_unsafe(source: Diagram, cospans: Vec<Cospan>) -> Self {
-        Self(
+        let diagram = Self(
             DIAGRAM_FACTORY
                 .with(|factory| factory.borrow_mut().mk(DiagramInternal { source, cospans })),
-        )
+        );
+        if cfg!(feature = "safety-checks") {
+            diagram
+                .check_well_formed(Mode::Shallow)
+                .expect("Diagram is malformed");
+        }
+        diagram
     }
 
     pub(crate) fn collect_garbage() {
@@ -219,44 +228,54 @@ impl DiagramN {
         self.0.source.dimension() + 1
     }
 
-    pub fn check_well_formed(&self) -> Result<(), MalformedDiagram> {
+    pub fn check_well_formed(&self, mode: Mode) -> Result<(), MalformedDiagram> {
         let mut slice = self.0.source.clone();
 
         // Check that the source slice is well-formed.
-        slice
-            .check_well_formed()
-            .map_err(|e| MalformedDiagram::Slice(Height::Regular(0), Box::new(e)))?;
+        if mode == Mode::Deep {
+            slice
+                .check_well_formed(mode)
+                .map_err(|e| MalformedDiagram::Slice(Height::Regular(0), Box::new(e)))?;
+        }
 
         for (i, cospan) in self.0.cospans.iter().enumerate() {
             // Check that the forward rewrite is well-formed.
-            cospan
-                .forward
-                .check_well_formed()
-                .map_err(|e| MalformedDiagram::Rewrite(i, Direction::Forward, Box::new(e)))?;
+            if mode == Mode::Deep {
+                cospan
+                    .forward
+                    .check_well_formed(mode)
+                    .map_err(|e| MalformedDiagram::Rewrite(i, Direction::Forward, Box::new(e)))?;
+            }
 
             // Check that the forward rewrite is compatible with the regular slice.
             slice = slice
                 .rewrite_forward(&cospan.forward)
                 .map_err(|e| MalformedDiagram::Incompatible(i, Direction::Forward, Box::new(e)))?;
 
-            slice
-                .check_well_formed()
-                .map_err(|e| MalformedDiagram::Slice(Height::Singular(i), Box::new(e)))?;
+            if mode == Mode::Deep {
+                slice
+                    .check_well_formed(mode)
+                    .map_err(|e| MalformedDiagram::Slice(Height::Singular(i), Box::new(e)))?;
+            }
 
             // Check that the backward rewrite is well-formed.
-            cospan
-                .backward
-                .check_well_formed()
-                .map_err(|e| MalformedDiagram::Rewrite(i, Direction::Backward, Box::new(e)))?;
+            if mode == Mode::Deep {
+                cospan
+                    .backward
+                    .check_well_formed(mode)
+                    .map_err(|e| MalformedDiagram::Rewrite(i, Direction::Backward, Box::new(e)))?;
+            }
 
             // Check that the backward rewrite is compatible with the singular slice.
             slice = slice
                 .rewrite_backward(&cospan.backward)
                 .map_err(|e| MalformedDiagram::Incompatible(i, Direction::Backward, Box::new(e)))?;
 
-            slice
-                .check_well_formed()
-                .map_err(|e| MalformedDiagram::Slice(Height::Regular(i + 1), Box::new(e)))?;
+            if mode == Mode::Deep {
+                slice
+                    .check_well_formed(mode)
+                    .map_err(|e| MalformedDiagram::Slice(Height::Regular(i + 1), Box::new(e)))?;
+            }
         }
 
         Ok(())

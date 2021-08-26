@@ -1,7 +1,7 @@
 [package]
 name = "homotopy-core"
 version = "0.1.0"
-authors = ["Lukas Heidemann <lukas@heidemann.me>", "Nick Hu <me@nickhu.co.uk>"]
+authors = ["Lukas Heidemann <lukas@heidemann.me>", "Nick Hu <me@nickhu.co.uk>", "Calin Tataru <calintat@gmail.com>"]
 edition = "2018"
 
 [dependencies]
@@ -22,6 +22,10 @@ quickcheck = "1.0.3"
 quickcheck_macros = "1.0.0"
 serde_json = "1.0.66"
 base64 = "0.13.0"
+
+[features]
+default = ["safety-checks"]
+safety-checks = []
 
 [[bench]]
 name = "bench"

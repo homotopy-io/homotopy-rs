@@ -8,7 +8,7 @@ use thiserror::Error;
 
 use hashconsing::{HConsed, HConsign, HashConsign};
 
-use crate::common::{DimensionError, Generator, SingularHeight};
+use crate::common::{DimensionError, Generator, Mode, SingularHeight};
 use crate::diagram::Diagram;
 use crate::util::{first_max_generator, CachedCell, Hasher};
 use crate::Boundary;
@@ -285,10 +285,10 @@ where
     }
 
     #[inline]
-    pub fn check_well_formed(&self) -> Result<(), MalformedRewrite> {
+    pub fn check_well_formed(&self, mode: Mode) -> Result<(), MalformedRewrite> {
         match self {
             Self::Rewrite0(_) => Ok(()),
-            Self::RewriteN(r) => r.check_well_formed(),
+            Self::RewriteN(r) => r.check_well_formed(mode),
         }
     }
 
@@ -464,6 +464,7 @@ impl<A> GenericRewriteN<A>
 where
     A: RewriteAllocator,
 {
+    #[allow(clippy::expect_used)]
     pub(crate) fn new_with_payload(
         dimension: usize,
         mut cones: Vec<GenericCone<A>>,
@@ -478,13 +479,19 @@ where
         // cones.
         cones.retain(|cone| !cone.is_identity());
 
-        Self(A::mk_rewrite(RewriteInternal {
+        let rewrite = Self(A::mk_rewrite(RewriteInternal {
             dimension,
             cones,
             max_generator_source: CachedCell::new(),
             max_generator_target: CachedCell::new(),
             payload: payload.clone(),
-        }))
+        }));
+        if cfg!(feature = "safety-checks") {
+            rewrite
+                .check_well_formed(Mode::Shallow)
+                .expect("Rewrite is malformed");
+        }
+        rewrite
     }
 
     pub(crate) fn collect_garbage() {
@@ -515,7 +522,7 @@ where
     }
 
     #[inline]
-    pub fn check_well_formed(&self) -> Result<(), MalformedRewrite> {
+    pub fn check_well_formed(&self, mode: Mode) -> Result<(), MalformedRewrite> {
         for cone in &self.0.cones {
             if cone.len() == 0 {
                 if cone.internal.target.forward != cone.internal.target.backward {
@@ -523,10 +530,12 @@ where
                 }
             } else {
                 // Check that the subslices are well-formed.
-                for (i, slice) in cone.internal.slices.iter().enumerate() {
-                    slice
-                        .check_well_formed()
-                        .map_err(|e| MalformedRewrite::Slice(i, Box::new(e)))?;
+                if mode == Mode::Deep {
+                    for (i, slice) in cone.internal.slices.iter().enumerate() {
+                        slice
+                            .check_well_formed(mode)
+                            .map_err(|e| MalformedRewrite::Slice(i, Box::new(e)))?;
+                    }
                 }
 
                 // Check that the squares commute.

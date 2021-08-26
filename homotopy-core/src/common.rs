@@ -287,3 +287,9 @@ pub enum Direction {
 #[derive(Debug, Error)]
 #[error("invalid dimension")]
 pub struct DimensionError;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Mode {
+    Deep,
+    Shallow,
+}
