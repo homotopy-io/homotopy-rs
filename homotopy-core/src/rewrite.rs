@@ -433,6 +433,23 @@ where
         )
     }
 
+    /// Same as `from_slices` but always checks if the result is welformed and propagates the error.
+    #[inline]
+    pub fn from_slices_safe(
+        dimension: usize,
+        source_cospans: &[GenericCospan<A>],
+        target_cospans: &[GenericCospan<A>],
+        slices: Vec<Vec<GenericRewrite<A>>>,
+    ) -> Result<Self, MalformedRewrite> {
+        Self::from_slices_with_payload_safe(
+            dimension,
+            source_cospans,
+            target_cospans,
+            slices,
+            &Default::default(),
+        )
+    }
+
     #[inline]
     pub fn from_slices(
         dimension: usize,
@@ -464,6 +481,33 @@ impl<A> GenericRewriteN<A>
 where
     A: RewriteAllocator,
 {
+    /// Same as `new_with_payload` but always checks if the result is welformed and propagates the error.
+    #[allow(clippy::expect_used)]
+    pub(crate) fn new_with_payload_safe(
+        dimension: usize,
+        mut cones: Vec<GenericCone<A>>,
+        payload: &A::Payload,
+    ) -> Result<Self, MalformedRewrite> {
+        if dimension == 0 {
+            panic!("Can not create RewriteN of dimension zero.");
+        }
+
+        // Remove all identity cones. This is not only important to reduce memory consumption, but
+        // it allows us the check if the rewrite is an identity by shallowly checking if it has any
+        // cones.
+        cones.retain(|cone| !cone.is_identity());
+
+        let rewrite = Self(A::mk_rewrite(RewriteInternal {
+            dimension,
+            cones,
+            max_generator_source: CachedCell::new(),
+            max_generator_target: CachedCell::new(),
+            payload: payload.clone(),
+        }));
+        rewrite.check_well_formed(Mode::Shallow)?;
+        Ok(rewrite)
+    }
+
     #[allow(clippy::expect_used)]
     pub(crate) fn new_with_payload(
         dimension: usize,
@@ -604,6 +648,31 @@ where
             .collect();
 
         Self::new_with_payload(dimension, cones, payload)
+    }
+
+    /// Same as `from_slices_with_payload` but always checks if the result is welformed and propagates the error.
+    pub fn from_slices_with_payload_safe(
+        dimension: usize,
+        source_cospans: &[GenericCospan<A>],
+        target_cospans: &[GenericCospan<A>],
+        slices: Vec<Vec<GenericRewrite<A>>>,
+        payload: &A::Payload,
+    ) -> Result<Self, MalformedRewrite> {
+        let mut cones = Vec::new();
+        let mut index = 0;
+
+        for (target, cone_slices) in slices.into_iter().enumerate() {
+            let size = cone_slices.len();
+            cones.push(GenericCone::new(
+                index,
+                source_cospans[index..index + size].to_vec(),
+                target_cospans[target].clone(),
+                cone_slices,
+            ));
+            index += size;
+        }
+
+        Self::new_with_payload_safe(dimension, cones, payload)
     }
 
     pub fn from_slices_with_payload(

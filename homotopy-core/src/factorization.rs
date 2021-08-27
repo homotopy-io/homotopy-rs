@@ -1,6 +1,5 @@
 use std::ops::Range;
 
-use crate::common::Mode;
 use crate::monotone::MonotoneIterator;
 use crate::Rewrite;
 use crate::{Diagram, Rewrite0};
@@ -69,19 +68,14 @@ pub fn factorize(
                         cone_slices[ti].push(slice);
                     }
 
-                    let hr = RewriteN::from_slices(
+                    let hr = RewriteN::from_slices_safe(
                         fr.dimension(),
                         s.cospans(),
                         t.cospans(),
                         cone_slices,
                     );
 
-                    // TODO(calintat): Think about removing this.
-                    if hr.check_well_formed(Mode::Shallow).is_ok() {
-                        Some(hr.into())
-                    } else {
-                        None
-                    }
+                    hr.ok().map(Rewrite::RewriteN)
                 })
                 .ok_or(FactorizationError::Failed)
         }
