@@ -123,9 +123,6 @@ fn expand_base_regular(
 
     let cs = &diagram.cospans()[i];
     if cs.forward == cs.backward {
-        (diagram.cospans().len() > 1)
-            .then(|| ())
-            .ok_or(ExpansionError::SmoothTooShort)?;
         Ok(RewriteN::new(
             diagram.dimension(),
             vec![Cone::new(
