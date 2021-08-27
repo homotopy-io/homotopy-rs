@@ -39,9 +39,6 @@ pub enum ExpansionError {
     #[error("singular height must be surrounded by identical rewrites for smoothing")]
     Unsmoothable,
 
-    #[error("smoothing must result in a diagram which has at least one singular level")]
-    SmoothTooShort,
-
     #[error("expansion is ill-typed: {0}")]
     IllTyped(#[from] TypeError),
 }
