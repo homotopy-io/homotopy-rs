@@ -74,7 +74,7 @@ pub enum SignatureEdit {
     MoveBefore(Node, Node),
     MoveInto(Node, Node),
     ToggleFolder(Node),
-    NewFolder,
+    NewFolder(Node),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -167,11 +167,9 @@ impl Signature {
 
     pub fn update(&mut self, edit: &SignatureEdit) {
         match edit {
-            SignatureEdit::NewFolder => {
-                self.0.push_onto(
-                    self.0.root(),
-                    SignatureItem::Folder("New folder".to_owned(), true),
-                );
+            SignatureEdit::NewFolder(node) => {
+                self.0
+                    .push_onto(*node, SignatureItem::Folder("New folder".to_owned(), true));
             }
             SignatureEdit::MoveBefore(from, to) => self.0.reparent_before(*from, *to),
             SignatureEdit::MoveInto(from, to) => self.0.reparent_under(*from, *to),

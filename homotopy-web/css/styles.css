@@ -24,6 +24,8 @@
   --space-2: calc(2 * var(--space-1));
 
   --generator-color-border: #8A919966;
+
+  --signature-height: 32px;
 }
 
 body, html {
@@ -262,32 +264,56 @@ body, html {
   scrollbar-width: thin;
   scrollbar-color: var(--drawer-border) var(--drawer-background);
   touch-action: pan-y;
+  width: 100%;
+  height: 100%;
 }
 
 /* Signature */
 
-.signature__dropzone {
-  height: 1px;
+.signature__folder {
+  height: var(--signature-height);
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 0 var(--space-0);
+  margin-right: var(--space-0);
+  border-radius: var(--space-0);
+  user-select: none;
+  cursor: pointer;
 }
 
-.signature__dropzone:-moz-drag-over {
-  height: 32px;
-  outline: 1px solid black;
+.signature__folder-icon {
+  margin-right: var(--space-1);
 }
 
 .signature__folder:-moz-drag-over {
-  outline: 1px solid black;
+  outline: 2px solid var(--toolbar-border);
 }
 
 .signature__generators {
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
 }
 
-.signature__generators ul {
+.signature__branch {
+  width: 100%;
   list-style-type: none;
+  padding-left: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  border-left: solid 2px var(--toolbar-border);
+}
+
+.signature__dropzone {
+  height: var(--space-1);
+  width: 100%;
+  cursor: pointer;
+  transition: height 100ms;
+}
+
+.signature__dropzone:-moz-drag-over {
+  height: var(--signature-height);
 }
 
 .signature__generator {
@@ -295,6 +321,10 @@ body, html {
   flex-direction: row;
   align-items: stretch;
   cursor: pointer;
+  border-radius: var(--space-0);
+  overflow: hidden;
+  user-select: none;
+  height: var(--signature-height);
 }
 
 .signature__generator-name {
@@ -327,7 +357,7 @@ body, html {
 }
 
 @media (pointer: fine) {
-  .signature__generator-name:hover {
+  .signature__folder:hover, .signature__generator-name:hover {
     background: var(--drawer-selected);
   }
   .signature__generator-edit:hover {
