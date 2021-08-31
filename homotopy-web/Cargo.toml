@@ -1,7 +1,7 @@
 [package]
 name = "homotopy-web"
 description = "Web frontend for homotopy.io"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Lukas Heidemann <lukas@heidemann.me>", "Nick Hu <me@nickhu.co.uk>", "Nathan Corbyn <me@nathancorbyn.com>"]
 categories = ["wasm"]
 readme = "README.md"
@@ -44,6 +44,7 @@ log = "0.4.14"
 euclid = "0.22.6"
 lyon_path = "0.17.4"
 thiserror = "1.0.26"
+obake = { version = "1.0.4", features = ["serde"] }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
