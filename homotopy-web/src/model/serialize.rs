@@ -1,4 +1,5 @@
 use im::Vector;
+use obake::AnyVersion;
 use wasm_bindgen::JsCast;
 
 use homotopy_common::tree::Tree;
@@ -7,7 +8,8 @@ use homotopy_core::common::{Generator, SliceIndex};
 use homotopy_core::serialize::{Key, Store};
 use homotopy_core::Diagram;
 
-use super::{proof::SignatureItem, Color, GeneratorInfo, Signature, Workspace};
+use super::proof::SignatureItem;
+use super::{Color, GeneratorInfo, Signature, Workspace};
 
 pub fn generate_download(name: &str, data: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
     let val: js_sys::Uint8Array = data.into();
@@ -33,12 +35,33 @@ pub fn generate_download(name: &str, data: &[u8]) -> Result<(), wasm_bindgen::Js
     web_sys::Url::revoke_object_url(&url)
 }
 
-#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
+#[obake::versioned]
+#[obake(version("0.1.0"))]
+#[obake(version("0.1.1"))]
+#[obake(derive(serde::Serialize, serde::Deserialize))]
+#[obake(serde(tag = "version"))]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 struct Data {
-    version: usize,
     store: Store,
+    #[obake(cfg("<0.1.1"))]
+    signature: Vec<GeneratorData>,
+    #[obake(cfg(">=0.1.1"))]
     signature: Tree<SignatureData>,
     workspace: Option<WorkspaceData>,
+}
+
+impl From<Data!["0.1.0"]> for Data!["0.1.1"] {
+    fn from(from: Data!["0.1.0"]) -> Self {
+        Self {
+            store: from.store,
+            signature: from
+                .signature
+                .into_iter()
+                .map(SignatureData::Item)
+                .collect(),
+            workspace: from.workspace,
+        }
+    }
 }
 
 impl std::fmt::Debug for Data {
@@ -75,14 +98,15 @@ struct WorkspaceData {
 
 pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> {
     let mut data = Data {
-        version: 0,
         store: Store::new(),
         signature: Default::default(),
         workspace: Default::default(),
     };
 
     let mut signature = signature.into_tree();
+    // Remove noise from signature tree
     signature.clean_up();
+    // Pack signature data
     data.signature = signature.map(|item| match item {
         SignatureItem::Folder(name, open) => SignatureData::Folder(name, open),
         SignatureItem::Item(info) => SignatureData::Item(GeneratorData {
@@ -100,17 +124,23 @@ pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> 
         });
     }
 
+    // Tag data with version
+    let data: AnyVersion<Data> = data.into();
+    // Serialize
     rmp_serde::encode::to_vec_named(&data).unwrap()
 }
 
 pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
-    let data: Data = match rmp_serde::decode::from_slice(data) {
+    // Deserialize with version tag
+    let data: AnyVersion<Data> = match rmp_serde::decode::from_slice(data) {
         Err(error) => {
             log::error!("Error while deserializing: {}", error);
             None
         }
         Ok(data) => Some(data),
     }?;
+    // Migrate to current version
+    let data: Data = data.into();
     let store = data.store;
 
     let signature = data

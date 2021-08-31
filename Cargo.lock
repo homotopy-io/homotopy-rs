@@ -663,7 +663,7 @@ dependencies = [
 
 [[package]]
 name = "homotopy-web"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "arrayvec 0.7.1",
  "cargo-husky",
@@ -681,6 +681,7 @@ dependencies = [
  "js-sys",
  "log",
  "lyon_path",
+ "obake",
  "palette",
  "paste",
  "quote",
@@ -873,6 +874,27 @@ checksum = "05499f3756671c15885fee9034446956fff3f243d6077b91e5767df161f766b3"
 dependencies = [
  "hermit-abi",
  "libc",
+]
+
+[[package]]
+name = "obake"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eda26464437175aa4630c72b246b2a5c007c9019df9ae22fbfcac58d647e29fd"
+dependencies = [
+ "obake_macros",
+]
+
+[[package]]
+name = "obake_macros"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "349b6115190d08db083863068c6ac746af6742d1ea8172cfa6ed716fdefd918b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "semver",
+ "syn",
 ]
 
 [[package]]
