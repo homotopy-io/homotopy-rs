@@ -15,6 +15,12 @@ pub struct Props {
     pub contents: Tree<SignatureItem>,
 }
 
+#[derive(Copy, Clone, PartialEq, Eq)]
+enum DropPosition {
+    Before,
+    After,
+}
+
 fn on_valid_callback<F>(props: &Props, node: Node, f: F) -> Callback<DragEvent>
 where
     F: Fn(DragEvent) + 'static,
@@ -30,6 +36,39 @@ where
             f(e);
         }
     })
+}
+
+fn on_drag_start(node: Node) -> Callback<DragEvent> {
+    Callback::from(move |e: DragEvent| {
+        if let Some(dt) = e.data_transfer() {
+            dt.set_effect_allowed("move");
+            let _result = dt.set_data("text/plain", &node.index().to_string());
+        }
+    })
+}
+
+fn on_drag_enter(props: &Props, node: Node) -> Callback<DragEvent> {
+    on_valid_callback(props, node, |_| {})
+}
+
+fn on_drag_over(props: &Props, node: Node) -> Callback<DragEvent> {
+    on_valid_callback(props, node, |e| {
+        if let Some(dt) = e.data_transfer() {
+            dt.set_drop_effect("move");
+        }
+    })
+}
+
+fn on_drop(props: &Props, node: Node, position: DropPosition) -> Callback<DragEvent> {
+    if position == DropPosition::After {
+        props
+            .dispatch
+            .reform(into_action(move |from| SignatureEdit::MoveInto(from, node)))
+    } else {
+        props.dispatch.reform(into_action(move |from| {
+            SignatureEdit::MoveBefore(from, node)
+        }))
+    }
 }
 
 fn into_action<F>(f: F) -> impl Fn(DragEvent) -> Action
@@ -49,146 +88,99 @@ where
 
 #[function_component(FolderView)]
 pub fn folder_view(props: &Props) -> Html {
-    let root = props.contents.root();
-    let inner: Html = props.contents.with(root, |r| {
-        r.children().map(|c| render_tree(props, c)).collect()
-    });
-    let ondragenter_end = Callback::from(|e: DragEvent| e.prevent_default());
-    let ondragover_end = Callback::from(|e: DragEvent| {
-        e.prevent_default();
-        if let Some(dt) = e.data_transfer() {
-            dt.set_drop_effect("move");
-        }
-    });
-    let ondrop_end = props
-        .dispatch
-        .reform(into_action(move |from| SignatureEdit::MoveInto(from, root)));
-
     html! {
-        <>
-            <ul class="signature__generators">
-                {inner}
-                <li
-                    class="signature__dropzone"
-                    ondragenter={ondragenter_end}
-                    ondragover={ondragover_end}
-                    ondrop={ondrop_end}
-                />
-            </ul>
-            <span onclick={props.dispatch.reform(|_| Action::EditSignature(SignatureEdit::NewFolder))}>
-                <Icon name={"create_new_folder"} size={IconSize::Icon18} />
-            </span>
-        </>
+        <ul class="signature__generators">
+            {render_tree(props, props.contents.root())}
+        </ul>
+    }
+}
+
+fn render_drop_zone(props: &Props, node: Node, position: DropPosition) -> Html {
+    html! {
+        <li
+            class="signature__dropzone"
+            ondragenter={on_drag_enter(props, node)}
+            ondragover={on_drag_over(props, node)}
+            ondrop={on_drop(props, node, position)}
+        />
     }
 }
 
 fn render_item(props: &Props, node: Node) -> Html {
     props.contents.with(node, |item| {
-        let ondragenter = on_valid_callback(props, node, |_| {});
-        let ondragenter_before = ondragenter.clone();
-        let ondragover = on_valid_callback(props, node, |e| {
-            if let Some(dt) = e.data_transfer() {
-                dt.set_drop_effect("move");
-            }
-        });
-        let ondragover_before = ondragover.clone();
-        let ondrop = |n: Node| props.dispatch.reform(into_action(move |from| SignatureEdit::MoveInto(from, n)));
-        let ondrop_before = |n: Node| props.dispatch.reform(into_action(move |from| SignatureEdit::MoveBefore(from, n)));
-        let ondragstart = |n: Node| {
-            Callback::from(move |e: DragEvent| {
-                if let Some(dt) = e.data_transfer() {
-                    dt.set_effect_allowed("move");
-                    let _result = dt.set_data("text/plain", &n.index().to_string());
-                }
-            })
-        };
-
-        let element = match item.inner() {
+        match item.inner() {
             SignatureItem::Folder(name, open) => {
                 let icon = if *open { "folder_open" } else { "folder" };
                 html! {
-                    <li
+                    <div
                         class="signature__folder"
                         draggable={true.to_string()}
-                        ondragover={ondragover}
-                        ondragenter={ondragenter}
-                        ondrop={ondrop(node)}
-                        ondragstart={ondragstart(node)}
+                        ondragover={on_drag_over(props, node)}
+                        ondragenter={on_drag_enter(props, node)}
+                        ondrop={on_drop(props, node, DropPosition::After)}
+                        ondragstart={on_drag_start(node)}
                         onclick={props.dispatch.reform(move |_| Action::EditSignature(SignatureEdit::ToggleFolder(node)))}
                     >
-                        <Icon name={icon} size={IconSize::Icon18} />
+                        <span class="signature__folder-icon">
+                            <Icon name={icon} size={IconSize::Icon18} />
+                        </span>
                         {name}
-                    </li>
+                    </div>
                 }
             }
             SignatureItem::Item(info) => {
                 html! {
-                    <li
+                    <div
                         class="signature__generator"
                         draggable={true.to_string()}
-                        ondragstart={ondragstart(node)}
+                        ondragstart={on_drag_start(node)}
                     >
                         <GeneratorView
                             dispatch={props.dispatch.clone()}
                             generator={info.generator}
                             info={info.clone()}
                         />
-                    </li>
+                    </div>
                 }
             }
-        };
-
-        html! {
-            <>
-                <li
-                    class="signature__dropzone"
-                    ondragenter={ondragenter_before}
-                    ondragover={ondragover_before}
-                    ondrop={ondrop_before(node)}
-                />
-                {element}
-            </>
         }
     })
 }
 
 fn render_tree(props: &Props, node: Node) -> Html {
-    props.contents.with(node, move |n| {
-        let ondragenter_end = on_valid_callback(props, node, |_| {});
-        let ondragover_end = on_valid_callback(props, node, |e| {
-            if let Some(dt) = e.data_transfer() {
-                dt.set_drop_effect("move");
-            }
-        });
-        let ondrop_end = props
-            .dispatch
-            .reform(into_action(move |from| SignatureEdit::MoveInto(from, node)));
+    props.contents.with(node, move |n| match n.inner() {
+        SignatureItem::Folder(_, true) => {
+            let children = n.children().map(|child| render_tree(props, child));
+            let new_folder = props
+                .dispatch
+                .reform(move |_| Action::EditSignature(SignatureEdit::NewFolder(node)));
 
-        let children: Html = if let SignatureItem::Folder(_, true) = n.inner() {
-            n.children()
-                .map(|child| {
-                    html! {
-                        <ul>
-                            {render_tree(props, child)}
-                            <li
-                                class="signature__dropzone"
-                                ondragenter={ondragenter_end.clone()}
-                                ondragover={ondragover_end.clone()}
-                                ondrop={ondrop_end.clone()}
-                            />
+            html! {
+                <>
+                    {render_drop_zone(props, node, DropPosition::Before)}
+                    <li>
+                        {render_item(props, node)}
+                        <ul class="signature__branch">
+                            {for children}
+                            {render_drop_zone(props, node, DropPosition::After)}
+                            <li class="signature__branch-new-folder">
+                                <span onclick={new_folder}>
+                                    <Icon
+                                        name={"create_new_folder"}
+                                        size={IconSize::Icon18}
+                                    />
+                                </span>
+                            </li>
                         </ul>
-                    }
-                })
-                .collect()
-        } else {
-            html! {}
-        };
-
-        html! {
-            <>
-                {render_item(props, node)}
-                {children}
-            </>
+                    </li>
+                </>
+            }
         }
+        _ => html! {
+            <>
+                {render_drop_zone(props, node, DropPosition::Before)}
+                <li>{render_item(props, node)}</li>
+            </>
+        },
     })
 }
