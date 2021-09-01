@@ -132,7 +132,7 @@ impl GeneratorView {
                     let (icon, picker) = (color_ref.clone(), picker_ref.clone());
                     html! {
                         <span style={format!("color:{}", Color(Srgb::new(c[0], c[1], c[2])))}
-                            class="signature__generator-edit"
+                            class="signature__item-icon"
                             onclick={self.link.callback(move |_| {
                                 let color = Color(Srgb::new(c[0], c[1], c[2]));
                                 let s = format!("background-color:{}; height:32px",color);
@@ -201,7 +201,7 @@ impl GeneratorView {
         html! {
             <>
                 <span style={format!("color:{}", &self.props.info.color)}
-                    class="signature__generator-edit"
+                    class="signature__item-icon"
                     onclick={self.link.callback(move |_| Message::Color)}
                 >
                     <Icon name={"palette"} size={IconSize::Icon18} />
@@ -231,17 +231,17 @@ impl GeneratorView {
                         }
                     })}
                 />
-                <span class="signature__generator-dimension">
+                <span class="signature__item-child">
                     {self.props.info.diagram.dimension()}
                 </span>
                 <span
-                    class="signature__generator-edit"
+                    class="signature__item-child"
                     onclick={self.props.dispatch.reform(move |_| Action::RemoveGenerator(generator))}
                 >
                     <Icon name={"delete"} size={IconSize::Icon18} />
                 </span>
                 <span
-                    class="signature__generator-edit"
+                    class="signature__item-child"
                     onclick={self.link.callback(move |_| {
                         Message::Done
                     })}
@@ -261,16 +261,16 @@ impl GeneratorView {
                     style={format!("background: {}", self.props.info.color)}
                 />
                 <span
-                    class="signature__generator-name"
+                    class="signature__item-child signature__item-name"
                     onclick={self.props.dispatch.reform(move |_| Action::SelectGenerator(generator))}
                 >
                     {&self.props.info.name}
                 </span>
-                <span class="signature__generator-dimension">
+                <span class="signature__item-child">
                     {self.props.info.diagram.dimension()}
                 </span>
                 <span
-                    class="signature__generator-edit"
+                    class="signature__item-child"
                     onclick={self.link.callback(|_| Message::Edit)}
                 >
                     <Icon name={"edit"} size={IconSize::Icon18} />
