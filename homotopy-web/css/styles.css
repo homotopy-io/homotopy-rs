@@ -10,6 +10,7 @@
 
   --drawer-width: 250px;
   --drawer-background: #f9f9f9;
+  --drawer-background-dimmed: #f1f1f1;
   --drawer-foreground: #575f66;
   --drawer-border: #e1e1e1;
   --drawer-selected: #d1e4f4;
@@ -38,6 +39,16 @@ body, html {
   flex: 1;
   font-size: 14px;
   overflow: hidden;
+}
+
+input {
+  font-family: 'IBM Plex Sans', 'sans';
+  color: var(--draw-foreground);
+  font-size: 14px;
+}
+
+*:focus {
+  outline: none;
 }
 
 .app {
@@ -274,14 +285,26 @@ body, html {
 
 .signature__item {
   border-radius: var(--space-0);
-  height: var(--signature-height);
   box-sizing: border-box;
   display: flex;
   user-select: none;
   cursor: pointer;
+  height: var(--signature-height);
   overflow: hidden;
+  flex-direction: column;
+  transition: height 100ms;
+}
+
+.signature__item.signature__item-coloring {
+  height: 120px;
+}
+
+.signature__item-info {
+  display: flex;
   flex-direction: row;
   align-items: stretch;
+  width: 100%;
+  height: var(--signature-height);
 }
 
 .signature__branch {
@@ -329,24 +352,61 @@ body, html {
   padding: var(--space-0);
   display: flex;
   align-items: center;
+  transition: background-color 100ms;
 }
 
 .signature__item-name, .signature__item-fill {
   flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .signature__item-name {
-  padding-left: var(--space-1);
+  padding-left: 0;
+  padding-right: 0;
+  border-left: var(--space-1) solid transparent;
+  border-right: var(--space-1) solid transparent;
 }
 
-.signature__generator-name-input {
+.signature__item-name-input {
   padding: var(--space-1);
   border: none;
   background: transparent;
+  user-select: text;
 }
 
 .signature__generator-color {
-  padding-left: var(--space-1);
+  color: var(--drawer-background);
+}
+
+.signature__generator-picker {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--space-1);
+  gap: var(--space-0);
+  box-sizing: border-box;
+}
+
+.signature__generator-picker-preset {
+  flex: 1 1 21%;
+  height: 24px;
+  border-radius: var(--space-0);
+}
+
+.signature__generator-picker-custom {
+  flex: 1 1 100%;
+  width: 100%;
+  height: 24px;
+  border-radius: var(--space-0);
+  overflow: hidden;
+  cursor: pointer;
+  outline: none;
 }
 
 @media (pointer: fine) {
@@ -481,3 +541,17 @@ input.visually-hidden:focus-within + label {
 }
 
 input { width:100%; }
+
+input[type="color"] {
+	-webkit-appearance: none;
+	border: none;
+  padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+	padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+	border: none;
+}

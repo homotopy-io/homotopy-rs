@@ -1,19 +1,12 @@
 use homotopy_common::idx::Idx;
 use homotopy_common::tree::{Node, Tree};
 
-use crate::components::icon::{Icon, IconSize};
 use crate::model::proof::{Action, SignatureEdit, SignatureItem};
 
-use super::generator::GeneratorView;
+use super::item::{ItemView, NewFolderButton, NewFolderKind};
 
 use yew::prelude::*;
 use yew_macro::function_component;
-
-#[derive(Clone, PartialEq, Properties)]
-pub struct Props {
-    pub dispatch: Callback<Action>,
-    pub contents: Tree<SignatureItem>,
-}
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 enum DropPosition {
@@ -21,10 +14,10 @@ enum DropPosition {
     After,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
-enum NewFolderKind {
-    Root,
-    Inline,
+#[derive(Clone, PartialEq, Properties)]
+pub struct Props {
+    pub dispatch: Callback<Action>,
+    pub contents: Tree<SignatureItem>,
 }
 
 fn on_valid_callback<F>(props: &Props, node: Node, f: F) -> Callback<DragEvent>
@@ -108,81 +101,29 @@ fn render_drop_zone(props: &Props, node: Node, position: DropPosition) -> Html {
     }
 }
 
-fn render_new_folder(props: &Props, node: Node, kind: NewFolderKind) -> Html {
-    let new_folder = props
-        .dispatch
-        .reform(move |_| Action::EditSignature(SignatureEdit::NewFolder(node)));
-
-    if kind == NewFolderKind::Inline {
-        html! {
-            <span
-                class="signature__item-child"
-                onclick={new_folder}
-            >
-                <Icon
-                    name={"create_new_folder"}
-                    size={IconSize::Icon18}
-                />
-            </span>
-        }
-    } else {
-        html! {
-            <span
-                class="signature__item-child signature__item-fill"
-                onclick={new_folder}
-            >
-                <Icon
-                    name={"create_new_folder"}
-                    size={IconSize::Icon18}
-                />
-            </span>
-        }
-    }
-}
-
 fn render_item(props: &Props, node: Node) -> Html {
     props.contents.with(node, |item| match item.inner() {
-        SignatureItem::Folder(name, open) => {
-            let icon = if *open { "folder_open" } else { "folder" };
-            let toggle = props
-                .dispatch
-                .reform(move |_| Action::EditSignature(SignatureEdit::ToggleFolder(node)));
-
+        SignatureItem::Folder(_, _) => {
             html! {
-                <div
-                    class="signature__item signature__folder"
-                    draggable={true.to_string()}
-                    ondragover={on_drag_over(props, node)}
-                    ondragenter={on_drag_enter(props, node)}
-                    ondrop={on_drop(props, node, DropPosition::After)}
-                    ondragstart={on_drag_start(node)}
-                >
-                    <span
-                        class="signature__item-child"
-                        onclick={toggle}
-                    >
-                        <Icon name={icon} size={IconSize::Icon18} />
-                    </span>
-                    <span class="signature__item-child signature__item-name">
-                        {name}
-                    </span>
-                    {render_new_folder(props, node, NewFolderKind::Inline)}
-                </div>
+                <ItemView
+                    dispatch={props.dispatch.clone()}
+                    node={node}
+                    item={item.inner().clone()}
+                    on_drag_over={on_drag_over(props, node)}
+                    on_drag_enter={on_drag_enter(props, node)}
+                    on_drop={on_drop(props, node, DropPosition::After)}
+                    on_drag_start={on_drag_start(node)}
+                />
             }
         }
-        SignatureItem::Item(info) => {
+        SignatureItem::Item(_) => {
             html! {
-                <div
-                    class="signature__item"
-                    draggable={true.to_string()}
-                    ondragstart={on_drag_start(node)}
-                >
-                    <GeneratorView
-                        dispatch={props.dispatch.clone()}
-                        generator={info.generator}
-                        info={info.clone()}
-                    />
-                </div>
+                <ItemView
+                    dispatch={props.dispatch.clone()}
+                    node={node}
+                    item={item.inner().clone()}
+                    on_drag_start={on_drag_start(node)}
+                />
             }
         }
     })
@@ -194,9 +135,11 @@ fn render_children(props: &Props, node: Node) -> Html {
             let children = n.children().map(|child| render_tree(props, child));
             let footer = if node == props.contents.root() {
                 html! {
-                    <div class="signature__item">
-                        {render_new_folder(props, node, NewFolderKind::Root)}
-                    </div>
+                    <NewFolderButton
+                        dispatch={props.dispatch.clone()}
+                        node={props.contents.root()}
+                        kind={NewFolderKind::Root}
+                    />
                 }
             } else {
                 html! {}

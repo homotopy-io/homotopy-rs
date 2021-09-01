@@ -73,14 +73,6 @@ pub enum Action {
     /// Create a new generator of dimension zero.
     CreateGeneratorZero,
 
-    /// Update the information attached to a generator. Currently: name, colour.
-    EditGenerator(Generator, GeneratorEdit),
-
-    /// Remove a generator from the signature. All generators in the signature that depend on the
-    /// generator that is to be removed will be removed as well recursively. If the workspace
-    /// diagram or boundaries are set and depend on any removed generator they will be cleared.
-    RemoveGenerator(Generator),
-
     /// Set the current diagram in the workspace as a boundary. If the opposite boundary is
     /// already currently set, a new generator will be created with those boundaries if possible,
     /// after which the selected boundary is cleared. Does nothing if the workspace is empty.
@@ -167,10 +159,6 @@ impl ProofState {
     pub fn update(&mut self, action: &Action) -> Result<(), ModelError> {
         match action {
             Action::CreateGeneratorZero => self.signature.create_generator_zero(),
-            Action::EditGenerator(generator, edit) => {
-                self.signature.edit_generator(*generator, edit.clone())?;
-            }
-            Action::RemoveGenerator(generator) => self.remove_generator(generator),
             Action::SetBoundary(boundary) => self.set_boundary(*boundary)?,
             Action::TakeIdentityDiagram => self.take_identity_diagram(),
             Action::ClearWorkspace => self.clear_workspace(),
@@ -199,10 +187,16 @@ impl ProofState {
     /// Determines if a given [Action] should reset the panzoom state, given the current  [ProofState].
     pub fn resets_panzoom(&self, action: &Action) -> bool {
         match *action {
-            Action::RemoveGenerator(ref generator) => self
-                .workspace
-                .as_ref()
-                .map_or(false, |ws| ws.diagram.generators().contains(generator)),
+            Action::EditSignature(SignatureEdit::Remove(ref _node)) => {
+                // TODO(@doctorn) resets whenever any of the children of the removed node
+                // is present in the current workspace
+
+                // self
+                //     .workspace
+                //     .as_ref()
+                //     .map_or(false, |ws| ws.diagram.generators().contains(generator))
+                false
+            }
             Action::SelectGenerator(_) => self.workspace.is_none(),
             Action::AscendSlice(i) => i > 0,
             Action::ClearWorkspace | Action::DescendSlice(_) => true,
@@ -211,6 +205,8 @@ impl ProofState {
     }
 
     /// Handler for [Action::RemoveGenerator].
+    // TODO(@doctorn) fix this
+    #[allow(unused)]
     fn remove_generator(&mut self, generator: &Generator) {
         self.signature.remove(*generator);
 
