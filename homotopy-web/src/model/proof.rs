@@ -177,7 +177,7 @@ impl ProofState {
             }
             Action::Restrict => self.restrict()?,
             Action::Theorem => self.theorem()?,
-            Action::EditSignature(edit) => self.signature.update(edit),
+            Action::EditSignature(edit) => self.edit_signature(edit),
             _ => {}
         }
 
@@ -187,15 +187,10 @@ impl ProofState {
     /// Determines if a given [Action] should reset the panzoom state, given the current  [ProofState].
     pub fn resets_panzoom(&self, action: &Action) -> bool {
         match *action {
-            Action::EditSignature(SignatureEdit::Remove(ref _node)) => {
-                // TODO(@doctorn) resets whenever any of the children of the removed node
-                // is present in the current workspace
-
-                // self
-                //     .workspace
-                //     .as_ref()
-                //     .map_or(false, |ws| ws.diagram.generators().contains(generator))
-                false
+            Action::EditSignature(SignatureEdit::Remove(node)) => {
+                self.workspace.as_ref().map_or(false, |ws| {
+                    self.signature.has_descendents_in(node, &ws.diagram)
+                })
             }
             Action::SelectGenerator(_) => self.workspace.is_none(),
             Action::AscendSlice(i) => i > 0,
@@ -204,24 +199,25 @@ impl ProofState {
         }
     }
 
-    /// Handler for [Action::RemoveGenerator].
-    // TODO(@doctorn) fix this
-    #[allow(unused)]
-    fn remove_generator(&mut self, generator: &Generator) {
-        self.signature.remove(*generator);
+    /// Handler for [Action::EditSignature].
+    fn edit_signature(&mut self, edit: &SignatureEdit) {
+        // intercept remove events in order to clean-up workspace and boundaries
+        if let SignatureEdit::Remove(node) = edit {
+            // remove from the workspace
+            if let Some(ws) = &self.workspace {
+                if self.signature.has_descendents_in(*node, &ws.diagram) {
+                    self.clear_workspace();
+                }
+            }
+            // remove from the boundary
+            if let Some(b) = &self.boundary {
+                if self.signature.has_descendents_in(*node, &b.diagram) {
+                    self.clear_boundary();
+                }
+            }
+        }
 
-        // remove from the workspace
-        if let Some(ws) = &self.workspace {
-            if ws.diagram.generators().contains(generator) {
-                self.clear_workspace();
-            }
-        }
-        // remove from the boundary
-        if let Some(b) = &self.boundary {
-            if b.diagram.generators().contains(generator) {
-                self.clear_boundary();
-            }
-        }
+        self.signature.update(edit);
     }
 
     /// Handler for [Action::SetBoundary].

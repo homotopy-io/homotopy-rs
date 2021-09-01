@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::fmt;
 use std::ops::Deref;
 use std::str::FromStr;
@@ -130,6 +131,18 @@ impl Signature {
         });
     }
 
+    pub fn has_descendents_in(&self, node: Node, diagram: &Diagram) -> bool {
+        self.0.descendents_of(node).any(|node| {
+            self.0.with(node, |n| {
+                if let SignatureItem::Item(info) = n.inner() {
+                    diagram.generators().contains(&info.generator)
+                } else {
+                    false
+                }
+            })
+        })
+    }
+
     pub fn create_generator_zero(&mut self) {
         let id = self.next_generator_id();
         let generator = Generator::new(id, 0);
@@ -170,8 +183,31 @@ impl Signature {
                     }
                 });
             }
-            SignatureEdit::Remove(_node) => {
-                // TODO(@doctorn):
+            SignatureEdit::Remove(node) => {
+                // Prepare to remove all of the descendents of the deleted node
+                let mut to_remove: VecDeque<_> = self.0.descendents_of(*node).collect();
+                // So long as we have something left to delete
+                while let Some(removing) = to_remove.pop_front() {
+                    let mut implied = self
+                        .0
+                        .iter()
+                        .filter_map(|(node, item)| {
+                            // Find all of the generators in the signature
+                            if let SignatureItem::Item(info) = item.inner() {
+                                if self.has_descendents_in(removing, &info.diagram) {
+                                    return Some(node);
+                                }
+                            }
+
+                            None
+                        })
+                        .collect();
+
+                    // Queue these for deletion
+                    to_remove.append(&mut implied);
+                    // Delete the node
+                    self.0.remove(removing);
+                }
             }
         }
     }
