@@ -21,6 +21,12 @@ enum DropPosition {
     After,
 }
 
+#[derive(Copy, Clone, PartialEq, Eq)]
+enum NewFolderKind {
+    Root,
+    Inline,
+}
+
 fn on_valid_callback<F>(props: &Props, node: Node, f: F) -> Callback<DragEvent>
 where
     F: Fn(DragEvent) + 'static,
@@ -88,11 +94,7 @@ where
 
 #[function_component(FolderView)]
 pub fn folder_view(props: &Props) -> Html {
-    html! {
-        <ul class="signature__generators">
-            {render_tree(props, props.contents.root())}
-        </ul>
-    }
+    render_children(props, props.contents.root())
 }
 
 fn render_drop_zone(props: &Props, node: Node, position: DropPosition) -> Html {
@@ -106,81 +108,128 @@ fn render_drop_zone(props: &Props, node: Node, position: DropPosition) -> Html {
     }
 }
 
+fn render_new_folder(props: &Props, node: Node, kind: NewFolderKind) -> Html {
+    let new_folder = props
+        .dispatch
+        .reform(move |_| Action::EditSignature(SignatureEdit::NewFolder(node)));
+
+    if kind == NewFolderKind::Inline {
+        html! {
+            <span
+                class="signature__item-child"
+                onclick={new_folder}
+            >
+                <Icon
+                    name={"create_new_folder"}
+                    size={IconSize::Icon18}
+                />
+            </span>
+        }
+    } else {
+        html! {
+            <span
+                class="signature__item-child signature__item-fill"
+                onclick={new_folder}
+            >
+                <Icon
+                    name={"create_new_folder"}
+                    size={IconSize::Icon18}
+                />
+            </span>
+        }
+    }
+}
+
 fn render_item(props: &Props, node: Node) -> Html {
-    props.contents.with(node, |item| {
-        match item.inner() {
-            SignatureItem::Folder(name, open) => {
-                let icon = if *open { "folder_open" } else { "folder" };
-                html! {
-                    <div
-                        class="signature__folder"
-                        draggable={true.to_string()}
-                        ondragover={on_drag_over(props, node)}
-                        ondragenter={on_drag_enter(props, node)}
-                        ondrop={on_drop(props, node, DropPosition::After)}
-                        ondragstart={on_drag_start(node)}
-                        onclick={props.dispatch.reform(move |_| Action::EditSignature(SignatureEdit::ToggleFolder(node)))}
+    props.contents.with(node, |item| match item.inner() {
+        SignatureItem::Folder(name, open) => {
+            let icon = if *open { "folder_open" } else { "folder" };
+            let toggle = props
+                .dispatch
+                .reform(move |_| Action::EditSignature(SignatureEdit::ToggleFolder(node)));
+
+            html! {
+                <div
+                    class="signature__item signature__folder"
+                    draggable={true.to_string()}
+                    ondragover={on_drag_over(props, node)}
+                    ondragenter={on_drag_enter(props, node)}
+                    ondrop={on_drop(props, node, DropPosition::After)}
+                    ondragstart={on_drag_start(node)}
+                >
+                    <span
+                        class="signature__item-child"
+                        onclick={toggle}
                     >
-                        <span class="signature__folder-icon">
-                            <Icon name={icon} size={IconSize::Icon18} />
-                        </span>
+                        <Icon name={icon} size={IconSize::Icon18} />
+                    </span>
+                    <span class="signature__item-child signature__item-name">
                         {name}
-                    </div>
-                }
+                    </span>
+                    {render_new_folder(props, node, NewFolderKind::Inline)}
+                </div>
             }
-            SignatureItem::Item(info) => {
-                html! {
-                    <div
-                        class="signature__generator"
-                        draggable={true.to_string()}
-                        ondragstart={on_drag_start(node)}
-                    >
-                        <GeneratorView
-                            dispatch={props.dispatch.clone()}
-                            generator={info.generator}
-                            info={info.clone()}
-                        />
-                    </div>
-                }
+        }
+        SignatureItem::Item(info) => {
+            html! {
+                <div
+                    class="signature__item"
+                    draggable={true.to_string()}
+                    ondragstart={on_drag_start(node)}
+                >
+                    <GeneratorView
+                        dispatch={props.dispatch.clone()}
+                        generator={info.generator}
+                        info={info.clone()}
+                    />
+                </div>
             }
         }
     })
 }
 
-fn render_tree(props: &Props, node: Node) -> Html {
+fn render_children(props: &Props, node: Node) -> Html {
     props.contents.with(node, move |n| match n.inner() {
         SignatureItem::Folder(_, true) => {
             let children = n.children().map(|child| render_tree(props, child));
-            let new_folder = props
-                .dispatch
-                .reform(move |_| Action::EditSignature(SignatureEdit::NewFolder(node)));
+            let footer = if node == props.contents.root() {
+                html! {
+                    <div class="signature__item">
+                        {render_new_folder(props, node, NewFolderKind::Root)}
+                    </div>
+                }
+            } else {
+                html! {}
+            };
+            let class = format!(
+                "signature__branch {}",
+                if n.is_empty() {
+                    "signature__branch-empty"
+                } else {
+                    ""
+                }
+            );
 
             html! {
-                <>
-                    {render_drop_zone(props, node, DropPosition::Before)}
-                    <li>
-                        {render_item(props, node)}
-                        <ul class="signature__branch">
-                            {for children}
-                            {render_drop_zone(props, node, DropPosition::After)}
-                            <li class="signature__branch-new-folder">
-                                <span onclick={new_folder}>
-                                    <Icon
-                                        name={"create_new_folder"}
-                                        size={IconSize::Icon18}
-                                    />
-                                </span>
-                            </li>
-                        </ul>
-                    </li>
-                </>
+                <ul class={class}>
+                    {for children}
+                    {render_drop_zone(props, node, DropPosition::After)}
+                    {footer}
+                </ul>
             }
         }
-        _ => html! {
-            <>
-                {render_drop_zone(props, node, DropPosition::Before)}
-                <li>{render_item(props, node)}</li>
-            </>
-        },
+        _ => html! {},
     })
+}
+
+fn render_tree(props: &Props, node: Node) -> Html {
+    html! {
+        <>
+            {render_drop_zone(props, node, DropPosition::Before)}
+            <li>
+                {render_item(props, node)}
+                {render_children(props, node)}
+            </li>
+        </>
+    }
 }

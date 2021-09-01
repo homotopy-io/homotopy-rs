@@ -266,43 +266,38 @@ body, html {
   touch-action: pan-y;
   width: 100%;
   height: 100%;
+  padding: var(--space-1);
+  box-sizing: border-box;
 }
 
 /* Signature */
 
-.signature__folder {
-  height: var(--signature-height);
-  display: flex;
-  align-items: center;
-  box-sizing: border-box;
-  padding: 0 var(--space-0);
-  margin-right: var(--space-0);
+.signature__item {
   border-radius: var(--space-0);
+  height: var(--signature-height);
+  box-sizing: border-box;
+  display: flex;
   user-select: none;
   cursor: pointer;
-}
-
-.signature__folder-icon {
-  margin-right: var(--space-1);
-}
-
-.signature__folder:-moz-drag-over {
-  outline: 2px solid var(--toolbar-border);
-}
-
-.signature__generators {
-  margin: 0;
-  padding: 0;
+  overflow: hidden;
+  flex-direction: row;
+  align-items: stretch;
 }
 
 .signature__branch {
   width: 100%;
   list-style-type: none;
-  padding-left: var(--space-2);
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+.signature__branch .signature__branch {
   border-left: solid 2px var(--toolbar-border);
+  margin-top: var(--space-0);
+  padding-left: var(--space-1);
 }
 
 .signature__dropzone {
@@ -312,26 +307,36 @@ body, html {
   transition: height 100ms;
 }
 
+.signature__branch-empty .signature__dropzone {
+  height: var(--signature-height);
+  color: var(--drawer-border);
+  content: "(Empty)";
+}
+
+.signature__branch-empty .signature__dropzone::after {
+  content: "(Empty)";
+  display: flex;
+  align-items: center;
+  margin-left: var(--space-0);
+  height: 100%;
+}
+
 .signature__dropzone:-moz-drag-over {
   height: var(--signature-height);
 }
 
-.signature__generator {
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  cursor: pointer;
-  border-radius: var(--space-0);
-  overflow: hidden;
-  user-select: none;
-  height: var(--signature-height);
-}
-
-.signature__generator-name {
-  padding: var(--space-1);
-  flex: 1;
+.signature__item-child {
+  padding: var(--space-0);
   display: flex;
   align-items: center;
+}
+
+.signature__item-name, .signature__item-fill {
+  flex: 1;
+}
+
+.signature__item-name {
+  padding-left: var(--space-1);
 }
 
 .signature__generator-name-input {
@@ -340,27 +345,12 @@ body, html {
   background: transparent;
 }
 
-.signature__generator-dimension {
-  padding: var(--space-1);
-  display: flex;
-  align-items: center;
-}
-
 .signature__generator-color {
   padding-left: var(--space-1);
 }
 
-.signature__generator-edit {
-  padding: var(--space-0);
-  display: flex;
-  align-items: center;
-}
-
 @media (pointer: fine) {
-  .signature__folder:hover, .signature__generator-name:hover {
-    background: var(--drawer-selected);
-  }
-  .signature__generator-edit:hover {
+  .signature__item-child:hover {
     background: var(--drawer-selected);
   }
 }
