@@ -12,12 +12,10 @@ use homotopy_core::common::Generator;
 use homotopy_core::diagram::NewDiagramError;
 use homotopy_core::{Diagram, DiagramN};
 
-use super::ModelError;
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Color(pub(crate) Srgb<u8>);
 
-const COLORS: &[&str] = &[
+pub const COLORS: &[&str] = &[
     "#2980b9", // belize blue
     "#c0392b", // pomegranate
     "#f39c12", // orange
@@ -64,17 +62,19 @@ impl Default for SignatureItem {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum GeneratorEdit {
+pub enum SignatureItemEdit {
     Rename(String),
     Recolor(Color),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SignatureEdit {
+    Edit(Node, SignatureItemEdit),
     MoveBefore(Node, Node),
     MoveInto(Node, Node),
     ToggleFolder(Node),
     NewFolder(Node),
+    Remove(Node),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -120,6 +120,16 @@ impl Signature {
         })
     }
 
+    fn edit(&mut self, node: Node, edit: SignatureItemEdit) {
+        use SignatureItemEdit::{Recolor, Rename};
+        self.0.with_mut(node, move |n| match (n.inner_mut(), edit) {
+            (SignatureItem::Item(info), Rename(name)) => info.name = name,
+            (SignatureItem::Item(info), Recolor(color)) => info.color = color,
+            (SignatureItem::Folder(ref mut old, _), Rename(name)) => *old = name,
+            (_, _) => {}
+        });
+    }
+
     pub fn create_generator_zero(&mut self) {
         let id = self.next_generator_id();
         let generator = Generator::new(id, 0);
@@ -138,27 +148,6 @@ impl Signature {
         Ok(diagram.into())
     }
 
-    pub fn edit_generator(
-        &mut self,
-        generator: Generator,
-        edit: GeneratorEdit,
-    ) -> Result<(), ModelError> {
-        let node = self
-            .find_node(generator)
-            .ok_or(ModelError::UnknownGeneratorSelected)?;
-
-        self.0.with_mut(node, move |n| {
-            if let SignatureItem::Item(info) = n.inner_mut() {
-                match edit {
-                    GeneratorEdit::Rename(name) => info.name = name,
-                    GeneratorEdit::Recolor(color) => info.color = color,
-                }
-            }
-        });
-
-        Ok(())
-    }
-
     pub fn remove(&mut self, generator: Generator) {
         if let Some(node) = self.find_node(generator) {
             self.0.remove(node);
@@ -167,6 +156,7 @@ impl Signature {
 
     pub fn update(&mut self, edit: &SignatureEdit) {
         match edit {
+            SignatureEdit::Edit(node, edit) => self.edit(*node, edit.clone()),
             SignatureEdit::NewFolder(node) => {
                 self.0
                     .push_onto(*node, SignatureItem::Folder("New folder".to_owned(), true));
@@ -179,6 +169,9 @@ impl Signature {
                         *b = !*b;
                     }
                 });
+            }
+            SignatureEdit::Remove(_node) => {
+                // TODO(@doctorn):
             }
         }
     }
