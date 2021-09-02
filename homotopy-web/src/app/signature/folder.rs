@@ -1,12 +1,13 @@
+use yew::prelude::*;
+use yew_macro::function_component;
+
 use homotopy_common::idx::Idx;
 use homotopy_common::tree::{Node, Tree};
 
+use crate::components::{add_class, remove_class};
 use crate::model::proof::{Action, SignatureEdit, SignatureItem};
 
 use super::item::{ItemView, NewFolderButton, NewFolderKind};
-
-use yew::prelude::*;
-use yew_macro::function_component;
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 enum DropPosition {
@@ -26,12 +27,12 @@ where
 {
     let ancestors: Vec<_> = props.contents.ancestors_of(node).collect();
     Callback::from(move |e: DragEvent| {
+        e.prevent_default();
         if e.data_transfer()
-            .and_then(|dt| dt.get_data("text/plain").ok())
+            .and_then(|dt| dt.get_data("text").ok())
             .and_then(|data| data.parse().ok())
             .map_or(false, |from| !ancestors.contains(&Node::new(from)))
         {
-            e.prevent_default();
             f(e);
         }
     })
@@ -41,7 +42,7 @@ fn on_drag_start(node: Node) -> Callback<DragEvent> {
     Callback::from(move |e: DragEvent| {
         if let Some(dt) = e.data_transfer() {
             dt.set_effect_allowed("move");
-            let _result = dt.set_data("text/plain", &node.index().to_string());
+            dt.set_data("text", &node.index().to_string()).unwrap();
         }
     })
 }
@@ -91,12 +92,36 @@ pub fn folder_view(props: &Props) -> Html {
 }
 
 fn render_drop_zone(props: &Props, node: Node, position: DropPosition) -> Html {
+    let drop_zone_ref = NodeRef::default();
+    let on_drag_enter = {
+        let drop_zone_ref = drop_zone_ref.clone();
+        on_drag_enter(props, node).reform(move |e| {
+            add_class(&drop_zone_ref, "drag-over");
+            e
+        })
+    };
+    let on_drag_leave = {
+        let drop_zone_ref = drop_zone_ref.clone();
+        Callback::from(move |_| {
+            remove_class(&drop_zone_ref, "drag-over");
+        })
+    };
+    let on_drop = {
+        let drop_zone_ref = drop_zone_ref.clone();
+        on_drop(props, node, position).reform(move |e| {
+            remove_class(&drop_zone_ref, "drag-over");
+            e
+        })
+    };
+
     html! {
         <li
+            ref={drop_zone_ref}
             class="signature__dropzone"
-            ondragenter={on_drag_enter(props, node)}
+            ondragenter={on_drag_enter}
+            ondragleave={on_drag_leave}
             ondragover={on_drag_over(props, node)}
-            ondrop={on_drop(props, node, position)}
+            ondrop={on_drop}
         />
     }
 }
