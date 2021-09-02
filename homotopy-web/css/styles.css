@@ -344,7 +344,7 @@ input {
   height: 100%;
 }
 
-.signature__dropzone:-moz-drag-over {
+.signature__dropzone.drag-over {
   height: var(--signature-height);
 }
 

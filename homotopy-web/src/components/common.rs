@@ -1,6 +1,6 @@
 use std::fmt;
 
-use web_sys::{DomRect, Element, TouchList};
+use web_sys::{DomRect, DomTokenList, Element, TouchList};
 use yew::NodeRef;
 
 use euclid::default::{Point2D, Vector2D};
@@ -47,6 +47,18 @@ pub fn bounding_rect(node_ref: &NodeRef) -> Option<DomRect> {
 
 pub fn document() -> web_sys::Document {
     web_sys::window().unwrap().document().unwrap()
+}
+
+pub fn class_list(node_ref: &NodeRef) -> DomTokenList {
+    node_ref.cast::<Element>().unwrap().class_list()
+}
+
+pub fn add_class<S: AsRef<str>>(node_ref: &NodeRef, class: S) {
+    class_list(node_ref).add_1(class.as_ref()).unwrap();
+}
+
+pub fn remove_class<S: AsRef<str>>(node_ref: &NodeRef, class: S) {
+    class_list(node_ref).remove_1(class.as_ref()).unwrap();
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
