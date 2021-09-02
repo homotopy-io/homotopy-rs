@@ -60,7 +60,8 @@ impl State for PanZoomState {
                 touches.sort_by_key(|(finger, _)| *finger);
 
                 if touches.len() != 2 || self.touches.len() != 2 {
-                    self.touches = touches.clone();
+                    self.touches = touches;
+                    return;
                 }
 
                 let average_next = (touches[0].1.to_vector() + touches[1].1.to_vector()) * 0.5;
