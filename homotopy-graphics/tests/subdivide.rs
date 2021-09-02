@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use homotopy_core::mesh::{CubeMesh, SquareMesh, Vertex, VertexId};
+    use homotopy_graphics::mesh::{CubeMesh, SquareMesh, Vertex, VertexId};
     use homotopy_graphics::subdivide::{subdivide3, subdivide4};
 
     fn create_simple_3d_input() -> SquareMesh {

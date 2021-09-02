@@ -1,7 +1,7 @@
 use std::cmp::{max, min};
 use std::collections::HashMap;
-use std::hash::Hash;
 use std::fmt;
+use std::hash::Hash;
 
 use homotopy_common::declare_idx;
 use homotopy_common::idx::IdxVec;
@@ -67,8 +67,8 @@ impl CubeMesh {
         let mut c = verts.clone();
         c.dedup();
         match (verts.len(), c.len()) {
-            (2, 1) | (4, 1) => c[0],
-            (2, 2) | (4, 4) | (4, 3) => self
+            (2 | 4, 1) => c[0],
+            (2, 2) | (4, 4 | 3) => self
                 .division_memory
                 .get(&verts)
                 .copied()

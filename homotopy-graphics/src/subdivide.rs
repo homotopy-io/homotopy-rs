@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use homotopy_common::idx::IdxVec;
 
-use crate::mesh::*;
+use crate::mesh::{CubeMesh, SquareMesh, Vertex, VertexId};
 
 /// Defines how new squares should be from linearly divided points.
 /// See Picture 1.
@@ -146,7 +146,7 @@ pub fn subdivide3(control_mesh: &SquareMesh) -> SquareMesh {
     }
     // Copy the final vertex positions and divide by valence
     for (v_id, v) in &smooth_vertices {
-        let valence = valence[&v_id];
+        let valence = valence[v_id];
         let vtx = new_mesh.vertices.get_mut(*v_id).unwrap();
         vtx.copy_from(v);
         vtx.scale(1.0 / f64::from(valence));
@@ -359,7 +359,7 @@ pub fn subdivide4(control_mesh: &CubeMesh) -> CubeMesh {
     }
     // Copy the final vertex positions and divide by valence
     for (v_id, v) in &smooth_vertices {
-        let valence = vert_valence[&v_id];
+        let valence = vert_valence[v_id];
         let vtx = new_mesh.vertices.get_mut(*v_id).unwrap();
         vtx.copy_from(v);
         vtx.scale(1.0 / f64::from(valence));

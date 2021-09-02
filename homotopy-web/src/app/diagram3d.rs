@@ -4,9 +4,9 @@ use im::HashMap;
 
 use homotopy_core::DiagramN;
 
-use homotopy_graphics::subdivide::subdivide3;
 use homotopy_graphics::cubicalise::cubicalise;
 use homotopy_graphics::mesh::SquareMesh;
+use homotopy_graphics::subdivide::subdivide3;
 
 pub struct Diagram3D {
     props: Props3D,
@@ -17,7 +17,6 @@ pub struct Props3D {
     pub diagram: DiagramN,
 }
 
-#[allow(clippy::pub_enum_variant_names)]
 #[derive(Debug)]
 pub enum Message3D {}
 
