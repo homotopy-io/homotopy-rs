@@ -10,6 +10,20 @@ use homotopy_common::tree::Node;
 use crate::components::icon::{Icon, IconSize};
 use crate::model::proof::{Action, Color, SignatureEdit, SignatureItem, SignatureItemEdit, COLORS};
 
+// FIXME(@doctorn)
+//
+// When deleting signature items, at the moment, `ItemView` components
+// retain their state. This means that the edit state intended for a particular
+// signature item ends up being applied to an entirely different signature item.
+//
+// In order to fix this, I think it is necessary to maintain a map from nodes
+// in the signature to their current `ItemView` state, but this is a big change
+// and I can't see any urgency.
+//
+// An alternative solution would be to prevent more than one signature item being
+// edited concurrently and simply reset all `ItemView` states to `Viewing` after
+// an edit.
+
 #[derive(Properties, Debug, Clone, PartialEq)]
 struct ItemViewButtonProps {
     icon: String,
@@ -107,7 +121,6 @@ impl Default for ItemViewMode {
 pub enum ItemViewMessage {
     SwitchTo(ItemViewMode),
     Edit(SignatureItemEdit),
-    Dispatch(Action),
     Noop,
 }
 
@@ -169,7 +182,6 @@ impl Component for ItemView {
         match msg {
             ItemViewMessage::SwitchTo(mode) => return self.switch_to(mode),
             ItemViewMessage::Edit(edit) => return self.edit.apply(edit),
-            ItemViewMessage::Dispatch(dispatch) => self.props.dispatch.emit(dispatch),
             ItemViewMessage::Noop => {}
         }
 
@@ -378,11 +390,10 @@ impl ItemView {
             SignatureItem::Folder(_, open) => {
                 let icon = if *open { "folder_open" } else { "folder" };
                 let node = self.props.node;
-                let toggle = self.link.callback(move |_| {
-                    ItemViewMessage::Dispatch(Action::EditSignature(SignatureEdit::ToggleFolder(
-                        node,
-                    )))
-                });
+                let toggle = self
+                    .props
+                    .dispatch
+                    .reform(move |_| Action::EditSignature(SignatureEdit::ToggleFolder(node)));
 
                 html! {
                     <>
