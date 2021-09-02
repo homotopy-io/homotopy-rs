@@ -59,12 +59,13 @@ impl<'a> Frame<'a> {
     pub fn render(self) {
         self.ctx.resize_to_fit();
 
-        self.ctx.webgl_ctx.clear_color(
-            self.ctx.clear_color.x,
-            self.ctx.clear_color.y,
-            self.ctx.clear_color.z,
-            1.0,
-        );
+        // TODO(@doctorn) fix clear color
+        // self.ctx.webgl_ctx.clear_color(
+        //     self.ctx.clear_color.x,
+        //     self.ctx.clear_color.y,
+        //     self.ctx.clear_color.z,
+        //     1.0,
+        // );
         self.ctx.webgl_ctx.clear(
             WebGl2RenderingContext::COLOR_BUFFER_BIT | WebGl2RenderingContext::DEPTH_BUFFER_BIT,
         );

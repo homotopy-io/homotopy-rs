@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use euclid::{Vector2D, Vector3D};
+use ultraviolet::{Vec2, Vec3};
 
 use web_sys::{WebGl2RenderingContext, WebGlVertexArrayObject};
 
@@ -145,18 +145,12 @@ unsafe impl Attributable for f32 {
     const TYPE: u32 = WebGl2RenderingContext::FLOAT;
 }
 
-unsafe impl<T, U> Attributable for Vector2D<T, U>
-where
-    T: Attributable,
-{
+unsafe impl Attributable for Vec2 {
     const DIMENSION: i32 = 2;
-    const TYPE: u32 = T::TYPE;
+    const TYPE: u32 = WebGl2RenderingContext::FLOAT;
 }
 
-unsafe impl<T, U> Attributable for Vector3D<T, U>
-where
-    T: Attributable,
-{
+unsafe impl Attributable for Vec3 {
     const DIMENSION: i32 = 3;
-    const TYPE: u32 = T::TYPE;
+    const TYPE: u32 = WebGl2RenderingContext::FLOAT;
 }
