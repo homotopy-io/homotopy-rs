@@ -1,9 +1,14 @@
-use std::collections::HashMap;
+//! Primal subdivision methods in this module follow a preset point order when subdividing elements.
+//! For 2-cubes, 9 points are generated in the order (a). For 3-cubes 27 points are generated in order (b).
+//! <img src="../../images/subdivision_illustration.png"/>
 
-use homotopy_common::idx::IdxVec;
+// use std::collections::HashMap;
 
-use crate::mesh::{CubeMesh, SquareMesh, Vertex, VertexId};
+// use homotopy_common::idx::IdxVec;
 
+// use super::geom::{CubeMesh, SquareMesh, Vertex, VertexId};
+
+/*
 /// Defines how new squares should be from linearly divided points.
 /// See Picture 1.
 /// Important property that is preserved - first point is a vertex point, and similar for edge points.
@@ -370,3 +375,4 @@ pub fn subdivide4(control_mesh: &CubeMesh) -> CubeMesh {
     ));
     new_mesh
 }
+*/

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use euclid::{Transform3D, Vector2D, Vector3D};
+use ultraviolet::{Mat4, Vec2, Vec3};
 
 use web_sys::{WebGl2RenderingContext, WebGlProgram, WebGlShader, WebGlUniformLocation};
 
@@ -299,33 +299,23 @@ unsafe impl Uniformable for f32 {
     }
 }
 
-unsafe impl<U> Uniformable for Vector2D<f32, U>
-where
-    U: 'static,
-{
+unsafe impl Uniformable for Vec2 {
     #[inline]
     fn uniform(&self, ctx: &WebGl2RenderingContext, loc: &WebGlUniformLocation) {
         ctx.uniform2f(Some(loc), self.x, self.y);
     }
 }
 
-unsafe impl<U> Uniformable for Vector3D<f32, U>
-where
-    U: 'static,
-{
+unsafe impl Uniformable for Vec3 {
     #[inline]
     fn uniform(&self, ctx: &WebGl2RenderingContext, loc: &WebGlUniformLocation) {
         ctx.uniform3f(Some(loc), self.x, self.y, self.z);
     }
 }
 
-unsafe impl<S, T> Uniformable for Transform3D<f32, S, T>
-where
-    S: 'static,
-    T: 'static,
-{
+unsafe impl Uniformable for Mat4 {
     #[inline]
     fn uniform(&self, ctx: &WebGl2RenderingContext, loc: &WebGlUniformLocation) {
-        ctx.uniform_matrix4fv_with_f32_array(Some(loc), false, &self.to_array());
+        ctx.uniform_matrix4fv_with_f32_array(Some(loc), false, self.as_array());
     }
 }
