@@ -2,6 +2,7 @@ use yew::prelude::*;
 
 use wasm_bindgen::closure::Closure;
 
+use crate::components::gl::GlViewport;
 use crate::components::icon::{Icon, IconSize};
 use crate::components::panzoom::PanZoom;
 use crate::components::toast::{Toast, Toaster, ToasterComponent};
@@ -9,8 +10,8 @@ use crate::model;
 
 mod attach;
 mod diagram2d;
-mod diagram3d;
 mod project;
+mod renderers;
 mod settings;
 mod sidebar;
 mod signature;
@@ -116,9 +117,13 @@ impl Component for App {
             }
             None => {
                 // TODO: Show onboarding info if workspace and signature is empty
+                // html! {
+                //     <content class="workspace workspace--empty">
+                //     </content>
+                // }
+                // TODO(@doctorn) remove
                 html! {
-                    <content class="workspace workspace--empty">
-                    </content>
+                    <GlViewport::<renderers::diagram3d::Diagram3D> />
                 }
             }
         };
