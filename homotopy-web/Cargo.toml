@@ -42,6 +42,7 @@ gloo-timers = "0.2.1"
 wasm-logger = "0.2.0"
 log = "0.4.14"
 euclid = "0.22.6"
+ultraviolet = "0.8.1"
 lyon_path = "0.17.4"
 thiserror = "1.0.26"
 obake = { version = "1.0.4", features = ["serde"] }
