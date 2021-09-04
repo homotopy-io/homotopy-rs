@@ -199,15 +199,7 @@ function makeMutClosure(arg0, arg1, dtor, f) {
     return real;
 }
 function __wbg_adapter_18(arg0, arg1) {
-    wasm._dyn_core__ops__function__FnMut_____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__hc374b906f9076941(arg0, arg1);
-}
-
-function __wbg_adapter_21(arg0, arg1, arg2) {
-    wasm._dyn_core__ops__function__FnMut__A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__h1d78e6dd1810f7eb(arg0, arg1, addHeapObject(arg2));
-}
-
-function __wbg_adapter_24(arg0, arg1, arg2) {
-    wasm._dyn_core__ops__function__FnMut__A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__h1d78e6dd1810f7eb(arg0, arg1, addHeapObject(arg2));
+    wasm._dyn_core__ops__function__FnMut_____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__h8b28050f42e156d2(arg0, arg1);
 }
 
 let stack_pointer = 32;
@@ -217,12 +209,20 @@ function addBorrowedObject(obj) {
     heap[--stack_pointer] = obj;
     return stack_pointer;
 }
-function __wbg_adapter_27(arg0, arg1, arg2) {
+function __wbg_adapter_21(arg0, arg1, arg2) {
     try {
-        wasm._dyn_core__ops__function__FnMut___A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__h0d675ae670102ca4(arg0, arg1, addBorrowedObject(arg2));
+        wasm._dyn_core__ops__function__FnMut___A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__ha6c956d74056acb7(arg0, arg1, addBorrowedObject(arg2));
     } finally {
         heap[stack_pointer++] = undefined;
     }
+}
+
+function __wbg_adapter_24(arg0, arg1, arg2) {
+    wasm._dyn_core__ops__function__FnMut__A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__h99499ed63a363fb2(arg0, arg1, addHeapObject(arg2));
+}
+
+function __wbg_adapter_27(arg0, arg1, arg2) {
+    wasm._dyn_core__ops__function__FnMut__A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__h99499ed63a363fb2(arg0, arg1, addHeapObject(arg2));
 }
 
 function __wbg_adapter_30(arg0, arg1, arg2) {
@@ -284,7 +284,7 @@ async function load(module, imports) {
 
 async function init(input) {
     if (typeof input === 'undefined') {
-        input = new URL('index-69424278cb361bff_bg.wasm', import.meta.url);
+        input = new URL('index-884a2a128b37f567_bg.wasm', import.meta.url);
     }
     const imports = {};
     imports.wbg = {};
@@ -782,8 +782,8 @@ async function init(input) {
         var ret = makeMutClosure(arg0, arg1, 432, __wbg_adapter_27);
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_closure_wrapper2492 = function(arg0, arg1, arg2) {
-        var ret = makeMutClosure(arg0, arg1, 868, __wbg_adapter_30);
+    imports.wbg.__wbindgen_closure_wrapper2502 = function(arg0, arg1, arg2) {
+        var ret = makeMutClosure(arg0, arg1, 869, __wbg_adapter_30);
         return addHeapObject(ret);
     };
 
