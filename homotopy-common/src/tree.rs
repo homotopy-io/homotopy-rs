@@ -203,7 +203,10 @@ impl<T> Tree<T> {
         self.root
     }
 
-    fn reparent_at(&mut self, node: Node, parent: Node, index: Option<usize>) {
+    fn reparent_at<F>(&mut self, node: Node, parent: Node, index: F)
+    where
+        F: FnOnce(&[Node]) -> Option<usize>,
+    {
         // Can't reparent the root
         assert_ne!(node, self.root);
         // Don't introduce a cycle
@@ -216,7 +219,7 @@ impl<T> Tree<T> {
         }
 
         self.nodes[node].parent = Some(parent);
-        if let Some(index) = index {
+        if let Some(index) = index(&self.nodes[parent].children) {
             self.nodes[parent].children.insert(index, node);
         } else {
             self.nodes[parent].children.push(node);
@@ -225,7 +228,7 @@ impl<T> Tree<T> {
 
     #[inline]
     pub fn reparent_under(&mut self, node: Node, parent: Node) {
-        self.reparent_at(node, parent, None);
+        self.reparent_at(node, parent, |_| None);
     }
 
     pub fn reparent_before(&mut self, node: Node, successor: Node) {
@@ -238,12 +241,9 @@ impl<T> Tree<T> {
         }
 
         if let Some(parent) = self.nodes[successor].parent {
-            let i = self.nodes[parent]
-                .children
-                .iter()
-                .position(|child| *child == successor)
-                .unwrap();
-            self.reparent_at(node, parent, Some(i));
+            self.reparent_at(node, parent, |siblings| {
+                siblings.iter().position(|child| *child == successor)
+            });
         }
     }
 
