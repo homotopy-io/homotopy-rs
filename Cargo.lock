@@ -627,6 +627,7 @@ dependencies = [
  "hashconsing",
  "highway",
  "insta",
+ "itertools",
  "log",
  "petgraph",
  "quickcheck",

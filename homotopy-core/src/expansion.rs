@@ -363,7 +363,7 @@ fn expand_recursive(
             diagram.slice(Height::Regular(height)).unwrap(),
             slice.clone().rewrite_backward(&recursive).unwrap(),
         )
-        .ok()?;
+        .next()?;
 
         let backward = factorize(
             target_cospan.backward.clone(),
@@ -371,7 +371,7 @@ fn expand_recursive(
             diagram.slice(Height::Regular(height + 1)).unwrap(),
             slice.clone().rewrite_backward(&recursive).unwrap(),
         )
-        .ok()?;
+        .next()?;
 
         let expansion_rewrite = RewriteN::new(
             diagram.dimension(),

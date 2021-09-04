@@ -1,107 +1,128 @@
 use std::ops::Range;
 
-use crate::monotone::MonotoneIterator;
-use crate::Rewrite;
-use crate::{Diagram, Rewrite0};
-use crate::{Height, RewriteN};
-use thiserror::Error;
+use crate::monotone::{Monotone, MonotoneIterator};
+use crate::Height;
+use crate::{Diagram, DiagramN};
+use crate::{Rewrite, Rewrite0, RewriteN};
 
-/// Given `Rewrite`s A -f> C <g- B, find some `Rewrite` A -h> B which factorises f = g ∘ h
-// modulo trivial cases, this works by guessing a monotone function to underly h, and then recurse
-// down dimensions (as in the 0-dimensional case, the only of the rewrite is the monotone function)
-pub fn factorize(
-    f: Rewrite,
-    g: Rewrite,
-    source: Diagram,
-    target: Diagram,
-) -> Result<Rewrite, FactorizationError> {
-    // Simple special cases
-    if g.is_identity() {
-        return Ok(f);
-    }
+use itertools::Itertools;
+use itertools::MultiProduct;
 
-    if f == g {
-        return Ok(Rewrite::identity(f.dimension()));
-    }
-
-    // General cases
+/// Given `Rewrite`s A -f> C <g- B, find some `Rewrite` A -h> B which factorises f = g ∘ h.
+pub fn factorize(f: Rewrite, g: Rewrite, source: Diagram, target: Diagram) -> Factorization {
     match (f, g, source, target) {
         (
-            Rewrite::Rewrite0(Rewrite0(Some((fs, ft)))),
-            Rewrite::Rewrite0(Rewrite0(Some((gs, gt)))),
+            Rewrite::Rewrite0(f),
+            Rewrite::Rewrite0(g),
             Diagram::Diagram0(s),
             Diagram::Diagram0(t),
-        ) if fs == s && ft == gt && gs == t => Ok(Rewrite::from(Rewrite0(Some((fs, gs))))),
+        ) => {
+            assert!(f.source() == None || f.source() == Some(s));
+            assert!(g.source() == None || g.source() == Some(t));
+
+            if s.dimension > t.dimension {
+                Factorization::Factorization0(None)
+            } else {
+                Factorization::Factorization0(Some(Rewrite::from(Rewrite0::new(s, t))))
+            }
+        }
         (
-            Rewrite::RewriteN(fr),
-            Rewrite::RewriteN(gr),
-            Diagram::DiagramN(s),
-            Diagram::DiagramN(t),
-        ) if fr.dimension() == gr.dimension() => {
-            if t.size() == 0 && s.size() > 0 {
-                return Err(FactorizationError::Function);
-            }
+            Rewrite::RewriteN(f),
+            Rewrite::RewriteN(g),
+            Diagram::DiagramN(source),
+            Diagram::DiagramN(target),
+        ) => {
+            assert_eq!(f.dimension(), g.dimension());
+            assert_eq!(f.dimension(), source.dimension());
+            assert_eq!(g.dimension(), target.dimension());
 
-            let f_height = fr.singular_image(s.size());
-            let g_height = gr.singular_image(t.size());
-
-            if g_height < f_height {
-                return Err(FactorizationError::Codomain);
-            }
-
-            // obtain an iterator over all possible monotone sequences which may underly h
-            // ( as f(a) = g(h(a)) ⟹ h(a) ∈ g⁻¹(f(a)) )
-            let constraints: Vec<Range<usize>> = (0..s.size())
-                .map(|i| gr.singular_preimage(fr.singular_image(i)))
+            let constraints: Vec<Range<usize>> = (0..source.size())
+                .map(|i| g.singular_preimage(f.singular_image(i)))
                 .collect();
 
-            // find a particular monotone sequence which works
-            MonotoneIterator::new(false, &constraints)
-                .find_map(|h_mono| {
-                    // Recurse on each monotone component
-                    let mut cone_slices: Vec<Vec<Rewrite>> = vec![vec![]; t.size()];
-
-                    for (si, ti) in h_mono.into_iter().enumerate() {
-                        let sub_s = s.slice(Height::Singular(si))?;
-                        let sub_t = t.slice(Height::Singular(ti))?;
-                        let slice = factorize(fr.slice(si), gr.slice(ti), sub_s, sub_t).ok()?;
-                        cone_slices[ti].push(slice);
-                    }
-
-                    let hr = RewriteN::from_slices_safe(
-                        fr.dimension(),
-                        s.cospans(),
-                        t.cospans(),
-                        cone_slices,
-                    );
-
-                    hr.ok().map(Rewrite::RewriteN)
-                })
-                .ok_or(FactorizationError::Failed)
+            Factorization::FactorizationN(FactorizationInternal {
+                f,
+                g,
+                source,
+                target,
+                monotone: MonotoneIterator::new(false, &constraints),
+                cur: None,
+            })
         }
-
-        // ideally, we would check for matching codomains in the n-rewrite
-        // case also, but this requires threading A through the function
-        (Rewrite::Rewrite0(_), Rewrite::Rewrite0(_), _, _) => Err(FactorizationError::Codomain),
-
-        (x, y, _, _) => Err(FactorizationError::Dimension(x.dimension(), y.dimension())),
+        _ => panic!("Mismatched dimensions"),
     }
 }
 
-#[derive(Debug, Error)]
-pub enum FactorizationError {
-    #[error("can't factorize rewrites of different dimensions {0} and {1}")]
-    Dimension(usize, usize),
+#[derive(Clone)]
+pub enum Factorization {
+    Factorization0(Option<Rewrite>),
+    FactorizationN(FactorizationInternal),
+}
 
-    #[error("rewrites have different codomains")]
-    Codomain,
+impl Iterator for Factorization {
+    type Item = Rewrite;
 
-    #[error("singular level at height {0} is not in both images")]
-    Image(usize),
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            Self::Factorization0(h) => h.take(),
+            Self::FactorizationN(internal) => internal.next(),
+        }
+    }
+}
 
-    #[error("codomain is empty, but domain is nonempty, so no function exists")]
-    Function,
+#[derive(Clone)]
+pub struct FactorizationInternal {
+    f: RewriteN,
+    g: RewriteN,
+    source: DiagramN,
+    target: DiagramN,
+    monotone: MonotoneIterator,
+    cur: Option<(Monotone, MultiProduct<Factorization>)>,
+}
 
-    #[error("failed to factorize")]
-    Failed,
+impl Iterator for FactorizationInternal {
+    type Item = Rewrite;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match &mut self.cur {
+            None => match self.monotone.next() {
+                None => None,
+                Some(h_mono) => {
+                    let product = h_mono
+                        .iter()
+                        .enumerate()
+                        .map(|(si, &ti)| {
+                            factorize(
+                                self.f.slice(si),
+                                self.g.slice(ti),
+                                self.source.slice(Height::Singular(si)).unwrap(),
+                                self.target.slice(Height::Singular(ti)).unwrap(),
+                            )
+                        })
+                        .multi_cartesian_product();
+                    self.cur = Some((h_mono, product));
+                    self.next()
+                }
+            },
+            Some((h_mono, product)) => match product.next() {
+                None => {
+                    self.cur = None;
+                    self.next()
+                }
+                Some(slices) => {
+                    let mut cone_slices: Vec<Vec<Rewrite>> = vec![vec![]; self.target.size()];
+                    for (i, &j) in h_mono.iter().enumerate() {
+                        cone_slices[j].push(slices[i].clone());
+                    }
+                    let h = RewriteN::from_slices_safe(
+                        self.f.dimension(),
+                        self.source.cospans(),
+                        self.target.cospans(),
+                        cone_slices,
+                    );
+                    h.map_or_else(|_| self.next(), |h| Some(Rewrite::from(h)))
+                }
+            },
+        }
+    }
 }
