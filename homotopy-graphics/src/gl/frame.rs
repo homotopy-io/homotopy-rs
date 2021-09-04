@@ -56,7 +56,7 @@ impl<'a> Frame<'a> {
         self.draws.push(draw);
     }
 
-    pub fn render(self) {
+    fn render(&mut self) {
         self.ctx.resize_to_fit();
 
         // TODO(@doctorn) fix clear color
@@ -130,5 +130,11 @@ impl<'a> DerefMut for Frame<'a> {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.ctx
+    }
+}
+
+impl<'a> Drop for Frame<'a> {
+    fn drop(&mut self) {
+        self.render();
     }
 }
