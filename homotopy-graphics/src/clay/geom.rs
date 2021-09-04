@@ -1,14 +1,17 @@
 use std::collections::HashMap;
+use std::convert::TryInto;
 use std::iter::FusedIterator;
 use std::ops::{Deref, DerefMut};
 
-use ultraviolet::Vec4;
+use ultraviolet::{Vec3, Vec4};
 
 use homotopy_common::declare_idx;
-use homotopy_common::idx::IdxVec;
+use homotopy_common::idx::{Idx, IdxVec};
+
+use crate::gl;
 
 declare_idx! {
-    pub struct Vertex = usize;
+    pub struct Vertex = u16;
     pub struct Element = usize;
     pub struct Square = usize;
     pub struct Cube = usize;
@@ -24,12 +27,50 @@ pub struct VertexData {
     // generator: Generator
 }
 
+pub trait MeshData {
+    type Idx: Idx;
+
+    fn remap<T>(&mut self, remapper: &mut VertexRemapper<T>)
+    where
+        T: MeshData;
+}
+
+pub trait FromMesh<T>: MeshData + Sized
+where
+    T: MeshData,
+{
+    fn try_from(mesh: &Mesh<T>, element: T::Idx) -> Option<Self>;
+}
+
+impl<T> FromMesh<Self> for T
+where
+    T: MeshData + Clone,
+{
+    fn try_from(mesh: &Mesh<Self>, element: Self::Idx) -> Option<Self> {
+        mesh.elements.get(element).cloned()
+    }
+}
+
 /// Represents cubical surface elements (points, lines, squares, cubes, ...)
 /// that have the cubical property (composed of exactly opposite subfaces).
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub enum ElementData {
     Cube0(Vertex),
     CubeN(CubeN),
+}
+
+impl MeshData for ElementData {
+    type Idx = Element;
+
+    fn remap<T>(&mut self, remapper: &mut VertexRemapper<T>)
+    where
+        T: MeshData,
+    {
+        match self {
+            ElementData::Cube0(vertex) => *vertex = remapper.get(*vertex),
+            ElementData::CubeN(_) => {}
+        }
+    }
 }
 
 /// Represents an n-cube by recording the two (n - 1)-cubes that make it and
@@ -41,28 +82,56 @@ pub struct CubeN {
     subcube_1: Element,
 }
 
-/// Represents concrete square mesh to be subdivided and rendered.
-#[derive(Clone, PartialEq, Default)]
-pub struct SquareMesh {
-    pub vertices: IdxVec<Vertex, VertexData>,
-    pub squares: IdxVec<Square, [Vertex; 4]>,
-    division_memory: HashMap<(Vertex, Vertex), Vertex>,
+pub type SquareData = [Vertex; 4];
+pub type CubeData = [Vertex; 8];
+
+impl<const N: usize> MeshData for [Vertex; N] {
+    type Idx = Square;
+
+    fn remap<T>(&mut self, remapper: &mut VertexRemapper<T>)
+    where
+        T: MeshData,
+    {
+        for v in self.iter_mut() {
+            *v = remapper.get(*v);
+        }
+    }
 }
 
-/// Represents concrete cube mesh to be subdivided and rendered.
-#[derive(Clone, PartialEq, Default)]
-pub struct CubeMesh {
-    pub vertices: IdxVec<Vertex, VertexData>,
-    pub cubes: IdxVec<Cube, [Vertex; 8]>,
-    division_memory: HashMap<Vec<Vertex>, Vertex>,
+impl FromMesh<ElementData> for SquareData {
+    fn try_from(mesh: &Mesh<ElementData>, element: Element) -> Option<Self> {
+        if mesh.order_of(element) == 2 {
+            mesh.flatten(element).collect::<Vec<_>>().try_into().ok()
+        } else {
+            None
+        }
+    }
+}
+
+impl FromMesh<ElementData> for CubeData {
+    fn try_from(mesh: &Mesh<ElementData>, element: Element) -> Option<Self> {
+        if mesh.order_of(element) == 3 {
+            mesh.flatten(element).collect::<Vec<_>>().try_into().ok()
+        } else {
+            None
+        }
+    }
 }
 
 /// Represents all cubical surface elements
-#[derive(Debug, Clone, PartialEq, Default)]
-pub struct Mesh {
+#[derive(Debug, Clone, PartialEq)]
+pub struct Mesh<T = ElementData>
+where
+    T: MeshData,
+{
     pub vertices: IdxVec<Vertex, VertexData>,
-    pub elements: IdxVec<Element, ElementData>,
+    pub elements: IdxVec<T::Idx, T>,
 }
+
+/// Represents concrete square mesh to be subdivided and rendered.
+pub type SquareMesh = Mesh<SquareData>;
+/// Represents concrete cube mesh to be subdivided and rendered.
+pub type CubeMesh = Mesh<CubeData>;
 
 impl Deref for VertexData {
     type Target = Vec4;
@@ -136,6 +205,75 @@ impl Mesh {
     }
 }
 
+impl<T> Mesh<T>
+where
+    T: MeshData,
+{
+    pub fn into<U>(self) -> Mesh<U>
+    where
+        U: FromMesh<T>,
+    {
+        let mut remapper = VertexRemapper::new(&self);
+        let elements = self
+            .elements
+            .keys()
+            .filter_map(|element| {
+                let mut element = U::try_from(&self, element)?;
+                remapper.remap(&mut element);
+                Some(element)
+            })
+            .collect();
+
+        Mesh {
+            vertices: remapper.into_verts(),
+            elements,
+        }
+    }
+}
+
+impl SquareMesh {
+    pub fn buffer(
+        &self,
+        ctx: &gl::GlCtx,
+    ) -> gl::Result<(gl::buffer::ElementBuffer, gl::buffer::Buffer<Vec3>)> {
+        // Every square results in 6 indices
+        let mut elements = Vec::with_capacity(self.elements.len() * 6);
+        let mut vertices = Vec::with_capacity(self.vertices.len());
+
+        for square in self.elements.values() {
+            // Upper right triangle
+            elements.push(square[0].index() as u16);
+            elements.push(square[1].index() as u16);
+            elements.push(square[2].index() as u16);
+            // Bottom left triangle
+            elements.push(square[0].index() as u16);
+            elements.push(square[2].index() as u16);
+            elements.push(square[3].index() as u16);
+        }
+
+        for vertex in self.vertices.values() {
+            vertices.push(vertex.xyz());
+        }
+
+        let element_buffer = ctx.mk_element_buffer(&elements)?;
+        let vertex_buffer = ctx.mk_buffer(&vertices)?;
+
+        Ok((element_buffer, vertex_buffer))
+    }
+}
+
+impl<T> Default for Mesh<T>
+where
+    T: MeshData,
+{
+    fn default() -> Self {
+        Self {
+            vertices: Default::default(),
+            elements: Default::default(),
+        }
+    }
+}
+
 pub struct Flattener<'a> {
     mesh: &'a Mesh,
     to_visit: Vec<Element>,
@@ -159,6 +297,50 @@ impl<'a> Iterator for Flattener<'a> {
 }
 
 impl<'a> FusedIterator for Flattener<'a> {}
+
+pub struct VertexRemapper<'a, T>
+where
+    T: MeshData,
+{
+    mesh: &'a Mesh<T>,
+    remapping: HashMap<Vertex, Vertex>,
+    data: IdxVec<Vertex, VertexData>,
+}
+
+impl<'a, T> VertexRemapper<'a, T>
+where
+    T: MeshData,
+{
+    fn new(mesh: &'a Mesh<T>) -> Self {
+        Self {
+            mesh,
+            remapping: Default::default(),
+            data: Default::default(),
+        }
+    }
+
+    fn get(&mut self, unmapped: Vertex) -> Vertex {
+        if let Some(vertex) = self.remapping.get(&unmapped) {
+            return *vertex;
+        }
+
+        let vertex = self.data.push(self.mesh.vertices[unmapped].clone());
+
+        self.remapping.insert(unmapped, vertex);
+        vertex
+    }
+
+    fn remap<U>(&mut self, data: &mut U)
+    where
+        U: MeshData,
+    {
+        U::remap(data, self);
+    }
+
+    fn into_verts(self) -> IdxVec<Vertex, VertexData> {
+        self.data
+    }
+}
 
 pub trait VertexExt {
     fn with_boundary(self, n: Dimension) -> VertexData;
