@@ -85,24 +85,22 @@ impl Iterator for FactorizationInternal {
 
     fn next(&mut self) -> Option<Self::Item> {
         match &mut self.cur {
-            None => match self.monotone.next() {
-                None => None,
-                Some(h_mono) => {
-                    let product = h_mono
-                        .iter()
-                        .enumerate()
-                        .map(|(si, &ti)| {
-                            factorize(
-                                self.f.slice(si),
-                                self.g.slice(ti),
-                                self.source.slice(Height::Singular(si)).unwrap(),
-                                self.target.slice(Height::Singular(ti)).unwrap(),
-                            )
-                        })
-                        .multi_cartesian_product();
-                    self.cur = Some((h_mono, product));
-                    self.next()
-                }
+            None => {
+                let h_mono = self.monotone.next()?;
+                let product = h_mono
+                    .iter()
+                    .enumerate()
+                    .map(|(si, &ti)| {
+                        factorize(
+                            self.f.slice(si),
+                            self.g.slice(ti),
+                            self.source.slice(Height::Singular(si)).unwrap(),
+                            self.target.slice(Height::Singular(ti)).unwrap(),
+                        )
+                    })
+                    .multi_cartesian_product();
+                self.cur = Some((h_mono, product));
+                self.next()
             },
             Some((h_mono, product)) => match product.next() {
                 None => {
