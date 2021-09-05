@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::hash::Hash;
 
 use euclid::default::Transform2D;
@@ -114,6 +115,7 @@ pub enum GraphicElement {
 }
 
 type FastHashMap<K, V> = HashMap<K, V, std::hash::BuildHasherDefault<SeaHasher>>;
+type FastHashSet<K> = HashSet<K, std::hash::BuildHasherDefault<SeaHasher>>;
 
 impl GraphicElement {
     /// Apply an affine coordinate transformation to the element.
@@ -271,11 +273,14 @@ where
 
         for component in components {
             let next: FastHashMap<P, P> = component.iter().map(|(s, t)| (*s, *t)).collect();
+            let mut visited = FastHashSet::<P>::default();
             let mut part = vec![component[0].0];
+            visited.insert(part[0]);
             let mut end = component[0].1;
 
-            while end != part[0] {
+            while !visited.contains(&end) {
                 part.push(end);
+                visited.insert(end);
                 end = next[&end];
             }
 
