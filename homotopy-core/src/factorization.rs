@@ -101,7 +101,7 @@ impl Iterator for FactorizationInternal {
                     .multi_cartesian_product();
                 self.cur = Some((h_mono, product));
                 self.next()
-            },
+            }
             Some((h_mono, product)) => match product.next() {
                 None => {
                     self.cur = None;
