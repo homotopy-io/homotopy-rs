@@ -8,12 +8,12 @@ use super::geom::{Mesh, Vertex, VertexExt};
 
 pub fn example_3() -> Mesh {
     const V_COORDS: [[i32; 4]; 6] = [
-        [0, 0, 0, -1],
         [0, 0, -1, 0],
         [0, -1, 0, 0],
-        [0, 0, 0, 1],
+        [-1, 0, 0, 0],
         [0, 0, 1, 0],
         [0, 1, 0, 0],
+        [1, 0, 0, 0],
     ];
     const V_BOUNDS: [u8; 6] = [2, 2, 2, 2, 2, 2];
     const SQUARES: [[usize; 4]; 8] = [
