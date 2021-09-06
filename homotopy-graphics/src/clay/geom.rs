@@ -161,14 +161,6 @@ impl ElementData {
 }
 
 impl Mesh {
-    pub fn new() -> Self {
-        Default::default()
-    }
-
-    pub fn mk_vertex(&mut self, vertex: VertexData) -> Vertex {
-        self.vertices.push(vertex)
-    }
-
     pub fn mk_element_0(&mut self, vertex: Vertex) -> Element {
         self.elements.push(ElementData::Cube0(vertex))
     }
@@ -218,6 +210,14 @@ impl<T> Mesh<T>
 where
     T: MeshData,
 {
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    pub fn mk_vertex(&mut self, vertex: VertexData) -> Vertex {
+        self.vertices.push(vertex)
+    }
+
     pub fn into<U>(self) -> Mesh<U>
     where
         U: FromMesh<T>,
@@ -241,6 +241,10 @@ where
 }
 
 impl SquareMesh {
+    pub fn mk_square(&mut self, square: SquareData) -> Square {
+        self.elements.push(square)
+    }
+
     pub fn buffer(
         &self,
         ctx: &gl::GlCtx,
@@ -252,10 +256,10 @@ impl SquareMesh {
         for square in self.elements.values() {
             // Upper right triangle
             elements.push(square[0].index() as u16);
-            elements.push(square[1].index() as u16);
             elements.push(square[2].index() as u16);
+            elements.push(square[1].index() as u16);
             // Bottom left triangle
-            elements.push(square[0].index() as u16);
+            elements.push(square[1].index() as u16);
             elements.push(square[2].index() as u16);
             elements.push(square[3].index() as u16);
         }
@@ -433,53 +437,6 @@ impl CubeMesh {
 
     pub fn mk_cube(&mut self, vertices: [VertexId; 8]) -> CubeId {
         self.cubes.push(vertices)
-    }
-}
-
-impl SquareMesh {
-    pub fn new() -> Self {
-        Self {
-            vertices: IdxVec::new(),
-            squares: IdxVec::new(),
-            division_memory: HashMap::new(),
-        }
-    }
-
-    fn create_new(&mut self, fst: VertexId, snd: VertexId) -> VertexId {
-        let fst_v = self.vertices.get(fst).unwrap();
-        let snd_v = self.vertices.get(snd).unwrap();
-        let new_b = max(fst_v.boundary, snd_v.boundary);
-        let new_v = Vertex::new(
-            (fst_v.x + snd_v.x) * 0.5,
-            (fst_v.y + snd_v.y) * 0.5,
-            (fst_v.z + snd_v.z) * 0.5,
-            (fst_v.t + snd_v.t) * 0.5,
-            min(2, new_b),
-        );
-        let new_id = self.vertices.push(new_v);
-        self.division_memory.insert((fst, snd), new_id);
-        self.division_memory.insert((snd, fst), new_id);
-        new_id
-    }
-
-    /// Returns a VertexId that coresponds to the average of the suplied vertices.
-    pub fn linearly_divide(&mut self, fst: VertexId, snd: VertexId) -> VertexId {
-        if fst == snd {
-            fst
-        } else {
-            self.division_memory
-                .get(&(fst, snd))
-                .copied()
-                .unwrap_or_else(|| self.create_new(fst, snd))
-        }
-    }
-
-    pub fn mk_vertex(&mut self, vertex: Vertex) -> VertexId {
-        self.vertices.push(vertex)
-    }
-
-    pub fn mk_square(&mut self, vertices: [VertexId; 4]) -> SquareId {
-        self.squares.push(vertices)
     }
 }
 */

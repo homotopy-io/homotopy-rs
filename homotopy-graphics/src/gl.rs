@@ -90,4 +90,19 @@ impl GlCtx {
 
         self.resize_to(width as u32, height as u32);
     }
+
+    #[inline]
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    #[inline]
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
+    #[inline]
+    pub fn aspect_ratio(&self) -> f32 {
+        (self.width as f32) / (self.height as f32)
+    }
 }
