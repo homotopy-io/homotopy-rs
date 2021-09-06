@@ -115,6 +115,7 @@ pub enum GraphicElement {
 }
 
 type FastHashMap<K, V> = HashMap<K, V, std::hash::BuildHasherDefault<SeaHasher>>;
+#[allow(dead_code)]
 type FastHashSet<K> = HashSet<K, std::hash::BuildHasherDefault<SeaHasher>>;
 
 impl GraphicElement {
@@ -192,7 +193,7 @@ impl GraphicElement {
         }
 
         for (generator, surfaces) in grouped_surfaces {
-            for merged in merge_surfaces(surfaces.into_iter()) {
+            for merged in surfaces {
                 surface_elements.push(Self::Surface(generator, make_path(&merged, true, layout)));
             }
         }
@@ -227,6 +228,7 @@ fn orient_surface(surface: &[Coordinate; 3]) -> [Coordinate; 3] {
     }
 }
 
+#[allow(dead_code)]
 fn merge_surfaces<P, I>(surfaces: I) -> Vec<Vec<P>>
 where
     P: Hash + Eq + Copy,
