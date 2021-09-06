@@ -2,23 +2,20 @@
 //! For 2-cubes, 9 points are generated in the order (a). For 3-cubes 27 points are generated in order (b).
 //! <img src="../../images/subdivision_illustration.png"/>
 
-// use std::collections::HashMap;
+use std::collections::HashMap;
+use std::{cmp, mem};
 
-// use homotopy_common::idx::IdxVec;
+use ultraviolet::Vec4;
 
-// use super::geom::{CubeMesh, SquareMesh, Vertex, VertexId};
+use homotopy_common::idx::IdxVec;
 
-/*
-/// Defines how new squares should be from linearly divided points.
-/// See Picture 1.
-/// Important property that is preserved - first point is a vertex point, and similar for edge points.
-const SQUARE_ASSEMBLY_ORDER: [[usize; 4]; 4] =
-    [[0, 4, 5, 8], [1, 6, 4, 8], [2, 5, 7, 8], [3, 7, 6, 8]];
+use super::geom::{SquareData, SquareMesh, Vertex, VertexExt};
 
+// TODO(@doctorn) refactor
 /// Generates a weight matrix for each surface element based on boundary information.
 /// Also does basic mesh validation - panics if the boundaries are inconsistent.
-fn create_square_matrix(bounds: [u8; 4]) -> [[f64; 4]; 4] {
-    let mut matrix: [[f64; 4]; 4] = [[0.0; 4]; 4];
+fn create_square_matrix(bounds: [u8; 4]) -> [[f32; 4]; 4] {
+    let mut matrix: [[f32; 4]; 4] = [[0.0; 4]; 4];
     // Vertex point
     matrix[0] = match bounds[0] {
         0 => [1.0, 0.0, 0.0, 0.0], // identity row
@@ -50,119 +47,195 @@ fn create_square_matrix(bounds: [u8; 4]) -> [[f64; 4]; 4] {
     matrix
 }
 
+// TODO(@doctorn) refactor and re-enable
+/*
 /// Debug check that signals that weights are reasonable
+#[cfg(debug_assertions)]
 fn check_bounds_preserved(
-    original: &IdxVec<VertexId, Vertex>,
-    subdivided: &IdxVec<VertexId, Vertex>,
+    original: &IdxVec<Vertex, VertexData>,
+    subdivided: &IdxVec<Vertex, VertexData>,
 ) -> bool {
     let (max_x, min_x) = original
         .iter()
-        .fold((f64::NEG_INFINITY, f64::INFINITY), |a, v| {
-            (f64::max(a.0, v.1.x), f64::min(a.1, v.1.x))
+        .fold((f32::NEG_INFINITY, f32::INFINITY), |a, v| {
+            (f32::max(a.0, v.1.x), f32::min(a.1, v.1.x))
         });
     let (max_y, min_y) = original
         .iter()
-        .fold((f64::NEG_INFINITY, f64::INFINITY), |a, v| {
-            (f64::max(a.0, v.1.y), f64::min(a.1, v.1.y))
+        .fold((f32::NEG_INFINITY, f32::INFINITY), |a, v| {
+            (f32::max(a.0, v.1.y), f32::min(a.1, v.1.y))
         });
     let (max_z, min_z) = original
         .iter()
-        .fold((f64::NEG_INFINITY, f64::INFINITY), |a, v| {
-            (f64::max(a.0, v.1.z), f64::min(a.1, v.1.z))
+        .fold((f32::NEG_INFINITY, f32::INFINITY), |a, v| {
+            (f32::max(a.0, v.1.z), f32::min(a.1, v.1.z))
         });
     let (max_t, min_t) = original
         .iter()
-        .fold((f64::NEG_INFINITY, f64::INFINITY), |a, v| {
-            (f64::max(a.0, v.1.t), f64::min(a.1, v.1.t))
+        .fold((f32::NEG_INFINITY, f32::INFINITY), |a, v| {
+            (f32::max(a.0, v.1.w), f32::min(a.1, v.1.w))
         });
 
     subdivided.iter().fold(true, |a, v| {
         a && (v.1.x <= max_x && v.1.x >= min_x)
             && (v.1.y <= max_y && v.1.y >= min_y)
             && (v.1.z <= max_z && v.1.z >= min_z)
-            && (v.1.t <= max_t && v.1.t >= min_t)
+            && (v.1.w <= max_t && v.1.w >= min_t)
     })
 }
+*/
 
-/// Subdivides square mesh one time based on the primal scheme.
-/// Assumption: the mesh is filtered so only the relevant elements are there and all elments have some area.
-pub fn subdivide3(control_mesh: &SquareMesh) -> SquareMesh {
-    let mut new_mesh = SquareMesh::new();
-    // Copy vertices as primal subdivision preserves them.
-    let mut vert_map = HashMap::new();
-    for v in control_mesh.vertices.iter() {
-        vert_map.insert(v.0, new_mesh.mk_vertex(v.1.clone()));
-    }
-    // Vertex point valence is calculated differently because smoothing weights depend on it.
-    let mut valence = HashMap::new();
-    // Linearly divide each square
-    for e in control_mesh.squares.iter() {
-        // Translate to new mesh indices
-        let mut points = [e.1[0]; 9];
-        for (i, p) in points.iter_mut().enumerate().take(4) {
-            *p = vert_map[&e.1[i]];
+struct SquareSubdivider<'a> {
+    mesh: &'a mut SquareMesh,
+    division_memory: HashMap<(Vertex, Vertex), Vertex>,
+    valence: HashMap<Vertex, i32>,
+}
+
+impl<'a> SquareSubdivider<'a> {
+    /// Defines how new squares should be from linearly divided points.
+    ///
+    /// Important property that is preserved - first point is a vertex point, and similar for edge points.
+    const SQUARE_ASSEMBLY_ORDER: [[usize; 4]; 4] =
+        [[0, 4, 5, 8], [1, 6, 4, 8], [2, 5, 7, 8], [3, 7, 6, 8]];
+
+    fn new(mesh: &'a mut SquareMesh) -> Self {
+        Self {
+            mesh,
+            division_memory: Default::default(),
+            valence: Default::default(),
         }
-        // Calculate edge midpoints
-        points[4] = new_mesh.linearly_divide(points[0], points[1]);
-        points[5] = new_mesh.linearly_divide(points[0], points[2]);
-        points[6] = new_mesh.linearly_divide(points[1], points[3]);
-        points[7] = new_mesh.linearly_divide(points[2], points[3]);
-        // centre point..
-        points[8] = new_mesh.linearly_divide(points[4], points[7]);
-        // Assemble subsquares
-        for order in &SQUARE_ASSEMBLY_ORDER {
-            let mut sq = [points[0]; 4];
-            for j in 0..4 {
-                sq[j] = points[order[j]];
+    }
+
+    fn divide_uncached(&mut self, v_1: Vertex, v_2: Vertex) -> Vertex {
+        let v_1 = &self.mesh.vertices[v_1];
+        let v_2 = &self.mesh.vertices[v_2];
+        let v = 0.5 * (**v_1 + **v_2);
+        let boundary = cmp::min(2, cmp::max(v_1.boundary, v_2.boundary));
+
+        self.mesh.mk_vertex(v.with_boundary(boundary))
+    }
+
+    fn divide(&mut self, mut v_1: Vertex, mut v_2: Vertex) -> Vertex {
+        if v_1 == v_2 {
+            return v_1;
+        }
+
+        if v_2 > v_1 {
+            mem::swap(&mut v_1, &mut v_2);
+        }
+
+        self.division_memory
+            .get(&(v_1, v_2))
+            .copied()
+            .unwrap_or_else(|| {
+                let v = self.divide_uncached(v_1, v_2);
+                self.division_memory.insert((v_1, v_2), v);
+                v
+            })
+    }
+
+    fn update_valence(&mut self, vertex: Vertex) {
+        if let Some(valence) = self.valence.get_mut(&vertex) {
+            *valence += 1;
+            return;
+        }
+
+        self.valence.insert(vertex, 1);
+    }
+
+    fn subdivide_square(&mut self, square: SquareData) {
+        let v_1 = self.divide(square[0], square[1]);
+        let v_2 = self.divide(square[2], square[3]);
+        let points = [
+            square[0],
+            square[1],
+            square[2],
+            square[3],
+            // Edge midpoints
+            v_1,
+            self.divide(square[0], square[2]),
+            self.divide(square[1], square[3]),
+            v_2,
+            // Centrepoint
+            self.divide(v_1, v_2),
+        ];
+
+        for order in &Self::SQUARE_ASSEMBLY_ORDER {
+            self.mesh.mk_square([
+                points[order[0]],
+                points[order[1]],
+                points[order[2]],
+                points[order[3]],
+            ]);
+
+            for v in order.iter() {
+                self.update_valence(points[*v]);
             }
-            new_mesh.mk_square(sq);
-            for v_id in &sq {
-                match valence.get_mut(v_id) {
-                    Some(v) => {
-                        *v += 1;
-                    }
-                    None => {
-                        valence.insert(*v_id, 1);
-                    }
+        }
+    }
+
+    /// Subdivides the square mesh one time based on the primal scheme.
+    ///
+    /// This assumes that the mesh is filtered so that only the relevant elements
+    /// are present and all elments have some area.
+    fn subdivide_once(&mut self) {
+        // 1. Reset valence
+        self.valence = HashMap::new();
+        // 2. Remove all squares from mesh
+        let mut squares = IdxVec::new();
+        mem::swap(&mut self.mesh.elements, &mut squares);
+        // 3. Subdivide each square linearly
+        for square in squares.into_values() {
+            self.subdivide_square(square);
+        }
+        // 4. Smooth
+        let mut smoothed = IdxVec::with_capacity(self.mesh.vertices.len());
+        // a) Populate with zero vertices
+        for vertex in self.mesh.vertices.values() {
+            smoothed.push(Vec4::zero().with_boundary(vertex.boundary));
+        }
+        // b) For each square
+        for square in self.mesh.elements.values() {
+            // gather the boundaries of its constituent vertices
+            let bounds = [
+                self.mesh.vertices[square[0]].boundary,
+                self.mesh.vertices[square[1]].boundary,
+                self.mesh.vertices[square[2]].boundary,
+                self.mesh.vertices[square[3]].boundary,
+            ];
+            // and calculate a corresponding weight matrix
+            let matrix = create_square_matrix(bounds);
+
+            // TODO(@doctorn) refactor
+            // Apply this matrix and update the smoothed position
+            for (i, row) in matrix.iter().enumerate() {
+                let v = &mut smoothed[square[i]];
+                for (j, weight) in row.iter().enumerate() {
+                    let w = &self.mesh.vertices[square[j]];
+                    v.vertex += *weight * w.vertex;
                 }
             }
         }
-    }
-    // Smoothing pass
-    let mut smooth_vertices = HashMap::new();
-    for v in new_mesh.vertices.iter() {
-        smooth_vertices.insert(v.0, Vertex::new(0.0, 0.0, 0.0, 0.0, v.1.boundary));
-    }
-    for s in new_mesh.squares.iter() {
-        // Construct smoothing matrix based on boundaries and valence
-        let mut bounds = [0; 4];
-        for (i, b) in bounds.iter_mut().enumerate() {
-            *b = new_mesh.vertices[s.1[i]].boundary;
-        }
-        let matrix = create_square_matrix(bounds);
-        // Apply the matrix
-        for (i, row) in matrix.iter().enumerate() {
-            let v = smooth_vertices.get_mut(&s.1[i]).unwrap();
-            for (j, weight) in row.iter().enumerate() {
-                let w = new_mesh.vertices[s.1[j]].clone();
-                v.add_scaled(&w, *weight);
-            }
+
+        // c) Update vertex positions and divide by valence
+        for (vertex, data) in smoothed {
+            let valence = self.valence[&vertex];
+            self.mesh.vertices[vertex].vertex = *data / (valence as f32);
         }
     }
-    // Copy the final vertex positions and divide by valence
-    for (v_id, v) in &smooth_vertices {
-        let valence = valence[v_id];
-        let vtx = new_mesh.vertices.get_mut(*v_id).unwrap();
-        vtx.copy_from(v);
-        vtx.scale(1.0 / f64::from(valence));
-    }
-    debug_assert!(check_bounds_preserved(
-        &control_mesh.vertices,
-        &new_mesh.vertices
-    ));
-    new_mesh
 }
 
+pub fn subdivide_3(mut mesh: SquareMesh, depth: u8) -> SquareMesh {
+    let mut subdivider = SquareSubdivider::new(&mut mesh);
+
+    for _ in 0..depth {
+        subdivider.subdivide_once();
+    }
+
+    mesh
+}
+
+/*
 // Defines all 12 edges of a cube based on vertex indices.
 const CUBE_EDGE_ORDER: [[usize; 2]; 12] = [
     [0, 1],

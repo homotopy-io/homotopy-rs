@@ -14,7 +14,8 @@ pub struct Diagram3D {
 
 impl Renderer for Diagram3D {
     fn init(ctx: &mut GlCtx) -> Result<Self> {
-        let (elements, vertices) = clay::examples::example_3().into().buffer(ctx)?;
+        let (elements, vertices) =
+            clay::subdivision::subdivide_3(clay::examples::example_3().into(), 4).buffer(ctx)?;
         let program = program!(
             ctx,
             "../../../glsl/vert.glsl",
@@ -35,7 +36,7 @@ impl Renderer for Diagram3D {
     }
 
     fn render<'a>(&'a self, mut frame: Frame<'a>) {
-        let mvp = perspective_gl(f32::to_radians(30.0), 1.0, 0.5, 10.0)
+        let mvp = perspective_gl(f32::to_radians(30.0), frame.aspect_ratio(), 0.5, 10.0)
             * Mat4::from_translation(Vec3::new(0.0, 0.0, -7.0))
             * Mat4::from_rotation_y(self.t);
 
