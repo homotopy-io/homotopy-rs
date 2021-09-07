@@ -82,7 +82,7 @@ impl Diagram {
         DiagramN::new_unsafe(self.clone(), vec![])
     }
 
-    pub fn check_well_formed(&self, mode: Mode) -> Result<(), MalformedDiagram> {
+    pub fn check_well_formed(&self, mode: Mode) -> Result<(), Vec<MalformedDiagram>> {
         match self {
             Self::Diagram0(_) => Ok(()),
             Self::DiagramN(d) => d.check_well_formed(mode),
@@ -227,57 +227,68 @@ impl DiagramN {
         self.0.source.dimension() + 1
     }
 
-    pub fn check_well_formed(&self, mode: Mode) -> Result<(), MalformedDiagram> {
-        let mut slice = self.0.source.clone();
+    pub fn check_well_formed(&self, mode: Mode) -> Result<(), Vec<MalformedDiagram>> {
+        let mut errors: Vec<MalformedDiagram> = Default::default();
+        let mut slice = self.source();
 
         // Check that the source slice is well-formed.
         if mode == Mode::Deep {
-            slice
-                .check_well_formed(mode)
-                .map_err(|e| MalformedDiagram::Slice(Height::Regular(0), Box::new(e)))?;
+            if let Err(e) = slice.check_well_formed(mode) {
+                errors.push(MalformedDiagram::Slice(Height::Regular(0), e));
+            }
         }
 
-        for (i, cospan) in self.0.cospans.iter().enumerate() {
+        for (i, cospan) in self.cospans().iter().enumerate() {
             // Check that the forward rewrite is well-formed.
             if mode == Mode::Deep {
-                cospan
-                    .forward
-                    .check_well_formed(mode)
-                    .map_err(|e| MalformedDiagram::Rewrite(i, Direction::Forward, Box::new(e)))?;
+                if let Err(e) = cospan.forward.check_well_formed(mode) {
+                    errors.push(MalformedDiagram::Rewrite(i, Direction::Forward, e));
+                }
             }
 
             // Check that the forward rewrite is compatible with the regular slice.
-            slice = slice
-                .rewrite_forward(&cospan.forward)
-                .map_err(|e| MalformedDiagram::Incompatible(i, Direction::Forward, Box::new(e)))?;
-
-            if mode == Mode::Deep {
-                slice
-                    .check_well_formed(mode)
-                    .map_err(|e| MalformedDiagram::Slice(Height::Singular(i), Box::new(e)))?;
+            match slice.rewrite_forward(&cospan.forward) {
+                Ok(next) if mode == Mode::Deep => {
+                    if let Err(e) = next.check_well_formed(mode) {
+                        errors.push(MalformedDiagram::Slice(Height::Singular(i), e));
+                    }
+                    slice = next;
+                }
+                Ok(next) => slice = next,
+                Err(re) => {
+                    errors.push(MalformedDiagram::Incompatible(i, Direction::Forward, re));
+                    break;
+                }
             }
 
             // Check that the backward rewrite is well-formed.
             if mode == Mode::Deep {
-                cospan
-                    .backward
-                    .check_well_formed(mode)
-                    .map_err(|e| MalformedDiagram::Rewrite(i, Direction::Backward, Box::new(e)))?;
+                if let Err(e) = cospan.backward.check_well_formed(mode) {
+                    errors.push(MalformedDiagram::Rewrite(i, Direction::Backward, e));
+                }
             }
 
             // Check that the backward rewrite is compatible with the singular slice.
-            slice = slice
-                .rewrite_backward(&cospan.backward)
-                .map_err(|e| MalformedDiagram::Incompatible(i, Direction::Backward, Box::new(e)))?;
-
-            if mode == Mode::Deep {
-                slice
-                    .check_well_formed(mode)
-                    .map_err(|e| MalformedDiagram::Slice(Height::Regular(i + 1), Box::new(e)))?;
+            match slice.rewrite_backward(&cospan.backward) {
+                Ok(next) if mode == Mode::Deep => {
+                    if let Err(e) = next.check_well_formed(mode) {
+                        errors.push(MalformedDiagram::Slice(Height::Regular(i + 1), e));
+                    }
+                    slice = next;
+                }
+                Ok(next) => slice = next,
+                Err(re) => {
+                    errors.push(MalformedDiagram::Incompatible(i, Direction::Backward, re));
+                    break;
+                }
             }
         }
 
-        Ok(())
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
     }
 
     /// The source boundary of the diagram.
@@ -692,14 +703,14 @@ pub enum RewritingError {
 
 #[derive(Debug, Error)]
 pub enum MalformedDiagram {
-    #[error("slice {0:?} is malformed: {1}")]
-    Slice(Height, Box<MalformedDiagram>),
+    #[error("slice {0:?} is malformed: {1:?}")]
+    Slice(Height, Vec<MalformedDiagram>),
 
-    #[error("rewrite {0} in direction {1:?} is malformed: {2}")]
-    Rewrite(usize, Direction, Box<MalformedRewrite>),
+    #[error("rewrite {0} in direction {1:?} is malformed: {2:?}")]
+    Rewrite(usize, Direction, Vec<MalformedRewrite>),
 
     #[error("rewrite {0} in direction {1:?} is incompatible with its source/target.")]
-    Incompatible(usize, Direction, Box<RewritingError>),
+    Incompatible(usize, Direction, RewritingError),
 }
 
 #[cfg(test)]
