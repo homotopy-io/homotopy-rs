@@ -115,7 +115,7 @@ pub trait RewriteAllocator: Copy + Eq + Hash + fmt::Debug + Sized {
 }
 
 pub trait Composable: Clone + Eq + Hash + fmt::Debug {
-    fn compose<A>(f: &GenericRewriteN<A>, g: &GenericRewriteN<A>) -> Self
+    fn compose<A>(f: &GenericRewriteN<A>, g: &GenericRewriteN<A>) -> Result<Self, CompositionError>
     where
         A: RewriteAllocator<Payload = Self>;
 }
@@ -823,7 +823,7 @@ where
         Ok(Self::new_with_payload(
             self.dimension(),
             cones,
-            &A::Payload::compose::<A>(self, g),
+            &A::Payload::compose::<A>(self, g)?,
         ))
     }
 
@@ -1003,10 +1003,11 @@ where
 
 impl Composable for () {
     #[inline]
-    fn compose<A>(_: &GenericRewriteN<A>, _: &GenericRewriteN<A>) -> Self
+    fn compose<A>(_: &GenericRewriteN<A>, _: &GenericRewriteN<A>) -> Result<Self, CompositionError>
     where
         A: RewriteAllocator<Payload = Self>,
     {
+        Ok(())
     }
 }
 
