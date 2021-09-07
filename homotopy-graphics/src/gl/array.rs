@@ -104,7 +104,6 @@ impl VertexArray {
                 // enable the specified attribute array
                 self.program.ctx().enable_vertex_attrib_array(loc);
                 // pass on the dimension and type information of the buffer
-                // TODO(@doctorn) stride and offset? (probably not...)
                 self.program.ctx().vertex_attrib_pointer_with_i32(
                     loc,
                     T::DIMENSION,

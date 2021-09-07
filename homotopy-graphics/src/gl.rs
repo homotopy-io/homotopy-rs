@@ -1,5 +1,3 @@
-// TODO(@doctorn) fix clear colour
-
 use thiserror::Error;
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlCanvasElement, WebGl2RenderingContext};
@@ -34,7 +32,6 @@ pub struct GlCtx {
 
     width: u32,
     height: u32,
-    // clear_color: Color,
 }
 
 impl GlCtx {
@@ -63,14 +60,8 @@ impl GlCtx {
             width: canvas.width(),
             height: canvas.height(),
             canvas,
-            // clear_color: Default::default(),
         })
     }
-
-    // #[inline]
-    // pub fn set_clear_color(&mut self, color: Color) {
-    //     self.clear_color = color;
-    // }
 
     fn resize_to(&mut self, width: u32, height: u32) {
         if width != self.canvas.width() || height != self.canvas.height() {

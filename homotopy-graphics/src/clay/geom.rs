@@ -23,11 +23,23 @@ declare_idx! {
 
 pub type Dimension = u8;
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Boundary {
+    /// Corner - no freedom to move
+    Zero = 0,
+    /// Edge - free to move along line
+    One = 1,
+    /// Surface - free to move in space
+    Two = 2,
+    /// Volume - free to move in time and space
+    Three = 3,
+}
+
 /// Represents a vertex in a 4-space
 #[derive(Debug, Clone, PartialEq)]
 pub struct VertexData {
     pub vertex: Vec4,
-    pub boundary: Dimension,
+    pub boundary: Boundary,
     // generator: Generator
 }
 
@@ -89,8 +101,21 @@ pub struct CubeN {
 pub type SquareData = [Vertex; 4];
 pub type CubeData = [Vertex; 8];
 
-impl<const N: usize> MeshData for [Vertex; N] {
+impl MeshData for SquareData {
     type Idx = Square;
+
+    fn remap<T>(&mut self, remapper: &mut VertexRemapper<T>)
+    where
+        T: MeshData,
+    {
+        for v in self.iter_mut() {
+            *v = remapper.get(*v);
+        }
+    }
+}
+
+impl MeshData for CubeData {
+    type Idx = Cube;
 
     fn remap<T>(&mut self, remapper: &mut VertexRemapper<T>)
     where
@@ -240,38 +265,72 @@ where
     }
 }
 
+pub struct SquareMeshBuffers {
+    pub element_buffer: gl::buffer::ElementBuffer,
+    pub vertex_buffer: gl::buffer::Buffer<Vec3>,
+    pub normal_buffer: gl::buffer::Buffer<Vec3>,
+}
+
 impl SquareMesh {
     pub fn mk_square(&mut self, square: SquareData) -> Square {
         self.elements.push(square)
     }
 
-    pub fn buffer(
-        &self,
-        ctx: &gl::GlCtx,
-    ) -> gl::Result<(gl::buffer::ElementBuffer, gl::buffer::Buffer<Vec3>)> {
-        // Every square results in 6 indices
+    pub fn buffer(self, ctx: &gl::GlCtx) -> gl::Result<SquareMeshBuffers> {
+        let vertices = self
+            .vertices
+            .into_values()
+            .map(|v| v.xyz())
+            .collect::<IdxVec<_, _>>();
         let mut elements = Vec::with_capacity(self.elements.len() * 6);
-        let mut vertices = Vec::with_capacity(self.vertices.len());
+        let mut normals = IdxVec::splat(Vec3::zero(), vertices.len());
 
+        let mut push_tri = |i: Vertex, j: Vertex, k: Vertex| {
+            if i != j && j != k && k != i {
+                elements.push(i.index() as u16);
+                elements.push(j.index() as u16);
+                elements.push(k.index() as u16);
+
+                let a = vertices[i];
+                let b = vertices[j];
+                let c = vertices[k];
+                let n = (b - a).cross(c - a);
+
+                normals[i] += n;
+                normals[j] += n;
+                normals[k] += n;
+            }
+        };
+
+        // Triangulate mesh
         for square in self.elements.values() {
-            // Upper right triangle
-            elements.push(square[0].index() as u16);
-            elements.push(square[2].index() as u16);
-            elements.push(square[1].index() as u16);
-            // Bottom left triangle
-            elements.push(square[1].index() as u16);
-            elements.push(square[2].index() as u16);
-            elements.push(square[3].index() as u16);
+            // Bottom right triangle
+            push_tri(square[0], square[1], square[3]);
+            // Top left triangle
+            push_tri(square[0], square[3], square[2]);
         }
 
-        for vertex in self.vertices.values() {
-            vertices.push(vertex.xyz());
+        // Average normals
+        for normal in normals.values_mut() {
+            normal.normalize();
         }
 
+        // Buffer data
         let element_buffer = ctx.mk_element_buffer(&elements)?;
-        let vertex_buffer = ctx.mk_buffer(&vertices)?;
+        let vertex_buffer = ctx.mk_buffer(&vertices.into_raw())?;
+        let normal_buffer = ctx.mk_buffer(&normals.into_raw())?;
 
-        Ok((element_buffer, vertex_buffer))
+        Ok(SquareMeshBuffers {
+            element_buffer,
+            vertex_buffer,
+            normal_buffer,
+        })
+    }
+}
+
+impl CubeMesh {
+    pub fn mk_cube(&mut self, cube: CubeData) -> Cube {
+        self.elements.push(cube)
     }
 }
 
@@ -356,24 +415,20 @@ where
 }
 
 pub trait VertexExt {
-    fn with_boundary(self, n: Dimension) -> VertexData;
+    fn with_boundary(self, boundary: Boundary) -> VertexData;
 }
 
 impl VertexExt for Vec4 {
-    fn with_boundary(self, n: Dimension) -> VertexData {
+    fn with_boundary(self, boundary: Boundary) -> VertexData {
         VertexData {
             vertex: self,
-            boundary: n,
+            boundary,
         }
     }
 }
 
+// TODO(@doctorn) refactor
 /*
-use std::cmp::{max, min};
-use std::collections::HashMap;
-use std::fmt;
-use std::hash::Hash;
-
 impl CubeMesh {
     pub fn new() -> Self {
         Self {

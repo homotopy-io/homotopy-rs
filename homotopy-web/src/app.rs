@@ -7,8 +7,8 @@ use yew::prelude::*;
 
 use crate::{
     components::{
-        icon::{Icon, IconSize},
         gl::GlViewport,
+        icon::{Icon, IconSize},
         panzoom::PanZoom,
         toast::{Toast, Toaster, ToasterComponent},
     },

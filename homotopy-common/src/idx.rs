@@ -60,6 +60,17 @@ where
     }
 
     #[inline]
+    pub fn splat(t: T, len: usize) -> Self
+    where
+        T: Clone,
+    {
+        Self {
+            raw: vec![t; len],
+            _phantom: PhantomData::default(),
+        }
+    }
+
+    #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             raw: Vec::with_capacity(capacity),
@@ -143,6 +154,11 @@ where
     #[inline]
     pub fn into_values(self) -> impl Iterator<Item = T> {
         self.raw.into_iter()
+    }
+
+    #[inline]
+    pub fn into_raw(self) -> Vec<T> {
+        self.raw
     }
 
     #[inline]
