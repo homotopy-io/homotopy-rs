@@ -3,7 +3,7 @@
 use homotopy_common::idx::Idx;
 use ultraviolet::Vec4;
 
-use super::geom::{Mesh, Vertex, VertexExt};
+use super::geom::{Boundary, Mesh, Vertex, VertexExt};
 
 pub fn example_3() -> Mesh {
     const V_COORDS: [[i32; 4]; 6] = [
@@ -14,16 +14,16 @@ pub fn example_3() -> Mesh {
         [0, 1, 0, 0],
         [1, 0, 0, 0],
     ];
-    const V_BOUNDS: [u8; 6] = [2, 2, 2, 2, 2, 2];
+    const V_BOUNDS: [Boundary; 6] = [Boundary::Two; 6];
     const SQUARES: [[usize; 4]; 8] = [
         [0, 1, 2, 2],
-        [3, 1, 2, 2],
-        [0, 4, 2, 2],
+        [1, 3, 2, 2],
+        [4, 0, 2, 2],
         [3, 4, 2, 2],
-        [0, 1, 5, 5],
+        [1, 0, 5, 5],
         [3, 1, 5, 5],
         [0, 4, 5, 5],
-        [3, 4, 5, 5],
+        [4, 3, 5, 5],
     ];
 
     let mut mesh = Mesh::new();
@@ -52,6 +52,7 @@ pub fn example_3() -> Mesh {
     mesh
 }
 
+/*
 pub fn example_4() -> Mesh {
     const V_COORDS: [[i32; 4]; 13] = [
         [1, 0, 0, -1],
@@ -117,3 +118,4 @@ pub fn example_4() -> Mesh {
 
     mesh
 }
+*/

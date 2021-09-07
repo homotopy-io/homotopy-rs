@@ -2,93 +2,17 @@
 //! For 2-cubes, 9 points are generated in the order (a). For 3-cubes 27 points are generated in order (b).
 //! <img src="../../images/subdivision_illustration.png"/>
 
-use std::collections::HashMap;
-use std::{cmp, mem};
-
-use ultraviolet::Vec4;
+use std::{cmp, collections::HashMap, mem};
 
 use homotopy_common::idx::IdxVec;
+use ultraviolet::{Mat4, Vec4};
 
-use super::geom::{SquareData, SquareMesh, Vertex, VertexExt};
-
-// TODO(@doctorn) refactor
-/// Generates a weight matrix for each surface element based on boundary information.
-/// Also does basic mesh validation - panics if the boundaries are inconsistent.
-fn create_square_matrix(bounds: [u8; 4]) -> [[f32; 4]; 4] {
-    let mut matrix: [[f32; 4]; 4] = [[0.0; 4]; 4];
-    // Vertex point
-    matrix[0] = match bounds[0] {
-        0 => [1.0, 0.0, 0.0, 0.0], // identity row
-        1 => {
-            match (bounds[1], bounds[2]) {
-                (1, _) => [0.5, 0.5, 0.0, 0.0],
-                (_, 1) => [0.5, 0.0, 0.5, 0.0],
-                _ => panic!("Inconsistent mesh!"), // if it turns out such mesh is consistent, replace with the identity row
-            }
-        }
-        2 => [0.25, 0.25, 0.25, 0.25],
-        _ => panic!("Inconsistent mesh!"),
-    };
-
-    matrix[1] = match bounds[1] {
-        1 => [0.0, 1.0, 0.0, 0.0],
-        2 => [0.0, 0.5, 0.0, 0.5],
-        _ => panic!("Inconsistent mesh!"),
-    };
-
-    matrix[2] = match bounds[2] {
-        1 => [0.0, 0.0, 1.0, 0.0],
-        2 => [0.0, 0.0, 0.5, 0.5],
-        _ => panic!("Inconsistent mesh!"),
-    };
-
-    matrix[3] = [0.0, 0.0, 0.0, 1.0];
-
-    matrix
-}
-
-// TODO(@doctorn) refactor and re-enable
-/*
-/// Debug check that signals that weights are reasonable
-#[cfg(debug_assertions)]
-fn check_bounds_preserved(
-    original: &IdxVec<Vertex, VertexData>,
-    subdivided: &IdxVec<Vertex, VertexData>,
-) -> bool {
-    let (max_x, min_x) = original
-        .iter()
-        .fold((f32::NEG_INFINITY, f32::INFINITY), |a, v| {
-            (f32::max(a.0, v.1.x), f32::min(a.1, v.1.x))
-        });
-    let (max_y, min_y) = original
-        .iter()
-        .fold((f32::NEG_INFINITY, f32::INFINITY), |a, v| {
-            (f32::max(a.0, v.1.y), f32::min(a.1, v.1.y))
-        });
-    let (max_z, min_z) = original
-        .iter()
-        .fold((f32::NEG_INFINITY, f32::INFINITY), |a, v| {
-            (f32::max(a.0, v.1.z), f32::min(a.1, v.1.z))
-        });
-    let (max_t, min_t) = original
-        .iter()
-        .fold((f32::NEG_INFINITY, f32::INFINITY), |a, v| {
-            (f32::max(a.0, v.1.w), f32::min(a.1, v.1.w))
-        });
-
-    subdivided.iter().fold(true, |a, v| {
-        a && (v.1.x <= max_x && v.1.x >= min_x)
-            && (v.1.y <= max_y && v.1.y >= min_y)
-            && (v.1.z <= max_z && v.1.z >= min_z)
-            && (v.1.w <= max_t && v.1.w >= min_t)
-    })
-}
-*/
+use super::geom::{Boundary, SquareData, SquareMesh, Vertex, VertexExt};
 
 struct SquareSubdivider<'a> {
     mesh: &'a mut SquareMesh,
     division_memory: HashMap<(Vertex, Vertex), Vertex>,
-    valence: HashMap<Vertex, i32>,
+    valence: HashMap<Vertex, u32>,
 }
 
 impl<'a> SquareSubdivider<'a> {
@@ -107,12 +31,18 @@ impl<'a> SquareSubdivider<'a> {
     }
 
     fn divide_uncached(&mut self, v_1: Vertex, v_2: Vertex) -> Vertex {
-        let v_1 = &self.mesh.vertices[v_1];
-        let v_2 = &self.mesh.vertices[v_2];
-        let v = 0.5 * (**v_1 + **v_2);
-        let boundary = cmp::min(2, cmp::max(v_1.boundary, v_2.boundary));
+        // Perform division
+        let v = {
+            let v_1 = &self.mesh.vertices[v_1];
+            let v_2 = &self.mesh.vertices[v_2];
+            let v = 0.5 * (**v_1 + **v_2);
+            let boundary = cmp::min(Boundary::Two, cmp::max(v_1.boundary, v_2.boundary));
 
-        self.mesh.mk_vertex(v.with_boundary(boundary))
+            self.mesh.mk_vertex(v.with_boundary(boundary))
+        };
+        // Cache result
+        self.division_memory.insert((v_1, v_2), v);
+        v
     }
 
     fn divide(&mut self, mut v_1: Vertex, mut v_2: Vertex) -> Vertex {
@@ -127,20 +57,7 @@ impl<'a> SquareSubdivider<'a> {
         self.division_memory
             .get(&(v_1, v_2))
             .copied()
-            .unwrap_or_else(|| {
-                let v = self.divide_uncached(v_1, v_2);
-                self.division_memory.insert((v_1, v_2), v);
-                v
-            })
-    }
-
-    fn update_valence(&mut self, vertex: Vertex) {
-        if let Some(valence) = self.valence.get_mut(&vertex) {
-            *valence += 1;
-            return;
-        }
-
-        self.valence.insert(vertex, 1);
+            .unwrap_or_else(|| self.divide_uncached(v_1, v_2))
     }
 
     fn subdivide_square(&mut self, square: SquareData) {
@@ -169,7 +86,7 @@ impl<'a> SquareSubdivider<'a> {
             ]);
 
             for v in order.iter() {
-                self.update_valence(points[*v]);
+                *self.valence.entry(points[*v]).or_insert(0) += 1;
             }
         }
     }
@@ -179,21 +96,29 @@ impl<'a> SquareSubdivider<'a> {
     /// This assumes that the mesh is filtered so that only the relevant elements
     /// are present and all elments have some area.
     fn subdivide_once(&mut self) {
+        // (0. In debug, clone a copy of the original diagram for sanity checking)
+        #[cfg(debug_assertions)]
+        let unmodified = self.mesh.clone();
+
         // 1. Reset valence
-        self.valence = HashMap::new();
+        self.valence.clear();
         // 2. Remove all squares from mesh
         let mut squares = IdxVec::new();
         mem::swap(&mut self.mesh.elements, &mut squares);
+
         // 3. Subdivide each square linearly
         for square in squares.into_values() {
             self.subdivide_square(square);
         }
+
         // 4. Smooth
         let mut smoothed = IdxVec::with_capacity(self.mesh.vertices.len());
+
         // a) Populate with zero vertices
         for vertex in self.mesh.vertices.values() {
             smoothed.push(Vec4::zero().with_boundary(vertex.boundary));
         }
+
         // b) For each square
         for square in self.mesh.elements.values() {
             // gather the boundaries of its constituent vertices
@@ -204,16 +129,19 @@ impl<'a> SquareSubdivider<'a> {
                 self.mesh.vertices[square[3]].boundary,
             ];
             // and calculate a corresponding weight matrix
-            let matrix = create_square_matrix(bounds);
-
-            // TODO(@doctorn) refactor
-            // Apply this matrix and update the smoothed position
-            for (i, row) in matrix.iter().enumerate() {
-                let v = &mut smoothed[square[i]];
-                for (j, weight) in row.iter().enumerate() {
-                    let w = &self.mesh.vertices[square[j]];
-                    v.vertex += *weight * w.vertex;
-                }
+            let weights = Self::weight_matrix(bounds);
+            // Shape vertices as a matrix
+            let square_matrix = Mat4::new(
+                *self.mesh.vertices[square[0]],
+                *self.mesh.vertices[square[1]],
+                *self.mesh.vertices[square[2]],
+                *self.mesh.vertices[square[3]],
+            );
+            // Transform
+            let transformed = square_matrix * weights;
+            // Update positions
+            for i in 0..4 {
+                *smoothed[square[i]] += transformed[i];
             }
         }
 
@@ -222,6 +150,55 @@ impl<'a> SquareSubdivider<'a> {
             let valence = self.valence[&vertex];
             self.mesh.vertices[vertex].vertex = *data / (valence as f32);
         }
+
+        // (5. In debug, sanity check the subdivided mesh)
+        #[cfg(debug_assertions)]
+        debug_assert!(self.check_bounds_preserved(&unmodified));
+    }
+
+    /// Generates a weight matrix for each surface element based on boundary information.
+    /// Also does basic mesh validation - panics if the boundaries are inconsistent.
+    fn weight_matrix(bounds: [Boundary; 4]) -> Mat4 {
+        // Vertex point
+        let row_0 = match bounds[0] {
+            Boundary::Zero => Vec4::unit_x(),
+            Boundary::One => match (bounds[1], bounds[2]) {
+                (Boundary::One, _) => Vec4::new(0.5, 0.5, 0.0, 0.0),
+                (_, Boundary::One) => Vec4::new(0.5, 0.0, 0.5, 0.0),
+                // if it turns out such mesh is consistent, replace with the identity row
+                _ => panic!("Inconsistent mesh!"),
+            },
+            _ => Vec4::broadcast(0.25),
+        };
+        let row_1 = match bounds[1] {
+            Boundary::One => Vec4::unit_y(),
+            Boundary::Two => Vec4::new(0.0, 0.5, 0.0, 0.5),
+            _ => panic!("Inconsistent mesh!"),
+        };
+        let row_2 = match bounds[2] {
+            Boundary::One => Vec4::unit_z(),
+            Boundary::Two => Vec4::new(0.0, 0.0, 0.5, 0.5),
+            _ => panic!("Inconsistent mesh!"),
+        };
+        let row_3 = Vec4::unit_w();
+
+        Mat4::new(row_0, row_1, row_2, row_3)
+    }
+
+    #[cfg(debug_assertions)]
+    fn check_bounds_preserved(&self, unmodified: &SquareMesh) -> bool {
+        let (min, max) = unmodified.vertices.values().fold(
+            (
+                Vec4::broadcast(f32::INFINITY),
+                Vec4::broadcast(f32::NEG_INFINITY),
+            ),
+            |a, v| (a.0.min_by_component(**v), a.1.max_by_component(**v)),
+        );
+
+        self.mesh
+            .vertices
+            .values()
+            .all(|v| v.clamped(min, max) == **v)
     }
 }
 
@@ -234,6 +211,59 @@ pub fn subdivide_3(mut mesh: SquareMesh, depth: u8) -> SquareMesh {
 
     mesh
 }
+
+// TODO(@doctorn) refactor
+/*
+impl CubeMesh {
+    fn create_new(&mut self, verts: &[VertexId]) -> VertexId {
+        let vertices: Vec<&Vertex> = verts
+            .iter()
+            .map(|v_id| self.vertices.get(*v_id).unwrap())
+            .collect();
+        let first_bound = vertices[0].boundary;
+        let mut bound = vertices.iter().fold(first_bound, |a, v| max(a, v.boundary));
+        bound = max(
+            bound,
+            match verts.len() {
+                2 => 1,
+                4 => 2,
+                _ => panic!(),
+            },
+        );
+
+        let mut new_vert = Vertex::new(0.0, 0.0, 0.0, 0.0, bound);
+        let scale = 1.0
+            / match vertices.len() {
+                2 => 2.0,
+                4 => 4.0,
+                _ => panic!("Unexpected number of vertices"),
+            };
+        for v in vertices {
+            new_vert.add_scaled(v, scale);
+        }
+        let v_id = self.vertices.push(new_vert);
+        self.division_memory.insert(verts.to_owned(), v_id);
+        v_id
+    }
+
+    /// Returns a VertexId that coresponds to the average of the suplied vertices.
+    pub fn linearly_divide(&mut self, mut verts: Vec<VertexId>) -> VertexId {
+        verts.sort();
+        let mut c = verts.clone();
+        c.dedup();
+        match (verts.len(), c.len()) {
+            (2 | 4, 1) => c[0],
+            (2, 2) | (4, 4 | 3) => self
+                .division_memory
+                .get(&verts)
+                .copied()
+                .unwrap_or_else(|| self.create_new(&verts)),
+            (4, 2) => self.linearly_divide(c),
+            _ => panic!(),
+        }
+    }
+}
+*/
 
 /*
 // Defines all 12 edges of a cube based on vertex indices.

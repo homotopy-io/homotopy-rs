@@ -59,18 +59,10 @@ impl<'a> Frame<'a> {
     fn render(&mut self) {
         self.ctx.resize_to_fit();
 
-        // TODO(@doctorn) fix clear color
-        // self.ctx.webgl_ctx.clear_color(
-        //     self.ctx.clear_color.x,
-        //     self.ctx.clear_color.y,
-        //     self.ctx.clear_color.z,
-        //     1.0,
-        // );
         self.ctx.webgl_ctx.clear(
             WebGl2RenderingContext::COLOR_BUFFER_BIT | WebGl2RenderingContext::DEPTH_BUFFER_BIT,
         );
 
-        // TODO(@doctorn) multiple draw queues (alpha channel etc.)
         for draw in &self.draws {
             // bind the program the draw expected
             // NOTE we could sort each draw queue by program to make this much more performant
@@ -97,7 +89,7 @@ impl<'a> Frame<'a> {
                                 WebGl2RenderingContext::TRIANGLES,
                                 elements.len() as i32,
                                 WebGl2RenderingContext::UNSIGNED_SHORT,
-                                0, // TODO(@doctorn) offset? (probably not...)
+                                0,
                             );
                         });
                     } else {
