@@ -55,6 +55,7 @@ pub mod attach;
 pub mod common;
 pub mod complex;
 pub mod contraction;
+pub mod cubicalisation;
 pub mod diagram;
 pub mod examples;
 pub mod expansion;
