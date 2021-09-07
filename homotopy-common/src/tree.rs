@@ -1,10 +1,11 @@
-use std::collections::VecDeque;
-use std::iter::{FromIterator, FusedIterator};
-use std::mem;
-use std::ops::{Deref, DerefMut, Index};
+use std::{
+    collections::VecDeque,
+    iter::{FromIterator, FusedIterator},
+    mem,
+    ops::{Deref, DerefMut, Index},
+};
 
-use crate::declare_idx;
-use crate::idx::IdxVec;
+use crate::{declare_idx, idx::IdxVec};
 
 declare_idx! {
     #[derive(serde::Serialize, serde::Deserialize)]

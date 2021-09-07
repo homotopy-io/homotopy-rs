@@ -1,8 +1,6 @@
-use std::collections::HashMap;
-use std::rc::Rc;
+use std::{collections::HashMap, rc::Rc};
 
 use ultraviolet::{Mat4, Vec2, Vec3};
-
 use web_sys::{WebGl2RenderingContext, WebGlProgram, WebGlShader, WebGlUniformLocation};
 
 use super::{GlCtx, GlError, Result};

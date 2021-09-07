@@ -1,5 +1,7 @@
-use homotopy_core::typecheck::{typecheck, Mode};
-use homotopy_core::*;
+use homotopy_core::{
+    typecheck::{typecheck, Mode},
+    *,
+};
 use insta::*;
 
 #[test]

@@ -88,8 +88,8 @@ pub struct ToasterComponent {
 }
 
 impl Component for ToasterComponent {
-    type Properties = ToasterProps;
     type Message = ToasterMsg;
+    type Properties = ToasterProps;
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
         let delta = Delta::new();

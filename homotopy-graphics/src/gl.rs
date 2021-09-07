@@ -1,11 +1,9 @@
 // TODO(@doctorn) fix clear colour
 
-use yew::prelude::*;
-
+use thiserror::Error;
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlCanvasElement, WebGl2RenderingContext};
-
-use thiserror::Error;
+use yew::prelude::*;
 
 pub mod array;
 pub mod buffer;

@@ -1,31 +1,30 @@
-use std::cmp::Ordering;
-use std::collections::BTreeSet;
-use std::convert::{Into, TryFrom, TryInto};
+use std::{
+    cmp::Ordering,
+    collections::BTreeSet,
+    convert::{Into, TryFrom, TryInto},
+};
 
-use serde::{Deserialize, Serialize};
-
+use homotopy::Homotopy;
+use homotopy_core::{
+    attach::BoundaryPath,
+    common::{Boundary, DimensionError, Direction, Generator, Height, RegularHeight, SliceIndex},
+    contraction::ContractionError,
+    diagram::NewDiagramError,
+    expansion::ExpansionError,
+    signature::SignatureClosure,
+    typecheck::TypeError,
+    Diagram, DiagramN,
+};
 use im::Vector;
-
+use serde::{Deserialize, Serialize};
+pub use signature::*;
 use thiserror::Error;
 
-use homotopy_core::attach::BoundaryPath;
-use homotopy_core::common::{
-    Boundary, DimensionError, Direction, Generator, Height, RegularHeight, SliceIndex,
-};
-use homotopy_core::contraction::ContractionError;
-use homotopy_core::diagram::NewDiagramError;
-use homotopy_core::expansion::ExpansionError;
-use homotopy_core::signature::SignatureClosure;
-use homotopy_core::typecheck::TypeError;
-use homotopy_core::{Diagram, DiagramN};
+use self::homotopy::{Contract, Expand};
 
 mod signature;
 
 pub mod homotopy;
-
-use homotopy::{Contract, Expand, Homotopy};
-
-pub use signature::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Workspace {

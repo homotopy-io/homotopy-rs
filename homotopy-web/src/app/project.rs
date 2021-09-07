@@ -1,8 +1,5 @@
 use closure::closure;
-
-use yew::functional::use_ref;
-use yew::html::ChangeData::Files;
-use yew::prelude::*;
+use yew::{functional::use_ref, html::ChangeData::Files, prelude::*};
 use yew_macro::function_component;
 
 use crate::model::Action;

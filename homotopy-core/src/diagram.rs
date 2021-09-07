@@ -1,23 +1,22 @@
-use crate::rewrite::{Cospan, MalformedRewrite, Rewrite, RewriteN};
+use std::{
+    cell::RefCell,
+    collections::HashSet,
+    convert::{From, Into, TryFrom},
+    fmt,
+    hash::Hash,
+};
+
+use hashconsing::{HConsed, HConsign, HashConsign};
+use thiserror::Error;
+
 use crate::{
     attach::{attach, BoundaryPath},
-    util::first_max_generator,
-};
-use crate::{
     common::{
         Boundary, DimensionError, Direction, Generator, Height, Mode, RegularHeight, SliceIndex,
     },
-    util::Hasher,
+    rewrite::{Cospan, MalformedRewrite, Rewrite, RewriteN},
+    util::{first_max_generator, Hasher},
 };
-use hashconsing::{HConsed, HConsign, HashConsign};
-use std::fmt;
-use std::hash::Hash;
-use std::{
-    cell::RefCell,
-    convert::{From, Into},
-};
-use std::{collections::HashSet, convert::TryFrom};
-use thiserror::Error;
 
 #[derive(PartialEq, Eq, Hash, Clone, PartialOrd, Ord)]
 pub enum Diagram {
@@ -705,9 +704,9 @@ pub enum MalformedDiagram {
 
 #[cfg(test)]
 mod test {
+    use std::{convert::TryInto, error::Error};
+
     use super::*;
-    use std::convert::TryInto;
-    use std::error::Error;
 
     fn assert_point_ids<D>(diagram: &D, points: &[(&[usize], usize)])
     where

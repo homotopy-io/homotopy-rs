@@ -1,8 +1,6 @@
-use yew::prelude::*;
-
 use gloo::render::{request_animation_frame, AnimationFrame};
-
 use homotopy_graphics::gl;
+use yew::prelude::*;
 
 pub trait Renderer: Sized + 'static {
     fn init(ctx: &mut gl::GlCtx) -> gl::Result<Self>;
@@ -39,8 +37,8 @@ impl<R> Component for GlViewport<R>
 where
     R: Renderer,
 {
-    type Properties = GlViewportProps;
     type Message = GlViewportMessage;
+    type Properties = GlViewportProps;
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
         Self {

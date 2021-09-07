@@ -1,6 +1,8 @@
 use criterion::{criterion_group, BenchmarkId, Criterion};
-use homotopy_core::typecheck::{typecheck, Mode};
-use homotopy_core::*;
+use homotopy_core::{
+    typecheck::{typecheck, Mode},
+    *,
+};
 
 fn contract_scalar(crit: &mut Criterion) {
     let mut group = crit.benchmark_group("contract scalar");

@@ -1,9 +1,7 @@
 use std::fmt::Write;
 
 use euclid::default::{Point2D, Rect};
-
-use lyon_algorithms::aabb::fast_bounding_rect;
-use lyon_algorithms::hit_test::hit_test_path;
+use lyon_algorithms::{aabb::fast_bounding_rect, hit_test::hit_test_path};
 use lyon_geom::{CubicBezierSegment, QuadraticBezierSegment};
 use lyon_path::Path;
 

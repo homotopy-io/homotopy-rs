@@ -23,10 +23,10 @@ impl<S> Agent for SettingsAgent<S>
 where
     S: KeyStore + 'static,
 {
-    type Reach = Context<Self>;
-    type Message = ();
     type Input = Settings<S>;
+    type Message = ();
     type Output = S::Message;
+    type Reach = Context<Self>;
 
     fn create(link: AgentLink<Self>) -> Self {
         Self {

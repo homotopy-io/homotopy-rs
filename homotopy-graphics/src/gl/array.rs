@@ -1,13 +1,13 @@
-use std::collections::HashMap;
-use std::rc::Rc;
+use std::{collections::HashMap, rc::Rc};
 
 use ultraviolet::{Vec2, Vec3};
-
 use web_sys::{WebGl2RenderingContext, WebGlVertexArrayObject};
 
-use super::buffer::{Buffer, ElementBuffer, UntypedBuffer};
-use super::shader::Program;
-use super::{GlError, Result};
+use super::{
+    buffer::{Buffer, ElementBuffer, UntypedBuffer},
+    shader::Program,
+    GlError, Result,
+};
 
 #[macro_export]
 macro_rules! vertex_array {

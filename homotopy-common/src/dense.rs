@@ -1,8 +1,9 @@
-use std::collections::VecDeque;
-use std::{fmt, mem};
+use std::{collections::VecDeque, fmt, mem};
 
-use crate::declare_idx;
-use crate::idx::{Idx, IdxVec};
+use crate::{
+    declare_idx,
+    idx::{Idx, IdxVec},
+};
 
 declare_idx! {
     #[derive(serde::Serialize, serde::Deserialize)]

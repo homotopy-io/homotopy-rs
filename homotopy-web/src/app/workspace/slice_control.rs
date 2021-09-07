@@ -1,12 +1,14 @@
+use homotopy_core::{Boundary, Height, SliceIndex};
+use web_sys::Element;
 use yew::prelude::*;
 
-use web_sys::Element;
-
-use homotopy_core::{Boundary, Height, SliceIndex};
-
-use crate::app::{Icon, IconSize};
-use crate::components::bounding_rect;
-use crate::components::panzoom::{PanZoom, PanZoomAgent};
+use crate::{
+    app::{Icon, IconSize},
+    components::{
+        bounding_rect,
+        panzoom::{PanZoom, PanZoomAgent},
+    },
+};
 
 #[derive(Debug, Clone, PartialEq, Properties)]
 pub struct SliceControlProps {
@@ -29,8 +31,8 @@ pub struct SliceControl {
 }
 
 impl Component for SliceControl {
-    type Properties = SliceControlProps;
     type Message = SliceControlMsg;
+    type Properties = SliceControlProps;
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
         let panzoom = PanZoom::new();

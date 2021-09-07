@@ -1,11 +1,12 @@
 use std::convert::{Into, TryFrom, TryInto};
 
+use homotopy_core::{
+    common::{Boundary, Height, SliceIndex},
+    diagram::DiagramN,
+    rewrite::RewriteN,
+};
 use serde::Serialize;
 use thiserror::Error;
-
-use homotopy_core::common::{Boundary, Height, SliceIndex};
-use homotopy_core::diagram::DiagramN;
-use homotopy_core::rewrite::RewriteN;
 
 use crate::svg::geom::Point;
 

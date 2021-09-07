@@ -1,9 +1,8 @@
 use std::fmt;
 
+use euclid::default::{Point2D, Vector2D};
 use web_sys::{DomRect, DomTokenList, Element, TouchList};
 use yew::NodeRef;
-
-use euclid::default::{Point2D, Vector2D};
 
 pub type Finger = i32;
 pub type Point = Point2D<f64>;

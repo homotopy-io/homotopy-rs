@@ -6,3 +6,6 @@ edition = "2018"
 
 [dependencies]
 serde = { features = ["derive"], version = "1.0.126" }
+
+[dev-dependencies]
+cargo-husky = { features = ["precommit-hook", "run-cargo-check", "run-cargo-test", "run-cargo-fmt", "run-cargo-clippy"], version = "1.5.0" }

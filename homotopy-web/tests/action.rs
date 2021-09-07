@@ -1,5 +1,4 @@
-use homotopy_web::model::Action::*;
-use homotopy_web::model::*;
+use homotopy_web::model::{Action::*, *};
 
 #[test]
 #[ignore]

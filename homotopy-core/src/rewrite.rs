@@ -1,17 +1,21 @@
-use std::convert::{From, Into, TryFrom};
-use std::fmt;
-use std::hash::Hash;
-use std::ops::{Deref, Range};
-use std::{cell::RefCell, cmp::Ordering};
-
-use thiserror::Error;
+use std::{
+    cell::RefCell,
+    cmp::Ordering,
+    convert::{From, Into, TryFrom},
+    fmt,
+    hash::Hash,
+    ops::{Deref, Range},
+};
 
 use hashconsing::{HConsed, HConsign, HashConsign};
+use thiserror::Error;
 
-use crate::common::{DimensionError, Generator, Mode, SingularHeight};
-use crate::diagram::Diagram;
-use crate::util::{first_max_generator, CachedCell, Hasher};
-use crate::Boundary;
+use crate::{
+    common::{DimensionError, Generator, Mode, SingularHeight},
+    diagram::Diagram,
+    util::{first_max_generator, CachedCell, Hasher},
+    Boundary,
+};
 
 thread_local! {
     static REWRITE_FACTORY: RefCell<HConsign<RewriteInternal<DefaultAllocator>, Hasher>> =
@@ -1007,9 +1011,9 @@ impl Composable for () {
 }
 
 impl RewriteAllocator for DefaultAllocator {
+    type ConeCell = HConsed<ConeInternal<Self>>;
     type Payload = ();
     type RewriteCell = HConsed<RewriteInternal<Self>>;
-    type ConeCell = HConsed<ConeInternal<Self>>;
 
     #[inline]
     fn mk_rewrite(internal: RewriteInternal<Self>) -> Self::RewriteCell {

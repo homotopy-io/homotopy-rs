@@ -5,22 +5,23 @@
 //! In order to avoid potentially costly recomputations and accidental quadratic complexity when a
 //! diagram is traversed again for every point, the analyses are performed for the entire diagram
 //! at once and the results are cached for efficient random-access retrieval.
-use crate::graph::GraphBuilder;
-use crate::{diagram::DiagramN, Diagram};
-
-use crate::{
-    common::{Boundary, Generator, SliceIndex},
-    Rewrite,
+use std::{
+    collections::HashMap,
+    convert::{Into, TryFrom},
 };
+
 use petgraph::{
     graph::{DiGraph, NodeIndex},
     visit::{EdgeRef, IntoNodeReferences, Topo, Walker},
     EdgeDirection,
 };
 use serde::Serialize;
-use std::{
-    collections::HashMap,
-    convert::{Into, TryFrom},
+
+use crate::{
+    common::{Boundary, Generator, SliceIndex},
+    diagram::DiagramN,
+    graph::GraphBuilder,
+    Diagram, Rewrite,
 };
 
 /// Diagram analysis that determines the generator displayed at any point in the 2-dimensional

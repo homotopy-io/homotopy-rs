@@ -1,15 +1,14 @@
+use homotopy_common::tree::Tree;
+use homotopy_core::{
+    common::{Generator, SliceIndex},
+    serialize::{Key, Store},
+    Diagram,
+};
 use im::Vector;
 use obake::AnyVersion;
 use wasm_bindgen::JsCast;
 
-use homotopy_common::tree::Tree;
-
-use homotopy_core::common::{Generator, SliceIndex};
-use homotopy_core::serialize::{Key, Store};
-use homotopy_core::Diagram;
-
-use super::proof::SignatureItem;
-use super::{Color, GeneratorInfo, Signature, Workspace};
+use super::{proof::SignatureItem, Color, GeneratorInfo, Signature, Workspace};
 
 pub fn generate_download(name: &str, data: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
     let val: js_sys::Uint8Array = data.into();

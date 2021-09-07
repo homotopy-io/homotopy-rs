@@ -1,29 +1,37 @@
-use std::convert::{From, Into, TryInto};
-use std::f32::consts::PI;
+use std::{
+    convert::{From, Into, TryInto},
+    f32::consts::PI,
+};
 
-use euclid::default::{Point2D, Size2D, Transform2D, Vector2D};
-use euclid::Angle;
-
+use euclid::{
+    default::{Point2D, Size2D, Transform2D, Vector2D},
+    Angle,
+};
+use homotopy_core::{
+    common::Direction,
+    complex::{make_complex, Simplex},
+    contraction::Bias,
+    projection::{Depths, Generators},
+    rewrite::RewriteN,
+    Boundary, DiagramN, Generator, Height, SliceIndex,
+};
+use homotopy_graphics::svg::{
+    geom,
+    geom::path_to_svg,
+    layout::Layout,
+    render::{ActionRegion, GraphicElement},
+};
 use web_sys::Element;
 use yew::prelude::*;
 
-use homotopy_core::common::Direction;
-use homotopy_core::complex::{make_complex, Simplex};
-use homotopy_core::contraction::Bias;
-use homotopy_core::projection::{Depths, Generators};
-use homotopy_core::rewrite::RewriteN;
-use homotopy_core::{Boundary, DiagramN, Generator, Height, SliceIndex};
-
-use homotopy_graphics::svg::geom;
-use homotopy_graphics::svg::geom::path_to_svg;
-use homotopy_graphics::svg::layout::Layout;
-use homotopy_graphics::svg::render::{ActionRegion, GraphicElement};
-
-use crate::app::signature_stylesheet::SignatureStylesheet;
-use crate::model::proof::homotopy::{Contract, Expand, Homotopy};
-use crate::model::proof::RenderStyle;
-
-use crate::components::{read_touch_list_abs, Finger};
+use crate::{
+    app::signature_stylesheet::SignatureStylesheet,
+    components::{read_touch_list_abs, Finger},
+    model::proof::{
+        homotopy::{Contract, Expand, Homotopy},
+        RenderStyle,
+    },
+};
 
 pub struct Diagram2D {
     props: Props2D,
@@ -565,8 +573,10 @@ impl Diagram1D {
     }
 
     fn to_y(&self, index: SliceIndex) -> f32 {
-        use self::Boundary::{Source, Target};
-        use self::SliceIndex::{Boundary, Interior};
+        use self::{
+            Boundary::{Source, Target},
+            SliceIndex::{Boundary, Interior},
+        };
 
         let scale = self.props.style.scale;
         let size = self.dimensions();

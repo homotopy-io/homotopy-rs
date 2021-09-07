@@ -1,23 +1,20 @@
-use crate::typecheck::typecheck_cospan;
+use std::{
+    cmp::Ordering,
+    convert::{Into, TryInto},
+};
+
+use thiserror::Error;
+
 use crate::{
     attach::{attach, BoundaryPath},
-    factorization::factorize,
-};
-use crate::{
     common::{Boundary, Direction, Height, RegularHeight, SingularHeight},
-    normalization::normalize_singular,
-};
-use crate::{
     diagram::{Diagram, DiagramN},
-    typecheck::TypeError,
-};
-use crate::{
+    factorization::factorize,
+    normalization::normalize_singular,
     rewrite::{Cone, Cospan, Rewrite, RewriteN},
     signature::Signature,
+    typecheck::{typecheck_cospan, TypeError},
 };
-use std::cmp::Ordering;
-use std::convert::{Into, TryInto};
-use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum ExpansionError {

@@ -1,10 +1,16 @@
-use crate::common::{Height, SingularHeight};
-use crate::diagram::{Diagram, DiagramN};
-use crate::rewrite::{Cospan, Rewrite, RewriteN};
-use crate::util::FastHashMap;
-use std::convert::{Into, TryFrom, TryInto};
-use std::rc::Rc;
-use std::{cell::RefCell, cmp::Ordering};
+use std::{
+    cell::RefCell,
+    cmp::Ordering,
+    convert::{Into, TryFrom, TryInto},
+    rc::Rc,
+};
+
+use crate::{
+    common::{Height, SingularHeight},
+    diagram::{Diagram, DiagramN},
+    rewrite::{Cospan, Rewrite, RewriteN},
+    util::FastHashMap,
+};
 
 /// A degeneracy map which keeps track of a subset of identity levels in a diagram.
 ///

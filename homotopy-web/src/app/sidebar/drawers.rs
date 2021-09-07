@@ -1,14 +1,11 @@
-use yew::callback::Callback;
-use yew::prelude::*;
-
-use crate::app::project::ProjectView;
-use crate::app::settings::SettingsView;
-use crate::app::signature::SignatureView;
-
-use crate::components::Visible;
-use crate::model::{self, Proof};
+use yew::{callback::Callback, prelude::*};
 
 use super::{Sidebar, SidebarButton, SidebarDrawer, SidebarMsg};
+use crate::{
+    app::{project::ProjectView, settings::SettingsView, signature::SignatureView},
+    components::Visible,
+    model::{self, Proof},
+};
 
 macro_rules! declare_sidebar_drawers {
     ($($name:ident {

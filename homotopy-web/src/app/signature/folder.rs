@@ -1,13 +1,15 @@
+use homotopy_common::{
+    idx::Idx,
+    tree::{Node, Tree},
+};
 use yew::prelude::*;
 use yew_macro::function_component;
 
-use homotopy_common::idx::Idx;
-use homotopy_common::tree::{Node, Tree};
-
-use crate::components::{add_class, remove_class};
-use crate::model::proof::{Action, SignatureEdit, SignatureItem};
-
 use super::item::{ItemView, NewFolderButton, NewFolderKind};
+use crate::{
+    components::{add_class, remove_class},
+    model::proof::{Action, SignatureEdit, SignatureItem},
+};
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 enum DropPosition {

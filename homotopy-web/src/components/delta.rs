@@ -33,10 +33,10 @@ impl<T> Agent for DeltaAgent<T>
 where
     T: State,
 {
-    type Reach = Context<Self>;
-    type Message = ();
     type Input = DeltaInput<T>;
+    type Message = ();
     type Output = ();
+    type Reach = Context<Self>;
 
     fn create(link: AgentLink<Self>) -> Self {
         Self {

@@ -1,14 +1,14 @@
 use std::str::FromStr;
 
+use homotopy_common::tree::Node;
+use palette::Srgb;
 use yew::prelude::*;
 use yew_macro::function_component;
 
-use palette::Srgb;
-
-use homotopy_common::tree::Node;
-
-use crate::components::icon::{Icon, IconSize};
-use crate::model::proof::{Action, Color, SignatureEdit, SignatureItem, SignatureItemEdit, COLORS};
+use crate::{
+    components::icon::{Icon, IconSize},
+    model::proof::{Action, Color, SignatureEdit, SignatureItem, SignatureItemEdit, COLORS},
+};
 
 // FIXME(@doctorn)
 //
@@ -166,8 +166,8 @@ pub struct ItemView {
 }
 
 impl Component for ItemView {
-    type Properties = ItemViewProps;
     type Message = ItemViewMessage;
+    type Properties = ItemViewProps;
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
         Self {

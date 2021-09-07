@@ -1,7 +1,6 @@
 use yew::prelude::*;
 
-use crate::components::settings::KeyStore;
-use crate::declare_settings;
+use crate::{components::settings::KeyStore, declare_settings};
 
 declare_settings! {
     pub struct AppSettings {
@@ -27,8 +26,8 @@ pub struct SettingsView {
 }
 
 impl Component for SettingsView {
-    type Properties = SettingsProps;
     type Message = SettingsMsg;
+    type Properties = SettingsProps;
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
         let mut settings = AppSettings::connect(link.callback(SettingsMsg::Setting));

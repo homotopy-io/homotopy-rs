@@ -1,12 +1,11 @@
 use std::ops::Range;
 
-use crate::monotone::{Monotone, MonotoneIterator};
-use crate::Height;
-use crate::{Diagram, DiagramN};
-use crate::{Rewrite, Rewrite0, RewriteN};
+use itertools::{Itertools, MultiProduct};
 
-use itertools::Itertools;
-use itertools::MultiProduct;
+use crate::{
+    monotone::{Monotone, MonotoneIterator},
+    Diagram, DiagramN, Height, Rewrite, Rewrite0, RewriteN,
+};
 
 /// Given `Rewrite`s A -f> C <g- B, find some `Rewrite` A -h> B which factorises f = g ∘ h.
 pub fn factorize(f: Rewrite, g: Rewrite, source: Diagram, target: Diagram) -> Factorization {

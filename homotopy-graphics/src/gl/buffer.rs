@@ -1,10 +1,7 @@
-use std::marker::PhantomData;
-use std::rc::Rc;
-use std::slice;
-
-use ultraviolet::{Vec2, Vec3};
+use std::{marker::PhantomData, rc::Rc, slice};
 
 use js_sys;
+use ultraviolet::{Vec2, Vec3};
 use web_sys::{WebGl2RenderingContext, WebGlBuffer};
 
 use super::{GlCtx, GlError, Result};

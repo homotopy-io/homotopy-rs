@@ -1,5 +1,7 @@
-use homotopy_core::common::{Direction, SingularHeight, SliceIndex};
-use homotopy_core::contraction::Bias;
+use homotopy_core::{
+    common::{Direction, SingularHeight, SliceIndex},
+    contraction::Bias,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Contract {

@@ -1,3 +1,4 @@
+use folder::FolderView;
 use yew::prelude::*;
 use yew_macro::function_component;
 
@@ -5,8 +6,6 @@ use crate::model::proof::{Action, Signature};
 
 mod folder;
 mod item;
-
-use folder::FolderView;
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct Props {

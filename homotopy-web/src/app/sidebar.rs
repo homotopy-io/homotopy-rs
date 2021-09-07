@@ -1,19 +1,19 @@
+pub use buttons::TOOL_BUTTONS;
+use wasm_bindgen::{closure::Closure, JsCast};
 use yew::prelude::*;
 use yew_macro::function_component;
 
-use wasm_bindgen::closure::Closure;
-
-use wasm_bindgen::JsCast;
-
-use crate::app::attach::AttachView;
-use crate::components::icon::{Icon, IconSize};
-use crate::components::Visibility;
-use crate::model::{self, proof, Proof};
+use crate::{
+    app::attach::AttachView,
+    components::{
+        icon::{Icon, IconSize},
+        Visibility,
+    },
+    model::{self, proof, Proof},
+};
 
 mod buttons;
 mod drawers;
-
-pub use buttons::TOOL_BUTTONS;
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct SidebarButtonProps {
@@ -94,8 +94,8 @@ pub struct Sidebar {
 }
 
 impl Component for Sidebar {
-    type Properties = SidebarProps;
     type Message = SidebarMsg;
+    type Properties = SidebarProps;
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
         let mut sidebar = Self {

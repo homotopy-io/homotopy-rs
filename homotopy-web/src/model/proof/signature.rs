@@ -1,17 +1,9 @@
-use std::collections::VecDeque;
-use std::fmt;
-use std::ops::Deref;
-use std::str::FromStr;
-
-use serde::{Deserialize, Serialize};
-
-use palette::Srgb;
+use std::{collections::VecDeque, fmt, ops::Deref, str::FromStr};
 
 use homotopy_common::tree::{Node, Tree};
-
-use homotopy_core::common::Generator;
-use homotopy_core::diagram::NewDiagramError;
-use homotopy_core::{Diagram, DiagramN};
+use homotopy_core::{common::Generator, diagram::NewDiagramError, Diagram, DiagramN};
+use palette::Srgb;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Color(pub(crate) Srgb<u8>);

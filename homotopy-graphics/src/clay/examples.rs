@@ -1,7 +1,6 @@
 // TODO(@doctorn) remove
 
 use homotopy_common::idx::Idx;
-
 use ultraviolet::Vec4;
 
 use super::geom::{Mesh, Vertex, VertexExt};

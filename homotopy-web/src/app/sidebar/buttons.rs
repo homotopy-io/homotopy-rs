@@ -1,16 +1,18 @@
+use homotopy_core::{
+    diagram::globularity,
+    Boundary,
+    Direction::{Backward, Forward},
+    Height, SliceIndex,
+};
+use paste::paste;
 use yew::prelude::*;
 
-use homotopy_core::diagram::globularity;
-use homotopy_core::Direction::{Backward, Forward};
-use homotopy_core::{Boundary, Height, SliceIndex};
-
-use paste::paste;
-
-use crate::components::{Visibility, Visible};
-use crate::model;
-use crate::model::history::{self, Proof, UndoState};
-
 use super::{Sidebar, SidebarButton, SidebarMsg};
+use crate::{
+    components::{Visibility, Visible},
+    model,
+    model::history::{self, Proof, UndoState},
+};
 
 macro_rules! declare_sidebar_tools {
     ($($name:ident {

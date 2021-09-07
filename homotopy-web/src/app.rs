@@ -1,11 +1,18 @@
+use settings::AppSettings;
+use sidebar::Sidebar;
+use signature_stylesheet::SignatureStylesheet;
+use wasm_bindgen::closure::Closure;
+use workspace::WorkspaceView;
 use yew::prelude::*;
 
-use wasm_bindgen::closure::Closure;
-
-use crate::components::icon::{Icon, IconSize};
-use crate::components::panzoom::PanZoom;
-use crate::components::toast::{Toast, Toaster, ToasterComponent};
-use crate::model;
+use crate::{
+    components::{
+        icon::{Icon, IconSize},
+        panzoom::PanZoom,
+        toast::{Toast, Toaster, ToasterComponent},
+    },
+    model,
+};
 
 mod attach;
 mod diagram2d;
@@ -16,11 +23,6 @@ mod sidebar;
 mod signature;
 mod signature_stylesheet;
 mod workspace;
-
-use settings::AppSettings;
-use sidebar::Sidebar;
-use signature_stylesheet::SignatureStylesheet;
-use workspace::WorkspaceView;
 
 #[derive(Default, Clone, Debug, PartialEq, Properties)]
 pub struct Props {}

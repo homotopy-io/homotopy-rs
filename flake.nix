@@ -19,6 +19,7 @@
             inherit system overlays;
           };
           nativeBuildInputs = with pkgs; [
+            rust-bin.nightly.latest.rustfmt # many useful lints are 'unstable'
             (
               rust-bin.stable.latest.default.override {
                 targets = [ "wasm32-unknown-unknown" ];

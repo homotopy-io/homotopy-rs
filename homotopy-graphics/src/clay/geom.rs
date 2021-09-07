@@ -1,12 +1,15 @@
-use std::collections::HashMap;
-use std::convert::TryInto;
-use std::iter::FusedIterator;
-use std::ops::{Deref, DerefMut};
+use std::{
+    collections::HashMap,
+    convert::TryInto,
+    iter::FusedIterator,
+    ops::{Deref, DerefMut},
+};
 
+use homotopy_common::{
+    declare_idx,
+    idx::{Idx, IdxVec},
+};
 use ultraviolet::{Vec3, Vec4};
-
-use homotopy_common::declare_idx;
-use homotopy_common::idx::{Idx, IdxVec};
 
 use crate::gl;
 

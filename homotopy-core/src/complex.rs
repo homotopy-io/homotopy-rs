@@ -1,8 +1,10 @@
-use crate::common::{Boundary, Height, SliceIndex};
-use crate::diagram::DiagramN;
-use crate::rewrite::RewriteN;
-use std::convert::TryInto;
-use std::hash::Hash;
+use std::{convert::TryInto, hash::Hash};
+
+use crate::{
+    common::{Boundary, Height, SliceIndex},
+    diagram::DiagramN,
+    rewrite::RewriteN,
+};
 
 pub type Coordinate = (SliceIndex, SliceIndex);
 
@@ -24,8 +26,8 @@ impl Simplex {
 }
 
 impl IntoIterator for Simplex {
-    type Item = Coordinate;
     type IntoIter = std::vec::IntoIter<Coordinate>;
+    type Item = Coordinate;
 
     fn into_iter(self) -> Self::IntoIter {
         match self {

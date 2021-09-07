@@ -1,6 +1,8 @@
 use criterion::{criterion_group, Criterion};
-use homotopy_core::typecheck::{typecheck, Mode};
-use homotopy_core::*;
+use homotopy_core::{
+    typecheck::{typecheck, Mode},
+    *,
+};
 
 fn expand_matchsticks(crit: &mut Criterion) {
     use Height::Singular;

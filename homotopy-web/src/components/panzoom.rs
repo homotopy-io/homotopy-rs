@@ -1,12 +1,13 @@
 use closure::closure;
+use homotopy_core::Direction;
 use yew::prelude::*;
 
-use homotopy_core::Direction;
-
-use crate::components::delta::{Delta, DeltaCallback, State};
-use crate::components::{bounding_rect, read_touch_list, Finger, Point, Vector};
-
 use super::delta::DeltaAgent;
+use crate::components::{
+    bounding_rect,
+    delta::{Delta, DeltaCallback, State},
+    read_touch_list, Finger, Point, Vector,
+};
 
 #[derive(Debug, Clone)]
 pub enum PanZoomAction {
@@ -113,8 +114,8 @@ pub struct PanZoomComponent {
 }
 
 impl Component for PanZoomComponent {
-    type Properties = PanZoomProps;
     type Message = PanZoomMessage;
+    type Properties = PanZoomProps;
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
         let delta = Delta::new();

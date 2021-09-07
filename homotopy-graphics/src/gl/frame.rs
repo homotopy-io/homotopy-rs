@@ -1,11 +1,11 @@
-use std::collections::HashMap;
-use std::ops::{Deref, DerefMut};
+use std::{
+    collections::HashMap,
+    ops::{Deref, DerefMut},
+};
 
 use web_sys::WebGl2RenderingContext;
 
-use super::array::VertexArray;
-use super::shader::Uniformable;
-use super::GlCtx;
+use super::{array::VertexArray, shader::Uniformable, GlCtx};
 
 #[macro_export]
 macro_rules! draw {

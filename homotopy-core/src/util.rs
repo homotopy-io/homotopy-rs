@@ -1,4 +1,8 @@
-use std::{cell::Cell, collections::HashMap, collections::HashSet, hash::BuildHasherDefault};
+use std::{
+    cell::Cell,
+    collections::{HashMap, HashSet},
+    hash::BuildHasherDefault,
+};
 
 use rustc_hash::FxHasher;
 

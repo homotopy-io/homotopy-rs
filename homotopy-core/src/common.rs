@@ -1,6 +1,6 @@
+use std::{cmp::Ordering, fmt, iter::FusedIterator};
+
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::fmt;
-use std::{cmp::Ordering, iter::FusedIterator};
 use thiserror::Error;
 
 #[derive(PartialEq, Eq, Copy, Clone, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -195,8 +195,9 @@ impl SliceIndex {
 /// ```
 impl Ord for SliceIndex {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        use self::Boundary::{Source, Target};
         use SliceIndex::{Boundary, Interior};
+
+        use self::Boundary::{Source, Target};
         match (self, other) {
             (Boundary(Source), Boundary(Source)) | (Boundary(Target), Boundary(Target)) => {
                 Ordering::Equal

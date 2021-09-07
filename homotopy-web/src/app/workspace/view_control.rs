@@ -1,7 +1,9 @@
 use yew::prelude::*;
 
-use crate::app::{Icon, IconSize};
-use crate::components::panzoom::PanZoom;
+use crate::{
+    app::{Icon, IconSize},
+    components::panzoom::PanZoom,
+};
 
 pub struct ViewControl {
     link: ComponentLink<Self>,
@@ -15,8 +17,8 @@ pub enum ViewMessage {
 }
 
 impl Component for ViewControl {
-    type Properties = ();
     type Message = ViewMessage;
+    type Properties = ();
 
     fn create(_props: Self::Properties, link: ComponentLink<Self>) -> Self {
         Self {

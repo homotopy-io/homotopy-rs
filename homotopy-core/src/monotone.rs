@@ -1,5 +1,4 @@
-use std::cmp;
-use std::ops::Range;
+use std::{cmp, ops::Range};
 
 pub type Monotone = Vec<usize>;
 

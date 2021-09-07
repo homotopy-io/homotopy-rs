@@ -44,6 +44,11 @@
     clippy::match_on_vec_items,
 )]
 
+pub use common::{Boundary, Direction, Generator, Height, SliceIndex};
+pub use contraction::Bias;
+pub use diagram::{Diagram, DiagramN};
+pub use rewrite::{Cospan, Rewrite, Rewrite0, RewriteN};
+
 mod util;
 
 pub mod attach;
@@ -62,11 +67,6 @@ pub mod rewrite;
 pub mod serialize;
 pub mod signature;
 pub mod typecheck;
-
-pub use common::{Boundary, Direction, Generator, Height, SliceIndex};
-pub use contraction::Bias;
-pub use diagram::{Diagram, DiagramN};
-pub use rewrite::{Cospan, Rewrite, Rewrite0, RewriteN};
 
 pub fn collect_garbage() {
     DiagramN::collect_garbage();

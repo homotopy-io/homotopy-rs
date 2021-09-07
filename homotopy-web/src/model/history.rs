@@ -1,10 +1,11 @@
-use std::fmt;
-use std::ops::{Deref, DerefMut};
-
-use instant::Instant;
-use thiserror::Error;
+use std::{
+    fmt,
+    ops::{Deref, DerefMut},
+};
 
 use homotopy_common::tree::{Node, NodeData, Tree};
+use instant::Instant;
+use thiserror::Error;
 
 use super::proof::ProofState;
 

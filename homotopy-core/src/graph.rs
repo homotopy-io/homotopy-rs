@@ -1,9 +1,12 @@
+use std::convert::{Into, TryInto};
+
 use petgraph::Graph;
 
-use crate::common::{Boundary, DimensionError, Height, SliceIndex};
-use crate::diagram::{Diagram, DiagramN};
-use crate::rewrite::{Rewrite, RewriteN};
-use std::convert::{Into, TryInto};
+use crate::{
+    common::{Boundary, DimensionError, Height, SliceIndex},
+    diagram::{Diagram, DiagramN},
+    rewrite::{Rewrite, RewriteN},
+};
 
 #[derive(Debug, Clone)]
 pub struct GraphBuilder<K> {

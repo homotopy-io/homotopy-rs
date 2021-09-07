@@ -1,28 +1,27 @@
-use crate::rewrite::{Cone, Cospan, Rewrite, Rewrite0, RewriteN};
-use crate::util::FastHashMap;
-use crate::{
-    attach::{attach, BoundaryPath},
-    typecheck::TypeError,
+use std::{
+    convert::{Into, TryFrom, TryInto},
+    hash::Hash,
 };
-use crate::{
-    common::{Boundary, Height, SingularHeight},
-    typecheck::typecheck_cospan,
-};
-use crate::{
-    diagram::{Diagram, DiagramN},
-    signature::Signature,
-};
-use crate::{normalization, util::FastHashSet};
-use petgraph::graph::NodeIndex;
-use petgraph::unionfind::UnionFind;
+
 use petgraph::{
     algo::kosaraju_scc,
+    graph::{DiGraph, NodeIndex},
     graphmap::{DiGraphMap, GraphMap},
+    unionfind::UnionFind,
+    visit::EdgeRef,
 };
-use petgraph::{graph::DiGraph, visit::EdgeRef};
-use std::convert::{Into, TryFrom, TryInto};
-use std::hash::Hash;
 use thiserror::Error;
+
+use crate::{
+    attach::{attach, BoundaryPath},
+    common::{Boundary, Height, SingularHeight},
+    diagram::{Diagram, DiagramN},
+    normalization,
+    rewrite::{Cone, Cospan, Rewrite, Rewrite0, RewriteN},
+    signature::Signature,
+    typecheck::{typecheck_cospan, TypeError},
+    util::{FastHashMap, FastHashSet},
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct Span(Rewrite, Diagram, Rewrite);

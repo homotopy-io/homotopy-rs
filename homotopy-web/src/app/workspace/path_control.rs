@@ -1,9 +1,7 @@
+use homotopy_core::{Boundary, Height, SliceIndex};
+use im::Vector;
 use yew::prelude::*;
 use yew_macro::function_component;
-
-use im::Vector;
-
-use homotopy_core::{Boundary, Height, SliceIndex};
 
 use crate::app::{Icon, IconSize};
 

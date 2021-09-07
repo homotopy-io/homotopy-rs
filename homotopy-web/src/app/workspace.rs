@@ -1,23 +1,24 @@
 use std::convert::{Into, TryInto};
 
+use homotopy_core::{
+    attach::BoundaryPath,
+    common::{Boundary, Height, SliceIndex},
+    Diagram, DiagramN,
+};
+use path_control::PathControl;
+use slice_control::SliceControl;
+use view_control::ViewControl;
 use yew::prelude::*;
 
-use homotopy_core::attach::BoundaryPath;
-use homotopy_core::common::{Boundary, Height, SliceIndex};
-use homotopy_core::{Diagram, DiagramN};
-
-use crate::app::diagram2d::{Diagram0D, Diagram1D, Diagram2D, Highlight2D, HighlightKind};
-use crate::components::panzoom::PanZoomComponent;
-use crate::model::proof::homotopy::Homotopy;
-use crate::model::proof::{Action, Signature, Workspace};
+use crate::{
+    app::diagram2d::{Diagram0D, Diagram1D, Diagram2D, Highlight2D, HighlightKind},
+    components::panzoom::PanZoomComponent,
+    model::proof::{homotopy::Homotopy, Action, Signature, Workspace},
+};
 
 mod path_control;
 mod slice_control;
 mod view_control;
-
-use path_control::PathControl;
-use slice_control::SliceControl;
-use view_control::ViewControl;
 
 // TODO: Workspace rerendering when panzoom is changed needs to be smoother.
 

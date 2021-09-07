@@ -1,9 +1,10 @@
-use std::fmt;
-use std::iter::{FromIterator, FusedIterator};
-use std::marker::PhantomData;
-use std::ops::{Index, IndexMut};
-
-use std::hash::Hash;
+use std::{
+    fmt,
+    hash::Hash,
+    iter::{FromIterator, FusedIterator},
+    marker::PhantomData,
+    ops::{Index, IndexMut},
+};
 
 pub trait Idx: 'static + Copy + Eq + Hash + fmt::Debug {
     fn index(&self) -> usize;
@@ -218,8 +219,8 @@ impl<I, T> IntoIterator for IdxVec<I, T>
 where
     I: Idx,
 {
-    type Item = (I, T);
     type IntoIter = IdxVecIterator<I, T>;
+    type Item = (I, T);
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {

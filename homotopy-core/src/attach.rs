@@ -1,8 +1,12 @@
-use crate::common::{Boundary, Height, SliceIndex};
-use crate::diagram::{Diagram, DiagramN};
-use crate::rewrite::Cospan;
-use serde::{Deserialize, Serialize};
 use std::convert::{From, Into, TryInto};
+
+use serde::{Deserialize, Serialize};
+
+use crate::{
+    common::{Boundary, Height, SliceIndex},
+    diagram::{Diagram, DiagramN},
+    rewrite::Cospan,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct BoundaryPath(pub Boundary, pub usize);

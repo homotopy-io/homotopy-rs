@@ -1,23 +1,23 @@
-use std::cmp::Ordering;
-use std::collections::HashMap;
-use std::collections::HashSet;
-use std::hash::Hash;
+use std::{
+    cmp::Ordering,
+    collections::{HashMap, HashSet},
+    hash::Hash,
+};
 
 use euclid::default::Transform2D;
-
+use homotopy_core::{
+    common::{Generator, Height, SliceIndex},
+    complex::Simplex,
+    projection::{Depths, Generators},
+};
 use lyon_path::Path;
 use petgraph::unionfind::UnionFind;
 use seahash::SeaHasher;
 
-use homotopy_core::complex::Simplex;
-use homotopy_core::projection::Generators;
-use homotopy_core::{
-    common::{Generator, Height, SliceIndex},
-    projection::Depths,
+use crate::svg::{
+    geom::{Circle, Fill, Point, Shape, Stroke},
+    layout::Layout,
 };
-
-use crate::svg::geom::{Circle, Fill, Point, Shape, Stroke};
-use crate::svg::layout::Layout;
 
 type Coordinate = (SliceIndex, SliceIndex);
 
@@ -318,8 +318,10 @@ fn make_path_segment(
     layout: &Layout,
     builder: &mut lyon_path::builder::WithSvg<lyon_path::path::Builder>,
 ) {
-    use self::Height::{Regular, Singular};
-    use self::SliceIndex::Interior;
+    use self::{
+        Height::{Regular, Singular},
+        SliceIndex::Interior,
+    };
 
     let layout_start = layout.get(start.0, start.1).unwrap();
     let layout_end = layout.get(end.0, end.1).unwrap();

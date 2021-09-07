@@ -1,5 +1,4 @@
-use homotopy_core::serialize::*;
-use homotopy_core::*;
+use homotopy_core::{serialize::*, *};
 use insta::*;
 
 #[test]

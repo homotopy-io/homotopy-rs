@@ -620,6 +620,7 @@ checksum = "3461b968f695ca312b968503261f5a345de0f02a39dbaa3021f20d53b426395d"
 name = "homotopy-common"
 version = "0.1.0"
 dependencies = [
+ "cargo-husky",
  "serde",
 ]
 

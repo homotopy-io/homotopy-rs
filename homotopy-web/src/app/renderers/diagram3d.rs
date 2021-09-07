@@ -1,12 +1,9 @@
-use ultraviolet::projection::rh_yup::perspective_gl;
-use ultraviolet::{Mat4, Vec3};
-
-use homotopy_graphics::gl::array::VertexArray;
-use homotopy_graphics::gl::frame::Frame;
-use homotopy_graphics::gl::{GlCtx, Result};
-use homotopy_graphics::{draw, program, vertex_array};
-
-use homotopy_graphics::clay;
+use homotopy_graphics::{
+    clay, draw,
+    gl::{array::VertexArray, frame::Frame, GlCtx, Result},
+    program, vertex_array,
+};
+use ultraviolet::{projection::rh_yup::perspective_gl, Mat4, Vec3};
 
 use crate::components::gl::Renderer;
 

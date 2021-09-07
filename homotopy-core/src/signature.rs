@@ -1,5 +1,6 @@
-use crate::{diagram::NewDiagramError, Diagram, DiagramN, Generator};
 use std::collections::HashMap;
+
+use crate::{diagram::NewDiagramError, Diagram, DiagramN, Generator};
 
 pub trait Signature {
     fn generator(&self, id: Generator) -> Option<Diagram>;

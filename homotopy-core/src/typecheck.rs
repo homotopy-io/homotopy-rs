@@ -1,22 +1,22 @@
-use crate::normalization::normalize;
-use crate::rewrite::{Cone, Cospan, Rewrite, RewriteN};
-use crate::util::FastHashMap;
-use crate::{
-    common::{Generator, Height, SingularHeight},
-    Boundary,
+use std::{
+    cell::RefCell,
+    collections::HashMap,
+    convert::{Into, TryInto},
+    rc::Rc,
 };
-use crate::{
-    diagram::{Diagram, DiagramN},
-    signature::Signature,
-};
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::convert::Into;
-use std::convert::TryInto;
-use std::rc::Rc;
+
 use thiserror::Error;
 
 pub use crate::common::Mode;
+use crate::{
+    common::{Generator, Height, SingularHeight},
+    diagram::{Diagram, DiagramN},
+    normalization::normalize,
+    rewrite::{Cone, Cospan, Rewrite, RewriteN},
+    signature::Signature,
+    util::FastHashMap,
+    Boundary,
+};
 
 type Point = Vec<SingularHeight>;
 
@@ -398,9 +398,8 @@ fn check_dimension(diagram: Diagram) -> bool {
 
 #[cfg(test)]
 mod test {
-    use crate::signature::SignatureBuilder;
-
     use super::*;
+    use crate::signature::SignatureBuilder;
 
     #[test]
     fn associativity() {

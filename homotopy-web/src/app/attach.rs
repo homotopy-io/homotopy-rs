@@ -1,6 +1,6 @@
-use crate::model::proof::{Action, AttachOption, Signature};
-
 use yew::prelude::*;
+
+use crate::model::proof::{Action, AttachOption, Signature};
 
 #[derive(Debug, Clone, PartialEq, Properties)]
 pub struct Props {

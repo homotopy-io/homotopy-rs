@@ -1,6 +1,5 @@
-use insta::*;
-
 use homotopy_core::examples;
+use insta::*;
 
 #[test]
 fn assoc_left() {

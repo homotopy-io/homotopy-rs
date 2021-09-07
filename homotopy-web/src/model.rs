@@ -1,15 +1,12 @@
+use history::History;
+pub use history::Proof;
 use homotopy_core::common::Mode;
-
+use proof::{Color, GeneratorInfo, Signature, Workspace};
 use thiserror::Error;
 
 pub mod history;
 pub mod proof;
 pub mod serialize;
-
-use history::History;
-use proof::{Color, GeneratorInfo, Signature, Workspace};
-
-pub use history::Proof;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {

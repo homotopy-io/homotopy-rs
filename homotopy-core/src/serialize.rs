@@ -1,9 +1,13 @@
-use crate::util::FastHashMap;
-use crate::{rewrite::Cone, Cospan, Diagram, DiagramN, Generator, Rewrite, Rewrite0, RewriteN};
-use highway::{HighwayHash, HighwayHasher};
-use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap, convert::TryInto, hash::Hash, marker::PhantomData, num::NonZeroU32,
+};
+
+use highway::{HighwayHash, HighwayHasher};
+use serde::{Deserialize, Serialize};
+
+use crate::{
+    rewrite::Cone, util::FastHashMap, Cospan, Diagram, DiagramN, Generator, Rewrite, Rewrite0,
+    RewriteN,
 };
 
 /// Similar to `Hash`, except supposed to be deterministic and shouldn't collide
