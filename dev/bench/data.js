@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1631028580932,
+  "lastUpdate": 1631055257184,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -8879,6 +8879,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 101.1,
             "range": "+/- 0.070",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "committer": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "distinct": true,
+          "id": "1680761e96e6c6430597424fd28f10680ab64621",
+          "message": "Well-formed checks carry through rewrite composition failures and now\nmay accumulate multiple errors in a single pass rather than the first\none it finds.",
+          "timestamp": "2021-09-07T22:50:24+01:00",
+          "tree_id": "5d6128f4a0cb70c463df56bd7460554efdecdcd7",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/1680761e96e6c6430597424fd28f10680ab64621"
+        },
+        "date": 1631055246479,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 91.019,
+            "range": "+/- 0.922",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 93.693,
+            "range": "+/- 1.431",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 137.61,
+            "range": "+/- 2.150",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 149.94,
+            "range": "+/- 1.860",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 239.24,
+            "range": "+/- 2.820",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 300.95,
+            "range": "+/- 5.040",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 117.32,
+            "range": "+/- 2.120",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 865.38,
+            "range": "+/- 10.140",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.9864,
+            "range": "+/- 0.034",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 16.682,
+            "range": "+/- 0.178",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 75.049,
+            "range": "+/- 0.646",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 417.61,
+            "range": "+/- 2.240",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 3.0735,
+            "range": "+/- 0.008",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 28.527,
+            "range": "+/- 0.069",
+            "unit": "s"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 94.36,
+            "range": "+/- 1.011",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 125.53,
+            "range": "+/- 2.120",
             "unit": "us"
           }
         ]
