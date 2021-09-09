@@ -52,6 +52,57 @@ pub fn example_3() -> Mesh {
     mesh
 }
 
+pub fn snake_3() -> Mesh {
+    const V_COORDS: [[f32; 4]; 10] = [
+        [0., 1., -1., 0.],
+        [0., 0., -1., 0.],
+        [0., -1., -1., 0.],
+        [0., 1., 0., 0.],
+        [0., 0., 0., 0.],
+        [0., -1., 0., 0.],
+        [1., 1., 1., 0.],
+        [1., -0.75, 1., 0.],
+        [-1., 0.75, 1., 0.],
+        [-1., -1., 1., 0.],
+    ];
+    const V_BOUNDS: [Boundary; 10] = [
+        Boundary::Zero,
+        Boundary::One,
+        Boundary::Zero,
+        Boundary::One,
+        Boundary::Two,
+        Boundary::One,
+        Boundary::Zero,
+        Boundary::One,
+        Boundary::One,
+        Boundary::Zero,
+    ];
+    const SQUARES: [[usize; 4]; 5] = [
+        [1, 4, 0, 3],
+        [2, 5, 1, 4],
+        [4, 7, 3, 6],
+        [4, 8, 4, 7],
+        [9, 8, 5, 4],
+    ];
+
+    let mut mesh = Mesh::new();
+
+    for (bound, coord) in V_BOUNDS.iter().zip(V_COORDS.iter()) {
+        mesh.mk_vertex(Vec4::new(coord[0], coord[1], coord[2], coord[3]).with_boundary(*bound));
+    }
+
+    for square in &SQUARES {
+        mesh.mk_element_from(&[
+            Vertex::new(square[0]),
+            Vertex::new(square[1]),
+            Vertex::new(square[2]),
+            Vertex::new(square[3]),
+        ]);
+    }
+
+    mesh
+}
+
 /*
 pub fn example_4() -> Mesh {
     const V_COORDS: [[i32; 4]; 13] = [

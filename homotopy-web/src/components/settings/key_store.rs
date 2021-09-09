@@ -3,7 +3,7 @@ use std::hash::Hash;
 use serde::{Deserialize, Serialize};
 
 pub trait KeyStore: Serialize + Deserialize<'static> + Default + Clone {
-    type Key: Copy + Eq + Hash;
+    type Key: Copy + Eq + Hash + 'static;
     type Message: Clone;
 
     fn get(&self, k: Self::Key) -> Self::Message;
@@ -12,6 +12,20 @@ pub trait KeyStore: Serialize + Deserialize<'static> + Default + Clone {
 
     fn key_of(msg: &Self::Message) -> Self::Key;
 }
+
+pub trait Settings {
+    type Store: KeyStore;
+
+    const ALL: &'static [<Self::Store as KeyStore>::Key];
+
+    fn connect(callback: yew::callback::Callback<<Self::Store as KeyStore>::Message>) -> Self;
+
+    fn subscribe(&mut self, keys: &[<Self::Store as KeyStore>::Key]);
+
+    fn unsubscribe(&mut self, keys: &[<Self::Store as KeyStore>::Key]);
+}
+
+pub type Store<S> = <S as Settings>::Store;
 
 #[macro_export]
 macro_rules! declare_settings {
@@ -79,6 +93,7 @@ macro_rules! declare_settings {
 
             impl [<$name KeyStore>] {
                 $(
+                    #[allow(unused)]
                     #[inline(always)]
                     pub fn [<get_ $key>](&self) -> &$ty {
                         &self.[<__ $key>]
@@ -92,12 +107,14 @@ macro_rules! declare_settings {
                 >>,
             }
 
-            impl $name {
+            impl $crate::components::settings::Settings for $name {
+                type Store = [<$name KeyStore>];
+
                 const ALL: &'static [[<$name Key>]] = &[
                     $([<$name Key>]::$key),*
                 ];
 
-                pub fn connect(callback: yew::callback::Callback<[<$name Msg>]>) -> Self {
+                fn connect(callback: yew::callback::Callback<[<$name Msg>]>) -> Self {
                     use $crate::components::settings::SettingsAgent;
                     use yew_agent::Bridged;
 
@@ -108,28 +125,28 @@ macro_rules! declare_settings {
                     }
                 }
 
+                fn subscribe(&mut self, keys: &[[<$name Key>]]) {
+                    use $crate::components::settings::SettingsInput;
+                    for key in keys.iter().copied() {
+                        self.bridge.send(SettingsInput::Subscribe(key))
+                    }
+                }
+
+                fn unsubscribe(&mut self, keys: &[[<$name Key>]]) {
+                    use $crate::components::settings::SettingsInput;
+                    for key in keys.iter().copied() {
+                        self.bridge.send(SettingsInput::Unsubscribe(key))
+                    }
+                }
+            }
+
+            impl $name {
                 $(
-                    #[allow(unused)]
-                    pub fn subscribe(&mut self, keys: &[[<$name Key>]]) {
-                        use $crate::components::settings::Settings;
-                        for key in keys.iter().copied() {
-                            self.bridge.send(Settings::Subscribe(key))
-                        }
-                    }
-
-                    #[allow(unused)]
-                    pub fn unsubscribe(&mut self, keys: &[[<$name Key>]]) {
-                        use $crate::components::settings::Settings;
-                        for key in keys.iter().copied() {
-                            self.bridge.send(Settings::Unsubscribe(key))
-                        }
-                    }
-
                     #[allow(unused)]
                     #[inline(always)]
                     pub fn [<set_ $key>](&mut self, v: $ty) {
-                        use $crate::components::settings::Settings;
-                        self.bridge.send(Settings::Update([<$name Msg>]::$key(v)))
+                        use $crate::components::settings::SettingsInput;
+                        self.bridge.send(SettingsInput::Update([<$name Msg>]::$key(v)))
                     }
                 )*
             }

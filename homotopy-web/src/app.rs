@@ -10,6 +10,7 @@ use crate::{
         gl::GlViewport,
         icon::{Icon, IconSize},
         panzoom::PanZoom,
+        settings::Settings,
         toast::{Toast, Toaster, ToasterComponent},
     },
     model,

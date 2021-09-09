@@ -4,7 +4,7 @@ use yew_agent::{Agent, AgentLink, Context, HandlerId};
 
 use super::KeyStore;
 
-pub enum Settings<S: KeyStore> {
+pub enum SettingsInput<S: KeyStore> {
     Subscribe(S::Key),
     Unsubscribe(S::Key),
     Update(S::Message),
@@ -23,7 +23,7 @@ impl<S> Agent for SettingsAgent<S>
 where
     S: KeyStore + 'static,
 {
-    type Input = Settings<S>;
+    type Input = SettingsInput<S>;
     type Message = ();
     type Output = S::Message;
     type Reach = Context<Self>;
@@ -40,7 +40,7 @@ where
 
     fn handle_input(&mut self, msg: Self::Input, id: HandlerId) {
         match msg {
-            Settings::Subscribe(k) => {
+            SettingsInput::Subscribe(k) => {
                 if let Some(handlers) = self.handlers.get_mut(&k) {
                     if !handlers.contains(&id) {
                         handlers.push(id);
@@ -50,12 +50,12 @@ where
                 }
                 self.link.respond(id, self.store.get(k));
             }
-            Settings::Unsubscribe(k) => {
+            SettingsInput::Unsubscribe(k) => {
                 if let Some(handlers) = self.handlers.get_mut(&k) {
                     handlers.retain(|handler_id| *handler_id != id);
                 }
             }
-            Settings::Update(msg) => {
+            SettingsInput::Update(msg) => {
                 self.store.set(&msg);
                 self.broadcast(&msg);
             }
