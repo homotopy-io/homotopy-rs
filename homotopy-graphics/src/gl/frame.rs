@@ -84,10 +84,10 @@ impl<'a> Frame<'a> {
                     if let Some(elements) = draw.vertex_array.elements() {
                         // if we're given an element buffer, bind it and draw the appropriate
                         // number of elements
-                        elements.bind(|| {
+                        elements.buffer.bind(|| {
                             self.ctx.webgl_ctx.draw_elements_with_i32(
-                                WebGl2RenderingContext::TRIANGLES,
-                                elements.len() as i32,
+                                elements.kind as u32,
+                                elements.buffer.len() as i32,
                                 WebGl2RenderingContext::UNSIGNED_SHORT,
                                 0,
                             );

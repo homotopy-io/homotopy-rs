@@ -276,38 +276,60 @@ impl SquareMesh {
         self.elements.push(square)
     }
 
-    pub fn buffer(self, ctx: &gl::GlCtx) -> gl::Result<SquareMeshBuffers> {
+    pub fn buffer(
+        &self,
+        ctx: &gl::GlCtx,
+        kind: gl::buffer::ElementKind,
+    ) -> gl::Result<SquareMeshBuffers> {
         let vertices = self
             .vertices
-            .into_values()
+            .values()
             .map(|v| v.xyz())
             .collect::<IdxVec<_, _>>();
         let mut elements = Vec::with_capacity(self.elements.len() * 6);
         let mut normals = IdxVec::splat(Vec3::zero(), vertices.len());
 
-        let mut push_tri = |i: Vertex, j: Vertex, k: Vertex| {
-            if i != j && j != k && k != i {
-                elements.push(i.index() as u16);
-                elements.push(j.index() as u16);
-                elements.push(k.index() as u16);
+        {
+            let mut push_element = |i: Vertex, j: Vertex, k: Vertex| {
+                match kind {
+                    gl::buffer::ElementKind::Lines => {
+                        elements.push(i.index() as u16);
+                        elements.push(j.index() as u16);
+                        elements.push(j.index() as u16);
+                        elements.push(k.index() as u16);
+                        elements.push(k.index() as u16);
+                        elements.push(i.index() as u16);
+                    }
+                    gl::buffer::ElementKind::Triangles => {
+                        elements.push(i.index() as u16);
+                        elements.push(j.index() as u16);
+                        elements.push(k.index() as u16);
+                    }
+                };
+            };
 
-                let a = vertices[i];
-                let b = vertices[j];
-                let c = vertices[k];
-                let n = (b - a).cross(c - a);
+            let mut push_tri = |i: Vertex, j: Vertex, k: Vertex| {
+                if i != j && j != k && k != i {
+                    push_element(i, j, k);
 
-                normals[i] += n;
-                normals[j] += n;
-                normals[k] += n;
+                    let a = vertices[i];
+                    let b = vertices[j];
+                    let c = vertices[k];
+                    let n = (b - a).cross(c - a);
+
+                    normals[i] += n;
+                    normals[j] += n;
+                    normals[k] += n;
+                }
+            };
+
+            // Triangulate mesh
+            for square in self.elements.values() {
+                // Bottom right triangle
+                push_tri(square[0], square[1], square[3]);
+                // Top left triangle
+                push_tri(square[0], square[3], square[2]);
             }
-        };
-
-        // Triangulate mesh
-        for square in self.elements.values() {
-            // Bottom right triangle
-            push_tri(square[0], square[1], square[3]);
-            // Top left triangle
-            push_tri(square[0], square[3], square[2]);
         }
 
         // Average normals
@@ -316,7 +338,7 @@ impl SquareMesh {
         }
 
         // Buffer data
-        let element_buffer = ctx.mk_element_buffer(&elements)?;
+        let element_buffer = ctx.mk_element_buffer(&elements, kind)?;
         let vertex_buffer = ctx.mk_buffer(&vertices.into_raw())?;
         let normal_buffer = ctx.mk_buffer(&normals.into_raw())?;
 

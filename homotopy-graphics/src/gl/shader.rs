@@ -290,6 +290,13 @@ pub unsafe trait Uniformable: 'static {
     fn uniform(&self, ctx: &WebGl2RenderingContext, loc: &WebGlUniformLocation);
 }
 
+unsafe impl Uniformable for bool {
+    #[inline]
+    fn uniform(&self, ctx: &WebGl2RenderingContext, loc: &WebGlUniformLocation) {
+        ctx.uniform1i(Some(loc), *self as i32);
+    }
+}
+
 unsafe impl Uniformable for f32 {
     #[inline]
     fn uniform(&self, ctx: &WebGl2RenderingContext, loc: &WebGlUniformLocation) {

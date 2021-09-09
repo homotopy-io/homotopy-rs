@@ -465,6 +465,29 @@ svg {
   }
 }
 
+/* Settings */
+
+.settings__segment {
+  border-bottom: 1px solid var(--drawer-border);
+  padding: var(--space-1) 0;
+  box-sizing: border-box;
+}
+
+.settings__segment h4 {
+  margin: 0;
+  margin-bottom: var(--space-1);
+}
+
+.settings__toggle-setting {
+  display: flex;
+  align-items: left;
+}
+
+.settings__toggle-setting input {
+  margin-right: var(--space-1);
+  cursor: pointer;
+}
+
 .version {
   position: absolute;
   bottom: 4px;
@@ -540,7 +563,7 @@ input.visually-hidden:focus-within + label {
   outline: thin dotted;
 }
 
-input { width:100%; }
+input[type="text"] { width:100%; }
 
 input[type="color"] {
 	-webkit-appearance: none;

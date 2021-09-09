@@ -1,15 +1,24 @@
 use yew::prelude::*;
 
-use crate::{components::settings::KeyStore, declare_settings};
+use crate::{
+    components::settings::{KeyStore, Settings},
+    declare_settings,
+};
 
 declare_settings! {
     pub struct AppSettings {
-        example_toggle: bool,
+        wireframe_3d: bool,
+        orthographic_3d: bool,
+        lighting_disable: bool,
+        subdivision_depth: usize,
     }
 }
 
+#[derive(Clone)]
 pub enum SettingsMsg {
-    Click,
+    ToggleWireframe,
+    ToggleOrtho,
+    ToggleLighting,
     Setting(AppSettingsMsg),
 }
 
@@ -45,11 +54,30 @@ impl Component for SettingsView {
 
     fn view(&self) -> Html {
         html! {
-            <input
-                type="checkbox"
-                checked={*self.local.get_example_toggle()}
-                onclick={self.link.callback(|_| SettingsMsg::Click)}
-            />
+            <div class="settings__segment">
+                <h4>{"3D renderer"}</h4>
+                {
+                    self.view_checkbox(
+                        "Wireframe 3D",
+                        |local| *local.get_wireframe_3d(),
+                        &SettingsMsg::ToggleWireframe,
+                    )
+                }
+                {
+                    self.view_checkbox(
+                        "Orthographic perspective",
+                        |local| *local.get_orthographic_3d(),
+                        &SettingsMsg::ToggleOrtho,
+                    )
+                }
+                {
+                    self.view_checkbox(
+                        "Disable lighting",
+                        |local| *local.get_lighting_disable(),
+                        &SettingsMsg::ToggleLighting,
+                    )
+                }
+            </div>
         }
     }
 
@@ -60,9 +88,17 @@ impl Component for SettingsView {
             // If we're notified about a setting change, just thread that through
             // to our local working copy.
             Self::Message::Setting(msg) => self.local.set(&msg),
-            Self::Message::Click => {
+            Self::Message::ToggleWireframe => {
                 self.settings
-                    .set_example_toggle(!self.local.get_example_toggle());
+                    .set_wireframe_3d(!self.local.get_wireframe_3d());
+            }
+            Self::Message::ToggleOrtho => {
+                self.settings
+                    .set_orthographic_3d(!self.local.get_orthographic_3d());
+            }
+            Self::Message::ToggleLighting => {
+                self.settings
+                    .set_lighting_disable(!self.local.get_lighting_disable());
             }
         }
         true
@@ -71,5 +107,23 @@ impl Component for SettingsView {
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
         self.props = props;
         false
+    }
+}
+
+impl SettingsView {
+    fn view_checkbox<F>(&self, name: &str, getter: F, on_click: &'static SettingsMsg) -> Html
+    where
+        F: Fn(&AppSettingsKeyStore) -> bool,
+    {
+        html! {
+            <div class="settings__toggle-setting">
+                <input
+                    type="checkbox"
+                    checked={getter(&self.local)}
+                    onclick={self.link.callback(move |_| on_click.clone())}
+                />
+                {name}
+            </div>
+        }
     }
 }

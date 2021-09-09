@@ -59,7 +59,17 @@ pub struct Buffer<T> {
     _phantom: PhantomData<T>,
 }
 
-pub type ElementBuffer = Buffer<u16>;
+#[derive(Copy, Clone, PartialEq, Eq)]
+pub enum ElementKind {
+    Lines = WebGl2RenderingContext::LINES as isize,
+    Triangles = WebGl2RenderingContext::TRIANGLES as isize,
+}
+
+#[derive(Clone)]
+pub struct ElementBuffer {
+    pub(super) buffer: Buffer<u16>,
+    pub(super) kind: ElementKind,
+}
 
 impl UntypedBuffer {
     #[inline]
@@ -140,8 +150,14 @@ impl GlCtx {
     }
 
     #[inline]
-    pub fn mk_element_buffer(&self, data: &[u16]) -> Result<ElementBuffer> {
-        self.mk_buffer_with_kind_and_usage(BufferKind::ElementArray, BufferUsage::StaticDraw, data)
+    pub fn mk_element_buffer(&self, data: &[u16], kind: ElementKind) -> Result<ElementBuffer> {
+        let buffer = self.mk_buffer_with_kind_and_usage(
+            BufferKind::ElementArray,
+            BufferUsage::StaticDraw,
+            data,
+        )?;
+
+        Ok(ElementBuffer { buffer, kind })
     }
 }
 

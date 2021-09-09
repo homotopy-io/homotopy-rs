@@ -1,4 +1,5 @@
 use thiserror::Error;
+use ultraviolet::Vec2;
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlCanvasElement, WebGl2RenderingContext};
 use yew::prelude::*;
@@ -83,6 +84,11 @@ impl GlCtx {
     }
 
     #[inline]
+    pub fn to_ndc(&self, v: Vec2) -> Vec2 {
+        2. * (Vec2::new(v.x, -v.y) / self.size()) + Vec2::new(-1., 1.)
+    }
+
+    #[inline]
     pub fn width(&self) -> u32 {
         self.width
     }
@@ -90,6 +96,11 @@ impl GlCtx {
     #[inline]
     pub fn height(&self) -> u32 {
         self.height
+    }
+
+    #[inline]
+    pub fn size(&self) -> Vec2 {
+        Vec2::new(self.width as f32, self.height as f32)
     }
 
     #[inline]
