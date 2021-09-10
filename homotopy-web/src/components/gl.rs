@@ -18,9 +18,9 @@ use crate::components::{
 pub trait Renderer: Sized + 'static {
     type Settings: Settings;
 
-    fn init(ctx: &mut GlCtx) -> Result<Self>;
+    fn init(ctx: &mut GlCtx, settings: &Store<Self::Settings>) -> Result<Self>;
 
-    fn update(this: &mut RendererState<Self>, dt: f32);
+    fn update(this: &mut RendererState<Self>, dt: f32) -> Result<()>;
 
     fn render<'a>(&'a self, frame: Frame<'a>, settings: &Store<Self::Settings>);
 
@@ -60,8 +60,15 @@ where
         self.ctx.as_ref().unwrap()
     }
 
-    fn update(&mut self, dt: f32) {
-        R::update(self, dt);
+    pub fn with_ctx<F, U>(&mut self, f: F) -> U
+    where
+        F: FnOnce(&mut R, &mut GlCtx) -> U,
+    {
+        f(self.renderer.as_mut().unwrap(), self.ctx.as_mut().unwrap())
+    }
+
+    fn update(&mut self, dt: f32) -> Result<()> {
+        R::update(self, dt)
     }
 
     fn render(&mut self) {
@@ -163,7 +170,8 @@ where
 
                 {
                     let mut renderer = self.renderer.borrow_mut();
-                    renderer.update(dt);
+                    // TODO(@doctorn) error handling?
+                    renderer.update(dt).unwrap();
                     renderer.render();
                 }
 
@@ -259,7 +267,7 @@ where
         {
             let mut ctx = GlCtx::attach(&self.canvas).unwrap();
             let mut renderer = self.renderer.borrow_mut();
-            renderer.renderer = Some(Renderer::init(&mut ctx).unwrap());
+            renderer.renderer = Some(Renderer::init(&mut ctx, &renderer.settings).unwrap());
             renderer.ctx = Some(ctx);
         }
 

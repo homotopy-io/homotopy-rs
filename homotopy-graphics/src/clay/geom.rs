@@ -267,6 +267,7 @@ where
 
 pub struct SquareMeshBuffers {
     pub element_buffer: gl::buffer::ElementBuffer,
+    pub wireframe_element_buffer: gl::buffer::ElementBuffer,
     pub vertex_buffer: gl::buffer::Buffer<Vec3>,
     pub normal_buffer: gl::buffer::Buffer<Vec3>,
 }
@@ -276,36 +277,32 @@ impl SquareMesh {
         self.elements.push(square)
     }
 
-    pub fn buffer(
-        &self,
-        ctx: &gl::GlCtx,
-        kind: gl::buffer::ElementKind,
-    ) -> gl::Result<SquareMeshBuffers> {
+    pub fn buffer(&self, ctx: &gl::GlCtx) -> gl::Result<SquareMeshBuffers> {
         let vertices = self
             .vertices
             .values()
             .map(|v| v.xyz())
             .collect::<IdxVec<_, _>>();
         let mut elements = Vec::with_capacity(self.elements.len() * 6);
+        let mut wireframe_elements = Vec::with_capacity(self.elements.len() * 12);
         let mut normals = IdxVec::splat(Vec3::zero(), vertices.len());
 
         {
             let mut push_element = |i: Vertex, j: Vertex, k: Vertex| {
-                match kind {
-                    gl::buffer::ElementKind::Lines => {
-                        elements.push(i.index() as u16);
-                        elements.push(j.index() as u16);
-                        elements.push(j.index() as u16);
-                        elements.push(k.index() as u16);
-                        elements.push(k.index() as u16);
-                        elements.push(i.index() as u16);
-                    }
-                    gl::buffer::ElementKind::Triangles => {
-                        elements.push(i.index() as u16);
-                        elements.push(j.index() as u16);
-                        elements.push(k.index() as u16);
-                    }
-                };
+                let i = i.index() as u16;
+                let j = j.index() as u16;
+                let k = k.index() as u16;
+
+                wireframe_elements.push(i);
+                wireframe_elements.push(j);
+                wireframe_elements.push(j);
+                wireframe_elements.push(k);
+                wireframe_elements.push(k);
+                wireframe_elements.push(i);
+
+                elements.push(i);
+                elements.push(j);
+                elements.push(k);
             };
 
             let mut push_tri = |i: Vertex, j: Vertex, k: Vertex| {
@@ -338,12 +335,16 @@ impl SquareMesh {
         }
 
         // Buffer data
-        let element_buffer = ctx.mk_element_buffer(&elements, kind)?;
+        let element_buffer =
+            ctx.mk_element_buffer(&elements, gl::buffer::ElementKind::Triangles)?;
+        let wireframe_element_buffer =
+            ctx.mk_element_buffer(&wireframe_elements, gl::buffer::ElementKind::Lines)?;
         let vertex_buffer = ctx.mk_buffer(&vertices.into_raw())?;
         let normal_buffer = ctx.mk_buffer(&normals.into_raw())?;
 
         Ok(SquareMeshBuffers {
             element_buffer,
+            wireframe_element_buffer,
             vertex_buffer,
             normal_buffer,
         })

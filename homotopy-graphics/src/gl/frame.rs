@@ -5,7 +5,7 @@ use std::{
 
 use web_sys::WebGl2RenderingContext;
 
-use super::{array::VertexArray, shader::Uniformable, GlCtx};
+use super::{array::VertexArray, buffer::ElementKind, shader::Uniformable, GlCtx};
 
 #[macro_export]
 macro_rules! draw {
@@ -58,7 +58,12 @@ impl<'a> Frame<'a> {
 
     fn render(&mut self) {
         self.ctx.resize_to_fit();
-
+        self.ctx.webgl_ctx.clear_color(
+            self.clear_color.x,
+            self.clear_color.y,
+            self.clear_color.z,
+            1.0,
+        );
         self.ctx.webgl_ctx.clear(
             WebGl2RenderingContext::COLOR_BUFFER_BIT | WebGl2RenderingContext::DEPTH_BUFFER_BIT,
         );
@@ -82,8 +87,15 @@ impl<'a> Frame<'a> {
                     }
 
                     if let Some(elements) = draw.vertex_array.elements() {
+                        // disable depth testing for lines
+                        if elements.kind == ElementKind::Lines {
+                            self.ctx
+                                .webgl_ctx
+                                .disable(WebGl2RenderingContext::DEPTH_TEST);
+                        }
                         // if we're given an element buffer, bind it and draw the appropriate
                         // number of elements
+
                         elements.buffer.bind(|| {
                             self.ctx.webgl_ctx.draw_elements_with_i32(
                                 elements.kind as u32,
@@ -92,6 +104,12 @@ impl<'a> Frame<'a> {
                                 0,
                             );
                         });
+                        // re-enable depth testing
+                        if elements.kind == ElementKind::Lines {
+                            self.ctx
+                                .webgl_ctx
+                                .enable(WebGl2RenderingContext::DEPTH_TEST);
+                        }
                     } else {
                         // if no element buffer was provided, assume we're just drawing an array of
                         // triangles

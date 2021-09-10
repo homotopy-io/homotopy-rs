@@ -3,16 +3,13 @@
 precision highp float;
 
 in vec3 position;
-in vec3 normal;
+in vec3 color;
 
-out vec3 frag_pos;
-out vec3 frag_normal;
+out vec3 frag_diffuse;
 
 uniform mat4 mvp;
 
 void main() {
-  frag_pos = position;
-  frag_normal = normal;
-
+  frag_diffuse = color;
   gl_Position = mvp * vec4(position, 1.);
 }

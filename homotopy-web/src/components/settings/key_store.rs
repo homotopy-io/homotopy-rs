@@ -31,16 +31,27 @@ pub type Store<S> = <S as Settings>::Store;
 macro_rules! declare_settings {
     ($vis:vis struct $name:ident {
         $(
-            $key:ident: $ty:ty,
+            $key:ident: $ty:ty = $default:expr,
         )*
     }) => {
         paste::paste! {
-            #[derive(serde::Serialize, serde::Deserialize, Default, Clone)]
+            #[derive(serde::Serialize, serde::Deserialize, Clone)]
             #[allow(non_snake_case)]
             $vis struct [<$name KeyStore>] {
                 $(
                     [<__ $key>]: $ty
                 ),*
+            }
+
+            #[allow(non_snake_case)]
+            impl Default for [<$name KeyStore>] {
+                fn default() -> Self {
+                    Self {
+                        $(
+                            [<__ $key>]: $default
+                        ),*
+                    }
+                }
             }
 
             #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Hash)]

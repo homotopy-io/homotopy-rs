@@ -7,10 +7,12 @@ use crate::{
 
 declare_settings! {
     pub struct AppSettings {
-        wireframe_3d: bool,
-        orthographic_3d: bool,
-        lighting_disable: bool,
-        subdivision_depth: usize,
+        wireframe_3d: bool = false,
+        orthographic_3d: bool = false,
+        debug_normals: bool = false,
+        debug_axes: bool = false,
+        mesh_hidden: bool = false,
+        subdivision_depth: u32 = 3,
     }
 }
 
@@ -18,7 +20,10 @@ declare_settings! {
 pub enum SettingsMsg {
     ToggleWireframe,
     ToggleOrtho,
-    ToggleLighting,
+    ToggleDebugNormals,
+    ToggleDebugAxes,
+    ToggleMesh,
+    SetSubdivisionDepth(u32),
     Setting(AppSettingsMsg),
 }
 
@@ -58,23 +63,46 @@ impl Component for SettingsView {
                 <h4>{"3D renderer"}</h4>
                 {
                     self.view_checkbox(
-                        "Wireframe 3D",
+                        "Debug wireframe",
                         |local| *local.get_wireframe_3d(),
-                        &SettingsMsg::ToggleWireframe,
+                        self.link.callback(|_| SettingsMsg::ToggleWireframe),
                     )
                 }
                 {
                     self.view_checkbox(
-                        "Orthographic perspective",
+                        "Orthographic projection",
                         |local| *local.get_orthographic_3d(),
-                        &SettingsMsg::ToggleOrtho,
+                        self.link.callback(|_| SettingsMsg::ToggleOrtho),
                     )
                 }
                 {
                     self.view_checkbox(
-                        "Disable lighting",
-                        |local| *local.get_lighting_disable(),
-                        &SettingsMsg::ToggleLighting,
+                        "Hide mesh",
+                        |local| *local.get_mesh_hidden(),
+                        self.link.callback(|_| SettingsMsg::ToggleMesh),
+                    )
+                }
+                {
+                    self.view_checkbox(
+                        "Debug normals",
+                        |local| *local.get_debug_normals(),
+                        self.link.callback(|_| SettingsMsg::ToggleDebugNormals),
+                    )
+                }
+                {
+                    self.view_checkbox(
+                        "Debug axes",
+                        |local| *local.get_debug_axes(),
+                        self.link.callback(|_| SettingsMsg::ToggleDebugAxes),
+                    )
+                }
+                {
+                    self.view_slider(
+                        "Subdivision depth",
+                        |local| *local.get_subdivision_depth(),
+                        0,
+                        6,
+                        &self.link.callback(SettingsMsg::SetSubdivisionDepth),
                     )
                 }
             </div>
@@ -96,9 +124,18 @@ impl Component for SettingsView {
                 self.settings
                     .set_orthographic_3d(!self.local.get_orthographic_3d());
             }
-            Self::Message::ToggleLighting => {
+            Self::Message::ToggleMesh => {
+                self.settings.set_mesh_hidden(!self.local.get_mesh_hidden());
+            }
+            Self::Message::ToggleDebugNormals => {
                 self.settings
-                    .set_lighting_disable(!self.local.get_lighting_disable());
+                    .set_debug_normals(!self.local.get_debug_normals());
+            }
+            Self::Message::ToggleDebugAxes => {
+                self.settings.set_debug_axes(!self.local.get_debug_axes());
+            }
+            Self::Message::SetSubdivisionDepth(v) => {
+                self.settings.set_subdivision_depth(v);
             }
         }
         true
@@ -111,7 +148,7 @@ impl Component for SettingsView {
 }
 
 impl SettingsView {
-    fn view_checkbox<F>(&self, name: &str, getter: F, on_click: &'static SettingsMsg) -> Html
+    fn view_checkbox<F>(&self, name: &str, getter: F, on_click: Callback<MouseEvent>) -> Html
     where
         F: Fn(&AppSettingsKeyStore) -> bool,
     {
@@ -120,9 +157,40 @@ impl SettingsView {
                 <input
                     type="checkbox"
                     checked={getter(&self.local)}
-                    onclick={self.link.callback(move |_| on_click.clone())}
+                    onclick={on_click}
                 />
                 {name}
+            </div>
+        }
+    }
+
+    fn view_slider<F>(
+        &self,
+        name: &str,
+        getter: F,
+        min: u32,
+        max: u32,
+        on_change: &Callback<u32>,
+    ) -> Html
+    where
+        F: Fn(&AppSettingsKeyStore) -> u32,
+    {
+        html! {
+            <div class="settings__slider-setting">
+                {name}
+                <input
+                    type="range"
+                    min={min.to_string()}
+                    max={max.to_string()}
+                    value={getter(&self.local).to_string()}
+                    onchange={on_change.reform(|c| {
+                        if let ChangeData::Value(v) = c {
+                            v.parse::<u32>().unwrap_or(0)
+                        } else {
+                            0
+                        }
+                    })}
+                />
             </div>
         }
     }
