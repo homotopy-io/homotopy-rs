@@ -1,5 +1,5 @@
 use thiserror::Error;
-use ultraviolet::Vec2;
+use ultraviolet::{Vec2, Vec3};
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlCanvasElement, WebGl2RenderingContext};
 use yew::prelude::*;
@@ -31,6 +31,8 @@ pub struct GlCtx {
     webgl_ctx: WebGl2RenderingContext,
     canvas: HtmlCanvasElement,
 
+    clear_color: Vec3,
+
     width: u32,
     height: u32,
 }
@@ -60,6 +62,7 @@ impl GlCtx {
             webgl_ctx,
             width: canvas.width(),
             height: canvas.height(),
+            clear_color: Vec3::broadcast(1.0),
             canvas,
         })
     }
@@ -81,6 +84,11 @@ impl GlCtx {
         let height = self.canvas.client_height();
 
         self.resize_to(width as u32, height as u32);
+    }
+
+    #[inline]
+    pub fn set_clear_color(&mut self, color: Vec3) {
+        self.clear_color = color;
     }
 
     #[inline]

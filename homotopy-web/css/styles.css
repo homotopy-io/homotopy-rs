@@ -488,6 +488,15 @@ svg {
   cursor: pointer;
 }
 
+.settings__slider-setting {
+  padding: var(--space-0) var(--space-1);
+}
+
+.settings__slider-setting input {
+  width: 100%;
+  cursor: pointer;
+}
+
 .version {
   position: absolute;
   bottom: 4px;

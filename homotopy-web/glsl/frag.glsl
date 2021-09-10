@@ -2,7 +2,7 @@
 
 precision highp float;
 
-uniform bool lighting;
+uniform bool debug_normals;
 uniform vec3 light_pos;
 
 in vec3 frag_pos;
@@ -18,13 +18,16 @@ const float alpha = 48.;
 const float gamma = 2.2;
 
 void main() {
-  if (lighting) {
-    vec3 normal = normalize(frag_normal);
-    vec3 l = normalize(light_pos - frag_pos);
+  vec3 normal = normalize(frag_normal);
 
-    if (!gl_FrontFacing) {
-        normal = -normal;  
-    }
+  if (!gl_FrontFacing) {
+      normal = -normal;
+  }
+
+  if (debug_normals) {
+    frag_color = vec4(0.5 * (normal + vec3(1.)), 1.);
+  } else {
+    vec3 l = normalize(light_pos - frag_pos);
 
     float lambertian = max(dot(l, normal), 0.);
     float specular = 0.;
@@ -38,7 +41,5 @@ void main() {
 
     vec3 color = d * (a + lambertian) + s * specular;
     frag_color = vec4(pow(color, vec3(1. / gamma)), 1.);
-  } else {
-    frag_color = vec4(pow(d, vec3(1. / gamma)), 1.);
   }
 }
