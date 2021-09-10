@@ -74,8 +74,6 @@ pub struct OrbitCamera {
     theta: f32,
     distance: f32,
     fov: f32,
-
-    aspect_ratio: f32,
     ortho: bool,
 }
 
@@ -87,15 +85,13 @@ impl OrbitCamera {
     const FAR: f32 = 100.;
     const NEAR: f32 = 0.01;
 
-    pub fn new(ctx: &GlCtx, target: Vec3, fov: f32) -> Self {
+    pub fn new(target: Vec3, fov: f32) -> Self {
         Self {
             target,
             phi: Self::DEFAULT_PHI,
             theta: Self::DEFAULT_THETA,
             distance: Self::DEFAULT_DISTANCE,
             fov,
-
-            aspect_ratio: ctx.aspect_ratio(),
             ortho: false,
         }
     }
@@ -110,11 +106,11 @@ impl OrbitCamera {
             + self.target
     }
 
-    pub fn transform(&self) -> Mat4 {
+    pub fn transform(&self, ctx: &GlCtx) -> Mat4 {
         let perspective = if self.ortho {
             orthographic_gl(
-                -self.aspect_ratio,
-                self.aspect_ratio,
+                -ctx.aspect_ratio(),
+                ctx.aspect_ratio(),
                 -1.,
                 1.,
                 Self::NEAR,
@@ -123,7 +119,7 @@ impl OrbitCamera {
         } else {
             perspective_gl(
                 f32::to_radians(self.fov),
-                self.aspect_ratio,
+                ctx.aspect_ratio(),
                 Self::NEAR,
                 Self::FAR,
             )
@@ -131,10 +127,6 @@ impl OrbitCamera {
         let view = Mat4::look_at(self.position(), self.target, Vec3::unit_y());
 
         perspective * view
-    }
-
-    pub fn update(&mut self, ctx: &GlCtx) {
-        self.aspect_ratio = ctx.aspect_ratio();
     }
 
     pub fn set_ortho(&mut self, ortho: bool) {

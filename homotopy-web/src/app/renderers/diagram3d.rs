@@ -43,7 +43,7 @@ impl Renderer for Diagram3D {
 
         let mut renderer = Self {
             debug_ctx: DebugCtx::new(ctx)?,
-            camera: OrbitCamera::new(ctx, Vec3::zero(), 30.0),
+            camera: OrbitCamera::new(Vec3::zero(), 30.0),
             program,
             solid_mesh: None,
             wireframe_mesh: None,
@@ -66,15 +66,12 @@ impl Renderer for Diagram3D {
 
         let ortho = *this.settings().get_orthographic_3d();
         this.camera.set_ortho(ortho);
-        this.with_ctx(|this, ctx| {
-            this.camera.update(ctx);
-        });
 
         Ok(())
     }
 
     fn render<'a>(&'a self, mut frame: Frame<'a>, settings: &Store<Self::Settings>) {
-        let vp = self.camera.transform();
+        let vp = self.camera.transform(&*frame);
 
         if !*settings.get_mesh_hidden() {
             frame.draw(draw! {
