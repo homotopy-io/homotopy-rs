@@ -44,20 +44,23 @@ where
     ctx: Option<GlCtx>,
     renderer: Option<R>,
     settings: Store<R::Settings>,
+    t: f32,
 }
 
 impl<R> RendererState<R>
 where
     R: Renderer,
 {
-    #[allow(unused)]
     pub fn settings(&self) -> &Store<R::Settings> {
         &self.settings
     }
 
-    #[allow(unused)]
     pub fn ctx(&self) -> &GlCtx {
         self.ctx.as_ref().unwrap()
+    }
+
+    pub fn time(&self) -> f32 {
+        self.t
     }
 
     pub fn with_ctx<F, U>(&mut self, f: F) -> U
@@ -67,7 +70,12 @@ where
         f(self.renderer.as_mut().unwrap(), self.ctx.as_mut().unwrap())
     }
 
-    fn update(&mut self, dt: f32) -> Result<()> {
+    fn update(&mut self, t: f32) -> Result<()> {
+        // Calculate time difference
+        let dt = t - self.t;
+        // Update current time
+        self.t = t;
+        // Update renderer with time difference
         R::update(self, dt)
     }
 
@@ -106,6 +114,7 @@ where
             ctx: None,
             renderer: None,
             settings: Default::default(),
+            t: 0.0,
         }
     }
 }
@@ -129,7 +138,6 @@ where
     link: ComponentLink<Self>,
     renderer: Rc<RefCell<RendererState<R>>>,
     canvas: NodeRef,
-    t: f64,
 
     // If the render task is dropped, we won't get notified about `requestAnimationFrame()`
     // calls, so store a reference to the task here
@@ -154,7 +162,6 @@ where
             link,
             renderer: Default::default(),
             canvas: Default::default(),
-            t: 0.0,
             render_loop: None,
             _settings: settings,
         }
@@ -163,15 +170,10 @@ where
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             GlViewportMessage::Render(t) => {
-                // Calculate time difference
-                let dt = (t - self.t) as f32;
-                // Update current time
-                self.t = t;
-
                 {
                     let mut renderer = self.renderer.borrow_mut();
                     // TODO(@doctorn) error handling?
-                    renderer.update(dt).unwrap();
+                    renderer.update(t as f32).unwrap();
                     renderer.render();
                 }
 

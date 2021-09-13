@@ -5,6 +5,7 @@ precision highp float;
 uniform bool debug_normals;
 uniform vec3 light_pos;
 
+in float hidden;
 in vec3 frag_pos;
 in vec3 frag_normal;
 
@@ -18,6 +19,10 @@ const float alpha = 48.;
 const float gamma = 2.2;
 
 void main() {
+  if (hidden != 0.) {
+    discard;
+  }
+
   vec3 normal = normalize(frag_normal);
 
   if (!gl_FrontFacing) {

@@ -1,7 +1,7 @@
 use std::{marker::PhantomData, rc::Rc, slice};
 
 use js_sys;
-use ultraviolet::{Vec2, Vec3};
+use ultraviolet::{Vec2, Vec3, Vec4};
 use web_sys::{WebGl2RenderingContext, WebGlBuffer};
 
 use super::{GlCtx, GlError, Result};
@@ -290,7 +290,7 @@ impl Bufferable for u16 {
 impl Bufferable for Vec2 {
     fn buffer_to(buffer: &mut Buffer<Self>, data: &[Self]) {
         assert_eq!(buffer.len(), data.len());
-        // SAFETY we can always view a slice of `Vector2D`s as a slice of `T`s as `Vector2D` is
+        // SAFETY we can always view a slice of `Vector2D`s as a slice of `T`s as `Vec2` is
         // `#[repr(c)]`
         unsafe {
             let t_slice = slice::from_raw_parts(data.as_ptr().cast::<f32>(), data.len() * 2);
@@ -302,10 +302,22 @@ impl Bufferable for Vec2 {
 impl Bufferable for Vec3 {
     fn buffer_to(buffer: &mut Buffer<Self>, data: &[Self]) {
         assert_eq!(buffer.len(), data.len());
-        // SAFETY we can always view a slice of `Vector3D`s as a slice of `T`s as `Vector3D` is
+        // SAFETY we can always view a slice of `Vector3D`s as a slice of `T`s as `Vec3` is
         // `#[repr(c)]`
         unsafe {
             let t_slice = slice::from_raw_parts(data.as_ptr().cast::<f32>(), data.len() * 3);
+            f32::buffer_to_unchecked(buffer, t_slice);
+        }
+    }
+}
+
+impl Bufferable for Vec4 {
+    fn buffer_to(buffer: &mut Buffer<Self>, data: &[Self]) {
+        assert_eq!(buffer.len(), data.len());
+        // SAFETY we can always view a slice of `Vector3D`s as a slice of `T`s as `Vec4` is
+        // `#[repr(c)]`
+        unsafe {
+            let t_slice = slice::from_raw_parts(data.as_ptr().cast::<f32>(), data.len() * 4);
             f32::buffer_to_unchecked(buffer, t_slice);
         }
     }

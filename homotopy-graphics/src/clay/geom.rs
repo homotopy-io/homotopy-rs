@@ -351,9 +351,100 @@ impl SquareMesh {
     }
 }
 
+pub struct CubeMeshBuffers {
+    pub element_buffer: gl::buffer::ElementBuffer,
+    pub wireframe_element_buffer: gl::buffer::ElementBuffer,
+    pub vertex_start_buffer: gl::buffer::Buffer<Vec4>,
+    pub vertex_end_buffer: gl::buffer::Buffer<Vec4>,
+    pub wireframe_vertex_buffer: gl::buffer::Buffer<Vec3>,
+}
+
 impl CubeMesh {
     pub fn mk_cube(&mut self, cube: CubeData) -> Cube {
         self.elements.push(cube)
+    }
+
+    pub fn buffer(&self, ctx: &gl::GlCtx) -> gl::Result<CubeMeshBuffers> {
+        declare_idx! {
+            struct Segment = u16;
+        }
+
+        let mut elements = Vec::new();
+        let mut wireframe_elements = Vec::with_capacity(self.elements.len() * 24);
+        let mut segment_starts = IdxVec::with_capacity(self.elements.len() * 24);
+        let mut segment_ends = IdxVec::with_capacity(self.elements.len() * 24);
+        let wireframe_vertices = self.vertices.values().map(|v| v.xyz()).collect::<Vec<_>>();
+
+        {
+            let mut push_segment = |i: Vertex, j: Vertex| {
+                wireframe_elements.push(i.index() as u16);
+                wireframe_elements.push(j.index() as u16);
+
+                let start = segment_starts.push(*self.vertices[i]);
+                let end = segment_ends.push(*self.vertices[j]);
+                debug_assert!(start == end);
+                start
+            };
+
+            let mut push_tri = |i: Segment, j: Segment, k: Segment| {
+                if i != j && j != k && k != i {
+                    elements.push(i.index() as u16);
+                    elements.push(j.index() as u16);
+                    elements.push(k.index() as u16);
+                }
+            };
+
+            let mut push_tetra = |i: Vertex, j: Vertex, k: Vertex, l: Vertex| {
+                let mut vertices = [i, j, k, l];
+
+                vertices.sort_by(|v_1, v_2| {
+                    self.vertices[*v_1]
+                        .w
+                        .partial_cmp(&self.vertices[*v_2].w)
+                        .unwrap()
+                });
+
+                let segment_ij = push_segment(vertices[0], vertices[1]);
+                let segment_ik = push_segment(vertices[0], vertices[2]);
+                let segment_il = push_segment(vertices[0], vertices[3]);
+
+                let segment_jk = push_segment(vertices[1], vertices[2]);
+                let segment_jl = push_segment(vertices[1], vertices[3]);
+
+                let segment_kl = push_segment(vertices[2], vertices[3]);
+
+                push_tri(segment_ij, segment_ik, segment_il);
+                push_tri(segment_jk, segment_ik, segment_jl);
+                push_tri(segment_jl, segment_il, segment_ik);
+                push_tri(segment_kl, segment_jl, segment_il);
+            };
+
+            // Triangulate mesh
+            for cube in self.elements.values() {
+                push_tetra(cube[0], cube[5], cube[3], cube[1]);
+                push_tetra(cube[0], cube[6], cube[3], cube[2]);
+                push_tetra(cube[0], cube[6], cube[5], cube[4]);
+                push_tetra(cube[3], cube[5], cube[6], cube[7]);
+                push_tetra(cube[0], cube[3], cube[6], cube[5]);
+            }
+        }
+
+        // Buffer data
+        let element_buffer =
+            ctx.mk_element_buffer(&elements, gl::buffer::ElementKind::Triangles)?;
+        let wireframe_element_buffer =
+            ctx.mk_element_buffer(&wireframe_elements, gl::buffer::ElementKind::Lines)?;
+        let vertex_start_buffer = ctx.mk_buffer(&segment_starts.into_raw())?;
+        let vertex_end_buffer = ctx.mk_buffer(&segment_ends.into_raw())?;
+        let wireframe_vertex_buffer = ctx.mk_buffer(&wireframe_vertices)?;
+
+        Ok(CubeMeshBuffers {
+            element_buffer,
+            wireframe_element_buffer,
+            vertex_start_buffer,
+            vertex_end_buffer,
+            wireframe_vertex_buffer,
+        })
     }
 }
 

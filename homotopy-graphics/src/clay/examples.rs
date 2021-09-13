@@ -103,22 +103,21 @@ pub fn snake_3() -> Mesh {
     mesh
 }
 
-/*
 pub fn example_4() -> Mesh {
     const V_COORDS: [[i32; 4]; 13] = [
+        [0, 0, 0, -1],
+        [0, 0, -1, 0],
+        [0, -1, 0, 0],
+        [-1, 0, 0, 0],
+        [0, 0, 0, 1],
+        [0, 0, 1, 0],
+        [0, 1, 0, 0],
         [1, 0, 0, -1],
         [1, 0, -1, 0],
         [1, -1, 0, 0],
-        [0, 0, 0, 0],
         [1, 0, 0, 1],
         [1, 0, 1, 0],
         [1, 1, 0, 0],
-        [2, 0, 0, -1],
-        [2, 0, -1, 0],
-        [2, -1, 0, 0],
-        [2, 0, 0, 1],
-        [2, 0, 1, 0],
-        [2, 1, 0, 0],
     ];
     const V_BOUNDS: [u8; 13] = [3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2];
     const CUBES: [[usize; 8]; 16] = [
@@ -142,7 +141,7 @@ pub fn example_4() -> Mesh {
 
     let mut mesh = Mesh::new();
 
-    for (bound, coord) in V_BOUNDS.iter().zip(V_COORDS.iter()) {
+    for (_, coord) in V_BOUNDS.iter().zip(V_COORDS.iter()) {
         mesh.mk_vertex(
             Vec4::new(
                 coord[0] as f32,
@@ -150,7 +149,7 @@ pub fn example_4() -> Mesh {
                 coord[2] as f32,
                 coord[3] as f32,
             )
-            .with_boundary(*bound),
+            .with_boundary(Boundary::Three),
         );
     }
 
@@ -169,4 +168,3 @@ pub fn example_4() -> Mesh {
 
     mesh
 }
-*/
