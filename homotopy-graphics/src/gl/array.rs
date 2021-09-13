@@ -1,6 +1,6 @@
 use std::{collections::HashMap, rc::Rc};
 
-use ultraviolet::{Vec2, Vec3};
+use ultraviolet::{Vec2, Vec3, Vec4};
 use web_sys::{WebGl2RenderingContext, WebGlVertexArrayObject};
 
 use super::{
@@ -151,5 +151,10 @@ unsafe impl Attributable for Vec2 {
 
 unsafe impl Attributable for Vec3 {
     const DIMENSION: i32 = 3;
+    const TYPE: u32 = WebGl2RenderingContext::FLOAT;
+}
+
+unsafe impl Attributable for Vec4 {
+    const DIMENSION: i32 = 4;
     const TYPE: u32 = WebGl2RenderingContext::FLOAT;
 }

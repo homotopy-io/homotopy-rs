@@ -1,7 +1,7 @@
 use std::f32;
 
 use homotopy_graphics::{
-    clay::{examples::example_3, subdivision},
+    clay::geom::CubeMesh,
     draw,
     gl::{array::VertexArray, frame::Frame, shader::Program, GlCtx, Result},
     program, vertex_array,
@@ -17,7 +17,7 @@ use crate::{
     },
 };
 
-pub struct Diagram3D {
+pub struct Diagram4D {
     debug_ctx: DebugCtx,
     program: Program,
     camera: OrbitCamera,
@@ -25,20 +25,20 @@ pub struct Diagram3D {
     solid_mesh: Option<VertexArray>,
     wireframe_mesh: Option<VertexArray>,
 
-    subdivision_depth: u32,
     mouse: Option<Vec2>,
+    t: f32,
 }
 
-impl Renderer for Diagram3D {
+impl Renderer for Diagram4D {
     type Settings = AppSettings;
 
-    fn init(ctx: &mut GlCtx, settings: &Store<Self::Settings>) -> Result<Self> {
+    fn init(ctx: &mut GlCtx, _: &Store<Self::Settings>) -> Result<Self> {
         let program = program!(
             ctx,
-            "../../../glsl/vert.glsl",
+            "../../../glsl/vert_4d.glsl",
             "../../../glsl/frag.glsl",
-            { position, normal },
-            { mvp, debug_normals, light_pos },
+            { position_start, position_end },
+            { mvp, debug_normals, light_pos, t },
         )?;
 
         let mut renderer = Self {
@@ -47,8 +47,8 @@ impl Renderer for Diagram3D {
             program,
             solid_mesh: None,
             wireframe_mesh: None,
-            subdivision_depth: *settings.get_subdivision_depth(),
             mouse: None,
+            t: 0.,
         };
 
         renderer.init_meshes(ctx)?;
@@ -57,15 +57,9 @@ impl Renderer for Diagram3D {
     }
 
     fn update(this: &mut RendererState<Self>, _: f32) -> Result<()> {
-        let depth = *this.settings().get_subdivision_depth();
-
-        if this.subdivision_depth != depth {
-            this.subdivision_depth = depth;
-            this.with_ctx(|this, ctx| this.init_meshes(ctx))?;
-        }
-
         let ortho = *this.settings().get_orthographic_3d();
         this.camera.set_ortho(ortho);
+        this.t = f32::sin(0.0001 * this.time());
 
         Ok(())
     }
@@ -74,16 +68,15 @@ impl Renderer for Diagram3D {
         let vp = self.camera.transform(&*frame);
 
         // TODO(@doctorn) light relative to camera up direciton
-        if !*settings.get_mesh_hidden() {
-            frame.draw(draw! {
-                self.solid_mesh.as_ref().unwrap(),
-                {
-                    mvp: vp,
-                    debug_normals: *settings.get_debug_normals(),
-                    light_pos: self.camera.position(),
-                }
-            });
-        }
+        frame.draw(draw! {
+            self.solid_mesh.as_ref().unwrap(),
+            {
+                mvp: vp,
+                debug_normals: *settings.get_debug_normals(),
+                light_pos: self.camera.position(),
+                t: self.t,
+            }
+        });
 
         if *settings.get_wireframe_3d() {
             frame.draw(draw! {
@@ -118,24 +111,24 @@ impl Renderer for Diagram3D {
     }
 }
 
-impl Diagram3D {
+impl Diagram4D {
     fn init_meshes(&mut self, ctx: &mut GlCtx) -> Result<()> {
-        let subdivided = subdivision::subdivide_3(example_3().into(), self.subdivision_depth as u8);
-        let buffers = subdivided.buffer(ctx)?;
+        let mesh: CubeMesh = homotopy_graphics::clay::examples::example_4().into();
+        let buffers = mesh.buffer(ctx)?;
 
         self.solid_mesh = Some(vertex_array!(
             &self.program,
             &buffers.element_buffer,
             {
-                position: &buffers.vertex_buffer,
-                normal: &buffers.normal_buffer,
+                position_start: &buffers.vertex_start_buffer,
+                position_end: &buffers.vertex_end_buffer,
             }
         )?);
 
         self.wireframe_mesh = Some(vertex_array!(
             self.debug_ctx.wireframe_program(),
             &buffers.wireframe_element_buffer,
-            { position: &buffers.vertex_buffer }
+            { position: &buffers.wireframe_vertex_buffer }
         )?);
 
         Ok(())
