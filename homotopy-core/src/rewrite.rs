@@ -423,6 +423,12 @@ where
         Self::new_with_payload(dimension, cones, &Default::default())
     }
 
+    /// Unsafe version of `new` which does not check if the rewrite is well-formed.
+    #[allow(dead_code)]
+    pub(crate) fn new_unsafe(dimension: usize, cones: Vec<GenericCone<A>>) -> Self {
+        Self::new_with_payload_unsafe(dimension, cones, &Default::default())
+    }
+
     #[inline]
     pub fn identity(dimension: usize) -> Self {
         Self::new(dimension, Vec::new())
@@ -437,23 +443,6 @@ where
         )
     }
 
-    /// Same as `from_slices` but always checks if the result is welformed and propagates the error.
-    #[inline]
-    pub fn from_slices_safe(
-        dimension: usize,
-        source_cospans: &[GenericCospan<A>],
-        target_cospans: &[GenericCospan<A>],
-        slices: Vec<Vec<GenericRewrite<A>>>,
-    ) -> Result<Self, Vec<MalformedRewrite>> {
-        Self::from_slices_with_payload_safe(
-            dimension,
-            source_cospans,
-            target_cospans,
-            slices,
-            &Default::default(),
-        )
-    }
-
     #[inline]
     pub fn from_slices(
         dimension: usize,
@@ -465,6 +454,60 @@ where
             dimension,
             source_cospans,
             target_cospans,
+            slices,
+            &Default::default(),
+        )
+    }
+
+    /// Unsafe version of `from_slices` which does not check if the rewrite is well-formed.
+    #[inline]
+    pub fn from_slices_unsafe(
+        dimension: usize,
+        source_cospans: &[GenericCospan<A>],
+        target_cospans: &[GenericCospan<A>],
+        slices: Vec<Vec<GenericRewrite<A>>>,
+    ) -> Self {
+        Self::from_slices_with_payload_unsafe(
+            dimension,
+            source_cospans,
+            target_cospans,
+            slices,
+            &Default::default(),
+        )
+    }
+
+    #[inline]
+    pub fn from_monotone(
+        dimension: usize,
+        source_cospans: &[GenericCospan<A>],
+        target_cospans: &[GenericCospan<A>],
+        mono: &[usize],
+        slices: &[GenericRewrite<A>],
+    ) -> Self {
+        Self::from_monotone_with_payload(
+            dimension,
+            source_cospans,
+            target_cospans,
+            mono,
+            slices,
+            &Default::default(),
+        )
+    }
+
+    /// Unsafe version of `from_monotone` which does not check if the rewrite is well-formed.
+    #[inline]
+    pub fn from_monotone_unsafe(
+        dimension: usize,
+        source_cospans: &[GenericCospan<A>],
+        target_cospans: &[GenericCospan<A>],
+        mono: &[usize],
+        slices: &[GenericRewrite<A>],
+    ) -> Self {
+        Self::from_monotone_with_payload_unsafe(
+            dimension,
+            source_cospans,
+            target_cospans,
+            mono,
             slices,
             &Default::default(),
         )
@@ -485,35 +528,23 @@ impl<A> GenericRewriteN<A>
 where
     A: RewriteAllocator,
 {
-    /// Same as `new_with_payload` but always checks if the result is welformed and propagates the error.
-    #[allow(clippy::expect_used)]
-    pub(crate) fn new_with_payload_safe(
-        dimension: usize,
-        mut cones: Vec<GenericCone<A>>,
-        payload: &A::Payload,
-    ) -> Result<Self, Vec<MalformedRewrite>> {
-        if dimension == 0 {
-            panic!("Can not create RewriteN of dimension zero.");
-        }
-
-        // Remove all identity cones. This is not only important to reduce memory consumption, but
-        // it allows us the check if the rewrite is an identity by shallowly checking if it has any
-        // cones.
-        cones.retain(|cone| !cone.is_identity());
-
-        let rewrite = Self(A::mk_rewrite(RewriteInternal {
-            dimension,
-            cones,
-            max_generator_source: CachedCell::new(),
-            max_generator_target: CachedCell::new(),
-            payload: payload.clone(),
-        }));
-        rewrite.check_well_formed(Mode::Shallow)?;
-        Ok(rewrite)
-    }
-
     #[allow(clippy::expect_used)]
     pub(crate) fn new_with_payload(
+        dimension: usize,
+        cones: Vec<GenericCone<A>>,
+        payload: &A::Payload,
+    ) -> Self {
+        let rewrite = Self::new_with_payload_unsafe(dimension, cones, payload);
+        if cfg!(feature = "safety-checks") {
+            rewrite
+                .check_well_formed(Mode::Shallow)
+                .expect("Rewrite is malformed");
+        }
+        rewrite
+    }
+
+    /// Unsafe version of `new_with_payload` which does not check if the rewrite is well-formed.
+    pub(crate) fn new_with_payload_unsafe(
         dimension: usize,
         mut cones: Vec<GenericCone<A>>,
         payload: &A::Payload,
@@ -527,19 +558,13 @@ where
         // cones.
         cones.retain(|cone| !cone.is_identity());
 
-        let rewrite = Self(A::mk_rewrite(RewriteInternal {
+        Self(A::mk_rewrite(RewriteInternal {
             dimension,
             cones,
             max_generator_source: CachedCell::new(),
             max_generator_target: CachedCell::new(),
             payload: payload.clone(),
-        }));
-        if cfg!(feature = "safety-checks") {
-            rewrite
-                .check_well_formed(Mode::Shallow)
-                .expect("Rewrite is malformed");
-        }
-        rewrite
+        }))
     }
 
     pub(crate) fn collect_garbage() {
@@ -669,32 +694,31 @@ where
         Self::new_with_payload(dimension, cones, payload)
     }
 
-    /// Same as `from_slices_with_payload` but always checks if the result is welformed and propagates the error.
-    pub fn from_slices_with_payload_safe(
+    #[allow(clippy::expect_used)]
+    pub fn from_slices_with_payload(
         dimension: usize,
         source_cospans: &[GenericCospan<A>],
         target_cospans: &[GenericCospan<A>],
         slices: Vec<Vec<GenericRewrite<A>>>,
         payload: &A::Payload,
-    ) -> Result<Self, Vec<MalformedRewrite>> {
-        let mut cones = Vec::new();
-        let mut index = 0;
-
-        for (target, cone_slices) in slices.into_iter().enumerate() {
-            let size = cone_slices.len();
-            cones.push(GenericCone::new(
-                index,
-                source_cospans[index..index + size].to_vec(),
-                target_cospans[target].clone(),
-                cone_slices,
-            ));
-            index += size;
+    ) -> Self {
+        let rewrite = Self::from_slices_with_payload_unsafe(
+            dimension,
+            source_cospans,
+            target_cospans,
+            slices,
+            payload,
+        );
+        if cfg!(feature = "safety-checks") {
+            rewrite
+                .check_well_formed(Mode::Shallow)
+                .expect("Rewrite is malformed");
         }
-
-        Self::new_with_payload_safe(dimension, cones, payload)
+        rewrite
     }
 
-    pub fn from_slices_with_payload(
+    /// Unsafe version of `from_slices_with_payload` which does not check if the rewrite is well-formed.
+    pub fn from_slices_with_payload_unsafe(
         dimension: usize,
         source_cospans: &[GenericCospan<A>],
         target_cospans: &[GenericCospan<A>],
@@ -715,7 +739,55 @@ where
             index += size;
         }
 
-        Self::new_with_payload(dimension, cones, payload)
+        Self::new_with_payload_unsafe(dimension, cones, payload)
+    }
+
+    #[allow(clippy::expect_used)]
+    pub fn from_monotone_with_payload(
+        dimension: usize,
+        source_cospans: &[GenericCospan<A>],
+        target_cospans: &[GenericCospan<A>],
+        mono: &[usize],
+        slices: &[GenericRewrite<A>],
+        payload: &A::Payload,
+    ) -> Self {
+        let rewrite = Self::from_monotone_with_payload_unsafe(
+            dimension,
+            source_cospans,
+            target_cospans,
+            mono,
+            slices,
+            payload,
+        );
+        if cfg!(feature = "safety-checks") {
+            rewrite
+                .check_well_formed(Mode::Shallow)
+                .expect("Rewrite is malformed");
+        }
+        rewrite
+    }
+
+    /// Unsafe version of `from_monotone_with_payload` which does not check if the rewrite is well-formed.
+    pub fn from_monotone_with_payload_unsafe(
+        dimension: usize,
+        source_cospans: &[GenericCospan<A>],
+        target_cospans: &[GenericCospan<A>],
+        mono: &[usize],
+        slices: &[GenericRewrite<A>],
+        payload: &A::Payload,
+    ) -> Self {
+        let mut cones_slices: Vec<Vec<GenericRewrite<A>>> = vec![vec![]; target_cospans.len()];
+        for (i, &j) in mono.iter().enumerate() {
+            cones_slices[j].push(slices[i].clone());
+        }
+
+        Self::from_slices_with_payload_unsafe(
+            dimension,
+            source_cospans,
+            target_cospans,
+            cones_slices,
+            payload,
+        )
     }
 
     pub fn dimension(&self) -> usize {

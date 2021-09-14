@@ -507,17 +507,12 @@ impl CubicalRewriteN {
         assert_eq!(source_cospans.len(), singular_slices.len());
         assert_eq!(target_cospans.len() + 1, regular_slices.len());
 
-        // Group the singular slices into cones.
-        let mut cone_slices: Vec<Vec<CubicalRewrite>> = vec![vec![]; target_cospans.len()];
-        for (i, &j) in f.iter().enumerate() {
-            cone_slices[j].push(singular_slices[i].clone());
-        }
-
-        Self::from_slices_with_payload(
+        Self::from_monotone_with_payload_unsafe(
             self.dimension(),
             source_cospans,
             target_cospans,
-            cone_slices,
+            f,
+            &singular_slices,
             &CubicalPayload::new(regular_slices),
         )
     }
@@ -821,18 +816,13 @@ impl CubicalRewriteN {
         assert_eq!(source_cospans.len(), singular_slices.len());
         assert_eq!(target_cospans.len() + 1, regular_slices.len());
 
-        // Group the singular slices into cones.
         let g = dual_inv(f, source_cospans.len() + 1);
-        let mut cone_slices: Vec<Vec<CubicalRewrite>> = vec![vec![]; target_cospans.len()];
-        for (i, &j) in g.iter().enumerate() {
-            cone_slices[j].push(singular_slices[i].clone());
-        }
-
-        Self::from_slices_with_payload(
+        Self::from_monotone_with_payload_unsafe(
             self.dimension(),
             source_cospans,
             target_cospans,
-            cone_slices,
+            &g,
+            &singular_slices,
             &CubicalPayload::new(regular_slices),
         )
     }

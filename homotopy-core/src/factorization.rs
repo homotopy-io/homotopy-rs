@@ -3,6 +3,7 @@ use std::ops::Range;
 use itertools::{Itertools, MultiProduct};
 
 use crate::{
+    common::Mode,
     monotone::{Monotone, MonotoneIterator},
     Diagram, DiagramN, Height, Rewrite, Rewrite0, RewriteN,
 };
@@ -107,17 +108,18 @@ impl Iterator for FactorizationInternal {
                     self.next()
                 }
                 Some(slices) => {
-                    let mut cone_slices: Vec<Vec<Rewrite>> = vec![vec![]; self.target.size()];
-                    for (i, &j) in h_mono.iter().enumerate() {
-                        cone_slices[j].push(slices[i].clone());
-                    }
-                    let h = RewriteN::from_slices_safe(
+                    let h = RewriteN::from_monotone_unsafe(
                         self.f.dimension(),
                         self.source.cospans(),
                         self.target.cospans(),
-                        cone_slices,
+                        h_mono,
+                        &slices,
                     );
-                    h.map_or_else(|_| self.next(), |h| Some(Rewrite::from(h)))
+                    if h.check_well_formed(Mode::Shallow).is_ok() {
+                        Some(Rewrite::from(h))
+                    } else {
+                        self.next()
+                    }
                 }
             },
         }
