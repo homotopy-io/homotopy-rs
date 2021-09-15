@@ -1,3 +1,6 @@
 mod common;
-pub mod diagram3d;
-pub mod diagram4d;
+mod diagram3d;
+mod diagram4d;
+
+pub use diagram3d::Diagram3D;
+pub use diagram4d::Diagram4D;

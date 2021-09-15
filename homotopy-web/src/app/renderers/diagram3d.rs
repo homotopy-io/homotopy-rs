@@ -1,14 +1,14 @@
 use std::f32;
 
 use homotopy_graphics::{
-    clay::{examples::snake_3, subdivision},
+    clay::{geom::Mesh, subdivision},
     draw,
     gl::{array::VertexArray, frame::Frame, shader::Program, GlCtx, Result},
     program, vertex_array,
 };
 use ultraviolet::{Vec2, Vec3};
 
-use super::common::DebugCtx;
+use super::common::{DebugCtx, DiagramProps};
 use crate::{
     app::{renderers::common::OrbitCamera, AppSettings},
     components::{
@@ -30,9 +30,14 @@ pub struct Diagram3D {
 }
 
 impl Renderer for Diagram3D {
+    type Properties = DiagramProps;
     type Settings = AppSettings;
 
-    fn init(ctx: &mut GlCtx, settings: &Store<Self::Settings>) -> Result<Self> {
+    fn init(
+        ctx: &mut GlCtx,
+        props: &Self::Properties,
+        settings: &Store<Self::Settings>,
+    ) -> Result<Self> {
         let program = program!(
             ctx,
             "../../../glsl/vert.glsl",
@@ -51,7 +56,7 @@ impl Renderer for Diagram3D {
             mouse: None,
         };
 
-        renderer.init_meshes(ctx)?;
+        renderer.init_meshes(ctx, props)?;
 
         Ok(renderer)
     }
@@ -61,7 +66,7 @@ impl Renderer for Diagram3D {
 
         if this.subdivision_depth != depth {
             this.subdivision_depth = depth;
-            this.with_ctx(|this, ctx| this.init_meshes(ctx))?;
+            this.as_parts(|this, ctx, props| this.init_meshes(ctx, props))?;
         }
 
         let ortho = *this.settings().get_orthographic_3d();
@@ -119,8 +124,11 @@ impl Renderer for Diagram3D {
 }
 
 impl Diagram3D {
-    fn init_meshes(&mut self, ctx: &mut GlCtx) -> Result<()> {
-        let subdivided = subdivision::subdivide_3(snake_3().into(), self.subdivision_depth as u8);
+    fn init_meshes(&mut self, ctx: &mut GlCtx, props: &DiagramProps) -> Result<()> {
+        let subdivided = subdivision::subdivide_3(
+            Mesh::build(&props.diagram).into(),
+            self.subdivision_depth as u8,
+        );
         let buffers = subdivided.buffer(ctx)?;
 
         self.solid_mesh = Some(vertex_array!(

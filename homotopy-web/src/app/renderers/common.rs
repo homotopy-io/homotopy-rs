@@ -1,5 +1,6 @@
 use std::f32::consts::PI;
 
+use homotopy_core::DiagramN;
 use homotopy_graphics::{
     draw,
     gl::{array::VertexArray, buffer::ElementKind, frame::Frame, shader::Program, GlCtx, Result},
@@ -9,6 +10,12 @@ use ultraviolet::{
     projection::rh_yup::{orthographic_gl, perspective_gl},
     Mat4, Vec2, Vec3,
 };
+use yew::prelude::*;
+
+#[derive(Properties, Clone, PartialEq)]
+pub struct DiagramProps {
+    pub diagram: DiagramN,
+}
 
 pub struct DebugCtx {
     program: Program,

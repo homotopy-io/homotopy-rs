@@ -8,7 +8,7 @@ use homotopy_graphics::{
 };
 use ultraviolet::{Vec2, Vec3};
 
-use super::common::DebugCtx;
+use super::common::{DebugCtx, DiagramProps};
 use crate::{
     app::{renderers::common::OrbitCamera, AppSettings},
     components::{
@@ -30,9 +30,10 @@ pub struct Diagram4D {
 }
 
 impl Renderer for Diagram4D {
+    type Properties = DiagramProps;
     type Settings = AppSettings;
 
-    fn init(ctx: &mut GlCtx, _: &Store<Self::Settings>) -> Result<Self> {
+    fn init(ctx: &mut GlCtx, _props: &Self::Properties, _: &Store<Self::Settings>) -> Result<Self> {
         let program = program!(
             ctx,
             "../../../glsl/vert_4d.glsl",
@@ -51,6 +52,7 @@ impl Renderer for Diagram4D {
             t: 0.,
         };
 
+        // TODO(@doctorn) init from diagram
         renderer.init_meshes(ctx)?;
 
         Ok(renderer)

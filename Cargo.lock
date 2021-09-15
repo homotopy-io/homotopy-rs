@@ -674,7 +674,7 @@ dependencies = [
 
 [[package]]
 name = "homotopy-web"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "arrayvec 0.7.1",
  "cargo-husky",

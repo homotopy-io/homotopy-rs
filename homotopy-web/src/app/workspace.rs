@@ -11,8 +11,11 @@ use view_control::ViewControl;
 use yew::prelude::*;
 
 use crate::{
-    app::diagram2d::{Diagram0D, Diagram1D, Diagram2D, Highlight2D, HighlightKind},
-    components::panzoom::PanZoomComponent,
+    app::{
+        diagram2d::{Diagram0D, Diagram1D, Diagram2D, Highlight2D, HighlightKind},
+        renderers::{Diagram3D, Diagram4D},
+    },
+    components::{gl::GlViewport, panzoom::PanZoomComponent},
     model::proof::{homotopy::Homotopy, Action, Signature, Workspace},
 };
 
@@ -66,8 +69,7 @@ impl Component for WorkspaceView {
 
     fn view(&self) -> Html {
         let slice_buttons = match self.visible_diagram() {
-            Diagram::Diagram0(_) => Default::default(),
-            Diagram::DiagramN(d) => html! {
+            Diagram::DiagramN(d) if self.props.workspace.view.dimension() == 2 => html! {
                 <SliceControl
                     number_slices={d.size()}
                     descend_slice={self.props.dispatch.reform(Action::DescendSlice)}
@@ -75,18 +77,19 @@ impl Component for WorkspaceView {
                     on_hover={self.props.dispatch.reform(Action::HighlightSlice)}
                 />
             },
+            _ => Default::default(),
         };
 
         html! {
             <div class="workspace">
-                <PanZoomComponent on_scroll={self.props.dispatch.reform(Action::SwitchSlice)}>
-                    {self.view_diagram()}
-                </PanZoomComponent>
+                {self.view_diagram()}
                 {slice_buttons}
                 <div class="workspace__toolbar">
                     <PathControl
                         path={self.props.workspace.path.clone()}
+                        view={self.props.workspace.view}
                         ascend_slice={self.props.dispatch.reform(Action::AscendSlice)}
+                        update_view={self.props.dispatch.reform(Action::UpdateView)}
                         dimension={self.props.workspace.diagram.dimension()}
                     />
                     <ViewControl />
@@ -106,36 +109,53 @@ impl WorkspaceView {
         match self.visible_diagram() {
             Diagram::Diagram0(generator) => {
                 html! {
-                    <Diagram0D
-                        diagram={generator}
-                        ref={self.diagram_ref.clone()}
-                    />
+                    <PanZoomComponent
+                        on_scroll={self.props.dispatch.reform(Action::SwitchSlice)}
+                    >
+                        <Diagram0D
+                            diagram={generator}
+                            ref={self.diagram_ref.clone()}
+                        />
+                    </PanZoomComponent>
                 }
             }
             Diagram::DiagramN(diagram) if diagram.dimension() == 1 => {
                 html! {
-                    <Diagram1D
-                        diagram={diagram}
-                        on_select={self.on_select.clone()}
-                        ref={self.diagram_ref.clone()}
-                    />
+                    <PanZoomComponent
+                        on_scroll={self.props.dispatch.reform(Action::SwitchSlice)}
+                    >
+                        <Diagram1D
+                            diagram={diagram}
+                            on_select={self.on_select.clone()}
+                            ref={self.diagram_ref.clone()}
+                        />
+                    </PanZoomComponent>
                 }
             }
-            Diagram::DiagramN(diagram) => {
-                let highlight = highlight_attachment(&self.props.workspace, &self.props.signature)
-                    .or_else(|| highlight_slice(&self.props.workspace));
+            Diagram::DiagramN(diagram) => match self.props.workspace.view.dimension() {
+                3 => html!(<GlViewport::<Diagram3D> diagram={diagram} />),
+                4 => html!(<GlViewport::<Diagram4D> diagram={diagram} />),
+                _ => {
+                    let highlight =
+                        highlight_attachment(&self.props.workspace, &self.props.signature)
+                            .or_else(|| highlight_slice(&self.props.workspace));
 
-                html! {
-                    <Diagram2D
-                        diagram={diagram}
-                        id="workspace__diagram"
-                        on_select={self.on_select.clone()}
-                        on_homotopy={self.on_homotopy.clone()}
-                        highlight={highlight}
-                        ref={self.diagram_ref.clone()}
-                    />
+                    html! {
+                        <PanZoomComponent
+                            on_scroll={self.props.dispatch.reform(Action::SwitchSlice)}
+                        >
+                            <Diagram2D
+                                diagram={diagram}
+                                id="workspace__diagram"
+                                on_select={self.on_select.clone()}
+                                on_homotopy={self.on_homotopy.clone()}
+                                highlight={highlight}
+                                ref={self.diagram_ref.clone()}
+                            />
+                        </PanZoomComponent>
+                    }
                 }
-            }
+            },
         }
     }
 }

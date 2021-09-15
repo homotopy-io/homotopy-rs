@@ -1,15 +1,22 @@
+use std::cmp;
+
 use homotopy_core::{Boundary, Height, SliceIndex};
 use im::Vector;
 use yew::prelude::*;
 use yew_macro::function_component;
 
-use crate::app::{Icon, IconSize};
+use crate::{
+    app::{Icon, IconSize},
+    model::proof::View,
+};
 
 #[derive(Debug, Clone, PartialEq, Properties)]
 pub struct PathControlProps {
     pub path: Vector<SliceIndex>,
+    pub view: View,
     pub dimension: usize,
     pub ascend_slice: Callback<usize>,
+    pub update_view: Callback<View>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -35,17 +42,27 @@ pub fn path_control(props: &PathControlProps) -> Html {
             Step::Projection => "P".to_owned(),
         };
 
+        let view = props.view;
         let ascend_slice = props.ascend_slice.clone();
+        let update_view = props.update_view.clone();
 
         let onclick = Callback::from(move |_| {
             if index < path_len {
                 ascend_slice.emit(path_len - index - 1);
             }
+
+            if step == Step::View {
+                update_view.emit(view.dec());
+            }
+
+            if step == Step::Projection {
+                update_view.emit(view.inc());
+            }
         });
 
         html! {
             <span
-                class="workspace__toolbar__button"
+                class="workspace__toolbar__button workspace__path-segment"
                 onclick={onclick}
             >
                 {label}
@@ -56,9 +73,14 @@ pub fn path_control(props: &PathControlProps) -> Html {
     let path = {
         let mut path = Vec::with_capacity(props.dimension);
         path.extend(props.path.iter().map(|slice| Step::SliceIndex(*slice)));
-        path.extend(
-            (path.len()..std::cmp::min(path.len() + 2, props.dimension)).map(|_| Step::View),
-        );
+
+        let viewing_range = path.len()
+            ..cmp::min(
+                path.len() + props.view.dimension() as usize,
+                props.dimension,
+            );
+
+        path.extend(viewing_range.map(|_| Step::View));
         path.extend((path.len()..props.dimension).map(|_| Step::Projection));
         path
     };
