@@ -7,7 +7,6 @@ use yew::prelude::*;
 
 use crate::{
     components::{
-        gl::GlViewport,
         icon::{Icon, IconSize},
         panzoom::PanZoom,
         settings::Settings,
@@ -120,12 +119,9 @@ impl Component for App {
             }
             None => {
                 // TODO: Show onboarding info if workspace and signature is empty
-                // html! {
-                //     <content class="workspace workspace--empty">
-                //     </content>
-                // }
                 html! {
-                    <GlViewport::<renderers::diagram3d::Diagram3D> />
+                    <content class="workspace workspace--empty">
+                    </content>
                 }
             }
         };

@@ -65,6 +65,7 @@ input {
   color: var(--sidebar-foreground);
   display: flex;
   flex-direction: column;
+  z-index: 1000;
 }
 
 .sidebar__logo {
@@ -144,6 +145,12 @@ input {
   display: flex;
 }
 
+.workspace__path-segment {
+  width: 24px;
+  justify-content: center;
+  align-items: center;
+}
+
 .workspace__toolbar__button {
   padding: var(--space-1);
   align-items: center;
@@ -194,7 +201,7 @@ input {
   padding: 10px 15px;
   position: absolute;
   text-align: center;
-  z-index: 900;
+  z-index: 1001;
   content: attr(data-tooltip);
   font-size: 12px;
   white-space: nowrap;
@@ -218,7 +225,7 @@ input {
   position: absolute;
   width: 15px;
   height: 15px;
-  z-index: 900;
+  z-index: 1001;
   top: 50%;
 }
 
@@ -252,6 +259,7 @@ input {
   display: flex;
   flex-direction: column;
   touch-action: none;
+  z-index: 1000;
 }
 
 .drawer__header {
@@ -518,7 +526,7 @@ svg {
   position: relative;
   width: 300px;
   min-height: 30px;
-  z-index: 10000;
+  z-index: 1002;
   margin: var(--space-1);
 }
 

@@ -26,10 +26,16 @@ mod signature;
 
 pub mod homotopy;
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct View {
+    dimension: u8,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Workspace {
     pub diagram: Diagram,
     pub path: Vector<SliceIndex>,
+    pub view: View,
     pub attach: Option<Vector<AttachOption>>,
     pub attachment_highlight: Option<AttachOption>,
     pub slice_highlight: Option<SliceIndex>,
@@ -51,6 +57,35 @@ impl Workspace {
         }
 
         diagram
+    }
+}
+
+impl View {
+    const MAX: u8 = 4;
+    const MIN: u8 = 2;
+
+    pub fn inc(self) -> Self {
+        Self {
+            dimension: (self.dimension + 1).clamp(Self::MIN, Self::MAX),
+        }
+    }
+
+    pub fn dec(self) -> Self {
+        Self {
+            dimension: (self.dimension - 1).clamp(Self::MIN, Self::MAX),
+        }
+    }
+
+    pub fn dimension(self) -> u8 {
+        self.dimension
+    }
+}
+
+impl Default for View {
+    fn default() -> Self {
+        Self {
+            dimension: Self::MIN,
+        }
     }
 }
 
@@ -103,6 +138,8 @@ pub enum Action {
 
     /// Switch between adjacent slices in the currently selected diagram in the workspace.
     SwitchSlice(Direction),
+
+    UpdateView(View),
 
     SelectPoints(Vec<Vec<SliceIndex>>),
 
@@ -166,6 +203,7 @@ impl ProofState {
             Action::AscendSlice(count) => self.ascend_slice(*count),
             Action::DescendSlice(slice) => self.descend_slice(*slice)?,
             Action::SwitchSlice(direction) => self.switch_slice(*direction),
+            Action::UpdateView(view) => self.update_view(*view),
             Action::SelectPoints(points) => self.select_points(points),
             Action::Attach(option) => self.attach(option),
             Action::HighlightAttachment(option) => self.highlight_attachment(option.clone()),
@@ -177,7 +215,7 @@ impl ProofState {
             Action::Restrict => self.restrict()?,
             Action::Theorem => self.theorem()?,
             Action::EditSignature(edit) => self.edit_signature(edit),
-            _ => {}
+            Action::Imported | Action::Nothing => {}
         }
 
         Ok(())
@@ -303,6 +341,7 @@ impl ProofState {
         self.workspace = Some(Workspace {
             diagram: info.diagram.clone(),
             path: Default::default(),
+            view: Default::default(),
             attach: Default::default(),
             attachment_highlight: Default::default(),
             slice_highlight: Default::default(),
@@ -361,6 +400,13 @@ impl ProofState {
 
             let next_slice = slice.step(diagram.size(), direction).unwrap_or(slice);
             workspace.path.push_back(next_slice);
+        }
+    }
+
+    /// Handler for [Action::UpdateView]
+    fn update_view(&mut self, view: View) {
+        if let Some(workspace) = &mut self.workspace {
+            workspace.view = view;
         }
     }
 

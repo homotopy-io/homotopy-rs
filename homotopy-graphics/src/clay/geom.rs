@@ -3,7 +3,6 @@ use std::{
     collections::HashMap,
     convert::TryInto,
     iter::FusedIterator,
-    mem,
     ops::{Deref, DerefMut},
 };
 
@@ -227,9 +226,9 @@ impl Mesh {
         self.elements[element].order()
     }
 
-    #[allow(dead_code)]
     pub fn build(_diagram: &DiagramN) -> Self {
-        Self::new()
+        // TODO(@calinat) extract mesh
+        super::examples::example_3()
     }
 }
 
@@ -359,6 +358,7 @@ pub struct CubeMeshBuffers {
     pub vertex_start_buffer: gl::buffer::Buffer<Vec4>,
     pub vertex_end_buffer: gl::buffer::Buffer<Vec4>,
     pub wireframe_vertex_buffer: gl::buffer::Buffer<Vec3>,
+    // TODO(@doctorn) normals
 }
 
 impl CubeMesh {
@@ -371,42 +371,40 @@ impl CubeMesh {
             struct Segment = u16;
         }
 
+        #[inline]
         fn parity_sort<F>(vertices: &mut [Vertex; 4], f: F) -> bool
         where
             F: Fn(Vertex, Vertex) -> Ordering,
         {
             let mut parity = true;
 
-            loop {
-                let mut swapped = false;
-
-                for i in 0..3 {
-                    if f(vertices[i + 1], vertices[i]) == Ordering::Less {
-                        vertices.swap(i, i + 1);
+            macro_rules! bubble_pass  {
+                ($($i:literal),*$(,)*) => {
+                    $(if f(vertices[$i + 1], vertices[$i]) == Ordering::Less {
+                        vertices.swap($i, $i + 1);
                         parity = !parity;
-                        swapped = true;
-                    }
-                }
-
-                if !swapped {
-                    return parity;
-                }
+                    })*
+                };
             }
+
+            bubble_pass!(
+                0, 1, 2, // First pass finds top element
+                0, 1, // Second pass finds next element
+                0, // Final pass orders remaining two elements
+            );
+
+            parity
         }
 
         let mut segment_cache = HashMap::new();
-        let mut elements = Vec::new();
-        let mut wireframe_elements = Vec::with_capacity(self.elements.len() * 24);
-        let mut segment_starts = IdxVec::with_capacity(self.elements.len() * 24);
-        let mut segment_ends = IdxVec::with_capacity(self.elements.len() * 24);
+        let mut elements = Vec::with_capacity(self.elements.len() * 30);
+        let mut wireframe_elements = Vec::with_capacity(self.elements.len() * 8);
+        let mut segment_starts = IdxVec::with_capacity(self.elements.len() * 30);
+        let mut segment_ends = IdxVec::with_capacity(self.elements.len() * 30);
         let wireframe_vertices = self.vertices.values().map(|v| v.xyz()).collect::<Vec<_>>();
 
         {
-            let mut push_segment = |mut i: Vertex, mut j: Vertex| {
-                if self.vertices[i].w < self.vertices[j].w {
-                    mem::swap(&mut i, &mut j);
-                }
-
+            let mut push_segment = |i: Vertex, j: Vertex| {
                 if let Some(segment) = segment_cache.get(&(i, j)) {
                     *segment
                 } else {
@@ -430,31 +428,31 @@ impl CubeMesh {
             };
 
             let mut push_tetra = |i: Vertex, j: Vertex, k: Vertex, l: Vertex| {
-                let mut vertices = [i, j, k, l];
+                let ([i, j, k, l], parity) = {
+                    let mut vertices = [i, j, k, l];
+                    let parity = parity_sort(&mut vertices, |i, j| {
+                        self.vertices[i].w.partial_cmp(&self.vertices[j].w).unwrap()
+                    });
+                    (vertices, parity)
+                };
 
-                let parity = parity_sort(&mut vertices, |i, j| {
-                    self.vertices[i].w.partial_cmp(&self.vertices[j].w).unwrap()
-                });
-
-                let segments = [
-                    push_segment(vertices[0], vertices[1]),
-                    push_segment(vertices[0], vertices[2]),
-                    push_segment(vertices[0], vertices[3]),
-                    push_segment(vertices[1], vertices[2]),
-                    push_segment(vertices[1], vertices[3]),
-                    push_segment(vertices[2], vertices[3]),
-                ];
+                let ij = push_segment(i, j);
+                let ik = push_segment(i, k);
+                let il = push_segment(i, l);
+                let jk = push_segment(j, k);
+                let jl = push_segment(j, l);
+                let kl = push_segment(k, l);
 
                 if parity {
-                    push_tri(segments[0], segments[2], segments[1]);
-                    push_tri(segments[4], segments[1], segments[3]);
-                    push_tri(segments[4], segments[2], segments[1]);
-                    push_tri(segments[4], segments[2], segments[5]);
+                    push_tri(ij, il, ik);
+                    push_tri(jl, ik, jk);
+                    push_tri(jl, il, ik);
+                    push_tri(jl, il, kl);
                 } else {
-                    push_tri(segments[2], segments[0], segments[1]);
-                    push_tri(segments[1], segments[4], segments[3]);
-                    push_tri(segments[2], segments[4], segments[1]);
-                    push_tri(segments[2], segments[4], segments[5]);
+                    push_tri(il, ij, ik);
+                    push_tri(ik, jl, jk);
+                    push_tri(il, jl, ik);
+                    push_tri(il, jl, kl);
                 }
             };
 

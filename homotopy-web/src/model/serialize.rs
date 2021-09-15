@@ -1,3 +1,5 @@
+#![allow(clippy::enum_variant_names)]
+
 use homotopy_common::tree::Tree;
 use homotopy_core::{
     common::{Generator, SliceIndex},
@@ -8,7 +10,10 @@ use im::Vector;
 use obake::AnyVersion;
 use wasm_bindgen::JsCast;
 
-use super::{proof::SignatureItem, Color, GeneratorInfo, Signature, Workspace};
+use super::{
+    proof::{SignatureItem, View},
+    Color, GeneratorInfo, Signature, Workspace,
+};
 
 pub fn generate_download(name: &str, data: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
     let val: js_sys::Uint8Array = data.into();
@@ -36,7 +41,31 @@ pub fn generate_download(name: &str, data: &[u8]) -> Result<(), wasm_bindgen::Js
 
 #[obake::versioned]
 #[obake(version("0.1.0"))]
+#[obake(version("0.1.2"))]
+#[obake(derive(serde::Serialize, serde::Deserialize))]
+#[obake(serde(untagged))]
+#[derive(Debug, PartialEq, Eq, Clone, serde::Serialize, serde::Deserialize)]
+struct WorkspaceData {
+    diagram: Key<Diagram>,
+    path: Vector<SliceIndex>,
+    #[obake(cfg(">=0.1.2"))]
+    view: View,
+}
+
+impl From<WorkspaceData!["0.1.0"]> for WorkspaceData!["0.1.2"] {
+    fn from(from: WorkspaceData!["0.1.0"]) -> Self {
+        Self {
+            diagram: from.diagram,
+            path: from.path,
+            view: Default::default(),
+        }
+    }
+}
+
+#[obake::versioned]
+#[obake(version("0.1.0"))]
 #[obake(version("0.1.1"))]
+#[obake(version("0.1.2"))]
 #[obake(derive(serde::Serialize, serde::Deserialize))]
 #[obake(serde(tag = "version"))]
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -46,7 +75,10 @@ struct Data {
     signature: Vec<GeneratorData>,
     #[obake(cfg(">=0.1.1"))]
     signature: Tree<SignatureData>,
-    workspace: Option<WorkspaceData>,
+    #[obake(cfg("<0.1.2"))]
+    workspace: Option<WorkspaceData!["0.1.0"]>,
+    #[obake(cfg(">=0.1.2"))]
+    workspace: Option<WorkspaceData!["0.1.2"]>,
 }
 
 impl From<Data!["0.1.0"]> for Data!["0.1.1"] {
@@ -59,6 +91,16 @@ impl From<Data!["0.1.0"]> for Data!["0.1.1"] {
                 .map(SignatureData::Item)
                 .collect(),
             workspace: from.workspace,
+        }
+    }
+}
+
+impl From<Data!["0.1.1"]> for Data!["0.1.2"] {
+    fn from(from: Data!["0.1.1"]) -> Self {
+        Self {
+            store: from.store,
+            signature: from.signature,
+            workspace: from.workspace.map(Into::into),
         }
     }
 }
@@ -89,12 +131,6 @@ struct GeneratorData {
     diagram: Key<Diagram>,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, serde::Serialize, serde::Deserialize)]
-struct WorkspaceData {
-    diagram: Key<Diagram>,
-    path: Vector<SliceIndex>,
-}
-
 pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> {
     let mut data = Data {
         store: Store::new(),
@@ -120,6 +156,7 @@ pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> 
         data.workspace = Some(WorkspaceData {
             diagram: data.store.pack_diagram(&workspace.diagram),
             path: workspace.path,
+            view: workspace.view,
         });
     }
 
@@ -163,6 +200,7 @@ pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
         workspace = Some(Workspace {
             diagram: store.unpack_diagram(workspace_data.diagram)?,
             path: workspace_data.path,
+            view: workspace_data.view,
             attach: Default::default(),
             attachment_highlight: Default::default(),
             slice_highlight: Default::default(),

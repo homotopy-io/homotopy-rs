@@ -9,6 +9,7 @@ use homotopy_graphics::gl::{frame::Frame, GlCtx, Result};
 use ultraviolet::Vec2;
 use yew::prelude::*;
 
+use super::toast::{Toast, Toaster};
 use crate::components::{
     read_touch_list,
     settings::{KeyStore, Settings, Store},
@@ -17,8 +18,13 @@ use crate::components::{
 
 pub trait Renderer: Sized + 'static {
     type Settings: Settings;
+    type Properties: Properties + PartialEq;
 
-    fn init(ctx: &mut GlCtx, settings: &Store<Self::Settings>) -> Result<Self>;
+    fn init(
+        ctx: &mut GlCtx,
+        props: &Self::Properties,
+        settings: &Store<Self::Settings>,
+    ) -> Result<Self>;
 
     fn update(this: &mut RendererState<Self>, dt: f32) -> Result<()>;
 
@@ -44,6 +50,7 @@ where
     ctx: Option<GlCtx>,
     renderer: Option<R>,
     settings: Store<R::Settings>,
+    props: R::Properties,
     t: f32,
 }
 
@@ -63,11 +70,15 @@ where
         self.t
     }
 
-    pub fn with_ctx<F, U>(&mut self, f: F) -> U
+    pub fn as_parts<F, U>(&mut self, f: F) -> U
     where
-        F: FnOnce(&mut R, &mut GlCtx) -> U,
+        F: FnOnce(&mut R, &mut GlCtx, &R::Properties) -> U,
     {
-        f(self.renderer.as_mut().unwrap(), self.ctx.as_mut().unwrap())
+        f(
+            self.renderer.as_mut().unwrap(),
+            self.ctx.as_mut().unwrap(),
+            &self.props,
+        )
     }
 
     fn update(&mut self, t: f32) -> Result<()> {
@@ -105,23 +116,6 @@ where
     }
 }
 
-impl<R> Default for RendererState<R>
-where
-    R: Renderer,
-{
-    fn default() -> Self {
-        Self {
-            ctx: None,
-            renderer: None,
-            settings: Default::default(),
-            t: 0.0,
-        }
-    }
-}
-
-#[derive(Properties, Clone, PartialEq)]
-pub struct GlViewportProps {}
-
 pub enum GlViewportMessage<R>
 where
     R: Renderer,
@@ -134,10 +128,11 @@ pub struct GlViewport<R>
 where
     R: Renderer,
 {
-    props: GlViewportProps,
     link: ComponentLink<Self>,
     renderer: Rc<RefCell<RendererState<R>>>,
     canvas: NodeRef,
+
+    toaster: Toaster,
 
     // If the render task is dropped, we won't get notified about `requestAnimationFrame()`
     // calls, so store a reference to the task here
@@ -150,29 +145,39 @@ where
     R: Renderer,
 {
     type Message = GlViewportMessage<R>;
-    type Properties = GlViewportProps;
+    type Properties = R::Properties;
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
         let mut settings = R::Settings::connect(link.callback(GlViewportMessage::Setting));
+        let state = Rc::new(RefCell::new(RendererState {
+            ctx: None,
+            renderer: None,
+            settings: Default::default(),
+            props,
+            t: 0.0,
+        }));
 
         settings.subscribe(R::Settings::ALL);
 
         Self {
-            props,
             link,
-            renderer: Default::default(),
+            renderer: state,
             canvas: Default::default(),
+            toaster: Toaster::new(),
             render_loop: None,
             _settings: settings,
         }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
+        if self.renderer.borrow().renderer.is_none() {
+            return false;
+        }
+
         match msg {
             GlViewportMessage::Render(t) => {
                 {
                     let mut renderer = self.renderer.borrow_mut();
-                    // TODO(@doctorn) error handling?
                     renderer.update(t as f32).unwrap();
                     renderer.render();
                 }
@@ -265,12 +270,15 @@ where
     }
 
     fn rendered(&mut self, first_render: bool) {
-        // TODO(@doctorn) error handling?
-        {
-            let mut ctx = GlCtx::attach(&self.canvas).unwrap();
+        if let Ok(mut ctx) = GlCtx::attach(&self.canvas) {
             let mut renderer = self.renderer.borrow_mut();
-            renderer.renderer = Some(Renderer::init(&mut ctx, &renderer.settings).unwrap());
+            renderer.renderer =
+                Some(Renderer::init(&mut ctx, &renderer.props, &renderer.settings).unwrap());
             renderer.ctx = Some(ctx);
+        } else {
+            self.toaster
+                .toast(Toast::error("Failed to get WebGL 2.0 context"));
+            return;
         }
 
         if first_render {
@@ -279,8 +287,10 @@ where
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        self.props != props && {
-            self.props = props;
+        let mut renderer = self.renderer.borrow_mut();
+
+        renderer.props != props && {
+            renderer.props = props;
             true
         }
     }
