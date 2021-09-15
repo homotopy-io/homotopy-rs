@@ -1,7 +1,7 @@
 use std::f32;
 
 use homotopy_graphics::{
-    clay::{examples::example_3, subdivision},
+    clay::{examples::snake_3, subdivision},
     draw,
     gl::{array::VertexArray, frame::Frame, shader::Program, GlCtx, Result},
     program, vertex_array,
@@ -120,7 +120,7 @@ impl Renderer for Diagram3D {
 
 impl Diagram3D {
     fn init_meshes(&mut self, ctx: &mut GlCtx) -> Result<()> {
-        let subdivided = subdivision::subdivide_3(example_3().into(), self.subdivision_depth as u8);
+        let subdivided = subdivision::subdivide_3(snake_3().into(), self.subdivision_depth as u8);
         let buffers = subdivided.buffer(ctx)?;
 
         self.solid_mesh = Some(vertex_array!(

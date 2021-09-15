@@ -1,7 +1,9 @@
 use std::{
+    cmp::Ordering,
     collections::HashMap,
     convert::TryInto,
     iter::FusedIterator,
+    mem,
     ops::{Deref, DerefMut},
 };
 
@@ -369,6 +371,30 @@ impl CubeMesh {
             struct Segment = u16;
         }
 
+        fn parity_sort<F>(vertices: &mut [Vertex; 4], f: F) -> bool
+        where
+            F: Fn(Vertex, Vertex) -> Ordering,
+        {
+            let mut parity = true;
+
+            loop {
+                let mut swapped = false;
+
+                for i in 0..3 {
+                    if f(vertices[i + 1], vertices[i]) == Ordering::Less {
+                        vertices.swap(i, i + 1);
+                        parity = !parity;
+                        swapped = true;
+                    }
+                }
+
+                if !swapped {
+                    return parity;
+                }
+            }
+        }
+
+        let mut segment_cache = HashMap::new();
         let mut elements = Vec::new();
         let mut wireframe_elements = Vec::with_capacity(self.elements.len() * 24);
         let mut segment_starts = IdxVec::with_capacity(self.elements.len() * 24);
@@ -376,14 +402,23 @@ impl CubeMesh {
         let wireframe_vertices = self.vertices.values().map(|v| v.xyz()).collect::<Vec<_>>();
 
         {
-            let mut push_segment = |i: Vertex, j: Vertex| {
-                wireframe_elements.push(i.index() as u16);
-                wireframe_elements.push(j.index() as u16);
+            let mut push_segment = |mut i: Vertex, mut j: Vertex| {
+                if self.vertices[i].w < self.vertices[j].w {
+                    mem::swap(&mut i, &mut j);
+                }
 
-                let start = segment_starts.push(*self.vertices[i]);
-                let end = segment_ends.push(*self.vertices[j]);
-                debug_assert!(start == end);
-                start
+                if let Some(segment) = segment_cache.get(&(i, j)) {
+                    *segment
+                } else {
+                    wireframe_elements.push(i.index() as u16);
+                    wireframe_elements.push(j.index() as u16);
+
+                    let start = segment_starts.push(*self.vertices[i]);
+                    let end = segment_ends.push(*self.vertices[j]);
+                    debug_assert!(start == end);
+                    segment_cache.insert((i, j), start);
+                    start
+                }
             };
 
             let mut push_tri = |i: Segment, j: Segment, k: Segment| {
@@ -397,35 +432,39 @@ impl CubeMesh {
             let mut push_tetra = |i: Vertex, j: Vertex, k: Vertex, l: Vertex| {
                 let mut vertices = [i, j, k, l];
 
-                vertices.sort_by(|v_1, v_2| {
-                    self.vertices[*v_1]
-                        .w
-                        .partial_cmp(&self.vertices[*v_2].w)
-                        .unwrap()
+                let parity = parity_sort(&mut vertices, |i, j| {
+                    self.vertices[i].w.partial_cmp(&self.vertices[j].w).unwrap()
                 });
 
-                let segment_ij = push_segment(vertices[0], vertices[1]);
-                let segment_ik = push_segment(vertices[0], vertices[2]);
-                let segment_il = push_segment(vertices[0], vertices[3]);
+                let segments = [
+                    push_segment(vertices[0], vertices[1]),
+                    push_segment(vertices[0], vertices[2]),
+                    push_segment(vertices[0], vertices[3]),
+                    push_segment(vertices[1], vertices[2]),
+                    push_segment(vertices[1], vertices[3]),
+                    push_segment(vertices[2], vertices[3]),
+                ];
 
-                let segment_jk = push_segment(vertices[1], vertices[2]);
-                let segment_jl = push_segment(vertices[1], vertices[3]);
-
-                let segment_kl = push_segment(vertices[2], vertices[3]);
-
-                push_tri(segment_ij, segment_ik, segment_il);
-                push_tri(segment_jk, segment_ik, segment_jl);
-                push_tri(segment_jl, segment_il, segment_ik);
-                push_tri(segment_kl, segment_jl, segment_il);
+                if parity {
+                    push_tri(segments[0], segments[2], segments[1]);
+                    push_tri(segments[4], segments[1], segments[3]);
+                    push_tri(segments[4], segments[2], segments[1]);
+                    push_tri(segments[4], segments[2], segments[5]);
+                } else {
+                    push_tri(segments[2], segments[0], segments[1]);
+                    push_tri(segments[1], segments[4], segments[3]);
+                    push_tri(segments[2], segments[4], segments[1]);
+                    push_tri(segments[2], segments[4], segments[5]);
+                }
             };
 
             // Triangulate mesh
             for cube in self.elements.values() {
-                push_tetra(cube[0], cube[5], cube[3], cube[1]);
-                push_tetra(cube[0], cube[6], cube[3], cube[2]);
-                push_tetra(cube[0], cube[6], cube[5], cube[4]);
-                push_tetra(cube[3], cube[5], cube[6], cube[7]);
-                push_tetra(cube[0], cube[3], cube[6], cube[5]);
+                push_tetra(cube[1], cube[4], cube[5], cube[7]);
+                push_tetra(cube[0], cube[4], cube[1], cube[2]);
+                push_tetra(cube[1], cube[7], cube[3], cube[2]);
+                push_tetra(cube[4], cube[6], cube[7], cube[2]);
+                push_tetra(cube[1], cube[7], cube[2], cube[4]);
             }
         }
 
@@ -540,72 +579,3 @@ impl VertexExt for Vec4 {
         }
     }
 }
-
-// TODO(@doctorn) refactor
-/*
-impl CubeMesh {
-    pub fn new() -> Self {
-        Self {
-            vertices: IdxVec::new(),
-            cubes: IdxVec::new(),
-            division_memory: HashMap::new(),
-        }
-    }
-
-    fn create_new(&mut self, verts: &[VertexId]) -> VertexId {
-        let vertices: Vec<&Vertex> = verts
-            .iter()
-            .map(|v_id| self.vertices.get(*v_id).unwrap())
-            .collect();
-        let first_bound = vertices[0].boundary;
-        let mut bound = vertices.iter().fold(first_bound, |a, v| max(a, v.boundary));
-        bound = max(
-            bound,
-            match verts.len() {
-                2 => 1,
-                4 => 2,
-                _ => panic!(),
-            },
-        );
-
-        let mut new_vert = Vertex::new(0.0, 0.0, 0.0, 0.0, bound);
-        let scale = 1.0
-            / match vertices.len() {
-                2 => 2.0,
-                4 => 4.0,
-                _ => panic!("Unexpected number of vertices"),
-            };
-        for v in vertices {
-            new_vert.add_scaled(v, scale);
-        }
-        let v_id = self.vertices.push(new_vert);
-        self.division_memory.insert(verts.to_owned(), v_id);
-        v_id
-    }
-
-    /// Returns a VertexId that coresponds to the average of the suplied vertices.
-    pub fn linearly_divide(&mut self, mut verts: Vec<VertexId>) -> VertexId {
-        verts.sort();
-        let mut c = verts.clone();
-        c.dedup();
-        match (verts.len(), c.len()) {
-            (2 | 4, 1) => c[0],
-            (2, 2) | (4, 4 | 3) => self
-                .division_memory
-                .get(&verts)
-                .copied()
-                .unwrap_or_else(|| self.create_new(&verts)),
-            (4, 2) => self.linearly_divide(c),
-            _ => panic!(),
-        }
-    }
-
-    pub fn mk_vertex(&mut self, vertex: Vertex) -> VertexId {
-        self.vertices.push(vertex)
-    }
-
-    pub fn mk_cube(&mut self, vertices: [VertexId; 8]) -> CubeId {
-        self.cubes.push(vertices)
-    }
-}
-*/

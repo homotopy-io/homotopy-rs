@@ -4,14 +4,21 @@
 
 use std::{cmp, collections::HashMap, mem};
 
-use homotopy_common::idx::IdxVec;
+use homotopy_common::idx::{Idx, IdxVec};
 use ultraviolet::{Mat4, Vec4};
 
-use super::geom::{Boundary, SquareData, SquareMesh, Vertex, VertexExt};
+use super::geom::{Boundary, CubeData, CubeMesh, SquareData, SquareMesh, Vertex, VertexExt};
 
 struct SquareSubdivider<'a> {
     mesh: &'a mut SquareMesh,
     division_memory: HashMap<(Vertex, Vertex), Vertex>,
+    valence: HashMap<Vertex, u32>,
+}
+
+struct CubeSubdivider<'a> {
+    mesh: &'a mut CubeMesh,
+    edge_division_memory: HashMap<(Vertex, Vertex), Vertex>,
+    face_division_memory: HashMap<SquareData, Vertex>,
     valence: HashMap<Vertex, u32>,
 }
 
@@ -36,7 +43,7 @@ impl<'a> SquareSubdivider<'a> {
             let v_1 = &self.mesh.vertices[v_1];
             let v_2 = &self.mesh.vertices[v_2];
             let v = 0.5 * (**v_1 + **v_2);
-            let boundary = cmp::min(Boundary::Two, cmp::max(v_1.boundary, v_2.boundary));
+            let boundary = cmp::max(Boundary::One, cmp::max(v_1.boundary, v_2.boundary));
 
             self.mesh.mk_vertex(v.with_boundary(boundary))
         };
@@ -94,7 +101,7 @@ impl<'a> SquareSubdivider<'a> {
     /// Subdivides the square mesh one time based on the primal scheme.
     ///
     /// This assumes that the mesh is filtered so that only the relevant elements
-    /// are present and all elments have some area.
+    /// are present and all elements have some area.
     fn subdivide_once(&mut self) {
         // (0. In debug, clone a copy of the original diagram for sanity checking)
         #[cfg(debug_assertions)]
@@ -202,6 +209,312 @@ impl<'a> SquareSubdivider<'a> {
     }
 }
 
+impl<'a> CubeSubdivider<'a> {
+    /// Defines how new cubes should be from linearly divided points.
+    ///
+    /// Important property that is preserved - first point is a vertex point,
+    /// edge and face points are also in precise positions.
+    const CUBE_ASSEMBLY_ORDER: [[usize; 8]; 8] = [
+        [0, 8, 9, 20, 10, 21, 22, 26],
+        [1, 11, 8, 20, 12, 23, 21, 26],
+        [2, 9, 13, 20, 14, 22, 24, 26],
+        [3, 13, 11, 20, 15, 24, 23, 26],
+        [4, 16, 10, 21, 17, 25, 22, 26],
+        [5, 18, 12, 23, 16, 25, 21, 26],
+        [6, 17, 14, 22, 19, 25, 24, 26],
+        [7, 19, 15, 24, 18, 25, 23, 26],
+    ];
+    /// Defines all 12 edges of a cube based on vertex indices.
+    const CUBE_EDGE_ORDER: [[usize; 2]; 12] = [
+        [0, 1],
+        [0, 2],
+        [0, 4],
+        [1, 3],
+        [1, 5],
+        [2, 3],
+        [2, 6],
+        [3, 7],
+        [4, 5],
+        [4, 6],
+        [5, 7],
+        [6, 7],
+    ];
+    /// Defines all 6 faces of a cube based on vertex indices.
+    const CUBE_FACE_ORDER: [[usize; 4]; 6] = [
+        [0, 1, 2, 3],
+        [0, 1, 4, 5],
+        [0, 2, 4, 6],
+        [1, 3, 5, 7],
+        [2, 3, 6, 7],
+        [4, 5, 6, 7],
+    ];
+
+    fn new(mesh: &'a mut CubeMesh) -> Self {
+        Self {
+            mesh,
+            edge_division_memory: Default::default(),
+            face_division_memory: Default::default(),
+            valence: Default::default(),
+        }
+    }
+
+    fn divide_edge_uncached(&mut self, v_1: Vertex, v_2: Vertex) -> Vertex {
+        // Perform division
+        let v = {
+            let v_1 = &self.mesh.vertices[v_1];
+            let v_2 = &self.mesh.vertices[v_2];
+            let v = 0.5 * (**v_1 + **v_2);
+            let boundary = cmp::max(Boundary::One, cmp::max(v_1.boundary, v_2.boundary));
+
+            self.mesh.mk_vertex(v.with_boundary(boundary))
+        };
+        // Cache result
+        self.edge_division_memory.insert((v_1, v_2), v);
+        v
+    }
+
+    fn divide_edge(&mut self, mut v_1: Vertex, mut v_2: Vertex) -> Vertex {
+        if v_1 == v_2 {
+            return v_1;
+        }
+
+        if v_2 > v_1 {
+            mem::swap(&mut v_1, &mut v_2);
+        }
+
+        self.edge_division_memory
+            .get(&(v_1, v_2))
+            .copied()
+            .unwrap_or_else(|| self.divide_edge_uncached(v_1, v_2))
+    }
+
+    fn divide_face_uncached(&mut self, square: SquareData) -> Vertex {
+        // Perform division
+        let v = {
+            let v_1 = &self.mesh.vertices[square[0]];
+            let v_2 = &self.mesh.vertices[square[1]];
+            let v_3 = &self.mesh.vertices[square[2]];
+            let v_4 = &self.mesh.vertices[square[3]];
+            let v = 0.25 * (**v_1 + **v_2 + **v_3 + **v_4);
+            let boundary = cmp::max(
+                Boundary::Two,
+                cmp::max(
+                    cmp::max(v_1.boundary, v_2.boundary),
+                    cmp::max(v_3.boundary, v_4.boundary),
+                ),
+            );
+
+            self.mesh.mk_vertex(v.with_boundary(boundary))
+        };
+        // Cache result
+        self.face_division_memory.insert(square, v);
+        v
+    }
+
+    fn divide_face(&mut self, mut square: SquareData) -> Vertex {
+        square.sort_unstable();
+
+        // After sorting, we know that all the vertices are identical
+        // if and only if the first vertex equals the last vertex. In
+        // this case, we just return this unique vertex.
+        if square[0] == square[3] {
+            return square[0];
+        }
+
+        // In any of these three cases, we have a single pair of vertices.
+        // As this corresponds to an edge, we just need to divide that edge
+        // and move on.
+        if (square[0] != square[1] && square[1] == square[3])
+            || (square[0] == square[1] && square[2] == square[3])
+            || (square[0] == square[2] && square[2] != square[3])
+        {
+            return self.divide_edge(square[0], square[3]);
+        }
+
+        self.face_division_memory
+            .get(&square)
+            .copied()
+            .unwrap_or_else(|| self.divide_face_uncached(square))
+    }
+
+    fn subdivide_cube(&mut self, cube: CubeData) {
+        let mut points = [Vertex::new(0); 27];
+
+        points[0..8].copy_from_slice(&cube);
+
+        for (i, edge) in Self::CUBE_EDGE_ORDER.iter().enumerate() {
+            points[i + 8] = self.divide_edge(points[edge[0]], points[edge[1]]);
+        }
+
+        for (i, face) in Self::CUBE_FACE_ORDER.iter().enumerate() {
+            points[i + 20] = self.divide_face([
+                points[face[0]],
+                points[face[1]],
+                points[face[2]],
+                points[face[3]],
+            ]);
+        }
+
+        points[26] = self.divide_edge(points[20], points[25]);
+
+        for order in &Self::CUBE_ASSEMBLY_ORDER {
+            self.mesh.mk_cube([
+                points[order[0]],
+                points[order[1]],
+                points[order[2]],
+                points[order[3]],
+                points[order[4]],
+                points[order[5]],
+                points[order[6]],
+                points[order[7]],
+            ]);
+
+            for v in order.iter() {
+                *self.valence.entry(points[*v]).or_insert(0) += 1;
+            }
+        }
+    }
+
+    /// Subdivides the cube mesh one time based on the primal scheme.
+    ///
+    /// This assumes that the mesh is filtered so that only the relevant elements
+    /// are present and all elements have some volume.
+    fn subdivide_once(&mut self) {
+        // 1. Reset valence
+        self.valence.clear();
+        // 2. Remove all cubes from mesh
+        let mut cubes = IdxVec::new();
+        mem::swap(&mut self.mesh.elements, &mut cubes);
+
+        // 3. Subdivide each square linearly
+        for cube in cubes.into_values() {
+            self.subdivide_cube(cube);
+        }
+
+        let mut smoothed = IdxVec::with_capacity(self.mesh.vertices.len());
+
+        for vertex in self.mesh.vertices.values() {
+            smoothed.push(Vec4::zero().with_boundary(vertex.boundary));
+        }
+
+        // TODO(@doctorn) refactor
+        for cube in self.mesh.elements.values() {
+            // Construct smoothing matrix based on boundaries and valence
+            let bounds = [
+                self.mesh.vertices[cube[0]].boundary,
+                self.mesh.vertices[cube[1]].boundary,
+                self.mesh.vertices[cube[2]].boundary,
+                self.mesh.vertices[cube[3]].boundary,
+                self.mesh.vertices[cube[4]].boundary,
+                self.mesh.vertices[cube[5]].boundary,
+                self.mesh.vertices[cube[6]].boundary,
+                self.mesh.vertices[cube[7]].boundary,
+            ];
+
+            let matrix = Self::create_cube_matrix(bounds);
+            // Apply the matrix
+            for (i, row) in matrix.iter().enumerate() {
+                let v = &mut *smoothed[cube[i]];
+                for (j, weight) in row.iter().enumerate() {
+                    let w = *self.mesh.vertices[cube[j]];
+                    *v += *weight * w;
+                }
+            }
+        }
+
+        for (vertex, data) in smoothed {
+            let valence = self.valence[&vertex];
+            self.mesh.vertices[vertex].vertex = *data / (valence as f32);
+        }
+    }
+
+    // TODO(@doctorn) refactor
+    /// Generates a weight matrix for each volume element based on boundary information.
+    ///
+    /// Also does basic mesh validation - panics if the boundaries are inconsistent.
+    fn create_cube_matrix(bounds: [Boundary; 8]) -> [[f32; 8]; 8] {
+        let mut matrix: [[f32; 8]; 8] = [[0.0; 8]; 8];
+        // Vertex point
+        matrix[0] = match bounds[0] as isize {
+            0 => [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], // identity row
+            1 => {
+                match (bounds[1] as isize, bounds[2] as isize, bounds[4] as isize) {
+                    (1, _, _) => [0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                    (_, 1, _) => [0.5, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0],
+                    (_, _, 1) => [0.5, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0],
+                    _ => panic!("Inconsistent mesh!"), /* if it turns out such mesh is consistent, replace with the identity row */
+                }
+            }
+            2 => {
+                match (bounds[3] as isize, bounds[5] as isize, bounds[6] as isize) {
+                    (2, _, _) => [0.25, 0.25, 0.25, 0.25, 0.0, 0.0, 0.0, 0.0],
+                    (_, 2, _) => [0.25, 0.25, 0.0, 0.0, 0.25, 0.25, 0.0, 0.0],
+                    (_, _, 2) => [0.25, 0.0, 0.25, 0.0, 0.25, 0.0, 0.25, 0.0],
+                    _ => panic!("Inconsistent mesh!"), /* if it turns out such mesh is consistent, replace with the identity row */
+                }
+            }
+            3 => [0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125],
+            _ => panic!("Inconsistent mesh!"),
+        };
+        // Edge points
+        matrix[1] = match bounds[1] as isize {
+            1 => [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], // identity row
+            2 => {
+                match (bounds[3] as isize, bounds[5] as isize) {
+                    (2, _) => [0.0, 0.5, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0],
+                    (_, 2) => [0.0, 0.5, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0],
+                    _ => panic!("Inconsistent mesh!"), /* if it turns out such mesh is consistent, replace with the identity row */
+                }
+            }
+            3 => [0.0, 0.25, 0.0, 0.25, 0.0, 0.25, 0.0, 0.25],
+            _ => panic!("Inconsistent mesh!"),
+        };
+        matrix[2] = match bounds[2] as isize {
+            1 => [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], // identity row
+            2 => {
+                match (bounds[3] as isize, bounds[6] as isize) {
+                    (2, _) => [0.0, 0.0, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0],
+                    (_, 2) => [0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.5, 0.0],
+                    _ => panic!("Inconsistent mesh!"), /* if it turns out such mesh is consistent, replace with the identity row */
+                }
+            }
+            3 => [0.0, 0.0, 0.25, 0.25, 0.0, 0.0, 0.25, 0.25],
+            _ => panic!("Inconsistent mesh!"),
+        };
+        matrix[4] = match bounds[4] as isize {
+            1 => [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0], // identity row
+            2 => {
+                match (bounds[5] as isize, bounds[6] as isize) {
+                    (2, _) => [0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.0, 0.0],
+                    (_, 2) => [0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.0],
+                    _ => panic!("Inconsistent mesh!"), /* if it turns out such mesh is consistent, replace with the identity row */
+                }
+            }
+            3 => [0.0, 0.0, 0.0, 0.0, 0.25, 0.25, 0.25, 0.25],
+            _ => panic!("Inconsistent mesh!"),
+        };
+        // Face points
+        matrix[3] = match bounds[3] as isize {
+            2 => [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+            3 => [0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.5],
+            _ => panic!("Inconsistent mesh!"),
+        };
+        matrix[5] = match bounds[5] as isize {
+            2 => [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            3 => [0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5],
+            _ => panic!("Inconsistent mesh!"),
+        };
+        matrix[6] = match bounds[6] as isize {
+            2 => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+            3 => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5],
+            _ => panic!("Inconsistent mesh!"),
+        };
+        // Centroid
+        matrix[7] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0];
+        matrix
+    }
+}
+
 pub fn subdivide_3(mut mesh: SquareMesh, depth: u8) -> SquareMesh {
     let mut subdivider = SquareSubdivider::new(&mut mesh);
 
@@ -212,270 +525,12 @@ pub fn subdivide_3(mut mesh: SquareMesh, depth: u8) -> SquareMesh {
     mesh
 }
 
-// TODO(@doctorn) refactor
-/*
-impl CubeMesh {
-    fn create_new(&mut self, verts: &[VertexId]) -> VertexId {
-        let vertices: Vec<&Vertex> = verts
-            .iter()
-            .map(|v_id| self.vertices.get(*v_id).unwrap())
-            .collect();
-        let first_bound = vertices[0].boundary;
-        let mut bound = vertices.iter().fold(first_bound, |a, v| max(a, v.boundary));
-        bound = max(
-            bound,
-            match verts.len() {
-                2 => 1,
-                4 => 2,
-                _ => panic!(),
-            },
-        );
+pub fn subdivide_4(mut mesh: CubeMesh, depth: u8) -> CubeMesh {
+    let mut subdivider = CubeSubdivider::new(&mut mesh);
 
-        let mut new_vert = Vertex::new(0.0, 0.0, 0.0, 0.0, bound);
-        let scale = 1.0
-            / match vertices.len() {
-                2 => 2.0,
-                4 => 4.0,
-                _ => panic!("Unexpected number of vertices"),
-            };
-        for v in vertices {
-            new_vert.add_scaled(v, scale);
-        }
-        let v_id = self.vertices.push(new_vert);
-        self.division_memory.insert(verts.to_owned(), v_id);
-        v_id
+    for _ in 0..depth {
+        subdivider.subdivide_once();
     }
 
-    /// Returns a VertexId that coresponds to the average of the suplied vertices.
-    pub fn linearly_divide(&mut self, mut verts: Vec<VertexId>) -> VertexId {
-        verts.sort();
-        let mut c = verts.clone();
-        c.dedup();
-        match (verts.len(), c.len()) {
-            (2 | 4, 1) => c[0],
-            (2, 2) | (4, 4 | 3) => self
-                .division_memory
-                .get(&verts)
-                .copied()
-                .unwrap_or_else(|| self.create_new(&verts)),
-            (4, 2) => self.linearly_divide(c),
-            _ => panic!(),
-        }
-    }
+    mesh
 }
-*/
-
-/*
-// Defines all 12 edges of a cube based on vertex indices.
-const CUBE_EDGE_ORDER: [[usize; 2]; 12] = [
-    [0, 1],
-    [0, 2],
-    [0, 4],
-    [1, 3],
-    [1, 5],
-    [2, 3],
-    [2, 6],
-    [3, 7],
-    [4, 5],
-    [4, 6],
-    [5, 7],
-    [6, 7],
-];
-
-// Defines all 6 faces of a cube based on vertex indices.
-const CUBE_FACE_ORDER: [[usize; 4]; 6] = [
-    [0, 1, 2, 3],
-    [0, 1, 4, 5],
-    [0, 2, 4, 6],
-    [1, 3, 5, 7],
-    [2, 3, 6, 7],
-    [4, 5, 6, 7],
-];
-
-/// Defines how new cubes should be from linearly divided points.
-/// See Picture 2.
-/// Important property that is preserved - first point is a vertex point, edge and face points are also in precise positions.
-const CUBE_ASSEMBLY_ORDER: [[usize; 8]; 8] = [
-    [0, 8, 9, 20, 10, 21, 22, 26],
-    [1, 11, 8, 20, 12, 23, 21, 26],
-    [2, 9, 13, 20, 14, 22, 24, 26],
-    [3, 13, 11, 20, 15, 24, 23, 26],
-    [4, 16, 17, 25, 10, 21, 22, 26],
-    [5, 18, 16, 25, 12, 23, 21, 26],
-    [6, 17, 19, 25, 14, 22, 24, 26],
-    [7, 19, 18, 25, 15, 24, 23, 26],
-];
-
-/// Generates a weight matrix for each volume element based on boundary information.
-/// Also does basic mesh validation - panics if the boundaries are inconsistent.
-fn create_cube_matrix(bounds: [u8; 8]) -> [[f64; 8]; 8] {
-    let mut matrix: [[f64; 8]; 8] = [[0.0; 8]; 8];
-    // Vertex point
-    matrix[0] = match bounds[0] {
-        0 => [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], // identity row
-        1 => {
-            match (bounds[1], bounds[2], bounds[4]) {
-                (1, _, _) => [0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                (_, 1, _) => [0.5, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0],
-                (_, _, 1) => [0.5, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0],
-                _ => panic!("Inconsistent mesh!"), // if it turns out such mesh is consistent, replace with the identity row
-            }
-        }
-        2 => {
-            match (bounds[3], bounds[5], bounds[6]) {
-                (2, _, _) => [0.25, 0.25, 0.25, 0.25, 0.0, 0.0, 0.0, 0.0],
-                (_, 2, _) => [0.25, 0.25, 0.0, 0.0, 0.25, 0.25, 0.0, 0.0],
-                (_, _, 2) => [0.25, 0.0, 0.25, 0.0, 0.25, 0.0, 0.25, 0.0],
-                _ => panic!("Inconsistent mesh!"), // if it turns out such mesh is consistent, replace with the identity row
-            }
-        }
-        3 => [0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125],
-        _ => panic!("Inconsistent mesh!"),
-    };
-    // Edge points
-    matrix[1] = match bounds[1] {
-        1 => [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], // identity row
-        2 => {
-            match (bounds[3], bounds[5]) {
-                (2, _) => [0.0, 0.5, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0],
-                (_, 2) => [0.0, 0.5, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0],
-                _ => panic!("Inconsistent mesh!"), // if it turns out such mesh is consistent, replace with the identity row
-            }
-        }
-        3 => [0.0, 0.25, 0.0, 0.25, 0.0, 0.25, 0.0, 0.25],
-        _ => panic!("Inconsistent mesh!"),
-    };
-    matrix[2] = match bounds[2] {
-        1 => [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], // identity row
-        2 => {
-            match (bounds[3], bounds[6]) {
-                (2, _) => [0.0, 0.0, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0],
-                (_, 2) => [0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.5, 0.0],
-                _ => panic!("Inconsistent mesh!"), // if it turns out such mesh is consistent, replace with the identity row
-            }
-        }
-        3 => [0.0, 0.0, 0.25, 0.25, 0.0, 0.0, 0.25, 0.25],
-        _ => panic!("Inconsistent mesh!"),
-    };
-    matrix[4] = match bounds[4] {
-        1 => [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0], // identity row
-        2 => {
-            match (bounds[5], bounds[6]) {
-                (2, _) => [0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.0, 0.0],
-                (_, 2) => [0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.0],
-                _ => panic!("Inconsistent mesh!"), // if it turns out such mesh is consistent, replace with the identity row
-            }
-        }
-        3 => [0.0, 0.0, 0.0, 0.0, 0.25, 0.25, 0.25, 0.25],
-        _ => panic!("Inconsistent mesh!"),
-    };
-    // Face points
-    matrix[3] = match bounds[3] {
-        2 => [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
-        3 => [0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.5],
-        _ => panic!("Inconsistent mesh!"),
-    };
-    matrix[5] = match bounds[5] {
-        2 => [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
-        3 => [0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5],
-        _ => panic!("Inconsistent mesh!"),
-    };
-    matrix[6] = match bounds[6] {
-        2 => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
-        3 => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5],
-        _ => panic!("Inconsistent mesh!"),
-    };
-    // Centroid
-    matrix[7] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0];
-    matrix
-}
-
-/// Subdivides cube mesh one time based on the primal scheme.
-/// Assumption: the mesh is filtered so only the relevant elements are there and all elments have some volume.
-pub fn subdivide4(control_mesh: &CubeMesh) -> CubeMesh {
-    let mut new_mesh = CubeMesh::new();
-
-    // Copy vertices as primal subdivision preserves them.
-    let mut vert_map = HashMap::new();
-    for v in control_mesh.vertices.iter() {
-        vert_map.insert(v.0, new_mesh.mk_vertex(v.1.clone()));
-    }
-
-    let mut vert_valence = HashMap::new();
-    // Linearly divide each cube
-    for e in control_mesh.cubes.iter() {
-        // Generate new points
-        let mut points = [e.1[0]; 27]; //0-7 vertex, 8-19 edge, 20-25 face, 26 centre
-        for (i, p) in points.iter_mut().enumerate().take(8) {
-            *p = vert_map[&e.1[i]];
-        }
-        for (i, e) in CUBE_EDGE_ORDER.iter().enumerate() {
-            let mut edge = Vec::new();
-            for id in e {
-                edge.push(points[*id]);
-            }
-            points[i + 8] = new_mesh.linearly_divide(edge);
-        }
-        for (i, f) in CUBE_FACE_ORDER.iter().enumerate() {
-            let mut face = Vec::new();
-            for id in f {
-                face.push(points[*id]);
-            }
-            points[i + 20] = new_mesh.linearly_divide(face);
-        }
-        points[26] = new_mesh.linearly_divide(vec![points[20], points[25]]);
-
-        // Assemble subcubes
-        for order in &CUBE_ASSEMBLY_ORDER {
-            let mut cube = [points[0]; 8];
-            for (i, j) in order.iter().enumerate() {
-                cube[i] = points[*j];
-            }
-            new_mesh.mk_cube(cube);
-            for v_id in &cube {
-                match vert_valence.get_mut(v_id) {
-                    Some(v) => {
-                        *v += 1;
-                    }
-                    None => {
-                        vert_valence.insert(*v_id, 1);
-                    }
-                }
-            }
-        }
-    }
-    // Smoothing pass
-    let mut smooth_vertices = HashMap::new();
-    for v in new_mesh.vertices.iter() {
-        smooth_vertices.insert(v.0, Vertex::new(0.0, 0.0, 0.0, 0.0, v.1.boundary));
-    }
-    for s in new_mesh.cubes.iter() {
-        // Construct smoothing matrix based on boundaries and valence
-        let mut bounds = [0; 8];
-        for (i, b) in bounds.iter_mut().enumerate() {
-            *b = new_mesh.vertices[s.1[i]].boundary;
-        }
-        let matrix = create_cube_matrix(bounds);
-        // Apply the matrix
-        for (i, row) in matrix.iter().enumerate() {
-            let v = smooth_vertices.get_mut(&s.1[i]).unwrap();
-            for (j, weight) in row.iter().enumerate() {
-                let w = new_mesh.vertices[s.1[j]].clone();
-                v.add_scaled(&w, *weight);
-            }
-        }
-    }
-    // Copy the final vertex positions and divide by valence
-    for (v_id, v) in &smooth_vertices {
-        let valence = vert_valence[v_id];
-        let vtx = new_mesh.vertices.get_mut(*v_id).unwrap();
-        vtx.copy_from(v);
-        vtx.scale(1.0 / f64::from(valence));
-    }
-    debug_assert!(check_bounds_preserved(
-        &control_mesh.vertices,
-        &new_mesh.vertices
-    ));
-    new_mesh
-}
-*/
