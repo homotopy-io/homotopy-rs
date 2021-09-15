@@ -9,6 +9,7 @@ use homotopy_common::{
     declare_idx,
     idx::{Idx, IdxVec},
 };
+use homotopy_core::DiagramN;
 use ultraviolet::{Vec3, Vec4};
 
 use crate::gl;
@@ -205,6 +206,11 @@ impl Mesh {
 
     pub fn order_of(&self, element: Element) -> Dimension {
         self.elements[element].order()
+    }
+
+    #[allow(dead_code)]
+    pub fn build(_diagram: &DiagramN) -> Self {
+        Self::new()
     }
 }
 
