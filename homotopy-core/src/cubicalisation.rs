@@ -81,11 +81,14 @@ impl CubicalGraph {
 
             // Interior slices
             for (i, slice) in diagram.slices().enumerate() {
-                let height = Height::from_int(i);
-                let slice_key = make_key(height, &node.key);
+                let slice_key = make_key(Height::from_int(i), &node.key);
+                let slice_heights = slice.heights();
+                let slice_original_key = make_key(node.heights[i], &node.key);
                 nodes_exploded.push(Node {
                     key: slice_key,
                     diagram: slice,
+                    heights: slice_heights,
+                    original_key: slice_original_key,
                     incoming_edges: vec![],
                     outgoing_edges: vec![],
                 });
@@ -355,10 +358,13 @@ impl SingularExpansion {
         for (i, node) in self.graph.nodes.iter() {
             let diagram: &DiagramN = (&node.diagram).try_into()?;
             let expanded_diagram = diagram.singular_expansion(&self.weights[i]);
+            let expanded_heights = singular_expansion(&node.heights, &self.weights[i]);
 
             expanded_nodes.push(Node {
                 key: node.key.clone(),
                 diagram: expanded_diagram.into(),
+                heights: expanded_heights,
+                original_key: node.original_key.clone(),
                 incoming_edges: node.incoming_edges.clone(),
                 outgoing_edges: node.outgoing_edges.clone(),
             });
@@ -518,6 +524,22 @@ impl CubicalRewriteN {
     }
 }
 
+fn singular_expansion(heights: &[Height], weights: &[usize]) -> Vec<Height> {
+    assert_eq!(heights.len(), weights.len() * 2 + 1);
+
+    heights
+        .iter()
+        .enumerate()
+        .flat_map(|(i, height)| {
+            let n = match Height::from_int(i) {
+                Height::Regular(_) => 1,
+                Height::Singular(j) => weights[j] * 2 - 1,
+            };
+            std::iter::repeat(*height).take(n)
+        })
+        .collect()
+}
+
 // Regular expansion
 
 struct RegularExpansion {
@@ -664,10 +686,13 @@ impl RegularExpansion {
         for (i, node) in self.graph.nodes.iter() {
             let diagram: &DiagramN = (&node.diagram).try_into()?;
             let expanded_diagram = diagram.regular_expansion(&self.weights[i]);
+            let expanded_heights = regular_expansion(&node.heights, &self.weights[i]);
 
             expanded_nodes.push(Node {
                 key: node.key.clone(),
                 diagram: expanded_diagram.into(),
+                heights: expanded_heights,
+                original_key: node.original_key.clone(),
                 incoming_edges: node.incoming_edges.clone(),
                 outgoing_edges: node.outgoing_edges.clone(),
             });
@@ -828,6 +853,22 @@ impl CubicalRewriteN {
     }
 }
 
+fn regular_expansion(heights: &[Height], weights: &[usize]) -> Vec<Height> {
+    assert_eq!(heights.len(), weights.len() * 2 - 1);
+
+    heights
+        .iter()
+        .enumerate()
+        .flat_map(|(i, height)| {
+            let n = match Height::from_int(i) {
+                Height::Regular(j) => weights[j] * 2 - 1,
+                Height::Singular(_) => 1,
+            };
+            std::iter::repeat(*height).take(n)
+        })
+        .collect()
+}
+
 // Injectification
 
 fn injectify(
@@ -903,6 +944,15 @@ impl Cospan {
                 });
                 cospans
             }
+        }
+    }
+}
+
+impl Diagram {
+    fn heights(&self) -> Vec<Height> {
+        match self {
+            Self::Diagram0(_) => vec![],
+            Self::DiagramN(d) => (0..d.size() * 2 + 1).map(Height::from_int).collect(),
         }
     }
 }
@@ -1008,6 +1058,8 @@ unsafe impl IndexType for EdgeId {
 pub struct Node {
     key: Key,
     diagram: Diagram,
+    heights: Vec<Height>,
+    original_key: Key,
     incoming_edges: Vec<EdgeId>,
     outgoing_edges: Vec<EdgeId>,
 }
@@ -1035,9 +1087,12 @@ struct Square {
 
 impl CubicalGraph {
     pub fn new(diagram: Diagram) -> Self {
+        let heights = (&diagram).heights();
         let node = Node {
             key: vec![],
             diagram,
+            heights,
+            original_key: vec![],
             incoming_edges: vec![],
             outgoing_edges: vec![],
         };
