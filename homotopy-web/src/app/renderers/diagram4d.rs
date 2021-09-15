@@ -1,7 +1,7 @@
 use std::f32;
 
 use homotopy_graphics::{
-    clay::geom::CubeMesh,
+    clay::subdivision::subdivide_4,
     draw,
     gl::{array::VertexArray, frame::Frame, shader::Program, GlCtx, Result},
     program, vertex_array,
@@ -113,7 +113,7 @@ impl Renderer for Diagram4D {
 
 impl Diagram4D {
     fn init_meshes(&mut self, ctx: &mut GlCtx) -> Result<()> {
-        let mesh: CubeMesh = homotopy_graphics::clay::examples::example_4().into();
+        let mesh = subdivide_4(homotopy_graphics::clay::examples::example_4().into(), 3);
         let buffers = mesh.buffer(ctx)?;
 
         self.solid_mesh = Some(vertex_array!(

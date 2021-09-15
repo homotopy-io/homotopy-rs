@@ -119,29 +119,43 @@ pub fn example_4() -> Mesh {
         [1, 0, 1, 0],
         [1, 1, 0, 0],
     ];
-    const V_BOUNDS: [u8; 13] = [3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2];
+    const V_BOUNDS: [Boundary; 13] = [
+        Boundary::Three,
+        Boundary::Three,
+        Boundary::Three,
+        Boundary::Three,
+        Boundary::Three,
+        Boundary::Three,
+        Boundary::Three,
+        Boundary::Two,
+        Boundary::Two,
+        Boundary::Two,
+        Boundary::Two,
+        Boundary::Two,
+        Boundary::Two,
+    ];
     const CUBES: [[usize; 8]; 16] = [
-        [0, 1, 2, 2, 3, 3, 3, 3],
+        [3, 3, 3, 3, 0, 1, 2, 2],
         [4, 1, 2, 2, 3, 3, 3, 3],
         [0, 5, 2, 2, 3, 3, 3, 3],
-        [4, 5, 2, 2, 3, 3, 3, 3],
+        [3, 3, 3, 3, 4, 5, 2, 2],
         [0, 1, 6, 6, 3, 3, 3, 3],
-        [4, 1, 6, 6, 3, 3, 3, 3],
-        [0, 5, 6, 6, 3, 3, 3, 3],
+        [3, 3, 3, 3, 4, 1, 6, 6],
+        [3, 3, 3, 3, 0, 5, 6, 6],
         [4, 5, 6, 6, 3, 3, 3, 3],
         [0, 7, 1, 8, 2, 9, 2, 9],
-        [4, 10, 1, 8, 2, 9, 2, 9],
-        [0, 7, 5, 11, 2, 9, 2, 9],
+        [2, 9, 2, 9, 4, 10, 1, 8],
+        [2, 9, 2, 9, 0, 7, 5, 11],
         [4, 10, 5, 11, 2, 9, 2, 9],
-        [0, 7, 1, 8, 6, 12, 6, 12],
+        [6, 12, 6, 12, 0, 7, 1, 8],
         [4, 10, 1, 8, 6, 12, 6, 12],
         [0, 7, 5, 11, 6, 12, 6, 12],
-        [4, 10, 5, 11, 6, 12, 6, 12],
+        [6, 12, 6, 12, 4, 10, 5, 11],
     ];
 
     let mut mesh = Mesh::new();
 
-    for (_, coord) in V_BOUNDS.iter().zip(V_COORDS.iter()) {
+    for (bound, coord) in V_BOUNDS.iter().zip(V_COORDS.iter()) {
         mesh.mk_vertex(
             Vec4::new(
                 coord[0] as f32,
@@ -149,7 +163,7 @@ pub fn example_4() -> Mesh {
                 coord[2] as f32,
                 coord[3] as f32,
             )
-            .with_boundary(Boundary::Three),
+            .with_boundary(*bound),
         );
     }
 
