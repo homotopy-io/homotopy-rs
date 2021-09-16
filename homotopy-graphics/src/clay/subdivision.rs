@@ -44,8 +44,14 @@ impl<'a> SquareSubdivider<'a> {
             let v_2 = &self.mesh.vertices[v_2];
             let v = 0.5 * (**v_1 + **v_2);
             let boundary = cmp::max(Boundary::One, cmp::max(v_1.boundary, v_2.boundary));
+            let generator = if v_1.generator.dimension < v_2.generator.dimension {
+                v_1.generator
+            } else {
+                v_2.generator
+            };
 
-            self.mesh.mk_vertex(v.with_boundary(boundary))
+            self.mesh
+                .mk_vertex(v.with_boundary_and_generator(boundary, generator))
         };
         // Cache result
         self.division_memory.insert((v_1, v_2), v);
@@ -123,7 +129,8 @@ impl<'a> SquareSubdivider<'a> {
 
         // a) Populate with zero vertices
         for vertex in self.mesh.vertices.values() {
-            smoothed.push(Vec4::zero().with_boundary(vertex.boundary));
+            smoothed
+                .push(Vec4::zero().with_boundary_and_generator(vertex.boundary, vertex.generator));
         }
 
         // b) For each square
@@ -265,8 +272,14 @@ impl<'a> CubeSubdivider<'a> {
             let v_2 = &self.mesh.vertices[v_2];
             let v = 0.5 * (**v_1 + **v_2);
             let boundary = cmp::max(Boundary::One, cmp::max(v_1.boundary, v_2.boundary));
+            let generator = if v_1.generator.dimension < v_2.generator.dimension {
+                v_1.generator
+            } else {
+                v_2.generator
+            };
 
-            self.mesh.mk_vertex(v.with_boundary(boundary))
+            self.mesh
+                .mk_vertex(v.with_boundary_and_generator(boundary, generator))
         };
         // Cache result
         self.edge_division_memory.insert((v_1, v_2), v);
@@ -303,8 +316,14 @@ impl<'a> CubeSubdivider<'a> {
                     cmp::max(v_3.boundary, v_4.boundary),
                 ),
             );
+            let generator = {
+                let mut vertices = [v_1, v_2, v_3, v_4];
+                vertices.sort_by_key(|v| v.generator.dimension);
+                vertices[0].generator
+            };
 
-            self.mesh.mk_vertex(v.with_boundary(boundary))
+            self.mesh
+                .mk_vertex(v.with_boundary_and_generator(boundary, generator))
         };
         // Cache result
         self.face_division_memory.insert(square, v);
@@ -394,7 +413,8 @@ impl<'a> CubeSubdivider<'a> {
         let mut smoothed = IdxVec::with_capacity(self.mesh.vertices.len());
 
         for vertex in self.mesh.vertices.values() {
-            smoothed.push(Vec4::zero().with_boundary(vertex.boundary));
+            smoothed
+                .push(Vec4::zero().with_boundary_and_generator(vertex.boundary, vertex.generator));
         }
 
         // TODO(@doctorn) refactor

@@ -1,6 +1,7 @@
 // TODO(@doctorn) remove
 
 use homotopy_common::idx::Idx;
+use homotopy_core::Generator;
 use ultraviolet::Vec4;
 
 use super::geom::{Boundary, Mesh, Vertex, VertexExt};
@@ -36,7 +37,7 @@ pub fn example_3() -> Mesh {
                 coord[2] as f32,
                 coord[3] as f32,
             )
-            .with_boundary(*bound),
+            .with_boundary_and_generator(*bound, Generator::new(0, 0)),
         );
     }
 
@@ -88,7 +89,10 @@ pub fn snake_3() -> Mesh {
     let mut mesh = Mesh::new();
 
     for (bound, coord) in V_BOUNDS.iter().zip(V_COORDS.iter()) {
-        mesh.mk_vertex(Vec4::new(coord[0], coord[1], coord[2], coord[3]).with_boundary(*bound));
+        mesh.mk_vertex(
+            Vec4::new(coord[0], coord[1], coord[2], coord[3])
+                .with_boundary_and_generator(*bound, Generator::new(0, 0)),
+        );
     }
 
     for square in &SQUARES {
@@ -163,7 +167,7 @@ pub fn example_4() -> Mesh {
                 coord[2] as f32,
                 coord[3] as f32,
             )
-            .with_boundary(*bound),
+            .with_boundary_and_generator(*bound, Generator::new(0, 0)),
         );
     }
 

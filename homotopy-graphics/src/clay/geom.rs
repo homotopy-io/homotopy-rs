@@ -10,7 +10,7 @@ use homotopy_common::{
     declare_idx,
     idx::{Idx, IdxVec},
 };
-use homotopy_core::DiagramN;
+use homotopy_core::{DiagramN, Generator};
 use ultraviolet::{Vec3, Vec4};
 
 use crate::gl;
@@ -41,7 +41,7 @@ pub enum Boundary {
 pub struct VertexData {
     pub vertex: Vec4,
     pub boundary: Boundary,
-    // generator: Generator
+    pub generator: Generator,
 }
 
 pub trait MeshData {
@@ -566,14 +566,15 @@ where
 }
 
 pub trait VertexExt {
-    fn with_boundary(self, boundary: Boundary) -> VertexData;
+    fn with_boundary_and_generator(self, boundary: Boundary, generator: Generator) -> VertexData;
 }
 
 impl VertexExt for Vec4 {
-    fn with_boundary(self, boundary: Boundary) -> VertexData {
+    fn with_boundary_and_generator(self, boundary: Boundary, generator: Generator) -> VertexData {
         VertexData {
             vertex: self,
             boundary,
+            generator,
         }
     }
 }
