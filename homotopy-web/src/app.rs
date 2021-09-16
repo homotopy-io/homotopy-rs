@@ -16,9 +16,9 @@ use crate::{
 };
 
 mod attach;
-mod diagram2d;
+mod diagram_gl;
+mod diagram_svg;
 mod project;
-mod renderers;
 mod settings;
 mod sidebar;
 mod signature;
