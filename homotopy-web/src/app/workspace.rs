@@ -12,10 +12,10 @@ use yew::prelude::*;
 
 use crate::{
     app::{
-        diagram2d::{Diagram0D, Diagram1D, Diagram2D, Highlight2D, HighlightKind},
-        renderers::{Diagram3D, Diagram4D},
+        diagram_gl::GlDiagram,
+        diagram_svg::{Diagram0D, Diagram1D, Diagram2D, Highlight2D, HighlightKind},
     },
-    components::{gl::GlViewport, panzoom::PanZoomComponent},
+    components::panzoom::PanZoomComponent,
     model::proof::{homotopy::Homotopy, Action, Signature, Workspace},
 };
 
@@ -133,8 +133,12 @@ impl WorkspaceView {
                 }
             }
             Diagram::DiagramN(diagram) => match self.props.workspace.view.dimension() {
-                3 => html!(<GlViewport::<Diagram3D> diagram={diagram} />),
-                4 => html!(<GlViewport::<Diagram4D> diagram={diagram} />),
+                3 | 4 => html! {
+                    <GlDiagram
+                        diagram={diagram}
+                        view={self.props.workspace.view}
+                    />
+                },
                 _ => {
                     let highlight =
                         highlight_attachment(&self.props.workspace, &self.props.signature)
