@@ -25,7 +25,8 @@ struct CubeSubdivider<'a> {
 impl<'a> SquareSubdivider<'a> {
     /// Defines how new squares should be from linearly divided points.
     ///
-    /// Important property that is preserved - first point is a vertex point, and similar for edge points.
+    /// Important property that is preserved - first point is a vertex point, and similar
+    /// for edge points.
     const SQUARE_ASSEMBLY_ORDER: [[usize; 4]; 4] =
         [[0, 4, 5, 8], [1, 6, 4, 8], [2, 5, 7, 8], [3, 7, 6, 8]];
 
@@ -171,27 +172,29 @@ impl<'a> SquareSubdivider<'a> {
     }
 
     /// Generates a weight matrix for each surface element based on boundary information.
+    ///
     /// Also does basic mesh validation - panics if the boundaries are inconsistent.
     fn weight_matrix(bounds: [Boundary; 4]) -> Mat4 {
+        use Boundary::{One, Two, Zero};
         // Vertex point
         let row_0 = match bounds[0] {
-            Boundary::Zero => Vec4::unit_x(),
-            Boundary::One => match (bounds[1], bounds[2]) {
-                (Boundary::One, _) => Vec4::new(0.5, 0.5, 0.0, 0.0),
-                (_, Boundary::One) => Vec4::new(0.5, 0.0, 0.5, 0.0),
+            Zero => Vec4::unit_x(),
+            One => match (bounds[1], bounds[2]) {
+                (One, _) => Vec4::new(0.5, 0.5, 0.0, 0.0),
+                (_, One) => Vec4::new(0.5, 0.0, 0.5, 0.0),
                 // if it turns out such mesh is consistent, replace with the identity row
                 _ => panic!("Inconsistent mesh!"),
             },
             _ => Vec4::broadcast(0.25),
         };
         let row_1 = match bounds[1] {
-            Boundary::One => Vec4::unit_y(),
-            Boundary::Two => Vec4::new(0.0, 0.5, 0.0, 0.5),
+            One => Vec4::unit_y(),
+            Two => Vec4::new(0.0, 0.5, 0.0, 0.5),
             _ => panic!("Inconsistent mesh!"),
         };
         let row_2 = match bounds[2] {
-            Boundary::One => Vec4::unit_z(),
-            Boundary::Two => Vec4::new(0.0, 0.0, 0.5, 0.5),
+            One => Vec4::unit_z(),
+            Two => Vec4::new(0.0, 0.0, 0.5, 0.5),
             _ => panic!("Inconsistent mesh!"),
         };
         let row_3 = Vec4::unit_w();
@@ -399,6 +402,10 @@ impl<'a> CubeSubdivider<'a> {
     /// This assumes that the mesh is filtered so that only the relevant elements
     /// are present and all elements have some volume.
     fn subdivide_once(&mut self) {
+        // (0. In debug, clone a copy of the original diagram for sanity checking)
+        #[cfg(debug_assertions)]
+        let unmodified = self.mesh.clone();
+
         // 1. Reset valence
         self.valence.clear();
         // 2. Remove all cubes from mesh
@@ -410,16 +417,18 @@ impl<'a> CubeSubdivider<'a> {
             self.subdivide_cube(cube);
         }
 
+        // 4. Smooth
         let mut smoothed = IdxVec::with_capacity(self.mesh.vertices.len());
 
+        // a) Populate with zero vertices
         for vertex in self.mesh.vertices.values() {
             smoothed
                 .push(Vec4::zero().with_boundary_and_generator(vertex.boundary, vertex.generator));
         }
 
-        // TODO(@doctorn) refactor
+        // b) For each cube
         for cube in self.mesh.elements.values() {
-            // Construct smoothing matrix based on boundaries and valence
+            // gather the boundaries of its constituent vertices
             let bounds = [
                 self.mesh.vertices[cube[0]].boundary,
                 self.mesh.vertices[cube[1]].boundary,
@@ -430,15 +439,28 @@ impl<'a> CubeSubdivider<'a> {
                 self.mesh.vertices[cube[6]].boundary,
                 self.mesh.vertices[cube[7]].boundary,
             ];
-
-            let matrix = Self::create_cube_matrix(bounds);
-            // Apply the matrix
-            for (i, row) in matrix.iter().enumerate() {
-                let v = &mut *smoothed[cube[i]];
-                for (j, weight) in row.iter().enumerate() {
-                    let w = *self.mesh.vertices[cube[j]];
-                    *v += *weight * w;
-                }
+            // and calculate a corresponding weight matrix
+            let weights = Self::weight_matrix(bounds);
+            // Shape vertices as matrix
+            let upper = Mat4::new(
+                *self.mesh.vertices[cube[0]],
+                *self.mesh.vertices[cube[1]],
+                *self.mesh.vertices[cube[2]],
+                *self.mesh.vertices[cube[3]],
+            );
+            let lower = Mat4::new(
+                *self.mesh.vertices[cube[4]],
+                *self.mesh.vertices[cube[5]],
+                *self.mesh.vertices[cube[6]],
+                *self.mesh.vertices[cube[7]],
+            );
+            // Tranform
+            let upper_transformed = upper * weights[0] + lower * weights[2];
+            let lower_transformed = upper * weights[1] + lower * weights[3];
+            // Update positions
+            for i in 0..4 {
+                *smoothed[cube[i]] += upper_transformed[i];
+                *smoothed[cube[4 + i]] += lower_transformed[i];
             }
         }
 
@@ -446,92 +468,115 @@ impl<'a> CubeSubdivider<'a> {
             let valence = self.valence[&vertex];
             self.mesh.vertices[vertex].vertex = *data / (valence as f32);
         }
+
+        // (5. In debug, sanity check the subdivided mesh)
+        #[cfg(debug_assertions)]
+        debug_assert!(self.check_bounds_preserved(&unmodified));
     }
 
-    // TODO(@doctorn) refactor
-    /// Generates a weight matrix for each volume element based on boundary information.
+    /// Generates a weight matrix for each surface element based on boundary information.
     ///
     /// Also does basic mesh validation - panics if the boundaries are inconsistent.
-    fn create_cube_matrix(bounds: [Boundary; 8]) -> [[f32; 8]; 8] {
-        let mut matrix: [[f32; 8]; 8] = [[0.0; 8]; 8];
+    fn weight_matrix(bounds: [Boundary; 8]) -> [Mat4; 4] {
+        use Boundary::{One, Three, Two, Zero};
+
         // Vertex point
-        matrix[0] = match bounds[0] as isize {
-            0 => [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], // identity row
-            1 => {
-                match (bounds[1] as isize, bounds[2] as isize, bounds[4] as isize) {
-                    (1, _, _) => [0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                    (_, 1, _) => [0.5, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0],
-                    (_, _, 1) => [0.5, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0],
-                    _ => panic!("Inconsistent mesh!"), /* if it turns out such mesh is consistent, replace with the identity row */
-                }
-            }
-            2 => {
-                match (bounds[3] as isize, bounds[5] as isize, bounds[6] as isize) {
-                    (2, _, _) => [0.25, 0.25, 0.25, 0.25, 0.0, 0.0, 0.0, 0.0],
-                    (_, 2, _) => [0.25, 0.25, 0.0, 0.0, 0.25, 0.25, 0.0, 0.0],
-                    (_, _, 2) => [0.25, 0.0, 0.25, 0.0, 0.25, 0.0, 0.25, 0.0],
-                    _ => panic!("Inconsistent mesh!"), /* if it turns out such mesh is consistent, replace with the identity row */
-                }
-            }
-            3 => [0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125, 0.125],
-            _ => panic!("Inconsistent mesh!"),
+        let (row_00, row_01) = match bounds[0] {
+            Zero => (Vec4::unit_x(), Vec4::zero()),
+            One => match (bounds[1], bounds[2], bounds[4]) {
+                (One, _, _) => (Vec4::new(0.5, 0.5, 0.0, 0.), Vec4::zero()),
+                (_, One, _) => (Vec4::new(0.5, 0., 0.5, 0.), Vec4::zero()),
+                (_, _, One) => (Vec4::new(0.5, 0., 0., 0.), Vec4::new(0.5, 0., 0., 0.)),
+                // if it turns out such mesh is consistent, replace with the identity row
+                _ => panic!("Inconsistent mesh!"),
+            },
+            Two => match (bounds[3], bounds[5], bounds[6]) {
+                (Two, _, _) => (Vec4::broadcast(0.25), Vec4::zero()),
+                (_, Two, _) => (Vec4::new(0.25, 0.25, 0., 0.), Vec4::new(0.25, 0.25, 0., 0.)),
+                (_, _, Two) => (Vec4::new(0.25, 0., 0.25, 0.), Vec4::new(0.25, 0., 0.25, 0.)),
+                // if it turns out such mesh is consistent, replace with the identity row
+                _ => panic!("Inconsistent mesh!"),
+            },
+            Three => (Vec4::broadcast(0.125), Vec4::broadcast(0.125)),
         };
+
         // Edge points
-        matrix[1] = match bounds[1] as isize {
-            1 => [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], // identity row
-            2 => {
-                match (bounds[3] as isize, bounds[5] as isize) {
-                    (2, _) => [0.0, 0.5, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0],
-                    (_, 2) => [0.0, 0.5, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0],
-                    _ => panic!("Inconsistent mesh!"), /* if it turns out such mesh is consistent, replace with the identity row */
-                }
-            }
-            3 => [0.0, 0.25, 0.0, 0.25, 0.0, 0.25, 0.0, 0.25],
-            _ => panic!("Inconsistent mesh!"),
+        let (row_10, row_11) = match bounds[1] {
+            Zero => panic!("Inconsistent mesh!"),
+            One => (Vec4::unit_y(), Vec4::zero()),
+            Two => match (bounds[3], bounds[5]) {
+                (Two, _) => (Vec4::new(0.0, 0.5, 0.0, 0.5), Vec4::zero()),
+                (_, Two) => (Vec4::new(0., 0.5, 0., 0.), Vec4::new(0., 0.5, 0., 0.)),
+                // if it turns out such mesh is consistent, replace with the identity row
+                _ => panic!("Inconsistent mesh!"),
+            },
+            Three => (Vec4::new(0.25, 0., 0.25, 0.), Vec4::new(0., 0.25, 0., 0.25)),
         };
-        matrix[2] = match bounds[2] as isize {
-            1 => [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], // identity row
-            2 => {
-                match (bounds[3] as isize, bounds[6] as isize) {
-                    (2, _) => [0.0, 0.0, 0.5, 0.5, 0.0, 0.0, 0.0, 0.0],
-                    (_, 2) => [0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.5, 0.0],
-                    _ => panic!("Inconsistent mesh!"), /* if it turns out such mesh is consistent, replace with the identity row */
-                }
-            }
-            3 => [0.0, 0.0, 0.25, 0.25, 0.0, 0.0, 0.25, 0.25],
-            _ => panic!("Inconsistent mesh!"),
+        let (row_20, row_21) = match bounds[2] {
+            Zero => panic!("Inconsistent mesh!"),
+            One => (Vec4::unit_z(), Vec4::zero()),
+            Two => match (bounds[3], bounds[6]) {
+                (Two, _) => (Vec4::new(0., 0., 0.5, 0.5), Vec4::zero()),
+                (_, Two) => (Vec4::new(0., 0., 0.5, 0.), Vec4::new(0., 0., 0.5, 0.)),
+                // if it turns out such mesh is consistent, replace with the identity row
+                _ => panic!("Inconsistent mesh!"),
+            },
+            Three => (Vec4::new(0., 0., 0.25, 0.25), Vec4::new(0., 0., 0.25, 0.25)),
         };
-        matrix[4] = match bounds[4] as isize {
-            1 => [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0], // identity row
-            2 => {
-                match (bounds[5] as isize, bounds[6] as isize) {
-                    (2, _) => [0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.0, 0.0],
-                    (_, 2) => [0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.0],
-                    _ => panic!("Inconsistent mesh!"), /* if it turns out such mesh is consistent, replace with the identity row */
-                }
-            }
-            3 => [0.0, 0.0, 0.0, 0.0, 0.25, 0.25, 0.25, 0.25],
-            _ => panic!("Inconsistent mesh!"),
+        let (row_40, row_41) = match bounds[4] {
+            Zero => panic!("Inconsistent mesh!"),
+            One => (Vec4::zero(), Vec4::unit_x()),
+            Two => match (bounds[5], bounds[6]) {
+                (Two, _) => (Vec4::zero(), Vec4::new(0.5, 0.5, 0., 0.)),
+                (_, Two) => (Vec4::zero(), Vec4::new(0.5, 0., 0.5, 0.)),
+                // if it turns out such mesh is consistent, replace with the identity row
+                _ => panic!("Inconsistent mesh!"),
+            },
+            Three => (Vec4::zero(), Vec4::broadcast(0.25)),
         };
+
         // Face points
-        matrix[3] = match bounds[3] as isize {
-            2 => [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
-            3 => [0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.5],
+        let (row_30, row_31) = match bounds[3] {
+            Two => (Vec4::unit_w(), Vec4::zero()),
+            Three => (Vec4::new(0., 0., 0., 0.5), Vec4::new(0., 0., 0., 0.5)),
             _ => panic!("Inconsistent mesh!"),
         };
-        matrix[5] = match bounds[5] as isize {
-            2 => [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
-            3 => [0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5],
+        let (row_50, row_51) = match bounds[5] {
+            Two => (Vec4::zero(), Vec4::unit_y()),
+            Three => (Vec4::zero(), Vec4::new(0., 0.5, 0., 0.5)),
             _ => panic!("Inconsistent mesh!"),
         };
-        matrix[6] = match bounds[6] as isize {
-            2 => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
-            3 => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5],
+        let (row_60, row_61) = match bounds[6] {
+            Two => (Vec4::zero(), Vec4::unit_z()),
+            Three => (Vec4::zero(), Vec4::new(0., 0., 0.5, 0.5)),
             _ => panic!("Inconsistent mesh!"),
         };
+
         // Centroid
-        matrix[7] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0];
-        matrix
+        let (row_70, row_71) = (Vec4::zero(), Vec4::unit_w());
+
+        [
+            Mat4::new(row_00, row_10, row_20, row_30),
+            Mat4::new(row_40, row_50, row_60, row_70),
+            Mat4::new(row_01, row_11, row_21, row_31),
+            Mat4::new(row_41, row_51, row_61, row_71),
+        ]
+    }
+
+    #[cfg(debug_assertions)]
+    fn check_bounds_preserved(&self, unmodified: &CubeMesh) -> bool {
+        let (min, max) = unmodified.vertices.values().fold(
+            (
+                Vec4::broadcast(f32::INFINITY),
+                Vec4::broadcast(f32::NEG_INFINITY),
+            ),
+            |a, v| (a.0.min_by_component(**v), a.1.max_by_component(**v)),
+        );
+
+        self.mesh
+            .vertices
+            .values()
+            .all(|v| v.clamped(min, max) == **v)
     }
 }
 
