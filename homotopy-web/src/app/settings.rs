@@ -12,7 +12,7 @@ declare_settings! {
         debug_normals: bool = false,
         debug_axes: bool = false,
         mesh_hidden: bool = false,
-        subdivision_depth: u32 = 3,
+        subdivision_depth: u32 = 0,
     }
 }
 

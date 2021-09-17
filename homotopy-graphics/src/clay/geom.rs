@@ -15,7 +15,7 @@ use homotopy_core::{
     cubicalisation::{Bias, Coord, EdgeId, NodeId},
     Diagram, DiagramN, Generator,
 };
-use ultraviolet::{Vec3, Vec4};
+use ultraviolet::{Mat3, Vec3, Vec4};
 
 use crate::gl;
 
@@ -485,8 +485,8 @@ pub struct CubeMeshBuffers {
     pub vertex_start_buffer: gl::buffer::Buffer<Vec4>,
     pub vertex_end_buffer: gl::buffer::Buffer<Vec4>,
     pub wireframe_vertex_buffer: gl::buffer::Buffer<Vec3>,
-    pub normal_start_buffer: gl::buffer::Buffer<Vec3>,
-    pub normal_end_buffer: gl::buffer::Buffer<Vec3>,
+    pub normal_start_buffer: gl::buffer::Buffer<Vec4>,
+    pub normal_end_buffer: gl::buffer::Buffer<Vec4>,
 }
 
 declare_idx! { struct Segment = u16; }
@@ -500,8 +500,7 @@ pub struct CubeMeshBufferer<'a> {
 
     segment_starts: IdxVec<Segment, Vec4>,
     segment_ends: IdxVec<Segment, Vec4>,
-    normal_starts: IdxVec<Segment, Vec3>,
-    normal_ends: IdxVec<Segment, Vec3>,
+    normals: IdxVec<Vertex, Vec4>,
 
     wireframe_vertices: Vec<Vec3>,
 }
@@ -520,8 +519,7 @@ impl<'a> CubeMeshBufferer<'a> {
 
             segment_starts: IdxVec::with_capacity(segments),
             segment_ends: IdxVec::with_capacity(segments),
-            normal_starts: IdxVec::with_capacity(segments),
-            normal_ends: IdxVec::with_capacity(segments),
+            normals: IdxVec::splat(Vec4::zero(), mesh.vertices.len()),
 
             wireframe_vertices: mesh.vertices.values().map(|v| v.xyz()).collect(),
         }
@@ -533,8 +531,6 @@ impl<'a> CubeMeshBufferer<'a> {
 
         let segment = self.segment_starts.push(*self.mesh.vertices[i]);
         self.segment_ends.push(*self.mesh.vertices[j]);
-        self.normal_starts.push(Vec3::zero());
-        self.normal_ends.push(Vec3::zero());
 
         self.segment_cache.insert((i, j), segment);
         segment
@@ -599,6 +595,39 @@ impl<'a> CubeMeshBufferer<'a> {
         let jl = self.mk_segment(j, l);
         let kl = self.mk_segment(k, l);
 
+        {
+            let origin = *self.mesh.vertices[i];
+            let v_0 = *self.mesh.vertices[j] - origin;
+            let v_1 = *self.mesh.vertices[k] - origin;
+            let v_2 = *self.mesh.vertices[l] - origin;
+
+            let xs = Vec3::new(v_0.x, v_1.x, v_2.x);
+            let ys = Vec3::new(v_0.y, v_1.y, v_2.y);
+            let zs = Vec3::new(v_0.z, v_1.z, v_2.z);
+            let ws = Vec3::new(v_0.w, v_1.w, v_2.w);
+
+            let m_0 = Mat3::new(ys, zs, ws);
+            let m_1 = Mat3::new(xs, zs, ws);
+            let m_2 = Mat3::new(xs, ys, ws);
+            let m_3 = Mat3::new(xs, ys, zs);
+
+            let mut normal = Vec4::new(
+                -m_0.determinant(),
+                m_1.determinant(),
+                -m_2.determinant(),
+                m_3.determinant(),
+            );
+
+            if !parity {
+                normal = -normal;
+            }
+
+            self.normals[i] += normal;
+            self.normals[j] += normal;
+            self.normals[k] += normal;
+            self.normals[l] += normal;
+        }
+
         if parity {
             self.push_tri(ij, il, ik);
             self.push_tri(jl, ik, jk);
@@ -625,12 +654,16 @@ impl<'a> CubeMeshBufferer<'a> {
 
     fn extract_buffers(mut self, ctx: &gl::GlCtx) -> gl::Result<CubeMeshBuffers> {
         // Average normals
-        for normal in self.normal_starts.values_mut() {
+        for normal in self.normals.values_mut() {
             normal.normalize();
         }
 
-        for normal in self.normal_ends.values_mut() {
-            normal.normalize();
+        let mut normal_starts = IdxVec::splat(Vec4::zero(), self.segment_cache.len());
+        let mut normal_ends = IdxVec::splat(Vec4::zero(), self.segment_cache.len());
+
+        for ((i, j), segment) in &self.segment_cache {
+            normal_starts[*segment] = self.normals[*i];
+            normal_ends[*segment] = self.normals[*j];
         }
 
         // Buffer data
@@ -641,8 +674,8 @@ impl<'a> CubeMeshBufferer<'a> {
         let vertex_start_buffer = ctx.mk_buffer(&self.segment_starts.into_raw())?;
         let vertex_end_buffer = ctx.mk_buffer(&self.segment_ends.into_raw())?;
         let wireframe_vertex_buffer = ctx.mk_buffer(&self.wireframe_vertices)?;
-        let normal_start_buffer = ctx.mk_buffer(&self.normal_starts.into_raw())?;
-        let normal_end_buffer = ctx.mk_buffer(&self.normal_ends.into_raw())?;
+        let normal_start_buffer = ctx.mk_buffer(&normal_starts.into_raw())?;
+        let normal_end_buffer = ctx.mk_buffer(&normal_ends.into_raw())?;
 
         Ok(CubeMeshBuffers {
             element_buffer,
