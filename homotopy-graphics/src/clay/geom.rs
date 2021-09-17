@@ -354,7 +354,6 @@ impl Mesh {
         //     elements_3d.insert([bf, bb, tf, tb], mesh.mk_element_n(subcube_0, subcube_1));
         // }
 
-        log::info!("{:#?}", mesh);
         Ok(mesh)
     }
 }
