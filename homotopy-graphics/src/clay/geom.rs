@@ -279,8 +279,8 @@ impl Mesh {
             generators
                 .entry(key.clone())
                 .or_insert_with(|| node.diagram.max_generator());
-            coordinates.entry(key.clone()).or_default().push(
-                [0, 1, 2, 3]
+            coordinates.entry(key.clone()).or_default().push({
+                let v = (0..4)
                     .map(|i| {
                         let n = node.coord.len();
                         if i >= n {
@@ -289,8 +289,9 @@ impl Mesh {
                             node.coord[n - i - 1].to_int() as f32
                         }
                     })
-                    .into(),
-            );
+                    .collect::<Vec<_>>();
+                (v[0], v[1], v[2], v[3]).into()
+            });
         }
         let coordinates: HashMap<Coord, Vec4> = coordinates
             .into_iter()
