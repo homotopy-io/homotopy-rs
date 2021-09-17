@@ -485,19 +485,77 @@ pub struct CubeMeshBuffers {
     pub vertex_start_buffer: gl::buffer::Buffer<Vec4>,
     pub vertex_end_buffer: gl::buffer::Buffer<Vec4>,
     pub wireframe_vertex_buffer: gl::buffer::Buffer<Vec3>,
-    // TODO(@doctorn) normals
+    pub normal_start_buffer: gl::buffer::Buffer<Vec3>,
+    pub normal_end_buffer: gl::buffer::Buffer<Vec3>,
 }
 
-impl CubeMesh {
-    pub fn mk_cube(&mut self, cube: CubeData) -> Cube {
-        self.elements.push(cube)
+declare_idx! { struct Segment = u16; }
+
+pub struct CubeMeshBufferer<'a> {
+    mesh: &'a CubeMesh,
+
+    segment_cache: HashMap<(Vertex, Vertex), Segment>,
+    elements: Vec<u16>,
+    wireframe_elements: Vec<u16>,
+
+    segment_starts: IdxVec<Segment, Vec4>,
+    segment_ends: IdxVec<Segment, Vec4>,
+    normal_starts: IdxVec<Segment, Vec3>,
+    normal_ends: IdxVec<Segment, Vec3>,
+
+    wireframe_vertices: Vec<Vec3>,
+}
+
+impl<'a> CubeMeshBufferer<'a> {
+    fn new(mesh: &'a CubeMesh) -> Self {
+        let len = mesh.elements.len();
+        let segments = 30 * len;
+
+        Self {
+            mesh,
+
+            segment_cache: HashMap::new(),
+            elements: Vec::with_capacity(segments),
+            wireframe_elements: Vec::with_capacity(len * 8),
+
+            segment_starts: IdxVec::with_capacity(segments),
+            segment_ends: IdxVec::with_capacity(segments),
+            normal_starts: IdxVec::with_capacity(segments),
+            normal_ends: IdxVec::with_capacity(segments),
+
+            wireframe_vertices: mesh.vertices.values().map(|v| v.xyz()).collect(),
+        }
     }
 
-    pub fn buffer(&self, ctx: &gl::GlCtx) -> gl::Result<CubeMeshBuffers> {
-        declare_idx! {
-            struct Segment = u16;
-        }
+    fn mk_segment_uncached(&mut self, i: Vertex, j: Vertex) -> Segment {
+        self.wireframe_elements.push(i.index() as u16);
+        self.wireframe_elements.push(j.index() as u16);
 
+        let segment = self.segment_starts.push(*self.mesh.vertices[i]);
+        self.segment_ends.push(*self.mesh.vertices[j]);
+        self.normal_starts.push(Vec3::zero());
+        self.normal_ends.push(Vec3::zero());
+
+        self.segment_cache.insert((i, j), segment);
+        segment
+    }
+
+    fn mk_segment(&mut self, i: Vertex, j: Vertex) -> Segment {
+        self.segment_cache
+            .get(&(i, j))
+            .copied()
+            .unwrap_or_else(|| self.mk_segment_uncached(i, j))
+    }
+
+    fn push_tri(&mut self, i: Segment, j: Segment, k: Segment) {
+        if i != j && j != k && k != i {
+            self.elements.push(i.index() as u16);
+            self.elements.push(j.index() as u16);
+            self.elements.push(k.index() as u16);
+        }
+    }
+
+    fn push_tetra(&mut self, i: Vertex, j: Vertex, k: Vertex, l: Vertex) {
         #[inline]
         fn parity_sort<F>(vertices: &mut [Vertex; 4], f: F) -> bool
         where
@@ -523,84 +581,68 @@ impl CubeMesh {
             parity
         }
 
-        let mut segment_cache = HashMap::new();
-        let mut elements = Vec::with_capacity(self.elements.len() * 30);
-        let mut wireframe_elements = Vec::with_capacity(self.elements.len() * 8);
-        let mut segment_starts = IdxVec::with_capacity(self.elements.len() * 30);
-        let mut segment_ends = IdxVec::with_capacity(self.elements.len() * 30);
-        let wireframe_vertices = self.vertices.values().map(|v| v.xyz()).collect::<Vec<_>>();
+        let ([i, j, k, l], parity) = {
+            let mut vertices = [i, j, k, l];
+            let parity = parity_sort(&mut vertices, |i, j| {
+                self.mesh.vertices[i]
+                    .w
+                    .partial_cmp(&self.mesh.vertices[j].w)
+                    .unwrap()
+            });
+            (vertices, parity)
+        };
 
-        {
-            let mut push_segment = |i: Vertex, j: Vertex| {
-                if let Some(segment) = segment_cache.get(&(i, j)) {
-                    *segment
-                } else {
-                    wireframe_elements.push(i.index() as u16);
-                    wireframe_elements.push(j.index() as u16);
+        let ij = self.mk_segment(i, j);
+        let ik = self.mk_segment(i, k);
+        let il = self.mk_segment(i, l);
+        let jk = self.mk_segment(j, k);
+        let jl = self.mk_segment(j, l);
+        let kl = self.mk_segment(k, l);
 
-                    let start = segment_starts.push(*self.vertices[i]);
-                    let end = segment_ends.push(*self.vertices[j]);
-                    debug_assert!(start == end);
-                    segment_cache.insert((i, j), start);
-                    start
-                }
-            };
+        if parity {
+            self.push_tri(ij, il, ik);
+            self.push_tri(jl, ik, jk);
+            self.push_tri(jl, il, ik);
+            self.push_tri(jl, il, kl);
+        } else {
+            self.push_tri(il, ij, ik);
+            self.push_tri(ik, jl, jk);
+            self.push_tri(il, jl, ik);
+            self.push_tri(il, jl, kl);
+        }
+    }
 
-            let mut push_tri = |i: Segment, j: Segment, k: Segment| {
-                if i != j && j != k && k != i {
-                    elements.push(i.index() as u16);
-                    elements.push(j.index() as u16);
-                    elements.push(k.index() as u16);
-                }
-            };
+    fn triangulate(&mut self) {
+        // Triangulate mesh
+        for cube in self.mesh.elements.values() {
+            self.push_tetra(cube[1], cube[4], cube[5], cube[7]);
+            self.push_tetra(cube[0], cube[4], cube[1], cube[2]);
+            self.push_tetra(cube[1], cube[7], cube[3], cube[2]);
+            self.push_tetra(cube[4], cube[6], cube[7], cube[2]);
+            self.push_tetra(cube[1], cube[7], cube[2], cube[4]);
+        }
+    }
 
-            let mut push_tetra = |i: Vertex, j: Vertex, k: Vertex, l: Vertex| {
-                let ([i, j, k, l], parity) = {
-                    let mut vertices = [i, j, k, l];
-                    let parity = parity_sort(&mut vertices, |i, j| {
-                        self.vertices[i].w.partial_cmp(&self.vertices[j].w).unwrap()
-                    });
-                    (vertices, parity)
-                };
+    fn extract_buffers(mut self, ctx: &gl::GlCtx) -> gl::Result<CubeMeshBuffers> {
+        // Average normals
+        for normal in self.normal_starts.values_mut() {
+            normal.normalize();
+        }
 
-                let ij = push_segment(i, j);
-                let ik = push_segment(i, k);
-                let il = push_segment(i, l);
-                let jk = push_segment(j, k);
-                let jl = push_segment(j, l);
-                let kl = push_segment(k, l);
-
-                if parity {
-                    push_tri(ij, il, ik);
-                    push_tri(jl, ik, jk);
-                    push_tri(jl, il, ik);
-                    push_tri(jl, il, kl);
-                } else {
-                    push_tri(il, ij, ik);
-                    push_tri(ik, jl, jk);
-                    push_tri(il, jl, ik);
-                    push_tri(il, jl, kl);
-                }
-            };
-
-            // Triangulate mesh
-            for cube in self.elements.values() {
-                push_tetra(cube[1], cube[4], cube[5], cube[7]);
-                push_tetra(cube[0], cube[4], cube[1], cube[2]);
-                push_tetra(cube[1], cube[7], cube[3], cube[2]);
-                push_tetra(cube[4], cube[6], cube[7], cube[2]);
-                push_tetra(cube[1], cube[7], cube[2], cube[4]);
-            }
+        for normal in self.normal_ends.values_mut() {
+            normal.normalize();
         }
 
         // Buffer data
         let element_buffer =
-            ctx.mk_element_buffer(&elements, gl::buffer::ElementKind::Triangles)?;
+            ctx.mk_element_buffer(&self.elements, gl::buffer::ElementKind::Triangles)?;
         let wireframe_element_buffer =
-            ctx.mk_element_buffer(&wireframe_elements, gl::buffer::ElementKind::Lines)?;
-        let vertex_start_buffer = ctx.mk_buffer(&segment_starts.into_raw())?;
-        let vertex_end_buffer = ctx.mk_buffer(&segment_ends.into_raw())?;
-        let wireframe_vertex_buffer = ctx.mk_buffer(&wireframe_vertices)?;
+            ctx.mk_element_buffer(&self.wireframe_elements, gl::buffer::ElementKind::Lines)?;
+        let vertex_start_buffer = ctx.mk_buffer(&self.segment_starts.into_raw())?;
+        let vertex_end_buffer = ctx.mk_buffer(&self.segment_ends.into_raw())?;
+        let wireframe_vertex_buffer = ctx.mk_buffer(&self.wireframe_vertices)?;
+        let normal_start_buffer = ctx.mk_buffer(&self.normal_starts.into_raw())?;
+        let normal_end_buffer = ctx.mk_buffer(&self.normal_ends.into_raw())?;
 
         Ok(CubeMeshBuffers {
             element_buffer,
@@ -608,7 +650,21 @@ impl CubeMesh {
             vertex_start_buffer,
             vertex_end_buffer,
             wireframe_vertex_buffer,
+            normal_start_buffer,
+            normal_end_buffer,
         })
+    }
+}
+
+impl CubeMesh {
+    pub fn mk_cube(&mut self, cube: CubeData) -> Cube {
+        self.elements.push(cube)
+    }
+
+    pub fn buffer(&self, ctx: &gl::GlCtx) -> gl::Result<CubeMeshBuffers> {
+        let mut bufferer = CubeMeshBufferer::new(self);
+        bufferer.triangulate();
+        bufferer.extract_buffers(ctx)
     }
 }
 
