@@ -4,6 +4,8 @@ precision highp float;
 
 in vec4 position_start;
 in vec4 position_end;
+in vec3 normal_start;
+in vec3 normal_end;
 
 uniform float t;
 
@@ -23,6 +25,6 @@ void main() {
   }
 
   frag_pos = position_start.xyz + lerp * (position_end.xyz - position_start.xyz);
-  frag_normal = vec3(1., 0., 0.);
+  frag_normal = normal_start + lerp * (normal_end - normal_start);
   gl_Position = mvp * vec4(frag_pos, 1.);
 }

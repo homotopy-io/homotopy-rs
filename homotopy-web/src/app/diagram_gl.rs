@@ -310,7 +310,7 @@ impl GlDiagramRenderer {
                         debug_normals: *settings.get_debug_normals(),
                         light_pos: self.camera.position(),
                         // TODO(@doctorn) something sensible for time control
-                        t: (0.001 * self.t) % 1.,
+                        t: f32::sin(0.00025 * self.t),
                     }
                 });
             }
@@ -375,7 +375,7 @@ impl Scene {
             ctx,
             "../../glsl/vert_4d.glsl",
             "../../glsl/frag.glsl",
-            { position_start, position_end },
+            { position_start, position_end, normal_start, normal_end },
             { mvp, debug_normals, light_pos, t },
         )?;
         let wireframe_program = program!(
@@ -470,6 +470,8 @@ impl Scene {
                 {
                     position_start: &buffers.vertex_start_buffer,
                     position_end: &buffers.vertex_end_buffer,
+                    normal_start: &buffers.normal_start_buffer,
+                    normal_end: &buffers.normal_end_buffer,
                 }
             )?;
             let wireframe_mesh = vertex_array!(
