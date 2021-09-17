@@ -441,7 +441,7 @@ impl Scene {
         subdivision_depth: u8,
     ) -> Result<(VertexArray, VertexArray)> {
         if view.dimension() <= 3 {
-            let subdivided = subdivide_3(Mesh::build(diagram).into(), subdivision_depth);
+            let subdivided = subdivide_3(Mesh::build(diagram).unwrap().into(), subdivision_depth);
             let buffers = subdivided.buffer(ctx)?;
 
             let solid_mesh = vertex_array!(

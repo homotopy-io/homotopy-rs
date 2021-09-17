@@ -1056,9 +1056,9 @@ unsafe impl IndexType for EdgeId {
 
 #[derive(Clone, Debug)]
 pub struct Node {
-    key: Coord,
-    coord: Coord,
-    diagram: Diagram,
+    pub key: Coord,
+    pub coord: Coord,
+    pub diagram: Diagram,
     heights: Vec<Height>,
     incoming_edges: Vec<EdgeId>,
     outgoing_edges: Vec<EdgeId>,
@@ -1066,23 +1066,23 @@ pub struct Node {
 
 #[derive(Clone, Debug)]
 pub struct Edge {
-    source: NodeId,
-    target: NodeId,
-    rewrite: CubicalRewrite,
+    pub source: NodeId,
+    pub target: NodeId,
+    pub rewrite: CubicalRewrite,
 }
 
 #[derive(Clone, Debug)]
 pub struct CubicalGraph {
     sizes: Vec<usize>,
-    nodes: IdxVec<NodeId, Node>,
-    edges: IdxVec<EdgeId, Edge>,
+    pub nodes: IdxVec<NodeId, Node>,
+    pub edges: IdxVec<EdgeId, Edge>,
 }
 
-struct Square {
-    top: EdgeId,
-    left: EdgeId,
-    right: EdgeId,
-    bottom: EdgeId,
+pub struct Square {
+    pub top: EdgeId,
+    pub left: EdgeId,
+    pub right: EdgeId,
+    pub bottom: EdgeId,
 }
 
 impl CubicalGraph {
@@ -1133,7 +1133,7 @@ impl CubicalGraph {
     }
 
     /// Returns all squares in the graph.
-    fn squares(&self) -> Vec<Square> {
+    pub fn squares(&self) -> Vec<Square> {
         let mut squares = Vec::new();
         // Iterate over all possible top-left nodes.
         for tl in self.topological_sort() {
