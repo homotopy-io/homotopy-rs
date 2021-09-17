@@ -81,14 +81,14 @@ impl CubicalGraph {
 
             // Interior slices
             for (i, slice) in diagram.slices().enumerate() {
-                let slice_key = make_key(Height::from_int(i), &node.key);
+                let slice_key = mk_coord(&node.key, node.heights[i]);
+                let slice_coord = mk_coord(&node.coord, Height::from_int(i));
                 let slice_heights = slice.heights();
-                let slice_original_key = make_key(node.heights[i], &node.key);
                 nodes_exploded.push(Node {
                     key: slice_key,
+                    coord: slice_coord,
                     diagram: slice,
                     heights: slice_heights,
-                    original_key: slice_original_key,
                     incoming_edges: vec![],
                     outgoing_edges: vec![],
                 });
@@ -362,9 +362,9 @@ impl SingularExpansion {
 
             expanded_nodes.push(Node {
                 key: node.key.clone(),
+                coord: node.coord.clone(),
                 diagram: expanded_diagram.into(),
                 heights: expanded_heights,
-                original_key: node.original_key.clone(),
                 incoming_edges: node.incoming_edges.clone(),
                 outgoing_edges: node.outgoing_edges.clone(),
             });
@@ -690,9 +690,9 @@ impl RegularExpansion {
 
             expanded_nodes.push(Node {
                 key: node.key.clone(),
+                coord: node.coord.clone(),
                 diagram: expanded_diagram.into(),
                 heights: expanded_heights,
-                original_key: node.original_key.clone(),
                 incoming_edges: node.incoming_edges.clone(),
                 outgoing_edges: node.outgoing_edges.clone(),
             });
@@ -1008,12 +1008,12 @@ impl Iterator for BiasedMonotoneIterator {
 
 // Cubical graphs
 
-pub type Key = Vec<Height>;
+pub type Coord = Vec<Height>;
 
-fn make_key(height: Height, key: &[Height]) -> Key {
-    let mut new_key = key.to_owned();
-    new_key.push(height);
-    new_key
+fn mk_coord(hs: &[Height], height: Height) -> Coord {
+    let mut coord = hs.to_owned();
+    coord.push(height);
+    coord
 }
 
 declare_idx! {
@@ -1056,10 +1056,10 @@ unsafe impl IndexType for EdgeId {
 
 #[derive(Clone, Debug)]
 pub struct Node {
-    key: Key,
+    key: Coord,
+    coord: Coord,
     diagram: Diagram,
     heights: Vec<Height>,
-    original_key: Key,
     incoming_edges: Vec<EdgeId>,
     outgoing_edges: Vec<EdgeId>,
 }
@@ -1087,12 +1087,12 @@ struct Square {
 
 impl CubicalGraph {
     pub fn new(diagram: Diagram) -> Self {
-        let heights = (&diagram).heights();
+        let heights = diagram.heights();
         let node = Node {
             key: vec![],
+            coord: vec![],
             diagram,
             heights,
-            original_key: vec![],
             incoming_edges: vec![],
             outgoing_edges: vec![],
         };
@@ -1111,12 +1111,12 @@ impl CubicalGraph {
         self.sizes.len()
     }
 
-    /// Finds the id of the node with the given key.
-    fn get_node_id(&self, key: &[Height]) -> NodeId {
+    /// Finds the node with the given coordinate.
+    fn get_node_id(&self, coord: &[Height]) -> NodeId {
         let mut i = 0;
         let mut prod = 1;
         let mut offset = self.dimension();
-        for height in key.iter().rev() {
+        for height in coord.iter().rev() {
             i += height.to_int() * prod;
             prod *= 2 * self.sizes[offset - 1] + 1;
             offset -= 1;
@@ -1125,8 +1125,11 @@ impl CubicalGraph {
     }
 
     /// Finds the direction of an edge between two keys.
-    fn get_edge_direction(source_key: &[Height], target_key: &[Height]) -> Option<usize> {
-        source_key.iter().zip(target_key).position(|(h, k)| h != k)
+    fn get_edge_direction(source_coord: &[Height], target_coord: &[Height]) -> Option<usize> {
+        source_coord
+            .iter()
+            .zip(target_coord)
+            .position(|(h, k)| h != k)
     }
 
     /// Returns all squares in the graph.
@@ -1134,10 +1137,10 @@ impl CubicalGraph {
         let mut squares = Vec::new();
         // Iterate over all possible top-left nodes.
         for tl in self.topological_sort() {
-            let key_tl = &self.nodes[tl].key;
+            let coord_tl = &self.nodes[tl].coord;
 
-            // Count the number of singular heights in the key.
-            let singular: usize = key_tl
+            // Count the number of singular heights in the coordinate.
+            let singular: usize = coord_tl
                 .iter()
                 .map(|h| match h {
                     Height::Regular(_) => 0,
@@ -1145,7 +1148,7 @@ impl CubicalGraph {
                 })
                 .sum();
 
-            // If the key contains more than n - 2 singular heights, the node cannot be the top-left node of a square.
+            // If the coordinate contains more than n - 2 singular heights, the node cannot be the top-left node of a square.
             // Since the nodes are in the topological ordering, all the remaining nodes are also not good, so we can just break.
             if singular + 2 > self.dimension() {
                 break;
@@ -1159,21 +1162,21 @@ impl CubicalGraph {
                         let tr = self.edges[t].target;
                         let bl = self.edges[l].target;
 
-                        let key_bl = &self.nodes[bl].key;
-                        let key_tr = &self.nodes[tr].key;
+                        let coord_bl = &self.nodes[bl].coord;
+                        let coord_tr = &self.nodes[tr].coord;
 
                         // Get the directions of these edges by comparing the source and target keys.
-                        let i = Self::get_edge_direction(key_tl, key_bl).unwrap();
-                        let j = Self::get_edge_direction(key_tl, key_tr).unwrap();
+                        let i = Self::get_edge_direction(coord_tl, coord_bl).unwrap();
+                        let j = Self::get_edge_direction(coord_tl, coord_tr).unwrap();
 
                         // The two edges can form a square only if their directions are orthogonal.
                         if i != j {
-                            let mut key_br = key_tl.clone();
-                            key_br[i] = key_bl[i];
-                            key_br[j] = key_tr[j];
+                            let mut coord_br = coord_tl.clone();
+                            coord_br[i] = coord_bl[i];
+                            coord_br[j] = coord_tr[j];
 
                             // Find the bottom-right node of the square.
-                            let br = self.get_node_id(&key_br);
+                            let br = self.get_node_id(&coord_br);
 
                             // Find the final two edges.
                             let &r = self.nodes[tr]
