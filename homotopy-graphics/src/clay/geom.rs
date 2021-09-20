@@ -11,7 +11,7 @@ use homotopy_common::{
     idx::{Idx, IdxVec},
 };
 use homotopy_core::{
-    common::{DimensionError, Height},
+    common::{DimensionError, Direction, Height},
     cubicalisation::{Bias, Coord, EdgeId, NodeId},
     Diagram, DiagramN, Generator,
 };
@@ -321,12 +321,16 @@ impl Mesh {
 
         // ELEMENTS: 1-CUBES
         let mut elements_1d: IdxVec<EdgeId, Element> = IdxVec::new();
-        for edge in graph.edges.values() {
+        for (e, edge) in graph.edges.iter() {
             let s = edge.source;
             let t = edge.target;
-            // TODO(calintat): Orient edge.
-            let subcube_0 = elements_0d[s];
-            let subcube_1 = elements_0d[t];
+
+            let mut subcube_0 = elements_0d[s];
+            let mut subcube_1 = elements_0d[t];
+            if graph.get_direction(e) == Direction::Backward {
+                std::mem::swap(&mut subcube_0, &mut subcube_1);
+            }
+
             elements_1d.push(mesh.mk_element_n(subcube_0, subcube_1));
         }
 
@@ -335,9 +339,12 @@ impl Mesh {
         for square in graph.squares() {
             let b = square.bottom;
             let t = square.top;
-            // TODO(calintat): Orient square.
-            let subcube_0 = elements_1d[b];
-            let subcube_1 = elements_1d[t];
+
+            let mut subcube_0 = elements_1d[b];
+            let mut subcube_1 = elements_1d[t];
+            if graph.get_direction(square.left) == Direction::Backward {
+                std::mem::swap(&mut subcube_0, &mut subcube_1);
+            }
 
             elements_2d.insert([b, t], mesh.mk_element_n(subcube_0, subcube_1));
         }
@@ -349,9 +356,13 @@ impl Mesh {
             let br = cube.bottom_right;
             let tl = cube.top_left;
             let tr = cube.top_right;
-            // TODO(calintat): Orient cube.
-            let subcube_0 = elements_2d[&[bl, br]];
-            let subcube_1 = elements_2d[&[tl, tr]];
+
+            let mut subcube_0 = elements_2d[&[bl, br]];
+            let mut subcube_1 = elements_2d[&[tl, tr]];
+            if graph.get_direction(cube.left_front) == Direction::Backward {
+                std::mem::swap(&mut subcube_0, &mut subcube_1);
+            }
+
             elements_3d.insert([bl, br, tl, tr], mesh.mk_element_n(subcube_0, subcube_1));
         }
 

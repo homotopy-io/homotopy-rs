@@ -1155,6 +1155,22 @@ impl CubicalGraph {
             .unwrap()
     }
 
+    pub fn get_direction(&self, ei: EdgeId) -> Direction {
+        let s = self.edges[ei].source;
+        let t = self.edges[ei].target;
+        let source_coord = &self.nodes[s].coord;
+        let target_coord = &self.nodes[t].coord;
+        source_coord
+            .iter()
+            .zip(target_coord)
+            .find_map(|(h, k)| match h.cmp(k) {
+                cmp::Ordering::Less => Some(Direction::Forward),
+                cmp::Ordering::Equal => None,
+                cmp::Ordering::Greater => Some(Direction::Backward),
+            })
+            .unwrap()
+    }
+
     fn complete_square(
         &self,
         e0: EdgeId,
