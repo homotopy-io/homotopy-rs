@@ -45,3 +45,4 @@
 pub mod dense;
 pub mod idx;
 pub mod tree;
+pub mod union_find;
