@@ -4,7 +4,6 @@ use gloo::render::{request_animation_frame, AnimationFrame};
 use homotopy_core::DiagramN;
 use homotopy_graphics::{
     clay::{
-        examples,
         geom::Mesh,
         subdivision::{subdivide_3, subdivide_4},
     },
@@ -461,7 +460,7 @@ impl Scene {
             Ok((solid_mesh, wireframe_mesh))
         } else {
             // TODO(@doctorn) use real diagram
-            let subdivided = subdivide_4(examples::example_4().into(), subdivision_depth);
+            let subdivided = subdivide_4(Mesh::build(diagram).unwrap().into(), subdivision_depth);
             let buffers = subdivided.buffer(ctx)?;
 
             let solid_mesh = vertex_array!(

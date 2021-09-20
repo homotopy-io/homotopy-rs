@@ -248,6 +248,13 @@ where
     }
 }
 
+impl<I, T> ExactSizeIterator for IdxVecIterator<I, T> where I: Idx {
+    #[inline]
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
 impl<I, T> FusedIterator for IdxVecIterator<I, T> where I: Idx {}
 
 impl<I, T> Index<I> for IdxVec<I, T>

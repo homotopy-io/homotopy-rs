@@ -162,7 +162,11 @@ impl MeshData for CubeData {
 impl FromMesh<ElementData> for SquareData {
     fn try_from(mesh: &Mesh<ElementData>, element: Element) -> Option<Self> {
         if mesh.order_of(element) == 2 {
-            mesh.flatten(element).collect::<Vec<_>>().try_into().ok()
+            mesh.flatten(element)
+                .filter(|v| mesh.diagram.dimension() - mesh.vertices[*v].generator.dimension <= 2)
+                .collect::<Vec<_>>()
+                .try_into()
+                .ok()
         } else {
             None
         }
@@ -185,6 +189,7 @@ pub struct Mesh<T = ElementData>
 where
     T: MeshData,
 {
+    pub diagram: Diagram,
     pub vertices: IdxVec<Vertex, VertexData>,
     pub elements: IdxVec<T::Idx, T>,
 }
@@ -265,7 +270,7 @@ impl Mesh {
             .clone()
             .cubicalise(&[Bias::Left].repeat(diagram.dimension() - 1))?;
 
-        let mut mesh = Self::new();
+        let mut mesh = Self::new(diagram);
 
         // Compute the coordinates of every node.
         let mut boundaries: HashMap<Coord, Boundary> = HashMap::new();
@@ -275,7 +280,7 @@ impl Mesh {
             let key = &node.key;
             boundaries
                 .entry(key.clone())
-                .or_insert_with(|| Boundary::at_location(&diagram, key));
+                .or_insert_with(|| Boundary::at_location(&mesh.diagram, key));
             generators
                 .entry(key.clone())
                 .or_insert_with(|| node.diagram.max_generator());
@@ -374,8 +379,12 @@ impl<T> Mesh<T>
 where
     T: MeshData,
 {
-    pub fn new() -> Self {
-        Default::default()
+    pub fn new(diagram: Diagram) -> Self {
+        Self {
+            vertices: Default::default(),
+            elements: Default::default(),
+            diagram,
+        }
     }
 
     pub fn mk_vertex(&mut self, vertex: VertexData) -> Vertex {
@@ -400,6 +409,7 @@ where
         Mesh {
             vertices: remapper.into_verts(),
             elements,
+            diagram: self.diagram,
         }
     }
 }
@@ -709,18 +719,6 @@ impl CubeMesh {
         let mut bufferer = CubeMeshBufferer::new(self);
         bufferer.triangulate();
         bufferer.extract_buffers(ctx)
-    }
-}
-
-impl<T> Default for Mesh<T>
-where
-    T: MeshData,
-{
-    fn default() -> Self {
-        Self {
-            vertices: Default::default(),
-            elements: Default::default(),
-        }
     }
 }
 

@@ -175,7 +175,7 @@ impl<'a> SquareSubdivider<'a> {
     ///
     /// Also does basic mesh validation - panics if the boundaries are inconsistent.
     fn weight_matrix(bounds: [Boundary; 4]) -> Mat4 {
-        use Boundary::{One, Two, Zero};
+        use Boundary::{One, Zero};
         // Vertex point
         let row_0 = match bounds[0] {
             Zero => Vec4::unit_x(),
@@ -183,19 +183,17 @@ impl<'a> SquareSubdivider<'a> {
                 (One, _) => Vec4::new(0.5, 0.5, 0.0, 0.0),
                 (_, One) => Vec4::new(0.5, 0.0, 0.5, 0.0),
                 // if it turns out such mesh is consistent, replace with the identity row
-                _ => panic!("Inconsistent mesh!"),
+                _ => Vec4::unit_x(), // panic!("Inconsistent mesh!"),
             },
             _ => Vec4::broadcast(0.25),
         };
         let row_1 = match bounds[1] {
             One => Vec4::unit_y(),
-            Two => Vec4::new(0.0, 0.5, 0.0, 0.5),
-            _ => panic!("Inconsistent mesh!"),
+            _ => Vec4::new(0.0, 0.5, 0.0, 0.5),
         };
         let row_2 = match bounds[2] {
             One => Vec4::unit_z(),
-            Two => Vec4::new(0.0, 0.0, 0.5, 0.5),
-            _ => panic!("Inconsistent mesh!"),
+            _ => Vec4::new(0.0, 0.0, 0.5, 0.5),
         };
         let row_3 = Vec4::unit_w();
 
