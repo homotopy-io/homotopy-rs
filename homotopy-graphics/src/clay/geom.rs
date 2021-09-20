@@ -343,17 +343,17 @@ impl Mesh {
         }
 
         // ELEMENTS: 3-CUBES
-        // let mut elements_3d: HashMap<[EdgeId; 4], Element> = HashMap::new();
-        // for cube in graph.cubes() {
-        //     let bf = cube.bottom_front;
-        //     let bb = cube.bottom_back;
-        //     let tf = cube.top_front;
-        //     let tb = cube.top_back;
-        //     // TODO(calintat): Orient cube.
-        //     let subcube_0 = elements_2d[&[bf, bb]];
-        //     let subcube_1 = elements_2d[&[tf, tb]];
-        //     elements_3d.insert([bf, bb, tf, tb], mesh.mk_element_n(subcube_0, subcube_1));
-        // }
+        let mut elements_3d: HashMap<[EdgeId; 4], Element> = HashMap::new();
+        for cube in graph.cubes() {
+            let bl = cube.bottom_left;
+            let br = cube.bottom_right;
+            let tl = cube.top_left;
+            let tr = cube.top_right;
+            // TODO(calintat): Orient cube.
+            let subcube_0 = elements_2d[&[bl, br]];
+            let subcube_1 = elements_2d[&[tl, tr]];
+            elements_3d.insert([bl, br, tl, tr], mesh.mk_element_n(subcube_0, subcube_1));
+        }
 
         Ok(mesh)
     }

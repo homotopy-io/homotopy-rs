@@ -277,9 +277,9 @@ impl SingularExpansion {
             let l = square.left;
             let r = square.right;
             let b = square.bottom;
-            // If top and left are trivial, identify right and bottom.
-            if iterators[t].1 && iterators[l].1 {
-                union_find.union(r, b);
+            // If bottom and left are trivial, identify right and top.
+            if iterators[b].1 && iterators[l].1 {
+                union_find.union(r, t);
             }
             // If top and bottom are trivial, identify left and right.
             if iterators[t].1 && iterators[b].1 {
@@ -289,9 +289,9 @@ impl SingularExpansion {
             if iterators[l].1 && iterators[r].1 {
                 union_find.union(t, b);
             }
-            // If right and bottom are trivial, identify top and left.
-            if iterators[r].1 && iterators[b].1 {
-                union_find.union(t, l);
+            // If right and top are trivial, identify bottom and left.
+            if iterators[r].1 && iterators[t].1 {
+                union_find.union(b, l);
             }
         }
 
@@ -344,7 +344,7 @@ impl SingularExpansion {
             let left = &monotones[self.indices[l]];
             let right = &monotones[self.indices[r]];
             let bottom = &monotones[self.indices[b]];
-            compose(top, right).unwrap() == compose(left, bottom).unwrap()
+            compose(bottom, right).unwrap() == compose(left, top).unwrap()
         })
     }
 
@@ -605,9 +605,9 @@ impl RegularExpansion {
             let l = square.left;
             let r = square.right;
             let b = square.bottom;
-            // If top and left are trivial, identify right and bottom.
-            if iterators[t].1 && iterators[l].1 {
-                union_find.union(r, b);
+            // If bottom and left are trivial, identify right and top.
+            if iterators[b].1 && iterators[l].1 {
+                union_find.union(r, t);
             }
             // If top and bottom are trivial, identify left and right.
             if iterators[t].1 && iterators[b].1 {
@@ -617,9 +617,9 @@ impl RegularExpansion {
             if iterators[l].1 && iterators[r].1 {
                 union_find.union(t, b);
             }
-            // If right and bottom are trivial, identify top and left.
-            if iterators[r].1 && iterators[b].1 {
-                union_find.union(t, l);
+            // If right and top are trivial, identify bottom and left.
+            if iterators[r].1 && iterators[t].1 {
+                union_find.union(b, l);
             }
         }
 
@@ -672,7 +672,7 @@ impl RegularExpansion {
             let left = &monotones[self.indices[l]];
             let right = &monotones[self.indices[r]];
             let bottom = &monotones[self.indices[b]];
-            compose(right, top).unwrap() == compose(bottom, left).unwrap()
+            compose(right, bottom).unwrap() == compose(top, left).unwrap()
         })
     }
 
@@ -1009,6 +1009,7 @@ impl Iterator for BiasedMonotoneIterator {
 // Cubical graphs
 
 pub type Coord = Vec<Height>;
+pub type Orientation = usize;
 
 fn mk_coord(hs: &[Height], height: Height) -> Coord {
     let mut coord = hs.to_owned();
@@ -1083,6 +1084,23 @@ pub struct Square {
     pub left: EdgeId,
     pub right: EdgeId,
     pub bottom: EdgeId,
+    pub orientation: [Orientation; 2],
+}
+
+pub struct Cube {
+    pub top_front: EdgeId,
+    pub left_front: EdgeId,
+    pub right_front: EdgeId,
+    pub bottom_front: EdgeId,
+    pub top_back: EdgeId,
+    pub left_back: EdgeId,
+    pub right_back: EdgeId,
+    pub bottom_back: EdgeId,
+    pub top_left: EdgeId,
+    pub top_right: EdgeId,
+    pub bottom_left: EdgeId,
+    pub bottom_right: EdgeId,
+    pub orientation: [Orientation; 3],
 }
 
 impl CubicalGraph {
@@ -1124,23 +1142,66 @@ impl CubicalGraph {
         NodeId(i)
     }
 
-    /// Finds the direction of an edge between two keys.
-    fn get_edge_direction(source_coord: &[Height], target_coord: &[Height]) -> Option<usize> {
+    /// Finds the orientation of an edge.
+    fn get_orientation(&self, ei: EdgeId) -> Orientation {
+        let s = self.edges[ei].source;
+        let t = self.edges[ei].target;
+        let source_coord = &self.nodes[s].coord;
+        let target_coord = &self.nodes[t].coord;
         source_coord
             .iter()
             .zip(target_coord)
             .position(|(h, k)| h != k)
+            .unwrap()
+    }
+
+    fn complete_square(
+        &self,
+        e0: EdgeId,
+        e1: EdgeId,
+        i0: Orientation,
+        i1: Orientation,
+    ) -> (EdgeId, EdgeId) {
+        let bl = self.edges[e0].source;
+        let tl = self.edges[e0].target;
+        let br = self.edges[e1].target;
+
+        let coord_bl = &self.nodes[bl].coord;
+        let coord_tl = &self.nodes[tl].coord;
+        let coord_br = &self.nodes[br].coord;
+
+        let mut coord_tr = coord_bl.clone();
+        coord_tr[i0] = coord_tl[i0];
+        coord_tr[i1] = coord_br[i1];
+
+        // Find the top-right corner of the square.
+        let tr = self.get_node_id(&coord_tr);
+
+        // Find the final two edges.
+        let &r = self.nodes[br]
+            .outgoing_edges
+            .iter()
+            .find(|&&e| self.edges[e].target == tr)
+            .unwrap();
+        let &t = self.nodes[tl]
+            .outgoing_edges
+            .iter()
+            .find(|&&e| self.edges[e].target == tr)
+            .unwrap();
+
+        (r, t)
     }
 
     /// Returns all squares in the graph.
     pub fn squares(&self) -> Vec<Square> {
         let mut squares = Vec::new();
-        // Iterate over all possible top-left nodes.
-        for tl in self.topological_sort() {
-            let coord_tl = &self.nodes[tl].coord;
+
+        // Iterate over all possible top-left corners.
+        for bl in self.topological_sort() {
+            let coord_bl = &self.nodes[bl].coord;
 
             // Count the number of singular heights in the coordinate.
-            let singular: usize = coord_tl
+            let singular: usize = coord_bl
                 .iter()
                 .map(|h| match h {
                     Height::Regular(_) => 0,
@@ -1148,60 +1209,99 @@ impl CubicalGraph {
                 })
                 .sum();
 
-            // If the coordinate contains more than n - 2 singular heights, the node cannot be the top-left node of a square.
+            // If the coordinate contains more than n - 2 singular heights, the node cannot be the top-left corner of a square.
             // Since the nodes are in the topological ordering, all the remaining nodes are also not good, so we can just break.
             if singular + 2 > self.dimension() {
                 break;
             }
 
-            // Pick two distinct outgoing edges.
-            for &t in &self.nodes[tl].outgoing_edges {
-                for &l in &self.nodes[tl].outgoing_edges {
-                    if t < l {
-                        // Find the targets of these edges (i.e. the top-right and bottom-left nodes).
-                        let tr = self.edges[t].target;
-                        let bl = self.edges[l].target;
+            // Pick two orthogonal outgoing edges.
+            for &l in &self.nodes[bl].outgoing_edges {
+                let i = self.get_orientation(l);
+                for &b in &self.nodes[bl].outgoing_edges {
+                    let j = self.get_orientation(b);
+                    if i < j {
+                        let (r, t) = self.complete_square(l, b, i, j);
 
-                        let coord_bl = &self.nodes[bl].coord;
-                        let coord_tr = &self.nodes[tr].coord;
+                        squares.push(Square {
+                            top: t,
+                            left: l,
+                            right: r,
+                            bottom: b,
+                            orientation: [i, j],
+                        });
+                    }
+                }
+            }
+        }
+        squares
+    }
 
-                        // Get the directions of these edges by comparing the source and target keys.
-                        let i = Self::get_edge_direction(coord_tl, coord_bl).unwrap();
-                        let j = Self::get_edge_direction(coord_tl, coord_tr).unwrap();
+    /// Returns all cubes in the graph.
+    pub fn cubes(&self) -> Vec<Cube> {
+        let mut cubes = Vec::new();
 
-                        // The two edges can form a square only if their directions are orthogonal.
-                        if i != j {
-                            let mut coord_br = coord_tl.clone();
-                            coord_br[i] = coord_bl[i];
-                            coord_br[j] = coord_tr[j];
+        // Iterate over all possible bottom-left-front corners.
+        for blf in self.topological_sort() {
+            let coord_blf = &self.nodes[blf].coord;
 
-                            // Find the bottom-right node of the square.
-                            let br = self.get_node_id(&coord_br);
+            // Count the number of singular heights in the coordinate.
+            let singular: usize = coord_blf
+                .iter()
+                .map(|h| match h {
+                    Height::Regular(_) => 0,
+                    Height::Singular(_) => 1,
+                })
+                .sum();
 
-                            // Find the final two edges.
-                            let &r = self.nodes[tr]
-                                .outgoing_edges
-                                .iter()
-                                .find(|&&e| self.edges[e].target == br)
-                                .unwrap();
-                            let &b = self.nodes[bl]
-                                .outgoing_edges
-                                .iter()
-                                .find(|&&e| self.edges[e].target == br)
-                                .unwrap();
+            // If the coordinate contains more than n - 3 singular heights, the node cannot be the bottom-left-front corner of a cube.
+            // Since the nodes are in the topological ordering, all the remaining nodes are also not good, so we can just break.
+            if singular + 3 > self.dimension() {
+                break;
+            }
 
-                            squares.push(Square {
-                                top: t,
-                                left: l,
-                                right: r,
-                                bottom: b,
+            // Pick three orthogonal outgoing edges.
+            for &lf in &self.nodes[blf].outgoing_edges {
+                let i = self.get_orientation(lf);
+                for &bf in &self.nodes[blf].outgoing_edges {
+                    let j = self.get_orientation(bf);
+                    for &bl in &self.nodes[blf].outgoing_edges {
+                        let k = self.get_orientation(bl);
+                        if i < j && j < k {
+                            let (rf, tf) = self.complete_square(lf, bf, i, j);
+                            let (lb, tl) = self.complete_square(lf, bl, i, k);
+                            let (bb, br) = self.complete_square(bf, bl, j, k);
+
+                            let (rb, tb) = self.complete_square(lb, bb, i, j);
+                            let (rb1, tr) = self.complete_square(rf, br, i, k);
+                            let (tb1, tr1) = self.complete_square(tf, tl, j, k);
+
+                            assert_eq!(rb, rb1);
+                            assert_eq!(tb, tb1);
+                            assert_eq!(tr, tr1);
+
+                            cubes.push(Cube {
+                                top_front: tf,
+                                left_front: lf,
+                                right_front: rf,
+                                bottom_front: bf,
+                                top_back: tb,
+                                left_back: lb,
+                                right_back: rb,
+                                bottom_back: bb,
+                                top_left: tl,
+                                top_right: tr,
+                                bottom_left: bl,
+                                bottom_right: br,
+                                orientation: [i, j, k],
                             });
                         }
                     }
                 }
             }
         }
-        squares
+
+        cubes
     }
 
     /// Returns the nodes in the topological ordering.
