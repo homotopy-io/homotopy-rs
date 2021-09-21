@@ -1,7 +1,7 @@
 use std::{
     cmp::Ordering,
     collections::HashMap,
-    convert::TryInto,
+    convert::{TryFrom, TryInto},
     iter::FusedIterator,
     ops::{Deref, DerefMut},
 };
@@ -22,6 +22,8 @@ use crate::gl;
 declare_idx! {
     pub struct Vertex = u16;
     pub struct Element = usize;
+    pub struct Point = usize;
+    pub struct Line = usize;
     pub struct Square = usize;
     pub struct Cube = usize;
 }
@@ -42,7 +44,7 @@ pub enum Boundary {
 
 impl Boundary {
     /// Increase the boundary by 1.
-    fn inc(self) -> Self {
+    pub fn inc(self) -> Self {
         match self {
             Self::Zero => Self::One,
             Self::One => Self::Two,
@@ -52,17 +54,28 @@ impl Boundary {
 
     /// Calculate the boundary of a given location in a diagram.
     fn at_location(diagram: &Diagram, location: &[Height]) -> Self {
-        match location.split_first() {
-            None => Self::Zero,
-            Some((&height, location)) => {
+        match location {
+            [] | [_] => Self::Zero,
+            [height, location @ ..] => {
                 let diagram: &DiagramN = diagram.try_into().unwrap();
                 let max = diagram.size();
-                let slice = diagram.slice(height).unwrap();
+                let slice = diagram.slice(*height).unwrap();
                 match height {
-                    Height::Regular(j) if j == 0 || j == max => Self::at_location(&slice, location),
+                    Height::Regular(j) if *j == 0 || *j == max => {
+                        Self::at_location(&slice, location)
+                    }
                     _ => Self::at_location(&slice, location).inc(),
                 }
             }
+        }
+    }
+
+    fn debug_color(self) -> Vec3 {
+        match self {
+            Boundary::Zero => Vec3::new(1., 1., 0.),
+            Boundary::One => Vec3::new(1., 0., 1.),
+            Boundary::Two => Vec3::new(0., 1., 1.),
+            Boundary::Three => Vec3::zero(),
         }
     }
 }
@@ -75,7 +88,7 @@ pub struct VertexData {
     pub generator: Generator,
 }
 
-pub trait MeshData {
+pub trait MeshData: Clone {
     type Idx: Idx;
 
     fn remap<T>(&mut self, remapper: &mut VertexRemapper<T>)
@@ -130,8 +143,34 @@ pub struct CubeN {
     subcube_1: Element,
 }
 
+pub type PointData = Vertex;
+pub type LineData = [Vertex; 2];
 pub type SquareData = [Vertex; 4];
 pub type CubeData = [Vertex; 8];
+
+impl MeshData for PointData {
+    type Idx = Point;
+
+    fn remap<T>(&mut self, remapper: &mut VertexRemapper<T>)
+    where
+        T: MeshData,
+    {
+        *self = remapper.get(*self);
+    }
+}
+
+impl MeshData for LineData {
+    type Idx = Line;
+
+    fn remap<T>(&mut self, remapper: &mut VertexRemapper<T>)
+    where
+        T: MeshData,
+    {
+        for v in self.iter_mut() {
+            *v = remapper.get(*v);
+        }
+    }
+}
 
 impl MeshData for SquareData {
     type Idx = Square;
@@ -159,27 +198,61 @@ impl MeshData for CubeData {
     }
 }
 
+fn extract_n_cube<T>(mesh: &Mesh<ElementData>, element: Element, order: Dimension) -> Option<T>
+where
+    T: TryFrom<Vec<Vertex>>,
+{
+    if mesh.order_of(element) == order {
+        let verts = mesh.flatten(element).collect::<Vec<_>>();
+
+        {
+            let mut unique = verts.clone();
+            unique.dedup();
+
+            if unique.len() <= order as usize {
+                return None;
+            }
+        }
+
+        let codimension = mesh.diagram.dimension()
+            - verts
+                .iter()
+                .map(|v| mesh.vertices[*v].generator.dimension)
+                .min()
+                .unwrap();
+
+        if codimension > order as usize {
+            return None;
+        }
+
+        verts.try_into().ok()
+    } else {
+        None
+    }
+}
+
+impl FromMesh<ElementData> for PointData {
+    fn try_from(mesh: &Mesh<ElementData>, element: Element) -> Option<Self> {
+        let vertex: [Self; 1] = extract_n_cube(mesh, element, 0)?;
+        Some(vertex[0])
+    }
+}
+
+impl FromMesh<ElementData> for LineData {
+    fn try_from(mesh: &Mesh<ElementData>, element: Element) -> Option<Self> {
+        extract_n_cube(mesh, element, 1)
+    }
+}
+
 impl FromMesh<ElementData> for SquareData {
     fn try_from(mesh: &Mesh<ElementData>, element: Element) -> Option<Self> {
-        if mesh.order_of(element) == 2 {
-            mesh.flatten(element)
-                .filter(|v| mesh.diagram.dimension() - mesh.vertices[*v].generator.dimension <= 2)
-                .collect::<Vec<_>>()
-                .try_into()
-                .ok()
-        } else {
-            None
-        }
+        extract_n_cube(mesh, element, 2)
     }
 }
 
 impl FromMesh<ElementData> for CubeData {
     fn try_from(mesh: &Mesh<ElementData>, element: Element) -> Option<Self> {
-        if mesh.order_of(element) == 3 {
-            mesh.flatten(element).collect::<Vec<_>>().try_into().ok()
-        } else {
-            None
-        }
+        extract_n_cube(mesh, element, 3)
     }
 }
 
@@ -194,9 +267,13 @@ where
     pub elements: IdxVec<T::Idx, T>,
 }
 
-/// Represents concrete square mesh to be subdivided and rendered.
+/// Represents a set of points.
+pub type PointMesh = Mesh<PointData>;
+/// Represents a set of piecewise linear curves to be subdivided and rendered.
+pub type LineMesh = Mesh<LineData>;
+/// Represents a concrete square mesh to be subdivided and rendered.
 pub type SquareMesh = Mesh<SquareData>;
-/// Represents concrete cube mesh to be subdivided and rendered.
+/// Represents a concrete cube mesh to be subdivided and rendered.
 pub type CubeMesh = Mesh<CubeData>;
 
 impl Deref for VertexData {
@@ -414,9 +491,39 @@ where
     }
 }
 
+pub struct LineBuffers {
+    pub element_buffer: gl::buffer::ElementBuffer,
+    pub vertex_buffer: gl::buffer::Buffer<Vec3>,
+}
+
+impl LineMesh {
+    pub fn mk_line(&mut self, line: LineData) -> Line {
+        self.elements.push(line)
+    }
+
+    pub fn buffer(&self, ctx: &gl::GlCtx) -> gl::Result<LineBuffers> {
+        let vertices = self.vertices.values().map(|v| v.xyz()).collect::<Vec<_>>();
+        let mut elements = Vec::with_capacity(self.elements.len());
+
+        for line in self.elements.values() {
+            elements.push(line[0].index() as u16);
+            elements.push(line[1].index() as u16);
+        }
+
+        let element_buffer = ctx.mk_element_buffer(&elements, gl::buffer::ElementKind::Lines)?;
+        let vertex_buffer = ctx.mk_buffer(&vertices)?;
+
+        Ok(LineBuffers {
+            element_buffer,
+            vertex_buffer,
+        })
+    }
+}
+
 pub struct SquareMeshBuffers {
     pub element_buffer: gl::buffer::ElementBuffer,
     pub wireframe_element_buffer: gl::buffer::ElementBuffer,
+    pub wireframe_color_buffer: gl::buffer::Buffer<Vec3>,
     pub vertex_buffer: gl::buffer::Buffer<Vec3>,
     pub normal_buffer: gl::buffer::Buffer<Vec3>,
 }
@@ -432,26 +539,29 @@ impl SquareMesh {
             .values()
             .map(|v| v.xyz())
             .collect::<IdxVec<_, _>>();
+        let boundary_colors = self
+            .vertices
+            .values()
+            .map(|v| v.boundary.debug_color())
+            .collect::<Vec<_>>();
         let mut elements = Vec::with_capacity(self.elements.len() * 6);
         let mut wireframe_elements = Vec::with_capacity(self.elements.len() * 12);
         let mut normals = IdxVec::splat(Vec3::zero(), vertices.len());
 
         {
+            let mut push_wireframe_element = |i: Vertex, j: Vertex| {
+                wireframe_elements.push(i.index() as u16);
+                wireframe_elements.push(j.index() as u16);
+            };
+
             let mut push_element = |i: Vertex, j: Vertex, k: Vertex| {
-                let i = i.index() as u16;
-                let j = j.index() as u16;
-                let k = k.index() as u16;
+                push_wireframe_element(i, j);
+                push_wireframe_element(j, k);
+                push_wireframe_element(k, i);
 
-                wireframe_elements.push(i);
-                wireframe_elements.push(j);
-                wireframe_elements.push(j);
-                wireframe_elements.push(k);
-                wireframe_elements.push(k);
-                wireframe_elements.push(i);
-
-                elements.push(i);
-                elements.push(j);
-                elements.push(k);
+                elements.push(i.index() as u16);
+                elements.push(j.index() as u16);
+                elements.push(k.index() as u16);
             };
 
             let mut push_tri = |i: Vertex, j: Vertex, k: Vertex| {
@@ -488,12 +598,14 @@ impl SquareMesh {
             ctx.mk_element_buffer(&elements, gl::buffer::ElementKind::Triangles)?;
         let wireframe_element_buffer =
             ctx.mk_element_buffer(&wireframe_elements, gl::buffer::ElementKind::Lines)?;
+        let wireframe_color_buffer = ctx.mk_buffer(&boundary_colors)?;
         let vertex_buffer = ctx.mk_buffer(&vertices.into_raw())?;
         let normal_buffer = ctx.mk_buffer(&normals.into_raw())?;
 
         Ok(SquareMeshBuffers {
             element_buffer,
             wireframe_element_buffer,
+            wireframe_color_buffer,
             vertex_buffer,
             normal_buffer,
         })

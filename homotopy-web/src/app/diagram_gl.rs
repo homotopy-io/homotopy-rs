@@ -5,7 +5,7 @@ use homotopy_core::DiagramN;
 use homotopy_graphics::{
     clay::{
         geom::Mesh,
-        subdivision::{subdivide_3, subdivide_4},
+        subdivision::{subdivide, CubeSubdivider, SquareSubdivider},
     },
     draw,
     gl::{array::VertexArray, buffer::ElementKind, frame::Frame, shader::Program, GlCtx, Result},
@@ -440,7 +440,8 @@ impl Scene {
         subdivision_depth: u8,
     ) -> Result<(VertexArray, VertexArray)> {
         if view.dimension() <= 3 {
-            let subdivided = subdivide_3(Mesh::build(diagram).unwrap().into(), subdivision_depth);
+            let subdivided =
+                subdivide::<SquareSubdivider>(Mesh::build(diagram).unwrap(), subdivision_depth);
             let buffers = subdivided.buffer(ctx)?;
 
             let solid_mesh = vertex_array!(
@@ -454,13 +455,16 @@ impl Scene {
             let wireframe_mesh = vertex_array!(
                 wireframe_program,
                 &buffers.wireframe_element_buffer,
-                { position: &buffers.vertex_buffer }
+                {
+                    position: &buffers.vertex_buffer,
+                    color: &buffers.wireframe_color_buffer,
+                }
             )?;
 
             Ok((solid_mesh, wireframe_mesh))
         } else {
-            // TODO(@doctorn) use real diagram
-            let subdivided = subdivide_4(Mesh::build(diagram).unwrap().into(), subdivision_depth);
+            let subdivided =
+                subdivide::<CubeSubdivider>(Mesh::build(diagram).unwrap(), subdivision_depth);
             let buffers = subdivided.buffer(ctx)?;
 
             let solid_mesh = vertex_array!(
