@@ -26,7 +26,7 @@ serde_json = "1.0.66"
 base64 = "0.13.0"
 
 [features]
-default = ["safety-checks"]
+default = []
 safety-checks = []
 
 [[bench]]
