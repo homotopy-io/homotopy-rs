@@ -43,6 +43,7 @@
 )]
 
 pub mod dense;
+pub mod graph;
 pub mod idx;
 pub mod tree;
 pub mod union_find;
