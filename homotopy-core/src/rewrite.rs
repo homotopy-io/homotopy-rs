@@ -1141,6 +1141,70 @@ pub enum MalformedRewrite {
     NotCommutativeMiddle(usize, usize),
 }
 
+impl<A, T> GenericCone<A>
+where
+    A: RewriteAllocator<Payload = T>,
+    T: Default,
+{
+    pub fn convert<B, U>(&self) -> GenericCone<B>
+    where
+        B: RewriteAllocator<Payload = U>,
+        U: Default,
+    {
+        GenericCone::new(
+            self.index,
+            self.internal
+                .source
+                .iter()
+                .map(GenericCospan::convert)
+                .collect(),
+            self.internal.target.convert(),
+            self.internal
+                .slices
+                .iter()
+                .map(GenericRewrite::convert)
+                .collect(),
+        )
+    }
+}
+
+impl<A, T> GenericCospan<A>
+where
+    A: RewriteAllocator<Payload = T>,
+    T: Default,
+{
+    pub fn convert<B, U>(&self) -> GenericCospan<B>
+    where
+        B: RewriteAllocator<Payload = U>,
+        U: Default,
+    {
+        GenericCospan {
+            forward: self.forward.convert(),
+            backward: self.backward.convert(),
+        }
+    }
+}
+
+impl<A, T> GenericRewrite<A>
+where
+    A: RewriteAllocator<Payload = T>,
+    T: Default,
+{
+    pub fn convert<B, U>(&self) -> GenericRewrite<B>
+    where
+        B: RewriteAllocator<Payload = U>,
+        U: Default,
+    {
+        match self {
+            Self::Rewrite0(r) => GenericRewrite::Rewrite0(*r),
+            Self::RewriteN(r) => GenericRewrite::RewriteN(GenericRewriteN::new_unsafe(
+                r.dimension(),
+                r.cones().iter().map(GenericCone::convert).collect(),
+            )),
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
