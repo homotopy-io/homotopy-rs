@@ -1,7 +1,7 @@
 use std::{
     cell::RefCell,
     cmp,
-    convert::{From, Into, TryInto},
+    convert::{Into, TryInto},
     iter::FromIterator,
 };
 
@@ -15,8 +15,8 @@ use crate::{
     diagram::{Diagram, DiagramN},
     monotone::{compose, dual_inv, Monotone, MonotoneIterator},
     rewrite::{
-        Composable, CompositionError, Cone, ConeInternal, Cospan, GenericCone, GenericCospan,
-        GenericRewrite, GenericRewriteN, Rewrite, RewriteAllocator, RewriteInternal, RewriteN,
+        Composable, CompositionError, ConeInternal, Cospan, GenericCone, GenericCospan,
+        GenericRewrite, GenericRewriteN, RewriteAllocator, RewriteInternal,
     },
     util::Hasher,
 };
@@ -102,7 +102,7 @@ impl CubicalGraph {
                 edges_exploded.push(Edge {
                     source: s,
                     target: t,
-                    rewrite: cospan.forward.clone().into(),
+                    rewrite: cospan.forward.map(|_| Default::default()),
                 });
                 nodes_exploded[s].outgoing_edges.push(e);
                 nodes_exploded[t].incoming_edges.push(e);
@@ -113,7 +113,7 @@ impl CubicalGraph {
                 edges_exploded.push(Edge {
                     source: s,
                     target: t,
-                    rewrite: cospan.backward.clone().into(),
+                    rewrite: cospan.backward.map(|_| Default::default()),
                 });
                 nodes_exploded[s].outgoing_edges.push(e);
                 nodes_exploded[t].incoming_edges.push(e);
@@ -962,7 +962,7 @@ impl DiagramN {
         self.cospans()
             .iter()
             .cloned()
-            .map(|cospan| cospan.into())
+            .map(|cospan| cospan.map(|_| Default::default()))
             .collect()
     }
 }
@@ -1425,91 +1425,5 @@ impl RewriteAllocator for CubicalAllocator {
     fn collect_garbage() {
         CONE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
         REWRITE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
-    }
-}
-
-// Conversions between rewrites and cubical rewrites
-
-impl From<Cospan> for CubicalCospan {
-    fn from(cospan: Cospan) -> Self {
-        Self {
-            forward: cospan.forward.into(),
-            backward: cospan.backward.into(),
-        }
-    }
-}
-
-impl From<CubicalCospan> for Cospan {
-    fn from(cospan: CubicalCospan) -> Self {
-        Self {
-            forward: cospan.forward.into(),
-            backward: cospan.backward.into(),
-        }
-    }
-}
-
-impl From<Cone> for CubicalCone {
-    fn from(cone: Cone) -> Self {
-        Self::new(
-            cone.index,
-            cone.internal
-                .source
-                .iter()
-                .cloned()
-                .map(|cospan| cospan.into())
-                .collect(),
-            cone.internal.target.clone().into(),
-            cone.internal
-                .slices
-                .iter()
-                .cloned()
-                .map(|rewrite| rewrite.into())
-                .collect(),
-        )
-    }
-}
-
-impl From<CubicalCone> for Cone {
-    fn from(cone: CubicalCone) -> Self {
-        Self::new(
-            cone.index,
-            cone.internal
-                .source
-                .iter()
-                .cloned()
-                .map(|cospan| cospan.into())
-                .collect(),
-            cone.internal.target.clone().into(),
-            cone.internal
-                .slices
-                .iter()
-                .cloned()
-                .map(|rewrite| rewrite.into())
-                .collect(),
-        )
-    }
-}
-
-impl From<Rewrite> for CubicalRewrite {
-    fn from(rewrite: Rewrite) -> Self {
-        match rewrite {
-            Rewrite::Rewrite0(f) => Self::Rewrite0(f),
-            Rewrite::RewriteN(f) => Self::RewriteN(CubicalRewriteN::new(
-                f.dimension(),
-                f.cones().iter().cloned().map(|cone| cone.into()).collect(),
-            )),
-        }
-    }
-}
-
-impl From<CubicalRewrite> for Rewrite {
-    fn from(rewrite: CubicalRewrite) -> Self {
-        match rewrite {
-            CubicalRewrite::Rewrite0(f) => Self::Rewrite0(f),
-            CubicalRewrite::RewriteN(f) => Self::RewriteN(RewriteN::new(
-                f.dimension(),
-                f.cones().iter().cloned().map(|cone| cone.into()).collect(),
-            )),
-        }
     }
 }
