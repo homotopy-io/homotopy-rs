@@ -107,7 +107,7 @@ impl PreparedDiagram {
         let generators = Generators::new(diagram);
         let layout = Layout::new(diagram, 2000).unwrap();
         let complex = make_complex(diagram);
-        let depths = Depths::new(diagram);
+        let depths = Depths::new(diagram).unwrap();
         let graphic = GraphicElement::build(&complex, &layout, &generators, &depths);
         let actions = ActionRegion::build(&complex, &layout);
 
@@ -130,8 +130,6 @@ impl PreparedDiagram {
                 ((&action).into(), shape)
             })
             .collect();
-
-        let depths = Depths::new(diagram);
 
         Self {
             graphic,
