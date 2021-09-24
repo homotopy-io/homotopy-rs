@@ -77,14 +77,7 @@ pub struct Depths {
 
 impl Depths {
     pub fn new(diagram: &DiagramN) -> Result<Self, DimensionError> {
-        if diagram.dimension() < 2 {
-            return Err(DimensionError);
-        }
-
-        let graph = GraphBuilder::new(diagram.clone().into())
-            .explode()?
-            .explode()?
-            .build();
+        let graph = GraphBuilder::build(diagram.clone().into(), 2)?;
 
         let mut node_depths = IdxVec::splat(None, graph.node_count());
         let mut edge_depths = IdxVec::splat(None, graph.edge_count());
