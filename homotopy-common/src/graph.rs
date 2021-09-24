@@ -4,9 +4,6 @@ use crate::{declare_idx, idx::IdxVec};
 
 declare_idx! {
     pub struct Node = usize;
-}
-
-declare_idx! {
     pub struct Edge = usize;
 }
 
