@@ -84,44 +84,42 @@ impl Iterator for FactorizationInternal {
     type Item = Rewrite;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match &mut self.cur {
-            None => {
-                let h_mono = self.monotone.next()?;
-                let product = h_mono
-                    .iter()
-                    .enumerate()
-                    .map(|(si, &ti)| {
-                        factorize(
-                            self.f.slice(si),
-                            self.g.slice(ti),
-                            self.source.slice(Height::Singular(si)).unwrap(),
-                            self.target.slice(Height::Singular(ti)).unwrap(),
-                        )
-                    })
-                    .multi_cartesian_product();
-                self.cur = Some((h_mono, product));
-                self.next()
-            }
-            Some((h_mono, product)) => match product.next() {
+        loop {
+            match &mut self.cur {
                 None => {
-                    self.cur = None;
-                    self.next()
+                    let h_mono = self.monotone.next()?;
+                    let product = h_mono
+                        .iter()
+                        .enumerate()
+                        .map(|(si, &ti)| {
+                            factorize(
+                                self.f.slice(si),
+                                self.g.slice(ti),
+                                self.source.slice(Height::Singular(si)).unwrap(),
+                                self.target.slice(Height::Singular(ti)).unwrap(),
+                            )
+                        })
+                        .multi_cartesian_product();
+                    self.cur = Some((h_mono, product));
                 }
-                Some(slices) => {
-                    let h = RewriteN::from_monotone_unsafe(
-                        self.f.dimension(),
-                        self.source.cospans(),
-                        self.target.cospans(),
-                        h_mono,
-                        &slices,
-                    );
-                    if h.check_well_formed(Mode::Shallow).is_ok() {
-                        Some(Rewrite::from(h))
-                    } else {
-                        self.next()
+                Some((h_mono, product)) => match product.next() {
+                    None => {
+                        self.cur = None;
                     }
-                }
-            },
+                    Some(slices) => {
+                        let h = RewriteN::from_monotone_unsafe(
+                            self.f.dimension(),
+                            self.source.cospans(),
+                            self.target.cospans(),
+                            h_mono,
+                            &slices,
+                        );
+                        if h.check_well_formed(Mode::Shallow).is_ok() {
+                            return Some(Rewrite::from(h));
+                        }
+                    }
+                },
+            }
         }
     }
 }
