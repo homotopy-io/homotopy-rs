@@ -78,7 +78,7 @@ impl CubicalGraph {
     }
 
     fn parallelise_directed(&self, bias: Bias, direction: Direction) -> Option<Self> {
-        if self.inner.edges_values().all(|edge| edge.is_parallel()) {
+        if self.inner.edge_values().all(|edge| edge.is_parallel()) {
             Some(self.clone())
         } else {
             match direction {
@@ -143,7 +143,7 @@ impl SingularExpansion {
         // Construct a monotone iterator for every edge and identify the trivial edges.
         let mut iterators: IdxVec<Edge, (MonotoneIterator, bool)> =
             IdxVec::with_capacity(graph.inner.edge_count());
-        for edge in graph.inner.edges_values() {
+        for edge in graph.inner.edge_values() {
             let rewrite: &CubicalRewriteN = (edge.inner()).try_into()?;
 
             let source_weights = &weights[edge.source()];
@@ -190,7 +190,7 @@ impl SingularExpansion {
         let mut combined_iterators: Vec<MonotoneIterator> = vec![];
         let mut indices: IdxVec<Edge, Option<usize>> =
             IdxVec::from_iter(vec![None; graph.inner.edge_count()]);
-        for e in graph.inner.edges_keys() {
+        for e in graph.inner.edge_keys() {
             let key = union_find.find(e);
             let iterator = &iterators[e].0;
             match indices[key] {
@@ -473,7 +473,7 @@ impl RegularExpansion {
         // Construct a monotone iterator for every edge and identify the trivial edges.
         let mut iterators: IdxVec<Edge, (MonotoneIterator, bool)> =
             IdxVec::with_capacity(graph.inner.edge_count());
-        for edge in graph.inner.edges_values() {
+        for edge in graph.inner.edge_values() {
             let rewrite: &CubicalRewriteN = (edge.inner()).try_into()?;
 
             let source_weights = &weights[edge.source()];
@@ -520,7 +520,7 @@ impl RegularExpansion {
         let mut combined_iterators: Vec<MonotoneIterator> = vec![];
         let mut indices: IdxVec<Edge, Option<usize>> =
             IdxVec::from_iter(vec![None; graph.inner.edge_count()]);
-        for e in graph.inner.edges_keys() {
+        for e in graph.inner.edge_keys() {
             let key = union_find.find(e);
             let iterator = &iterators[e].0;
             match indices[key] {
@@ -972,7 +972,7 @@ impl CubicalGraph {
         let mut labels = IdxVec::new();
         let mut internal_labels = IdxVec::new();
 
-        for n in graph.nodes_keys() {
+        for n in graph.node_keys() {
             let label = self.label(n);
             for index in &self.internal_labels[n] {
                 labels.push(mk_coord(label, *index));

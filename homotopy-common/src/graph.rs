@@ -229,17 +229,17 @@ impl<V, E> Graph<V, E> {
     }
 
     #[inline]
-    pub fn nodes_keys(&self) -> impl Iterator<Item = Node> {
+    pub fn node_keys(&self) -> impl Iterator<Item = Node> {
         self.nodes.keys()
     }
 
     #[inline]
-    pub fn nodes_values(&self) -> impl Iterator<Item = &NodeData<V>> {
+    pub fn node_values(&self) -> impl Iterator<Item = &NodeData<V>> {
         self.nodes.values()
     }
 
     #[inline]
-    pub fn nodes_values_mut(&mut self) -> impl Iterator<Item = &mut NodeData<V>> {
+    pub fn node_values_mut(&mut self) -> impl Iterator<Item = &mut NodeData<V>> {
         self.nodes.values_mut()
     }
 
@@ -254,17 +254,17 @@ impl<V, E> Graph<V, E> {
     }
 
     #[inline]
-    pub fn edges_keys(&self) -> impl Iterator<Item = Edge> {
+    pub fn edge_keys(&self) -> impl Iterator<Item = Edge> {
         self.edges.keys()
     }
 
     #[inline]
-    pub fn edges_values(&self) -> impl Iterator<Item = &EdgeData<E>> {
+    pub fn edge_values(&self) -> impl Iterator<Item = &EdgeData<E>> {
         self.edges.values()
     }
 
     #[inline]
-    pub fn edges_values_mut(&mut self) -> impl Iterator<Item = &mut EdgeData<E>> {
+    pub fn edge_values_mut(&mut self) -> impl Iterator<Item = &mut EdgeData<E>> {
         self.edges.values_mut()
     }
 

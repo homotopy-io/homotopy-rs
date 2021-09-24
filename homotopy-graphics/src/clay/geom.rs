@@ -397,7 +397,7 @@ impl Mesh {
 
         // ELEMENTS: 0-CUBES
         let mut elements_0d: IdxVec<Node, Element> = IdxVec::new();
-        for n in graph.inner().nodes_keys() {
+        for n in graph.inner().node_keys() {
             let vertex = vertices[graph.label(n)];
             elements_0d.push(mesh.mk_element_0(vertex));
         }
