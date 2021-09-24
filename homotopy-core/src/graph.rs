@@ -6,14 +6,14 @@ use homotopy_common::{
 };
 
 use crate::{
-    common::{Boundary, DimensionError, Height, SliceIndex},
+    common::{Boundary, DimensionError, Height, RegularHeight, SliceIndex},
     diagram::{Diagram, DiagramN},
     rewrite::{DefaultAllocator, GenericRewrite, GenericRewriteN, RewriteAllocator},
 };
 
-type Coord = Vec<SliceIndex>;
+pub type Coord = Vec<SliceIndex>;
 
-fn mk_coord<I>(coord: &[SliceIndex], index: I) -> Coord
+pub fn mk_coord<I>(coord: &[SliceIndex], index: I) -> Coord
 where
     I: Into<SliceIndex>,
 {
@@ -40,17 +40,18 @@ impl GraphBuilder {
         graph.add_node((vec![], diagram));
 
         for _ in 0..depth {
-            graph = explode(&graph)?;
+            graph = explode(&graph, |r, _| GenericRewrite::identity(r.dimension() - 1))?;
         }
 
         Ok(graph)
     }
 }
 
-pub fn explode<A, T>(graph: &SliceGraph<A>) -> Result<SliceGraph<A>, DimensionError>
+pub fn explode<A, T, F>(graph: &SliceGraph<A>, f: F) -> Result<SliceGraph<A>, DimensionError>
 where
     A: RewriteAllocator<Payload = T>,
     T: Default,
+    F: Fn(&GenericRewriteN<A>, RegularHeight) -> GenericRewrite<A>,
 {
     use Height::{Regular, Singular};
 
@@ -126,17 +127,13 @@ where
         let target_size = target_slices.len();
 
         // Identity rewrite between source slices
-        exploded_graph.add_edge(
-            source_slices[0],
-            target_slices[0],
-            GenericRewrite::identity(rewrite.dimension() - 1),
-        );
+        exploded_graph.add_edge(source_slices[0], target_slices[0], f(rewrite, 0));
 
         // Identity rewrite between target slices
         exploded_graph.add_edge(
             source_slices[source_size - 1],
             target_slices[target_size - 1],
-            GenericRewrite::identity(rewrite.dimension() - 1),
+            f(rewrite, target_size - 1),
         );
 
         // Singular slices
@@ -155,7 +152,7 @@ where
             exploded_graph.add_edge(
                 source_slices[Regular(source_height).to_int() + 1],
                 target_slices[Regular(target_height).to_int() + 1],
-                GenericRewrite::identity(rewrite.dimension() - 1),
+                f(rewrite, target_height),
             );
         }
     }

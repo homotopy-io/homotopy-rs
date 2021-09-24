@@ -24,9 +24,9 @@ impl<I> UnionFind<I>
 where
     I: Idx,
 {
-    pub fn new<T>(data: &IdxVec<I, T>) -> Self {
+    pub fn new(len: usize) -> Self {
         Self {
-            forest: data.keys().map(NodeData::new).collect(),
+            forest: (0..len).map(I::new).map(NodeData::new).collect(),
         }
     }
 

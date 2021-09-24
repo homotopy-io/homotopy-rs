@@ -1,22 +1,27 @@
 use std::{
     cell::RefCell,
     cmp,
-    convert::{From, Into, TryInto},
+    collections::HashMap,
+    convert::{Into, TryInto},
     iter::FromIterator,
 };
 
 use hashconsing::{HConsed, HConsign, HashConsign};
-use homotopy_common::{declare_idx, idx::IdxVec};
+use homotopy_common::{
+    graph::{Edge, Graph, Node},
+    idx::IdxVec,
+    union_find::UnionFind,
+};
 use itertools::{Itertools, MultiProduct};
-use petgraph::{graph::IndexType, unionfind::UnionFind};
 
 use crate::{
-    common::{DimensionError, Direction, Height, RegularHeight, SingularHeight},
+    common::{DimensionError, Direction, Height, RegularHeight, SingularHeight, SliceIndex},
     diagram::{Diagram, DiagramN},
+    graph::{explode, mk_coord, Coord, SliceGraph, TopologicalSort},
     monotone::{compose, dual_inv, Monotone, MonotoneIterator},
     rewrite::{
-        Composable, CompositionError, Cone, ConeInternal, Cospan, GenericCone, GenericCospan,
-        GenericRewrite, GenericRewriteN, Rewrite, RewriteAllocator, RewriteInternal, RewriteN,
+        Composable, CompositionError, ConeInternal, Cospan, GenericCone, GenericCospan,
+        GenericRewrite, GenericRewriteN, RewriteAllocator, RewriteInternal,
     },
     util::Hasher,
 };
@@ -61,120 +66,6 @@ impl Diagram {
 // Explosion and parallelisation
 
 impl CubicalGraph {
-    fn explode(self) -> Result<Self, DimensionError> {
-        use Height::{Regular, Singular};
-
-        let original_nodes_len = self.nodes.len();
-
-        let mut nodes_exploded: IdxVec<NodeId, Node> = IdxVec::new();
-        let mut edges_exploded: IdxVec<EdgeId, Edge> = IdxVec::new();
-
-        // For every node index in the original graph, we record the index in `nodes_exploded` at
-        // which the slices of that node start. This allows us to find the index again when
-        // constructing the edges of the exploded graph.
-        let mut nodes_indices: Vec<usize> = Vec::new();
-
-        for (_, node) in self.nodes {
-            let nodes_index_start = nodes_exploded.len();
-            nodes_indices.push(nodes_index_start);
-            let diagram: DiagramN = node.diagram.try_into()?;
-
-            // Interior slices
-            for (i, slice) in diagram.slices().enumerate() {
-                let slice_key = mk_coord(&node.key, node.heights[i]);
-                let slice_coord = mk_coord(&node.coord, Height::from_int(i));
-                let slice_heights = slice.heights();
-                nodes_exploded.push(Node {
-                    key: slice_key,
-                    coord: slice_coord,
-                    diagram: slice,
-                    heights: slice_heights,
-                    incoming_edges: vec![],
-                    outgoing_edges: vec![],
-                });
-            }
-
-            // Rewrites between interior slices
-            for (i, cospan) in diagram.cospans().iter().enumerate() {
-                let e = EdgeId(edges_exploded.len());
-                let s = NodeId(nodes_index_start + Regular(i).to_int());
-                let t = NodeId(nodes_index_start + Singular(i).to_int());
-                edges_exploded.push(Edge {
-                    source: s,
-                    target: t,
-                    rewrite: cospan.forward.clone().into(),
-                });
-                nodes_exploded[s].outgoing_edges.push(e);
-                nodes_exploded[t].incoming_edges.push(e);
-
-                let e = EdgeId(edges_exploded.len());
-                let s = NodeId(nodes_index_start + Regular(i + 1).to_int());
-                let t = NodeId(nodes_index_start + Singular(i).to_int());
-                edges_exploded.push(Edge {
-                    source: s,
-                    target: t,
-                    rewrite: cospan.backward.clone().into(),
-                });
-                nodes_exploded[s].outgoing_edges.push(e);
-                nodes_exploded[t].incoming_edges.push(e);
-            }
-        }
-
-        // We push a final index so that the length of any node's contribution to `nodes_exploded`
-        // can be computed by subtracting the node's index from that of the next node.
-        nodes_indices.push(nodes_exploded.len());
-
-        for (_, edge) in self.edges {
-            let source = edge.source.0;
-            let target = edge.target.0;
-            let rewrite: CubicalRewriteN = edge.rewrite.try_into()?;
-
-            let source_index = nodes_indices[source];
-            let source_size = nodes_indices[source + 1] - source_index;
-            let target_index = nodes_indices[target];
-            let target_size = nodes_indices[target + 1] - target_index;
-
-            // Singular slices
-            for source_height in 0..(source_size - 1) / 2 {
-                let target_height = rewrite.singular_image(source_height);
-                let e = EdgeId(edges_exploded.len());
-                let s = NodeId(source_index + Singular(source_height).to_int());
-                let t = NodeId(target_index + Singular(target_height).to_int());
-                edges_exploded.push(Edge {
-                    source: s,
-                    target: t,
-                    rewrite: rewrite.singular_slice(source_height),
-                });
-                nodes_exploded[s].outgoing_edges.push(e);
-                nodes_exploded[t].incoming_edges.push(e);
-            }
-
-            // Regular slices
-            for target_height in 0..(target_size + 1) / 2 {
-                let source_height = rewrite.regular_image(target_height);
-                let e = EdgeId(edges_exploded.len());
-                let s = NodeId(source_index + Regular(source_height).to_int());
-                let t = NodeId(target_index + Regular(target_height).to_int());
-                edges_exploded.push(Edge {
-                    source: s,
-                    target: t,
-                    rewrite: rewrite.regular_slice(target_height),
-                });
-                nodes_exploded[s].outgoing_edges.push(e);
-                nodes_exploded[t].incoming_edges.push(e);
-            }
-        }
-
-        let mut sizes = self.sizes;
-        sizes.push((nodes_exploded.len() / original_nodes_len - 1) / 2);
-
-        Ok(Self {
-            sizes,
-            nodes: nodes_exploded,
-            edges: edges_exploded,
-        })
-    }
-
     fn parallelise(&self, bias: Bias) -> Self {
         if let Some(res) = self.parallelise_directed(bias, Direction::Forward) {
             return res;
@@ -187,7 +78,7 @@ impl CubicalGraph {
     }
 
     fn parallelise_directed(&self, bias: Bias, direction: Direction) -> Option<Self> {
-        if self.edges.values().all(|edge| edge.rewrite.is_parallel()) {
+        if self.inner.edges_values().all(|edge| edge.is_parallel()) {
             Some(self.clone())
         } else {
             match direction {
@@ -216,18 +107,18 @@ impl CubicalGraph {
 
 struct SingularExpansion {
     graph: CubicalGraph,
-    weights: IdxVec<NodeId, Vec<usize>>, // weights[i][j] = weight of singular slice j of node i
-    indices: IdxVec<EdgeId, usize>,      // indices[e] = index of edge e in the product below
+    weights: IdxVec<Node, Vec<usize>>, // weights[n][i] = weight of singular slice i of node n
+    indices: IdxVec<Edge, usize>,      // indices[e] = index of edge e in the product below
     product: MultiProduct<BiasedMonotoneIterator>,
 }
 
 impl SingularExpansion {
     fn new(graph: CubicalGraph, bias: Bias) -> Result<Self, DimensionError> {
         // Assign weights to the singular slices of every node.
-        let mut weights: IdxVec<NodeId, Vec<usize>> =
-            IdxVec::from_iter(vec![vec![]; graph.nodes.len()]);
-        for i in graph.topological_sort() {
-            let diagram: &DiagramN = (&graph.nodes[i].diagram).try_into()?;
+        let mut weights: IdxVec<Node, Vec<usize>> =
+            IdxVec::from_iter(vec![vec![]; graph.inner.node_count()]);
+        for i in TopologicalSort::new(&graph.inner) {
+            let diagram: &DiagramN = (&graph.inner[i].1).try_into()?;
 
             // Start by assigning weight 1 to every singular slice.
             for _ in 0..diagram.size() {
@@ -235,9 +126,9 @@ impl SingularExpansion {
             }
 
             // Now propagate weights forwards along every incoming edge.
-            for &e in &graph.nodes[i].incoming_edges {
-                let source = graph.edges[e].source;
-                let rewrite: &CubicalRewriteN = (&graph.edges[e].rewrite).try_into()?;
+            for e in graph.inner.incoming_edges(i) {
+                let source = graph.inner.source(e);
+                let rewrite: &CubicalRewriteN = (&graph.inner[e]).try_into()?;
 
                 for target_height in 0..diagram.size() {
                     let weight = rewrite
@@ -250,13 +141,13 @@ impl SingularExpansion {
         }
 
         // Construct a monotone iterator for every edge and identify the trivial edges.
-        let mut iterators: IdxVec<EdgeId, (MonotoneIterator, bool)> =
-            IdxVec::with_capacity(graph.edges.len());
-        for edge in graph.edges.values() {
-            let rewrite: &CubicalRewriteN = (&edge.rewrite).try_into()?;
+        let mut iterators: IdxVec<Edge, (MonotoneIterator, bool)> =
+            IdxVec::with_capacity(graph.inner.edge_count());
+        for edge in graph.inner.edges_values() {
+            let rewrite: &CubicalRewriteN = (edge.inner()).try_into()?;
 
-            let source_weights = &weights[edge.source];
-            let target_weights = &weights[edge.target];
+            let source_weights = &weights[edge.source()];
+            let target_weights = &weights[edge.target()];
 
             // Construct the underlying singular monotone map.
             let f = rewrite.singular_monotone(source_weights.len());
@@ -271,7 +162,7 @@ impl SingularExpansion {
         }
 
         // Identify the edges that must be equal.
-        let mut union_find: UnionFind<EdgeId> = UnionFind::new(graph.edges.len());
+        let mut union_find: UnionFind<Edge> = UnionFind::new(graph.inner.edge_count());
         for square in graph.squares() {
             let t = square.top;
             let l = square.left;
@@ -295,15 +186,12 @@ impl SingularExpansion {
             }
         }
 
-        // This maps each edge to its representative.
-        let edge_keys: IdxVec<EdgeId, EdgeId> = IdxVec::from_iter(union_find.into_labeling());
-
         // Combine the iterators of the identified edges.
         let mut combined_iterators: Vec<MonotoneIterator> = vec![];
-        let mut indices: IdxVec<EdgeId, Option<usize>> =
-            IdxVec::from_iter(vec![None; graph.edges.len()]);
-        for e in graph.edges.keys() {
-            let key = edge_keys[e];
+        let mut indices: IdxVec<Edge, Option<usize>> =
+            IdxVec::from_iter(vec![None; graph.inner.edge_count()]);
+        for e in graph.inner.edges_keys() {
+            let key = union_find.find(e);
             let iterator = &iterators[e].0;
             match indices[key] {
                 None => {
@@ -318,7 +206,7 @@ impl SingularExpansion {
         }
 
         // By this point, all indices should be non-null.
-        let indices: IdxVec<EdgeId, usize> = indices.values().map(|x| x.unwrap()).collect();
+        let indices: IdxVec<Edge, usize> = indices.values().map(|x| x.unwrap()).collect();
 
         // Construct the cartesian product.
         let product: MultiProduct<BiasedMonotoneIterator> = combined_iterators
@@ -352,35 +240,27 @@ impl SingularExpansion {
         &self,
         monotones: &[Monotone],
     ) -> Result<CubicalGraph, DimensionError> {
-        // Expand the nodes.
-        let mut expanded_nodes: IdxVec<NodeId, Node> =
-            IdxVec::with_capacity(self.graph.nodes.len());
-        for (i, node) in self.graph.nodes.iter() {
-            let diagram: &DiagramN = (&node.diagram).try_into()?;
-            let expanded_diagram = diagram.singular_expansion(&self.weights[i]);
-            let expanded_heights = singular_expansion(&node.heights, &self.weights[i]);
+        let graph = &self.graph.inner;
+        let mut expanded_graph = CubicalSliceGraph::new();
 
-            expanded_nodes.push(Node {
-                key: node.key.clone(),
-                coord: node.coord.clone(),
-                diagram: expanded_diagram.into(),
-                heights: expanded_heights,
-                incoming_edges: node.incoming_edges.clone(),
-                outgoing_edges: node.outgoing_edges.clone(),
-            });
+        // Expand the nodes.
+        for (n, nd) in graph.nodes() {
+            let coord: &Coord = &nd.0;
+            let diagram: &DiagramN = (&nd.1).try_into()?;
+            let expanded_diagram = diagram.singular_expansion(&self.weights[n]);
+
+            expanded_graph.add_node((coord.clone(), expanded_diagram.into()));
         }
 
         // Expand the edges.
-        let mut expanded_edges: IdxVec<EdgeId, Edge> =
-            IdxVec::with_capacity(self.graph.edges.len());
-        for (e, edge) in self.graph.edges.iter() {
-            let s = edge.source;
-            let t = edge.target;
-            let rewrite: &CubicalRewriteN = (&edge.rewrite).try_into()?;
+        for (e, ed) in graph.edges() {
+            let s = ed.source();
+            let t = ed.target();
+            let rewrite: &CubicalRewriteN = ed.inner().try_into()?;
 
             let f = &monotones[self.indices[e]];
-            let expanded_source: &DiagramN = (&expanded_nodes[s].diagram).try_into()?;
-            let expanded_target: &DiagramN = (&expanded_nodes[t].diagram).try_into()?;
+            let expanded_source: &DiagramN = (&expanded_graph[s].1).try_into()?;
+            let expanded_target: &DiagramN = (&expanded_graph[t].1).try_into()?;
 
             let expanded_rewrite = rewrite.singular_expansion(
                 f,
@@ -390,18 +270,22 @@ impl SingularExpansion {
                 &expanded_target.cubical_cospans(),
             );
 
-            expanded_edges.push(Edge {
-                source: s,
-                target: t,
-                rewrite: expanded_rewrite.into(),
-            });
+            expanded_graph.add_edge(s, t, expanded_rewrite.into());
         }
 
-        // Reconstruct the expanded graph.
+        let expanded_internal_labels = self
+            .graph
+            .internal_labels
+            .iter()
+            .map(|(n, labels)| singular_expansion(labels, &self.weights[n]))
+            .collect();
+
         Ok(CubicalGraph {
-            nodes: expanded_nodes,
-            edges: expanded_edges,
+            inner: expanded_graph,
             sizes: self.graph.sizes.clone(),
+            coord_to_node: self.graph.coord_to_node.clone(),
+            labels: self.graph.labels.clone(),
+            internal_labels: expanded_internal_labels,
         })
     }
 }
@@ -524,18 +408,27 @@ impl CubicalRewriteN {
     }
 }
 
-fn singular_expansion(heights: &[Height], weights: &[usize]) -> Vec<Height> {
-    assert_eq!(heights.len(), weights.len() * 2 + 1);
+fn singular_expansion<A>(labels: &[A], weights: &[usize]) -> Vec<A>
+where
+    A: Copy,
+{
+    assert_eq!(labels.len(), weights.len() * 2 + 3);
 
-    heights
+    let len = labels.len();
+
+    labels
         .iter()
         .enumerate()
-        .flat_map(|(i, height)| {
-            let n = match Height::from_int(i) {
-                Height::Regular(_) => 1,
-                Height::Singular(j) => weights[j] * 2 - 1,
+        .flat_map(|(i, label)| {
+            let n = if i == 0 || i == len - 1 {
+                1
+            } else {
+                match Height::from_int(i - 1) {
+                    Height::Regular(_) => 1,
+                    Height::Singular(j) => weights[j] * 2 - 1,
+                }
             };
-            std::iter::repeat(*height).take(n)
+            std::iter::repeat(*label).take(n)
         })
         .collect()
 }
@@ -544,18 +437,18 @@ fn singular_expansion(heights: &[Height], weights: &[usize]) -> Vec<Height> {
 
 struct RegularExpansion {
     graph: CubicalGraph,
-    weights: IdxVec<NodeId, Vec<usize>>, /* weights[i][j] is the weight of regular slice j of node i */
-    indices: IdxVec<EdgeId, usize>,      // indices[e] is the index of edge e in the product below
+    weights: IdxVec<Node, Vec<usize>>, /* weights[n][i] = weight of regular slice i of node n */
+    indices: IdxVec<Edge, usize>,      /* indices[e] = index of edge e in the product below */
     product: MultiProduct<BiasedMonotoneIterator>,
 }
 
 impl RegularExpansion {
     fn new(graph: CubicalGraph, bias: Bias) -> Result<Self, DimensionError> {
         // Assign weights to the regular slices of every node.
-        let mut weights: IdxVec<NodeId, Vec<usize>> =
-            IdxVec::from_iter(vec![vec![]; graph.nodes.len()]);
-        for i in graph.reverse_topological_sort() {
-            let diagram: &DiagramN = (&graph.nodes[i].diagram).try_into()?;
+        let mut weights: IdxVec<Node, Vec<usize>> =
+            IdxVec::from_iter(vec![vec![]; graph.inner.node_count()]);
+        for i in TopologicalSort::new(&graph.inner).into_iter().rev() {
+            let diagram: &DiagramN = (&graph.inner[i].1).try_into()?;
 
             // Start by assigning weight 1 to every regular slice.
             for _ in 0..diagram.size() + 1 {
@@ -563,9 +456,9 @@ impl RegularExpansion {
             }
 
             // Now propagate weights backwards along every outgoing edge.
-            for &e in &graph.nodes[i].outgoing_edges {
-                let target = graph.edges[e].target;
-                let rewrite: &CubicalRewriteN = (&graph.edges[e].rewrite).try_into()?;
+            for e in graph.inner.outgoing_edges(i) {
+                let target = graph.inner.target(e);
+                let rewrite: &CubicalRewriteN = (&graph.inner[e]).try_into()?;
 
                 for source_height in 0..diagram.size() + 1 {
                     let weight = rewrite
@@ -578,13 +471,13 @@ impl RegularExpansion {
         }
 
         // Construct a monotone iterator for every edge and identify the trivial edges.
-        let mut iterators: IdxVec<EdgeId, (MonotoneIterator, bool)> =
-            IdxVec::with_capacity(graph.edges.len());
-        for edge in graph.edges.values() {
-            let rewrite: &CubicalRewriteN = (&edge.rewrite).try_into()?;
+        let mut iterators: IdxVec<Edge, (MonotoneIterator, bool)> =
+            IdxVec::with_capacity(graph.inner.edge_count());
+        for edge in graph.inner.edges_values() {
+            let rewrite: &CubicalRewriteN = (edge.inner()).try_into()?;
 
-            let source_weights = &weights[edge.source];
-            let target_weights = &weights[edge.target];
+            let source_weights = &weights[edge.source()];
+            let target_weights = &weights[edge.target()];
 
             // Construct the underlying regular monotone map.
             let f = rewrite.regular_monotone(target_weights.len() - 1);
@@ -599,7 +492,7 @@ impl RegularExpansion {
         }
 
         // Identify the edges that must be equal.
-        let mut union_find: UnionFind<EdgeId> = UnionFind::new(graph.edges.len());
+        let mut union_find: UnionFind<Edge> = UnionFind::new(graph.inner.edge_count());
         for square in graph.squares() {
             let t = square.top;
             let l = square.left;
@@ -623,15 +516,12 @@ impl RegularExpansion {
             }
         }
 
-        // This maps each edge to its representative.
-        let edge_keys: IdxVec<EdgeId, EdgeId> = IdxVec::from_iter(union_find.into_labeling());
-
         // Combine the iterators of the identified edges.
         let mut combined_iterators: Vec<MonotoneIterator> = vec![];
-        let mut indices: IdxVec<EdgeId, Option<usize>> =
-            IdxVec::from_iter(vec![None; graph.edges.len()]);
-        for e in graph.edges.keys() {
-            let key = edge_keys[e];
+        let mut indices: IdxVec<Edge, Option<usize>> =
+            IdxVec::from_iter(vec![None; graph.inner.edge_count()]);
+        for e in graph.inner.edges_keys() {
+            let key = union_find.find(e);
             let iterator = &iterators[e].0;
             match indices[key] {
                 None => {
@@ -646,7 +536,7 @@ impl RegularExpansion {
         }
 
         // By this point, all indices should be non-null.
-        let indices: IdxVec<EdgeId, usize> = indices.values().map(|x| x.unwrap()).collect();
+        let indices: IdxVec<Edge, usize> = indices.values().map(|x| x.unwrap()).collect();
 
         // Construct the cartesian product.
         let product: MultiProduct<BiasedMonotoneIterator> = combined_iterators
@@ -680,35 +570,27 @@ impl RegularExpansion {
         &self,
         monotones: &[Monotone],
     ) -> Result<CubicalGraph, DimensionError> {
-        // Expand the nodes.
-        let mut expanded_nodes: IdxVec<NodeId, Node> =
-            IdxVec::with_capacity(self.graph.nodes.len());
-        for (i, node) in self.graph.nodes.iter() {
-            let diagram: &DiagramN = (&node.diagram).try_into()?;
-            let expanded_diagram = diagram.regular_expansion(&self.weights[i]);
-            let expanded_heights = regular_expansion(&node.heights, &self.weights[i]);
+        let graph = &self.graph.inner;
+        let mut expanded_graph = CubicalSliceGraph::new();
 
-            expanded_nodes.push(Node {
-                key: node.key.clone(),
-                coord: node.coord.clone(),
-                diagram: expanded_diagram.into(),
-                heights: expanded_heights,
-                incoming_edges: node.incoming_edges.clone(),
-                outgoing_edges: node.outgoing_edges.clone(),
-            });
+        // Expand the nodes.
+        for (n, nd) in graph.nodes() {
+            let coord: &Coord = &nd.0;
+            let diagram: &DiagramN = (&nd.1).try_into()?;
+            let expanded_diagram = diagram.regular_expansion(&self.weights[n]);
+
+            expanded_graph.add_node((coord.clone(), expanded_diagram.into()));
         }
 
         // Expand the edges.
-        let mut expanded_edges: IdxVec<EdgeId, Edge> =
-            IdxVec::with_capacity(self.graph.edges.len());
-        for (e, edge) in self.graph.edges.iter() {
-            let s = edge.source;
-            let t = edge.target;
-            let rewrite: &CubicalRewriteN = (&edge.rewrite).try_into()?;
+        for (e, ed) in graph.edges() {
+            let s = ed.source();
+            let t = ed.target();
+            let rewrite: &CubicalRewriteN = ed.inner().try_into()?;
 
             let f = &monotones[self.indices[e]];
-            let expanded_source: &DiagramN = (&expanded_nodes[s].diagram).try_into()?;
-            let expanded_target: &DiagramN = (&expanded_nodes[t].diagram).try_into()?;
+            let expanded_source: &DiagramN = (&expanded_graph[s].1).try_into()?;
+            let expanded_target: &DiagramN = (&expanded_graph[t].1).try_into()?;
 
             let expanded_rewrite = rewrite.regular_expansion(
                 f,
@@ -718,18 +600,22 @@ impl RegularExpansion {
                 &expanded_target.cubical_cospans(),
             );
 
-            expanded_edges.push(Edge {
-                source: s,
-                target: t,
-                rewrite: expanded_rewrite.into(),
-            });
+            expanded_graph.add_edge(s, t, expanded_rewrite.into());
         }
 
-        // Construct the expanded graph.
+        let expanded_internal_labels = self
+            .graph
+            .internal_labels
+            .iter()
+            .map(|(n, labels)| regular_expansion(labels, &self.weights[n]))
+            .collect();
+
         Ok(CubicalGraph {
-            nodes: expanded_nodes,
-            edges: expanded_edges,
+            inner: expanded_graph,
             sizes: self.graph.sizes.clone(),
+            coord_to_node: self.graph.coord_to_node.clone(),
+            labels: self.graph.labels.clone(),
+            internal_labels: expanded_internal_labels,
         })
     }
 }
@@ -853,18 +739,27 @@ impl CubicalRewriteN {
     }
 }
 
-fn regular_expansion(heights: &[Height], weights: &[usize]) -> Vec<Height> {
-    assert_eq!(heights.len(), weights.len() * 2 - 1);
+fn regular_expansion<A>(labels: &[A], weights: &[usize]) -> Vec<A>
+where
+    A: Copy,
+{
+    assert_eq!(labels.len(), weights.len() * 2 + 1);
 
-    heights
+    let len = labels.len();
+
+    labels
         .iter()
         .enumerate()
-        .flat_map(|(i, height)| {
-            let n = match Height::from_int(i) {
-                Height::Regular(j) => weights[j] * 2 - 1,
-                Height::Singular(_) => 1,
+        .flat_map(|(i, label)| {
+            let n = if i == 0 || i == len - 1 {
+                1
+            } else {
+                match Height::from_int(i - 1) {
+                    Height::Regular(j) => weights[j] * 2 - 1,
+                    Height::Singular(_) => 1,
+                }
             };
-            std::iter::repeat(*height).take(n)
+            std::iter::repeat(*label).take(n)
         })
         .collect()
 }
@@ -949,10 +844,12 @@ impl Cospan {
 }
 
 impl Diagram {
-    fn heights(&self) -> Vec<Height> {
+    fn slice_indices(&self) -> Vec<SliceIndex> {
         match self {
             Self::Diagram0(_) => vec![],
-            Self::DiagramN(d) => (0..d.size() * 2 + 1).map(Height::from_int).collect(),
+            Self::DiagramN(d) => (0..d.size() * 2 + 3)
+                .map(|h| SliceIndex::from_int(h as isize - 1, d.size()))
+                .collect(),
         }
     }
 }
@@ -962,7 +859,7 @@ impl DiagramN {
         self.cospans()
             .iter()
             .cloned()
-            .map(|cospan| cospan.into())
+            .map(|cospan| cospan.convert())
             .collect()
     }
 }
@@ -1008,117 +905,93 @@ impl Iterator for BiasedMonotoneIterator {
 
 // Cubical graphs
 
-pub type Coord = Vec<Height>;
-pub type Orientation = usize;
-
-fn mk_coord(hs: &[Height], height: Height) -> Coord {
-    let mut coord = hs.to_owned();
-    coord.push(height);
-    coord
-}
-
-declare_idx! {
-    #[derive(Default)]
-    pub struct NodeId = usize;
-}
-
-declare_idx! {
-    #[derive(Default)]
-    pub struct EdgeId = usize;
-}
-
-unsafe impl IndexType for NodeId {
-    fn new(x: usize) -> Self {
-        Self(x)
-    }
-
-    fn index(&self) -> usize {
-        self.0
-    }
-
-    fn max() -> Self {
-        Self(::std::usize::MAX)
-    }
-}
-
-unsafe impl IndexType for EdgeId {
-    fn new(x: usize) -> Self {
-        Self(x)
-    }
-
-    fn index(&self) -> usize {
-        self.0
-    }
-
-    fn max() -> Self {
-        Self(::std::usize::MAX)
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct Node {
-    pub key: Coord,
-    pub coord: Coord,
-    pub diagram: Diagram,
-    heights: Vec<Height>,
-    incoming_edges: Vec<EdgeId>,
-    outgoing_edges: Vec<EdgeId>,
-}
-
-#[derive(Clone, Debug)]
-pub struct Edge {
-    pub source: NodeId,
-    pub target: NodeId,
-    pub rewrite: CubicalRewrite,
-}
+type Orientation = usize;
+type CubicalSliceGraph = SliceGraph<CubicalAllocator>;
 
 #[derive(Clone, Debug)]
 pub struct CubicalGraph {
+    inner: CubicalSliceGraph,
     sizes: Vec<usize>,
-    pub nodes: IdxVec<NodeId, Node>,
-    pub edges: IdxVec<EdgeId, Edge>,
+    coord_to_node: HashMap<Coord, Node>,
+    labels: IdxVec<Node, Vec<SliceIndex>>, /* labels[n] = label of node n (i.e. a coordinate in the original graph) */
+    internal_labels: IdxVec<Node, Vec<SliceIndex>>, /* internal_labels[n][i] = label of slice i of node n (i.e. a slice index in the original node) */
 }
 
 pub struct Square {
-    pub top: EdgeId,
-    pub left: EdgeId,
-    pub right: EdgeId,
-    pub bottom: EdgeId,
+    pub top: Edge,
+    pub left: Edge,
+    pub right: Edge,
+    pub bottom: Edge,
     pub orientation: [Orientation; 2],
 }
 
 pub struct Cube {
-    pub top_front: EdgeId,
-    pub left_front: EdgeId,
-    pub right_front: EdgeId,
-    pub bottom_front: EdgeId,
-    pub top_back: EdgeId,
-    pub left_back: EdgeId,
-    pub right_back: EdgeId,
-    pub bottom_back: EdgeId,
-    pub top_left: EdgeId,
-    pub top_right: EdgeId,
-    pub bottom_left: EdgeId,
-    pub bottom_right: EdgeId,
+    pub top_front: Edge,
+    pub left_front: Edge,
+    pub right_front: Edge,
+    pub bottom_front: Edge,
+    pub top_back: Edge,
+    pub left_back: Edge,
+    pub right_back: Edge,
+    pub bottom_back: Edge,
+    pub top_left: Edge,
+    pub top_right: Edge,
+    pub bottom_left: Edge,
+    pub bottom_right: Edge,
     pub orientation: [Orientation; 3],
 }
 
 impl CubicalGraph {
     pub fn new(diagram: Diagram) -> Self {
-        let heights = diagram.heights();
-        let node = Node {
-            key: vec![],
-            coord: vec![],
-            diagram,
-            heights,
-            incoming_edges: vec![],
-            outgoing_edges: vec![],
-        };
+        let slice_indices = diagram.slice_indices();
+
+        let mut graph = Graph::new();
+        let n = graph.add_node((vec![], diagram));
+
         Self {
-            sizes: vec![],
-            nodes: IdxVec::from_iter([node]),
-            edges: IdxVec::new(),
+            inner: graph,
+            sizes: Vec::new(),
+            coord_to_node: HashMap::from_iter([(vec![], n)]),
+            labels: IdxVec::from_iter([vec![]]),
+            internal_labels: IdxVec::from_iter([slice_indices]),
         }
+    }
+
+    pub fn inner(&self) -> &SliceGraph<CubicalAllocator> {
+        &self.inner
+    }
+
+    pub fn explode(&self) -> Result<Self, DimensionError> {
+        let graph = &self.inner;
+        let exploded_graph = explode(graph, CubicalRewriteN::regular_slice)?;
+
+        let mut sizes = self.sizes.clone();
+        sizes.push((exploded_graph.node_count() / graph.node_count() - 3) / 2);
+
+        let mut coord_to_node = HashMap::new();
+        let mut labels = IdxVec::new();
+        let mut internal_labels = IdxVec::new();
+
+        for n in graph.nodes_keys() {
+            let label = self.label(n);
+            for index in &self.internal_labels[n] {
+                labels.push(mk_coord(label, *index));
+            }
+        }
+        for (n, nd) in exploded_graph.nodes() {
+            let (coord, diagram) = &nd.inner();
+
+            coord_to_node.insert(coord.clone(), n);
+            internal_labels.push(diagram.slice_indices());
+        }
+
+        Ok(Self {
+            inner: exploded_graph,
+            sizes,
+            coord_to_node,
+            labels,
+            internal_labels,
+        })
     }
 
     pub fn size(&self, direction: usize) -> usize {
@@ -1129,25 +1002,17 @@ impl CubicalGraph {
         self.sizes.len()
     }
 
-    /// Finds the node with the given coordinate.
-    fn get_node_id(&self, coord: &[Height]) -> NodeId {
-        let mut i = 0;
-        let mut prod = 1;
-        let mut offset = self.dimension();
-        for height in coord.iter().rev() {
-            i += height.to_int() * prod;
-            prod *= 2 * self.sizes[offset - 1] + 1;
-            offset -= 1;
-        }
-        NodeId(i)
+    pub fn label(&self, node: Node) -> &[SliceIndex] {
+        &self.labels[node]
     }
 
     /// Finds the orientation of an edge.
-    fn get_orientation(&self, ei: EdgeId) -> Orientation {
-        let s = self.edges[ei].source;
-        let t = self.edges[ei].target;
-        let source_coord = &self.nodes[s].coord;
-        let target_coord = &self.nodes[t].coord;
+    fn get_orientation(&self, edge: Edge) -> usize {
+        let graph = &self.inner;
+        let s = graph.source(edge);
+        let t = graph.target(edge);
+        let source_coord = &graph[s].0;
+        let target_coord = &graph[t].0;
         source_coord
             .iter()
             .zip(target_coord)
@@ -1155,11 +1020,12 @@ impl CubicalGraph {
             .unwrap()
     }
 
-    pub fn get_direction(&self, ei: EdgeId) -> Direction {
-        let s = self.edges[ei].source;
-        let t = self.edges[ei].target;
-        let source_coord = &self.nodes[s].coord;
-        let target_coord = &self.nodes[t].coord;
+    pub fn get_direction(&self, edge: Edge) -> Direction {
+        let graph = &self.inner;
+        let s = graph.source(edge);
+        let t = graph.target(edge);
+        let source_coord = &graph[s].0;
+        let target_coord = &graph[t].0;
         source_coord
             .iter()
             .zip(target_coord)
@@ -1171,73 +1037,68 @@ impl CubicalGraph {
             .unwrap()
     }
 
-    fn complete_square(
-        &self,
-        e0: EdgeId,
-        e1: EdgeId,
-        i0: Orientation,
-        i1: Orientation,
-    ) -> (EdgeId, EdgeId) {
-        let bl = self.edges[e0].source;
-        let tl = self.edges[e0].target;
-        let br = self.edges[e1].target;
+    fn complete_square(&self, e0: Edge, e1: Edge, i0: usize, i1: usize) -> [Edge; 2] {
+        let graph = &self.inner;
+        let bl = graph.source(e0);
+        let tl = graph.target(e0);
+        let br = graph.target(e1);
 
-        let coord_bl = &self.nodes[bl].coord;
-        let coord_tl = &self.nodes[tl].coord;
-        let coord_br = &self.nodes[br].coord;
+        let coord_bl = &graph[bl].0;
+        let coord_tl = &graph[tl].0;
+        let coord_br = &graph[br].0;
 
         let mut coord_tr = coord_bl.clone();
         coord_tr[i0] = coord_tl[i0];
         coord_tr[i1] = coord_br[i1];
 
         // Find the top-right corner of the square.
-        let tr = self.get_node_id(&coord_tr);
+        let tr = self.coord_to_node[&coord_tr];
 
         // Find the final two edges.
-        let &r = self.nodes[br]
-            .outgoing_edges
-            .iter()
-            .find(|&&e| self.edges[e].target == tr)
+        let r = graph
+            .outgoing_edges(br)
+            .find(|&e| graph.target(e) == tr)
             .unwrap();
-        let &t = self.nodes[tl]
-            .outgoing_edges
-            .iter()
-            .find(|&&e| self.edges[e].target == tr)
+        let t = graph
+            .outgoing_edges(tl)
+            .find(|&e| graph.target(e) == tr)
             .unwrap();
 
-        (r, t)
+        [r, t]
     }
 
     /// Returns all squares in the graph.
     pub fn squares(&self) -> Vec<Square> {
+        let graph = &self.inner;
+
         let mut squares = Vec::new();
 
         // Iterate over all possible top-left corners.
-        for bl in self.topological_sort() {
-            let coord_bl = &self.nodes[bl].coord;
+        for bl in TopologicalSort::new(graph) {
+            let coord_bl = &graph[bl].0;
 
-            // Count the number of singular heights in the coordinate.
-            let singular: usize = coord_bl
+            let rank = coord_bl
                 .iter()
                 .map(|h| match h {
-                    Height::Regular(_) => 0,
-                    Height::Singular(_) => 1,
+                    SliceIndex::Boundary(_) => -1,
+                    SliceIndex::Interior(Height::Regular(_)) => 0,
+                    SliceIndex::Interior(Height::Singular(_)) => 1,
                 })
-                .sum();
+                .sum::<i32>();
 
-            // If the coordinate contains more than n - 2 singular heights, the node cannot be the top-left corner of a square.
+            // If the rank is more than dimension - 2, the node cannot be the apex of a square.
             // Since the nodes are in the topological ordering, all the remaining nodes are also not good, so we can just break.
-            if singular + 2 > self.dimension() {
+            if rank > self.dimension() as i32 - 2 {
                 break;
             }
 
             // Pick two orthogonal outgoing edges.
-            for &l in &self.nodes[bl].outgoing_edges {
+            for l in graph.outgoing_edges(bl) {
                 let i = self.get_orientation(l);
-                for &b in &self.nodes[bl].outgoing_edges {
+                for b in graph.outgoing_edges(bl) {
                     let j = self.get_orientation(b);
                     if i < j {
-                        let (r, t) = self.complete_square(l, b, i, j);
+                        let [r, t] = self.complete_square(l, b, i, j);
 
                         squares.push(Square {
                             top: t,
@@ -1255,42 +1116,44 @@ impl CubicalGraph {
 
     /// Returns all cubes in the graph.
     pub fn cubes(&self) -> Vec<Cube> {
+        let graph = &self.inner;
+
         let mut cubes = Vec::new();
 
         // Iterate over all possible bottom-left-front corners.
-        for blf in self.topological_sort() {
-            let coord_blf = &self.nodes[blf].coord;
+        for blf in TopologicalSort::new(graph) {
+            let coord_blf = &graph[blf].0;
 
-            // Count the number of singular heights in the coordinate.
-            let singular: usize = coord_blf
+            let rank = coord_blf
                 .iter()
                 .map(|h| match h {
-                    Height::Regular(_) => 0,
-                    Height::Singular(_) => 1,
+                    SliceIndex::Boundary(_) => -1,
+                    SliceIndex::Interior(Height::Regular(_)) => 0,
+                    SliceIndex::Interior(Height::Singular(_)) => 1,
                 })
-                .sum();
+                .sum::<i32>();
 
-            // If the coordinate contains more than n - 3 singular heights, the node cannot be the bottom-left-front corner of a cube.
+            // If the rank is more than dimension - 3, the node cannot be the apex of a cube.
             // Since the nodes are in the topological ordering, all the remaining nodes are also not good, so we can just break.
-            if singular + 3 > self.dimension() {
+            if rank > self.dimension() as i32 - 3 {
                 break;
             }
 
             // Pick three orthogonal outgoing edges.
-            for &lf in &self.nodes[blf].outgoing_edges {
+            for lf in graph.outgoing_edges(blf) {
                 let i = self.get_orientation(lf);
-                for &bf in &self.nodes[blf].outgoing_edges {
+                for bf in graph.outgoing_edges(blf) {
                     let j = self.get_orientation(bf);
-                    for &bl in &self.nodes[blf].outgoing_edges {
+                    for bl in graph.outgoing_edges(blf) {
                         let k = self.get_orientation(bl);
                         if i < j && j < k {
-                            let (rf, tf) = self.complete_square(lf, bf, i, j);
-                            let (lb, tl) = self.complete_square(lf, bl, i, k);
-                            let (bb, br) = self.complete_square(bf, bl, j, k);
+                            let [rf, tf] = self.complete_square(lf, bf, i, j);
+                            let [lb, tl] = self.complete_square(lf, bl, i, k);
+                            let [bb, br] = self.complete_square(bf, bl, j, k);
 
-                            let (rb, tb) = self.complete_square(lb, bb, i, j);
-                            let (rb1, tr) = self.complete_square(rf, br, i, k);
-                            let (tb1, tr1) = self.complete_square(tf, tl, j, k);
+                            let [rb, tb] = self.complete_square(lb, bb, i, j);
+                            let [rb1, tr] = self.complete_square(rf, br, i, k);
+                            let [tb1, tr1] = self.complete_square(tf, tl, j, k);
 
                             assert_eq!(rb, rb1);
                             assert_eq!(tb, tb1);
@@ -1318,24 +1181,6 @@ impl CubicalGraph {
         }
 
         cubes
-    }
-
-    /// Returns the nodes in the topological ordering.
-    /// For every edge (i, j), we have that i comes before j in this ordering.
-    fn topological_sort(&self) -> Vec<NodeId> {
-        (0..self.nodes.len())
-            .map(NodeId)
-            .sorted_by_key(|&i| self.nodes[i].incoming_edges.len())
-            .collect()
-    }
-
-    /// Returns the nodes in the reverse topological ordering.
-    /// For every edge (i, j), we have that j comes before i in this ordering.
-    fn reverse_topological_sort(&self) -> Vec<NodeId> {
-        (0..self.nodes.len())
-            .map(NodeId)
-            .sorted_by_key(|&i| self.nodes[i].outgoing_edges.len())
-            .collect()
     }
 }
 
@@ -1425,91 +1270,5 @@ impl RewriteAllocator for CubicalAllocator {
     fn collect_garbage() {
         CONE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
         REWRITE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
-    }
-}
-
-// Conversions between rewrites and cubical rewrites
-
-impl From<Cospan> for CubicalCospan {
-    fn from(cospan: Cospan) -> Self {
-        Self {
-            forward: cospan.forward.into(),
-            backward: cospan.backward.into(),
-        }
-    }
-}
-
-impl From<CubicalCospan> for Cospan {
-    fn from(cospan: CubicalCospan) -> Self {
-        Self {
-            forward: cospan.forward.into(),
-            backward: cospan.backward.into(),
-        }
-    }
-}
-
-impl From<Cone> for CubicalCone {
-    fn from(cone: Cone) -> Self {
-        Self::new(
-            cone.index,
-            cone.internal
-                .source
-                .iter()
-                .cloned()
-                .map(|cospan| cospan.into())
-                .collect(),
-            cone.internal.target.clone().into(),
-            cone.internal
-                .slices
-                .iter()
-                .cloned()
-                .map(|rewrite| rewrite.into())
-                .collect(),
-        )
-    }
-}
-
-impl From<CubicalCone> for Cone {
-    fn from(cone: CubicalCone) -> Self {
-        Self::new(
-            cone.index,
-            cone.internal
-                .source
-                .iter()
-                .cloned()
-                .map(|cospan| cospan.into())
-                .collect(),
-            cone.internal.target.clone().into(),
-            cone.internal
-                .slices
-                .iter()
-                .cloned()
-                .map(|rewrite| rewrite.into())
-                .collect(),
-        )
-    }
-}
-
-impl From<Rewrite> for CubicalRewrite {
-    fn from(rewrite: Rewrite) -> Self {
-        match rewrite {
-            Rewrite::Rewrite0(f) => Self::Rewrite0(f),
-            Rewrite::RewriteN(f) => Self::RewriteN(CubicalRewriteN::new(
-                f.dimension(),
-                f.cones().iter().cloned().map(|cone| cone.into()).collect(),
-            )),
-        }
-    }
-}
-
-impl From<CubicalRewrite> for Rewrite {
-    fn from(rewrite: CubicalRewrite) -> Self {
-        match rewrite {
-            CubicalRewrite::Rewrite0(f) => Self::Rewrite0(f),
-            CubicalRewrite::RewriteN(f) => Self::RewriteN(RewriteN::new(
-                f.dimension(),
-                f.cones().iter().cloned().map(|cone| cone.into()).collect(),
-            )),
-        }
     }
 }

@@ -8,11 +8,13 @@ use std::{
 
 use homotopy_common::{
     declare_idx,
+    graph::{Edge, Node},
     idx::{Idx, IdxVec},
 };
 use homotopy_core::{
-    common::{DimensionError, Direction, Height},
-    cubicalisation::{Bias, Coord, EdgeId, NodeId},
+    common::{DimensionError, Direction, SliceIndex},
+    cubicalisation::Bias,
+    graph::Coord,
     Diagram, DiagramN, Generator,
 };
 use ultraviolet::{Mat3, Vec3, Vec4};
@@ -53,18 +55,16 @@ impl Boundary {
     }
 
     /// Calculate the boundary of a given location in a diagram.
-    fn at_location(diagram: &Diagram, location: &[Height]) -> Self {
-        match location {
+    fn at_coord(diagram: &Diagram, coord: &[SliceIndex]) -> Self {
+        match coord {
             [] | [_] => Self::Zero,
-            [height, location @ ..] => {
-                let diagram: &DiagramN = diagram.try_into().unwrap();
-                let max = diagram.size();
-                let slice = diagram.slice(*height).unwrap();
-                match height {
-                    Height::Regular(j) if *j == 0 || *j == max => {
-                        Self::at_location(&slice, location)
-                    }
-                    _ => Self::at_location(&slice, location).inc(),
+            [index, coord @ ..] => {
+                let d: &DiagramN = diagram.try_into().unwrap();
+                let slice = d.slice(*index).unwrap();
+                let boundary = Self::at_coord(&slice, coord);
+                match index {
+                    SliceIndex::Boundary(_) => boundary,
+                    SliceIndex::Interior(_) => boundary.inc(),
                 }
             }
         }
@@ -353,22 +353,23 @@ impl Mesh {
         let mut boundaries: HashMap<Coord, Boundary> = HashMap::new();
         let mut generators: HashMap<Coord, Generator> = HashMap::new();
         let mut coordinates: HashMap<Coord, Vec<Vec4>> = HashMap::new();
-        for node in graph.nodes.values() {
-            let key = &node.key;
+        for (n, nd) in graph.inner().nodes() {
+            let label = graph.label(n).to_vec();
             boundaries
-                .entry(key.clone())
-                .or_insert_with(|| Boundary::at_location(&mesh.diagram, key));
+                .entry(label.clone())
+                .or_insert_with(|| Boundary::at_coord(&mesh.diagram, &label));
             generators
-                .entry(key.clone())
-                .or_insert_with(|| node.diagram.max_generator());
-            coordinates.entry(key.clone()).or_default().push({
+                .entry(label.clone())
+                .or_insert_with(|| nd.1.max_generator());
+            coordinates.entry(label).or_default().push({
                 let v = (0..4)
                     .map(|i| {
-                        let n = node.coord.len();
+                        let n = nd.0.len();
                         if i >= n {
                             0.0
                         } else {
-                            node.coord[n - i - 1].to_int() as f32
+                            let j = n - i - 1;
+                            nd.0[j].to_int(graph.size(j)) as f32
                         }
                     })
                     .collect::<Vec<_>>();
@@ -395,17 +396,17 @@ impl Mesh {
         }
 
         // ELEMENTS: 0-CUBES
-        let mut elements_0d: IdxVec<NodeId, Element> = IdxVec::new();
-        for node in graph.nodes.values() {
-            let vertex = vertices[&node.key];
+        let mut elements_0d: IdxVec<Node, Element> = IdxVec::new();
+        for n in graph.inner().nodes_keys() {
+            let vertex = vertices[graph.label(n)];
             elements_0d.push(mesh.mk_element_0(vertex));
         }
 
         // ELEMENTS: 1-CUBES
-        let mut elements_1d: IdxVec<EdgeId, Element> = IdxVec::new();
-        for (e, edge) in graph.edges.iter() {
-            let s = edge.source;
-            let t = edge.target;
+        let mut elements_1d: IdxVec<Edge, Element> = IdxVec::new();
+        for (e, edge) in graph.inner().edges() {
+            let s = edge.source();
+            let t = edge.target();
 
             let mut subcube_0 = elements_0d[s];
             let mut subcube_1 = elements_0d[t];
@@ -417,7 +418,7 @@ impl Mesh {
         }
 
         // ELEMENTS: 2-CUBES
-        let mut elements_2d: HashMap<[EdgeId; 2], Element> = HashMap::new();
+        let mut elements_2d: HashMap<[Edge; 2], Element> = HashMap::new();
         for square in graph.squares() {
             let b = square.bottom;
             let t = square.top;
@@ -432,7 +433,7 @@ impl Mesh {
         }
 
         // ELEMENTS: 3-CUBES
-        let mut elements_3d: HashMap<[EdgeId; 4], Element> = HashMap::new();
+        let mut elements_3d: HashMap<[Edge; 4], Element> = HashMap::new();
         for cube in graph.cubes() {
             let bl = cube.bottom_left;
             let br = cube.bottom_right;
