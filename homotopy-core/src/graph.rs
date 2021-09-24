@@ -60,7 +60,7 @@ where
     // Maps every node in the original graph to its slices in the exploded graph.
     let mut node_to_slices: IdxVec<Node, Vec<Node>> = IdxVec::with_capacity(graph.node_count());
 
-    for nd in graph.nodes_values() {
+    for nd in graph.node_values() {
         let coord: &Coord = &nd.0;
         let diagram: &DiagramN = (&nd.1).try_into()?;
 
@@ -118,7 +118,7 @@ where
         node_to_slices.push(slices);
     }
 
-    for ed in graph.edges_values() {
+    for ed in graph.edge_values() {
         let rewrite: &GenericRewriteN<_> = ed.inner().try_into()?;
 
         let source_slices = &node_to_slices[ed.source()];
@@ -167,7 +167,7 @@ impl TopologicalSort {
     where
         A: RewriteAllocator,
     {
-        let mut nodes: Vec<Node> = graph.nodes_keys().collect();
+        let mut nodes: Vec<Node> = graph.node_keys().collect();
         nodes.sort_by_cached_key(|&n| {
             graph[n]
                 .0
