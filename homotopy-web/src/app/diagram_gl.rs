@@ -3,13 +3,9 @@ use std::{cell::RefCell, f32::consts::PI, rc::Rc};
 use gloo::render::{request_animation_frame, AnimationFrame};
 use homotopy_core::DiagramN;
 use homotopy_graphics::{
-    clay::{
-        geom::Mesh,
-        subdivision::{subdivide, CubeSubdivider, SquareSubdivider},
-    },
+    clay::{Scene, ViewDimension},
     draw,
-    gl::{array::VertexArray, buffer::ElementKind, frame::Frame, shader::Program, GlCtx, Result},
-    program, vertex_array,
+    gl::{frame::Frame, GlCtx, Result},
 };
 use ultraviolet::{
     projection::rh_yup::{orthographic_gl, perspective_gl},
@@ -228,17 +224,6 @@ struct GlDiagramRenderer {
     t: f32,
 }
 
-struct Scene {
-    solid_program_3: Program,
-    solid_program_4: Program,
-    wireframe_program: Program,
-
-    solid_mesh: VertexArray,
-    wireframe_mesh: VertexArray,
-
-    axes: VertexArray,
-}
-
 pub struct OrbitCamera {
     target: Vec3,
     phi: f32,
@@ -249,13 +234,17 @@ pub struct OrbitCamera {
 }
 
 impl GlDiagramRenderer {
-    fn new(mut ctx: GlCtx, settings: &Store<AppSettings>, props: &GlDiagramProps) -> Result<Self> {
+    fn new(ctx: GlCtx, settings: &Store<AppSettings>, props: &GlDiagramProps) -> Result<Self> {
         Ok(Self {
             props: props.clone(),
-            scene: Scene::new(
-                &mut ctx,
+            scene: Scene::build(
+                &ctx,
                 &props.diagram,
-                props.view,
+                if props.view.dimension() <= 3 {
+                    ViewDimension::Three
+                } else {
+                    ViewDimension::Four
+                },
                 *settings.get_subdivision_depth() as u8,
             )?,
             camera: OrbitCamera::new(Vec3::zero(), 30.0),
@@ -271,12 +260,7 @@ impl GlDiagramRenderer {
 
         if self.subdivision_depth != depth {
             self.subdivision_depth = depth;
-            self.scene.reload_meshes(
-                &mut self.ctx,
-                &self.props.diagram,
-                self.props.view,
-                self.subdivision_depth,
-            )?;
+            self.scene.reload_meshes(&self.ctx, depth)?;
         }
 
         self.camera.ortho = *settings.get_orthographic_3d();
@@ -290,43 +274,39 @@ impl GlDiagramRenderer {
 
         let vp = self.camera.transform(&*frame);
 
-        // TODO(@doctorn) light relative to camera up direciton
         if !*settings.get_mesh_hidden() {
+            let normals = *settings.get_debug_normals();
+            let camera = self.camera.position();
+
             if self.props.view.dimension() <= 3 {
-                frame.draw(draw! {
-                    &self.scene.solid_mesh,
-                    {
+                self.scene.draw(&mut frame, |_, array| {
+                    draw!(array, {
                         mvp: vp,
-                        debug_normals: *settings.get_debug_normals(),
-                        light_pos: self.camera.position(),
-                    }
+                        debug_normals: normals,
+                        camera_pos: camera,
+                    })
                 });
             } else {
-                frame.draw(draw! {
-                    &self.scene.solid_mesh,
-                    {
+                // TODO(@doctorn) something sensible for time control
+                let t = f32::sin(0.00025 * self.t);
+
+                self.scene.draw(&mut frame, |_, array| {
+                    draw!(array, {
                         mvp: vp,
-                        debug_normals: *settings.get_debug_normals(),
-                        light_pos: self.camera.position(),
-                        // TODO(@doctorn) something sensible for time control
-                        t: f32::sin(0.00025 * self.t),
-                    }
+                        debug_normals: normals,
+                        camera_pos: camera,
+                        t: t,
+                    })
                 });
             }
         }
 
         if *settings.get_wireframe_3d() {
-            frame.draw(draw! {
-                &self.scene.wireframe_mesh,
-                { mvp: vp }
-            });
+            self.scene.draw_wireframe(&mut frame, &vp);
         }
 
         if *settings.get_debug_axes() {
-            frame.draw(draw! {
-                &self.scene.axes,
-                { mvp: vp }
-            });
+            self.scene.draw_axes(&mut frame, &vp);
         }
     }
 
@@ -361,162 +341,6 @@ impl GlDiagramRenderer {
     }
 }
 
-impl Scene {
-    fn new(ctx: &mut GlCtx, diagram: &DiagramN, view: View, subdivision_depth: u8) -> Result<Self> {
-        let solid_program_3 = program!(
-            ctx,
-            "../../glsl/vert.glsl",
-            "../../glsl/frag.glsl",
-            { position, normal },
-            { mvp, debug_normals, light_pos },
-        )?;
-        let solid_program_4 = program!(
-            ctx,
-            "../../glsl/vert_4d.glsl",
-            "../../glsl/frag.glsl",
-            { position_start, position_end, normal_start, normal_end },
-            { mvp, debug_normals, light_pos, t },
-        )?;
-        let wireframe_program = program!(
-            ctx,
-            "../../glsl/wireframe_vert.glsl",
-            "../../glsl/wireframe_frag.glsl",
-            { position, color },
-            { mvp },
-        )?;
-        let (solid_mesh, wireframe_mesh) = Self::buffer_meshes(
-            ctx,
-            diagram,
-            view,
-            &solid_program_3,
-            &solid_program_4,
-            &wireframe_program,
-            subdivision_depth,
-        )?;
-        let axes = Self::buffer_axes(ctx, &wireframe_program)?;
-
-        Ok(Self {
-            solid_program_3,
-            solid_program_4,
-            wireframe_program,
-
-            solid_mesh,
-            wireframe_mesh,
-
-            axes,
-        })
-    }
-
-    fn reload_meshes(
-        &mut self,
-        ctx: &mut GlCtx,
-        diagram: &DiagramN,
-        view: View,
-        subdivision_depth: u8,
-    ) -> Result<()> {
-        let (solid_mesh, wireframe_mesh) = Self::buffer_meshes(
-            ctx,
-            diagram,
-            view,
-            &self.solid_program_3,
-            &self.solid_program_4,
-            &self.wireframe_program,
-            subdivision_depth,
-        )?;
-
-        self.solid_mesh = solid_mesh;
-        self.wireframe_mesh = wireframe_mesh;
-
-        Ok(())
-    }
-
-    fn buffer_meshes(
-        ctx: &mut GlCtx,
-        diagram: &DiagramN,
-        view: View,
-        solid_program_3: &Program,
-        solid_program_4: &Program,
-        wireframe_program: &Program,
-        subdivision_depth: u8,
-    ) -> Result<(VertexArray, VertexArray)> {
-        if view.dimension() <= 3 {
-            let subdivided =
-                subdivide::<SquareSubdivider>(Mesh::build(diagram).unwrap(), subdivision_depth);
-            let buffers = subdivided.buffer(ctx)?;
-
-            let solid_mesh = vertex_array!(
-                solid_program_3,
-                &buffers.element_buffer,
-                {
-                    position: &buffers.vertex_buffer,
-                    normal: &buffers.normal_buffer,
-                }
-            )?;
-            let wireframe_mesh = vertex_array!(
-                wireframe_program,
-                &buffers.wireframe_element_buffer,
-                {
-                    position: &buffers.vertex_buffer,
-                    color: &buffers.wireframe_color_buffer,
-                }
-            )?;
-
-            Ok((solid_mesh, wireframe_mesh))
-        } else {
-            let subdivided =
-                subdivide::<CubeSubdivider>(Mesh::build(diagram).unwrap(), subdivision_depth);
-            let buffers = subdivided.buffer(ctx)?;
-
-            let solid_mesh = vertex_array!(
-                solid_program_4,
-                &buffers.element_buffer,
-                {
-                    position_start: &buffers.vertex_start_buffer,
-                    position_end: &buffers.vertex_end_buffer,
-                    normal_start: &buffers.normal_start_buffer,
-                    normal_end: &buffers.normal_end_buffer,
-                }
-            )?;
-            let wireframe_mesh = vertex_array!(
-                wireframe_program,
-                &buffers.wireframe_element_buffer,
-                { position: &buffers.wireframe_vertex_buffer }
-            )?;
-
-            Ok((solid_mesh, wireframe_mesh))
-        }
-    }
-
-    fn buffer_axes(ctx: &mut GlCtx, program: &Program) -> Result<VertexArray> {
-        let axes_elements = ctx.mk_element_buffer(&[0, 1, 2, 3, 4, 5], ElementKind::Lines)?;
-        let axes_verts = ctx.mk_buffer(&[
-            Vec3::zero(),
-            Vec3::unit_x(),
-            Vec3::zero(),
-            Vec3::unit_y(),
-            Vec3::zero(),
-            Vec3::unit_z(),
-        ])?;
-        let axes_colors = ctx.mk_buffer(&[
-            Vec3::unit_x(),
-            Vec3::unit_x(),
-            Vec3::unit_y(),
-            Vec3::unit_y(),
-            Vec3::unit_z(),
-            Vec3::unit_z(),
-        ])?;
-
-        vertex_array!(
-            program,
-            &axes_elements,
-            {
-                position: &axes_verts,
-                color: &axes_colors,
-            }
-        )
-    }
-}
-
 impl OrbitCamera {
     const DEFAULT_DISTANCE: f32 = 12.;
     const DEFAULT_PHI: f32 = 0.5 * PI;
@@ -548,11 +372,13 @@ impl OrbitCamera {
 
     fn transform(&self, ctx: &GlCtx) -> Mat4 {
         let perspective = if self.ortho {
+            let scale = self.distance / 10.;
+            let aspect = ctx.aspect_ratio();
             orthographic_gl(
-                -ctx.aspect_ratio(),
-                ctx.aspect_ratio(),
-                -1.,
-                1.,
+                -aspect * scale,
+                aspect * scale,
+                -scale,
+                scale,
                 Self::NEAR,
                 Self::FAR,
             )
