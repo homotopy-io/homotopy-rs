@@ -44,14 +44,14 @@ pub struct MeshExtractor {
 }
 
 impl MeshExtractor {
-    pub fn new(diagram: &DiagramN, view_dimension: u8) -> Result<Self, DimensionError> {
+    pub fn new(diagram: &DiagramN, cubicalisation_depth: u8) -> Result<Self, DimensionError> {
         let diagram = Diagram::from(diagram.clone());
-        let graph =
-            diagram.clone().cubicalise(&[Bias::Left].repeat(
-                cmp::min(view_dimension as usize, diagram.dimension()).saturating_sub(1),
-            ))?;
+        let graph = diagram.clone().cubicalise(&[Bias::Left].repeat(cmp::min(
+            cubicalisation_depth as usize,
+            diagram.dimension().saturating_sub(1),
+        )))?;
 
-        let mut mesh = Mesh::new(diagram.clone());
+        let mut mesh = Mesh::new(diagram.clone().into());
         let mut coords = HashMap::new();
         let mut valence = HashMap::new();
 
@@ -71,7 +71,7 @@ impl MeshExtractor {
                 Vec4::new(mk_coord(0), mk_coord(1), mk_coord(2), mk_coord(3))
             };
             let vert = coords.get(label).copied().unwrap_or_else(|| {
-                let boundary = Boundary::at_coord(&diagram, graph.label(node));
+                let boundary = Boundary::at_coord(&diagram, &graph.label(node));
                 let generator = data.1.max_generator();
                 let vert = mesh.mk(Vec4::zero().with_boundary_and_generator(boundary, generator));
 
