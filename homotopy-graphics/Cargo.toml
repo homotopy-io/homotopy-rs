@@ -16,6 +16,7 @@ lyon_path = "0.17.4"
 thiserror = "1.0.26"
 serde = { features = ["derive"], version = "1.0.126" }
 serde_json = "1.0.66"
+paste = "1.0.5"
 petgraph = "0.6.0"
 seahash = "4.1.0"
 log = "0.4.14"

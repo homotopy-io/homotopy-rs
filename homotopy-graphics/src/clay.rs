@@ -1,4 +1,9 @@
 //! C(ubical) Lay(out) Engine
 
-pub mod geom;
-pub mod subdivision;
+mod buffers;
+mod geom;
+mod layout;
+mod scene;
+mod subdivision;
+
+pub use scene::{Scene, ViewDimension};

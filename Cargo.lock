@@ -661,6 +661,7 @@ dependencies = [
  "lyon_algorithms",
  "lyon_geom",
  "lyon_path",
+ "paste",
  "petgraph",
  "seahash",
  "serde",
