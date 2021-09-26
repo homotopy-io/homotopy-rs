@@ -153,14 +153,14 @@ impl MeshExtractor {
                 continue;
             }
 
-            if self.graph.get_direction(bl) == Direction::Backward {
+            if self.graph.get_direction(cube.bottom_front) == Direction::Backward {
                 verts.swap(0, 1);
                 verts.swap(2, 3);
                 verts.swap(4, 5);
                 verts.swap(6, 7);
             }
 
-            if self.graph.get_direction(tl) == Direction::Backward {
+            if self.graph.get_direction(cube.bottom_left) == Direction::Backward {
                 verts.swap(0, 2);
                 verts.swap(1, 3);
                 verts.swap(4, 6);
