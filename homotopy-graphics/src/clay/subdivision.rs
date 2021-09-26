@@ -98,7 +98,7 @@ impl<'a> Subdivider<'a> {
     }
 
     #[inline]
-    fn interpolate_edge_uncached(&mut self, line: LineData, mk: bool) -> Vert {
+    fn interpolate_edge_uncached(&mut self, mut line: LineData, mk: bool) -> Vert {
         // Interpolate
         let v = {
             let v_1 = &self.mesh.verts[line[0]];
@@ -121,6 +121,7 @@ impl<'a> Subdivider<'a> {
         }
 
         // Cache result
+        line.sort_unstable();
         self.edge_division_memory.insert(line, v);
         v
     }
@@ -136,7 +137,7 @@ impl<'a> Subdivider<'a> {
         self.edge_division_memory
             .get(&cloned)
             .copied()
-            .unwrap_or_else(|| self.interpolate_edge_uncached(cloned, mk))
+            .unwrap_or_else(|| self.interpolate_edge_uncached(line, mk))
     }
 
     #[inline]
@@ -197,7 +198,7 @@ impl<'a> Subdivider<'a> {
         self.face_division_memory
             .get(&cloned)
             .copied()
-            .unwrap_or_else(|| self.interpolate_face_uncached(cloned, mk))
+            .unwrap_or_else(|| self.interpolate_face_uncached(square, mk))
     }
 
     fn interpolate_cube(&mut self, cube: CubeData) {
