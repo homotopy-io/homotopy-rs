@@ -138,12 +138,12 @@ impl MeshExtractor {
 
             let mut verts = [
                 self.source_of(bl),
-                self.target_of(bl),
                 self.source_of(br),
+                self.target_of(bl),
                 self.target_of(br),
                 self.source_of(tl),
-                self.target_of(tl),
                 self.source_of(tr),
+                self.target_of(tl),
                 self.target_of(tr),
             ];
             let generator =

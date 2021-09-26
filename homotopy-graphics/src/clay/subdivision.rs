@@ -126,17 +126,17 @@ impl<'a> Subdivider<'a> {
     }
 
     fn interpolate_edge(&mut self, line: LineData, mk: bool) -> Vert {
-        let mut cloned = line;
-        cloned.sort_unstable();
-
         if line[0] == line[1] {
             return line[0];
         }
 
+        let mut cloned = line;
+        cloned.sort_unstable();
+
         self.edge_division_memory
             .get(&cloned)
             .copied()
-            .unwrap_or_else(|| self.interpolate_edge_uncached(line, mk))
+            .unwrap_or_else(|| self.interpolate_edge_uncached(cloned, mk))
     }
 
     #[inline]
@@ -149,11 +149,11 @@ impl<'a> Subdivider<'a> {
             let v_4 = self.interpolate_edge([square[2], square[3]], false);
             let center = self.interpolate_edge([v_1, v_4], false);
 
-            let points = [
-                square[0], square[1], square[2], square[3], v_1, v_2, v_3, v_4, center,
-            ];
-
             if mk {
+                let points = [
+                    square[0], square[1], square[2], square[3], v_1, v_2, v_3, v_4, center,
+                ];
+
                 for order in &Self::SQUARE_ASSEMBLY_ORDER {
                     self.mesh.mk([
                         points[order[0]],
@@ -197,7 +197,7 @@ impl<'a> Subdivider<'a> {
         self.face_division_memory
             .get(&cloned)
             .copied()
-            .unwrap_or_else(|| self.interpolate_face_uncached(square, mk))
+            .unwrap_or_else(|| self.interpolate_face_uncached(cloned, mk))
     }
 
     fn interpolate_cube(&mut self, cube: CubeData) {

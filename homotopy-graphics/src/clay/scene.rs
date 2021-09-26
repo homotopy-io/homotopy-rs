@@ -63,7 +63,8 @@ impl Scene {
     pub fn reload_meshes(&mut self, ctx: &GlCtx, subdivision_depth: u8) -> Result<()> {
         self.components.clear();
 
-        let mut extractor = MeshExtractor::new(&self.diagram, self.view_dimension as u8).unwrap();
+        let mut extractor =
+            MeshExtractor::new(&self.diagram, self.view_dimension as u8 - 1).unwrap();
 
         if self.view_dimension == ViewDimension::Four {
             extractor = extractor.extract_cubes();
