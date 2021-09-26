@@ -44,12 +44,12 @@ pub struct MeshExtractor {
 }
 
 impl MeshExtractor {
-    pub fn new(diagram: &DiagramN, view_dimension: u8) -> Result<Self, DimensionError> {
+    pub fn new(diagram: &DiagramN, cubicalisation_depth: u8) -> Result<Self, DimensionError> {
         let diagram = Diagram::from(diagram.clone());
-        let graph =
-            diagram.clone().cubicalise(&[Bias::Left].repeat(
-                cmp::min(view_dimension as usize, diagram.dimension()).saturating_sub(1),
-            ))?;
+        let graph = diagram.clone().cubicalise(&[Bias::Left].repeat(cmp::min(
+            cubicalisation_depth as usize,
+            diagram.dimension().saturating_sub(1),
+        )))?;
 
         let mut mesh = Mesh::new(diagram.clone());
         let mut coords = HashMap::new();
@@ -138,12 +138,12 @@ impl MeshExtractor {
 
             let mut verts = [
                 self.source_of(bl),
-                self.target_of(bl),
                 self.source_of(br),
+                self.target_of(bl),
                 self.target_of(br),
                 self.source_of(tl),
-                self.target_of(tl),
                 self.source_of(tr),
+                self.target_of(tl),
                 self.target_of(tr),
             ];
             let generator =
