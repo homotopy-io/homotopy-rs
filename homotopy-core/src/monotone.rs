@@ -208,7 +208,7 @@ impl DoubleEndedIterator for MonotoneIterator {
 
                     // Reset all elements to the left to their maximal values while preserving monotonicity.
                     let mut max = seq[start];
-                    for i in 0..start {
+                    for i in (0..start).rev() {
                         if self.strict {
                             max = cmp::min(max - 1, self.constraints[i].end - 1);
                         } else {
