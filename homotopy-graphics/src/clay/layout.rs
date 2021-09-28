@@ -1,4 +1,4 @@
-use std::{cmp, collections::HashMap, convert::TryInto};
+use std::{cmp, collections::HashMap};
 
 use homotopy_common::{declare_idx, graph::Edge};
 use homotopy_core::{
@@ -12,20 +12,16 @@ use super::geom::{Boundary, Mesh, Vert, VertExt};
 
 impl Boundary {
     /// Calculate the boundary of a given location in a diagram.
-    fn at_coord(diagram: &Diagram, mut coord: &[SliceIndex]) -> Self {
-        let mut diagram = diagram.clone();
+    fn at_coord(mut coord: &[SliceIndex]) -> Self {
         let mut boundary = Self::Zero;
 
         loop {
             match coord {
                 [] | [_] => return boundary,
                 [index, tail @ ..] => {
-                    let d: DiagramN = diagram.try_into().unwrap();
-                    diagram = d.slice(*index).unwrap();
                     coord = tail;
-                    match index {
-                        SliceIndex::Boundary(_) => {}
-                        SliceIndex::Interior(_) => boundary.inc(),
+                    if let SliceIndex::Interior(_) = index {
+                        boundary.inc();
                     }
                 }
             }
@@ -51,7 +47,7 @@ impl MeshExtractor {
             diagram.dimension().saturating_sub(1),
         )))?;
 
-        let mut mesh = Mesh::new(diagram.clone());
+        let mut mesh = Mesh::new(diagram);
         let mut coords = HashMap::new();
         let mut valence = HashMap::new();
 
@@ -71,7 +67,7 @@ impl MeshExtractor {
                 Vec4::new(mk_coord(0), mk_coord(1), mk_coord(2), mk_coord(3))
             };
             let vert = coords.get(label).copied().unwrap_or_else(|| {
-                let boundary = Boundary::at_coord(&diagram, graph.label(node));
+                let boundary = Boundary::at_coord(graph.label(node));
                 let generator = data.1.max_generator();
                 let vert = mesh.mk(Vec4::zero().with_boundary_and_generator(boundary, generator));
 
