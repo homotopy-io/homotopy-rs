@@ -2,13 +2,11 @@ use std::{
     collections::BTreeMap, convert::TryInto, hash::Hash, marker::PhantomData, num::NonZeroU32,
 };
 
+use bimap::BiHashMap;
 use highway::{HighwayHash, HighwayHasher};
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    rewrite::Cone, util::FastHashMap, Cospan, Diagram, DiagramN, Generator, Rewrite, Rewrite0,
-    RewriteN,
-};
+use crate::{rewrite::Cone, Cospan, Diagram, DiagramN, Generator, Rewrite, Rewrite0, RewriteN};
 
 /// Similar to `Hash`, except supposed to be deterministic and shouldn't collide
 trait Keyed<K> {
@@ -26,15 +24,15 @@ impl<K, H: Hash> Keyed<Key<K>> for H {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Store {
     #[serde(skip_serializing, skip_deserializing)]
-    diagram_keys: FastHashMap<Diagram, Key<Diagram>>,
+    diagram_keys: BiHashMap<Diagram, Key<Diagram>>,
     diagrams: BTreeMap<Key<Diagram>, DiagramSer>,
 
     #[serde(skip_serializing, skip_deserializing)]
-    rewrite_keys: FastHashMap<Rewrite, Key<Rewrite>>,
+    rewrite_keys: BiHashMap<Rewrite, Key<Rewrite>>,
     rewrites: BTreeMap<Key<Rewrite>, RewriteSer>,
 
     #[serde(skip_serializing, skip_deserializing)]
-    cone_keys: FastHashMap<Cone, Key<Cone>>,
+    cone_keys: BiHashMap<Cone, Key<Cone>>,
     cones: BTreeMap<Key<Cone>, ConeSer>,
 }
 
@@ -51,7 +49,7 @@ impl Store {
     }
 
     pub fn pack_diagram(&mut self, diagram: &Diagram) -> Key<Diagram> {
-        if let Some(key) = self.diagram_keys.get(diagram) {
+        if let Some(key) = self.diagram_keys.get_by_left(diagram) {
             return *key;
         }
 
@@ -87,7 +85,7 @@ impl Store {
     }
 
     pub fn pack_rewrite(&mut self, rewrite: &Rewrite) -> Key<Rewrite> {
-        if let Some(key) = self.rewrite_keys.get(rewrite) {
+        if let Some(key) = self.rewrite_keys.get_by_left(rewrite) {
             return *key;
         }
 
@@ -120,7 +118,7 @@ impl Store {
     }
 
     fn pack_cone(&mut self, cone: &Cone) -> ConeWithIndexSer {
-        if let Some(key) = self.cone_keys.get(cone) {
+        if let Some(key) = self.cone_keys.get_by_left(cone) {
             return ConeWithIndexSer {
                 index: cone.index as u32,
                 cone: *key,
@@ -153,59 +151,91 @@ impl Store {
         }
     }
 
-    pub fn unpack_diagram(&self, key: Key<Diagram>) -> Option<Diagram> {
-        match self.diagrams.get(&key)?.clone() {
-            DiagramSer::D0 { generator, .. } => Some(Diagram::from(generator)),
-            DiagramSer::Dn {
-                source, cospans, ..
-            } => {
-                let source = self.unpack_diagram(source)?;
-                let cospans = cospans
-                    .into_iter()
-                    .map(|cospan| self.unpack_cospan(&cospan))
-                    .collect::<Option<_>>()?;
-                Some(DiagramN::new_unsafe(source, cospans).into())
-            }
-        }
+    pub fn unpack_diagram(&mut self, key: Key<Diagram>) -> Option<Diagram> {
+        self.diagram_keys.get_by_right(&key).cloned().or_else(|| {
+            let diagram = match self.diagrams.get(&key)?.clone() {
+                DiagramSer::D0 { generator, .. } => Some(Diagram::from(generator)),
+                DiagramSer::Dn {
+                    source, cospans, ..
+                } => {
+                    let source = self.unpack_diagram(source)?;
+                    let cospans = cospans
+                        .into_iter()
+                        .map(|cospan| self.unpack_cospan(&cospan))
+                        .collect::<Option<_>>()?;
+                    Some(DiagramN::new_unsafe(source, cospans).into())
+                }
+            };
+            diagram
+                .as_ref()
+                .cloned()
+                .map(|r| self.diagram_keys.insert(r, key));
+            diagram
+        })
     }
 
-    fn unpack_cospan(&self, serialized: &CospanSer) -> Option<Cospan> {
+    fn unpack_cospan(&mut self, serialized: &CospanSer) -> Option<Cospan> {
         let forward = self.unpack_rewrite(serialized.forward)?;
         let backward = self.unpack_rewrite(serialized.backward)?;
         Some(Cospan { forward, backward })
     }
 
-    pub fn unpack_rewrite(&self, key: Key<Rewrite>) -> Option<Rewrite> {
-        match self.rewrites.get(&key)?.clone() {
-            RewriteSer::R0 { source, target, .. } => match (source, target) {
-                (None, None) => Some(Rewrite0(None).into()),
-                (Some(source), Some(target)) => Some(Rewrite0(Some((source, target))).into()),
-                (None, Some(_)) | (Some(_), None) => None,
-            },
-            RewriteSer::Rn { dimension, cones } => {
-                let cones = cones
-                    .into_iter()
-                    .map(|cone| self.unpack_cone(cone))
-                    .collect::<Option<_>>()?;
-                Some(RewriteN::new(u32::from(dimension) as usize, cones).into())
-            }
-        }
+    pub fn unpack_rewrite(&mut self, key: Key<Rewrite>) -> Option<Rewrite> {
+        self.rewrite_keys.get_by_right(&key).cloned().or_else(|| {
+            let rewrite = match self.rewrites.get(&key)?.clone() {
+                RewriteSer::R0 { source, target, .. } => match (source, target) {
+                    (None, None) => Some(Rewrite0(None).into()),
+                    (Some(source), Some(target)) => Some(Rewrite0(Some((source, target))).into()),
+                    (None, Some(_)) | (Some(_), None) => None,
+                },
+                RewriteSer::Rn { dimension, cones } => {
+                    let cones = cones
+                        .into_iter()
+                        .map(|cone| self.unpack_cone(cone))
+                        .collect::<Option<_>>()?;
+                    Some(RewriteN::new(u32::from(dimension) as usize, cones).into())
+                }
+            };
+            rewrite
+                .as_ref()
+                .cloned()
+                .map(|r| self.rewrite_keys.insert(r, key));
+            rewrite
+        })
     }
 
-    fn unpack_cone(&self, cone: ConeWithIndexSer) -> Option<Cone> {
-        let serialized = self.cones.get(&cone.cone)?.clone();
-        let source = serialized
-            .source
-            .into_iter()
-            .map(|cospan| self.unpack_cospan(&cospan))
-            .collect::<Option<_>>()?;
-        let target = self.unpack_cospan(&serialized.target)?;
-        let slices = serialized
-            .slices
-            .into_iter()
-            .map(|slice| self.unpack_rewrite(slice))
-            .collect::<Option<_>>()?;
-        Some(Cone::new(cone.index as usize, source, target, slices))
+    fn unpack_cone(&mut self, cone: ConeWithIndexSer) -> Option<Cone> {
+        let key = cone.cone;
+        self.cone_keys
+            .get_by_right(&key)
+            .cloned()
+            .map(|c| {
+                Cone::new(
+                    cone.index as usize,
+                    c.internal.source.clone(),
+                    c.internal.target.clone(),
+                    c.internal.slices.clone(),
+                )
+            })
+            .or_else(|| {
+                let serialized = self.cones.get(&cone.cone)?.clone();
+                let source = serialized
+                    .source
+                    .into_iter()
+                    .map(|cospan| self.unpack_cospan(&cospan))
+                    .collect::<Option<_>>()?;
+                let target = self.unpack_cospan(&serialized.target)?;
+                let slices = serialized
+                    .slices
+                    .into_iter()
+                    .map(|slice| self.unpack_rewrite(slice))
+                    .collect::<Option<_>>()?;
+                let cone = Some(Cone::new(cone.index as usize, source, target, slices));
+                cone.as_ref()
+                    .cloned()
+                    .map(|c| self.cone_keys.insert(c, key));
+                cone
+            })
     }
 }
 
