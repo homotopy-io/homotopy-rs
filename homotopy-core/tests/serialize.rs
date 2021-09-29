@@ -15,7 +15,7 @@ fn serialize_associator() {
     assert_debug_snapshot!(base64::encode(&serialized));
 
     let deserialized = {
-        let store: Store = rmp_serde::decode::from_slice(&serialized).unwrap();
+        let mut store: Store = rmp_serde::decode::from_slice(&serialized).unwrap();
         store.unpack_diagram(key).unwrap()
     };
 

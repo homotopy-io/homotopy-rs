@@ -177,7 +177,7 @@ pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
     }?;
     // Migrate to current version
     let data: Data = data.into();
-    let store = data.store;
+    let mut store = data.store;
 
     let signature = data
         .signature
