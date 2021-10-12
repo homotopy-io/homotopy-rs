@@ -1,0 +1,29 @@
+[env]
+GIT_DESCRIBE = { script = ["git describe --dirty --always --tags"] }
+
+[env.development]
+WASM_PACK_FLAGS = "--dev"
+
+[env.production]
+WASM_PACK_FLAGS = "--release"
+
+[tasks.build]
+clear = true
+script = '''
+rm -rf dist
+wasm-pack build -d dist --target web --no-typescript ${WASM_PACK_FLAGS}
+rm dist/{package.json,README.md}
+cp static/* dist/
+'''
+
+[tasks.clean]
+clear = true
+script = '''
+rm -rf dist
+cargo clean
+'''
+
+[tasks.serve]
+command = "devserver"
+args = ["--path", "dist"]
+dependencies = ["build"]

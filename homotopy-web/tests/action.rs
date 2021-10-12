@@ -2,6 +2,7 @@ use homotopy_web::model::{Action::*, *};
 
 #[test]
 #[ignore]
+#[allow(unreachable_code)]
 fn action() {
     let data: SerializedData = std::env::var("HOMOTOPY_IMPORT")
         .map_or(Err(futures::io::ErrorKind::NotFound.into()), |fp| {

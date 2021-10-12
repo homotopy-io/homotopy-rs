@@ -2,6 +2,7 @@
 name = "homotopy-core"
 version = "0.1.0"
 authors = ["Lukas Heidemann <lukas@heidemann.me>", "Nick Hu <me@nickhu.co.uk>", "Calin Tataru <calintat@gmail.com>"]
+repository = "https://github.com/homotopy-io/homotopy-rs"
 edition = "2018"
 
 [dependencies]

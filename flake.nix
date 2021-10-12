@@ -26,13 +26,14 @@
                 extensions = [ "rust-src" ]; # seems to be already included in stable
               }
             )
-            trunk
-            wasm-bindgen-cli
+            wasm-pack
           ];
         in
           {
             devShell = with pkgs; mkShell {
               buildInputs = nativeBuildInputs ++ [
+                cargo-make
+                devserver
                 rust-analyzer
               ];
               RUST_SRC_PATH = "${rust-bin.stable.latest.rust-src}/lib/rustlib/src/rust/library";

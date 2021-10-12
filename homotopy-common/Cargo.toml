@@ -2,6 +2,7 @@
 name = "homotopy-common"
 version = "0.1.0"
 authors = ["Nathan Corbyn <me@nathancorbyn.com>"]
+repository = "https://github.com/homotopy-io/homotopy-rs"
 edition = "2018"
 
 [dependencies]
