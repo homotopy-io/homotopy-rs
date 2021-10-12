@@ -1,3 +1,4 @@
+use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
 use crate::{
@@ -31,8 +32,6 @@ pub enum SettingsMsg {
 pub struct SettingsProps {}
 
 pub struct SettingsView {
-    link: ComponentLink<Self>,
-    props: SettingsProps,
     settings: AppSettings,
     // Maintain a local copy of the global app settings in order to display the current settings
     // state correctly.
@@ -43,21 +42,19 @@ impl Component for SettingsView {
     type Message = SettingsMsg;
     type Properties = SettingsProps;
 
-    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let mut settings = AppSettings::connect(link.callback(SettingsMsg::Setting));
+    fn create(ctx: &Context<Self>) -> Self {
+        let mut settings = AppSettings::connect(ctx.link().callback(SettingsMsg::Setting));
         // So that we can keep our local copy of the global settings up to date,
         // we're going to need to subscribe to all changes in the global settings state.
         settings.subscribe(AppSettings::ALL);
 
         Self {
-            link,
-            props,
             settings,
             local: Default::default(),
         }
     }
 
-    fn view(&self) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
             <div class="settings__segment">
                 <h4>{"3D renderer"}</h4>
@@ -65,35 +62,35 @@ impl Component for SettingsView {
                     self.view_checkbox(
                         "Debug wireframe",
                         |local| *local.get_wireframe_3d(),
-                        self.link.callback(|_| SettingsMsg::ToggleWireframe),
+                        ctx.link().callback(|_| SettingsMsg::ToggleWireframe),
                     )
                 }
                 {
                     self.view_checkbox(
                         "Orthographic projection",
                         |local| *local.get_orthographic_3d(),
-                        self.link.callback(|_| SettingsMsg::ToggleOrtho),
+                        ctx.link().callback(|_| SettingsMsg::ToggleOrtho),
                     )
                 }
                 {
                     self.view_checkbox(
                         "Hide mesh",
                         |local| *local.get_mesh_hidden(),
-                        self.link.callback(|_| SettingsMsg::ToggleMesh),
+                        ctx.link().callback(|_| SettingsMsg::ToggleMesh),
                     )
                 }
                 {
                     self.view_checkbox(
                         "Debug normals",
                         |local| *local.get_debug_normals(),
-                        self.link.callback(|_| SettingsMsg::ToggleDebugNormals),
+                        ctx.link().callback(|_| SettingsMsg::ToggleDebugNormals),
                     )
                 }
                 {
                     self.view_checkbox(
                         "Debug axes",
                         |local| *local.get_debug_axes(),
-                        self.link.callback(|_| SettingsMsg::ToggleDebugAxes),
+                        ctx.link().callback(|_| SettingsMsg::ToggleDebugAxes),
                     )
                 }
                 {
@@ -102,16 +99,14 @@ impl Component for SettingsView {
                         |local| *local.get_subdivision_depth(),
                         0,
                         6,
-                        &self.link.callback(SettingsMsg::SetSubdivisionDepth),
+                        &ctx.link().callback(SettingsMsg::SetSubdivisionDepth),
                     )
                 }
             </div>
         }
     }
 
-    fn rendered(&mut self, _: bool) {}
-
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             // If we're notified about a setting change, just thread that through
             // to our local working copy.
@@ -139,11 +134,6 @@ impl Component for SettingsView {
             }
         }
         true
-    }
-
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        self.props = props;
-        false
     }
 }
 
@@ -183,12 +173,9 @@ impl SettingsView {
                     min={min.to_string()}
                     max={max.to_string()}
                     value={getter(&self.local).to_string()}
-                    onchange={on_change.reform(|c| {
-                        if let ChangeData::Value(v) = c {
-                            v.parse::<u32>().unwrap_or(0)
-                        } else {
-                            0
-                        }
+                    onchange={on_change.reform(|e: Event| {
+                        let input: HtmlInputElement = e.target_unchecked_into();
+                        input.value().parse::<u32>().unwrap_or(0)
                     })}
                 />
             </div>

@@ -1,5 +1,6 @@
 use closure::closure;
-use yew::{functional::use_ref, html::ChangeData::Files, prelude::*};
+use web_sys::HtmlInputElement;
+use yew::{functional::use_ref, prelude::*};
 use yew_macro::function_component;
 
 use crate::model::Action;
@@ -14,8 +15,9 @@ pub fn project_view(props: &Props) -> Html {
     let export = props.dispatch.reform(|_| Action::ExportProof);
     let dispatch = &props.dispatch;
     let reader_task = use_ref(|| None);
-    let import: Callback<ChangeData> = Callback::from(closure!(clone dispatch, |evt| {
-        if let Files(filelist) = evt {
+    let import = Callback::from(closure!(clone dispatch, |evt: Event| {
+        let input: HtmlInputElement = evt.target_unchecked_into();
+        if let Some(filelist) = input.files() {
             let file = filelist.get(0).unwrap();
             let task = gloo::file::callbacks::read_as_bytes(&file.into(), closure!(clone dispatch, |res| {
                 dispatch.emit(Action::ImportProof(res.expect("failed to read file").into()));

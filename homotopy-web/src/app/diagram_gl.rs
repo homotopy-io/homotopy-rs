@@ -36,8 +36,6 @@ pub struct GlDiagramProps {
 }
 
 pub struct GlDiagram {
-    link: ComponentLink<Self>,
-    props: GlDiagramProps,
     canvas: NodeRef,
     toaster: Toaster,
     _settings: AppSettings,
@@ -55,14 +53,12 @@ impl Component for GlDiagram {
     type Message = GlDiagramMessage;
     type Properties = GlDiagramProps;
 
-    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let mut settings = AppSettings::connect(link.callback(GlDiagramMessage::Setting));
+    fn create(ctx: &Context<Self>) -> Self {
+        let mut settings = AppSettings::connect(ctx.link().callback(GlDiagramMessage::Setting));
 
         settings.subscribe(AppSettings::ALL);
 
         Self {
-            link,
-            props,
             canvas: Default::default(),
             toaster: Toaster::new(),
             _settings: settings,
@@ -75,7 +71,7 @@ impl Component for GlDiagram {
         }
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             GlDiagramMessage::Render(t) => {
                 let t = t as f32;
@@ -85,11 +81,11 @@ impl Component for GlDiagram {
 
                 if let Some(renderer) = &mut *self.renderer.borrow_mut() {
                     renderer.update(&self.local, dt).unwrap();
-                    renderer.render(&self.local);
+                    renderer.render(ctx.props().view.dimension(), &self.local);
                 }
 
                 // Schedule the next frame
-                self.schedule_frame();
+                self.schedule_frame(ctx);
             }
             GlDiagramMessage::Setting(msg) => self.local.set(&msg),
         }
@@ -97,7 +93,7 @@ impl Component for GlDiagram {
         false
     }
 
-    fn view(&self) -> Html {
+    fn view(&self, _ctx: &Context<Self>) -> Html {
         let on_mouse_move = {
             let renderer = Rc::clone(&self.renderer);
             Callback::from(move |e: MouseEvent| {
@@ -180,15 +176,15 @@ impl Component for GlDiagram {
         }
     }
 
-    fn rendered(&mut self, first_render: bool) {
-        if let Ok(ctx) = GlCtx::attach(&self.canvas) {
+    fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
+        if let Ok(gl_ctx) = GlCtx::attach(&self.canvas) {
             {
                 *self.renderer.borrow_mut() =
-                    Some(GlDiagramRenderer::new(ctx, &self.local, &self.props).unwrap());
+                    Some(GlDiagramRenderer::new(gl_ctx, &self.local, ctx.props()).unwrap());
             }
 
             if first_render {
-                self.schedule_frame();
+                self.schedule_frame(ctx);
             }
         } else {
             self.render_loop = None;
@@ -196,18 +192,11 @@ impl Component for GlDiagram {
                 .toast(Toast::error("Failed to get WebGL 2.0 context"));
         }
     }
-
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        self.props != props && {
-            self.props = props;
-            true
-        }
-    }
 }
 
 impl GlDiagram {
-    fn schedule_frame(&mut self) {
-        let link = self.link.clone();
+    fn schedule_frame(&mut self, ctx: &Context<Self>) {
+        let link = ctx.link().clone();
         self.render_loop = Some(request_animation_frame(move |t| {
             link.send_message(GlDiagramMessage::Render(t));
         }));
@@ -215,8 +204,7 @@ impl GlDiagram {
 }
 
 struct GlDiagramRenderer {
-    ctx: GlCtx,
-    props: GlDiagramProps,
+    gl_ctx: GlCtx,
     scene: Scene,
     camera: OrbitCamera,
     subdivision_depth: u8,
@@ -234,11 +222,10 @@ pub struct OrbitCamera {
 }
 
 impl GlDiagramRenderer {
-    fn new(ctx: GlCtx, settings: &Store<AppSettings>, props: &GlDiagramProps) -> Result<Self> {
+    fn new(gl_ctx: GlCtx, settings: &Store<AppSettings>, props: &GlDiagramProps) -> Result<Self> {
         Ok(Self {
-            props: props.clone(),
             scene: Scene::build(
-                &ctx,
+                &gl_ctx,
                 &props.diagram,
                 if props.view.dimension() <= 3 {
                     ViewDimension::Three
@@ -250,7 +237,7 @@ impl GlDiagramRenderer {
             camera: OrbitCamera::new(Vec3::zero(), 30.0),
             subdivision_depth: *settings.get_subdivision_depth() as u8,
             mouse: None,
-            ctx,
+            gl_ctx,
             t: 0.0,
         })
     }
@@ -260,7 +247,7 @@ impl GlDiagramRenderer {
 
         if self.subdivision_depth != depth {
             self.subdivision_depth = depth;
-            self.scene.reload_meshes(&self.ctx, depth)?;
+            self.scene.reload_meshes(&self.gl_ctx, depth)?;
         }
 
         self.camera.ortho = *settings.get_orthographic_3d();
@@ -269,8 +256,8 @@ impl GlDiagramRenderer {
         Ok(())
     }
 
-    fn render(&mut self, settings: &Store<AppSettings>) {
-        let mut frame = Frame::new(&mut self.ctx);
+    fn render(&mut self, dimension: u8, settings: &Store<AppSettings>) {
+        let mut frame = Frame::new(&mut self.gl_ctx);
 
         let vp = self.camera.transform(&*frame);
 
@@ -278,7 +265,7 @@ impl GlDiagramRenderer {
             let normals = *settings.get_debug_normals();
             let camera = self.camera.position();
 
-            if self.props.view.dimension() <= 3 {
+            if dimension <= 3 {
                 self.scene.draw(&mut frame, |_, array| {
                     draw!(array, {
                         mvp: vp,
@@ -320,7 +307,7 @@ impl GlDiagramRenderer {
 
     fn on_mouse_move(&mut self, next: Vec2) {
         if let Some(prev) = self.mouse {
-            let delta = 4. * (next - prev) / self.ctx.size();
+            let delta = 4. * (next - prev) / self.gl_ctx.size();
             self.camera.apply_angle_delta(delta);
             self.mouse = Some(next);
         }
@@ -370,10 +357,10 @@ impl OrbitCamera {
             + self.target
     }
 
-    fn transform(&self, ctx: &GlCtx) -> Mat4 {
+    fn transform(&self, gl_ctx: &GlCtx) -> Mat4 {
         let perspective = if self.ortho {
             let scale = self.distance / 10.;
-            let aspect = ctx.aspect_ratio();
+            let aspect = gl_ctx.aspect_ratio();
             orthographic_gl(
                 -aspect * scale,
                 aspect * scale,
@@ -385,7 +372,7 @@ impl OrbitCamera {
         } else {
             perspective_gl(
                 f32::to_radians(self.fov),
-                ctx.aspect_ratio(),
+                gl_ctx.aspect_ratio(),
                 Self::NEAR,
                 Self::FAR,
             )

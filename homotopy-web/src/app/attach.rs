@@ -12,54 +12,47 @@ pub struct Props {
 #[derive(Debug, Clone)]
 pub enum Message {}
 
-pub struct AttachView {
-    props: Props,
-}
+pub struct AttachView;
 
 impl Component for AttachView {
     type Message = Message;
     type Properties = Props;
 
-    fn create(props: Self::Properties, _link: ComponentLink<Self>) -> Self {
-        Self { props }
+    fn create(_ctx: &Context<Self>) -> Self {
+        Self
     }
 
-    fn update(&mut self, _msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, _ctx: &Context<Self>, _msg: Self::Message) -> bool {
         false
     }
 
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        self.props = props;
-        true
-    }
-
-    fn view(&self) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
-            { for self.props.options.iter().map(|option| self.view_option(option)) }
+            { for ctx.props().options.iter().map(|option| Self::view_option(ctx, option)) }
         }
     }
 }
 
 impl AttachView {
-    pub fn view_option(&self, option: &AttachOption) -> Html {
-        let info = self
-            .props
+    pub fn view_option(ctx: &Context<Self>, option: &AttachOption) -> Html {
+        let info = ctx
+            .props()
             .signature
             .generator_info(option.generator)
             .unwrap();
 
-        let onclick = self.props.dispatch.reform({
+        let onclick = ctx.props().dispatch.reform({
             let option = option.clone();
             move |_| Action::Attach(option.clone())
         });
 
-        let onmouseenter = self.props.dispatch.reform({
+        let onmouseenter = ctx.props().dispatch.reform({
             let option = option.clone();
             move |_| Action::HighlightAttachment(Some(option.clone()))
         });
 
-        let onmouseleave = self
-            .props
+        let onmouseleave = ctx
+            .props()
             .dispatch
             .reform(|_| Action::HighlightAttachment(None));
 

@@ -33,7 +33,6 @@ pub enum Message {
 }
 
 pub struct App {
-    link: ComponentLink<Self>,
     state: model::State,
     panzoom: PanZoom,
     signature_stylesheet: SignatureStylesheet,
@@ -46,7 +45,7 @@ impl Component for App {
     type Message = Message;
     type Properties = Props;
 
-    fn create(_props: Self::Properties, link: ComponentLink<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         let state = model::State::default();
 
         // Install the signature stylesheet
@@ -61,13 +60,12 @@ impl Component for App {
             toaster: Toaster::new(),
             _settings: AppSettings::connect(Callback::noop()),
             before_unload: None,
-            link,
         };
         app.install_unload_hook();
         app
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Message::Dispatch(action) => {
                 log::info!("Received action: {:?}", action);
@@ -98,12 +96,8 @@ impl Component for App {
         }
     }
 
-    fn change(&mut self, _props: Self::Properties) -> ShouldRender {
-        false
-    }
-
-    fn view(&self) -> Html {
-        let dispatch = self.link.callback(Message::Dispatch);
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let dispatch = ctx.link().callback(Message::Dispatch);
         let proof = self.state.with_proof(Clone::clone);
         let signature = proof.signature();
 
@@ -141,7 +135,7 @@ impl Component for App {
         }
     }
 
-    fn destroy(&mut self) {
+    fn destroy(&mut self, _ctx: &Context<Self>) {
         self.signature_stylesheet.unmount();
     }
 }

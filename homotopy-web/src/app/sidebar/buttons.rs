@@ -51,14 +51,14 @@ macro_rules! declare_sidebar_tools {
             impl Sidebar {
                 $(
                     #[allow(non_snake_case)]
-                    fn [<$name _visible>](&self) -> Visibility {
+                    fn [<$name _visible>](&self, ctx: &Context<Self>) -> Visibility {
                         let enable = $enable;
-                        enable(&self.props.proof)
+                        enable(&ctx.props().proof)
                     }
                 )*
 
-                pub(super) fn tools(&self) -> Html {
-                    let dispatch = &self.link.callback(|x| x);
+                pub(super) fn tools(&self, ctx: &Context<Self>) -> Html {
+                    let dispatch = &ctx.link().callback(|x| x);
                     html! {
                         <nav class="sidebar__tools">
                             $(<SidebarButton
@@ -67,7 +67,7 @@ macro_rules! declare_sidebar_tools {
                                 action={SidebarMsg::Dispatch($action)}
                                 shortcut={$shortcut}
                                 dispatch={dispatch}
-                                visibility={self.[<$name _visible>]()}
+                                visibility={self.[<$name _visible>](ctx)}
                             />)*
                         </nav>
                     }

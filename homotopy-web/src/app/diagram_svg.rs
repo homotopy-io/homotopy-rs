@@ -34,9 +34,7 @@ use crate::{
 };
 
 pub struct Diagram2D {
-    props: Props2D,
     diagram: PreparedDiagram,
-    link: ComponentLink<Self>,
     node_ref: NodeRef,
     drag_start: Option<Point2D<f32>>,
 }
@@ -146,31 +144,29 @@ impl Component for Diagram2D {
     type Message = Message2D;
     type Properties = Props2D;
 
-    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let diagram = PreparedDiagram::new(&props.diagram, props.style);
+    fn create(ctx: &Context<Self>) -> Self {
+        let diagram = PreparedDiagram::new(&ctx.props().diagram, ctx.props().style);
         let node_ref = NodeRef::default();
         let drag_start = Default::default();
         Self {
-            props,
             diagram,
-            link,
             node_ref,
             drag_start,
         }
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Message2D::OnMouseDown(point) => {
                 self.drag_start = Some(point);
                 false
             }
             Message2D::OnMouseMove(point) => {
-                self.pointer_move(point);
+                self.pointer_move(ctx, point);
                 false
             }
             Message2D::OnMouseUp => {
-                self.pointer_stop();
+                self.pointer_stop(ctx);
                 false
             }
             Message2D::OnTouchUpdate(touches) => {
@@ -183,31 +179,23 @@ impl Component for Diagram2D {
             }
             Message2D::OnTouchMove(touches) => {
                 if touches.len() == 1 {
-                    self.pointer_move(touches[0].1);
+                    self.pointer_move(ctx, touches[0].1);
                 }
                 false
             }
         }
     }
 
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        if (self.props.diagram != props.diagram) || (self.props.style != props.style) {
-            self.diagram = PreparedDiagram::new(&props.diagram, props.style);
-            self.props = props;
-            true
-        } else if self.props == props {
-            false
-        } else {
-            self.props = props;
-            true
-        }
+    fn changed(&mut self, ctx: &Context<Self>) -> bool {
+        self.diagram = PreparedDiagram::new(&ctx.props().diagram, ctx.props().style);
+        true
     }
 
-    fn view(&self) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         let size = self.diagram.dimensions;
 
         let on_mouse_down = {
-            let link = self.link.clone();
+            let link = ctx.link().clone();
             Callback::from(move |e: MouseEvent| {
                 if !e.alt_key() {
                     let x = e.client_x() as f32;
@@ -218,7 +206,7 @@ impl Component for Diagram2D {
         };
 
         let on_mouse_move = {
-            let link = self.link.clone();
+            let link = ctx.link().clone();
             Callback::from(move |e: MouseEvent| {
                 if !e.alt_key() {
                     let x = e.client_x() as f32;
@@ -229,14 +217,14 @@ impl Component for Diagram2D {
         };
 
         let on_mouse_up = {
-            let link = self.link.clone();
+            let link = ctx.link().clone();
             Callback::from(move |_e: MouseEvent| {
                 link.send_message(Message2D::OnMouseUp);
             })
         };
 
         let on_touch_move = {
-            let link = self.link.clone();
+            let link = ctx.link().clone();
             Callback::from(move |e: TouchEvent| {
                 let touches = read_touch_list_abs(&e.touches())
                     .map(|(finger, point)| (finger, point.cast()))
@@ -246,7 +234,7 @@ impl Component for Diagram2D {
         };
 
         let on_touch_update = {
-            let link = self.link.clone();
+            let link = ctx.link().clone();
             Callback::from(move |e: TouchEvent| {
                 let touches = read_touch_list_abs(&e.touches())
                     .map(|(finger, point)| (finger, point.cast()))
@@ -274,8 +262,8 @@ impl Component for Diagram2D {
                 ontouchcancel={on_touch_update.clone()}
                 ref={self.node_ref.clone()}
             >
-                {self.diagram.graphic.iter().enumerate().map(|(i, e)| self.view_element(i, e)).collect::<Html>()}
-                {self.view_highlight()}
+                {self.diagram.graphic.iter().enumerate().map(|(i, e)| self.view_element(ctx, i, e)).collect::<Html>()}
+                {self.view_highlight(ctx)}
             </svg>
         }
     }
@@ -301,7 +289,7 @@ impl Diagram2D {
     }
 
     /// Creates the SVG elements for the diagram.
-    fn view_element(&self, index: usize, element: &GraphicElement) -> Html {
+    fn view_element(&self, ctx: &Context<Self>, index: usize, element: &GraphicElement) -> Html {
         let generator = element.generator();
 
         match element {
@@ -321,7 +309,7 @@ impl Diagram2D {
                         <path
                             d={path}
                             class={class}
-                            stroke-width={self.props.style.wire_thickness.to_string()}
+                            stroke-width={ctx.props().style.wire_thickness.to_string()}
                             fill="none"
                         />
                     }
@@ -332,7 +320,7 @@ impl Diagram2D {
                             html! {
                                 <path
                                     d={path_to_svg(&mask_path.clone().transformed(&self.diagram.transform))}
-                                    stroke-width={(self.props.style.wire_thickness * 2.0).to_string()}
+                                    stroke-width={(ctx.props().style.wire_thickness * 2.0).to_string()}
                                     fill="none"
                                     stroke="black"
                                     stroke-linecap="round"
@@ -341,7 +329,7 @@ impl Diagram2D {
                         })
                         .collect();
 
-                    let mask_id = format!("{}-mask-{}", self.props.id, index);
+                    let mask_id = format!("{}-mask-{}", ctx.props().id, index);
 
                     html! {
                         <>
@@ -354,7 +342,7 @@ impl Diagram2D {
                             <path
                                 d={path}
                                 class={class}
-                                stroke-width={self.props.style.wire_thickness.to_string()}
+                                stroke-width={ctx.props().style.wire_thickness.to_string()}
                                 fill="none"
                                 mask={format!("url(#{})", mask_id)}
                             />
@@ -366,14 +354,14 @@ impl Diagram2D {
                 let class = SignatureStylesheet::name("generator", generator, "point");
                 let point = self.diagram.transform.transform_point(*point);
                 html! {
-                    <circle r={self.props.style.point_radius.to_string()} cx={point.x.to_string()} cy={point.y.to_string()} class={class} />
+                    <circle r={ctx.props().style.point_radius.to_string()} cx={point.x.to_string()} cy={point.y.to_string()} class={class} />
                 }
             }
         }
     }
 
-    fn view_highlight(&self) -> Html {
-        let highlight = if let Some(highlight) = self.props.highlight {
+    fn view_highlight(&self, ctx: &Context<Self>) -> Html {
+        let highlight = if let Some(highlight) = ctx.props().highlight {
             highlight
         } else {
             return Default::default();
@@ -383,10 +371,10 @@ impl Diagram2D {
             (Some(from), Some(to)) => {
                 let padding = match highlight.kind {
                     HighlightKind::Attach => {
-                        let padding = self.props.style.scale * 0.25;
+                        let padding = ctx.props().style.scale * 0.25;
                         Vector2D::new(padding, padding)
                     }
-                    HighlightKind::Slice => Vector2D::new(0.0, self.props.style.scale * 0.5),
+                    HighlightKind::Slice => Vector2D::new(0.0, ctx.props().style.scale * 0.5),
                 };
                 let from = from + padding;
                 let to = to - padding;
@@ -426,10 +414,10 @@ impl Diagram2D {
             .map(|(simplex, _)| simplex.clone())
     }
 
-    fn pointer_move(&mut self, point: Point2D<f32>) {
+    fn pointer_move(&mut self, ctx: &Context<Self>, point: Point2D<f32>) {
         if let Some(start) = self.drag_start {
             let diff: Vector2D<f32> = point - start;
-            let distance = self.props.style.scale * 0.5;
+            let distance = ctx.props().style.scale * 0.5;
 
             if diff.square_length() < distance * distance {
                 return;
@@ -446,27 +434,27 @@ impl Diagram2D {
             let homotopy = drag_to_homotopy(
                 angle,
                 &simplex,
-                self.props.diagram.clone(),
+                ctx.props().diagram.clone(),
                 &self.diagram.depths,
             );
 
             if let Some(homotopy) = homotopy {
                 log::info!("Homotopy: {:?}", homotopy);
-                self.props.on_homotopy.emit(homotopy);
+                ctx.props().on_homotopy.emit(homotopy);
             } else {
                 log::info!("No homotopy");
             }
         }
     }
 
-    fn pointer_stop(&mut self) {
+    fn pointer_stop(&mut self, ctx: &Context<Self>) {
         // If the mouse button is released without having travelled a distance great enough
         // to indicate a drag, it should be interpreted as a click.  This is preferrable to
         // a separate onclick handler since drags aren't interpreted as clicks anymore.
         if let Some(point) = self.drag_start {
             self.drag_start = None;
             if let Some(simplex) = self.simplex_at(point) {
-                self.props
+                ctx.props()
                     .on_select
                     .emit(simplex.into_iter().map(|(x, y)| vec![y, x]).collect());
             }
@@ -485,35 +473,24 @@ pub struct Props1D {
 
 pub enum Message1D {}
 
-pub struct Diagram1D {
-    props: Props1D,
-}
+pub struct Diagram1D;
 
 impl Component for Diagram1D {
     type Message = Message1D;
     type Properties = Props1D;
 
-    fn create(props: Self::Properties, _link: ComponentLink<Self>) -> Self {
-        Self { props }
+    fn create(_ctx: &Context<Self>) -> Self {
+        Self
     }
 
-    fn update(&mut self, _msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, _ctx: &Context<Self>, _msg: Self::Message) -> bool {
         false
     }
 
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        if self.props == props {
-            false
-        } else {
-            self.props = props;
-            true
-        }
-    }
-
-    fn view(&self) -> Html {
-        let size = self.dimensions();
-        let generators: Vec<_> = self
-            .props
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let size = Self::dimensions(ctx);
+        let generators: Vec<_> = ctx
+            .props()
             .diagram
             .slices()
             .map(|slice| slice.max_generator())
@@ -522,34 +499,39 @@ impl Component for Diagram1D {
         let mut points = Vec::new();
         let mut wires = Vec::new();
 
-        for height in 0..self.props.diagram.size() {
-            wires.push(self.view_wire(
+        for height in 0..ctx.props().diagram.size() {
+            wires.push(Self::view_wire(
+                ctx,
                 generators[Height::Regular(height).to_int()],
                 Height::Regular(height).into(),
                 Height::Singular(height).into(),
             ));
 
-            wires.push(self.view_wire(
+            wires.push(Self::view_wire(
+                ctx,
                 generators[Height::Regular(height + 1).to_int()],
                 Height::Regular(height + 1).into(),
                 Height::Singular(height).into(),
             ));
 
-            points.push(self.view_point(
+            points.push(Self::view_point(
+                ctx,
                 generators[Height::Singular(height).to_int()],
                 Height::Singular(height).into(),
             ));
         }
 
-        wires.push(self.view_wire(
+        wires.push(Self::view_wire(
+            ctx,
             generators[0],
             Height::Regular(0).into(),
             Boundary::Source.into(),
         ));
 
-        wires.push(self.view_wire(
+        wires.push(Self::view_wire(
+            ctx,
             *generators.last().unwrap(),
-            Height::Regular(self.props.diagram.size()).into(),
+            Height::Regular(ctx.props().diagram.size()).into(),
             Boundary::Target.into(),
         ));
 
@@ -567,21 +549,21 @@ impl Component for Diagram1D {
 }
 
 impl Diagram1D {
-    fn dimensions(&self) -> Size2D<f32> {
-        let style = &self.props.style;
+    fn dimensions(ctx: &Context<Self>) -> Size2D<f32> {
+        let style = &ctx.props().style;
         let width = f32::max(style.point_radius, style.wire_thickness) * 2.0;
-        let height = (self.props.diagram.size() as f32 + 1.0) * 2.0 * style.scale;
+        let height = (ctx.props().diagram.size() as f32 + 1.0) * 2.0 * style.scale;
         Size2D::new(width, height)
     }
 
-    fn to_y(&self, index: SliceIndex) -> f32 {
+    fn to_y(ctx: &Context<Self>, index: SliceIndex) -> f32 {
         use self::{
             Boundary::{Source, Target},
             SliceIndex::{Boundary, Interior},
         };
 
-        let scale = self.props.style.scale;
-        let size = self.dimensions();
+        let scale = ctx.props().style.scale;
+        let size = Self::dimensions(ctx);
 
         match index {
             Boundary(Source) => size.height,
@@ -590,17 +572,22 @@ impl Diagram1D {
         }
     }
 
-    fn view_wire(&self, generator: Generator, from: SliceIndex, to: SliceIndex) -> Html {
+    fn view_wire(
+        ctx: &Context<Self>,
+        generator: Generator,
+        from: SliceIndex,
+        to: SliceIndex,
+    ) -> Html {
         let path = format!(
             "M {x} {from} L {x} {to}",
-            from = self.to_y(from),
-            to = self.to_y(to),
-            x = self.dimensions().width * 0.5
+            from = Self::to_y(ctx, from),
+            to = Self::to_y(ctx, to),
+            x = Self::dimensions(ctx).width * 0.5
         );
         let class = SignatureStylesheet::name("generator", generator, "wire");
-        let style = &self.props.style;
+        let style = &ctx.props().style;
 
-        let onselect = self.props.on_select.clone();
+        let onselect = ctx.props().on_select.clone();
         let onclick = Callback::from(move |e: MouseEvent| {
             if !e.ctrl_key() {
                 onselect.emit(vec![vec![from], vec![to]]);
@@ -618,11 +605,11 @@ impl Diagram1D {
         }
     }
 
-    fn view_point(&self, generator: Generator, point: SliceIndex) -> Html {
+    fn view_point(ctx: &Context<Self>, generator: Generator, point: SliceIndex) -> Html {
         let class = SignatureStylesheet::name("generator", generator, "point");
-        let style = &self.props.style;
+        let style = &ctx.props().style;
 
-        let onselect = self.props.on_select.clone();
+        let onselect = ctx.props().on_select.clone();
         let onclick = Callback::from(move |e: MouseEvent| {
             if !e.ctrl_key() {
                 onselect.emit(vec![vec![point]]);
@@ -631,8 +618,8 @@ impl Diagram1D {
 
         html! {
             <circle
-                cx={(self.dimensions().width * 0.5).to_string()}
-                cy={self.to_y(point).to_string()}
+                cx={(Self::dimensions(ctx).width * 0.5).to_string()}
+                cy={Self::to_y(ctx, point).to_string()}
                 r={style.point_radius.to_string()}
                 class={class}
                 onclick={onclick}
@@ -650,33 +637,22 @@ pub struct Props0D {
 
 pub enum Message0D {}
 
-pub struct Diagram0D {
-    props: Props0D,
-}
+pub struct Diagram0D;
 
 impl Component for Diagram0D {
     type Message = Message0D;
     type Properties = Props0D;
 
-    fn create(props: Self::Properties, _link: ComponentLink<Self>) -> Self {
-        Self { props }
+    fn create(_ctx: &Context<Self>) -> Self {
+        Self
     }
 
-    fn update(&mut self, _msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, _ctx: &Context<Self>, _msg: Self::Message) -> bool {
         false
     }
 
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        if self.props == props {
-            false
-        } else {
-            self.props = props;
-            true
-        }
-    }
-
-    fn view(&self) -> Html {
-        let size = self.dimensions();
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let size = Self::dimensions(ctx);
 
         html! {
             <svg
@@ -684,7 +660,7 @@ impl Component for Diagram0D {
                  width={size.width.to_string()}
                  height={size.height.to_string()}
             >
-                {self.view_point(self.props.diagram)}
+                {Self::view_point(ctx, ctx.props().diagram)}
             </svg>
         }
     }
@@ -693,20 +669,20 @@ impl Component for Diagram0D {
 impl Diagram0D {
     const RADIUS_SCALE: f32 = 3.0;
 
-    fn dimensions(&self) -> Size2D<f32> {
-        let style = &self.props.style;
+    fn dimensions(ctx: &Context<Self>) -> Size2D<f32> {
+        let style = &ctx.props().style;
         let dimension = style.point_radius * 2.0 * Self::RADIUS_SCALE;
         Size2D::new(dimension, dimension)
     }
 
-    fn view_point(&self, generator: Generator) -> Html {
+    fn view_point(ctx: &Context<Self>, generator: Generator) -> Html {
         let class = SignatureStylesheet::name("generator", generator, "point");
-        let style = &self.props.style;
+        let style = &ctx.props().style;
 
         html! {
             <circle
-                cx={(self.dimensions().width * 0.5).to_string()}
-                cy={(self.dimensions().height * 0.5).to_string()}
+                cx={(Self::dimensions(ctx).width * 0.5).to_string()}
+                cy={(Self::dimensions(ctx).height * 0.5).to_string()}
                 r={(style.point_radius * Self::RADIUS_SCALE).to_string()}
                 class={class}
             />

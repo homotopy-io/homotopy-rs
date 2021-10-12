@@ -82,7 +82,6 @@ impl State for ToasterState {
 }
 
 pub struct ToasterComponent {
-    props: ToasterProps,
     _delta: Delta<ToasterState>,
     state: ToasterState,
 }
@@ -91,10 +90,11 @@ impl Component for ToasterComponent {
     type Message = ToasterMsg;
     type Properties = ToasterProps;
 
-    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
         let delta = Delta::new();
         delta.register({
-            let timeout = props.timeout;
+            let timeout = ctx.props().timeout;
+            let link = ctx.link().clone();
             Box::new(move |_, e: &ToasterMsg| {
                 if let ToasterMsg::Toast(_) = e {
                     let link = link.clone();
@@ -109,13 +109,12 @@ impl Component for ToasterComponent {
         });
 
         Self {
-            props,
             _delta: delta,
             state: Default::default(),
         }
     }
 
-    fn view(&self) -> Html {
+    fn view(&self, _ctx: &Context<Self>) -> Html {
         let toasts: Html = self
             .state
             .toasts
@@ -137,14 +136,9 @@ impl Component for ToasterComponent {
         }
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         self.state.update(&msg);
         !matches!(msg, ToasterMsg::Clear if self.state.animating > 1)
-    }
-
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        self.props = props;
-        false
     }
 }
 

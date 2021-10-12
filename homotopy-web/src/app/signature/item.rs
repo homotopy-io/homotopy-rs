@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use homotopy_common::tree::Node;
 use palette::Srgb;
+use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_macro::function_component;
 
@@ -159,8 +160,6 @@ impl EditState {
 
 #[derive(Debug)]
 pub struct ItemView {
-    props: ItemViewProps,
-    link: ComponentLink<Self>,
     mode: ItemViewMode,
     edit: EditState,
 }
@@ -169,18 +168,16 @@ impl Component for ItemView {
     type Message = ItemViewMessage;
     type Properties = ItemViewProps;
 
-    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         Self {
-            props,
-            link,
             mode: Default::default(),
             edit: Default::default(),
         }
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            ItemViewMessage::SwitchTo(mode) => return self.switch_to(mode),
+            ItemViewMessage::SwitchTo(mode) => return self.switch_to(ctx, mode),
             ItemViewMessage::Edit(edit) => return self.edit.apply(edit),
             ItemViewMessage::Noop => {}
         }
@@ -188,14 +185,7 @@ impl Component for ItemView {
         false
     }
 
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        props != self.props && {
-            self.props = props;
-            true
-        }
-    }
-
-    fn view(&self) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         let class = format!(
             "signature__item {}",
             if self.mode == ItemViewMode::Coloring {
@@ -205,8 +195,8 @@ impl Component for ItemView {
             },
         );
 
-        let picker = if let SignatureItem::Item(info) = &self.props.item {
-            self.view_picker(&info.color)
+        let picker = if let SignatureItem::Item(info) = &ctx.props().item {
+            self.view_picker(ctx, &info.color)
         } else {
             html! {}
         };
@@ -215,14 +205,14 @@ impl Component for ItemView {
             <div
                 class={class}
                 draggable={(self.mode == ItemViewMode::Viewing).to_string()}
-                ondragover={self.props.on_drag_over.clone()}
-                ondragenter={self.props.on_drag_enter.clone()}
-                ondrop={self.props.on_drop.clone()}
-                ondragstart={self.props.on_drag_start.clone()}
+                ondragover={ctx.props().on_drag_over.clone()}
+                ondragenter={ctx.props().on_drag_enter.clone()}
+                ondrop={ctx.props().on_drop.clone()}
+                ondragstart={ctx.props().on_drag_start.clone()}
             >
                 <div class="signature__item-info">
-                    {self.view_info()}
-                    {self.view_buttons()}
+                    {self.view_info(ctx)}
+                    {self.view_buttons(ctx)}
                 </div>
                 {picker}
             </div>
@@ -231,28 +221,28 @@ impl Component for ItemView {
 }
 
 impl ItemView {
-    fn switch_to(&mut self, mode: ItemViewMode) -> bool {
+    fn switch_to(&mut self, ctx: &Context<Self>, mode: ItemViewMode) -> bool {
         if mode == self.mode {
             return false;
         }
 
         if ItemViewMode::Viewing == mode {
-            self.edit.dispatch(&self.props.dispatch, self.props.node);
+            self.edit.dispatch(&ctx.props().dispatch, ctx.props().node);
         }
 
         self.mode = mode;
         true
     }
 
-    fn view_name(&self) -> Html {
-        let name = match &self.props.item {
+    fn view_name(&self, ctx: &Context<Self>) -> Html {
+        let name = match &ctx.props().item {
             SignatureItem::Item(info) => &info.name,
             SignatureItem::Folder(name, _) => name,
         };
-        let on_click = match &self.props.item {
+        let on_click = match &ctx.props().item {
             SignatureItem::Item(info) => {
                 let generator = info.generator;
-                self.props
+                ctx.props()
                     .dispatch
                     .reform(move |_| Action::SelectGenerator(generator))
             }
@@ -274,10 +264,11 @@ impl ItemView {
                     type="text"
                     class="signature__item-name-input"
                     value={self.edit.name.clone().unwrap_or_else(|| name.clone())}
-                    oninput={self.link.callback(move |e: InputData| {
-                        ItemViewMessage::Edit(SignatureItemEdit::Rename(e.value))
+                    oninput={ctx.link().callback(move |e: InputEvent| {
+                        let input: HtmlInputElement = e.target_unchecked_into();
+                        ItemViewMessage::Edit(SignatureItemEdit::Rename(input.value()))
                     })}
-                    onkeyup={self.link.callback(move |e: KeyboardEvent| {
+                    onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
                         e.stop_propagation();
                         if e.key().to_ascii_lowercase() == "enter" {
                             ItemViewMessage::SwitchTo(ItemViewMode::Viewing)
@@ -290,7 +281,7 @@ impl ItemView {
         }
     }
 
-    fn view_color(&self, color: &Color) -> Html {
+    fn view_color(&self, ctx: &Context<Self>, color: &Color) -> Html {
         let style = format!(
             "background: {}",
             self.edit.color.clone().unwrap_or_else(|| color.clone())
@@ -304,8 +295,8 @@ impl ItemView {
                 />
             },
             ItemViewMode::Editing => {
-                let recolor = self
-                    .link
+                let recolor = ctx
+                    .link()
                     .callback(|_| ItemViewMessage::SwitchTo(ItemViewMode::Coloring));
 
                 html! {
@@ -318,8 +309,8 @@ impl ItemView {
                 }
             }
             ItemViewMode::Coloring => {
-                let apply = self
-                    .link
+                let apply = ctx
+                    .link()
                     .callback(|_| ItemViewMessage::SwitchTo(ItemViewMode::Editing));
 
                 html! {
@@ -334,13 +325,13 @@ impl ItemView {
         }
     }
 
-    fn view_picker(&self, color: &Color) -> Html {
+    fn view_picker(&self, ctx: &Context<Self>, color: &Color) -> Html {
         if self.mode != ItemViewMode::Coloring {
             return html! {};
         }
 
         let buttons = COLORS.iter().map(|color| {
-            let recolor = self.link.callback(move |_| {
+            let recolor = ctx.link().callback(move |_| {
                 ItemViewMessage::Edit(SignatureItemEdit::Recolor(Color(
                     Srgb::<u8>::from_str(color).unwrap(),
                 )))
@@ -355,9 +346,10 @@ impl ItemView {
             }
         });
         let color = self.edit.color.clone().unwrap_or_else(|| color.clone());
-        let custom_recolor = self.link.callback(move |e: InputData| {
+        let custom_recolor = ctx.link().callback(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
             ItemViewMessage::Edit(SignatureItemEdit::Recolor(Color(
-                Srgb::<u8>::from_str(&e.value).unwrap(),
+                Srgb::<u8>::from_str(&input.value()).unwrap(),
             )))
         });
 
@@ -374,13 +366,13 @@ impl ItemView {
         }
     }
 
-    fn view_info(&self) -> Html {
-        match &self.props.item {
+    fn view_info(&self, ctx: &Context<Self>) -> Html {
+        match &ctx.props().item {
             SignatureItem::Item(info) => {
                 html! {
                     <>
-                        {self.view_color(&info.color)}
-                        {self.view_name()}
+                        {self.view_color(ctx, &info.color)}
+                        {self.view_name(ctx)}
                         <span class="signature__item-child">
                             {info.diagram.dimension()}
                         </span>
@@ -389,29 +381,29 @@ impl ItemView {
             }
             SignatureItem::Folder(_, open) => {
                 let icon = if *open { "folder_open" } else { "folder" };
-                let node = self.props.node;
-                let toggle = self
-                    .props
+                let node = ctx.props().node;
+                let toggle = ctx
+                    .props()
                     .dispatch
                     .reform(move |_| Action::EditSignature(SignatureEdit::ToggleFolder(node)));
 
                 html! {
                     <>
                         <ItemViewButton icon={icon} on_click={toggle} />
-                        {self.view_name()}
+                        {self.view_name(ctx)}
                     </>
                 }
             }
         }
     }
 
-    fn view_buttons(&self) -> Html {
+    fn view_buttons(&self, ctx: &Context<Self>) -> Html {
         if self.mode == ItemViewMode::Viewing {
-            let new_folder = if let SignatureItem::Folder(_, true) = self.props.item {
+            let new_folder = if let SignatureItem::Folder(_, true) = ctx.props().item {
                 html! {
                     <NewFolderButton
-                        dispatch={self.props.dispatch.clone()}
-                        node={self.props.node}
+                        dispatch={ctx.props().dispatch.clone()}
+                        node={ctx.props().node}
                         kind={NewFolderKind::Inline}
                     />
                 }
@@ -423,24 +415,24 @@ impl ItemView {
                 <>
                     {new_folder}
                     <ItemViewButton icon={"edit"} on_click={
-                        self.link.callback(move |_| {
+                        ctx.link().callback(move |_| {
                             ItemViewMessage::SwitchTo(ItemViewMode::Editing)
                         })
                     } />
                 </>
             }
         } else {
-            let node = self.props.node;
+            let node = ctx.props().node;
 
             html! {
                 <>
                     <ItemViewButton icon={"delete"} on_click={
-                        self.props.dispatch.reform(
+                        ctx.props().dispatch.reform(
                             move |_| Action::EditSignature(SignatureEdit::Remove(node))
                         )
                     } />
                     <ItemViewButton icon={"done"} on_click={
-                        self.link.callback(move |_| {
+                        ctx.link().callback(move |_| {
                             ItemViewMessage::SwitchTo(ItemViewMode::Viewing)
                         })
                     } />

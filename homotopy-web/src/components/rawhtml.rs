@@ -9,7 +9,6 @@ pub struct RawHtmlProps {
 }
 
 pub struct RawHtml {
-    props: RawHtmlProps,
     node_ref: NodeRef,
 }
 
@@ -17,35 +16,25 @@ impl Component for RawHtml {
     type Message = ();
     type Properties = RawHtmlProps;
 
-    fn create(props: Self::Properties, _: ComponentLink<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         Self {
-            props,
             node_ref: NodeRef::default(),
         }
     }
 
-    fn update(&mut self, _: Self::Message) -> ShouldRender {
+    fn update(&mut self, _ctx: &Context<Self>, _: Self::Message) -> bool {
         true
     }
 
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        if self.props == props {
-            false
-        } else {
-            self.props = props;
-            true
-        }
-    }
-
-    fn view(&self) -> Html {
+    fn view(&self, _ctx: &Context<Self>) -> Html {
         // create the parent element and store a reference to it
         html! {
             <div ref={self.node_ref.clone()}/>
         }
     }
 
-    fn rendered(&mut self, _first_render: bool) {
+    fn rendered(&mut self, ctx: &Context<Self>, _first_render: bool) {
         let el = self.node_ref.cast::<Element>().unwrap();
-        el.set_inner_html(&self.props.inner_html);
+        el.set_inner_html(&ctx.props().inner_html);
     }
 }

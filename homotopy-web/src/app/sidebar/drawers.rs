@@ -44,7 +44,7 @@ macro_rules! declare_sidebar_drawers {
         }
 
         impl Sidebar {
-            pub(super) fn nav(&self) -> Html {
+            pub(super) fn nav(&self, ctx: &Context<Self>) -> Html {
                 html! {
                     <nav class="sidebar__nav">
                         $(<SidebarButton
@@ -52,7 +52,7 @@ macro_rules! declare_sidebar_drawers {
                             icon={$icon}
                             action={SidebarMsg::Toggle(NavDrawer::$name)}
                             shortcut={None}
-                            dispatch={self.link.callback(|x| x)}
+                            dispatch={ctx.link().callback(|x| x)}
                             visibility={Visible}
                         />)*
                     </nav>

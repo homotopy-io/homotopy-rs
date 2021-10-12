@@ -106,7 +106,6 @@ pub enum PanZoomMessage {
 }
 
 pub struct PanZoomComponent {
-    props: PanZoomProps,
     node_ref: NodeRef,
     translate: Vector,
     scale: f64,
@@ -117,15 +116,15 @@ impl Component for PanZoomComponent {
     type Message = PanZoomMessage;
     type Properties = PanZoomProps;
 
-    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
         let delta = Delta::new();
+        let link = ctx.link().clone();
         delta.register(Box::new(move |agent: &DeltaAgent<PanZoomState>, _| {
             let state = agent.state();
             link.send_message(PanZoomMessage::Delta(state.translate, state.scale));
         }));
 
         Self {
-            props,
             node_ref: Default::default(),
             translate: Default::default(),
             scale: 1.0,
@@ -133,14 +132,14 @@ impl Component for PanZoomComponent {
         }
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         let PanZoomMessage::Delta(translate, scale) = msg;
         self.translate = translate;
         self.scale = scale;
         true
     }
 
-    fn view(&self) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         let style = format!(
             "transform: translate(calc({x}px - 50%), calc({y}px - 50%)) scale({s})",
             x = self.translate.x,
@@ -181,9 +180,9 @@ impl Component for PanZoomComponent {
         let on_wheel = {
             let delta = Delta::<PanZoomState>::new();
             let node_ref = self.node_ref.clone();
-            let on_scroll = self.props.on_scroll.clone();
+            let on_scroll = ctx.props().on_scroll.clone();
 
-            Callback::from(closure!(|e: WheelEvent| {
+            Callback::from(move |e: WheelEvent| {
                 let dy = e.delta_y();
                 if e.alt_key() {
                     e.prevent_default();
@@ -202,7 +201,7 @@ impl Component for PanZoomComponent {
                 } else {
                     on_scroll.emit(Direction::Backward);
                 }
-            }))
+            })
         };
 
         let on_touch_move = {
@@ -245,16 +244,9 @@ impl Component for PanZoomComponent {
                     style={style}
                     ref={self.node_ref.clone()}
                 >
-                    { for self.props.children.iter() }
+                    { for ctx.props().children.iter() }
                 </div>
             </content>
-        }
-    }
-
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        props != self.props && {
-            self.props = props;
-            true
         }
     }
 }

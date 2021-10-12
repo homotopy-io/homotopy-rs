@@ -86,8 +86,6 @@ pub enum SidebarMsg {
 }
 
 pub struct Sidebar {
-    props: SidebarProps,
-    link: ComponentLink<Self>,
     open: Option<drawers::NavDrawer>,
     // Hold onto bindings so that they are dropped when the app is destroyed
     bindings: Option<Closure<dyn FnMut(KeyboardEvent)>>,
@@ -97,18 +95,16 @@ impl Component for Sidebar {
     type Message = SidebarMsg;
     type Properties = SidebarProps;
 
-    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
         let mut sidebar = Self {
-            props,
-            link,
             open: None,
             bindings: None,
         };
-        sidebar.install_keyboard_shortcuts();
+        sidebar.install_keyboard_shortcuts(ctx);
         sidebar
     }
 
-    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             SidebarMsg::Toggle(drawer) if Some(drawer) == self.open => {
                 self.open = None;
@@ -121,44 +117,37 @@ impl Component for Sidebar {
             SidebarMsg::Dispatch(action) => {
                 if let model::Action::Proof(proof::Action::CreateGeneratorZero) = action {
                     if self.open.is_none() {
-                        self.link
+                        ctx.link()
                             .send_message(SidebarMsg::Toggle(drawers::NavDrawer::DRAWER_SIGNATURE));
                     }
                 }
-                self.props.dispatch.emit(action);
+                ctx.props().dispatch.emit(action);
                 false
             }
         }
     }
 
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        props != self.props && {
-            self.props = props;
-            true
-        }
-    }
-
-    fn view(&self) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
             <>
                 <aside class="sidebar">
                     <a href="https://ncatlab.org/nlab/show/homotopy.io">
                         <img src="/static/logo.svg" class="sidebar__logo" />
                     </a>
-                    {self.nav()}
-                    {self.tools()}
+                    {self.nav(ctx)}
+                    {self.tools(ctx)}
                 </aside>
-                {self.drawer()}
+                {self.drawer(ctx)}
             </>
         }
     }
 }
 
 impl Sidebar {
-    fn drawer(&self) -> Html {
-        let dispatch = &self.props.dispatch;
-        let attach_options = self
-            .props
+    fn drawer(&self, ctx: &Context<Self>) -> Html {
+        let dispatch = &ctx.props().dispatch;
+        let attach_options = ctx
+            .props()
             .proof
             .workspace()
             .and_then(|workspace| workspace.attach.clone());
@@ -169,21 +158,21 @@ impl Sidebar {
                     <AttachView
                         dispatch={dispatch.reform(model::Action::Proof)}
                         options={attach_options}
-                        signature={self.props.proof.signature().clone()}
+                        signature={ctx.props().proof.signature().clone()}
                     />
                 </SidebarDrawer>
             };
         }
 
         self.open
-            .map(|drawer| drawer.view(dispatch, &self.props.proof))
+            .map(|drawer| drawer.view(dispatch, &ctx.props().proof))
             .unwrap_or_default()
     }
 
-    fn install_keyboard_shortcuts(&mut self) {
+    fn install_keyboard_shortcuts(&mut self, ctx: &Context<Self>) {
         use homotopy_core::Direction;
 
-        let dispatch = self.link.callback(SidebarMsg::Dispatch);
+        let dispatch = ctx.link().callback(SidebarMsg::Dispatch);
         let bindings = Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
             let key = event.key().to_ascii_lowercase();
             let button = TOOL_BUTTONS.iter().find(|button| match button.shortcut() {

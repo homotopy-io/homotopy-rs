@@ -35,7 +35,6 @@ pub struct Props {
 pub enum Message {}
 
 pub struct WorkspaceView {
-    props: Props,
     on_select: Callback<Vec<Vec<SliceIndex>>>,
     on_homotopy: Callback<Homotopy>,
     diagram_ref: NodeRef,
@@ -45,36 +44,28 @@ impl Component for WorkspaceView {
     type Message = Message;
     type Properties = Props;
 
-    fn create(props: Self::Properties, _link: ComponentLink<Self>) -> Self {
-        let on_select = props.dispatch.reform(Action::SelectPoints);
-        let on_homotopy = props.dispatch.reform(Action::Homotopy);
+    fn create(ctx: &Context<Self>) -> Self {
+        let on_select = ctx.props().dispatch.reform(Action::SelectPoints);
+        let on_homotopy = ctx.props().dispatch.reform(Action::Homotopy);
         Self {
-            props,
             on_select,
             on_homotopy,
             diagram_ref: Default::default(),
         }
     }
 
-    fn update(&mut self, _: Self::Message) -> ShouldRender {
+    fn update(&mut self, _ctx: &Context<Self>, _: Self::Message) -> bool {
         false
     }
 
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        props != self.props && {
-            self.props = props;
-            true
-        }
-    }
-
-    fn view(&self) -> Html {
-        let slice_buttons = match self.visible_diagram() {
-            Diagram::DiagramN(d) if self.props.workspace.view.dimension() == 2 => html! {
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let slice_buttons = match Self::visible_diagram(ctx) {
+            Diagram::DiagramN(d) if ctx.props().workspace.view.dimension() == 2 => html! {
                 <SliceControl
                     number_slices={d.size()}
-                    descend_slice={self.props.dispatch.reform(Action::DescendSlice)}
+                    descend_slice={ctx.props().dispatch.reform(Action::DescendSlice)}
                     diagram_ref={self.diagram_ref.clone()}
-                    on_hover={self.props.dispatch.reform(Action::HighlightSlice)}
+                    on_hover={ctx.props().dispatch.reform(Action::HighlightSlice)}
                 />
             },
             _ => Default::default(),
@@ -82,15 +73,15 @@ impl Component for WorkspaceView {
 
         html! {
             <div class="workspace">
-                {self.view_diagram()}
+                {self.view_diagram(ctx)}
                 {slice_buttons}
                 <div class="workspace__toolbar">
                     <PathControl
-                        path={self.props.workspace.path.clone()}
-                        view={self.props.workspace.view}
-                        ascend_slice={self.props.dispatch.reform(Action::AscendSlice)}
-                        update_view={self.props.dispatch.reform(Action::UpdateView)}
-                        dimension={self.props.workspace.diagram.dimension()}
+                        path={ctx.props().workspace.path.clone()}
+                        view={ctx.props().workspace.view}
+                        ascend_slice={ctx.props().dispatch.reform(Action::AscendSlice)}
+                        update_view={ctx.props().dispatch.reform(Action::UpdateView)}
+                        dimension={ctx.props().workspace.diagram.dimension()}
                     />
                     <ViewControl />
                 </div>
@@ -100,17 +91,17 @@ impl Component for WorkspaceView {
 }
 
 impl WorkspaceView {
-    fn visible_diagram(&self) -> Diagram {
+    fn visible_diagram(ctx: &Context<Self>) -> Diagram {
         // TODO: This should not be recomputed every view
-        self.props.workspace.visible_diagram()
+        ctx.props().workspace.visible_diagram()
     }
 
-    fn view_diagram(&self) -> Html {
-        match self.visible_diagram() {
+    fn view_diagram(&self, ctx: &Context<Self>) -> Html {
+        match Self::visible_diagram(ctx) {
             Diagram::Diagram0(generator) => {
                 html! {
                     <PanZoomComponent
-                        on_scroll={self.props.dispatch.reform(Action::SwitchSlice)}
+                        on_scroll={ctx.props().dispatch.reform(Action::SwitchSlice)}
                     >
                         <Diagram0D
                             diagram={generator}
@@ -122,7 +113,7 @@ impl WorkspaceView {
             Diagram::DiagramN(diagram) if diagram.dimension() == 1 => {
                 html! {
                     <PanZoomComponent
-                        on_scroll={self.props.dispatch.reform(Action::SwitchSlice)}
+                        on_scroll={ctx.props().dispatch.reform(Action::SwitchSlice)}
                     >
                         <Diagram1D
                             diagram={diagram}
@@ -132,21 +123,21 @@ impl WorkspaceView {
                     </PanZoomComponent>
                 }
             }
-            Diagram::DiagramN(diagram) => match self.props.workspace.view.dimension() {
+            Diagram::DiagramN(diagram) => match ctx.props().workspace.view.dimension() {
                 3 | 4 => html! {
                     <GlDiagram
                         diagram={diagram}
-                        view={self.props.workspace.view}
+                        view={ctx.props().workspace.view}
                     />
                 },
                 _ => {
                     let highlight =
-                        highlight_attachment(&self.props.workspace, &self.props.signature)
-                            .or_else(|| highlight_slice(&self.props.workspace));
+                        highlight_attachment(&ctx.props().workspace, &ctx.props().signature)
+                            .or_else(|| highlight_slice(&ctx.props().workspace));
 
                     html! {
                         <PanZoomComponent
-                            on_scroll={self.props.dispatch.reform(Action::SwitchSlice)}
+                            on_scroll={ctx.props().dispatch.reform(Action::SwitchSlice)}
                         >
                             <Diagram2D
                                 diagram={diagram}
