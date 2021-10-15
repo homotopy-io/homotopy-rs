@@ -7,23 +7,44 @@ WASM_PACK_FLAGS = "--dev"
 [env.production]
 WASM_PACK_FLAGS = "--release"
 
-[tasks.build]
-clear = true
+[tasks.build-mt]
+script = '''
+RUSTFLAGS='-C target-feature=+atomics,+bulk-memory,+mutable-globals' wasm-pack build -d pkg-parallel --out-name homotopy_web-parallel --target web --no-typescript ${WASM_PACK_FLAGS} -- --features parallel -Z build-std=panic_abort,std
+rm pkg-parallel/package.json pkg-parallel/README.md
+'''
+
+[tasks.build-st]
+script = '''
+wasm-pack build --target web --no-typescript ${WASM_PACK_FLAGS}
+rm pkg/package.json pkg/README.md
+'''
+
+[tasks.dist]
 script = '''
 rm -rf dist
-wasm-pack build -d dist --target web --no-typescript ${WASM_PACK_FLAGS}
-rm dist/{package.json,README.md}
-cp static/* dist/
+mkdir dist
+cp -r pkg/* dist/
+cp -r pkg-parallel/* dist/
+cp -r static/* dist/
 '''
+dependencies = ["build-st", "build-mt"]
 
 [tasks.clean]
 clear = true
 script = '''
-rm -rf dist
+rm -rf dist pkg pkg-parallel
 cargo clean
 '''
 
 [tasks.serve]
 command = "devserver"
-args = ["--path", "dist"]
-dependencies = ["build"]
+args = [
+  "--path"
+, "dist"
+, "--header"
+, "Cross-Origin-Opener-Policy=same-origin"
+, "--header"
+, "Cross-Origin-Embedder-Policy=require-corp"
+]
+dependencies = ["dist"]
+watch = true

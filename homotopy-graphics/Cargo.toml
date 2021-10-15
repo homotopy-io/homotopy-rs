@@ -22,7 +22,7 @@ petgraph = "0.6.0"
 seahash = "4.1.0"
 log = "0.4.14"
 js-sys = "0.3.55"
-yew = { git = "https://github.com/NickHu/yew" }
+yew = { git = "https://github.com/NickHu/yew", branch = "rayon" }
 wasm-bindgen = "0.2.78"
 
 [dependencies.web-sys]

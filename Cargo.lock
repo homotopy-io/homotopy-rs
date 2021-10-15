@@ -672,6 +672,7 @@ dependencies = [
  "ultraviolet",
  "wasm-bindgen",
  "wasm-bindgen-futures",
+ "wasm-bindgen-rayon",
  "wasm-bindgen-test",
  "wasm-logger",
  "web-sys",
@@ -1338,6 +1339,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c307a32c1c5c437f38c7fd45d753050587732ba8628319fbdf12a7e289ccc590"
 
 [[package]]
+name = "spmc"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "02a8428da277a8e3a15271d79943e80ccc2ef254e78813a166a08d65e4c3ece5"
+
+[[package]]
 name = "syn"
 version = "1.0.80"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1525,6 +1532,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasm-bindgen-rayon"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df87c67450805c305d3ae44a3ac537b0253d029153c25afc3ecd2edc36ccafb1"
+dependencies = [
+ "js-sys",
+ "rayon",
+ "spmc",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "wasm-bindgen-shared"
 version = "0.2.78"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1628,7 +1647,7 @@ dependencies = [
 [[package]]
 name = "yew"
 version = "0.18.0"
-source = "git+https://github.com/NickHu/yew#77b46bfa407fd8ff5da098f42fa838ff4e3995ed"
+source = "git+https://github.com/NickHu/yew?branch=rayon#f79655fe61ab01c65415c434ce6809dd869bf9ea"
 dependencies = [
  "anyhow",
  "console_error_panic_hook",
@@ -1646,7 +1665,7 @@ dependencies = [
 [[package]]
 name = "yew-agent"
 version = "0.1.0"
-source = "git+https://github.com/NickHu/yew#77b46bfa407fd8ff5da098f42fa838ff4e3995ed"
+source = "git+https://github.com/NickHu/yew?branch=rayon#f79655fe61ab01c65415c434ce6809dd869bf9ea"
 dependencies = [
  "anymap2",
  "bincode",
@@ -1663,7 +1682,7 @@ dependencies = [
 [[package]]
 name = "yew-macro"
 version = "0.18.0"
-source = "git+https://github.com/NickHu/yew#77b46bfa407fd8ff5da098f42fa838ff4e3995ed"
+source = "git+https://github.com/NickHu/yew?branch=rayon#f79655fe61ab01c65415c434ce6809dd869bf9ea"
 dependencies = [
  "boolinator",
  "lazy_static",

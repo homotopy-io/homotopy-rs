@@ -46,12 +46,24 @@
     clippy::shadow_unrelated,
     clippy::match_same_arms,
 )]
+#![cfg_attr(feature = "parallel", feature(once_cell))]
 #![recursion_limit = "1024"]
 
 use wasm_bindgen::prelude::*;
+#[cfg(feature = "wasm-bindgen-rayon")]
+pub use wasm_bindgen_rayon::init_thread_pool;
+#[cfg(not(feature = "wasm-bindgen-rayon"))]
+#[wasm_bindgen(js_name = initThreadPool)]
+pub fn init_thread_pool(_nthreads: usize) {
+    // empty stub
+}
+#[cfg(feature = "parallel")]
+use yew_agent::Threaded;
 
 mod app;
 mod components;
+#[cfg(feature = "parallel")]
+mod worker;
 
 pub mod model;
 
@@ -59,14 +71,19 @@ pub mod model;
 #[wasm_bindgen(start)]
 #[allow(clippy::unnecessary_wraps)]
 pub fn main_js() -> Result<(), JsValue> {
+    use js_sys::{global, Reflect};
     // This provides better error messages in debug mode.
     // It's disabled in release mode so it doesn't bloat up the file size.
     #[cfg(feature = "console_error_panic_hook")]
     console_error_panic_hook::set_once();
 
-    wasm_logger::init(wasm_logger::Config::default());
-
-    yew::start_app::<app::App>();
-
+    // check if we are the main/UI thread
+    if Reflect::has(&global(), &JsValue::from_str("window")).unwrap() {
+        wasm_logger::init(wasm_logger::Config::default());
+        yew::start_app::<app::App>();
+    } else {
+        #[cfg(feature = "parallel")]
+        worker::Worker::register();
+    }
     Ok(())
 }
