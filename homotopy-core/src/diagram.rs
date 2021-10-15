@@ -1,12 +1,11 @@
 use std::{
-    cell::RefCell,
     collections::HashSet,
     convert::{From, Into, TryFrom},
     fmt,
     hash::Hash,
 };
 
-use hashconsing::{HConsed, HConsign, HashConsign};
+use hashconsing::{consign, HConsed, HashConsign};
 use thiserror::Error;
 
 use crate::{
@@ -15,7 +14,7 @@ use crate::{
         Boundary, DimensionError, Direction, Generator, Height, Mode, RegularHeight, SliceIndex,
     },
     rewrite::{Cospan, MalformedRewrite, Rewrite, RewriteN},
-    util::{first_max_generator, Hasher},
+    util::first_max_generator,
 };
 
 #[derive(PartialEq, Eq, Hash, Clone, PartialOrd, Ord)]
@@ -172,8 +171,8 @@ pub fn globularity(s: &Diagram, t: &Diagram) -> bool {
 #[derive(PartialEq, Eq, Hash, Clone, PartialOrd, Ord)]
 pub struct DiagramN(HConsed<DiagramInternal>);
 
-thread_local! {
-    static DIAGRAM_FACTORY: RefCell<HConsign<DiagramInternal, Hasher>> = RefCell::new(HConsign::with_capacity_and_hasher(37, Hasher::default()));
+consign! {
+   let DIAGRAM_FACTORY = consign(37) for DiagramInternal;
 }
 
 impl DiagramN {
@@ -206,10 +205,7 @@ impl DiagramN {
 
     #[allow(clippy::expect_used)]
     pub(crate) fn new_unsafe(source: Diagram, cospans: Vec<Cospan>) -> Self {
-        let diagram = Self(
-            DIAGRAM_FACTORY
-                .with(|factory| factory.borrow_mut().mk(DiagramInternal { source, cospans })),
-        );
+        let diagram = Self(DIAGRAM_FACTORY.mk(DiagramInternal { source, cospans }));
         if cfg!(feature = "safety-checks") {
             diagram
                 .check_well_formed(Mode::Shallow)
@@ -219,7 +215,7 @@ impl DiagramN {
     }
 
     pub(crate) fn collect_garbage() {
-        DIAGRAM_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
+        DIAGRAM_FACTORY.collect_to_fit();
     }
 
     /// The dimension of the diagram, which is at least one.

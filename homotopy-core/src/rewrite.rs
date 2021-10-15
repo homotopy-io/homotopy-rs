@@ -1,28 +1,27 @@
 use std::{
-    cell::RefCell,
     cmp::Ordering,
     convert::{From, Into, TryFrom},
     fmt,
     hash::Hash,
+    lazy::SyncOnceCell,
     ops::{Deref, Range},
 };
 
-use hashconsing::{HConsed, HConsign, HashConsign};
+use hashconsing::{consign, HConsed, HashConsign};
 use thiserror::Error;
 
 use crate::{
     common::{DimensionError, Generator, Mode, SingularHeight},
     diagram::Diagram,
-    util::{first_max_generator, CachedCell, Hasher},
+    util::first_max_generator,
     Boundary,
 };
 
-thread_local! {
-    static REWRITE_FACTORY: RefCell<HConsign<RewriteInternal<DefaultAllocator>, Hasher>> =
-        RefCell::new(HConsign::with_capacity_and_hasher(37, Hasher::default()));
-
-    static CONE_FACTORY: RefCell<HConsign<ConeInternal<DefaultAllocator>, Hasher>> =
-        RefCell::new(HConsign::with_capacity_and_hasher(37, Hasher::default()));
+consign! {
+    let REWRITE_FACTORY = consign(37) for RewriteInternal<DefaultAllocator>;
+}
+consign! {
+    let CONE_FACTORY = consign(37) for ConeInternal<DefaultAllocator>;
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
@@ -60,8 +59,8 @@ where
 {
     dimension: usize,
     cones: Vec<GenericCone<A>>,
-    max_generator_source: CachedCell<Option<Generator>>,
-    max_generator_target: CachedCell<Option<Generator>>,
+    max_generator_source: SyncOnceCell<Option<Generator>>,
+    max_generator_target: SyncOnceCell<Option<Generator>>,
     payload: A::Payload,
 }
 
@@ -104,8 +103,8 @@ where
 pub trait RewriteAllocator: Copy + Eq + Hash + fmt::Debug + Sized {
     type Payload: Composable;
 
-    type RewriteCell: Deref<Target = RewriteInternal<Self>> + Clone + Eq + Ord + Hash;
-    type ConeCell: Deref<Target = ConeInternal<Self>> + Clone + Eq + Ord + Hash;
+    type RewriteCell: Deref<Target = RewriteInternal<Self>> + Clone + Eq + Ord + Hash + Send + Sync;
+    type ConeCell: Deref<Target = ConeInternal<Self>> + Clone + Eq + Ord + Hash + Send + Sync;
 
     fn mk_rewrite(internal: RewriteInternal<Self>) -> Self::RewriteCell;
 
@@ -114,7 +113,7 @@ pub trait RewriteAllocator: Copy + Eq + Hash + fmt::Debug + Sized {
     fn collect_garbage();
 }
 
-pub trait Composable: Clone + Eq + Hash + fmt::Debug {
+pub trait Composable: Clone + Eq + Hash + fmt::Debug + Send + Sync {
     fn compose<A>(f: &GenericRewriteN<A>, g: &GenericRewriteN<A>) -> Result<Self, CompositionError>
     where
         A: RewriteAllocator<Payload = Self>;
@@ -561,8 +560,8 @@ where
         Self(A::mk_rewrite(RewriteInternal {
             dimension,
             cones,
-            max_generator_source: CachedCell::new(),
-            max_generator_target: CachedCell::new(),
+            max_generator_source: SyncOnceCell::new(),
+            max_generator_target: SyncOnceCell::new(),
             payload: payload.clone(),
         }))
     }
@@ -993,7 +992,7 @@ where
 
     pub(crate) fn max_generator(&self, boundary: Boundary) -> Option<Generator> {
         match boundary {
-            Boundary::Source => self.0.max_generator_source.compute(|| {
+            Boundary::Source => *self.0.max_generator_source.get_or_init(|| {
                 first_max_generator(
                     self.cones()
                         .iter()
@@ -1002,7 +1001,7 @@ where
                     None,
                 )
             }),
-            Boundary::Target => self.0.max_generator_target.compute(|| {
+            Boundary::Target => *self.0.max_generator_target.get_or_init(|| {
                 first_max_generator(
                     self.cones()
                         .iter()
@@ -1105,18 +1104,18 @@ impl RewriteAllocator for DefaultAllocator {
 
     #[inline]
     fn mk_rewrite(internal: RewriteInternal<Self>) -> Self::RewriteCell {
-        REWRITE_FACTORY.with(|factory| factory.borrow_mut().mk(internal))
+        REWRITE_FACTORY.mk(internal)
     }
 
     #[inline]
     fn mk_cone(internal: ConeInternal<Self>) -> Self::ConeCell {
-        CONE_FACTORY.with(|factory| factory.borrow_mut().mk(internal))
+        CONE_FACTORY.mk(internal)
     }
 
     #[inline]
     fn collect_garbage() {
-        REWRITE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
-        CONE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
+        REWRITE_FACTORY.collect_to_fit();
+        CONE_FACTORY.collect_to_fit();
     }
 }
 

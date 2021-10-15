@@ -43,6 +43,7 @@
     clippy::shadow_unrelated,
     clippy::match_on_vec_items,
 )]
+#![feature(once_cell)]
 
 pub use common::{Boundary, Direction, Generator, Height, SliceIndex};
 pub use contraction::Bias;
