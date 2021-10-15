@@ -2,13 +2,14 @@ use history::History;
 pub use history::Proof;
 use homotopy_core::common::Mode;
 use proof::{Color, GeneratorInfo, Signature, Workspace};
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 pub mod history;
 pub mod proof;
 pub mod serialize;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Action {
     Proof(proof::Action),
     History(history::Action),
@@ -28,7 +29,7 @@ impl From<history::Action> for Action {
     }
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SerializedData(Vec<u8>);
 
 impl std::fmt::Debug for SerializedData {

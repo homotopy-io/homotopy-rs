@@ -10,6 +10,7 @@ use petgraph::{
     unionfind::UnionFind,
     visit::EdgeRef,
 };
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{
@@ -40,7 +41,7 @@ struct Component(usize);
 
 type BiasValue = usize;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum Bias {
     Higher,
     Lower,

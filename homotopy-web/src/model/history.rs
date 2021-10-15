@@ -5,16 +5,17 @@ use std::{
 
 use homotopy_common::tree::{Node, NodeData, Tree};
 use instant::Instant;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use super::proof::ProofState;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Action {
     Move(Direction),
     // TODO: history pruning
 }
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Direction {
     Linear(homotopy_core::common::Direction),
     // TODO: branch moves

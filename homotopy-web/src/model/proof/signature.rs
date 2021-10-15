@@ -54,13 +54,13 @@ impl Default for SignatureItem {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SignatureItemEdit {
     Rename(String),
     Recolor(Color),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SignatureEdit {
     Edit(Node, SignatureItemEdit),
     MoveBefore(Node, Node),

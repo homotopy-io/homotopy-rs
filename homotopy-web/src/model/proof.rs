@@ -102,7 +102,7 @@ pub struct ProofState {
     boundary: Option<SelectedBoundary>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Action {
     /// Create a new generator of dimension zero.
     CreateGeneratorZero,

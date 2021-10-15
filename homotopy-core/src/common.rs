@@ -96,7 +96,6 @@ impl<'de> Deserialize<'de> for Height {
 }
 
 #[derive(PartialEq, Eq, Copy, Clone, Debug, Hash, Serialize, Deserialize)]
-#[serde(untagged)]
 pub enum SliceIndex {
     Boundary(Boundary),
     Interior(Height),
@@ -279,7 +278,7 @@ impl DoubleEndedIterator for SliceIndexIterator {
 
 impl FusedIterator for SliceIndexIterator {}
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum Direction {
     Forward,
     Backward,
