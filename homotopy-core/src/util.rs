@@ -7,7 +7,12 @@ use rustc_hash::FxHasher;
 
 use crate::common::Generator;
 
-pub fn first_max_generator<I>(iterator: I, dimension_cutoff: Option<usize>) -> Option<Generator>
+pub mod rayon;
+
+pub(crate) fn first_max_generator<I>(
+    iterator: I,
+    dimension_cutoff: Option<usize>,
+) -> Option<Generator>
 where
     I: IntoIterator<Item = Generator>,
 {
@@ -27,6 +32,6 @@ where
     max
 }
 
-pub type Hasher = BuildHasherDefault<FxHasher>;
-pub type FastHashMap<K, V> = HashMap<K, V, Hasher>;
-pub type FastHashSet<K> = HashSet<K, Hasher>;
+pub(crate) type Hasher = BuildHasherDefault<FxHasher>;
+pub(crate) type FastHashMap<K, V> = HashMap<K, V, Hasher>;
+pub(crate) type FastHashSet<K> = HashSet<K, Hasher>;

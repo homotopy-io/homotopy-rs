@@ -608,6 +608,7 @@ dependencies = [
  "petgraph",
  "quickcheck",
  "quickcheck_macros",
+ "rayon",
  "rmp-serde",
  "rustc-hash",
  "serde",

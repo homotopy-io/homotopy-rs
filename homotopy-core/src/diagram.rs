@@ -3,11 +3,16 @@ use std::{
     convert::{From, Into, TryFrom},
     fmt,
     hash::Hash,
+    sync::Mutex,
 };
 
 use hashconsing::{consign, HConsed, HashConsign};
+#[cfg(feature = "rayon")]
+use rayon::prelude::*;
 use thiserror::Error;
 
+#[allow(clippy::wildcard_imports)]
+use crate::util::rayon::*;
 use crate::{
     attach::{attach, BoundaryPath},
     common::{
@@ -203,13 +208,16 @@ impl DiagramN {
         Ok(Self::new_unsafe(source, vec![cospan]))
     }
 
-    #[allow(clippy::expect_used)]
+    #[allow(clippy::expect_used, clippy::let_and_return)]
     pub(crate) fn new_unsafe(source: Diagram, cospans: Vec<Cospan>) -> Self {
         let diagram = Self(DIAGRAM_FACTORY.mk(DiagramInternal { source, cospans }));
-        if cfg!(feature = "safety-checks") {
-            diagram
-                .check_well_formed(Mode::Shallow)
-                .expect("Diagram is malformed");
+        #[cfg(feature = "safety-checks")]
+        {
+            background_only! {
+                diagram
+                    .check_well_formed(Mode::Shallow)
+                    .expect("Diagram is malformed")
+            };
         }
         diagram
     }
@@ -224,66 +232,69 @@ impl DiagramN {
     }
 
     pub fn check_well_formed(&self, mode: Mode) -> Result<(), Vec<MalformedDiagram>> {
-        let mut errors: Vec<MalformedDiagram> = Default::default();
-        let mut slice = self.source();
+        let errors: Mutex<Vec<MalformedDiagram>> = Default::default();
 
         // Check that the source slice is well-formed.
         if mode == Mode::Deep {
-            if let Err(e) = slice.check_well_formed(mode) {
-                errors.push(MalformedDiagram::Slice(Height::Regular(0), e));
+            if let Err(e) = self.source().check_well_formed(mode) {
+                errors
+                    .lock()
+                    .unwrap()
+                    .push(MalformedDiagram::Slice(Height::Regular(0), e));
             }
         }
 
-        for (i, cospan) in self.cospans().iter().enumerate() {
-            // Check that the forward rewrite is well-formed.
-            if mode == Mode::Deep {
-                if let Err(e) = cospan.forward.check_well_formed(mode) {
-                    errors.push(MalformedDiagram::Rewrite(i, Direction::Forward, e));
-                }
-            }
-
-            // Check that the forward rewrite is compatible with the regular slice.
-            match slice.rewrite_forward(&cospan.forward) {
-                Ok(next) if mode == Mode::Deep => {
-                    if let Err(e) = next.check_well_formed(mode) {
-                        errors.push(MalformedDiagram::Slice(Height::Singular(i), e));
+        self.slices()
+            .collect::<Vec<_>>()
+            .into_par_iter()
+            .zip(
+                self.cospans()
+                    .par_iter()
+                    .map(|cs| &cs.forward)
+                    .interleave(self.cospans().par_iter().map(|cs| &cs.backward)),
+            )
+            .enumerate()
+            .for_each(|(i, (slice, rewrite))| {
+                // Check that the rewrite is well-formed.
+                if mode == Mode::Deep {
+                    if let Err(e) = rewrite.check_well_formed(mode) {
+                        errors.lock().unwrap().push(MalformedDiagram::Rewrite(
+                            i,
+                            Direction::Forward,
+                            e,
+                        ));
                     }
-                    slice = next;
                 }
-                Ok(next) => slice = next,
-                Err(re) => {
-                    errors.push(MalformedDiagram::Incompatible(i, Direction::Forward, re));
-                    break;
-                }
-            }
 
-            // Check that the backward rewrite is well-formed.
-            if mode == Mode::Deep {
-                if let Err(e) = cospan.backward.check_well_formed(mode) {
-                    errors.push(MalformedDiagram::Rewrite(i, Direction::Backward, e));
-                }
-            }
-
-            // Check that the backward rewrite is compatible with the singular slice.
-            match slice.rewrite_backward(&cospan.backward) {
-                Ok(next) if mode == Mode::Deep => {
-                    if let Err(e) = next.check_well_formed(mode) {
-                        errors.push(MalformedDiagram::Slice(Height::Regular(i + 1), e));
+                // Check that the rewrite is compatible with the regular slice.
+                match if i % 2 == 0 {
+                    slice.rewrite_forward(rewrite)
+                } else {
+                    slice.rewrite_backward(rewrite)
+                } {
+                    Ok(next) if mode == Mode::Deep => {
+                        if let Err(e) = next.check_well_formed(mode) {
+                            errors
+                                .lock()
+                                .unwrap()
+                                .push(MalformedDiagram::Slice(Height::Singular(i), e));
+                        }
                     }
-                    slice = next;
+                    Ok(_) => { /* no error */ }
+                    Err(re) => {
+                        errors.lock().unwrap().push(MalformedDiagram::Incompatible(
+                            i,
+                            Direction::Forward,
+                            re,
+                        ));
+                    }
                 }
-                Ok(next) => slice = next,
-                Err(re) => {
-                    errors.push(MalformedDiagram::Incompatible(i, Direction::Backward, re));
-                    break;
-                }
-            }
-        }
+            });
 
-        if errors.is_empty() {
+        if errors.lock().unwrap().is_empty() {
             Ok(())
         } else {
-            Err(errors)
+            Err(errors.into_inner().unwrap())
         }
     }
 

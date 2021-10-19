@@ -50,8 +50,6 @@ pub use contraction::Bias;
 pub use diagram::{Diagram, DiagramN};
 pub use rewrite::{Cospan, Rewrite, Rewrite0, RewriteN};
 
-mod util;
-
 pub mod attach;
 pub mod common;
 pub mod complex;
@@ -69,6 +67,7 @@ pub mod rewrite;
 pub mod serialize;
 pub mod signature;
 pub mod typecheck;
+pub mod util;
 
 pub fn collect_garbage() {
     DiagramN::collect_garbage();

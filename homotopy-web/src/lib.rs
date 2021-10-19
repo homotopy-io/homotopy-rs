@@ -79,6 +79,7 @@ pub fn main_js() -> Result<(), JsValue> {
 
     // check if we are the main/UI thread
     if Reflect::has(&global(), &JsValue::from_str("window")).unwrap() {
+        homotopy_core::util::rayon::MAIN_THREAD.with(|b| b.set(true));
         wasm_logger::init(wasm_logger::Config::default());
         yew::start_app::<app::App>();
     } else {
