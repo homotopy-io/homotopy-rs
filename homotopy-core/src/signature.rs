@@ -42,7 +42,7 @@ impl SignatureBuilder {
         let source: Diagram = source.into();
         let target: Diagram = target.into();
         let generator = Generator::new(self.0.len(), source.dimension() + 1);
-        let diagram = DiagramN::new(generator, source, target)?;
+        let diagram = DiagramN::from_generator(generator, source, target)?;
         self.0.insert(generator, diagram.clone().into());
         Ok(diagram)
     }

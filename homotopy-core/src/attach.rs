@@ -86,7 +86,7 @@ where
 
             let offset = cospans.len();
             cospans.extend(diagram.cospans().iter().cloned());
-            Ok((DiagramN::new_unsafe(source, cospans), offset))
+            Ok((DiagramN::new(source, cospans), offset))
         }
 
         BoundaryPath(Boundary::Target, 0) => {
@@ -94,7 +94,7 @@ where
             let offset = added_cospans.len();
             let mut cospans = diagram.cospans().to_vec();
             cospans.extend(added_cospans);
-            Ok((DiagramN::new_unsafe(diagram.source(), cospans), offset))
+            Ok((DiagramN::new(diagram.source(), cospans), offset))
         }
 
         BoundaryPath(boundary, depth) => {
@@ -111,7 +111,7 @@ where
                 Boundary::Target => diagram.cospans().to_vec(),
             };
 
-            Ok((DiagramN::new_unsafe(source.into(), cospans), offset))
+            Ok((DiagramN::new(source.into(), cospans), offset))
         }
     }
 }

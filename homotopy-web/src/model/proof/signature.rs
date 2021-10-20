@@ -148,7 +148,7 @@ impl Signature {
     ) -> Result<Diagram, NewDiagramError> {
         let id = self.next_generator_id();
         let generator = Generator::new(id, source.dimension() + 1);
-        let diagram = DiagramN::new(generator, source, target)?;
+        let diagram = DiagramN::from_generator(generator, source, target)?;
         self.insert(id, generator, diagram.clone());
         Ok(diagram.into())
     }

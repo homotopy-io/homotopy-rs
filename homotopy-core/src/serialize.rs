@@ -193,7 +193,7 @@ impl Store {
                         .into_iter()
                         .map(|cone| self.unpack_cone(cone))
                         .collect::<Option<_>>()?;
-                    Some(RewriteN::new(u32::from(dimension) as usize, cones).into())
+                    Some(RewriteN::new_unsafe(u32::from(dimension) as usize, cones).into())
                 }
             };
             rewrite
