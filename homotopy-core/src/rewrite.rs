@@ -5,14 +5,11 @@ use std::{
     hash::Hash,
     lazy::SyncOnceCell,
     ops::{Deref, Range},
-    sync::Mutex,
 };
 
 use hashconsing::{consign, HConsed, HashConsign};
 use thiserror::Error;
 
-#[allow(clippy::wildcard_imports)]
-use crate::util::rayon::*;
 use crate::{
     common::{DimensionError, Generator, Mode, SingularHeight},
     diagram::Diagram,
@@ -598,94 +595,70 @@ where
 
     #[inline]
     pub fn check_well_formed(&self, mode: Mode) -> Result<(), Vec<MalformedRewrite>> {
-        let errors: Mutex<Vec<MalformedRewrite>> = Default::default();
-        self.0.cones.par_iter().for_each(|cone| {
+        let mut errors: Vec<MalformedRewrite> = Default::default();
+        for cone in &self.0.cones {
             if cone.len() == 0 {
                 if cone.internal.target.forward != cone.internal.target.backward {
-                    errors
-                        .lock()
-                        .unwrap()
-                        .push(MalformedRewrite::NotSingularity(cone.index));
+                    errors.push(MalformedRewrite::NotSingularity(cone.index));
                 }
             } else {
                 // Check that the subslices are well-formed.
                 if mode == Mode::Deep {
-                    cone.internal
-                        .slices
-                        .par_iter()
-                        .enumerate()
-                        .for_each(|(i, slice)| {
-                            if let Err(e) = slice.check_well_formed(mode) {
-                                errors.lock().unwrap().push(MalformedRewrite::Slice(i, e));
-                            }
-                        });
+                    for (i, slice) in cone.internal.slices.iter().enumerate() {
+                        if let Err(e) = slice.check_well_formed(mode) {
+                            errors.push(MalformedRewrite::Slice(i, e));
+                        }
+                    }
                 }
 
                 // Check that the squares commute.
                 let len = cone.len();
 
-                join(
-                    || {
-                        join(
-                            || match cone.internal.source[0]
-                                .forward
-                                .compose(&cone.internal.slices[0])
-                            {
-                                Ok(f) if f == cone.internal.target.forward => { /* no error */ }
-                                Ok(_) => errors
-                                    .lock()
-                                    .unwrap()
-                                    .push(MalformedRewrite::NotCommutativeLeft(cone.index)),
-                                Err(ce) => errors.lock().unwrap().push(ce.into()),
-                            },
-                            || match cone.internal.source[len - 1]
-                                .backward
-                                .compose(&cone.internal.slices[len - 1])
-                            {
-                                Ok(f) if f == cone.internal.target.backward => { /* no error */ }
-                                Ok(_) => errors
-                                    .lock()
-                                    .unwrap()
-                                    .push(MalformedRewrite::NotCommutativeRight(len - 1)),
-                                Err(ce) => errors.lock().unwrap().push(ce.into()),
-                            },
-                        )
-                    },
-                    || {
-                        (0..len - 1).into_par_iter().for_each(|i| {
-                            let f = cone.internal.source[i]
-                                .backward
-                                .compose(&cone.internal.slices[i]);
-                            let g = cone.internal.source[i + 1]
-                                .forward
-                                .compose(&cone.internal.slices[i + 1]);
-                            match (f, g) {
-                                (Ok(f), Ok(g)) if f == g => { /* no error */ }
-                                (Ok(_), Ok(_)) => errors.lock().unwrap().push(
-                                    MalformedRewrite::NotCommutativeMiddle(
-                                        cone.index + i,
-                                        cone.index + i + 1,
-                                    ),
-                                ),
-                                (Ok(_), Err(ce)) | (Err(ce), Ok(_)) => {
-                                    errors.lock().unwrap().push(ce.into());
-                                }
-                                (Err(f_ce), Err(g_ce)) => {
-                                    let mut e = errors.lock().unwrap();
-                                    e.push(f_ce.into());
-                                    e.push(g_ce.into());
-                                }
-                            }
-                        });
-                    },
-                );
-            }
-        });
+                match cone.internal.source[0]
+                    .forward
+                    .compose(&cone.internal.slices[0])
+                {
+                    Ok(f) if f == cone.internal.target.forward => { /* no error */ }
+                    Ok(_) => errors.push(MalformedRewrite::NotCommutativeLeft(cone.index)),
+                    Err(ce) => errors.push(ce.into()),
+                };
 
-        if errors.lock().unwrap().is_empty() {
+                for i in 0..len - 1 {
+                    let f = cone.internal.source[i]
+                        .backward
+                        .compose(&cone.internal.slices[i]);
+                    let g = cone.internal.source[i + 1]
+                        .forward
+                        .compose(&cone.internal.slices[i + 1]);
+                    match (f, g) {
+                        (Ok(f), Ok(g)) if f == g => { /* no error */ }
+                        (Ok(_), Ok(_)) => errors.push(MalformedRewrite::NotCommutativeMiddle(
+                            cone.index + i,
+                            cone.index + i + 1,
+                        )),
+                        (Ok(_), Err(ce)) | (Err(ce), Ok(_)) => errors.push(ce.into()),
+                        (Err(f_ce), Err(g_ce)) => {
+                            errors.push(f_ce.into());
+                            errors.push(g_ce.into());
+                        }
+                    }
+                }
+
+                match cone.internal.source[len - 1]
+                    .backward
+                    .compose(&cone.internal.slices[len - 1])
+                {
+                    Ok(f) if f == cone.internal.target.backward => { /* no error */ }
+                    Ok(_) => errors.push(MalformedRewrite::NotCommutativeRight(len - 1)),
+                    Err(ce) => errors.push(ce.into()),
+                };
+            }
+        }
+
+        if errors.is_empty() {
             Ok(())
         } else {
-            Err(errors.into_inner().unwrap())
+            Err(errors)
         }
     }
 
