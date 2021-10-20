@@ -575,7 +575,7 @@ fn colimit_recursive(
         cospans.push(Cospan { forward, backward });
     }
 
-    let target = DiagramN::new_unsafe(
+    let target = DiagramN::new(
         <&DiagramN>::try_from(&diagrams[0].0).unwrap().source(),
         cospans,
     );

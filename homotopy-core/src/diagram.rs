@@ -181,7 +181,11 @@ consign! {
 }
 
 impl DiagramN {
-    pub fn new<S, T>(generator: Generator, source: S, target: T) -> Result<Self, NewDiagramError>
+    pub fn from_generator<S, T>(
+        generator: Generator,
+        source: S,
+        target: T,
+    ) -> Result<Self, NewDiagramError>
     where
         S: Into<Diagram>,
         T: Into<Diagram>,
@@ -209,8 +213,8 @@ impl DiagramN {
     }
 
     #[allow(clippy::expect_used, clippy::let_and_return)]
-    pub(crate) fn new_unsafe(source: Diagram, cospans: Vec<Cospan>) -> Self {
-        let diagram = Self(DIAGRAM_FACTORY.mk(DiagramInternal { source, cospans }));
+    pub(crate) fn new(source: Diagram, cospans: Vec<Cospan>) -> Self {
+        let diagram = Self::new_unsafe(source, cospans);
         #[cfg(feature = "safety-checks")]
         {
             background_only! {
@@ -220,6 +224,12 @@ impl DiagramN {
             };
         }
         diagram
+    }
+
+    /// Unsafe version of `new` which does not check if the diagram is well-formed.
+    #[inline]
+    pub(crate) fn new_unsafe(source: Diagram, cospans: Vec<Cospan>) -> Self {
+        Self(DIAGRAM_FACTORY.mk(DiagramInternal { source, cospans }))
     }
 
     pub(crate) fn collect_garbage() {
@@ -750,9 +760,9 @@ mod test {
         use Boundary::{Source, Target};
 
         let x = Diagram::from(Generator::new(0, 0));
-        let f = DiagramN::new(Generator::new(1, 1), x.clone(), x)?;
+        let f = DiagramN::from_generator(Generator::new(1, 1), x.clone(), x)?;
         let ff = f.attach(&f, Target, &[])?;
-        let m = DiagramN::new(Generator::new(2, 2), ff, f)?;
+        let m = DiagramN::from_generator(Generator::new(2, 2), ff, f)?;
         let left = m.attach(&m, Source, &[0])?;
 
         assert_point_ids(
@@ -790,7 +800,7 @@ mod test {
     #[test]
     fn scalar() {
         let x = Diagram::from(Generator::new(0, 0));
-        let f = DiagramN::new(Generator::new(1, 2), x.identity(), x.identity()).unwrap();
+        let f = DiagramN::from_generator(Generator::new(1, 2), x.identity(), x.identity()).unwrap();
 
         assert_eq!(f.source(), x.identity().into());
         assert_eq!(f.target(), x.identity().into());

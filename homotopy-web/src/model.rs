@@ -1,6 +1,5 @@
 use history::History;
 pub use history::Proof;
-use homotopy_core::common::Mode;
 use proof::{Color, GeneratorInfo, Signature, Workspace};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -97,11 +96,16 @@ impl State {
             Action::ImportProof(data) => {
                 let (signature, workspace) =
                     serialize::deserialize(&Vec::<u8>::from(data)).ok_or(ModelError::Import)?;
-                if let Some(w) = workspace.as_ref() {
-                    if w.diagram.check_well_formed(Mode::Deep).is_err() {
-                        return Err(ModelError::Import);
-                    }
-                }
+                // for g in signature.iter() {
+                //     if g.diagram.check_well_formed(Mode::Deep).is_err() {
+                //         return Err(ModelError::Import);
+                //     }
+                // }
+                // if let Some(w) = workspace.as_ref() {
+                //     if w.diagram.check_well_formed(Mode::Deep).is_err() {
+                //         return Err(ModelError::Import);
+                //     }
+                // }
                 let mut proof: Proof = Default::default();
                 proof.signature = signature;
                 proof.workspace = workspace;

@@ -78,7 +78,7 @@ where
 
             let forward = restrict_rewrite(&cospan.forward, &target_embedding);
             let backward = restrict_rewrite(&cospan.backward, &target_embedding);
-            let restricted = DiagramN::new_unsafe(source, vec![Cospan { forward, backward }]);
+            let restricted = DiagramN::new(source, vec![Cospan { forward, backward }]);
             let signature_diagram = signature
                 .generator(generator)
                 .ok_or(TypeError::UnknownGenerator(generator))?;
@@ -120,7 +120,7 @@ where
     };
 
     typecheck(
-        &DiagramN::new_unsafe(source, vec![cospan]).into(),
+        &DiagramN::new(source, vec![cospan]).into(),
         signature,
         Mode::Shallow,
     )
@@ -266,7 +266,7 @@ fn restrict_diagram(diagram: &Diagram, embedding: &Embedding) -> Diagram {
                     backward: restrict_rewrite(&cospan.backward, &slices[i]),
                 })
                 .collect();
-            DiagramN::new_unsafe(source, cospans).into()
+            DiagramN::new(source, cospans).into()
         }
     }
 }

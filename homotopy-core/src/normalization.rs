@@ -355,7 +355,7 @@ fn normalize_relative(diagram: &Diagram, sink: &[SinkArrow], mode: Normalization
         })
         .collect();
 
-    let normalized_diagram = DiagramN::new_unsafe(regular[0].clone(), normalized_cospans);
+    let normalized_diagram = DiagramN::new(regular[0].clone(), normalized_cospans);
 
     let degeneracy = Rc::new(Degeneracy::new(
         trivial,
