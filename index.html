@@ -1,14 +1,29 @@
-<!DOCTYPE html><html><head>
+<!DOCTYPE html>
+<html>
+  <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="HandheldFriendly" content="true">
     <title>homotopy.io</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=IBM+Plex+Sans">
-    <link rel="stylesheet" href="/styles-192bdf24d63654a5.css">
-    
-  
-<link rel="preload" href="/index-729cdc25d269011e_bg.wasm" as="fetch" type="application/wasm" crossorigin="">
-<link rel="modulepreload" href="/index-729cdc25d269011e.js"></head>
-<body>
-<script type="module">import init from '/index-729cdc25d269011e.js';init('/index-729cdc25d269011e_bg.wasm');</script></body></html>
+    <link rel="stylesheet" type="text/css" href="/styles.css">
+  </head>
+  <body>
+    <script src="coi-serviceworker.min.js"></script> <!-- remove when we can set headers -->
+    <script src="module-workers-polyfill.min.js"></script>
+    <script type="module">
+      import { threads } from './wasm-feature-detect.min.js';
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("forceSingleThreaded") == undefined && await threads()) {
+        console.info("Multi-threaded mode, with " + navigator.hardwareConcurrency + " threads");
+        const mt = await import('./homotopy_web-parallel.js');
+        await mt.default();
+      } else {
+        console.info("Single-threaded mode");
+        const st = await import('./homotopy_web.js');
+        await st.default();
+      }
+    </script>
+  </body>
+</html>
