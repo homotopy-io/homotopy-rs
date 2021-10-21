@@ -105,6 +105,29 @@ impl Component for App {
     #[cfg(feature = "parallel")]
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            Message::Dispatch(action @ model::Action::ExportProof) => {
+                log::info!("Received action: {:?}", action);
+                let time_start = web_sys::window().unwrap().performance().unwrap().now();
+                let result = STATE.try_lock().map(|mut state| state.update(action));
+                let time_stop = web_sys::window().unwrap().performance().unwrap().now();
+                log::info!("State update took {}ms.", time_stop - time_start);
+                match result {
+                    Err(WouldBlock) => {
+                        self.toaster
+                            .toast(Toast::error("State is updating, try again later…"));
+                        log::warn!("Cannot export while state updating");
+                    }
+                    Err(Poisoned(_)) => {
+                        todo!("handle export when background thread panicked")
+                    }
+                    Ok(Err(error)) => {
+                        self.toaster.toast(Toast::error(format!("{}", error)));
+                        log::error!("Error occured: {}", error);
+                    }
+                    _ => {}
+                }
+                false
+            }
             Message::Dispatch(action) => {
                 log::info!("Received action: {:?}", action);
                 self.worker.send(Request::Dispatch(action));
