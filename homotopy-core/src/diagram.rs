@@ -491,7 +491,7 @@ impl DiagramN {
         let source = std::iter::once(self.source().max_generator());
         let cospans = self.cospans().iter().filter_map(Cospan::max_generator);
         let generators = source.chain(cospans);
-        first_max_generator(generators, Some(self.dimension())).unwrap()
+        first_max_generator(generators).unwrap()
     }
 
     pub fn identity(&self) -> Self {

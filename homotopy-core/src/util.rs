@@ -9,20 +9,13 @@ use crate::common::Generator;
 
 pub mod rayon;
 
-pub(crate) fn first_max_generator<I>(
-    iterator: I,
-    dimension_cutoff: Option<usize>,
-) -> Option<Generator>
+pub(crate) fn first_max_generator<I>(iterator: I) -> Option<Generator>
 where
     I: IntoIterator<Item = Generator>,
 {
     let mut max: Option<Generator> = None;
 
     for generator in iterator {
-        if Some(generator.dimension) == dimension_cutoff {
-            return Some(generator);
-        }
-
         max = match max {
             Some(prev) if prev.dimension >= generator.dimension => Some(prev),
             _ => Some(generator),

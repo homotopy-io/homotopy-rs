@@ -143,7 +143,7 @@ where
             self.backward.max_generator(Boundary::Source),
         ];
 
-        first_max_generator(generators.iter().copied().flatten(), None)
+        first_max_generator(generators.iter().copied().flatten())
     }
 }
 
@@ -998,7 +998,6 @@ where
                         .iter()
                         .flat_map(|cone| &cone.internal.source)
                         .filter_map(GenericCospan::max_generator),
-                    None,
                 )
             }),
             Boundary::Target => *self.0.max_generator_target.get_or_init(|| {
@@ -1006,7 +1005,6 @@ where
                     self.cones()
                         .iter()
                         .filter_map(|cone| cone.internal.target.max_generator()),
-                    None,
                 )
             }),
         }
