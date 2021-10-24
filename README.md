@@ -8,11 +8,11 @@ Master branch hosted live here: https://beta.homotopy.io/
 
 # License
 
-Unless explitly specified otherwise, all contributions are licensed under the following terms.
+Unless explicitly stated otherwise, all contributions are licensed under the following terms.
 
 ## Source
 
-The source code of homotopy.io, including all its crates, is published under the terms of the [BSD 3-Clause License](LICENSE).
+homotopy.io source code is published under the terms of the [BSD 3-Clause License](LICENSE).
 
 ## Documentation
 
