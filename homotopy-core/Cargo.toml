@@ -2,6 +2,7 @@
 name = "homotopy-core"
 version = "0.1.0"
 authors = ["Lukas Heidemann <lukas@heidemann.me>", "Nick Hu <me@nickhu.co.uk>", "Calin Tataru <calintat@gmail.com>"]
+license = "BSD-3-Clause"
 repository = "https://github.com/homotopy-io/homotopy-rs"
 edition = "2018"
 
