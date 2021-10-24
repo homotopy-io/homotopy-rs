@@ -193,7 +193,7 @@ impl GraphicElement {
         }
 
         for (generator, surfaces) in grouped_surfaces {
-            for merged in merge_surfaces(surfaces.into_iter()) {
+            for merged in surfaces {
                 surface_elements.push(Self::Surface(generator, make_path(&merged, true, layout)));
             }
         }
