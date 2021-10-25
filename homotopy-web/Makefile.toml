@@ -47,4 +47,4 @@ args = [
 , "Cross-Origin-Embedder-Policy=require-corp"
 ]
 dependencies = ["dist"]
-watch = true
+watch = { ignore_pattern = "README.md" }
