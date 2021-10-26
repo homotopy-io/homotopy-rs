@@ -102,6 +102,8 @@ impl PreparedDiagram {
     fn new(diagram: &DiagramN, style: RenderStyle) -> Self {
         assert!(diagram.dimension() >= 2);
 
+        let time_start = web_sys::window().unwrap().performance().unwrap().now();
+
         let generators = Generators::new(diagram);
         let layout = Layout::new(diagram, 2000).unwrap();
         let complex = make_complex(diagram);
@@ -128,6 +130,12 @@ impl PreparedDiagram {
                 ((&action).into(), shape)
             })
             .collect();
+
+        let time_stop = web_sys::window().unwrap().performance().unwrap().now();
+        log::info!(
+            "preparing diagram for rendering took {}ms",
+            time_stop - time_start
+        );
 
         Self {
             graphic,

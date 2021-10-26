@@ -11,7 +11,6 @@ use homotopy_core::{
     projection::{Depths, Generators},
 };
 use lyon_path::Path;
-use petgraph::unionfind::UnionFind;
 use seahash::SeaHasher;
 
 use crate::svg::{
@@ -60,11 +59,11 @@ impl ActionRegion {
         for simplex in complex {
             match simplex {
                 Simplex::Surface(ps) => {
-                    let path = make_path(ps, true, layout);
+                    let path = build_path(ps, true, layout);
                     region_surfaces.push(Self::Surface(*ps, path));
                 }
                 Simplex::Wire(ps) => {
-                    let path = make_path(ps, false, layout);
+                    let path = build_path(ps, false, layout);
                     region_wires.push(Self::Wire(*ps, path));
                 }
                 Simplex::Point([p]) => {
@@ -178,12 +177,12 @@ impl GraphicElement {
                         Some(depth) => depths
                             .edges_above(depth, [ps[1].1, ps[1].0])
                             .into_iter()
-                            .map(|s| make_path(&[(s[1], s[0]), ps[1]], false, layout))
+                            .map(|s| build_path(&[(s[1], s[0]), ps[1]], false, layout))
                             .collect(),
                         None => vec![],
                     };
 
-                    wire_elements.push(Self::Wire(generator, make_path(ps, false, layout), mask));
+                    wire_elements.push(Self::Wire(generator, build_path(ps, false, layout), mask));
                 }
                 Simplex::Point([p]) => {
                     let generator = generators.get(p.0, p.1).unwrap();
@@ -193,9 +192,15 @@ impl GraphicElement {
         }
 
         for (generator, surfaces) in grouped_surfaces {
-            for merged in surfaces {
-                surface_elements.push(Self::Surface(generator, make_path(&merged, true, layout)));
+            let mut path_builder = Path::svg_builder();
+
+            for points in merge_simplices(surfaces) {
+                make_path(&points, true, layout, &mut path_builder);
             }
+
+            let path = path_builder.build();
+
+            surface_elements.push(Self::Surface(generator, path));
         }
 
         // TODO: Group and merge wires as well.
@@ -228,88 +233,115 @@ fn orient_surface(surface: &[Coordinate; 3]) -> [Coordinate; 3] {
     }
 }
 
-#[allow(dead_code)]
-fn merge_surfaces<P, I>(surfaces: I) -> Vec<Vec<P>>
+/// Merge a collection of simplices to a sequence of closed curves such that rendering the
+/// curves with the SVG evenodd fill rule will yield the
+fn merge_simplices<P, I>(simplices: I) -> Vec<Vec<P>>
 where
     P: Hash + Eq + Copy,
-    I: ExactSizeIterator<Item = [P; 3]>,
+    I: IntoIterator<Item = [P; 3]>,
 {
-    // Find a representative for each connected component.
-    let count = surfaces.len();
-    let mut repr = UnionFind::<usize>::new(count);
-    let mut edge_to_surface = FastHashMap::<(P, P), usize>::default();
+    #[derive(Debug, Clone, Copy)]
+    struct EdgeData<P> {
+        source: P,
+        prev: usize,
+        next: usize,
+    }
 
-    for (surface_index, surface) in surfaces.enumerate() {
-        for i in 0..surface.len() {
-            let source = surface[i];
-            let target = surface[(i + 1) % surface.len()];
+    // Doubly linked circular lists of edges. This will be initialised with all the edges along the
+    // boundaries of the input simplices. After that edges found to be in the interior of the final
+    // surface are removed and the lists relinked appropriately.
+    let mut edges = Vec::<Option<EdgeData<P>>>::new();
 
-            match edge_to_surface.remove(&(target, source)) {
-                Some(other_index) => {
-                    repr.union(surface_index, other_index);
-                }
-                None => {
-                    edge_to_surface.insert((source, target), surface_index);
-                }
+    // Pairs of indices of edges that overlap going in opposite directions. Edges in this list are
+    // in the interior of the surface so they will be removed from the final surface boundaries.
+    let mut interior_pairs = Vec::<(usize, usize)>::new();
+
+    // Map that allows to look up an edge index by the pair of its source and target points. Using
+    // the invariant that no edge can be doubled we optimize this by removing any edge that is
+    // found to be in the interior.
+    let mut edge_to_index = FastHashMap::<(P, P), usize>::default();
+
+    // Iterate over the simplices and add the edges.
+    for simplex in simplices {
+        let base_index = edges.len();
+
+        for i in 0..3 {
+            let source = simplex[i];
+            let target = simplex[(i + 1) % 3];
+            let edge_index = base_index + i;
+
+            if let Some(rev_index) = edge_to_index.remove(&(target, source)) {
+                // If we already added the opposite edge, this new edge is in the interior.
+                interior_pairs.push((edge_index, rev_index));
+            } else {
+                edge_to_index.insert((source, target), edge_index);
             }
+
+            edges.push(Some(EdgeData {
+                source,
+                prev: i.checked_sub(1).unwrap_or(2) + base_index,
+                next: (i + 1) % 3 + base_index,
+            }));
         }
     }
 
-    // Gather the connected components.
-    let components: Vec<_> = {
-        let mut components = vec![vec![]; count];
+    // Remove the interior edges.
+    for (a, b) in std::mem::take(&mut interior_pairs) {
+        let a_data = edges[a].unwrap();
+        let b_data = edges[b].unwrap();
 
-        for (edge, index) in edge_to_surface {
-            components[repr.find(index)].push(edge);
+        edges[a_data.prev].as_mut().unwrap().next = b_data.next;
+        edges[b_data.next].as_mut().unwrap().prev = a_data.prev;
+
+        edges[a_data.next].as_mut().unwrap().prev = b_data.prev;
+        edges[b_data.prev].as_mut().unwrap().next = a_data.next;
+
+        edges[a] = None;
+        edges[b] = None;
+    }
+
+    // Extract the remaining circular paths.
+    let mut paths = Vec::new();
+
+    for start in 0..edges.len() {
+        let mut path = Vec::new();
+        let mut current = start;
+
+        while let Some(data) = std::mem::take(&mut edges[current]) {
+            path.push(data.source);
+            current = data.next;
         }
 
-        components
-            .into_iter()
-            .filter(|edges| !edges.is_empty())
-            .collect()
-    };
-
-    // Find edge ordering for each connected component.
-    let parts: Vec<_> = {
-        let mut parts = vec![];
-
-        for component in components {
-            let next: FastHashMap<P, P> = component.iter().map(|(s, t)| (*s, *t)).collect();
-            let mut visited = FastHashSet::<P>::default();
-            let mut part = vec![component[0].0];
-            visited.insert(part[0]);
-            let mut end = component[0].1;
-
-            while !visited.contains(&end) {
-                part.push(end);
-                visited.insert(end);
-                end = next[&end];
-            }
-
-            parts.push(part);
+        if !path.is_empty() {
+            paths.push(path);
         }
+    }
 
-        parts
-    };
-
-    parts
+    paths
 }
 
-fn make_path(points: &[Coordinate], closed: bool, layout: &Layout) -> Path {
+fn build_path(points: &[Coordinate], closed: bool, layout: &Layout) -> Path {
     let mut builder = Path::svg_builder();
+    make_path(points, closed, layout, &mut builder);
+    builder.build()
+}
 
+fn make_path(
+    points: &[Coordinate],
+    closed: bool,
+    layout: &Layout,
+    builder: &mut lyon_path::builder::WithSvg<lyon_path::path::Builder>,
+) {
     let start = layout.get(points[0].0, points[0].1).unwrap();
     builder.move_to(start);
 
     for i in 1..points.len() {
-        make_path_segment(points[i - 1], points[i], layout, &mut builder);
+        make_path_segment(points[i - 1], points[i], layout, builder);
     }
 
     if closed {
-        make_path_segment(*points.last().unwrap(), points[0], layout, &mut builder);
+        make_path_segment(*points.last().unwrap(), points[0], layout, builder);
     }
-
-    builder.build()
 }
 
 fn make_path_segment(
