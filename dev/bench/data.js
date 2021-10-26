@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1635174756512,
+  "lastUpdate": 1635257745553,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -13679,6 +13679,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 92.33,
             "range": "+/- 0.042",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "lukas@heidemann.me",
+            "name": "Lukas Heidemann",
+            "username": "zrho"
+          },
+          "committer": {
+            "email": "lukas@heidemann.me",
+            "name": "Lukas Heidemann",
+            "username": "zrho"
+          },
+          "distinct": true,
+          "id": "289733d2c82fbb383b4c5f8b9bf598fab9137b6f",
+          "message": "Improved surface merging algorithm.\n\nThis new algorithm should be able to deal with surfaces that have\ndiscontinuous boundaries.",
+          "timestamp": "2021-10-26T14:57:38+01:00",
+          "tree_id": "3c5d9f17cfb99ccbede0fa6e3da823640a0a2ff3",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/289733d2c82fbb383b4c5f8b9bf598fab9137b6f"
+        },
+        "date": 1635257721072,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 87.58,
+            "range": "+/- 1.554",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 88.263,
+            "range": "+/- 1.477",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 126.33,
+            "range": "+/- 3.070",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 146.24,
+            "range": "+/- 2.450",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 180.3,
+            "range": "+/- 3.210",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 261.21,
+            "range": "+/- 5.860",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 110.84,
+            "range": "+/- 1.540",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 750.83,
+            "range": "+/- 18.480",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.6355,
+            "range": "+/- 0.054",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 8.5889,
+            "range": "+/- 0.131",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 22.624,
+            "range": "+/- 0.392",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 59.51,
+            "range": "+/- 0.931",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 140.91,
+            "range": "+/- 1.810",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 384.76,
+            "range": "+/- 4.660",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 84.93,
+            "range": "+/- 1.478",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 118.45,
+            "range": "+/- 2.000",
             "unit": "us"
           }
         ]
