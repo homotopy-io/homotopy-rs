@@ -6,8 +6,6 @@ use std::{
 };
 
 use hashconsing::{consign, HConsed, HashConsign};
-#[cfg(feature = "rayon")]
-use rayon::prelude::*;
 use thiserror::Error;
 
 use crate::{

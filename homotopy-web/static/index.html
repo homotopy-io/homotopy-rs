@@ -11,19 +11,8 @@
   </head>
   <body>
     <script src="coi-serviceworker.min.js"></script> <!-- remove when we can set headers -->
-    <script src="module-workers-polyfill.min.js"></script>
     <script type="module">
-      import { threads } from './wasm-feature-detect.min.js';
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("forceSingleThreaded") == undefined && await threads()) {
-        console.info("Multi-threaded mode, with " + navigator.hardwareConcurrency + " threads");
-        const mt = await import('./homotopy_web-parallel.js');
-        await mt.default();
-      } else {
-        console.info("Single-threaded mode");
-        const st = await import('./homotopy_web.js');
-        await st.default();
-      }
+        import('./homotopy_web.js').then(wasm => wasm.default()).catch_err(console.log);
     </script>
   </body>
 </html>

@@ -7,8 +7,6 @@ use rustc_hash::FxHasher;
 
 use crate::common::Generator;
 
-pub mod rayon;
-
 pub(crate) fn first_max_generator<I>(iterator: I) -> Option<Generator>
 where
     I: IntoIterator<Item = Generator>,

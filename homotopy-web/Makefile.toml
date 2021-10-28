@@ -7,13 +7,7 @@ WASM_PACK_FLAGS = "--dev"
 [env.production]
 WASM_PACK_FLAGS = "--release"
 
-[tasks.build-mt]
-script = '''
-RUSTFLAGS='-C target-feature=+atomics,+bulk-memory,+mutable-globals' wasm-pack build -d pkg-parallel --out-name homotopy_web-parallel --target web --no-typescript ${WASM_PACK_FLAGS} -- --features parallel -Z build-std=panic_abort,std
-rm pkg-parallel/package.json pkg-parallel/README.md
-'''
-
-[tasks.build-st]
+[tasks.build-wasm]
 script = '''
 wasm-pack build --target web --no-typescript ${WASM_PACK_FLAGS}
 rm pkg/package.json pkg/README.md
@@ -24,10 +18,9 @@ script = '''
 rm -rf dist
 mkdir dist
 cp -r pkg/* dist/
-cp -r pkg-parallel/* dist/
 cp -r static/* dist/
 '''
-dependencies = ["build-st", "build-mt"]
+dependencies = ["build-wasm"]
 
 [tasks.clean]
 clear = true

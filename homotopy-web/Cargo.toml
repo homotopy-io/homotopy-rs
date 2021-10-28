@@ -14,7 +14,6 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 default = ["console_error_panic_hook"]
-parallel = ["wasm-bindgen-rayon", "homotopy-core/parallel"]
 
 [dependencies]
 palette = { git = "https://github.com/Ogeon/palette", features = ["serializing"] }
@@ -29,14 +28,10 @@ serde = { version = "1.0.130", features = ["derive"] }
 syn = "1.0.81"
 paste = "1.0.5"
 rmp-serde = "0.15.5"
-yew = { git = "https://github.com/NickHu/yew", branch = "rayon" }
-yew-agent = { git = "https://github.com/NickHu/yew", branch = "rayon" }
-yew-macro = { git = "https://github.com/NickHu/yew", branch = "rayon" }
 
 # The `wasm-bindgen` crate provides the bare minimum functionality needed
 # to interact with JavaScript.
 wasm-bindgen = { version = "0.2.78", features = ["serde-serialize"] }
-wasm-bindgen-rayon = { version = "1.0", features = ["no-bundler"], optional = true }
 gloo = "0.4.0"
 gloo-timers = "0.2.1"
 
@@ -56,6 +51,9 @@ console_error_panic_hook = { version = "0.1.7", optional = true }
 # need latest git version because of https://github.com/bodil/im-rs/issues/143
 im = { git = "https://github.com/bodil/im-rs", features = ["serde"] }
 arrayvec = "0.7.1"
+yew = { git = "https://github.com/NickHu/yew" }
+yew-agent = { git = "https://github.com/NickHu/yew" }
+yew-macro = { git = "https://github.com/NickHu/yew" }
 
 # The `web-sys` crate allows you to interact with the various browser APIs,
 # like the DOM.
