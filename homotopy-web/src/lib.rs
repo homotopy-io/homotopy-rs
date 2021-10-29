@@ -46,15 +46,12 @@
     clippy::shadow_unrelated,
     clippy::match_same_arms,
 )]
-#![cfg_attr(feature = "parallel", feature(once_cell))]
 #![recursion_limit = "1024"]
 
 use wasm_bindgen::prelude::*;
 
 mod app;
 mod components;
-#[cfg(feature = "parallel")]
-mod worker;
 
 pub mod model;
 

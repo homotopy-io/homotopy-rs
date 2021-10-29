@@ -40,6 +40,7 @@
     clippy::redundant_else,
     clippy::similar_names,
     clippy::too_many_lines,
+    clippy::redundant_closure,
 )]
 
 pub mod dense;

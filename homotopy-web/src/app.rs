@@ -1,23 +1,10 @@
-#[cfg(feature = "parallel")]
-use std::{
-    lazy::SyncLazy,
-    sync::{
-        Mutex,
-        TryLockError::{Poisoned, WouldBlock},
-    },
-};
-
 use settings::AppSettings;
 use sidebar::Sidebar;
 use signature_stylesheet::SignatureStylesheet;
 use wasm_bindgen::closure::Closure;
 use workspace::WorkspaceView;
 use yew::prelude::*;
-#[cfg(feature = "parallel")]
-use yew_agent::{Bridge, Bridged};
 
-#[cfg(feature = "parallel")]
-use crate::worker::{Request, Response, Worker};
 use crate::{
     components::{
         icon::{Icon, IconSize},
@@ -43,24 +30,15 @@ pub struct Props {}
 
 pub enum Message {
     Dispatch(model::Action),
-    #[cfg(feature = "parallel")]
-    WorkerMessage(Response),
 }
 
-#[cfg(feature = "parallel")]
-pub(crate) static STATE: SyncLazy<Mutex<model::State>> =
-    SyncLazy::new(|| Mutex::new(model::State::default()));
-
 pub struct App {
-    #[cfg(not(feature = "parallel"))]
     state: model::State,
     panzoom: PanZoom,
     signature_stylesheet: SignatureStylesheet,
     toaster: Toaster,
     _settings: AppSettings,
     before_unload: Option<Closure<dyn FnMut(web_sys::BeforeUnloadEvent)>>,
-    #[cfg(feature = "parallel")]
-    worker: Box<dyn Bridge<Worker>>,
 }
 
 impl Component for App {
@@ -69,90 +47,24 @@ impl Component for App {
 
     #[allow(unused_variables)]
     fn create(ctx: &Context<Self>) -> Self {
-        #[cfg(feature = "parallel")]
-        // Spawn background worker
-        let worker = Worker::bridge(ctx.link().callback(Self::Message::WorkerMessage));
-        #[cfg(not(feature = "parallel"))]
         let state = model::State::default();
         // Install the signature stylesheet
         let mut signature_stylesheet = SignatureStylesheet::new("generator");
-        signature_stylesheet.update(
-            #[cfg(feature = "parallel")]
-            STATE
-                .try_lock()
-                .unwrap()
-                .with_proof(|p| p.signature().clone()),
-            #[cfg(not(feature = "parallel"))]
-            state.with_proof(|p| p.signature().clone()),
-        );
+        signature_stylesheet.update(state.with_proof(|p| p.signature().clone()));
         signature_stylesheet.mount();
 
         let mut app = Self {
-            #[cfg(not(feature = "parallel"))]
             state,
             panzoom: PanZoom::new(),
             signature_stylesheet,
             toaster: Toaster::new(),
             _settings: AppSettings::connect(Callback::noop()),
             before_unload: None,
-            #[cfg(feature = "parallel")]
-            worker,
         };
         app.install_unload_hook();
         app
     }
 
-    #[cfg(feature = "parallel")]
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
-        match msg {
-            Message::Dispatch(action @ model::Action::ExportProof) => {
-                log::info!("Received action: {:?}", action);
-                let time_start = web_sys::window().unwrap().performance().unwrap().now();
-                let result = STATE.try_lock().map(|mut state| state.update(action));
-                let time_stop = web_sys::window().unwrap().performance().unwrap().now();
-                log::info!("State update took {}ms.", time_stop - time_start);
-                match result {
-                    Err(WouldBlock) => {
-                        self.toaster
-                            .toast(Toast::error("State is updating, try again later…"));
-                        log::warn!("Cannot export while state updating");
-                    }
-                    Err(Poisoned(_)) => {
-                        todo!("handle export when background thread panicked")
-                    }
-                    Ok(Err(error)) => {
-                        self.toaster.toast(Toast::error(format!("{}", error)));
-                        log::error!("Error occured: {}", error);
-                    }
-                    _ => {}
-                }
-                false
-            }
-            Message::Dispatch(action) => {
-                log::info!("Received action: {:?}", action);
-                self.worker.send(Request::Dispatch(action));
-                false
-            }
-            Message::WorkerMessage(Response::Finished(Err(error))) => {
-                self.toaster.toast(Toast::error(format!("{}", error)));
-                log::error!("Error occured: {}", error);
-                false
-            }
-            Message::WorkerMessage(Response::Finished(Ok(params))) => {
-                log::info!("State update took {}ms.", params.time);
-                if params.reset_panzoom {
-                    self.panzoom.reset()
-                }
-                let _ = STATE.try_lock().map(|state| {
-                    self.signature_stylesheet
-                        .update(state.with_proof(|p| p.signature().clone()))
-                });
-                true
-            }
-        }
-    }
-
-    #[cfg(not(feature = "parallel"))]
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Message::Dispatch(action) => {
@@ -184,20 +96,6 @@ impl Component for App {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        #[cfg(feature = "parallel")]
-        match STATE.try_lock() {
-            Ok(state) => Self::render(ctx, &state),
-            Err(WouldBlock) => {
-                //    do nothing; try again after worker processes next action;
-                //    guaranteed to be able to acquire the lock without blocking
-                //    after the last worker action
-                html! {<div class="loader">{"Loading…"}</div>}
-            }
-            Err(Poisoned(_)) => {
-                todo!("handle panic in background thread")
-            }
-        }
-        #[cfg(not(feature = "parallel"))]
         Self::render(ctx, &self.state)
     }
 
