@@ -233,6 +233,41 @@ impl MeshExtractor {
     }
 
     #[inline]
+    pub fn extract_curves(mut self) -> Self {
+        let mut curves: Vec<Vec<_>> = vec![];
+
+        'outer: for edge in self.graph.inner().edge_keys() {
+            let mut verts = [self.source_of(edge), self.target_of(edge)];
+            let generator =
+                Self::minimum_generator(verts.iter().map(|v| self.mesh.verts[*v].generator));
+
+            if verts[0] == verts[1] || !self.codimension_visible(generator, 1) {
+                continue;
+            }
+
+            if self.graph.get_direction(edge) == Direction::Backward {
+                verts.swap(0, 1);
+            }
+
+            for curve in &mut curves {
+                if let Some(&curve_target) = curve.last() {
+                    if self.codimension_visible(self.mesh.verts[curve_target].generator, 1)
+                        && curve_target == verts[0]
+                    {
+                        curve.push(verts[1]);
+                        continue 'outer;
+                    }
+                }
+            }
+
+            curves.push(verts.to_vec());
+        }
+
+        self.mesh.curves = curves.into_iter().collect();
+        self
+    }
+
+    #[inline]
     pub fn extract_points(mut self) -> Self {
         for node in self.graph.inner().node_keys() {
             let vert = self.coords[self.graph.label(node)];

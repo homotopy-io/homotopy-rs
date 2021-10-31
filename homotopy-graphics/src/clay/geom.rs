@@ -29,17 +29,6 @@ impl Boundary {
             _ => Self::Three,
         };
     }
-
-    /// Generates a debug color to visualise the boundary when debugging.
-    #[inline]
-    pub fn debug_color(self) -> Vec3 {
-        match self {
-            Boundary::Zero => Vec3::new(1., 1., 0.),
-            Boundary::One => Vec3::new(1., 0., 1.),
-            Boundary::Two => Vec3::new(0., 1., 1.),
-            Boundary::Three => Vec3::zero(),
-        }
-    }
 }
 
 /// Represents a vertex in a 4-space
@@ -133,10 +122,13 @@ macro_rules! declare_mesh_data {
 
 declare_mesh_data! {
     pub type Vert(usize) = VertDataInner;
+
     pub type Point(usize) = Vert;
     pub type Line(usize) = [Vert; 2];
     pub type Square(usize) = [Vert; 4];
     pub type Cube(usize) = [Vert; 8];
+
+    pub type Curve(usize) = Vec<Vert>;
 }
 
 impl Mesh {

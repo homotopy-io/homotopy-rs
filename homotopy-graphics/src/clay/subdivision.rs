@@ -105,11 +105,7 @@ impl<'a> Subdivider<'a> {
             let v_2 = &self.mesh.verts[line[1]];
             let v = 0.5 * (**v_1 + **v_2);
             let boundary = cmp::max(Boundary::One, cmp::max(v_1.boundary, v_2.boundary));
-            let generator = if v_1.generator.dimension < v_2.generator.dimension {
-                v_1.generator
-            } else {
-                v_2.generator
-            };
+            let generator = cmp::min_by_key(v_1.generator, v_2.generator, |g| g.dimension);
 
             self.mesh
                 .mk(v.with_boundary_and_generator(boundary, generator))
@@ -337,13 +333,29 @@ impl<'a> Subdivider<'a> {
         let mut lines = IdxVec::with_capacity(self.mesh.lines.len() * 2);
         let mut squares = IdxVec::with_capacity(self.mesh.squares.len() * 4);
         let mut cubes = IdxVec::with_capacity(self.mesh.cubes.len() * 8);
+        let mut curves = IdxVec::with_capacity(self.mesh.curves.len());
         mem::swap(&mut self.mesh.lines, &mut lines);
         mem::swap(&mut self.mesh.squares, &mut squares);
         mem::swap(&mut self.mesh.cubes, &mut cubes);
+        mem::swap(&mut self.mesh.curves, &mut curves);
 
         // 2. Subdivide and obtain valence
         for line in lines.into_values() {
             self.interpolate_edge(line, true);
+        }
+
+        for curve in curves.into_values() {
+            let mut interpolated = Vec::with_capacity(curve.len() * 2);
+            for i in 0..curve.len() - 1 {
+                interpolated.push(curve[i]);
+                interpolated.push(self.interpolate_edge([curve[i], curve[i + 1]], false));
+            }
+
+            if let Some(point) = curve.last() {
+                interpolated.push(*point);
+            }
+
+            self.mesh.curves.push(interpolated);
         }
 
         for square in squares.into_values() {
@@ -380,6 +392,7 @@ impl<'a> Subdivider<'a> {
             }
         }
 
+        // TODO(@doctorn) fix spurious failures
         // (5. In debug, sanity check the subdivided mesh)
         #[cfg(debug_assertions)]
         debug_assert!(self.bounds_preserved(&unmodified));
