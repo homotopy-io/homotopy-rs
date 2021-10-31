@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1635503959424,
+  "lastUpdate": 1635697566725,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -14279,6 +14279,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 122.66,
             "range": "+/- 1.060",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "me@nathancorbyn.com",
+            "name": "Nathan Corbyn",
+            "username": "doctorn"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7211beabb1d3b3b33f19224c4a05c7c1de62cd20",
+          "message": "Add monochrome tubes and points for static 3D (#223)\n\n* Monochrome points and tubes for static 3D\r\n\r\n* Remove unused import",
+          "timestamp": "2021-10-31T16:15:26Z",
+          "tree_id": "359d2f08a4af2bc8f67be23970c408f0814e3a7a",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/7211beabb1d3b3b33f19224c4a05c7c1de62cd20"
+        },
+        "date": 1635697545365,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 86.702,
+            "range": "+/- 0.634",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 88.386,
+            "range": "+/- 0.420",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 129.89,
+            "range": "+/- 1.070",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 147.84,
+            "range": "+/- 1.070",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 179.26,
+            "range": "+/- 1.150",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 249.48,
+            "range": "+/- 1.740",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 110.18,
+            "range": "+/- 0.670",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 729.82,
+            "range": "+/- 4.780",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.8225,
+            "range": "+/- 0.018",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 8.4741,
+            "range": "+/- 0.046",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 22.4,
+            "range": "+/- 0.112",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 55.205,
+            "range": "+/- 0.334",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 140.8,
+            "range": "+/- 0.640",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 379.66,
+            "range": "+/- 1.880",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 86.316,
+            "range": "+/- 0.547",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 121.86,
+            "range": "+/- 0.880",
             "unit": "us"
           }
         ]
