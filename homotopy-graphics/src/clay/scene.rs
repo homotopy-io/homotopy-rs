@@ -73,6 +73,7 @@ impl Scene {
         let mut mesh = extractor
             .extract_squares()
             .extract_lines()
+            .extract_curves()
             .extract_points()
             .build();
         mesh.subdivide(subdivision_depth);
@@ -92,25 +93,7 @@ impl Scene {
                 wireframe_array: vertex_array!(
                     &self.wireframe_program,
                     &square_buffers.wireframe_element_buffer,
-                    {
-                        position: &square_buffers.vertex_buffer,
-                        color: &square_buffers.wireframe_color_buffer,
-                    }
-                )?,
-            });
-
-            let line_buffers = mesh.buffer_lines(ctx)?;
-            self.components.push(SceneComponent {
-                generator: Generator::new(0, 0), // TODO(@doctorn) split mesh
-                array: vertex_array!(
-                    &self.solid_program,
-                    &line_buffers.element_buffer,
-                    { position: &line_buffers.vertex_buffer }
-                )?,
-                wireframe_array: vertex_array!(
-                    &self.wireframe_program,
-                    &line_buffers.element_buffer,
-                    { position: &line_buffers.vertex_buffer }
+                    { position: &square_buffers.vertex_buffer }
                 )?,
             });
         } else {

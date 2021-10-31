@@ -1,4 +1,8 @@
-use std::{cmp::Ordering, collections::HashMap};
+use std::{
+    cmp::Ordering,
+    collections::HashMap,
+    f32::consts::{PI, TAU},
+};
 
 use homotopy_common::{
     declare_idx,
@@ -12,18 +16,9 @@ use crate::gl::{
     GlCtx, Result,
 };
 
-// TODO(@doctorn) remove line buffers (by making tubes)
-// TODO(@doctorn) chunk meshes
-
-pub struct LineBuffers {
-    pub element_buffer: ElementBuffer,
-    pub vertex_buffer: Buffer<Vec3>,
-}
-
 pub struct SquareBuffers {
     pub element_buffer: ElementBuffer,
     pub wireframe_element_buffer: ElementBuffer,
-    pub wireframe_color_buffer: Buffer<Vec3>,
     pub vertex_buffer: Buffer<Vec3>,
     pub normal_buffer: Buffer<Vec3>,
 }
@@ -38,49 +33,12 @@ pub struct CubeBuffers {
     pub normal_end_buffer: Buffer<Vec4>,
 }
 
-struct LineBufferer<'a> {
-    mesh: &'a Mesh,
-    elements: Vec<u16>,
-}
-
-impl<'a> LineBufferer<'a> {
-    fn new(mesh: &'a Mesh) -> Self {
-        Self {
-            mesh,
-            elements: Vec::with_capacity(mesh.lines.len()),
-        }
-    }
-
-    fn triangulate(&mut self) {
-        for line in self.mesh.lines.values() {
-            self.elements.push(line[0].index() as u16);
-            self.elements.push(line[1].index() as u16);
-        }
-    }
-
-    fn extract_buffers(self, ctx: &GlCtx) -> Result<LineBuffers> {
-        let vertices = self
-            .mesh
-            .verts
-            .values()
-            .map(|v| v.xyz())
-            .collect::<Vec<_>>();
-
-        let element_buffer = ctx.mk_element_buffer(&self.elements, ElementKind::Lines)?;
-        let vertex_buffer = ctx.mk_buffer(&vertices)?;
-
-        Ok(LineBuffers {
-            element_buffer,
-            vertex_buffer,
-        })
-    }
-}
-
 struct SquareBufferer<'a> {
     mesh: &'a Mesh,
     elements: Vec<u16>,
+    verts: Vec<Vec3>,
     wireframe_elements: Vec<u16>,
-    normals: IdxVec<Vert, Vec3>,
+    normals: Vec<Vec3>,
 }
 
 impl<'a> SquareBufferer<'a> {
@@ -89,34 +47,35 @@ impl<'a> SquareBufferer<'a> {
 
         Self {
             mesh,
+            verts: mesh.verts.values().map(|v| v.xyz()).collect::<Vec<_>>(),
             elements: Vec::with_capacity(len * 6),
             wireframe_elements: Vec::with_capacity(len * 12),
-            normals: IdxVec::splat(Vec3::zero(), mesh.verts.len()),
+            normals: vec![Vec3::zero(); mesh.verts.len()],
         }
     }
 
-    fn push_wireframe_element(&mut self, i: Vert, j: Vert) {
-        self.wireframe_elements.push(i.index() as u16);
-        self.wireframe_elements.push(j.index() as u16);
+    fn push_wireframe_element(&mut self, i: usize, j: usize) {
+        self.wireframe_elements.push(i as u16);
+        self.wireframe_elements.push(j as u16);
     }
 
-    fn push_element(&mut self, i: Vert, j: Vert, k: Vert) {
+    fn push_element(&mut self, i: usize, j: usize, k: usize) {
         self.push_wireframe_element(i, j);
         self.push_wireframe_element(j, k);
         self.push_wireframe_element(k, i);
 
-        self.elements.push(i.index() as u16);
-        self.elements.push(j.index() as u16);
-        self.elements.push(k.index() as u16);
+        self.elements.push(i as u16);
+        self.elements.push(j as u16);
+        self.elements.push(k as u16);
     }
 
-    fn push_tri(&mut self, i: Vert, j: Vert, k: Vert) {
+    fn push_tri(&mut self, i: usize, j: usize, k: usize) {
         if i != j && j != k && k != i {
             self.push_element(i, j, k);
 
-            let v_1 = self.mesh.verts[i].xyz();
-            let v_2 = self.mesh.verts[j].xyz();
-            let v_3 = self.mesh.verts[k].xyz();
+            let v_1 = self.verts[i];
+            let v_2 = self.verts[j];
+            let v_3 = self.verts[k];
             let n = (v_2 - v_1).cross(v_3 - v_1);
 
             self.normals[i] += n;
@@ -125,47 +84,159 @@ impl<'a> SquareBufferer<'a> {
         }
     }
 
+    fn push_vert(&mut self, v: Vec3) -> usize {
+        let idx = self.verts.len();
+        self.verts.push(v);
+        self.normals.push(Vec3::zero());
+        idx
+    }
+
+    fn push_samples(&mut self, vert: Vert, normal: Vec3, binormal: Vec3, connect: bool) {
+        const SAMPLES: usize = 10;
+        const RADIUS: f32 = 0.05;
+
+        let len = self.verts.len();
+
+        for j in 0..SAMPLES {
+            let theta = j as f32 * TAU / SAMPLES as f32;
+            self.push_vert(
+                self.verts[vert.index()]
+                    + RADIUS * f32::cos(theta) * normal
+                    + RADIUS * f32::sin(theta) * binormal,
+            );
+        }
+
+        if connect {
+            for j in 0..SAMPLES as usize {
+                let v_0 = len + j;
+                let v_1 = len + ((j + 1) % SAMPLES);
+                let v_2 = v_0 - SAMPLES;
+                let v_3 = v_1 - SAMPLES;
+
+                self.push_tri(v_0, v_2, v_1);
+                self.push_tri(v_1, v_2, v_3);
+            }
+        }
+    }
+
+    fn push_curve(&mut self, curve: &[Vert]) {
+        // The direction of the curve in the previous segment
+        let mut d_0 = (*self.mesh.verts[curve[1]] - *self.mesh.verts[curve[0]])
+            .xyz()
+            .normalized();
+        // A vector in the previous normal plane (initialised to a numerically
+        // stable choice of perpendicular vector to the initial value of `d_0`)
+        let mut n = (if d_0.z < d_0.x {
+            Vec3::new(d_0.y, -d_0.x, 0.)
+        } else {
+            Vec3::new(0., -d_0.z, d_0.y)
+        })
+        .normalized();
+
+        self.push_samples(curve[0], n, d_0.cross(n), false);
+
+        for i in 1..curve.len() {
+            let v_0 = curve[i - 1];
+            let v_1 = curve[i];
+
+            let d_1 = (*self.mesh.verts[v_1] - *self.mesh.verts[v_0])
+                .xyz()
+                .normalized();
+            let t = 0.5 * (d_1 + d_0);
+            d_0 = d_1;
+
+            n = t.cross(n).cross(t).normalized();
+            let bn = t.cross(n).normalized();
+
+            self.push_samples(v_1, n, bn, true);
+        }
+    }
+
+    fn push_point(&mut self, point: Vert) {
+        const STACKS: usize = 10;
+        const SECTORS: usize = 10;
+        const RADIUS: f32 = 0.1;
+
+        let origin = self.mesh.verts[point].xyz();
+        let north_pole = self.push_vert(origin + Vec3::unit_y() * RADIUS);
+        let south_pole = self.push_vert(origin - Vec3::unit_y() * RADIUS);
+
+        for i in 1..STACKS {
+            let theta = 0.5 * PI - (i as f32 * PI / STACKS as f32);
+            let xz = RADIUS * f32::cos(theta);
+            let y = RADIUS * f32::sin(theta);
+
+            let len = self.verts.len();
+
+            for j in 0..SECTORS {
+                let phi = j as f32 * TAU / SECTORS as f32;
+                let x = xz * f32::cos(phi);
+                let z = xz * f32::sin(phi);
+                self.push_vert(origin + Vec3::new(x, y, z));
+            }
+
+            if i == 1 {
+                for j in 0..SECTORS {
+                    let v_0 = len + j;
+                    let v_1 = len + (j + 1) % SECTORS;
+                    self.push_tri(north_pole, v_1, v_0);
+                }
+            } else {
+                for j in 0..SECTORS {
+                    let v_0 = len + j;
+                    let v_1 = len + (j + 1) % SECTORS;
+                    let v_2 = v_0 - SECTORS;
+                    let v_3 = v_1 - SECTORS;
+
+                    self.push_tri(v_0, v_2, v_1);
+                    self.push_tri(v_1, v_2, v_3);
+                }
+            }
+
+            if i == STACKS - 1 {
+                for j in 0..SECTORS {
+                    let v_0 = len + j;
+                    let v_1 = len + (j + 1) % SECTORS;
+                    self.push_tri(south_pole, v_0, v_1);
+                }
+            }
+        }
+    }
+
     fn triangulate(&mut self) {
         // Triangulate mesh
         for square in self.mesh.squares.values() {
             // Bottom right triangle
-            self.push_tri(square[0], square[1], square[3]);
+            self.push_tri(square[0].index(), square[1].index(), square[3].index());
             // Top left triangle
-            self.push_tri(square[0], square[3], square[2]);
+            self.push_tri(square[0].index(), square[3].index(), square[2].index());
+        }
+
+        for curve in self.mesh.curves.values() {
+            self.push_curve(curve);
+        }
+
+        for point in self.mesh.points.values() {
+            self.push_point(*point);
         }
     }
 
     fn extract_buffers(mut self, ctx: &GlCtx) -> Result<SquareBuffers> {
         // Average normals
-        for normal in self.normals.values_mut() {
+        for normal in &mut self.normals {
             normal.normalize();
         }
-
-        let verts = self
-            .mesh
-            .verts
-            .values()
-            .map(|v| v.xyz())
-            .collect::<Vec<_>>();
-        let boundary_colors = self
-            .mesh
-            .verts
-            .values()
-            .map(|v| v.boundary.debug_color())
-            .collect::<Vec<_>>();
 
         // Buffer data
         let element_buffer = ctx.mk_element_buffer(&self.elements, ElementKind::Triangles)?;
         let wireframe_element_buffer =
             ctx.mk_element_buffer(&self.wireframe_elements, ElementKind::Lines)?;
-        let wireframe_color_buffer = ctx.mk_buffer(&boundary_colors)?;
-        let vertex_buffer = ctx.mk_buffer(&verts)?;
-        let normal_buffer = ctx.mk_buffer(&self.normals.into_raw())?;
+        let vertex_buffer = ctx.mk_buffer(&self.verts)?;
+        let normal_buffer = ctx.mk_buffer(&self.normals)?;
 
         Ok(SquareBuffers {
             element_buffer,
             wireframe_element_buffer,
-            wireframe_color_buffer,
             vertex_buffer,
             normal_buffer,
         })
@@ -372,12 +443,6 @@ impl<'a> CubeBufferer<'a> {
 }
 
 impl Mesh {
-    pub fn buffer_lines(&self, ctx: &GlCtx) -> Result<LineBuffers> {
-        let mut bufferer = LineBufferer::new(self);
-        bufferer.triangulate();
-        bufferer.extract_buffers(ctx)
-    }
-
     pub fn buffer_squares(&self, ctx: &GlCtx) -> Result<SquareBuffers> {
         let mut bufferer = SquareBufferer::new(self);
         bufferer.triangulate();
