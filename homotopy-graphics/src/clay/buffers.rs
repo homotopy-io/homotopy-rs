@@ -135,7 +135,7 @@ impl<'a> SquareBufferer<'a> {
 
         self.push_samples(curve[0], n, d_0.cross(n), false);
 
-        for i in 1..curve.len() {
+        for i in 2..curve.len() {
             let v_0 = curve[i - 1];
             let v_1 = curve[i];
 
@@ -148,7 +148,11 @@ impl<'a> SquareBufferer<'a> {
             n = t.cross(n).cross(t).normalized();
             let bn = t.cross(n).normalized();
 
-            self.push_samples(v_1, n, bn, true);
+            self.push_samples(v_0, n, bn, true);
+
+            if i == curve.len() - 1 {
+                self.push_samples(v_1, n, bn, true);
+            }
         }
     }
 
