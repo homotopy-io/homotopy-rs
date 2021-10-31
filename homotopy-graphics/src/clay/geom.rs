@@ -5,7 +5,7 @@ use homotopy_common::{
     idx::{Idx, IdxVec},
 };
 use homotopy_core::{Diagram, Generator};
-use ultraviolet::{Vec3, Vec4};
+use ultraviolet::Vec4;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Boundary {
