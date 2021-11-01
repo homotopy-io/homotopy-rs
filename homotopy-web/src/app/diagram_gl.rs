@@ -21,7 +21,7 @@ use crate::{
         toast::{Toast, Toaster},
         Finger,
     },
-    model::proof::View,
+    model::proof::{Signature, View},
 };
 
 pub enum GlDiagramMessage {
@@ -32,6 +32,7 @@ pub enum GlDiagramMessage {
 #[derive(Properties, PartialEq, Clone)]
 pub struct GlDiagramProps {
     pub diagram: DiagramN,
+    pub signature: Signature,
     pub view: View,
 }
 
@@ -206,6 +207,7 @@ impl GlDiagram {
 struct GlDiagramRenderer {
     gl_ctx: GlCtx,
     scene: Scene,
+    signature: Signature,
     camera: OrbitCamera,
     subdivision_depth: u8,
     mouse: Option<Vec2>,
@@ -234,6 +236,7 @@ impl GlDiagramRenderer {
                 },
                 *settings.get_subdivision_depth() as u8,
             )?,
+            signature: props.signature.clone(),
             camera: OrbitCamera::new(Vec3::zero(), 30.0),
             subdivision_depth: *settings.get_subdivision_depth() as u8,
             mouse: None,
@@ -264,13 +267,21 @@ impl GlDiagramRenderer {
         if !*settings.get_mesh_hidden() {
             let normals = *settings.get_debug_normals();
             let camera = self.camera.position();
+            let signature = &self.signature;
 
             if dimension <= 3 {
-                self.scene.draw(&mut frame, |_, array| {
+                self.scene.draw(&mut frame, |generator, array| {
+                    let color = signature
+                        .generator_info(generator)
+                        .unwrap()
+                        .color
+                        .0
+                        .into_format();
                     draw!(array, {
                         mvp: vp,
                         debug_normals: normals,
                         camera_pos: camera,
+                        d: Vec3::new(color.red, color.green, color.blue),
                     })
                 });
             } else {

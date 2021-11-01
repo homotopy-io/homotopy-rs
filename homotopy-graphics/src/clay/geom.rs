@@ -53,6 +53,27 @@ impl DerefMut for VertDataInner {
     }
 }
 
+/// Represents a piece-wise linear curve in a 4-space
+#[derive(Debug, Clone, PartialEq)]
+pub struct CurveDataInner {
+    pub verts: Vec<Vert>,
+    pub generator: Generator,
+}
+
+impl Deref for CurveDataInner {
+    type Target = Vec<Vert>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.verts
+    }
+}
+
+impl DerefMut for CurveDataInner {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.verts
+    }
+}
+
 pub trait MeshData: Clone {
     type Idx: Idx;
 
@@ -128,7 +149,7 @@ declare_mesh_data! {
     pub type Square(usize) = [Vert; 4];
     pub type Cube(usize) = [Vert; 8];
 
-    pub type Curve(usize) = Vec<Vert>;
+    pub type Curve(usize) = CurveDataInner;
 }
 
 impl Mesh {
@@ -178,6 +199,20 @@ impl VertExt for Vec4 {
         VertData {
             vert: self,
             boundary,
+            generator,
+        }
+    }
+}
+
+pub trait CurveExt {
+    fn with_generator(self, generator: Generator) -> CurveData;
+}
+
+impl CurveExt for Vec<Vert> {
+    #[inline]
+    fn with_generator(self, generator: Generator) -> CurveData {
+        CurveData {
+            verts: self,
             generator,
         }
     }

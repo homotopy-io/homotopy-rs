@@ -4,6 +4,7 @@ precision highp float;
 
 uniform bool debug_normals;
 uniform vec3 camera_pos;
+uniform vec3 d;
 
 in float hidden;
 in vec3 frag_pos;
@@ -12,7 +13,6 @@ in vec3 frag_normal;
 out vec4 frag_color;
 
 const float a = 0.05;
-const vec3 d = vec3(.161, .502, .725);
 const vec3 s = vec3(1., 1., 1.);
 
 const vec3 light_offset = vec3(-.75, .25, -.5);

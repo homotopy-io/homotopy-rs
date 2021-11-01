@@ -9,6 +9,8 @@ use super::{
     GlError, Result,
 };
 
+pub const VAO_LIMIT: usize = 0x0001_0000;
+
 #[macro_export]
 macro_rules! vertex_array {
     ($program:expr, {$($attribute:ident : $value:expr),*$(,)*}) => {{
@@ -80,9 +82,7 @@ impl VertexArray {
         self.program.ctx().bind_vertex_array(None);
         result
     }
-}
 
-impl VertexArray {
     pub fn attribute<T>(mut self, attribute: &'static str, src: &Buffer<T>) -> Self
     where
         T: Attributable,
@@ -94,6 +94,8 @@ impl VertexArray {
                 "buffer does not match length of vertex array"
             );
         }
+
+        assert!(src.len() < VAO_LIMIT, "buffer exceeds maximum VAO size");
 
         // get the location of the target attribute
         let loc = self.program.attribute_loc(attribute);
