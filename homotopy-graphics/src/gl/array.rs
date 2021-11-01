@@ -95,7 +95,7 @@ impl VertexArray {
             );
         }
 
-        assert!(src.len() < VAO_LIMIT, "buffer exceeds maximum VAO size");
+        assert!(src.len() <= VAO_LIMIT, "buffer exceeds maximum VAO size");
 
         // get the location of the target attribute
         let loc = self.program.attribute_loc(attribute);
