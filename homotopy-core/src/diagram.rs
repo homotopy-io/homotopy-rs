@@ -212,11 +212,9 @@ impl DiagramN {
         let diagram = Self::new_unsafe(source, cospans);
         #[cfg(feature = "safety-checks")]
         {
-            background_only! {
-                diagram
-                    .check_well_formed(Mode::Shallow)
-                    .expect("Diagram is malformed")
-            };
+            diagram
+                .check_well_formed(Mode::Shallow)
+                .expect("Diagram is malformed");
         }
         diagram
     }

@@ -127,6 +127,7 @@ impl WorkspaceView {
                 3 | 4 => html! {
                     <GlDiagram
                         diagram={diagram}
+                        signature={ctx.props().signature.clone()}
                         view={ctx.props().workspace.view}
                     />
                 },

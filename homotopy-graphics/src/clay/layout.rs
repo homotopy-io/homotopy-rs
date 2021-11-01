@@ -8,7 +8,7 @@ use homotopy_core::{
 };
 use ultraviolet::Vec4;
 
-use super::geom::{Boundary, Mesh, Vert, VertExt};
+use super::geom::{Boundary, CurveData, CurveExt, Mesh, Vert, VertExt};
 
 impl Boundary {
     /// Calculate the boundary of a given location in a diagram.
@@ -234,7 +234,7 @@ impl MeshExtractor {
 
     #[inline]
     pub fn extract_curves(mut self) -> Self {
-        let mut curves: Vec<Vec<_>> = vec![];
+        let mut curves: Vec<CurveData> = vec![];
 
         'outer: for edge in self.graph.inner().edge_keys() {
             let mut verts = [self.source_of(edge), self.target_of(edge)];
@@ -260,7 +260,7 @@ impl MeshExtractor {
                 }
             }
 
-            curves.push(verts.to_vec());
+            curves.push(verts.to_vec().with_generator(generator));
         }
 
         self.mesh.curves = curves.into_iter().collect();

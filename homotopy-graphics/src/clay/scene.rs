@@ -79,23 +79,24 @@ impl Scene {
         mesh.subdivide(subdivision_depth);
 
         if self.view_dimension == ViewDimension::Three {
-            let square_buffers = mesh.buffer_squares(ctx)?;
-            self.components.push(SceneComponent {
-                generator: Generator::new(0, 0), // TODO(@doctorn) split mesh
-                array: vertex_array!(
-                    &self.solid_program,
-                    &square_buffers.element_buffer,
-                    {
-                        position: &square_buffers.vertex_buffer,
-                        normal: &square_buffers.normal_buffer,
-                    }
-                )?,
-                wireframe_array: vertex_array!(
-                    &self.wireframe_program,
-                    &square_buffers.wireframe_element_buffer,
-                    { position: &square_buffers.vertex_buffer }
-                )?,
-            });
+            for square_buffers in mesh.buffer_squares(ctx)? {
+                self.components.push(SceneComponent {
+                    generator: square_buffers.generator,
+                    array: vertex_array!(
+                        &self.solid_program,
+                        &square_buffers.element_buffer,
+                        {
+                            position: &square_buffers.vertex_buffer,
+                            normal: &square_buffers.normal_buffer,
+                        }
+                    )?,
+                    wireframe_array: vertex_array!(
+                        &self.wireframe_program,
+                        &square_buffers.wireframe_element_buffer,
+                        { position: &square_buffers.vertex_buffer }
+                    )?,
+                });
+            }
         } else {
             let cube_buffers = mesh.buffer_cubes(ctx)?;
             self.components.push(SceneComponent {
@@ -183,7 +184,7 @@ fn load_solid_program(ctx: &GlCtx, dimension: ViewDimension) -> Result<Program> 
             "../../glsl/vert_3d.glsl",
             "../../glsl/frag.glsl",
             { position, normal },
-            { mvp, debug_normals, camera_pos },
+            { mvp, debug_normals, camera_pos, d },
         ),
         ViewDimension::Four => program!(
             ctx,

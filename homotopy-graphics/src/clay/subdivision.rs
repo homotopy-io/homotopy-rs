@@ -5,7 +5,7 @@ use ultraviolet::{Mat4, Vec4};
 
 use super::geom::Mesh;
 use crate::clay::geom::{
-    Boundary, Cube, CubeData, Line, LineData, Square, SquareData, Vert, VertExt,
+    Boundary, Cube, CubeData, CurveExt, Line, LineData, Square, SquareData, Vert, VertExt,
 };
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -355,7 +355,9 @@ impl<'a> Subdivider<'a> {
                 interpolated.push(*point);
             }
 
-            self.mesh.curves.push(interpolated);
+            self.mesh
+                .curves
+                .push(interpolated.with_generator(curve.generator));
         }
 
         for square in squares.into_values() {
