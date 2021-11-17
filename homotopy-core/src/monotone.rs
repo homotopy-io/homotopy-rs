@@ -1,6 +1,6 @@
 use std::{cmp, ops::Range};
 
-use crate::rewrite::{GenericRewriteN, RewriteAllocator};
+use crate::rewrite::RewriteN;
 
 pub type Monotone = Vec<usize>;
 
@@ -46,10 +46,7 @@ pub fn dual_inv(f: &[usize], target_size: usize) -> Monotone {
     dual[1..target_size].iter().map(|&i| i - 1).collect()
 }
 
-impl<A> GenericRewriteN<A>
-where
-    A: RewriteAllocator,
-{
+impl RewriteN {
     pub fn singular_monotone(&self, source_size: usize) -> Monotone {
         (0..source_size).map(|i| self.singular_image(i)).collect()
     }
