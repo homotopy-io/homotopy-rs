@@ -8,7 +8,7 @@ use homotopy_common::{
 use crate::{
     common::{Boundary, DimensionError, Height, RegularHeight, SliceIndex},
     diagram::{Diagram, DiagramN},
-    rewrite::{DefaultAllocator, GenericRewrite, GenericRewriteN, RewriteAllocator},
+    rewrite::{Rewrite, RewriteN},
 };
 
 pub type Coord = Vec<SliceIndex>;
@@ -22,16 +22,12 @@ where
     coord
 }
 
-pub type SliceGraph<A = DefaultAllocator> = Graph<(Coord, Diagram), GenericRewrite<A>>;
+pub type SliceGraph = Graph<(Coord, Diagram), Rewrite>;
 
 pub struct GraphBuilder;
 
 impl GraphBuilder {
-    pub fn build<A, T>(diagram: Diagram, depth: usize) -> Result<SliceGraph<A>, DimensionError>
-    where
-        A: RewriteAllocator<Payload = T>,
-        T: Default,
-    {
+    pub fn build(diagram: Diagram, depth: usize) -> Result<SliceGraph, DimensionError> {
         if depth > diagram.dimension() {
             return Err(DimensionError);
         }
@@ -40,22 +36,20 @@ impl GraphBuilder {
         graph.add_node((vec![], diagram));
 
         for _ in 0..depth {
-            graph = explode(&graph, |r, _| GenericRewrite::identity(r.dimension() - 1))?;
+            graph = explode(&graph, |r, _| Rewrite::identity(r.dimension() - 1))?;
         }
 
         Ok(graph)
     }
 }
 
-pub fn explode<A, T, F>(graph: &SliceGraph<A>, f: F) -> Result<SliceGraph<A>, DimensionError>
+pub fn explode<F>(graph: &SliceGraph, f: F) -> Result<SliceGraph, DimensionError>
 where
-    A: RewriteAllocator<Payload = T>,
-    T: Default,
-    F: Fn(&GenericRewriteN<A>, RegularHeight) -> GenericRewrite<A>,
+    F: Fn(&RewriteN, RegularHeight) -> Rewrite,
 {
     use Height::{Regular, Singular};
 
-    let mut exploded_graph: SliceGraph<A> = Graph::new();
+    let mut exploded_graph: SliceGraph = Graph::new();
 
     // Maps every node in the original graph to its slices in the exploded graph.
     let mut node_to_slices: IdxVec<Node, Vec<Node>> = IdxVec::with_capacity(graph.node_count());
@@ -90,7 +84,7 @@ where
         exploded_graph.add_edge(
             slices[0],
             slices[1],
-            GenericRewrite::identity(diagram.dimension() - 1),
+            Rewrite::identity(diagram.dimension() - 1),
         );
 
         // Rewrites between interior slices
@@ -98,13 +92,13 @@ where
             exploded_graph.add_edge(
                 slices[Regular(i).to_int() + 1],
                 slices[Singular(i).to_int() + 1],
-                cospan.forward.convert(),
+                cospan.forward.clone(),
             );
 
             exploded_graph.add_edge(
                 slices[Regular(i + 1).to_int() + 1],
                 slices[Singular(i).to_int() + 1],
-                cospan.backward.convert(),
+                cospan.backward.clone(),
             );
         }
 
@@ -112,14 +106,14 @@ where
         exploded_graph.add_edge(
             slices[diagram.size() * 2 + 2],
             slices[diagram.size() * 2 + 1],
-            GenericRewrite::identity(diagram.dimension() - 1),
+            Rewrite::identity(diagram.dimension() - 1),
         );
 
         node_to_slices.push(slices);
     }
 
     for ed in graph.edge_values() {
-        let rewrite: &GenericRewriteN<_> = ed.inner().try_into()?;
+        let rewrite: &RewriteN = ed.inner().try_into()?;
 
         let source_slices = &node_to_slices[ed.source()];
         let source_size = source_slices.len();
@@ -163,10 +157,7 @@ where
 pub struct TopologicalSort(Vec<Node>);
 
 impl TopologicalSort {
-    pub fn new<A>(graph: &SliceGraph<A>) -> Self
-    where
-        A: RewriteAllocator,
-    {
+    pub fn new(graph: &SliceGraph) -> Self {
         let mut nodes: Vec<Node> = graph.node_keys().collect();
         nodes.sort_by_cached_key(|&n| {
             graph[n]

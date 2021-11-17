@@ -9,7 +9,7 @@ DiagramN {
             0:0,
         ),
         cospans: [
-            GenericCospan {
+            Cospan {
                 forward: Rewrite0(
                     0:0,
                     1:1,
@@ -19,7 +19,7 @@ DiagramN {
                     1:1,
                 ),
             },
-            GenericCospan {
+            Cospan {
                 forward: Rewrite0(
                     0:0,
                     1:1,
@@ -29,7 +29,7 @@ DiagramN {
                     1:1,
                 ),
             },
-            GenericCospan {
+            Cospan {
                 forward: Rewrite0(
                     0:0,
                     1:1,
@@ -42,193 +42,13 @@ DiagramN {
         ],
     },
     cospans: [
-        GenericCospan {
-            forward: RewriteN {
-                dimension: 1,
-                cones: [
-                    Cone {
-                        index: 0,
-                        internal: ConeInternal {
-                            source: [
-                                GenericCospan {
-                                    forward: Rewrite0(
-                                        0:0,
-                                        1:1,
-                                    ),
-                                    backward: Rewrite0(
-                                        0:0,
-                                        1:1,
-                                    ),
-                                },
-                                GenericCospan {
-                                    forward: Rewrite0(
-                                        0:0,
-                                        1:1,
-                                    ),
-                                    backward: Rewrite0(
-                                        0:0,
-                                        1:1,
-                                    ),
-                                },
-                            ],
-                            target: GenericCospan {
-                                forward: Rewrite0(
-                                    0:0,
-                                    2:2,
-                                ),
-                                backward: Rewrite0(
-                                    0:0,
-                                    2:2,
-                                ),
-                            },
-                            slices: [
-                                Rewrite0(
-                                    1:1,
-                                    2:2,
-                                ),
-                                Rewrite0(
-                                    1:1,
-                                    2:2,
-                                ),
-                            ],
-                        },
-                    },
-                ],
-                payload: (),
-            },
-            backward: RewriteN {
-                dimension: 1,
-                cones: [
-                    Cone {
-                        index: 0,
-                        internal: ConeInternal {
-                            source: [
-                                GenericCospan {
-                                    forward: Rewrite0(
-                                        0:0,
-                                        1:1,
-                                    ),
-                                    backward: Rewrite0(
-                                        0:0,
-                                        1:1,
-                                    ),
-                                },
-                            ],
-                            target: GenericCospan {
-                                forward: Rewrite0(
-                                    0:0,
-                                    2:2,
-                                ),
-                                backward: Rewrite0(
-                                    0:0,
-                                    2:2,
-                                ),
-                            },
-                            slices: [
-                                Rewrite0(
-                                    1:1,
-                                    2:2,
-                                ),
-                            ],
-                        },
-                    },
-                ],
-                payload: (),
-            },
+        Cospan {
+            forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2), Rewrite0(1:1, 2:2)] } }] },
+            backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2)] } }] },
         },
-        GenericCospan {
-            forward: RewriteN {
-                dimension: 1,
-                cones: [
-                    Cone {
-                        index: 0,
-                        internal: ConeInternal {
-                            source: [
-                                GenericCospan {
-                                    forward: Rewrite0(
-                                        0:0,
-                                        1:1,
-                                    ),
-                                    backward: Rewrite0(
-                                        0:0,
-                                        1:1,
-                                    ),
-                                },
-                                GenericCospan {
-                                    forward: Rewrite0(
-                                        0:0,
-                                        1:1,
-                                    ),
-                                    backward: Rewrite0(
-                                        0:0,
-                                        1:1,
-                                    ),
-                                },
-                            ],
-                            target: GenericCospan {
-                                forward: Rewrite0(
-                                    0:0,
-                                    2:2,
-                                ),
-                                backward: Rewrite0(
-                                    0:0,
-                                    2:2,
-                                ),
-                            },
-                            slices: [
-                                Rewrite0(
-                                    1:1,
-                                    2:2,
-                                ),
-                                Rewrite0(
-                                    1:1,
-                                    2:2,
-                                ),
-                            ],
-                        },
-                    },
-                ],
-                payload: (),
-            },
-            backward: RewriteN {
-                dimension: 1,
-                cones: [
-                    Cone {
-                        index: 0,
-                        internal: ConeInternal {
-                            source: [
-                                GenericCospan {
-                                    forward: Rewrite0(
-                                        0:0,
-                                        1:1,
-                                    ),
-                                    backward: Rewrite0(
-                                        0:0,
-                                        1:1,
-                                    ),
-                                },
-                            ],
-                            target: GenericCospan {
-                                forward: Rewrite0(
-                                    0:0,
-                                    2:2,
-                                ),
-                                backward: Rewrite0(
-                                    0:0,
-                                    2:2,
-                                ),
-                            },
-                            slices: [
-                                Rewrite0(
-                                    1:1,
-                                    2:2,
-                                ),
-                            ],
-                        },
-                    },
-                ],
-                payload: (),
-            },
+        Cospan {
+            forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2), Rewrite0(1:1, 2:2)] } }] },
+            backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2)] } }] },
         },
     ],
 }

@@ -11,87 +11,9 @@ DiagramN {
         cospans: [],
     },
     cospans: [
-        GenericCospan {
-            forward: RewriteN {
-                dimension: 1,
-                cones: [
-                    Cone {
-                        index: 0,
-                        internal: ConeInternal {
-                            source: [],
-                            target: GenericCospan {
-                                forward: Rewrite0(
-                                    0:0,
-                                    2:2,
-                                ),
-                                backward: Rewrite0(
-                                    0:0,
-                                    2:2,
-                                ),
-                            },
-                            slices: [],
-                        },
-                    },
-                    Cone {
-                        index: 0,
-                        internal: ConeInternal {
-                            source: [],
-                            target: GenericCospan {
-                                forward: Rewrite0(
-                                    0:0,
-                                    1:2,
-                                ),
-                                backward: Rewrite0(
-                                    0:0,
-                                    1:2,
-                                ),
-                            },
-                            slices: [],
-                        },
-                    },
-                ],
-                payload: (),
-            },
-            backward: RewriteN {
-                dimension: 1,
-                cones: [
-                    Cone {
-                        index: 0,
-                        internal: ConeInternal {
-                            source: [],
-                            target: GenericCospan {
-                                forward: Rewrite0(
-                                    0:0,
-                                    2:2,
-                                ),
-                                backward: Rewrite0(
-                                    0:0,
-                                    2:2,
-                                ),
-                            },
-                            slices: [],
-                        },
-                    },
-                    Cone {
-                        index: 0,
-                        internal: ConeInternal {
-                            source: [],
-                            target: GenericCospan {
-                                forward: Rewrite0(
-                                    0:0,
-                                    1:2,
-                                ),
-                                backward: Rewrite0(
-                                    0:0,
-                                    1:2,
-                                ),
-                            },
-                            slices: [],
-                        },
-                    },
-                ],
-                payload: (),
-            },
+        Cospan {
+            forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [] } }, Cone { index: 0, internal: ConeInternal { source: [], target: Cospan { forward: Rewrite0(0:0, 1:2), backward: Rewrite0(0:0, 1:2) }, slices: [] } }] },
+            backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [] } }, Cone { index: 0, internal: ConeInternal { source: [], target: Cospan { forward: Rewrite0(0:0, 1:2), backward: Rewrite0(0:0, 1:2) }, slices: [] } }] },
         },
     ],
 }

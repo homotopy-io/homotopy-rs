@@ -4,35 +4,25 @@ use std::{
     fmt,
     hash::Hash,
     lazy::SyncOnceCell,
-    ops::{Deref, Range},
+    ops::Range,
 };
 
 use hashconsing::{consign, HConsed, HashConsign};
 use thiserror::Error;
 
 use crate::{
-    common::{DimensionError, Generator, Mode, SingularHeight},
+    common::{DimensionError, Generator, Mode, RegularHeight, SingularHeight},
     diagram::Diagram,
     util::first_max_generator,
     Boundary,
 };
 
 consign! {
-    let REWRITE_FACTORY = consign(37) for RewriteInternal<DefaultAllocator>;
+    let REWRITE_FACTORY = consign(37) for RewriteInternal;
 }
 consign! {
-    let CONE_FACTORY = consign(37) for ConeInternal<DefaultAllocator>;
+    let CONE_FACTORY = consign(37) for ConeInternal;
 }
-
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
-pub struct DefaultAllocator;
-
-pub type Cospan = GenericCospan<DefaultAllocator>;
-
-pub type Cone = GenericCone<DefaultAllocator>;
-
-pub type RewriteN = GenericRewriteN<DefaultAllocator>;
-pub type Rewrite = GenericRewrite<DefaultAllocator>;
 
 #[derive(Debug, Error)]
 pub enum CompositionError {
@@ -44,85 +34,45 @@ pub enum CompositionError {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
-pub struct GenericCospan<A>
-where
-    A: RewriteAllocator,
-{
-    pub forward: GenericRewrite<A>,
-    pub backward: GenericRewrite<A>,
+pub struct Cospan {
+    pub forward: Rewrite,
+    pub backward: Rewrite,
 }
 
 #[derive(Clone)]
-pub struct RewriteInternal<A>
-where
-    A: RewriteAllocator,
-{
+pub struct RewriteInternal {
     dimension: usize,
-    cones: Vec<GenericCone<A>>,
+    cones: Vec<Cone>,
     max_generator_source: SyncOnceCell<Option<Generator>>,
     max_generator_target: SyncOnceCell<Option<Generator>>,
-    payload: A::Payload,
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
 pub struct Rewrite0(pub(crate) Option<(Generator, Generator)>);
 
 #[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
-pub struct GenericRewriteN<A>(A::RewriteCell)
-where
-    A: RewriteAllocator;
+pub struct RewriteN(HConsed<RewriteInternal>);
 
 #[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
-pub enum GenericRewrite<A>
-where
-    A: RewriteAllocator,
-{
+pub enum Rewrite {
     Rewrite0(Rewrite0),
-    RewriteN(GenericRewriteN<A>),
+    RewriteN(RewriteN),
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
-pub struct ConeInternal<A>
-where
-    A: RewriteAllocator,
-{
-    pub(crate) source: Vec<GenericCospan<A>>,
-    pub(crate) target: GenericCospan<A>,
-    pub(crate) slices: Vec<GenericRewrite<A>>,
+pub struct ConeInternal {
+    pub(crate) source: Vec<Cospan>,
+    pub(crate) target: Cospan,
+    pub(crate) slices: Vec<Rewrite>,
 }
 
 #[derive(PartialEq, Eq, Clone, Hash)]
-pub struct GenericCone<A>
-where
-    A: RewriteAllocator,
-{
+pub struct Cone {
     pub(crate) index: usize,
-    pub(crate) internal: A::ConeCell,
+    pub(crate) internal: HConsed<ConeInternal>,
 }
 
-pub trait RewriteAllocator: Copy + Eq + Hash + fmt::Debug + Sized {
-    type Payload: Composable;
-
-    type RewriteCell: Deref<Target = RewriteInternal<Self>> + Clone + Eq + Ord + Hash + Send + Sync;
-    type ConeCell: Deref<Target = ConeInternal<Self>> + Clone + Eq + Ord + Hash + Send + Sync;
-
-    fn mk_rewrite(internal: RewriteInternal<Self>) -> Self::RewriteCell;
-
-    fn mk_cone(internal: ConeInternal<Self>) -> Self::ConeCell;
-
-    fn collect_garbage();
-}
-
-pub trait Composable: Clone + Eq + Hash + fmt::Debug + Send + Sync {
-    fn compose<A>(f: &GenericRewriteN<A>, g: &GenericRewriteN<A>) -> Result<Self, CompositionError>
-    where
-        A: RewriteAllocator<Payload = Self>;
-}
-
-impl<A> GenericCospan<A>
-where
-    A: RewriteAllocator,
-{
+impl Cospan {
     #[inline]
     pub(crate) fn pad(&self, embedding: &[usize]) -> Self {
         let forward = self.forward.pad(embedding);
@@ -147,10 +97,7 @@ where
     }
 }
 
-impl<A> fmt::Debug for GenericRewrite<A>
-where
-    A: RewriteAllocator,
-{
+impl fmt::Debug for Rewrite {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -160,91 +107,65 @@ where
     }
 }
 
-impl<A> From<GenericRewriteN<A>> for GenericRewrite<A>
-where
-    A: RewriteAllocator,
-{
+impl From<RewriteN> for Rewrite {
     #[inline]
-    fn from(r: GenericRewriteN<A>) -> Self {
+    fn from(r: RewriteN) -> Self {
         Self::RewriteN(r)
     }
 }
 
-impl<A> From<Rewrite0> for GenericRewrite<A>
-where
-    A: RewriteAllocator,
-{
+impl From<Rewrite0> for Rewrite {
     #[inline]
     fn from(r: Rewrite0) -> Self {
         Self::Rewrite0(r)
     }
 }
 
-impl<A> TryFrom<GenericRewrite<A>> for GenericRewriteN<A>
-where
-    A: RewriteAllocator,
-{
+impl TryFrom<Rewrite> for RewriteN {
     type Error = DimensionError;
 
     #[inline]
-    fn try_from(value: GenericRewrite<A>) -> Result<Self, Self::Error> {
+    fn try_from(value: Rewrite) -> Result<Self, Self::Error> {
         match value {
-            GenericRewrite::Rewrite0(_) => Err(DimensionError),
-            GenericRewrite::RewriteN(r) => Ok(r),
+            Rewrite::Rewrite0(_) => Err(DimensionError),
+            Rewrite::RewriteN(r) => Ok(r),
         }
     }
 }
 
-impl<'a, A> TryFrom<&'a GenericRewrite<A>> for &'a GenericRewriteN<A>
-where
-    A: RewriteAllocator,
-{
+impl<'a> TryFrom<&'a Rewrite> for &'a RewriteN {
     type Error = DimensionError;
 
     #[inline]
-    fn try_from(value: &'a GenericRewrite<A>) -> Result<Self, Self::Error> {
+    fn try_from(value: &'a Rewrite) -> Result<Self, Self::Error> {
         match value {
-            GenericRewrite::Rewrite0(_) => Err(DimensionError),
-            GenericRewrite::RewriteN(r) => Ok(r),
+            Rewrite::Rewrite0(_) => Err(DimensionError),
+            Rewrite::RewriteN(r) => Ok(r),
         }
     }
 }
 
-impl<A> TryFrom<GenericRewrite<A>> for Rewrite0
-where
-    A: RewriteAllocator,
-{
+impl TryFrom<Rewrite> for Rewrite0 {
     type Error = DimensionError;
 
-    fn try_from(value: GenericRewrite<A>) -> Result<Self, Self::Error> {
+    fn try_from(value: Rewrite) -> Result<Self, Self::Error> {
         match value {
-            GenericRewrite::Rewrite0(r) => Ok(r),
-            GenericRewrite::RewriteN(_) => Err(DimensionError),
+            Rewrite::Rewrite0(r) => Ok(r),
+            Rewrite::RewriteN(_) => Err(DimensionError),
         }
     }
 }
 
-impl<A, T> GenericRewrite<A>
-where
-    A: RewriteAllocator<Payload = T>,
-    T: Default,
-{
-    #[inline]
-    pub fn identity(dimension: usize) -> Self {
-        Self::identity_with_payload(dimension, &Default::default())
-    }
-}
-
-impl GenericRewrite<DefaultAllocator> {
+impl Rewrite {
     pub fn cone_over_generator(generator: Generator, base: Diagram) -> Self {
         match base {
             Diagram::Diagram0(base) => Rewrite0::new(base, generator).into(),
-            Diagram::DiagramN(base) => GenericRewriteN::new(
+            Diagram::DiagramN(base) => RewriteN::new(
                 base.dimension(),
-                vec![GenericCone::new(
+                vec![Cone::new(
                     0,
                     base.cospans().to_vec(),
-                    GenericCospan {
+                    Cospan {
                         forward: Self::cone_over_generator(generator, base.source()),
                         backward: Self::cone_over_generator(generator, base.target()),
                     },
@@ -257,17 +178,12 @@ impl GenericRewrite<DefaultAllocator> {
             .into(),
         }
     }
-}
 
-impl<A> GenericRewrite<A>
-where
-    A: RewriteAllocator,
-{
     #[inline]
-    pub fn identity_with_payload(dimension: usize, payload: &A::Payload) -> Self {
+    pub fn identity(dimension: usize) -> Self {
         match dimension {
             0 => Rewrite0::identity().into(),
-            _ => GenericRewriteN::identity_with_payload(dimension, payload).into(),
+            _ => RewriteN::identity(dimension).into(),
         }
     }
 
@@ -377,163 +293,33 @@ impl Rewrite0 {
     }
 }
 
-impl<A> fmt::Debug for GenericRewriteN<A>
-where
-    A: RewriteAllocator,
-{
+impl fmt::Debug for RewriteN {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
     }
 }
 
-impl<A> PartialEq for RewriteInternal<A>
-where
-    A: RewriteAllocator,
-{
+impl PartialEq for RewriteInternal {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        self.dimension == other.dimension
-            && self.cones == other.cones
-            && self.payload == other.payload
+        self.dimension == other.dimension && self.cones == other.cones
     }
 }
 
-impl<A> Eq for RewriteInternal<A> where A: RewriteAllocator {}
+impl Eq for RewriteInternal {}
 
-impl<A> Hash for RewriteInternal<A>
-where
-    A: RewriteAllocator,
-{
+impl Hash for RewriteInternal {
     #[inline]
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.dimension.hash(state);
         self.cones.hash(state);
-        self.payload.hash(state);
     }
 }
 
-impl<A, T> GenericRewriteN<A>
-where
-    A: RewriteAllocator<Payload = T>,
-    T: Default,
-{
-    pub(crate) fn new(dimension: usize, cones: Vec<GenericCone<A>>) -> Self {
-        Self::new_with_payload(dimension, cones, &Default::default())
-    }
-
-    /// Unsafe version of `new` which does not check if the rewrite is well-formed.
-    #[allow(dead_code)]
-    pub(crate) fn new_unsafe(dimension: usize, cones: Vec<GenericCone<A>>) -> Self {
-        Self::new_with_payload_unsafe(dimension, cones, &Default::default())
-    }
-
-    #[inline]
-    pub fn identity(dimension: usize) -> Self {
-        Self::new(dimension, Vec::new())
-    }
-
-    pub(crate) fn make_degeneracy(dimension: usize, trivial_heights: &[SingularHeight]) -> Self {
-        Self::make_degeneracy_with_payloads(
-            dimension,
-            trivial_heights,
-            &Default::default(),
-            |_, _| Default::default(),
-        )
-    }
-
-    #[inline]
-    pub fn from_slices(
-        dimension: usize,
-        source_cospans: &[GenericCospan<A>],
-        target_cospans: &[GenericCospan<A>],
-        slices: Vec<Vec<GenericRewrite<A>>>,
-    ) -> Self {
-        Self::from_slices_with_payload(
-            dimension,
-            source_cospans,
-            target_cospans,
-            slices,
-            &Default::default(),
-        )
-    }
-
-    /// Unsafe version of `from_slices` which does not check if the rewrite is well-formed.
-    #[inline]
-    pub fn from_slices_unsafe(
-        dimension: usize,
-        source_cospans: &[GenericCospan<A>],
-        target_cospans: &[GenericCospan<A>],
-        slices: Vec<Vec<GenericRewrite<A>>>,
-    ) -> Self {
-        Self::from_slices_with_payload_unsafe(
-            dimension,
-            source_cospans,
-            target_cospans,
-            slices,
-            &Default::default(),
-        )
-    }
-
-    #[inline]
-    pub fn from_monotone(
-        dimension: usize,
-        source_cospans: &[GenericCospan<A>],
-        target_cospans: &[GenericCospan<A>],
-        mono: &[usize],
-        slices: &[GenericRewrite<A>],
-    ) -> Self {
-        Self::from_monotone_with_payload(
-            dimension,
-            source_cospans,
-            target_cospans,
-            mono,
-            slices,
-            &Default::default(),
-        )
-    }
-
-    /// Unsafe version of `from_monotone` which does not check if the rewrite is well-formed.
-    #[inline]
-    pub fn from_monotone_unsafe(
-        dimension: usize,
-        source_cospans: &[GenericCospan<A>],
-        target_cospans: &[GenericCospan<A>],
-        mono: &[usize],
-        slices: &[GenericRewrite<A>],
-    ) -> Self {
-        Self::from_monotone_with_payload_unsafe(
-            dimension,
-            source_cospans,
-            target_cospans,
-            mono,
-            slices,
-            &Default::default(),
-        )
-    }
-
-    #[inline]
-    pub fn slice(&self, height: usize) -> GenericRewrite<A> {
-        self.slice_with_payload(height, &Default::default())
-    }
-
-    #[inline]
-    pub fn payload(&self) -> &A::Payload {
-        &self.0.payload
-    }
-}
-
-impl<A> GenericRewriteN<A>
-where
-    A: RewriteAllocator,
-{
-    #[allow(clippy::expect_used)]
-    pub(crate) fn new_with_payload(
-        dimension: usize,
-        cones: Vec<GenericCone<A>>,
-        payload: &A::Payload,
-    ) -> Self {
-        let rewrite = Self::new_with_payload_unsafe(dimension, cones, payload);
+impl RewriteN {
+    pub(crate) fn new(dimension: usize, cones: Vec<Cone>) -> Self {
+        let rewrite = Self::new_unsafe(dimension, cones);
         if cfg!(feature = "safety-checks") {
             rewrite
                 .check_well_formed(Mode::Shallow)
@@ -542,12 +328,8 @@ where
         rewrite
     }
 
-    /// Unsafe version of `new_with_payload` which does not check if the rewrite is well-formed.
-    pub(crate) fn new_with_payload_unsafe(
-        dimension: usize,
-        mut cones: Vec<GenericCone<A>>,
-        payload: &A::Payload,
-    ) -> Self {
+    /// Unsafe version of `new` which does not check if the rewrite is well-formed.
+    pub(crate) fn new_unsafe(dimension: usize, mut cones: Vec<Cone>) -> Self {
         assert_ne!(dimension, 0, "Can not create RewriteN of dimension zero.");
 
         // Remove all identity cones. This is not only important to reduce memory consumption, but
@@ -555,20 +337,120 @@ where
         // cones.
         cones.retain(|cone| !cone.is_identity());
 
-        Self(A::mk_rewrite(RewriteInternal {
+        Self(REWRITE_FACTORY.mk(RewriteInternal {
             dimension,
             cones,
             max_generator_source: SyncOnceCell::new(),
             max_generator_target: SyncOnceCell::new(),
-            payload: payload.clone(),
         }))
     }
 
-    pub(crate) fn collect_garbage() {
-        A::collect_garbage();
+    #[inline]
+    pub fn identity(dimension: usize) -> Self {
+        Self::new(dimension, Vec::new())
     }
 
-    pub(crate) fn cones(&self) -> &[GenericCone<A>] {
+    pub(crate) fn make_degeneracy(dimension: usize, trivial_heights: &[SingularHeight]) -> Self {
+        let cones = trivial_heights
+            .iter()
+            .enumerate()
+            .map(|(i, height)| {
+                Cone::new(
+                    height - i,
+                    vec![],
+                    Cospan {
+                        forward: Rewrite::identity(dimension - 1),
+                        backward: Rewrite::identity(dimension - 1),
+                    },
+                    vec![],
+                )
+            })
+            .collect();
+
+        Self::new(dimension, cones)
+    }
+
+    #[inline]
+    pub fn from_slices(
+        dimension: usize,
+        source_cospans: &[Cospan],
+        target_cospans: &[Cospan],
+        slices: Vec<Vec<Rewrite>>,
+    ) -> Self {
+        let rewrite = Self::from_slices_unsafe(dimension, source_cospans, target_cospans, slices);
+        if cfg!(feature = "safety-checks") {
+            rewrite
+                .check_well_formed(Mode::Shallow)
+                .expect("Rewrite is malformed");
+        }
+        rewrite
+    }
+
+    /// Unsafe version of `from_slices` which does not check if the rewrite is well-formed.
+    #[inline]
+    pub fn from_slices_unsafe(
+        dimension: usize,
+        source_cospans: &[Cospan],
+        target_cospans: &[Cospan],
+        slices: Vec<Vec<Rewrite>>,
+    ) -> Self {
+        let mut cones = Vec::new();
+        let mut index = 0;
+
+        for (target, cone_slices) in slices.into_iter().enumerate() {
+            let size = cone_slices.len();
+            cones.push(Cone::new(
+                index,
+                source_cospans[index..index + size].to_vec(),
+                target_cospans[target].clone(),
+                cone_slices,
+            ));
+            index += size;
+        }
+
+        Self::new_unsafe(dimension, cones)
+    }
+
+    #[inline]
+    pub fn from_monotone(
+        dimension: usize,
+        source_cospans: &[Cospan],
+        target_cospans: &[Cospan],
+        mono: &[usize],
+        slices: &[Rewrite],
+    ) -> Self {
+        let rewrite =
+            Self::from_monotone_unsafe(dimension, source_cospans, target_cospans, mono, slices);
+        if cfg!(feature = "safety-checks") {
+            rewrite
+                .check_well_formed(Mode::Shallow)
+                .expect("Rewrite is malformed");
+        }
+        rewrite
+    }
+
+    /// Unsafe version of `from_monotone` which does not check if the rewrite is well-formed.
+    #[inline]
+    pub fn from_monotone_unsafe(
+        dimension: usize,
+        source_cospans: &[Cospan],
+        target_cospans: &[Cospan],
+        mono: &[usize],
+        slices: &[Rewrite],
+    ) -> Self {
+        let mut cones_slices: Vec<Vec<Rewrite>> = vec![vec![]; target_cospans.len()];
+        for (i, &j) in mono.iter().enumerate() {
+            cones_slices[j].push(slices[i].clone());
+        }
+
+        Self::from_slices_unsafe(dimension, source_cospans, target_cospans, cones_slices)
+    }
+
+    pub(crate) fn collect_garbage() {
+        REWRITE_FACTORY.collect_to_fit();
+    }
+
+    pub(crate) fn cones(&self) -> &[Cone] {
         &self.0.cones
     }
 
@@ -578,12 +460,7 @@ where
             .iter()
             .map(|cone| cone.pad(embedding))
             .collect();
-        Self::new_with_payload(self.dimension(), cones, &self.0.payload)
-    }
-
-    #[inline]
-    pub fn identity_with_payload(dimension: usize, payload: &A::Payload) -> Self {
-        Self::new_with_payload(dimension, Vec::new(), payload)
+        Self::new(self.dimension(), cones)
     }
 
     #[inline]
@@ -660,133 +537,6 @@ where
         }
     }
 
-    pub(crate) fn make_degeneracy_with_payloads(
-        dimension: usize,
-        trivial_heights: &[SingularHeight],
-        payload: &A::Payload,
-        payloads: impl Fn(usize, usize) -> A::Payload,
-    ) -> Self {
-        let cones = trivial_heights
-            .iter()
-            .enumerate()
-            .map(|(i, height)| {
-                GenericCone::new(
-                    height - i,
-                    vec![],
-                    GenericCospan {
-                        forward: GenericRewrite::identity_with_payload(
-                            dimension - 1,
-                            &payloads(i, *height),
-                        ),
-                        backward: GenericRewrite::identity_with_payload(
-                            dimension - 1,
-                            &payloads(i, *height),
-                        ),
-                    },
-                    vec![],
-                )
-            })
-            .collect();
-
-        Self::new_with_payload(dimension, cones, payload)
-    }
-
-    #[allow(clippy::expect_used)]
-    pub fn from_slices_with_payload(
-        dimension: usize,
-        source_cospans: &[GenericCospan<A>],
-        target_cospans: &[GenericCospan<A>],
-        slices: Vec<Vec<GenericRewrite<A>>>,
-        payload: &A::Payload,
-    ) -> Self {
-        let rewrite = Self::from_slices_with_payload_unsafe(
-            dimension,
-            source_cospans,
-            target_cospans,
-            slices,
-            payload,
-        );
-        if cfg!(feature = "safety-checks") {
-            rewrite
-                .check_well_formed(Mode::Shallow)
-                .expect("Rewrite is malformed");
-        }
-        rewrite
-    }
-
-    /// Unsafe version of `from_slices_with_payload` which does not check if the rewrite is well-formed.
-    pub fn from_slices_with_payload_unsafe(
-        dimension: usize,
-        source_cospans: &[GenericCospan<A>],
-        target_cospans: &[GenericCospan<A>],
-        slices: Vec<Vec<GenericRewrite<A>>>,
-        payload: &A::Payload,
-    ) -> Self {
-        let mut cones = Vec::new();
-        let mut index = 0;
-
-        for (target, cone_slices) in slices.into_iter().enumerate() {
-            let size = cone_slices.len();
-            cones.push(GenericCone::new(
-                index,
-                source_cospans[index..index + size].to_vec(),
-                target_cospans[target].clone(),
-                cone_slices,
-            ));
-            index += size;
-        }
-
-        Self::new_with_payload_unsafe(dimension, cones, payload)
-    }
-
-    #[allow(clippy::expect_used)]
-    pub fn from_monotone_with_payload(
-        dimension: usize,
-        source_cospans: &[GenericCospan<A>],
-        target_cospans: &[GenericCospan<A>],
-        mono: &[usize],
-        slices: &[GenericRewrite<A>],
-        payload: &A::Payload,
-    ) -> Self {
-        let rewrite = Self::from_monotone_with_payload_unsafe(
-            dimension,
-            source_cospans,
-            target_cospans,
-            mono,
-            slices,
-            payload,
-        );
-        if cfg!(feature = "safety-checks") {
-            rewrite
-                .check_well_formed(Mode::Shallow)
-                .expect("Rewrite is malformed");
-        }
-        rewrite
-    }
-
-    /// Unsafe version of `from_monotone_with_payload` which does not check if the rewrite is well-formed.
-    pub fn from_monotone_with_payload_unsafe(
-        dimension: usize,
-        source_cospans: &[GenericCospan<A>],
-        target_cospans: &[GenericCospan<A>],
-        mono: &[usize],
-        slices: &[GenericRewrite<A>],
-        payload: &A::Payload,
-    ) -> Self {
-        let mut cones_slices: Vec<Vec<GenericRewrite<A>>> = vec![vec![]; target_cospans.len()];
-        for (i, &j) in mono.iter().enumerate() {
-            cones_slices[j].push(slices[i].clone());
-        }
-
-        Self::from_slices_with_payload_unsafe(
-            dimension,
-            source_cospans,
-            target_cospans,
-            cones_slices,
-            payload,
-        )
-    }
-
     pub fn dimension(&self) -> usize {
         self.0.dimension
     }
@@ -803,7 +553,7 @@ where
         targets
     }
 
-    pub(crate) fn cone_over_target(&self, height: usize) -> Option<&GenericCone<A>> {
+    pub(crate) fn cone_over_target(&self, height: usize) -> Option<&Cone> {
         let mut offset: isize = 0;
 
         for cone in self.cones() {
@@ -819,14 +569,13 @@ where
         None
     }
 
-    pub fn slice_with_payload(&self, height: usize, payload: &A::Payload) -> GenericRewrite<A> {
+    pub fn slice(&self, height: SingularHeight) -> Rewrite {
         self.cones()
             .iter()
             .find(|cone| cone.index <= height && height < cone.index + cone.len())
-            .map_or(
-                GenericRewrite::identity_with_payload(self.dimension() - 1, payload),
-                |cone| cone.internal.slices[height - cone.index].clone(),
-            )
+            .map_or(Rewrite::identity(self.dimension() - 1), |cone| {
+                cone.internal.slices[height - cone.index].clone()
+            })
     }
 
     pub fn compose(&self, g: &Self) -> Result<Self, CompositionError> {
@@ -837,16 +586,16 @@ where
         let mut offset = 0;
         let mut delayed_offset = 0;
 
-        let mut f_cones: Vec<GenericCone<A>> = self.cones().iter().rev().cloned().collect();
-        let mut g_cones: Vec<GenericCone<A>> = g.cones().iter().rev().cloned().collect();
-        let mut cones: Vec<GenericCone<A>> = Vec::new();
+        let mut f_cones: Vec<Cone> = self.cones().iter().rev().cloned().collect();
+        let mut g_cones: Vec<Cone> = g.cones().iter().rev().cloned().collect();
+        let mut cones: Vec<Cone> = Vec::new();
 
         loop {
             match (f_cones.pop(), g_cones.pop()) {
                 (None, None) => break,
                 (Some(f_cone), None) => cones.push(f_cone.clone()),
                 (None, Some(g_cone)) => {
-                    let mut cone: GenericCone<A> = g_cone.clone();
+                    let mut cone: Cone = g_cone.clone();
                     cone.index = (cone.index as isize + offset) as usize;
                     offset += delayed_offset;
                     delayed_offset = 0;
@@ -893,7 +642,7 @@ where
 
                         delayed_offset -= 1 - f_cone.len() as isize;
 
-                        g_cones.push(GenericCone::new(
+                        g_cones.push(Cone::new(
                             g_cone.index,
                             source,
                             g_cone.internal.target.clone(),
@@ -904,14 +653,10 @@ where
             }
         }
 
-        Ok(Self::new_with_payload(
-            self.dimension(),
-            cones,
-            &A::Payload::compose::<A>(self, g)?,
-        ))
+        Ok(Self::new(self.dimension(), cones))
     }
 
-    pub fn singular_image(&self, index: usize) -> usize {
+    pub fn singular_image(&self, index: SingularHeight) -> SingularHeight {
         let mut offset: isize = 0;
 
         for cone in self.cones() {
@@ -927,7 +672,7 @@ where
         (index as isize + offset) as usize
     }
 
-    pub fn singular_preimage(&self, index: usize) -> Range<usize> {
+    pub fn singular_preimage(&self, index: SingularHeight) -> Range<SingularHeight> {
         let mut offset: isize = 0;
 
         for cone in self.cones() {
@@ -949,7 +694,7 @@ where
         adjusted..adjusted + 1
     }
 
-    pub fn regular_image(&self, index: usize) -> usize {
+    pub fn regular_image(&self, index: RegularHeight) -> RegularHeight {
         let mut offset = 0;
 
         for cone in self.cones() {
@@ -963,7 +708,7 @@ where
         (index as isize - offset) as usize
     }
 
-    pub fn regular_preimage(&self, index: usize) -> Range<usize> {
+    pub fn regular_preimage(&self, index: RegularHeight) -> Range<RegularHeight> {
         let mut offset = 0;
 
         for (cone_index, cone) in self.cones().iter().enumerate() {
@@ -995,7 +740,7 @@ where
                     self.cones()
                         .iter()
                         .flat_map(|cone| &cone.internal.source)
-                        .filter_map(GenericCospan::max_generator),
+                        .filter_map(Cospan::max_generator),
                 )
             }),
             Boundary::Target => *self.0.max_generator_target.get_or_init(|| {
@@ -1009,23 +754,16 @@ where
     }
 }
 
-impl<A> fmt::Debug for RewriteInternal<A>
-where
-    A: RewriteAllocator,
-{
+impl fmt::Debug for RewriteInternal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("RewriteN")
             .field("dimension", &self.dimension)
             .field("cones", &self.cones)
-            .field("payload", &self.payload)
             .finish()
     }
 }
 
-impl<A> fmt::Debug for GenericCone<A>
-where
-    A: RewriteAllocator,
-{
+impl fmt::Debug for Cone {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Cone")
             .field("index", &self.index)
@@ -1034,19 +772,16 @@ where
     }
 }
 
-impl<A> GenericCone<A>
-where
-    A: RewriteAllocator,
-{
+impl Cone {
     pub(crate) fn new(
         index: usize,
-        source: Vec<GenericCospan<A>>,
-        target: GenericCospan<A>,
-        slices: Vec<GenericRewrite<A>>,
+        source: Vec<Cospan>,
+        target: Cospan,
+        slices: Vec<Rewrite>,
     ) -> Self {
         Self {
             index,
-            internal: A::mk_cone(ConeInternal {
+            internal: CONE_FACTORY.mk(ConeInternal {
                 source,
                 target,
                 slices,
@@ -1055,7 +790,7 @@ where
     }
 
     pub(crate) fn collect_garbage() {
-        A::collect_garbage();
+        CONE_FACTORY.collect_to_fit();
     }
 
     pub(crate) fn is_identity(&self) -> bool {
@@ -1083,38 +818,6 @@ where
     }
 }
 
-impl Composable for () {
-    #[inline]
-    fn compose<A>(_: &GenericRewriteN<A>, _: &GenericRewriteN<A>) -> Result<Self, CompositionError>
-    where
-        A: RewriteAllocator<Payload = Self>,
-    {
-        Ok(())
-    }
-}
-
-impl RewriteAllocator for DefaultAllocator {
-    type ConeCell = HConsed<ConeInternal<Self>>;
-    type Payload = ();
-    type RewriteCell = HConsed<RewriteInternal<Self>>;
-
-    #[inline]
-    fn mk_rewrite(internal: RewriteInternal<Self>) -> Self::RewriteCell {
-        REWRITE_FACTORY.mk(internal)
-    }
-
-    #[inline]
-    fn mk_cone(internal: ConeInternal<Self>) -> Self::ConeCell {
-        CONE_FACTORY.mk(internal)
-    }
-
-    #[inline]
-    fn collect_garbage() {
-        REWRITE_FACTORY.collect_to_fit();
-        CONE_FACTORY.collect_to_fit();
-    }
-}
-
 #[derive(Debug, Error)]
 pub enum MalformedRewrite {
     #[error(transparent)]
@@ -1134,70 +837,6 @@ pub enum MalformedRewrite {
 
     #[error("square between slices {0} and {1} does not commute.")]
     NotCommutativeMiddle(usize, usize),
-}
-
-impl<A, T> GenericCone<A>
-where
-    A: RewriteAllocator<Payload = T>,
-    T: Default,
-{
-    pub fn convert<B, U>(&self) -> GenericCone<B>
-    where
-        B: RewriteAllocator<Payload = U>,
-        U: Default,
-    {
-        GenericCone::new(
-            self.index,
-            self.internal
-                .source
-                .iter()
-                .map(GenericCospan::convert)
-                .collect(),
-            self.internal.target.convert(),
-            self.internal
-                .slices
-                .iter()
-                .map(GenericRewrite::convert)
-                .collect(),
-        )
-    }
-}
-
-impl<A, T> GenericCospan<A>
-where
-    A: RewriteAllocator<Payload = T>,
-    T: Default,
-{
-    pub fn convert<B, U>(&self) -> GenericCospan<B>
-    where
-        B: RewriteAllocator<Payload = U>,
-        U: Default,
-    {
-        GenericCospan {
-            forward: self.forward.convert(),
-            backward: self.backward.convert(),
-        }
-    }
-}
-
-impl<A, T> GenericRewrite<A>
-where
-    A: RewriteAllocator<Payload = T>,
-    T: Default,
-{
-    pub fn convert<B, U>(&self) -> GenericRewrite<B>
-    where
-        B: RewriteAllocator<Payload = U>,
-        U: Default,
-    {
-        match self {
-            Self::Rewrite0(r) => GenericRewrite::Rewrite0(*r),
-            Self::RewriteN(r) => GenericRewrite::RewriteN(GenericRewriteN::new_unsafe(
-                r.dimension(),
-                r.cones().iter().map(GenericCone::convert).collect(),
-            )),
-        }
-    }
 }
 
 #[cfg(test)]
