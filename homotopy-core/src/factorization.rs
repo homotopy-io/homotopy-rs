@@ -10,6 +10,14 @@ use crate::{
 
 /// Given `Rewrite`s A -f> C <g- B, find some `Rewrite` A -h> B which factorises f = g ∘ h.
 pub fn factorize(f: Rewrite, g: Rewrite, source: Diagram, target: Diagram) -> Factorization {
+    if g.is_identity() {
+        return Factorization::Unique(f.into());
+    }
+
+    if f == g {
+        return Factorization::Unique(Rewrite::identity(f.dimension()).into());
+    }
+
     match (f, g, source, target) {
         (
             Rewrite::Rewrite0(f),
@@ -21,9 +29,9 @@ pub fn factorize(f: Rewrite, g: Rewrite, source: Diagram, target: Diagram) -> Fa
             assert!(g.source() == None || g.source() == Some(t));
 
             if s.dimension > t.dimension {
-                Factorization::Factorization0(None)
+                Factorization::Unique(None)
             } else {
-                Factorization::Factorization0(Some(Rewrite::from(Rewrite0::new(s, t))))
+                Factorization::Unique(Rewrite::from(Rewrite0::new(s, t)).into())
             }
         }
         (
@@ -36,18 +44,33 @@ pub fn factorize(f: Rewrite, g: Rewrite, source: Diagram, target: Diagram) -> Fa
             assert_eq!(f.dimension(), source.dimension());
             assert_eq!(g.dimension(), target.dimension());
 
-            let constraints: Vec<Range<usize>> = (0..source.size())
-                .map(|i| g.singular_preimage(f.singular_image(i)))
-                .collect();
+            if source.size() == 0 {
+                // Try to construct the trivial rewrite.
+                let h = RewriteN::from_slices_unsafe(
+                    f.dimension(),
+                    source.cospans(),
+                    target.cospans(),
+                    vec![vec![]; target.size()]
+                );
+                Factorization::Unique(
+                    h.check_well_formed(Mode::Shallow)
+                        .is_ok()
+                        .then(|| Rewrite::from(h)),
+                )
+            } else {
+                let constraints: Vec<Range<usize>> = (0..source.size())
+                    .map(|i| g.singular_preimage(f.singular_image(i)))
+                    .collect();
 
-            Factorization::FactorizationN(FactorizationInternal {
-                f,
-                g,
-                source,
-                target,
-                monotone: MonotoneIterator::new(false, &constraints),
-                cur: None,
-            })
+                Factorization::Iterator(FactorizationInternal {
+                    f,
+                    g,
+                    source,
+                    target,
+                    monotone: MonotoneIterator::new(false, &constraints),
+                    cur: None,
+                })
+            }
         }
         _ => panic!("Mismatched dimensions"),
     }
@@ -55,8 +78,8 @@ pub fn factorize(f: Rewrite, g: Rewrite, source: Diagram, target: Diagram) -> Fa
 
 #[derive(Clone)]
 pub enum Factorization {
-    Factorization0(Option<Rewrite>),
-    FactorizationN(FactorizationInternal),
+    Unique(Option<Rewrite>),
+    Iterator(FactorizationInternal),
 }
 
 impl Iterator for Factorization {
@@ -64,8 +87,8 @@ impl Iterator for Factorization {
 
     fn next(&mut self) -> Option<Self::Item> {
         match self {
-            Self::Factorization0(h) => h.take(),
-            Self::FactorizationN(internal) => internal.next(),
+            Self::Unique(h) => h.take(),
+            Self::Iterator(internal) => internal.next(),
         }
     }
 }
