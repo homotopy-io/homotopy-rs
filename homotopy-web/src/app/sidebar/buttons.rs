@@ -1,6 +1,6 @@
 use homotopy_core::{
     diagram::globularity,
-    Boundary,
+    Boundary, Diagram,
     Direction::{Backward, Forward},
     Height, SliceIndex,
 };
@@ -92,6 +92,33 @@ declare_sidebar_tools! {
         model::Action::History(history::Action::Move(history::Direction::Linear(Forward))),
         None,
         |proof: &Proof| proof.can_redo().into(),
+    }
+
+    BUTTON_BEHEAD {
+        "Behead",
+        "content_cut",
+        model::Action::Proof(model::proof::Action::Behead),
+        Some('b'),
+        |proof: &Proof| {
+            proof.workspace()
+                .map_or(false, |ws| {
+                    match &ws.diagram {
+                        Diagram::Diagram0(_) => false,
+                        Diagram::DiagramN(d) => d.size() > 0 && {
+                            let s = match ws.path.len() {
+                                0 => ws.slice_highlight,
+                                1 => Some(ws.path[0]),
+                                _ => None,
+                            };
+                            s.map_or(false, |s| {
+                                matches!(s, SliceIndex::Boundary(_))
+                                    || matches!(s, SliceIndex::Interior(Height::Regular(_)))
+                            })
+                        }
+                    }
+                })
+                .into()
+        },
     }
 
     BUTTON_RESTRICT {

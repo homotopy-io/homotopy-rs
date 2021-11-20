@@ -151,6 +151,8 @@ pub enum Action {
 
     Homotopy(Homotopy),
 
+    Behead,
+
     Restrict,
 
     Theorem,
@@ -212,6 +214,7 @@ impl ProofState {
             Action::Homotopy(Homotopy::Contract(homotopy)) => {
                 self.homotopy_contraction(homotopy)?;
             }
+            Action::Behead => self.behead()?,
             Action::Restrict => self.restrict()?,
             Action::Theorem => self.theorem()?,
             Action::EditSignature(edit) => self.edit_signature(edit),
@@ -533,6 +536,37 @@ impl ProofState {
         if let Some(workspace) = &mut self.workspace {
             workspace.slice_highlight = option;
         }
+    }
+
+    /// Handler for [Action::Behead].
+    fn behead(&mut self) -> Result<(), ModelError> {
+        if let Some(ws) = &mut self.workspace {
+            let diagram: &DiagramN = (&ws.diagram)
+                .try_into()
+                .map_err(|_| ModelError::InvalidAction)?;
+            let s = match ws.path.len() {
+                0 => ws.slice_highlight,
+                1 => Some(ws.path[0]),
+                _ => None,
+            };
+            let max_height = match s {
+                Some(SliceIndex::Boundary(Boundary::Source)) => 0,
+                Some(SliceIndex::Boundary(Boundary::Target)) => diagram.size(),
+                Some(SliceIndex::Interior(Height::Regular(j))) => j,
+                None | Some(SliceIndex::Interior(Height::Singular(_))) => {
+                    return Err(ModelError::InvalidAction)
+                }
+            };
+            let beheaded_diagram = diagram.behead(max_height).into();
+
+            ws.diagram = beheaded_diagram;
+            ws.path = Default::default();
+            ws.attach = Default::default();
+            ws.attachment_highlight = Default::default();
+            ws.slice_highlight = Default::default();
+        }
+
+        Ok(())
     }
 
     /// Handler for [Action::Restrict].

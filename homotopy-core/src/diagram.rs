@@ -516,6 +516,10 @@ impl DiagramN {
             }
         })
     }
+
+    pub fn behead(&self, max_height: RegularHeight) -> Self {
+        Self::new(self.source(), self.cospans()[0..max_height].to_vec())
+    }
 }
 
 impl fmt::Debug for DiagramN {
