@@ -544,18 +544,20 @@ impl ProofState {
             let diagram: &DiagramN = (&ws.diagram)
                 .try_into()
                 .map_err(|_| ModelError::InvalidAction)?;
+            if diagram.size() == 0 {
+                return Err(ModelError::InvalidAction);
+            }
             let s = match ws.path.len() {
                 0 => ws.slice_highlight,
                 1 => Some(ws.path[0]),
-                _ => None,
+                _ => return Err(ModelError::InvalidAction),
             };
             let max_height = match s {
+                None => diagram.size() - 1,
                 Some(SliceIndex::Boundary(Boundary::Source)) => 0,
                 Some(SliceIndex::Boundary(Boundary::Target)) => diagram.size(),
                 Some(SliceIndex::Interior(Height::Regular(j))) => j,
-                None | Some(SliceIndex::Interior(Height::Singular(_))) => {
-                    return Err(ModelError::InvalidAction)
-                }
+                Some(SliceIndex::Interior(Height::Singular(_))) => return Err(ModelError::InvalidAction),
             };
             let beheaded_diagram = diagram.behead(max_height).into();
 

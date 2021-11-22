@@ -104,17 +104,9 @@ declare_sidebar_tools! {
                 .map_or(false, |ws| {
                     match &ws.diagram {
                         Diagram::Diagram0(_) => false,
-                        Diagram::DiagramN(d) => d.size() > 0 && {
-                            let s = match ws.path.len() {
-                                0 => ws.slice_highlight,
-                                1 => Some(ws.path[0]),
-                                _ => None,
-                            };
-                            s.map_or(false, |s| {
-                                matches!(s, SliceIndex::Boundary(_))
-                                    || matches!(s, SliceIndex::Interior(Height::Regular(_)))
-                            })
-                        }
+                        Diagram::DiagramN(d) => d.size() > 0 &&
+                            (ws.path.len() == 0 || (ws.path.len() == 1 &&
+                                matches!(ws.path[0], SliceIndex::Boundary(_) | SliceIndex::Interior(Height::Regular(_)))))
                     }
                 })
                 .into()
