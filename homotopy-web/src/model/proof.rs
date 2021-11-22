@@ -547,17 +547,17 @@ impl ProofState {
             if diagram.size() == 0 {
                 return Err(ModelError::InvalidAction);
             }
-            let s = match ws.path.len() {
-                0 => ws.slice_highlight,
-                1 => Some(ws.path[0]),
+            let max_height = match ws.path.len() {
+                0 => diagram.size() - 1,
+                1 => match ws.path[0] {
+                    SliceIndex::Boundary(Boundary::Source) => 0,
+                    SliceIndex::Boundary(Boundary::Target) => diagram.size(),
+                    SliceIndex::Interior(Height::Regular(j)) => j,
+                    SliceIndex::Interior(Height::Singular(_)) => {
+                        return Err(ModelError::InvalidAction)
+                    }
+                },
                 _ => return Err(ModelError::InvalidAction),
-            };
-            let max_height = match s {
-                None => diagram.size() - 1,
-                Some(SliceIndex::Boundary(Boundary::Source)) => 0,
-                Some(SliceIndex::Boundary(Boundary::Target)) => diagram.size(),
-                Some(SliceIndex::Interior(Height::Regular(j))) => j,
-                Some(SliceIndex::Interior(Height::Singular(_))) => return Err(ModelError::InvalidAction),
             };
             let beheaded_diagram = diagram.behead(max_height).into();
 
