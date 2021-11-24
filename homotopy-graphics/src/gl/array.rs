@@ -136,6 +136,7 @@ impl Drop for VertexArray {
     }
 }
 
+#[allow(clippy::missing_safety_doc)]
 pub unsafe trait Attributable {
     const DIMENSION: i32;
     const TYPE: u32;

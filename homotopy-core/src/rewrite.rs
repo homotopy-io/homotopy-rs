@@ -548,9 +548,7 @@ where
         mut cones: Vec<GenericCone<A>>,
         payload: &A::Payload,
     ) -> Self {
-        if dimension == 0 {
-            panic!("Can not create RewriteN of dimension zero.");
-        }
+        assert_ne!(dimension, 0, "Can not create RewriteN of dimension zero.");
 
         // Remove all identity cones. This is not only important to reduce memory consumption, but
         // it allows us the check if the rewrite is an identity by shallowly checking if it has any

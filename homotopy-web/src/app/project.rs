@@ -1,7 +1,6 @@
 use closure::closure;
 use web_sys::HtmlInputElement;
-use yew::{functional::use_ref, prelude::*};
-use yew_macro::function_component;
+use yew::prelude::*;
 
 use crate::model::Action;
 
@@ -14,7 +13,7 @@ pub struct Props {
 pub fn project_view(props: &Props) -> Html {
     let export = props.dispatch.reform(|_| Action::ExportProof);
     let dispatch = &props.dispatch;
-    let reader_task = use_ref(|| None);
+    let reader_task = use_mut_ref(|| None);
     let import = Callback::from(closure!(clone dispatch, |evt: Event| {
         let input: HtmlInputElement = evt.target_unchecked_into();
         if let Some(filelist) = input.files() {

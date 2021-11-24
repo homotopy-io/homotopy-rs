@@ -1204,7 +1204,7 @@ pub type CubicalCospan = GenericCospan<CubicalAllocator>;
 pub type CubicalRewrite = GenericRewrite<CubicalAllocator>;
 pub type CubicalRewriteN = GenericRewriteN<CubicalAllocator>;
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Default)]
 pub struct CubicalPayload(Vec<(RegularHeight, CubicalRewrite)>);
 
 impl CubicalPayload {
@@ -1216,12 +1216,6 @@ impl CubicalPayload {
             }
         }
         Self(payload)
-    }
-}
-
-impl Default for CubicalPayload {
-    fn default() -> Self {
-        Self(vec![])
     }
 }
 

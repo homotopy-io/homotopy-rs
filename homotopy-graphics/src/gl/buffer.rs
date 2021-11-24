@@ -228,6 +228,7 @@ impl<T> Buffer<T> {
     }
 }
 
+#[allow(clippy::missing_safety_doc)]
 pub unsafe trait UnsafeBufferable: Sized {
     /// # Safety
     ///

@@ -222,9 +222,7 @@ fn colimit(
     let dimension = diagrams[0].0.dimension();
 
     for diagram in diagrams {
-        if diagram.0.dimension() != dimension {
-            panic!();
-        }
+        assert_eq!(diagram.0.dimension(), dimension);
     }
 
     for (_, Span(backward, diagram, forward), _) in spans {

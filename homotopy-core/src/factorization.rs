@@ -50,7 +50,7 @@ pub fn factorize(f: Rewrite, g: Rewrite, source: Diagram, target: Diagram) -> Fa
                     f.dimension(),
                     source.cospans(),
                     target.cospans(),
-                    vec![vec![]; target.size()]
+                    vec![vec![]; target.size()],
                 );
                 Factorization::Unique(
                     h.check_well_formed(Mode::Shallow)

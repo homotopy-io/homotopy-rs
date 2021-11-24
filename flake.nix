@@ -20,9 +20,9 @@
           };
           nativeBuildInputs = with pkgs; [
             (
-              rust-bin.nightly."2021-09-09".default.override { # rust stable 1.55
+              rust-bin.nightly."2021-11-01".default.override { # rust stable 1.56.1
                 targets = [ "wasm32-unknown-unknown" ];
-                extensions = [ "rust-src" ]; # seems to be already included in stable
+                extensions = [ "rust-src" ];
               }
             )
             wasm-pack

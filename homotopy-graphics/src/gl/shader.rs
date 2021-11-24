@@ -286,6 +286,7 @@ impl GlCtx {
     }
 }
 
+#[allow(clippy::missing_safety_doc)]
 pub unsafe trait Uniformable: 'static {
     fn uniform(&self, ctx: &WebGl2RenderingContext, loc: &WebGlUniformLocation);
 }

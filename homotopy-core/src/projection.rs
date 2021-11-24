@@ -31,10 +31,7 @@ pub struct Generators(Vec<Vec<Generator>>);
 
 impl Generators {
     pub fn new(diagram: &DiagramN) -> Self {
-        if diagram.dimension() < 2 {
-            // TODO: Make this into an error
-            panic!();
-        }
+        assert!(diagram.dimension() >= 2, "TODO: Make this into an error");
 
         // TODO: Projection
         Self(
