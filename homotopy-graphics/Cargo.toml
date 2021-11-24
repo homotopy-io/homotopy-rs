@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Lukas Heidemann <lukas@heidemann.me>", "Nathan Corbyn <me@nathancorbyn.com>"]
 license = "BSD-3-Clause"
 repository = "https://github.com/homotopy-io/homotopy-rs"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 homotopy-common = { path = "../homotopy-common" }
