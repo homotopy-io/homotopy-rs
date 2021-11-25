@@ -543,7 +543,7 @@ impl ProofState {
         if let Some(ws) = &mut self.workspace {
             let diagram: &DiagramN = (&ws.diagram)
                 .try_into()
-                .map_err(|_| ModelError::InvalidAction)?;
+                .map_err(|_dimerr| ModelError::InvalidAction)?;
             if diagram.size() == 0 {
                 return Err(ModelError::InvalidAction);
             }

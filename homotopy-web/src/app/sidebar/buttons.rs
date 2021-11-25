@@ -105,7 +105,7 @@ declare_sidebar_tools! {
                     match &ws.diagram {
                         Diagram::Diagram0(_) => false,
                         Diagram::DiagramN(d) => d.size() > 0 &&
-                            (ws.path.len() == 0 || (ws.path.len() == 1 &&
+                            (ws.path.is_empty() || (ws.path.len() == 1 &&
                                 matches!(ws.path[0], SliceIndex::Boundary(_) | SliceIndex::Interior(Height::Regular(_)))))
                     }
                 })
