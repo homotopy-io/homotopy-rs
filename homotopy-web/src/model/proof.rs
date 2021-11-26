@@ -1,5 +1,4 @@
 use std::{
-    cmp::Ordering,
     collections::BTreeSet,
     convert::{Into, TryFrom, TryInto},
 };
@@ -176,6 +175,8 @@ impl Action {
 
 #[derive(Debug, Error)]
 pub enum ModelError {
+    #[error("no attachment found")]
+    NoAttachment,
     #[error("the boundaries are not compatible")]
     IncompatibleBoundaries(#[from] NewDiagramError),
     #[error("selected a generator that is not in the signature")]
@@ -206,7 +207,7 @@ impl ProofState {
             Action::DescendSlice(slice) => self.descend_slice(*slice)?,
             Action::SwitchSlice(direction) => self.switch_slice(*direction),
             Action::UpdateView(view) => self.update_view(*view),
-            Action::SelectPoints(points) => self.select_points(points),
+            Action::SelectPoints(points) => self.select_points(points)?,
             Action::Attach(option) => self.attach(option),
             Action::HighlightAttachment(option) => self.highlight_attachment(option.clone()),
             Action::HighlightSlice(slice) => self.highlight_slice(*slice),
@@ -414,14 +415,14 @@ impl ProofState {
     }
 
     /// Handler for [Action::SelectPoint].
-    fn select_points(&mut self, selected: &[Vec<SliceIndex>]) {
+    fn select_points(&mut self, selected: &[Vec<SliceIndex>]) -> Result<(), ModelError> {
         if selected.is_empty() {
-            return;
+            return Ok(());
         }
 
         let workspace = match &self.workspace {
             Some(workspace) => workspace,
-            None => return,
+            None => return Ok(()),
         };
 
         let mut matches: BTreeSet<AttachOption> = BTreeSet::new();
@@ -479,13 +480,20 @@ impl ProofState {
             }
         }
 
-        match matches.len().cmp(&1) {
-            Ordering::Less => self.clear_highlights(),
-            Ordering::Equal => self.attach(&matches.into_iter().next().unwrap()),
-            Ordering::Greater => {
+        match matches.len() {
+            0 => {
+                self.clear_highlights();
+                Err(ModelError::NoAttachment)
+            }
+            1 => {
+                self.attach(&matches.into_iter().next().unwrap());
+                Ok(())
+            }
+            _ => {
                 let workspace = self.workspace.as_mut().unwrap();
                 workspace.attach = Some(matches.into_iter().collect());
                 workspace.attachment_highlight = None;
+                Ok(())
             }
         }
     }
