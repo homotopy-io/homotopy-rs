@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1637857268648,
+  "lastUpdate": 1637924219723,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -15359,6 +15359,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 117.08,
             "range": "+/- 0.680",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "calintat",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "calintat",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "f86e38627c5318a4d87664cbe681f0244567794e",
+          "message": "Show a toast if there is nothing to attach (fix #205)",
+          "timestamp": "2021-11-26T10:41:20Z",
+          "tree_id": "4beba6344769d8ad6da55313585fb5cb48f57d31",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/f86e38627c5318a4d87664cbe681f0244567794e"
+        },
+        "date": 1637924195196,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 80.21,
+            "range": "+/- 1.146",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 81.189,
+            "range": "+/- 1.338",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 116.51,
+            "range": "+/- 1.440",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 136.63,
+            "range": "+/- 1.860",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 162.5,
+            "range": "+/- 2.590",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 230.06,
+            "range": "+/- 3.360",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 103.7,
+            "range": "+/- 2.510",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 691.34,
+            "range": "+/- 15.010",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.5982,
+            "range": "+/- 0.032",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 7.8395,
+            "range": "+/- 0.103",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 21.263,
+            "range": "+/- 0.318",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 50.921,
+            "range": "+/- 0.479",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 129.27,
+            "range": "+/- 2.020",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 342.59,
+            "range": "+/- 3.080",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 79.118,
+            "range": "+/- 0.940",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 112.24,
+            "range": "+/- 1.950",
             "unit": "us"
           }
         ]
