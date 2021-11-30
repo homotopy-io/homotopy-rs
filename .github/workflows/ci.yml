@@ -50,6 +50,9 @@ jobs:
 
   lint:
     name: Lint
+    # Don't run on dependabot PRs
+    # https://github.com/actions-rs/clippy-check/issues/2#issuecomment-807852653
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
