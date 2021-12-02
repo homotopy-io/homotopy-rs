@@ -210,6 +210,7 @@ struct GlDiagramRenderer {
     signature: Signature,
     camera: OrbitCamera,
     subdivision_depth: u8,
+    geometry_samples: u8,
     mouse: Option<Vec2>,
     t: f32,
 }
@@ -225,6 +226,9 @@ pub struct OrbitCamera {
 
 impl GlDiagramRenderer {
     fn new(gl_ctx: GlCtx, settings: &Store<AppSettings>, props: &GlDiagramProps) -> Result<Self> {
+        let depth = *settings.get_subdivision_depth() as u8;
+        let samples = *settings.get_geometry_samples() as u8;
+
         Ok(Self {
             scene: Scene::build(
                 &gl_ctx,
@@ -234,11 +238,13 @@ impl GlDiagramRenderer {
                 } else {
                     ViewDimension::Four
                 },
-                *settings.get_subdivision_depth() as u8,
+                depth,
+                samples,
             )?,
             signature: props.signature.clone(),
             camera: OrbitCamera::new(Vec3::zero(), 30.0),
-            subdivision_depth: *settings.get_subdivision_depth() as u8,
+            subdivision_depth: depth,
+            geometry_samples: samples,
             mouse: None,
             gl_ctx,
             t: 0.0,
@@ -247,10 +253,12 @@ impl GlDiagramRenderer {
 
     fn update(&mut self, settings: &Store<AppSettings>, dt: f32) -> Result<()> {
         let depth = *settings.get_subdivision_depth() as u8;
+        let samples = *settings.get_geometry_samples() as u8;
 
-        if self.subdivision_depth != depth {
+        if self.subdivision_depth != depth || self.geometry_samples != samples {
             self.subdivision_depth = depth;
-            self.scene.reload_meshes(&self.gl_ctx, depth)?;
+            self.geometry_samples = samples;
+            self.scene.reload_meshes(&self.gl_ctx, depth, samples)?;
         }
 
         self.camera.ortho = *settings.get_orthographic_3d();
