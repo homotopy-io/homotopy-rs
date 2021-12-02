@@ -14,6 +14,7 @@ declare_settings! {
         debug_axes: bool = false,
         mesh_hidden: bool = false,
         subdivision_depth: u32 = 3,
+        geometry_samples: u32 = 10,
     }
 }
 
@@ -25,6 +26,7 @@ pub enum SettingsMsg {
     ToggleDebugAxes,
     ToggleMesh,
     SetSubdivisionDepth(u32),
+    SetGeometrySamples(u32),
     Setting(AppSettingsMsg),
 }
 
@@ -102,6 +104,15 @@ impl Component for SettingsView {
                         &ctx.link().callback(SettingsMsg::SetSubdivisionDepth),
                     )
                 }
+                {
+                    self.view_slider(
+                        "Geometry samples",
+                        |local| *local.get_geometry_samples(),
+                        3,
+                        15,
+                        &ctx.link().callback(SettingsMsg::SetGeometrySamples),
+                    )
+                }
             </div>
         }
     }
@@ -131,6 +142,9 @@ impl Component for SettingsView {
             }
             Self::Message::SetSubdivisionDepth(v) => {
                 self.settings.set_subdivision_depth(v);
+            }
+            Self::Message::SetGeometrySamples(v) => {
+                self.settings.set_geometry_samples(v);
             }
         }
         true

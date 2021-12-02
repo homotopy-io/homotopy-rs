@@ -41,6 +41,7 @@ impl Scene {
         diagram: &DiagramN,
         view_dimension: ViewDimension,
         subdivision_depth: u8,
+        geometry_samples: u8,
     ) -> Result<Self> {
         let solid_program = load_solid_program(ctx, view_dimension)?;
         let wireframe_program = load_wireframe_program(ctx)?;
@@ -56,11 +57,16 @@ impl Scene {
             components: vec![],
         };
 
-        scene.reload_meshes(ctx, subdivision_depth)?;
+        scene.reload_meshes(ctx, subdivision_depth, geometry_samples)?;
         Ok(scene)
     }
 
-    pub fn reload_meshes(&mut self, ctx: &GlCtx, subdivision_depth: u8) -> Result<()> {
+    pub fn reload_meshes(
+        &mut self,
+        ctx: &GlCtx,
+        subdivision_depth: u8,
+        geometry_samples: u8,
+    ) -> Result<()> {
         self.components.clear();
 
         let mut extractor =
@@ -79,7 +85,7 @@ impl Scene {
         mesh.subdivide(subdivision_depth);
 
         if self.view_dimension == ViewDimension::Three {
-            for square_buffers in mesh.buffer_squares(ctx)? {
+            for square_buffers in mesh.buffer_squares(ctx, geometry_samples)? {
                 self.components.push(SceneComponent {
                     generator: square_buffers.generator,
                     array: vertex_array!(

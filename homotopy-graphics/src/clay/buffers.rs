@@ -19,12 +19,8 @@ use crate::gl::{
     GlCtx, Result,
 };
 
-const SPHERE_STACKS: u16 = 10;
-const SPHERE_SECTORS: u16 = 10;
 const SPHERE_RADIUS: f32 = 0.1;
-
 const TUBE_RADIUS: f32 = 0.05;
-const TUBE_SECTORS: u16 = 10;
 
 pub struct SquareVertexArrayData {
     pub element_buffer: ElementBuffer,
@@ -47,15 +43,17 @@ struct SquareBufferingCtx<'a> {
     mesh: &'a Mesh,
     state: HashMap<Generator, SquareBufferingState>,
     complete_arrays: Vec<SquareVertexArrayData>,
+    geometry_samples: u8,
 }
 
 impl<'a> SquareBufferingCtx<'a> {
-    fn new(ctx: &'a GlCtx, mesh: &'a Mesh) -> Self {
+    fn new(ctx: &'a GlCtx, mesh: &'a Mesh, geometry_samples: u8) -> Self {
         Self {
             ctx,
             mesh,
             state: Default::default(),
             complete_arrays: vec![],
+            geometry_samples,
         }
     }
 
@@ -100,8 +98,9 @@ impl<'a> SquareBufferingCtx<'a> {
 
     fn push_curve(&mut self, generator: Generator, curve: &[Vert]) -> Result<()> {
         let mesh = self.mesh;
+        let sectors = self.geometry_samples;
 
-        self.with_state(generator, curve.len() * TUBE_SECTORS as usize, |state| {
+        self.with_state(generator, curve.len() * sectors as usize, |state| {
             // The direction of the curve in the previous segment
             let mut d_0 = (*mesh.verts[curve[1]] - *mesh.verts[curve[0]])
                 .xyz()
@@ -115,7 +114,7 @@ impl<'a> SquareBufferingCtx<'a> {
             })
             .normalized();
 
-            state.push_tube_sector(mesh.verts[curve[0]].xyz(), n, d_0.cross(n), false);
+            state.push_tube_sector(mesh.verts[curve[0]].xyz(), n, d_0.cross(n), false, sectors);
 
             for i in 2..curve.len() {
                 let v_0 = mesh.verts[curve[i - 1]].xyz();
@@ -128,10 +127,10 @@ impl<'a> SquareBufferingCtx<'a> {
                 n = t.cross(n).cross(t).normalized();
                 let bn = t.cross(n).normalized();
 
-                state.push_tube_sector(v_0, n, bn, true);
+                state.push_tube_sector(v_0, n, bn, true, sectors);
 
                 if i == curve.len() - 1 {
-                    state.push_tube_sector(v_1, n, bn, true);
+                    state.push_tube_sector(v_1, n, bn, true, sectors);
                 }
             }
         })
@@ -141,56 +140,55 @@ impl<'a> SquareBufferingCtx<'a> {
         let mesh = self.mesh;
         let generator = mesh.verts[point].generator;
 
-        self.with_state(
-            generator,
-            (SPHERE_STACKS * SPHERE_SECTORS) as usize + 2,
-            |state| {
-                let origin = mesh.verts[point].xyz();
-                let north_pole = state.push_unmapped_vert(origin + Vec3::unit_y() * SPHERE_RADIUS);
-                let south_pole = state.push_unmapped_vert(origin - Vec3::unit_y() * SPHERE_RADIUS);
+        let stacks = self.geometry_samples as u16;
+        let sectors = self.geometry_samples as u16;
 
-                for i in 1..SPHERE_STACKS {
-                    let theta = 0.5 * PI - (f32::from(i) * PI / f32::from(SPHERE_STACKS));
-                    let xz = SPHERE_RADIUS * f32::cos(theta);
-                    let y = SPHERE_RADIUS * f32::sin(theta);
+        self.with_state(generator, (stacks * sectors) as usize + 2, |state| {
+            let origin = mesh.verts[point].xyz();
+            let north_pole = state.push_unmapped_vert(origin + Vec3::unit_y() * SPHERE_RADIUS);
+            let south_pole = state.push_unmapped_vert(origin - Vec3::unit_y() * SPHERE_RADIUS);
 
-                    let len = state.verts.len() as u16;
+            for i in 1..stacks {
+                let theta = 0.5 * PI - (f32::from(i) * PI / f32::from(stacks));
+                let xz = SPHERE_RADIUS * f32::cos(theta);
+                let y = SPHERE_RADIUS * f32::sin(theta);
 
-                    for j in 0..SPHERE_SECTORS {
-                        let phi = f32::from(j) * TAU / f32::from(SPHERE_SECTORS);
-                        let x = xz * f32::cos(phi);
-                        let z = xz * f32::sin(phi);
-                        state.push_unmapped_vert(origin + Vec3::new(x, y, z));
+                let len = state.verts.len() as u16;
+
+                for j in 0..sectors {
+                    let phi = f32::from(j) * TAU / f32::from(sectors);
+                    let x = xz * f32::cos(phi);
+                    let z = xz * f32::sin(phi);
+                    state.push_unmapped_vert(origin + Vec3::new(x, y, z));
+                }
+
+                if i == 1 {
+                    for j in 0..sectors {
+                        let v_0 = len + j;
+                        let v_1 = len + (j + 1) % sectors;
+                        state.push_tri(north_pole, v_1, v_0);
                     }
+                } else {
+                    for j in 0..sectors {
+                        let v_0 = len + j;
+                        let v_1 = len + (j + 1) % sectors;
+                        let v_2 = v_0 - sectors;
+                        let v_3 = v_1 - sectors;
 
-                    if i == 1 {
-                        for j in 0..SPHERE_SECTORS {
-                            let v_0 = len + j;
-                            let v_1 = len + (j + 1) % SPHERE_SECTORS;
-                            state.push_tri(north_pole, v_1, v_0);
-                        }
-                    } else {
-                        for j in 0..SPHERE_SECTORS {
-                            let v_0 = len + j;
-                            let v_1 = len + (j + 1) % SPHERE_SECTORS;
-                            let v_2 = v_0 - SPHERE_SECTORS;
-                            let v_3 = v_1 - SPHERE_SECTORS;
-
-                            state.push_tri(v_0, v_2, v_1);
-                            state.push_tri(v_1, v_2, v_3);
-                        }
-                    }
-
-                    if i == SPHERE_STACKS - 1 {
-                        for j in 0..SPHERE_SECTORS {
-                            let v_0 = len + j;
-                            let v_1 = len + (j + 1) % SPHERE_SECTORS;
-                            state.push_tri(south_pole, v_0, v_1);
-                        }
+                        state.push_tri(v_0, v_2, v_1);
+                        state.push_tri(v_1, v_2, v_3);
                     }
                 }
-            },
-        )
+
+                if i == stacks - 1 {
+                    for j in 0..sectors {
+                        let v_0 = len + j;
+                        let v_1 = len + (j + 1) % sectors;
+                        state.push_tri(south_pole, v_0, v_1);
+                    }
+                }
+            }
+        })
     }
 
     fn triangulate(&mut self) -> Result<()> {
@@ -268,11 +266,18 @@ impl SquareBufferingState {
         }
     }
 
-    fn push_tube_sector(&mut self, vert: Vec3, normal: Vec3, binormal: Vec3, connect: bool) {
+    fn push_tube_sector(
+        &mut self,
+        vert: Vec3,
+        normal: Vec3,
+        binormal: Vec3,
+        connect: bool,
+        sectors: u8,
+    ) {
         let len = self.verts.len() as u16;
 
-        for j in 0..TUBE_SECTORS {
-            let theta = f32::from(j) * TAU / f32::from(TUBE_SECTORS);
+        for j in 0..sectors {
+            let theta = f32::from(j) * TAU / f32::from(sectors);
             self.push_unmapped_vert(
                 vert + TUBE_RADIUS * f32::cos(theta) * normal
                     + TUBE_RADIUS * f32::sin(theta) * binormal,
@@ -280,11 +285,13 @@ impl SquareBufferingState {
         }
 
         if connect {
-            for j in 0..TUBE_SECTORS {
+            let sectors = sectors as u16;
+
+            for j in 0..sectors {
                 let v_0 = len + j;
-                let v_1 = len + ((j + 1) % TUBE_SECTORS);
-                let v_2 = v_0 - TUBE_SECTORS;
-                let v_3 = v_1 - TUBE_SECTORS;
+                let v_1 = len + ((j + 1) % sectors);
+                let v_2 = v_0 - sectors;
+                let v_3 = v_1 - sectors;
 
                 self.push_tri(v_0, v_2, v_1);
                 self.push_tri(v_1, v_2, v_3);
@@ -541,8 +548,12 @@ impl<'a> CubeBufferer<'a> {
 }
 
 impl Mesh {
-    pub fn buffer_squares(&self, ctx: &GlCtx) -> Result<Vec<SquareVertexArrayData>> {
-        let mut ctx = SquareBufferingCtx::new(ctx, self);
+    pub fn buffer_squares(
+        &self,
+        ctx: &GlCtx,
+        segments_per_cyllinder: u8,
+    ) -> Result<Vec<SquareVertexArrayData>> {
+        let mut ctx = SquareBufferingCtx::new(ctx, self, segments_per_cyllinder);
         ctx.triangulate()?;
         ctx.extract_buffers()
     }
