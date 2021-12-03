@@ -3,7 +3,6 @@ use homotopy_common::{
     tree::{Node, Tree},
 };
 use yew::prelude::*;
-use yew_macro::function_component;
 
 use super::item::{ItemView, NewFolderButton, NewFolderKind};
 use crate::{
@@ -88,9 +87,27 @@ where
     }
 }
 
-#[function_component(FolderView)]
-pub fn folder_view(props: &Props) -> Html {
-    render_children(props, props.contents.root())
+// NOTE this looks like it could be a function component but it can't.
+// Making this a function component means that it doesn't re-render
+// as the signature is incrementally modified.
+pub struct FolderView {}
+
+impl Component for FolderView {
+    type Message = ();
+    type Properties = Props;
+
+    fn create(_: &Context<Self>) -> Self {
+        Self {}
+    }
+
+    fn changed(&mut self, _: &Context<Self>) -> bool {
+        // This is the critical line.
+        true
+    }
+
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        render_children(ctx.props(), ctx.props().contents.root())
+    }
 }
 
 fn render_drop_zone(props: &Props, node: Node, position: DropPosition) -> Html {
