@@ -140,8 +140,10 @@ impl<'a> SquareBufferingCtx<'a> {
         let mesh = self.mesh;
         let generator = mesh.verts[point].generator;
 
-        let stacks = self.geometry_samples as u16;
-        let sectors = self.geometry_samples as u16;
+        let samples = u16::from(self.geometry_samples);
+        // Algorithm works with these set independently.
+        let stacks = samples;
+        let sectors = samples;
 
         self.with_state(generator, (stacks * sectors) as usize + 2, |state| {
             let origin = mesh.verts[point].xyz();
@@ -285,7 +287,7 @@ impl SquareBufferingState {
         }
 
         if connect {
-            let sectors = sectors as u16;
+            let sectors = u16::from(sectors);
 
             for j in 0..sectors {
                 let v_0 = len + j;
