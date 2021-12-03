@@ -76,7 +76,7 @@ button, .button {
   color: var(--sidebar-foreground);
   display: flex;
   flex-direction: column;
-  z-index: 1000;
+  z-index: 1001;
 }
 
 .sidebar__logo {
