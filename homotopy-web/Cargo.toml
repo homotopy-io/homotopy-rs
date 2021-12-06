@@ -33,7 +33,7 @@ rmp-serde = "0.15.5"
 # to interact with JavaScript.
 wasm-bindgen = { version = "0.2.78", features = ["serde-serialize"] }
 gloo = "0.4.0"
-gloo-timers = "0.2.1"
+gloo-timers = "0.2.2"
 
 wasm-logger = "0.2.0"
 log = "0.4.14"
