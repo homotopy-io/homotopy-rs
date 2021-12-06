@@ -112,6 +112,17 @@ where
     }
 
     #[inline]
+    pub fn reindex<J>(self) -> IdxVec<J, T>
+    where
+        J: Idx,
+    {
+        IdxVec {
+            raw: self.raw,
+            _phantom: PhantomData::default(),
+        }
+    }
+
+    #[inline]
     pub fn contains_key(&self, index: I) -> bool {
         self.raw.len() < index.index()
     }

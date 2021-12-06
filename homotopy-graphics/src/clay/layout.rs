@@ -8,7 +8,10 @@ use homotopy_core::{
 };
 use ultraviolet::Vec4;
 
-use super::geom::{Boundary, CurveData, CurveExt, Mesh, Vert, VertExt};
+use crate::clay::geom::{
+    cubical::{CubicalMesh, CurveData},
+    Boundary, Carries, Mesh, Vert, WithBoundaryAndGenerator, WithGenerator,
+};
 
 impl Boundary {
     /// Calculate the boundary of a given location in a diagram.
@@ -33,13 +36,13 @@ declare_idx! {
     struct CoordIdx = usize;
 }
 
-pub struct MeshExtractor {
+pub struct CubicalMeshExtractor {
     graph: CubicalGraph,
     coords: HashMap<Vec<SliceIndex>, Vert>,
-    mesh: Mesh,
+    mesh: CubicalMesh,
 }
 
-impl MeshExtractor {
+impl CubicalMeshExtractor {
     pub fn new(diagram: &DiagramN, cubicalisation_depth: u8) -> Result<Self, DimensionError> {
         let diagram = Diagram::from(diagram.clone());
         let graph = diagram.clone().cubicalise(&[Bias::Left].repeat(cmp::min(
@@ -47,7 +50,7 @@ impl MeshExtractor {
             diagram.dimension().saturating_sub(1),
         )))?;
 
-        let mut mesh = Mesh::new(diagram);
+        let mut mesh = CubicalMesh::new(diagram);
         let mut coords = HashMap::new();
         let mut valence = HashMap::new();
 
@@ -283,7 +286,7 @@ impl MeshExtractor {
     }
 
     #[inline]
-    pub fn build(mut self) -> Mesh {
+    pub fn build(mut self) -> CubicalMesh {
         let (min, max) = self.mesh.bounds();
         let translation = 0.5 * (max + min);
         let duration = 0.5 * (max.w - min.w);

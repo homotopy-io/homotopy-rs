@@ -12,7 +12,7 @@ in vec3 frag_normal;
 
 out vec4 frag_color;
 
-const float a = 0.05;
+const float a = 0.3;
 const vec3 s = vec3(1., 1., 1.);
 
 const vec3 light_offset = vec3(-.75, .25, -.5);
@@ -47,6 +47,6 @@ void main() {
     }
 
     vec3 color = d * (a + lambertian) + .25 * s * specular;
-    frag_color = vec4(pow(color, vec3(1. / gamma)), 1.);
+    frag_color = vec4(color, 1.);
   }
 }

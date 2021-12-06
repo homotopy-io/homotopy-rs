@@ -3,9 +3,9 @@ use std::{cmp, collections::HashMap, mem};
 use homotopy_common::idx::IdxVec;
 use ultraviolet::{Mat4, Vec4};
 
-use super::geom::Mesh;
 use crate::clay::geom::{
-    Boundary, Cube, CubeData, CurveExt, Line, LineData, Square, SquareData, Vert, VertExt,
+    cubical::{Cube, CubeData, CubicalMesh, Line, LineData, Square, SquareData},
+    Boundary, Carries, Mesh, Vert, WithBoundaryAndGenerator, WithGenerator,
 };
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -16,7 +16,7 @@ enum Pass {
 }
 
 struct Subdivider<'a> {
-    mesh: &'a mut Mesh,
+    mesh: &'a mut CubicalMesh,
 
     edge_division_memory: HashMap<LineData, Vert>,
     face_division_memory: HashMap<SquareData, Vert>,
@@ -73,7 +73,7 @@ impl<'a> Subdivider<'a> {
         [[0, 4, 5, 8], [1, 6, 4, 8], [2, 5, 7, 8], [3, 7, 6, 8]];
 
     #[inline]
-    pub(super) fn new(mesh: &'a mut Mesh) -> Self {
+    pub(super) fn new(mesh: &'a mut CubicalMesh) -> Self {
         Self {
             edge_division_memory: Default::default(),
             face_division_memory: Default::default(),
@@ -401,7 +401,7 @@ impl<'a> Subdivider<'a> {
     }
 
     #[cfg(debug_assertions)]
-    fn bounds_preserved(&self, unmodified: &Mesh) -> bool {
+    fn bounds_preserved(&self, unmodified: &CubicalMesh) -> bool {
         let (unmodified_min, unmodified_max) = unmodified.bounds();
         let (min, max) = self.mesh.bounds();
 
@@ -537,7 +537,7 @@ impl<'a> Subdivider<'a> {
     }
 }
 
-impl Mesh {
+impl CubicalMesh {
     pub fn subdivide(&mut self, depth: u8) {
         if depth == 0 {
             return;

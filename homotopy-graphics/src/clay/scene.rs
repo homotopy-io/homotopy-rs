@@ -2,7 +2,7 @@ use homotopy_core::{DiagramN, Generator};
 use ultraviolet::{Mat4, Vec3};
 
 use crate::{
-    clay::layout::MeshExtractor,
+    clay::{geom::simplicial::SimplicialMesh, layout::CubicalMeshExtractor},
     draw,
     gl::{
         array::VertexArray,
@@ -70,7 +70,7 @@ impl Scene {
         self.components.clear();
 
         let mut extractor =
-            MeshExtractor::new(&self.diagram, self.view_dimension as u8 - 1).unwrap();
+            CubicalMeshExtractor::new(&self.diagram, self.view_dimension as u8 - 1).unwrap();
 
         if self.view_dimension == ViewDimension::Four {
             extractor = extractor.extract_cubes();
@@ -85,42 +85,61 @@ impl Scene {
         mesh.subdivide(subdivision_depth);
 
         if self.view_dimension == ViewDimension::Three {
-            for square_buffers in mesh.buffer_squares(ctx, geometry_samples)? {
+            for tri_buffers in SimplicialMesh::from(mesh).buffer_tris(ctx, geometry_samples)? {
                 self.components.push(SceneComponent {
-                    generator: square_buffers.generator,
+                    generator: tri_buffers.generator,
                     array: vertex_array!(
                         &self.solid_program,
-                        &square_buffers.element_buffer,
+                        &tri_buffers.element_buffer,
                         {
-                            position: &square_buffers.vertex_buffer,
-                            normal: &square_buffers.normal_buffer,
+                            position: &tri_buffers.vertex_buffer,
+                            normal: &tri_buffers.normal_buffer,
                         }
                     )?,
                     wireframe_array: vertex_array!(
                         &self.wireframe_program,
-                        &square_buffers.wireframe_element_buffer,
-                        { position: &square_buffers.vertex_buffer }
+                        &tri_buffers.wireframe_element_buffer,
+                        { position: &tri_buffers.vertex_buffer }
                     )?,
                 });
             }
         } else {
-            let cube_buffers = mesh.buffer_cubes(ctx)?;
+            let tetra_buffers = SimplicialMesh::from(mesh).buffer_tetras(ctx)?;
             self.components.push(SceneComponent {
                 generator: Generator::new(0, 0),
                 array: vertex_array!(
                     &self.solid_program,
-                    &cube_buffers.element_buffer,
+                    &tetra_buffers.element_buffer,
                     {
-                        position_start: &cube_buffers.vertex_start_buffer,
-                        position_end: &cube_buffers.vertex_end_buffer,
-                        normal_start: &cube_buffers.normal_start_buffer,
-                        normal_end: &cube_buffers.normal_end_buffer,
+                        position_start: &tetra_buffers.vertex_start_buffer,
+                        position_end: &tetra_buffers.vertex_end_buffer,
+                        normal_start: &tetra_buffers.normal_start_buffer,
+                        normal_end: &tetra_buffers.normal_end_buffer,
                     }
                 )?,
                 wireframe_array: vertex_array!(
                     &self.wireframe_program,
-                    &cube_buffers.wireframe_element_buffer,
-                    { position: &cube_buffers.wireframe_vertex_buffer }
+                    &tetra_buffers.projected_wireframe_element_buffer,
+                    { position: &tetra_buffers.wireframe_vertex_buffer }
+                )?,
+            });
+            // TODO(@doctorn) remove
+            self.components.push(SceneComponent {
+                generator: Generator::new(1, 0),
+                array: vertex_array!(
+                    &self.solid_program,
+                    &tetra_buffers.animated_wireframe_element_buffer,
+                    {
+                        position_start: &tetra_buffers.vertex_start_buffer,
+                        position_end: &tetra_buffers.vertex_end_buffer,
+                        normal_start: &tetra_buffers.normal_start_buffer,
+                        normal_end: &tetra_buffers.normal_end_buffer,
+                    }
+                )?,
+                wireframe_array: vertex_array!(
+                    &self.wireframe_program,
+                    &tetra_buffers.projected_wireframe_element_buffer,
+                    { position: &tetra_buffers.wireframe_vertex_buffer }
                 )?,
             });
         }
@@ -197,7 +216,7 @@ fn load_solid_program(ctx: &GlCtx, dimension: ViewDimension) -> Result<Program> 
             "../../glsl/vert_4d.glsl",
             "../../glsl/frag.glsl",
             { position_start, position_end, normal_start, normal_end },
-            { mvp, debug_normals, camera_pos, t },
+            { mvp, debug_normals, camera_pos, d, t },
         ),
     }
 }
