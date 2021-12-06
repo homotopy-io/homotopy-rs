@@ -296,12 +296,19 @@ impl GlDiagramRenderer {
                 // TODO(@doctorn) something sensible for time control
                 let t = f32::sin(0.00025 * self.t);
 
-                self.scene.draw(&mut frame, |_, array| {
+                self.scene.draw(&mut frame, |generator, array| {
+                    let color = if generator.id == 0 {
+                        Vec3::new(30. / 255., 144. / 255., 1.)
+                    } else {
+                        Vec3::zero()
+                    };
+
                     draw!(array, {
                         mvp: vp,
                         debug_normals: normals,
                         camera_pos: camera,
                         t: t,
+                        d: color,
                     })
                 });
             }

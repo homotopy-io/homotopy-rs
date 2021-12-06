@@ -1,5 +1,4 @@
 use std::{
-    cmp::Ordering,
     collections::HashMap,
     f32::consts::{PI, TAU},
     mem,
@@ -12,17 +11,22 @@ use homotopy_common::{
 use homotopy_core::Generator;
 use ultraviolet::{Mat3, Vec3, Vec4};
 
-use super::geom::{Mesh, Vert};
-use crate::gl::{
-    array::VAO_LIMIT,
-    buffer::{Buffer, ElementBuffer, ElementKind},
-    GlCtx, Result,
+use crate::{
+    clay::geom::{
+        simplicial::{Orientation, SimplicialMesh, TetraData, TriData},
+        Vert,
+    },
+    gl::{
+        array::VAO_LIMIT,
+        buffer::{Buffer, ElementBuffer, ElementKind},
+        GlCtx, Result,
+    },
 };
 
 const SPHERE_RADIUS: f32 = 0.1;
 const TUBE_RADIUS: f32 = 0.05;
 
-pub struct SquareVertexArrayData {
+pub struct TriVertexArrayData {
     pub element_buffer: ElementBuffer,
     pub wireframe_element_buffer: ElementBuffer,
     pub vertex_buffer: Buffer<Vec3>,
@@ -30,7 +34,7 @@ pub struct SquareVertexArrayData {
     pub generator: Generator,
 }
 
-struct SquareBufferingState {
+struct TriBufferingState {
     elements: Vec<u16>,
     verts: Vec<Vec3>,
     mapping: HashMap<Vert, u16>,
@@ -38,16 +42,16 @@ struct SquareBufferingState {
     normals: Vec<Vec3>,
 }
 
-struct SquareBufferingCtx<'a> {
+struct TriBufferingCtx<'a> {
     ctx: &'a GlCtx,
-    mesh: &'a Mesh,
-    state: HashMap<Generator, SquareBufferingState>,
-    complete_arrays: Vec<SquareVertexArrayData>,
+    mesh: &'a SimplicialMesh,
+    state: HashMap<Generator, TriBufferingState>,
+    complete_arrays: Vec<TriVertexArrayData>,
     geometry_samples: u8,
 }
 
-impl<'a> SquareBufferingCtx<'a> {
-    fn new(ctx: &'a GlCtx, mesh: &'a Mesh, geometry_samples: u8) -> Self {
+impl<'a> TriBufferingCtx<'a> {
+    fn new(ctx: &'a GlCtx, mesh: &'a SimplicialMesh, geometry_samples: u8) -> Self {
         Self {
             ctx,
             mesh,
@@ -62,7 +66,7 @@ impl<'a> SquareBufferingCtx<'a> {
     // along these boundaries (copying any duplicated normal data?)
     fn with_state<F, U>(&mut self, generator: Generator, required: usize, f: F) -> Result<U>
     where
-        F: FnOnce(&mut SquareBufferingState) -> U,
+        F: FnOnce(&mut TriBufferingState) -> U,
     {
         let state = self.state.entry(generator).or_default();
 
@@ -76,8 +80,8 @@ impl<'a> SquareBufferingCtx<'a> {
         Ok(f(state))
     }
 
-    fn push_square(&mut self, square: &[Vert; 4]) -> Result<()> {
-        let generator = square
+    fn push_tri(&mut self, tri: &TriData) -> Result<()> {
+        let generator = tri
             .iter()
             .map(|v| self.mesh.verts[*v].generator)
             .min_by_key(|g| g.dimension)
@@ -85,14 +89,15 @@ impl<'a> SquareBufferingCtx<'a> {
         let mesh = self.mesh;
 
         self.with_state(generator, 4, |state| {
-            let v_0 = state.push_vert(mesh, square[0]);
-            let v_1 = state.push_vert(mesh, square[1]);
-            let v_2 = state.push_vert(mesh, square[2]);
-            let v_3 = state.push_vert(mesh, square[3]);
+            let v_0 = state.push_vert(mesh, tri[0]);
+            let v_1 = state.push_vert(mesh, tri[1]);
+            let v_2 = state.push_vert(mesh, tri[2]);
 
-            // Bottom right triangle
-            state.push_tri(v_0, v_1, v_3);
-            state.push_tri(v_0, v_3, v_2);
+            if tri.orientation == Orientation::Anticlockwise {
+                state.push_tri(v_0, v_1, v_2);
+            } else {
+                state.push_tri(v_0, v_2, v_1);
+            }
         })
     }
 
@@ -193,10 +198,9 @@ impl<'a> SquareBufferingCtx<'a> {
         })
     }
 
-    fn triangulate(&mut self) -> Result<()> {
-        // Triangulate mesh
-        for square in self.mesh.squares.values() {
-            self.push_square(square)?;
+    fn extract_buffers(mut self) -> Result<Vec<TriVertexArrayData>> {
+        for tri in self.mesh.tris.values() {
+            self.push_tri(tri)?;
         }
 
         for curve in self.mesh.curves.values() {
@@ -207,10 +211,6 @@ impl<'a> SquareBufferingCtx<'a> {
             self.push_point(*point)?;
         }
 
-        Ok(())
-    }
-
-    fn extract_buffers(mut self) -> Result<Vec<SquareVertexArrayData>> {
         for (generator, state) in self.state {
             self.complete_arrays
                 .push(state.extract_buffers(self.ctx, generator)?);
@@ -220,7 +220,7 @@ impl<'a> SquareBufferingCtx<'a> {
     }
 }
 
-impl SquareBufferingState {
+impl TriBufferingState {
     fn push_wireframe_element(&mut self, i: u16, j: u16) {
         self.wireframe_elements.push(i);
         self.wireframe_elements.push(j);
@@ -236,7 +236,7 @@ impl SquareBufferingState {
         self.elements.push(k);
     }
 
-    fn push_vert(&mut self, mesh: &Mesh, v: Vert) -> u16 {
+    fn push_vert(&mut self, mesh: &SimplicialMesh, v: Vert) -> u16 {
         if let Some(&idx) = self.mapping.get(&v) {
             return idx;
         }
@@ -301,11 +301,7 @@ impl SquareBufferingState {
         }
     }
 
-    fn extract_buffers(
-        mut self,
-        ctx: &GlCtx,
-        generator: Generator,
-    ) -> Result<SquareVertexArrayData> {
+    fn extract_buffers(mut self, ctx: &GlCtx, generator: Generator) -> Result<TriVertexArrayData> {
         // Average normals
         for normal in &mut self.normals {
             normal.normalize();
@@ -318,7 +314,7 @@ impl SquareBufferingState {
         let vertex_buffer = ctx.mk_buffer(&self.verts)?;
         let normal_buffer = ctx.mk_buffer(&self.normals)?;
 
-        Ok(SquareVertexArrayData {
+        Ok(TriVertexArrayData {
             element_buffer,
             wireframe_element_buffer,
             vertex_buffer,
@@ -328,7 +324,7 @@ impl SquareBufferingState {
     }
 }
 
-impl Default for SquareBufferingState {
+impl Default for TriBufferingState {
     fn default() -> Self {
         Self {
             elements: Vec::with_capacity(VAO_LIMIT),
@@ -340,9 +336,11 @@ impl Default for SquareBufferingState {
     }
 }
 
-pub struct CubeBuffers {
+// TODO(@doctorn) remove and replace with partitioned set of buffers
+pub struct TetraBuffers {
     pub element_buffer: ElementBuffer,
-    pub wireframe_element_buffer: ElementBuffer,
+    pub projected_wireframe_element_buffer: ElementBuffer,
+    pub animated_wireframe_element_buffer: ElementBuffer,
     pub vertex_start_buffer: Buffer<Vec4>,
     pub vertex_end_buffer: Buffer<Vec4>,
     pub wireframe_vertex_buffer: Buffer<Vec3>,
@@ -352,47 +350,48 @@ pub struct CubeBuffers {
 
 declare_idx! { struct Segment = u16; }
 
-struct CubeBufferer<'a> {
-    mesh: &'a Mesh,
+struct TetraBufferer<'a> {
+    mesh: &'a SimplicialMesh,
 
     segment_cache: HashMap<(Vert, Vert), Segment>,
     elements: Vec<u16>,
-    wireframe_elements: Vec<u16>,
+    animated_wireframe_elements: Vec<u16>,
 
     segment_starts: IdxVec<Segment, Vec4>,
     segment_ends: IdxVec<Segment, Vec4>,
     normals: IdxVec<Vert, Vec4>,
 
+    projected_wireframe_elements: Vec<u16>,
     wireframe_vertices: Vec<Vec3>,
 }
 
-impl<'a> CubeBufferer<'a> {
-    fn new(mesh: &'a Mesh) -> Self {
-        let len = mesh.cubes.len();
-        let segments = 30 * len;
+impl<'a> TetraBufferer<'a> {
+    fn new(mesh: &'a SimplicialMesh) -> Self {
+        let len = mesh.tetras.len();
+        let segments = 6 * len;
 
         Self {
             mesh,
 
             segment_cache: HashMap::new(),
             elements: Vec::with_capacity(segments),
-            wireframe_elements: Vec::with_capacity(len * 8),
+            animated_wireframe_elements: Vec::with_capacity(segments),
 
             segment_starts: IdxVec::with_capacity(segments),
             segment_ends: IdxVec::with_capacity(segments),
             normals: IdxVec::splat(Vec4::zero(), mesh.verts.len()),
 
+            projected_wireframe_elements: Vec::with_capacity(len * 8),
             wireframe_vertices: mesh.verts.values().map(|v| v.xyz()).collect(),
         }
     }
 
     fn mk_segment_uncached(&mut self, i: Vert, j: Vert) -> Segment {
-        self.wireframe_elements.push(i.index() as u16);
-        self.wireframe_elements.push(j.index() as u16);
+        self.projected_wireframe_elements.push(i.index() as u16);
+        self.projected_wireframe_elements.push(j.index() as u16);
 
         let segment = self.segment_starts.push(*self.mesh.verts[i]);
         self.segment_ends.push(*self.mesh.verts[j]);
-
         self.segment_cache.insert((i, j), segment);
         segment
     }
@@ -406,48 +405,37 @@ impl<'a> CubeBufferer<'a> {
 
     fn push_tri(&mut self, i: Segment, j: Segment, k: Segment) {
         if i != j && j != k && k != i {
-            self.elements.push(i.index() as u16);
-            self.elements.push(j.index() as u16);
-            self.elements.push(k.index() as u16);
+            let i = i.index() as u16;
+            let j = j.index() as u16;
+            let k = k.index() as u16;
+
+            self.elements.push(i);
+            self.elements.push(j);
+            self.elements.push(k);
         }
     }
 
-    fn push_tetra(&mut self, i: Vert, j: Vert, k: Vert, l: Vert) {
-        #[inline]
-        fn parity_sort<F>(vertices: &mut [Vert; 4], f: F) -> bool
-        where
-            F: Fn(Vert, Vert) -> Ordering,
-        {
-            let mut parity = true;
+    fn push_wireframe_tri(&mut self, tri: &TriData) {
+        let [i, j, k] = **tri;
 
-            macro_rules! bubble_pass  {
-                ($($i:literal),*$(,)*) => {
-                    $(if f(vertices[$i + 1], vertices[$i]) == Ordering::Less {
-                        vertices.swap($i, $i + 1);
-                        parity = !parity;
-                    })*
-                };
-            }
+        let ij = self.mk_segment(i, j);
+        let ik = self.mk_segment(i, k);
+        let jk = self.mk_segment(j, k);
 
-            bubble_pass!(
-                0, 1, 2, // First pass finds top element
-                0, 1, // Second pass finds next element
-                0, // Final pass orders remaining two elements
-            );
+        if ij != ik && ik != jk {
+            let ij = ij.index() as u16;
+            let ik = ik.index() as u16;
+            let jk = jk.index() as u16;
 
-            parity
+            self.animated_wireframe_elements.push(ij);
+            self.animated_wireframe_elements.push(ik);
+            self.animated_wireframe_elements.push(jk);
+            self.animated_wireframe_elements.push(ik);
         }
+    }
 
-        let ([i, j, k, l], parity) = {
-            let mut verts = [i, j, k, l];
-            let parity = parity_sort(&mut verts, |i, j| {
-                self.mesh.verts[i]
-                    .w
-                    .partial_cmp(&self.mesh.verts[j].w)
-                    .unwrap()
-            });
-            (verts, parity)
-        };
+    fn push_tetra(&mut self, tetra: &TetraData) {
+        let [i, j, k, l] = **tetra;
 
         let ij = self.mk_segment(i, j);
         let ik = self.mk_segment(i, k);
@@ -479,7 +467,7 @@ impl<'a> CubeBufferer<'a> {
                 m_3.determinant(),
             );
 
-            if !parity {
+            if tetra.orientation != Orientation::Anticlockwise {
                 normal = -normal;
             }
 
@@ -489,7 +477,7 @@ impl<'a> CubeBufferer<'a> {
             self.normals[l] += normal;
         }
 
-        if parity {
+        if tetra.orientation == Orientation::Anticlockwise {
             self.push_tri(ij, il, ik);
             self.push_tri(jl, ik, jk);
             self.push_tri(jl, il, ik);
@@ -502,18 +490,15 @@ impl<'a> CubeBufferer<'a> {
         }
     }
 
-    fn triangulate(&mut self) {
-        // Triangulate mesh
-        for cube in self.mesh.cubes.values() {
-            self.push_tetra(cube[1], cube[4], cube[5], cube[7]);
-            self.push_tetra(cube[0], cube[4], cube[1], cube[2]);
-            self.push_tetra(cube[1], cube[7], cube[3], cube[2]);
-            self.push_tetra(cube[4], cube[6], cube[7], cube[2]);
-            self.push_tetra(cube[1], cube[7], cube[2], cube[4]);
+    fn extract_buffers(mut self, ctx: &GlCtx) -> Result<TetraBuffers> {
+        for tetra in self.mesh.tetras.values() {
+            self.push_tetra(tetra);
         }
-    }
 
-    fn extract_buffers(mut self, ctx: &GlCtx) -> Result<CubeBuffers> {
+        for tri in self.mesh.tris.values() {
+            self.push_wireframe_tri(tri);
+        }
+
         // Average normals
         for normal in self.normals.values_mut() {
             normal.normalize();
@@ -529,17 +514,20 @@ impl<'a> CubeBufferer<'a> {
 
         // Buffer data
         let element_buffer = ctx.mk_element_buffer(&self.elements, ElementKind::Triangles)?;
-        let wireframe_element_buffer =
-            ctx.mk_element_buffer(&self.wireframe_elements, ElementKind::Lines)?;
+        let projected_wireframe_element_buffer =
+            ctx.mk_element_buffer(&self.projected_wireframe_elements, ElementKind::Lines)?;
+        let animated_wireframe_element_buffer =
+            ctx.mk_element_buffer(&self.animated_wireframe_elements, ElementKind::Lines)?;
         let vertex_start_buffer = ctx.mk_buffer(&self.segment_starts.into_raw())?;
         let vertex_end_buffer = ctx.mk_buffer(&self.segment_ends.into_raw())?;
         let wireframe_vertex_buffer = ctx.mk_buffer(&self.wireframe_vertices)?;
         let normal_start_buffer = ctx.mk_buffer(&normal_starts.into_raw())?;
         let normal_end_buffer = ctx.mk_buffer(&normal_ends.into_raw())?;
 
-        Ok(CubeBuffers {
+        Ok(TetraBuffers {
             element_buffer,
-            wireframe_element_buffer,
+            projected_wireframe_element_buffer,
+            animated_wireframe_element_buffer,
             vertex_start_buffer,
             vertex_end_buffer,
             wireframe_vertex_buffer,
@@ -549,20 +537,18 @@ impl<'a> CubeBufferer<'a> {
     }
 }
 
-impl Mesh {
-    pub fn buffer_squares(
+impl SimplicialMesh {
+    #[inline]
+    pub fn buffer_tris(
         &self,
         ctx: &GlCtx,
         segments_per_cyllinder: u8,
-    ) -> Result<Vec<SquareVertexArrayData>> {
-        let mut ctx = SquareBufferingCtx::new(ctx, self, segments_per_cyllinder);
-        ctx.triangulate()?;
-        ctx.extract_buffers()
+    ) -> Result<Vec<TriVertexArrayData>> {
+        TriBufferingCtx::new(ctx, self, segments_per_cyllinder).extract_buffers()
     }
 
-    pub fn buffer_cubes(&self, ctx: &GlCtx) -> Result<CubeBuffers> {
-        let mut bufferer = CubeBufferer::new(self);
-        bufferer.triangulate();
-        bufferer.extract_buffers(ctx)
+    #[inline]
+    pub fn buffer_tetras(&self, ctx: &GlCtx) -> Result<TetraBuffers> {
+        TetraBufferer::new(self).extract_buffers(ctx)
     }
 }
