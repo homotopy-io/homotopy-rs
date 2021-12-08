@@ -1647,7 +1647,7 @@ dependencies = [
 [[package]]
 name = "yew"
 version = "0.19.1"
-source = "git+https://github.com/yewstack/yew#63eb95ca4452302c63c6664f6add67293345bf33"
+source = "git+https://github.com/yewstack/yew#d2857c9c4e395f08f19a4fcb9ff3c013b084f550"
 dependencies = [
  "console_error_panic_hook",
  "gloo",
@@ -1665,7 +1665,7 @@ dependencies = [
 [[package]]
 name = "yew-agent"
 version = "0.1.0"
-source = "git+https://github.com/yewstack/yew#63eb95ca4452302c63c6664f6add67293345bf33"
+source = "git+https://github.com/yewstack/yew#d2857c9c4e395f08f19a4fcb9ff3c013b084f550"
 dependencies = [
  "anymap2",
  "bincode",
@@ -1683,7 +1683,7 @@ dependencies = [
 [[package]]
 name = "yew-macro"
 version = "0.19.1"
-source = "git+https://github.com/yewstack/yew#63eb95ca4452302c63c6664f6add67293345bf33"
+source = "git+https://github.com/yewstack/yew#d2857c9c4e395f08f19a4fcb9ff3c013b084f550"
 dependencies = [
  "boolinator",
  "lazy_static",
