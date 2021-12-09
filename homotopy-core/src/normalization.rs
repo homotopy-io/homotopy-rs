@@ -5,11 +5,12 @@ use std::{
     rc::Rc,
 };
 
+use homotopy_common::hash::FastHashMap;
+
 use crate::{
     common::{Height, SingularHeight},
     diagram::{Diagram, DiagramN},
     rewrite::{Cospan, Rewrite, RewriteN},
-    util::FastHashMap,
 };
 
 /// A degeneracy map which keeps track of a subset of identity levels in a diagram.

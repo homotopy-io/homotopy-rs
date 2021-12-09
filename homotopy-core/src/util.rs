@@ -1,10 +1,3 @@
-use std::{
-    collections::{HashMap, HashSet},
-    hash::BuildHasherDefault,
-};
-
-use rustc_hash::FxHasher;
-
 use crate::common::Generator;
 
 pub(crate) fn first_max_generator<I>(iterator: I) -> Option<Generator>
@@ -22,7 +15,3 @@ where
 
     max
 }
-
-pub(crate) type Hasher = BuildHasherDefault<FxHasher>;
-pub(crate) type FastHashMap<K, V> = HashMap<K, V, Hasher>;
-pub(crate) type FastHashSet<K> = HashSet<K, Hasher>;

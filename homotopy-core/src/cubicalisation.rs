@@ -6,6 +6,7 @@ use std::{
     iter::FromIterator,
 };
 
+use homotopy_common::hash::FastHasher;
 use hashconsing::{HConsed, HConsign, HashConsign};
 use homotopy_common::{
     graph::{Edge, Graph, Node},
@@ -23,7 +24,6 @@ use crate::{
         Composable, CompositionError, ConeInternal, Cospan, GenericCone, GenericCospan,
         GenericRewrite, GenericRewriteN, RewriteAllocator, RewriteInternal,
     },
-    util::Hasher,
 };
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
@@ -1187,11 +1187,11 @@ impl CubicalGraph {
 // Cubical rewrites
 
 thread_local! {
-    static CONE_FACTORY: RefCell<HConsign<ConeInternal<CubicalAllocator>, Hasher>> =
-        RefCell::new(HConsign::with_capacity_and_hasher(37, Hasher::default()));
+    static CONE_FACTORY: RefCell<HConsign<ConeInternal<CubicalAllocator>, FastHasher>> =
+        RefCell::new(HConsign::with_capacity_and_hasher(37, FastHasher::default()));
 
-    static REWRITE_FACTORY: RefCell<HConsign<RewriteInternal<CubicalAllocator>, Hasher>> =
-        RefCell::new(HConsign::with_capacity_and_hasher(37, Hasher::default()));
+    static REWRITE_FACTORY: RefCell<HConsign<RewriteInternal<CubicalAllocator>, FastHasher>> =
+        RefCell::new(HConsign::with_capacity_and_hasher(37, FastHasher::default()));
 }
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]

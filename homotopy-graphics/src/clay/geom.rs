@@ -282,7 +282,7 @@ pub mod simplicial {
 
     use homotopy_common::parity;
 
-    use super::{cubical, CurveDataInner, Deref, DerefMut, IdxVec, Vert};
+    use super::{cubical, Carries, CurveDataInner, Deref, DerefMut, IdxVec, Mesh, Vert};
 
     #[derive(Copy, Clone, PartialEq, Eq, Debug)]
     pub enum Orientation {
@@ -349,65 +349,66 @@ pub mod simplicial {
 
     impl From<cubical::CubicalMesh> for SimplicialMesh {
         fn from(cubical: cubical::CubicalMesh) -> Self {
-            let mut lines = IdxVec::with_capacity(cubical.lines.len());
-            let mut tris = IdxVec::with_capacity(cubical.squares.len() * 2);
-            let mut tetras = IdxVec::with_capacity(cubical.cubes.len() * 5);
+            const TRI_ASSEMBLY_ORDER: [[usize; 3]; 2] = [[0, 1, 2], [1, 3, 2]];
 
-            let time_order = |i, j| {
-                cubical.verts[i]
+            const TETRA_ASSEMBLY_ORDER: [[usize; 4]; 5] = [
+                [1, 4, 5, 7],
+                [0, 4, 1, 2],
+                [1, 7, 3, 2],
+                [4, 6, 7, 2],
+                [1, 7, 2, 4],
+            ];
+
+            #[inline]
+            fn time_order<M: Mesh>(mesh: &M, i: Vert, j: Vert) -> Ordering {
+                let verts = mesh.verts();
+                verts[i]
                     .w
-                    .partial_cmp(&cubical.verts[j].w)
+                    .partial_cmp(&verts[j].w)
                     .unwrap_or(Ordering::Equal)
-            };
-
-            let mut push_line = |i, j| {
-                let mut verts = [i, j];
-                let parity = parity::sort_2(&mut verts, &time_order);
-                lines.push(Oriented::from_parity(verts, parity));
-            };
-
-            let mut push_tri = |i, j, k| {
-                if i != j && j != k && k != i {
-                    let mut verts = [i, j, k];
-                    let parity = parity::sort_3(&mut verts, &time_order);
-                    tris.push(Oriented::from_parity(verts, parity));
-                }
-            };
-
-            let mut push_tetra = |i, j, k, l| {
-                if i != j && j != k && k != l && l != i {
-                    let mut verts = [i, j, k, l];
-                    let parity = parity::sort_4(&mut verts, &time_order);
-                    tetras.push(Oriented::from_parity(verts, parity));
-                }
-            };
-
-            for line in cubical.lines.into_values() {
-                push_line(line[0], line[1]);
             }
 
-            for square in cubical.squares.into_values() {
-                push_tri(square[0], square[1], square[2]);
-                push_tri(square[1], square[3], square[2]);
-            }
-
-            for cube in cubical.cubes.into_values() {
-                push_tetra(cube[1], cube[4], cube[5], cube[7]);
-                push_tetra(cube[0], cube[4], cube[1], cube[2]);
-                push_tetra(cube[1], cube[7], cube[3], cube[2]);
-                push_tetra(cube[4], cube[6], cube[7], cube[2]);
-                push_tetra(cube[1], cube[7], cube[2], cube[4]);
-            }
-
-            Self {
+            let mut simplicial = Self {
                 diagram: cubical.diagram,
                 verts: cubical.verts,
                 points: cubical.points.reindex(),
-                lines,
-                tris,
-                tetras,
+                lines: IdxVec::with_capacity(cubical.lines.len()),
+                tris: IdxVec::with_capacity(cubical.squares.len() * 2),
+                tetras: IdxVec::with_capacity(cubical.cubes.len() * 5),
                 curves: cubical.curves.reindex(),
+            };
+
+            for line in cubical.lines.into_values() {
+                let mut verts = [line[0], line[1]];
+                let parity = parity::sort_2(&mut verts, |i, j| time_order(&simplicial, i, j));
+                simplicial.mk(Oriented::from_parity(verts, parity));
             }
+
+            for square in cubical.squares.into_values() {
+                for [i, j, k] in TRI_ASSEMBLY_ORDER {
+                    let mut verts @ [i, j, k] = [square[i], square[j], square[k]];
+
+                    if i != j && j != k && k != i {
+                        let parity =
+                            parity::sort_3(&mut verts, |i, j| time_order(&simplicial, i, j));
+                        simplicial.mk(Oriented::from_parity(verts, parity));
+                    }
+                }
+            }
+
+            for cube in cubical.cubes.into_values() {
+                for [i, j, k, l] in TETRA_ASSEMBLY_ORDER {
+                    let mut verts @ [i, j, k, l] = [cube[i], cube[j], cube[k], cube[l]];
+
+                    if i != j && j != k && k != l && l != i {
+                        let parity =
+                            parity::sort_4(&mut verts, |i, j| time_order(&simplicial, i, j));
+                        simplicial.mk(Oriented::from_parity(verts, parity));
+                    }
+                }
+            }
+
+            simplicial
         }
     }
 }

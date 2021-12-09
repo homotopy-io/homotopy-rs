@@ -6,6 +6,7 @@ use std::{
 };
 
 use thiserror::Error;
+use homotopy_common::hash::FastHashMap;
 
 pub use crate::common::Mode;
 use crate::{
@@ -14,7 +15,6 @@ use crate::{
     normalization::normalize,
     rewrite::{Cone, Cospan, Rewrite, RewriteN},
     signature::Signature,
-    util::FastHashMap,
     Boundary,
 };
 

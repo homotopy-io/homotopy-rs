@@ -1,17 +1,16 @@
 use std::{
     cmp::Ordering,
-    collections::{HashMap, HashSet},
     hash::Hash,
 };
 
 use euclid::default::Transform2D;
+use homotopy_common::hash::FastHashMap;
 use homotopy_core::{
     common::{Generator, Height, SliceIndex},
     complex::Simplex,
     projection::{Depths, Generators},
 };
 use lyon_path::Path;
-use seahash::SeaHasher;
 
 use crate::svg::{
     geom::{Circle, Fill, Point, Shape, Stroke},
@@ -112,10 +111,6 @@ pub enum GraphicElement {
     /// A point that is drawn as a circle.
     Point(Generator, Point),
 }
-
-type FastHashMap<K, V> = HashMap<K, V, std::hash::BuildHasherDefault<SeaHasher>>;
-#[allow(dead_code)]
-type FastHashSet<K> = HashSet<K, std::hash::BuildHasherDefault<SeaHasher>>;
 
 impl GraphicElement {
     /// Apply an affine coordinate transformation to the element.

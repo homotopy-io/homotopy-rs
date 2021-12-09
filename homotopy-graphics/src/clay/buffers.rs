@@ -1,11 +1,11 @@
 use std::{
-    collections::HashMap,
     f32::consts::{PI, TAU},
     mem,
 };
 
 use homotopy_common::{
     declare_idx,
+    hash::FastHashMap,
     idx::{Idx, IdxVec},
 };
 use homotopy_core::Generator;
@@ -37,7 +37,7 @@ pub struct TriVertexArrayData {
 struct TriBufferingState {
     elements: Vec<u16>,
     verts: Vec<Vec3>,
-    mapping: HashMap<Vert, u16>,
+    mapping: FastHashMap<Vert, u16>,
     wireframe_elements: Vec<u16>,
     normals: Vec<Vec3>,
 }
@@ -45,7 +45,7 @@ struct TriBufferingState {
 struct TriBufferingCtx<'a> {
     ctx: &'a GlCtx,
     mesh: &'a SimplicialMesh,
-    state: HashMap<Generator, TriBufferingState>,
+    state: FastHashMap<Generator, TriBufferingState>,
     complete_arrays: Vec<TriVertexArrayData>,
     geometry_samples: u8,
 }
@@ -329,7 +329,7 @@ impl Default for TriBufferingState {
         Self {
             elements: Vec::with_capacity(VAO_LIMIT),
             verts: Vec::with_capacity(VAO_LIMIT),
-            mapping: Default::default(),
+            mapping: FastHashMap::with_capacity_and_hasher(VAO_LIMIT, Default::default()),
             wireframe_elements: Vec::with_capacity(VAO_LIMIT),
             normals: Vec::with_capacity(VAO_LIMIT),
         }
@@ -353,7 +353,7 @@ declare_idx! { struct Segment = u16; }
 struct TetraBufferer<'a> {
     mesh: &'a SimplicialMesh,
 
-    segment_cache: HashMap<(Vert, Vert), Segment>,
+    segment_cache: FastHashMap<(Vert, Vert), Segment>,
     elements: Vec<u16>,
     animated_wireframe_elements: Vec<u16>,
 
@@ -373,7 +373,7 @@ impl<'a> TetraBufferer<'a> {
         Self {
             mesh,
 
-            segment_cache: HashMap::new(),
+            segment_cache: FastHashMap::with_capacity_and_hasher(segments, Default::default()),
             elements: Vec::with_capacity(segments),
             animated_wireframe_elements: Vec::with_capacity(segments),
 
