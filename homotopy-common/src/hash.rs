@@ -1,5 +1,7 @@
-use std::hash::BuildHasherDefault;
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    hash::BuildHasherDefault,
+};
 
 use rustc_hash::FxHasher;
 

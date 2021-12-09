@@ -6,10 +6,10 @@ use std::{
     iter::FromIterator,
 };
 
-use homotopy_common::hash::FastHasher;
 use hashconsing::{HConsed, HConsign, HashConsign};
 use homotopy_common::{
     graph::{Edge, Graph, Node},
+    hash::FastHasher,
     idx::IdxVec,
     union_find::UnionFind,
 };
