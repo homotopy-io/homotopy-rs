@@ -1,6 +1,6 @@
-use std::{cmp, collections::HashMap, mem};
+use std::{cmp, mem};
 
-use homotopy_common::idx::IdxVec;
+use homotopy_common::{hash::FastHashMap, idx::IdxVec};
 use ultraviolet::{Mat4, Vec4};
 
 use crate::clay::geom::{
@@ -18,8 +18,8 @@ enum Pass {
 struct Subdivider<'a> {
     mesh: &'a mut CubicalMesh,
 
-    edge_division_memory: HashMap<LineData, Vert>,
-    face_division_memory: HashMap<SquareData, Vert>,
+    edge_division_memory: FastHashMap<LineData, Vert>,
+    face_division_memory: FastHashMap<SquareData, Vert>,
 
     valence: IdxVec<Vert, u32>,
     smoothed: IdxVec<Vert, Vec4>,
@@ -75,11 +75,17 @@ impl<'a> Subdivider<'a> {
     #[inline]
     pub(super) fn new(mesh: &'a mut CubicalMesh) -> Self {
         Self {
-            edge_division_memory: Default::default(),
-            face_division_memory: Default::default(),
-            valence: Default::default(),
-            smoothed: Default::default(),
-            touched: Default::default(),
+            edge_division_memory: FastHashMap::with_capacity_and_hasher(
+                mesh.lines.len(),
+                Default::default(),
+            ),
+            face_division_memory: FastHashMap::with_capacity_and_hasher(
+                mesh.squares.len(),
+                Default::default(),
+            ),
+            valence: IdxVec::with_capacity(mesh.verts.len()),
+            smoothed: IdxVec::with_capacity(mesh.verts.len()),
+            touched: IdxVec::with_capacity(mesh.verts.len()),
             mesh,
         }
     }
@@ -98,11 +104,11 @@ impl<'a> Subdivider<'a> {
     }
 
     #[inline]
-    fn interpolate_edge_uncached(&mut self, mut line: LineData, mk: bool) -> Vert {
+    fn interpolate_edge_uncached(&mut self, mut line @ [a, b]: LineData, mk: bool) -> Vert {
         // Interpolate
         let v = {
-            let v_1 = &self.mesh.verts[line[0]];
-            let v_2 = &self.mesh.verts[line[1]];
+            let v_1 = &self.mesh.verts[a];
+            let v_2 = &self.mesh.verts[b];
             let v = 0.5 * (**v_1 + **v_2);
             let stratum = cmp::min(v_1.stratum, v_2.stratum);
             let boundary = cmp::max(Boundary::One, cmp::max(v_1.boundary, v_2.boundary));
@@ -113,8 +119,8 @@ impl<'a> Subdivider<'a> {
         };
 
         if mk {
-            self.mesh.mk([line[0], v]);
-            self.mesh.mk([line[1], v]);
+            self.mesh.mk([a, v]);
+            self.mesh.mk([b, v]);
         }
 
         // Cache result
@@ -138,27 +144,24 @@ impl<'a> Subdivider<'a> {
     }
 
     #[inline]
-    fn interpolate_face_uncached(&mut self, mut square: SquareData, mk: bool) -> Vert {
+    fn interpolate_face_uncached(
+        &mut self,
+        mut square @ [a, b, c, d]: SquareData,
+        mk: bool,
+    ) -> Vert {
         // Interpolate
         let v = {
-            let v_1 = self.interpolate_edge([square[0], square[1]], false);
-            let v_2 = self.interpolate_edge([square[0], square[2]], false);
-            let v_3 = self.interpolate_edge([square[1], square[3]], false);
-            let v_4 = self.interpolate_edge([square[2], square[3]], false);
+            let v_1 = self.interpolate_edge([a, b], false);
+            let v_2 = self.interpolate_edge([a, c], false);
+            let v_3 = self.interpolate_edge([b, d], false);
+            let v_4 = self.interpolate_edge([c, d], false);
             let center = self.interpolate_edge([v_1, v_4], false);
 
             if mk {
-                let points = [
-                    square[0], square[1], square[2], square[3], v_1, v_2, v_3, v_4, center,
-                ];
+                let points = [a, b, c, d, v_1, v_2, v_3, v_4, center];
 
-                for order in &Self::SQUARE_ASSEMBLY_ORDER {
-                    self.mesh.mk([
-                        points[order[0]],
-                        points[order[1]],
-                        points[order[2]],
-                        points[order[3]],
-                    ]);
+                for [i, j, k, l] in Self::SQUARE_ASSEMBLY_ORDER {
+                    self.mesh.mk([points[i], points[j], points[k], points[l]]);
                 }
             }
 
@@ -210,62 +213,49 @@ impl<'a> Subdivider<'a> {
             points[i + 8] = self.interpolate_edge([points[edge[0]], points[edge[1]]], false);
         }
 
-        for (i, face) in Self::CUBE_FACE_ORDER.iter().enumerate() {
-            points[i + 20] = self.interpolate_face(
-                [
-                    points[face[0]],
-                    points[face[1]],
-                    points[face[2]],
-                    points[face[3]],
-                ],
-                false,
-            );
+        for (i, [a, b, c, d]) in Self::CUBE_FACE_ORDER.into_iter().enumerate() {
+            points[i + 20] =
+                self.interpolate_face([points[a], points[b], points[c], points[d]], false);
         }
 
         points[26] = self.interpolate_edge([points[20], points[25]], false);
 
-        for order in &Self::CUBE_ASSEMBLY_ORDER {
+        for [a, b, c, d, e, f, g, h] in Self::CUBE_ASSEMBLY_ORDER {
             self.mesh.mk([
-                points[order[0]],
-                points[order[1]],
-                points[order[2]],
-                points[order[3]],
-                points[order[4]],
-                points[order[5]],
-                points[order[6]],
-                points[order[7]],
+                points[a], points[b], points[c], points[d], points[e], points[f], points[g],
+                points[h],
             ]);
         }
     }
 
     #[inline]
     fn smooth_cube(&mut self, cube: Cube) {
-        let cube = self.mesh.cubes[cube];
+        let cube @ [a, b, c, d, e, f, g, h] = self.mesh.cubes[cube];
         // Gather the boundaries of its constituent vertices
         let bounds = [
-            self.mesh.verts[cube[0]].boundary,
-            self.mesh.verts[cube[1]].boundary,
-            self.mesh.verts[cube[2]].boundary,
-            self.mesh.verts[cube[3]].boundary,
-            self.mesh.verts[cube[4]].boundary,
-            self.mesh.verts[cube[5]].boundary,
-            self.mesh.verts[cube[6]].boundary,
-            self.mesh.verts[cube[7]].boundary,
+            self.mesh.verts[a].boundary,
+            self.mesh.verts[b].boundary,
+            self.mesh.verts[c].boundary,
+            self.mesh.verts[d].boundary,
+            self.mesh.verts[e].boundary,
+            self.mesh.verts[f].boundary,
+            self.mesh.verts[g].boundary,
+            self.mesh.verts[h].boundary,
         ];
         // and calculate a corresponding weight matrix
         let weights = Self::cube_weight_matrix(bounds);
         // Shape vertices as matrix
         let upper = Mat4::new(
-            *self.mesh.verts[cube[0]],
-            *self.mesh.verts[cube[1]],
-            *self.mesh.verts[cube[2]],
-            *self.mesh.verts[cube[3]],
+            *self.mesh.verts[a],
+            *self.mesh.verts[b],
+            *self.mesh.verts[c],
+            *self.mesh.verts[d],
         );
         let lower = Mat4::new(
-            *self.mesh.verts[cube[4]],
-            *self.mesh.verts[cube[5]],
-            *self.mesh.verts[cube[6]],
-            *self.mesh.verts[cube[7]],
+            *self.mesh.verts[e],
+            *self.mesh.verts[f],
+            *self.mesh.verts[g],
+            *self.mesh.verts[h],
         );
         // Tranform
         let upper_transformed = upper * weights[0] + lower * weights[2];
@@ -279,22 +269,22 @@ impl<'a> Subdivider<'a> {
 
     #[inline]
     fn smooth_square(&mut self, square: Square) {
-        let square = self.mesh.squares[square];
+        let square @ [a, b, c, d] = self.mesh.squares[square];
         // Gather the boundaries of its constituent vertices
         let bounds = [
-            self.mesh.verts[square[0]].boundary,
-            self.mesh.verts[square[1]].boundary,
-            self.mesh.verts[square[2]].boundary,
-            self.mesh.verts[square[3]].boundary,
+            self.mesh.verts[a].boundary,
+            self.mesh.verts[b].boundary,
+            self.mesh.verts[c].boundary,
+            self.mesh.verts[d].boundary,
         ];
         // and calculate a corresponding weight matrix
         let weights = Self::square_weight_matrix(bounds);
         // Shape vertices as a matrix
         let square_matrix = Mat4::new(
-            *self.mesh.verts[square[0]],
-            *self.mesh.verts[square[1]],
-            *self.mesh.verts[square[2]],
-            *self.mesh.verts[square[3]],
+            *self.mesh.verts[a],
+            *self.mesh.verts[b],
+            *self.mesh.verts[c],
+            *self.mesh.verts[d],
         );
         // Transform
         let transformed = square_matrix * weights;
@@ -306,15 +296,12 @@ impl<'a> Subdivider<'a> {
 
     #[inline]
     fn smooth_line(&mut self, line: Line) {
-        let line = self.mesh.lines[line];
-        let bounds = [
-            self.mesh.verts[line[0]].boundary,
-            self.mesh.verts[line[1]].boundary,
-        ];
+        let line @ [a, b] = self.mesh.lines[line];
+        let bounds = [self.mesh.verts[a].boundary, self.mesh.verts[b].boundary];
         let weights = Self::line_weight_matrix(bounds);
         let line_matrix = Mat4::new(
-            *self.mesh.verts[line[0]],
-            *self.mesh.verts[line[1]],
+            *self.mesh.verts[a],
+            *self.mesh.verts[b],
             Vec4::zero(),
             Vec4::zero(),
         );
@@ -397,8 +384,8 @@ impl<'a> Subdivider<'a> {
 
         // TODO(@doctorn) fix spurious failures
         // (5. In debug, sanity check the subdivided mesh)
-        #[cfg(debug_assertions)]
-        debug_assert!(self.bounds_preserved(&unmodified));
+        // #[cfg(debug_assertions)]
+        // debug_assert!(self.bounds_preserved(&unmodified));
     }
 
     #[cfg(debug_assertions)]

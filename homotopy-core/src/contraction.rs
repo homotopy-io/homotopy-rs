@@ -3,6 +3,7 @@ use std::{
     hash::Hash,
 };
 
+use homotopy_common::hash::{FastHashMap, FastHashSet};
 use petgraph::{
     algo::kosaraju_scc,
     graph::{DiGraph, NodeIndex},
@@ -21,7 +22,6 @@ use crate::{
     rewrite::{Cone, Cospan, Rewrite, Rewrite0, RewriteN},
     signature::Signature,
     typecheck::{typecheck_cospan, TypeError},
-    util::{FastHashMap, FastHashSet},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
