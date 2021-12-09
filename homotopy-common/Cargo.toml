@@ -8,7 +8,7 @@ edition = "2021"
 
 [dependencies]
 rustc-hash = "1.1.0"
-serde = { features = ["derive"], version = "1.0.130" }
+serde = { features = ["derive"], version = "1.0.131" }
 
 [dev-dependencies]
 cargo-husky = { features = ["precommit-hook", "run-cargo-check", "run-cargo-test", "run-cargo-fmt", "run-cargo-clippy"], version = "1.5.0" }

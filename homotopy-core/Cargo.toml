@@ -13,7 +13,7 @@ hashconsing = "1.5.0"
 highway = "0.6.4"
 log = "0.4.14"
 petgraph = "0.6.0"
-serde = { features = ["derive"], version = "1.0.130" }
+serde = { features = ["derive"], version = "1.0.131" }
 rmp-serde = { features = ["serde128"], version = "0.15.5" } # u128 support is new
 itertools = "0.10.1"
 thiserror = "1.0.30"
