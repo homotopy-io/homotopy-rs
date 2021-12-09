@@ -4,7 +4,7 @@ use homotopy_common::{declare_idx, graph::Edge};
 use homotopy_core::{
     common::DimensionError,
     cubicalisation::{Bias, CubicalGraph},
-    Diagram, DiagramN, Direction, Generator, SliceIndex,
+    Diagram, DiagramN, Direction, Generator, Height, SliceIndex,
 };
 use ultraviolet::Vec4;
 
@@ -70,9 +70,17 @@ impl CubicalMeshExtractor {
                 Vec4::new(mk_coord(0), mk_coord(1), mk_coord(2), mk_coord(3))
             };
             let vert = coords.get(label).copied().unwrap_or_else(|| {
+                let stratum = label
+                    .iter()
+                    .map(|index| match index {
+                        SliceIndex::Interior(Height::Singular(_)) => 1,
+                        _ => 0,
+                    })
+                    .sum();
                 let boundary = Boundary::at_coord(graph.label(node));
                 let generator = data.1.max_generator();
-                let vert = mesh.mk(Vec4::zero().with_boundary_and_generator(boundary, generator));
+                let vert =
+                    mesh.mk(Vec4::zero().with_boundary_and_generator(stratum, boundary, generator));
 
                 coords.insert(label.to_owned(), vert);
                 vert

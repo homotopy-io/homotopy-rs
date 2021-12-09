@@ -104,11 +104,12 @@ impl<'a> Subdivider<'a> {
             let v_1 = &self.mesh.verts[line[0]];
             let v_2 = &self.mesh.verts[line[1]];
             let v = 0.5 * (**v_1 + **v_2);
+            let stratum = cmp::min(v_1.stratum, v_2.stratum);
             let boundary = cmp::max(Boundary::One, cmp::max(v_1.boundary, v_2.boundary));
             let generator = cmp::min_by_key(v_1.generator, v_2.generator, |g| g.dimension);
 
             self.mesh
-                .mk(v.with_boundary_and_generator(boundary, generator))
+                .mk(v.with_boundary_and_generator(stratum, boundary, generator))
         };
 
         if mk {
