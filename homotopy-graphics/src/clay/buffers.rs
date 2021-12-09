@@ -82,13 +82,14 @@ impl<'a> TriBufferingCtx<'a> {
 
     fn push_tri(&mut self, tri: &TriData) -> Result<()> {
         let generator = tri
-            .iter()
-            .map(|v| self.mesh.verts[*v].generator)
-            .min_by_key(|g| g.dimension)
-            .unwrap();
+            .into_iter()
+            .map(|v| &self.mesh.verts[v])
+            .min_by_key(|v| (v.stratum, v.generator.dimension))
+            .unwrap()
+            .generator;
         let mesh = self.mesh;
 
-        self.with_state(generator, 4, |state| {
+        self.with_state(generator, 3, |state| {
             let v_0 = state.push_vert(mesh, tri[0]);
             let v_1 = state.push_vert(mesh, tri[1]);
             let v_2 = state.push_vert(mesh, tri[2]);

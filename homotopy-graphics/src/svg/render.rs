@@ -1,7 +1,4 @@
-use std::{
-    cmp::Ordering,
-    hash::Hash,
-};
+use std::{cmp::Ordering, hash::Hash};
 
 use euclid::default::Transform2D;
 use homotopy_common::hash::FastHashMap;

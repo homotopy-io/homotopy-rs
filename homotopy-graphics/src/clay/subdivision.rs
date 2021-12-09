@@ -107,12 +107,13 @@ impl<'a> Subdivider<'a> {
     fn interpolate_edge_uncached(&mut self, mut line @ [a, b]: LineData, mk: bool) -> Vert {
         // Interpolate
         let v = {
-            let v_1 = &self.mesh.verts[a];
-            let v_2 = &self.mesh.verts[b];
-            let v = 0.5 * (**v_1 + **v_2);
-            let stratum = cmp::min(v_1.stratum, v_2.stratum);
-            let boundary = cmp::max(Boundary::One, cmp::max(v_1.boundary, v_2.boundary));
-            let generator = cmp::min_by_key(v_1.generator, v_2.generator, |g| g.dimension);
+            let v_0 = &self.mesh.verts[a];
+            let v_1 = &self.mesh.verts[b];
+            let v = 0.5 * (**v_0 + **v_1);
+            let stratum = cmp::min(v_0.stratum, v_1.stratum);
+            let boundary = cmp::max(Boundary::One, cmp::max(v_0.boundary, v_1.boundary));
+            let generator =
+                cmp::min_by_key(v_0, v_1, |v| (v.stratum, v.generator.dimension)).generator;
 
             self.mesh
                 .mk(v.with_boundary_and_generator(stratum, boundary, generator))
@@ -384,8 +385,8 @@ impl<'a> Subdivider<'a> {
 
         // TODO(@doctorn) fix spurious failures
         // (5. In debug, sanity check the subdivided mesh)
-        // #[cfg(debug_assertions)]
-        // debug_assert!(self.bounds_preserved(&unmodified));
+        #[cfg(debug_assertions)]
+        debug_assert!(self.bounds_preserved(&unmodified));
     }
 
     #[cfg(debug_assertions)]

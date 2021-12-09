@@ -349,16 +349,6 @@ pub mod simplicial {
 
     impl From<cubical::CubicalMesh> for SimplicialMesh {
         fn from(cubical: cubical::CubicalMesh) -> Self {
-            const TRI_ASSEMBLY_ORDER: [[usize; 3]; 2] = [[0, 1, 2], [1, 3, 2]];
-
-            const TETRA_ASSEMBLY_ORDER: [[usize; 4]; 5] = [
-                [1, 4, 5, 7],
-                [0, 4, 1, 2],
-                [1, 7, 3, 2],
-                [4, 6, 7, 2],
-                [1, 7, 2, 4],
-            ];
-
             #[inline]
             fn time_order<M: Mesh>(mesh: &M, i: Vert, j: Vert) -> Ordering {
                 let verts = mesh.verts();
@@ -384,7 +374,16 @@ pub mod simplicial {
                 simplicial.mk(Oriented::from_parity(verts, parity));
             }
 
-            for square in cubical.squares.into_values() {
+            for mut square in cubical.squares.into_values() {
+                const TRI_ASSEMBLY_ORDER: [[usize; 3]; 2] = [[0, 1, 2], [1, 3, 2]];
+
+                // Simplices need to have unique strata at each vertex in order to be coloured properly.
+                // If we see identical at the diagonal of the square, rotate counter-clockwise so we factor
+                // along the correct diagonal
+                if simplicial.verts[square[1]].stratum == simplicial.verts[square[2]].stratum {
+                    square = [square[1], square[3], square[0], square[2]];
+                }
+
                 for [i, j, k] in TRI_ASSEMBLY_ORDER {
                     let mut verts @ [i, j, k] = [square[i], square[j], square[k]];
 
@@ -396,7 +395,29 @@ pub mod simplicial {
                 }
             }
 
-            for cube in cubical.cubes.into_values() {
+            for mut cube in cubical.cubes.into_values() {
+                const TETRA_ASSEMBLY_ORDER: [[usize; 4]; 5] = [
+                    [1, 4, 5, 7],
+                    [0, 4, 1, 2],
+                    [1, 7, 3, 2],
+                    [4, 6, 7, 2],
+                    [1, 7, 2, 4],
+                ];
+
+                // See above (but this could be wrong)
+                if simplicial.verts[cube[0]].stratum == simplicial.verts[cube[7]].stratum {
+                    cube = if simplicial.verts[cube[1]].stratum == simplicial.verts[cube[6]].stratum
+                    {
+                        [
+                            cube[2], cube[0], cube[3], cube[1], cube[6], cube[4], cube[7], cube[5],
+                        ]
+                    } else {
+                        [
+                            cube[1], cube[5], cube[3], cube[7], cube[0], cube[4], cube[2], cube[6],
+                        ]
+                    };
+                }
+
                 for [i, j, k, l] in TETRA_ASSEMBLY_ORDER {
                     let mut verts @ [i, j, k, l] = [cube[i], cube[j], cube[k], cube[l]];
 

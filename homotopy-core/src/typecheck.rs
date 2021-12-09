@@ -5,8 +5,8 @@ use std::{
     rc::Rc,
 };
 
-use thiserror::Error;
 use homotopy_common::hash::FastHashMap;
+use thiserror::Error;
 
 pub use crate::common::Mode;
 use crate::{
