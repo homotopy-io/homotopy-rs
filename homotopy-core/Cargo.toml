@@ -10,7 +10,7 @@ edition = "2021"
 homotopy-common = { path = "../homotopy-common" }
 bimap = "0.6.1"
 hashconsing = "1.5.0"
-highway = "0.6.4"
+highway = "0.7.0"
 log = "0.4.14"
 petgraph = "0.6.0"
 serde = { features = ["derive"], version = "1.0.131" }
