@@ -198,14 +198,27 @@ fn load_solid_program(ctx: &GlCtx, dimension: ViewDimension) -> Result<Program> 
             "../../glsl/vert_3d.glsl",
             "../../glsl/frag.glsl",
             { position, normal },
-            { mvp, debug_normals, camera_pos, d },
+            {
+                mvp,
+                debug_normals,
+                lighting_disable,
+                camera_pos,
+                d,
+            },
         ),
         ViewDimension::Four => program!(
             ctx,
             "../../glsl/vert_4d.glsl",
             "../../glsl/frag.glsl",
             { position_start, position_end, normal_start, normal_end },
-            { mvp, debug_normals, camera_pos, d, t },
+            {
+                mvp,
+                debug_normals,
+                lighting_disable,
+                camera_pos,
+                d,
+                t,
+            },
         ),
     }
 }

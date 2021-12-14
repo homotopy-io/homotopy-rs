@@ -11,6 +11,7 @@ declare_settings! {
         wireframe_3d: bool = false,
         orthographic_3d: bool = false,
         debug_normals: bool = false,
+        disable_lighting: bool = false,
         debug_axes: bool = false,
         mesh_hidden: bool = false,
         subdivision_depth: u32 = 3,
@@ -25,6 +26,7 @@ pub enum SettingsMsg {
     ToggleDebugNormals,
     ToggleDebugAxes,
     ToggleMesh,
+    ToggleLighting,
     SetSubdivisionDepth(u32),
     SetGeometrySamples(u32),
     Setting(AppSettingsMsg),
@@ -90,6 +92,13 @@ impl Component for SettingsView {
                 }
                 {
                     self.view_checkbox(
+                        "Disable lighting",
+                        |local| *local.get_disable_lighting(),
+                        ctx.link().callback(|_| SettingsMsg::ToggleLighting),
+                    )
+                }
+                {
+                    self.view_checkbox(
                         "Debug axes",
                         |local| *local.get_debug_axes(),
                         ctx.link().callback(|_| SettingsMsg::ToggleDebugAxes),
@@ -136,6 +145,10 @@ impl Component for SettingsView {
             Self::Message::ToggleDebugNormals => {
                 self.settings
                     .set_debug_normals(!self.local.get_debug_normals());
+            }
+            Self::Message::ToggleLighting => {
+                self.settings
+                    .set_disable_lighting(!self.local.get_disable_lighting());
             }
             Self::Message::ToggleDebugAxes => {
                 self.settings.set_debug_axes(!self.local.get_debug_axes());
