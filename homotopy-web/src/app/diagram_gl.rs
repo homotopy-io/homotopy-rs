@@ -234,6 +234,7 @@ impl GlDiagramRenderer {
 
         if !*settings.get_mesh_hidden() {
             let normals = *settings.get_debug_normals();
+            let lighting = *settings.get_disable_lighting();
             let camera = camera.position();
             let signature = &self.signature;
 
@@ -248,6 +249,7 @@ impl GlDiagramRenderer {
                     draw!(array, {
                         mvp: vp,
                         debug_normals: normals,
+                        lighting_disable: lighting,
                         camera_pos: camera,
                         d: Vec3::new(color.red, color.green, color.blue),
                     })
@@ -266,6 +268,7 @@ impl GlDiagramRenderer {
                     draw!(array, {
                         mvp: vp,
                         debug_normals: normals,
+                        lighting_disable: lighting,
                         camera_pos: camera,
                         t: t,
                         d: color,

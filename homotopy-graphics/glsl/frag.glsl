@@ -3,6 +3,7 @@
 precision highp float;
 
 uniform bool debug_normals;
+uniform bool lighting_disable;
 uniform vec3 camera_pos;
 uniform vec3 d;
 
@@ -33,6 +34,8 @@ void main() {
 
   if (debug_normals) {
     frag_color = vec4(0.5 * (normal + vec3(1.)), 1.);
+  } else if (lighting_disable) {
+    frag_color = vec4(d, 1.);
   } else {
     vec3 l = normalize(camera_pos + light_offset - frag_pos);
 

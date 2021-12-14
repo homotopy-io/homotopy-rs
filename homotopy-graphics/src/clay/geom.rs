@@ -275,6 +275,50 @@ pub mod cubical {
             pub type Curve(usize) = CurveDataInner;
         }
     }
+
+    pub trait SquareRotation {
+        /// Rotate a square a quarter turn counter-clockwise around the z-axis.
+        fn rotate_z(&mut self);
+    }
+
+    impl SquareRotation for SquareData {
+        #[inline]
+        fn rotate_z(&mut self) {
+            let [i, j, k, l] = *self;
+            *self = [j, l, i, k];
+        }
+    }
+
+    pub trait CubeRotation {
+        /// Rotate a cube a quarter turn counter-clockwise around the x-axis.
+        fn rotate_x(&mut self);
+        /// Rotate a cube a quarter turn counter-clockwise around the y-axis.
+        fn rotate_y(&mut self);
+        /// Rotate a cube a quarter turn counter-clockwise around the z-axis.
+        fn rotate_z(&mut self);
+    }
+
+    impl CubeRotation for CubeData {
+        #![allow(clippy::many_single_char_names)]
+
+        #[inline]
+        fn rotate_x(&mut self) {
+            let [i, j, k, l, m, n, o, p] = *self;
+            *self = [m, n, i, j, o, p, k, l];
+        }
+
+        #[inline]
+        fn rotate_y(&mut self) {
+            let [i, j, k, l, m, n, o, p] = *self;
+            *self = [j, l, i, k, n, o, m, p];
+        }
+
+        #[inline]
+        fn rotate_z(&mut self) {
+            let [i, j, k, l, m, n, o, p] = *self;
+            *self = [m, i, o, k, n, j, p, l];
+        }
+    }
 }
 
 pub mod simplicial {
@@ -282,7 +326,10 @@ pub mod simplicial {
 
     use homotopy_common::parity;
 
-    use super::{cubical, Carries, CurveDataInner, Deref, DerefMut, IdxVec, Mesh, Vert};
+    use super::{
+        cubical::{self, CubeRotation, SquareRotation},
+        Carries, CurveDataInner, Deref, DerefMut, IdxVec, Mesh, Vert,
+    };
 
     #[derive(Copy, Clone, PartialEq, Eq, Debug)]
     pub enum Orientation {
@@ -381,7 +428,7 @@ pub mod simplicial {
                 // If we see identical at the diagonal of the square, rotate counter-clockwise so we factor
                 // along the correct diagonal
                 if simplicial.verts[square[1]].stratum == simplicial.verts[square[2]].stratum {
-                    square = [square[1], square[3], square[0], square[2]];
+                    square.rotate_z();
                 }
 
                 for [i, j, k] in TRI_ASSEMBLY_ORDER {
@@ -405,17 +452,19 @@ pub mod simplicial {
                 ];
 
                 // See above (but this could be wrong)
-                if simplicial.verts[cube[0]].stratum == simplicial.verts[cube[7]].stratum {
-                    cube = if simplicial.verts[cube[1]].stratum == simplicial.verts[cube[6]].stratum
-                    {
-                        [
-                            cube[2], cube[0], cube[3], cube[1], cube[6], cube[4], cube[7], cube[5],
-                        ]
-                    } else {
-                        [
-                            cube[1], cube[5], cube[3], cube[7], cube[0], cube[4], cube[2], cube[6],
-                        ]
-                    };
+                match cube {
+                    _ if cube[0] != cube[7] => {} // already ok
+                    _ if cube[1] != cube[6] => {
+                        cube.rotate_y();
+                        cube.rotate_x();
+                    }
+                    _ if cube[2] != cube[5] => {
+                        cube.rotate_y();
+                    }
+                    _ if cube[3] != cube[4] => {
+                        cube.rotate_x();
+                    }
+                    _ => {} // degenerate
                 }
 
                 for [i, j, k, l] in TETRA_ASSEMBLY_ORDER {
