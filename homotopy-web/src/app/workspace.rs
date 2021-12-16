@@ -1,7 +1,6 @@
 use std::convert::{Into, TryInto};
 
 use homotopy_core::{
-    attach::BoundaryPath,
     common::{Boundary, Height, SliceIndex},
     Diagram, DiagramN,
 };
@@ -167,39 +166,11 @@ fn highlight_attachment(workspace: &Workspace, signature: &Signature) -> Option<
         .try_into()
         .unwrap();
 
-    let mut boundary_path = attach_option.boundary_path.clone();
-    let mut embedding = attach_option.embedding.clone();
-
-    if let Some(BoundaryPath(boundary, depth)) = boundary_path {
-        if depth >= workspace.path.len() {
-            boundary_path = Some(BoundaryPath(boundary, depth - workspace.path.len()));
-        } else {
-            boundary_path = None;
-            embedding = embedding.skip(workspace.path.len() - depth - 1);
-        }
-    } else {
-        embedding = embedding.skip(workspace.path.len());
-    }
+    let boundary_path = attach_option.boundary_path;
+    let embedding = &attach_option.embedding;
 
     match boundary_path {
-        None => {
-            // Note: An empty boundary path implies that `needle` is one dimension
-            // higher than the currently displayed diagram. Since this function
-            // computes highlights for 2d diagrams, the `needle` diagram is at
-            // least three-dimensional.
-            let needle_s: DiagramN = needle.source().try_into().unwrap();
-            let needle_st: DiagramN = needle_s.target().try_into().unwrap();
-
-            Some(Highlight2D {
-                from: [Regular(embedding[1]).into(), Regular(embedding[0]).into()],
-                to: [
-                    Regular(embedding[1] + needle_st.size()).into(),
-                    Regular(embedding[0] + needle_s.size()).into(),
-                ],
-                kind: HighlightKind::Attach,
-            })
-        }
-        Some(bp) if bp.depth() == 0 => {
+        Some(bp) if bp.depth() == workspace.path.len() => {
             let slice: DiagramN = needle
                 .slice(bp.boundary().flip())
                 .unwrap()
@@ -212,11 +183,41 @@ fn highlight_attachment(workspace: &Workspace, signature: &Signature) -> Option<
                 kind: HighlightKind::Attach,
             })
         }
-        Some(bp) => Some(Highlight2D {
+        Some(bp) if bp.depth() > workspace.path.len() => Some(Highlight2D {
             from: [bp.boundary().into(), Boundary::Source.into()],
             to: [bp.boundary().into(), Boundary::Target.into()],
             kind: HighlightKind::Attach,
         }),
+        Some(bp) if bp.boundary() == Boundary::Source => {
+            let embedding = embedding.skip(workspace.path.len() - bp.depth() - 1);
+            Some(Highlight2D {
+                from: [Regular(embedding[1]).into(), Regular(embedding[0]).into()],
+                to: [
+                    Regular(embedding[1] + 1).into(),
+                    Regular(embedding[0]).into(),
+                ],
+                kind: HighlightKind::Attach,
+            })
+        }
+        _ => {
+            // Note: An empty boundary path implies that `needle` is one dimension
+            // higher than the currently displayed diagram. Since this function
+            // computes highlights for 2d diagrams, the `needle` diagram is at
+            // least three-dimensional.
+            let depth = boundary_path.map_or(0, |bp| bp.depth() + 1);
+            let embedding = embedding.skip(workspace.path.len() - depth);
+            let needle_s: DiagramN = needle.source().try_into().unwrap();
+            let needle_st: DiagramN = needle_s.target().try_into().unwrap();
+
+            Some(Highlight2D {
+                from: [Regular(embedding[1]).into(), Regular(embedding[0]).into()],
+                to: [
+                    Regular(embedding[1] + needle_st.size()).into(),
+                    Regular(embedding[0] + needle_s.size()).into(),
+                ],
+                kind: HighlightKind::Attach,
+            })
+        }
     }
 }
 
