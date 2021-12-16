@@ -455,9 +455,7 @@ impl ProofState {
                     .unwrap(),
             };
 
-            let boundary: Boundary = boundary_path
-                .clone()
-                .map_or(Boundary::Target, |bp| bp.boundary());
+            let boundary: Boundary = boundary_path.map_or(Boundary::Target, |bp| bp.boundary());
 
             for info in self.signature.iter() {
                 if info.diagram.dimension() == haystack.dimension() + 1 {
@@ -472,7 +470,7 @@ impl ProofState {
                             .filter(|embedding| contains_point(needle.clone(), &point, embedding))
                             .map(|embedding| AttachOption {
                                 embedding: embedding.into_iter().collect(),
-                                boundary_path: boundary_path.clone(),
+                                boundary_path,
                                 generator: info.generator,
                             }),
                     );

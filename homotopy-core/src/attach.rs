@@ -8,7 +8,7 @@ use crate::{
     rewrite::Cospan,
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct BoundaryPath(pub Boundary, pub usize);
 
 impl BoundaryPath {
