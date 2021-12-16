@@ -375,42 +375,38 @@ impl Diagram2D {
             return Default::default();
         };
 
-        match (self.position(highlight.from), self.position(highlight.to)) {
-            (Some(from), Some(to)) => {
-                let padding = match highlight.kind {
-                    HighlightKind::Attach => {
-                        let padding = ctx.props().style.scale * 0.25;
-                        Vector2D::new(padding, padding)
-                    }
-                    HighlightKind::Slice => Vector2D::new(0.0, ctx.props().style.scale * 0.5),
-                };
-                let from = from + padding;
-                let to = to - padding;
-
-                let path = format!(
-                    "M {from_x} {from_y} L {from_x} {to_y} L {to_x} {to_y} L {to_x} {from_y} Z",
-                    from_x = from.x,
-                    from_y = from.y,
-                    to_x = to.x,
-                    to_y = to.y
-                );
-
-                let class = match highlight.kind {
-                    HighlightKind::Attach => "diagram-svg__attach-highlight",
-                    HighlightKind::Slice => "diagram-svg__slice-highlight",
-                };
-
-                html! {
-                    <path d={path} class={class}/>
-                }
+        let padding = match highlight.kind {
+            HighlightKind::Attach => {
+                let padding = ctx.props().style.scale * 0.25;
+                Vector2D::new(padding, padding)
             }
-            _ => Default::default(),
+            HighlightKind::Slice => Vector2D::new(0.0, ctx.props().style.scale * 0.5),
+        };
+
+        let from = self.position(highlight.from) + padding;
+        let to = self.position(highlight.to) - padding;
+
+        let path = format!(
+            "M {from_x} {from_y} L {from_x} {to_y} L {to_x} {to_y} L {to_x} {from_y} Z",
+            from_x = from.x,
+            from_y = from.y,
+            to_x = to.x,
+            to_y = to.y
+        );
+
+        let class = match highlight.kind {
+            HighlightKind::Attach => "diagram-svg__attach-highlight",
+            HighlightKind::Slice => "diagram-svg__slice-highlight",
+        };
+
+        html! {
+            <path d={path} class={class}/>
         }
     }
 
-    fn position(&self, point: [SliceIndex; 2]) -> Option<Point2D<f32>> {
-        let point = self.diagram.layout.get(point[0], point[1])?;
-        Some(self.diagram.transform.transform_point(point))
+    fn position(&self, point: [SliceIndex; 2]) -> Point2D<f32> {
+        let point = self.diagram.layout.get(point[0], point[1]).unwrap();
+        self.diagram.transform.transform_point(point)
     }
 
     fn simplex_at(&self, point: Point2D<f32>) -> Option<Simplex> {
