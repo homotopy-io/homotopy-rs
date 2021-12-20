@@ -12,7 +12,7 @@
   <body>
     <script src="coi-serviceworker.min.js"></script> <!-- remove when we can set headers -->
     <script type="module">
-        import('./homotopy_web.js').then(wasm => wasm.default()).catch_err(console.log);
+        import('./homotopy_web.js').then(wasm => wasm.default()).catch(console.log);
     </script>
   </body>
 </html>
