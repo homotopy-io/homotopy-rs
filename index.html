@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="HandheldFriendly" content="true">
     <title>homotopy.io</title>
+    <link rel="icon" type="image/svg+xml" href="/logo.svg">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=IBM+Plex+Sans">
     <link rel="stylesheet" type="text/css" href="/styles.css">
@@ -12,7 +13,7 @@
   <body>
     <script src="coi-serviceworker.min.js"></script> <!-- remove when we can set headers -->
     <script type="module">
-        import('./homotopy_web.js').then(wasm => wasm.default()).catch_err(console.log);
+        import('./homotopy_web.js').then(wasm => wasm.default()).catch(console.log);
     </script>
   </body>
 </html>
