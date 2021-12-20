@@ -1,3 +1,4 @@
+use indoc::indoc;
 use settings::AppSettings;
 use sidebar::Sidebar;
 use signature_stylesheet::SignatureStylesheet;
@@ -151,6 +152,75 @@ impl App {
                 />
                 <ToasterComponent timeout={3000} />
                 {workspace}
+                <div id="about" class="modal">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <header>
+                                <h2>{"About"}</h2>
+                                <a href="#" class="modal-close">
+                                    <Icon name="close" size={IconSize::Icon18} />
+                                </a>
+                            </header>
+                            <p>
+                                <a href="https://ncatlab.org/nlab/show/homotopy.io">{"homotopy.io"}</a>
+                                {": the proof assistant for finitely-presented globular n-categories."}
+                            </p>
+                            <p>{"Written by "}
+                                <a href="https://github.com/doctorn">{"Nathan Corbyn"}</a>
+                                {", "}
+                                <a href="https://github.com/zrho">{"Lukas Heidemann"}</a>
+                                {", "}
+                                <a href="https://github.com/NickHu">{"Nick Hu"}</a>
+                                {", "}
+                                <a href="https://github.com/calintat">{"Calin Tataru"}</a>
+                                {", and "}
+                                <a href="https://github.com/jamievicary">{"Jamie Vicary"}</a>
+                                {"."}
+                            </p>
+                            <h3>{"License"}</h3>
+                            <p>{"homotopy.io source code is published under the terms of the BSD 3-Clause License."}</p>
+                            <pre>{indoc!("
+                                BSD 3-Clause License
+
+                                Copyright (c) 2021, github.com/homotopy-io/homotopy-rs contributors
+                                All rights reserved.
+
+                                Redistribution and use in source and binary forms, with or without
+                                modification, are permitted provided that the following conditions are met:
+
+                                1. Redistributions of source code must retain the above copyright notice, this
+                                  list of conditions and the following disclaimer.
+
+                                2. Redistributions in binary form must reproduce the above copyright notice,
+                                  this list of conditions and the following disclaimer in the documentation
+                                  and/or other materials provided with the distribution.
+
+                                3. Neither the name of the copyright holder nor the names of its
+                                  contributors may be used to endorse or promote products derived from
+                                  this software without specific prior written permission.
+
+                                THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"
+                                AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+                                IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+                                DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+                                FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+                                DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+                                SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+                                CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+                                OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+                                OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+                            ")}</pre>
+                            {"homotopy.io documentation is licensed under a "}
+                            <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">
+                                {"Creative Commons Attribution 4.0 International License"}
+                            </a>{"."}
+                            <br />
+                            <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">
+                                <img alt="Creative Commons License" style="border-width:0" src="by.svg" />
+                            </a>
+                        </div>
+                    </div>
+                </div>
                 <span class="version">
                     {format!("Version: {}", option_env!("GIT_DESCRIBE").unwrap_or(env!("CARGO_PKG_VERSION")))}
                 </span>

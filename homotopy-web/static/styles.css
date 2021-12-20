@@ -633,6 +633,58 @@ svg {
   }
 }
 
+/* About */
+
+/* The modal's background */
+.modal {
+  display: none;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+/* Display the modal when targeted */
+.modal:target {
+  display: table;
+  position: absolute;
+}
+
+/* The modal box */
+.modal-dialog {
+  display: table-cell;
+  vertical-align: middle;
+}
+
+/* The modal's content */
+.modal-dialog .modal-content {
+  margin: auto;
+  background-color: #f3f3f3;
+  border: 1px #777 solid;
+  width: 80%;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.modal-content > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--sidebar-foreground);
+  background-color: var(--sidebar-background);
+}
+
+.modal-close {
+  text-decoration: none;
+  color: var(--sidebar-foreground);
+}
+
+.modal-close:hover,.modal-close:focus {
+  background: var(--sidebar-hover);
+  cursor: pointer;
+}
+
 /* https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#using_a_label_element_to_trigger_a_hidden_file_input_element */
 
 .visually-hidden {
