@@ -4,9 +4,8 @@ use yew::prelude::*;
 
 use super::delta::DeltaAgent;
 use crate::components::{
-    bounding_rect,
     delta::{Delta, DeltaCallback, State},
-    read_touch_list, Finger, Point, Vector,
+    node_midpoint, read_touch_list, Finger, Point, Vector,
 };
 
 #[derive(Debug, Clone)]
@@ -187,13 +186,13 @@ impl Component for PanZoomComponent {
                 if e.alt_key() {
                     e.prevent_default();
 
-                    let rect = bounding_rect(&node_ref).unwrap();
+                    let midpoint = node_midpoint(&node_ref).unwrap();
 
                     // Offset the observed x and y by half the dimensinos of the panzoom view to
                     // account for centering (not required on mouse moves as that information is
                     // only used relatively)
-                    let x = f64::from(e.client_x()) - rect.left() - 0.5 * rect.width();
-                    let y = f64::from(e.client_y()) - rect.top() - 0.5 * rect.height();
+                    let x = f64::from(e.client_x()) - midpoint.x;
+                    let y = f64::from(e.client_y()) - midpoint.y;
 
                     delta.emit(PanZoomAction::MouseWheel((x, y).into(), dy));
                 } else if dy > 0.0 {
@@ -209,8 +208,11 @@ impl Component for PanZoomComponent {
             let node_ref = self.node_ref.clone();
             Callback::from(closure!(|e: TouchEvent| {
                 e.prevent_default();
+                let midpoint = node_midpoint(&node_ref).unwrap();
                 delta.emit(PanZoomAction::TouchMove(
-                    read_touch_list(&e.touches(), &node_ref).collect(),
+                    read_touch_list(&e.touches())
+                        .map(|(finger, point)| (finger, (point - midpoint).to_point()))
+                        .collect(),
                 ));
             }))
         };
@@ -219,9 +221,11 @@ impl Component for PanZoomComponent {
             let delta = Delta::<PanZoomState>::new();
             let node_ref = self.node_ref.clone();
             Callback::from(closure!(|e: TouchEvent| {
-                // e.prevent_default();
+                let midpoint = node_midpoint(&node_ref).unwrap();
                 delta.emit(PanZoomAction::TouchUpdate(
-                    read_touch_list(&e.touches(), &node_ref).collect(),
+                    read_touch_list(&e.touches())
+                        .map(|(finger, point)| (finger, (point - midpoint).to_point()))
+                        .collect(),
                 ));
             }))
         };

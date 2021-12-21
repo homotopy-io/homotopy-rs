@@ -16,7 +16,7 @@ use yew::prelude::*;
 use crate::{
     app::AppSettings,
     components::{
-        read_touch_list,
+        bounding_rect, read_touch_list,
         settings::{KeyStore, Settings, Store},
         toast::{Toast, Toaster},
         Finger,
@@ -139,9 +139,14 @@ impl Component for GlDiagram {
             let node_ref = self.canvas.clone();
             Callback::from(move |e: TouchEvent| {
                 e.prevent_default();
+                let rect = bounding_rect(&node_ref).unwrap();
                 if let Some(r) = &mut *renderer.borrow_mut() {
-                    let touches = read_touch_list(&e.touches(), &node_ref)
-                        .map(|(f, p)| (f, Vec2::new(p.x as f32, p.y as f32)))
+                    let touches = read_touch_list(&e.touches())
+                        .map(|(f, p)| {
+                            let x = (p.x - rect.left()) as f32;
+                            let y = (p.y - rect.top()) as f32;
+                            (f, Vec2::new(x, y))
+                        })
                         .collect::<Vec<_>>();
                     r.on_touch_move(&touches);
                 }
@@ -152,9 +157,14 @@ impl Component for GlDiagram {
             let node_ref = self.canvas.clone();
             Callback::from(move |e: TouchEvent| {
                 e.prevent_default();
+                let rect = bounding_rect(&node_ref).unwrap();
                 if let Some(r) = &mut *renderer.borrow_mut() {
-                    let touches = read_touch_list(&e.touches(), &node_ref)
-                        .map(|(f, p)| (f, Vec2::new(p.x as f32, p.y as f32)))
+                    let touches = read_touch_list(&e.touches())
+                        .map(|(f, p)| {
+                            let x = (p.x - rect.left()) as f32;
+                            let y = (p.y - rect.top()) as f32;
+                            (f, Vec2::new(x, y))
+                        })
                         .collect::<Vec<_>>();
                     r.on_touch_update(&touches);
                 }
