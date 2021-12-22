@@ -53,8 +53,11 @@ pub fn sidebar_button(props: &SidebarButtonProps) -> Html {
 pub struct SidebarDrawerProps {
     pub class: &'static str,
     pub title: &'static str,
+    pub dispatch: Callback<model::Action>,
     #[prop_or_default]
     pub children: Children,
+    #[prop_or_default]
+    pub on_close: Option<model::Action>,
 }
 
 #[function_component(SidebarDrawer)]
@@ -65,6 +68,14 @@ pub fn sidebar_drawer(props: &SidebarDrawerProps) -> Html {
                 <span class="drawer__title">
                     {props.title}
                 </span>
+                if let Some(action) = props.on_close.as_ref().cloned() {
+                    <span
+                        class="drawer__close"
+                        onclick={props.dispatch.reform(move |_| action.clone())}
+                    >
+                        <Icon name="close" size={IconSize::Icon18} />
+                    </span>
+                }
             </div>
             <div class="drawer__content">
                 { for props.children.iter() }
@@ -154,7 +165,12 @@ impl Sidebar {
 
         if let Some(attach_options) = attach_options {
             return html! {
-                <SidebarDrawer class="attach" title="Attach">
+                <SidebarDrawer
+                    class="attach"
+                    title="Attach"
+                    dispatch={dispatch}
+                    on_close={model::Action::from(proof::Action::ClearAttach)}
+                >
                     <AttachView
                         dispatch={dispatch.reform(model::Action::Proof)}
                         options={attach_options}
@@ -183,11 +199,11 @@ impl Sidebar {
             if let Some(button) = button {
                 dispatch.emit(button.action());
             } else if key == "arrowup" {
-                dispatch.emit(model::proof::Action::SwitchSlice(Direction::Forward).into());
+                dispatch.emit(proof::Action::SwitchSlice(Direction::Forward).into());
             } else if key == "arrowdown" {
-                dispatch.emit(model::proof::Action::SwitchSlice(Direction::Backward).into());
+                dispatch.emit(proof::Action::SwitchSlice(Direction::Backward).into());
             } else if key == "arrowleft" {
-                dispatch.emit(model::proof::Action::AscendSlice(1).into());
+                dispatch.emit(proof::Action::AscendSlice(1).into());
             }
         }) as Box<dyn FnMut(_)>);
 

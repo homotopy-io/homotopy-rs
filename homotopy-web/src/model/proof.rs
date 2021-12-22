@@ -115,6 +115,9 @@ pub enum Action {
     /// nothing if the workspace is empty.
     TakeIdentityDiagram,
 
+    /// Clear the attachment state.
+    ClearAttach,
+
     /// Clear the workspace by forgetting the current diagram.
     ClearWorkspace,
 
@@ -197,9 +200,13 @@ impl ProofState {
     /// Update the state in response to an [Action].
     pub fn update(&mut self, action: &Action) -> Result<(), ModelError> {
         match action {
-            Action::CreateGeneratorZero => self.signature.create_generator_zero(),
+            Action::CreateGeneratorZero => {
+                self.signature.create_generator_zero();
+                self.clear_attach();
+            }
             Action::SetBoundary(boundary) => self.set_boundary(*boundary)?,
             Action::TakeIdentityDiagram => self.take_identity_diagram(),
+            Action::ClearAttach => self.clear_attach(),
             Action::ClearWorkspace => self.clear_workspace(),
             Action::ClearBoundary => self.clear_boundary(),
             Action::SelectGenerator(generator) => self.select_generator(*generator)?,
@@ -308,6 +315,7 @@ impl ProofState {
                 }
 
                 workspace.diagram = workspace.diagram.identity().into();
+                self.clear_attach();
             }
             None => {}
         }
@@ -323,7 +331,8 @@ impl ProofState {
         self.boundary = None;
     }
 
-    fn clear_highlights(&mut self) {
+    /// Handler for [Action::ClearAttach].
+    fn clear_attach(&mut self) {
         if let Some(ref mut workspace) = self.workspace {
             workspace.attach = None;
             workspace.attachment_highlight = None;
@@ -362,7 +371,7 @@ impl ProofState {
                 count -= 1;
             }
 
-            self.clear_highlights();
+            self.clear_attach();
         }
     }
 
@@ -383,7 +392,7 @@ impl ProofState {
 
             // Update workspace
             workspace.path = path;
-            self.clear_highlights();
+            self.clear_attach();
         }
 
         Ok(())
@@ -404,6 +413,7 @@ impl ProofState {
 
             let next_slice = slice.step(diagram.size(), direction).unwrap_or(slice);
             workspace.path.push_back(next_slice);
+            self.clear_attach();
         }
     }
 
@@ -480,7 +490,7 @@ impl ProofState {
 
         match matches.len() {
             0 => {
-                self.clear_highlights();
+                self.clear_attach();
                 Err(ModelError::NoAttachment)
             }
             1 => {
@@ -527,7 +537,7 @@ impl ProofState {
             };
         }
 
-        self.clear_highlights();
+        self.clear_attach();
     }
 
     /// Handler for [Action::HighlightAttachment].
@@ -569,9 +579,7 @@ impl ProofState {
 
             ws.diagram = beheaded_diagram;
             ws.path = Default::default();
-            ws.attach = Default::default();
-            ws.attachment_highlight = Default::default();
-            ws.slice_highlight = Default::default();
+            self.clear_attach();
         }
 
         Ok(())
@@ -579,7 +587,7 @@ impl ProofState {
 
     /// Handler for [Action::Restrict].
     fn restrict(&mut self) -> Result<(), ModelError> {
-        for ws in self.workspace.iter_mut() {
+        if let Some(ws) = &mut self.workspace {
             let mut diagram = ws.diagram.clone();
             for height in &ws.path {
                 (matches!(height, SliceIndex::Boundary(_))
@@ -593,9 +601,7 @@ impl ProofState {
             }
             ws.diagram = diagram;
             ws.path = Default::default();
-            ws.attach = Default::default();
-            ws.attachment_highlight = Default::default();
-            ws.slice_highlight = Default::default();
+            self.clear_attach();
         }
 
         Ok(())
@@ -665,6 +671,7 @@ impl ProofState {
             // would have the path updated such that the image of the slice after the expansion is
             // visible. For now, we just step back up until we find a valid path.
             self.unwind_to_valid_path();
+            self.clear_attach();
         }
 
         Ok(())
@@ -725,6 +732,7 @@ impl ProofState {
 
             // FIXME(@doctorn) see above
             self.unwind_to_valid_path();
+            self.clear_attach();
         }
 
         Ok(())

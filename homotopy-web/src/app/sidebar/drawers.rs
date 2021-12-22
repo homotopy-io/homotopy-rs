@@ -34,6 +34,7 @@ macro_rules! declare_sidebar_drawers {
                             <SidebarDrawer
                                 title={$title}
                                 class={$class}
+                                dispatch={dispatch}
                             >
                                 {body(dispatch, proof)}
                             </SidebarDrawer>
