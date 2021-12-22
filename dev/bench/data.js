@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1640132693809,
+  "lastUpdate": 1640190830956,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -17279,6 +17279,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 119.95,
             "range": "+/- 0.040",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "committer": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "distinct": true,
+          "id": "74ef144a38221d3a5f3036cb51fa8380b0fd0284",
+          "message": "Make attach window closable. Also, make it close automatically when it\nmakes sense for it to do so (most of the time).\n\nFixes #135",
+          "timestamp": "2021-12-22T16:18:59Z",
+          "tree_id": "058bb0b0308899706b4520da06a4d7c438f1aacc",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/74ef144a38221d3a5f3036cb51fa8380b0fd0284"
+        },
+        "date": 1640190823923,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 71.662,
+            "range": "+/- 0.022",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 73.095,
+            "range": "+/- 0.069",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 106.98,
+            "range": "+/- 0.090",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 123.26,
+            "range": "+/- 0.060",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 146.38,
+            "range": "+/- 0.040",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 203.65,
+            "range": "+/- 0.080",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 89.914,
+            "range": "+/- 0.023",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 603.26,
+            "range": "+/- 0.290",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.3477,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 7.0878,
+            "range": "+/- 0.002",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 18.648,
+            "range": "+/- 0.006",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 45.836,
+            "range": "+/- 0.044",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 114.64,
+            "range": "+/- 0.230",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 311.35,
+            "range": "+/- 0.740",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 70.921,
+            "range": "+/- 0.029",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 99.875,
+            "range": "+/- 0.034",
             "unit": "us"
           }
         ]
