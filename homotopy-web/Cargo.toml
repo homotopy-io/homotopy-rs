@@ -54,7 +54,6 @@ arrayvec = "0.7.2"
 yew = { git = "https://github.com/yewstack/yew" }
 yew-agent = { git = "https://github.com/yewstack/yew" }
 yew-macro = { git = "https://github.com/yewstack/yew" }
-indoc = "1.0.3"
 
 # The `web-sys` crate allows you to interact with the various browser APIs,
 # like the DOM.
