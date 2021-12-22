@@ -131,8 +131,14 @@ impl Component for PanZoomComponent {
         }
     }
 
+    #[allow(clippy::float_cmp)]
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         let PanZoomMessage::Delta(translate, scale) = msg;
+
+        if self.translate == translate || self.scale == scale {
+            return false;
+        }
+
         self.translate = translate;
         self.scale = scale;
         true
@@ -246,7 +252,6 @@ impl Component for PanZoomComponent {
                 <div
                     class="panzoom__inner"
                     style={style}
-                    ref={self.node_ref.clone()}
                 >
                     { for ctx.props().children.iter() }
                 </div>
