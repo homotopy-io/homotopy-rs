@@ -281,6 +281,7 @@ button, .button {
   border-bottom: 1px solid var(--drawer-border);
   display: flex;
   align-items: center;
+  justify-content: space-between;
   box-sizing: border-box;
 }
 
@@ -298,6 +299,10 @@ button, .button {
   height: 100%;
   padding: var(--space-1);
   box-sizing: border-box;
+}
+
+.drawer__close {
+  cursor: pointer;
 }
 
 /* Signature */
