@@ -4,7 +4,6 @@ use homotopy_core::{
 };
 
 #[test]
-#[allow(clippy::many_single_char_names)]
 fn matchsticks() {
     use Height::*;
 
@@ -12,14 +11,14 @@ fn matchsticks() {
 
     let contracted = diagram
         .identity()
-        .contract(&Boundary::Target.into(), &[], 0, Some(Bias::Lower), &sig)
+        .contract(Boundary::Target.into(), &[], 0, Some(Bias::Lower), &sig)
         .unwrap()
         .target();
 
     let expanded = contracted
         .identity()
         .expand(
-            &Boundary::Target.into(),
+            Boundary::Target.into(),
             &[Singular(0), Singular(1)],
             Direction::Forward,
             &sig,

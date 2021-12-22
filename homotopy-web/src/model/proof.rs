@@ -465,7 +465,7 @@ impl ProofState {
                     .unwrap(),
             };
 
-            let boundary: Boundary = boundary_path.map_or(Boundary::Target, |bp| bp.boundary());
+            let boundary: Boundary = boundary_path.map_or(Boundary::Target, BoundaryPath::boundary);
 
             for info in self.signature.iter() {
                 if info.diagram.dimension() == haystack.dimension() + 1 {
@@ -651,7 +651,7 @@ impl ProofState {
 
             if let Some(boundary_path) = boundary_path {
                 let expanded = diagram.expand(
-                    &boundary_path,
+                    boundary_path,
                     &interior_path,
                     homotopy.direction,
                     &signature,
@@ -659,7 +659,7 @@ impl ProofState {
                 workspace.diagram = expanded.into();
             } else {
                 let expanded = diagram.identity().expand(
-                    &Boundary::Target.into(),
+                    Boundary::Target.into(),
                     &interior_path,
                     homotopy.direction,
                     &signature,
@@ -713,14 +713,14 @@ impl ProofState {
 
             if let Some(boundary_path) = boundary_path {
                 let contractum = diagram
-                    .contract(&boundary_path, &interior_path, height, bias, &signature)
+                    .contract(boundary_path, &interior_path, height, bias, &signature)
                     .map_err(ModelError::ContractionError)?;
                 workspace.diagram = contractum.into();
             } else {
                 let contractum = diagram
                     .identity()
                     .contract(
-                        &Boundary::Target.into(),
+                        Boundary::Target.into(),
                         &interior_path,
                         height,
                         bias,

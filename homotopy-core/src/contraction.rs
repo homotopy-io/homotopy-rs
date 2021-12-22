@@ -69,7 +69,7 @@ pub enum ContractionError {
 impl DiagramN {
     pub fn contract<S>(
         &self,
-        boundary_path: &BoundaryPath,
+        boundary_path: BoundaryPath,
         interior_path: &[Height],
         height: SingularHeight,
         bias: Option<Bias>,

@@ -43,7 +43,7 @@ pub enum ExpansionError {
 impl DiagramN {
     pub fn expand<S>(
         &self,
-        boundary_path: &BoundaryPath,
+        boundary_path: BoundaryPath,
         interior_path: &[Height],
         direction: Direction,
         signature: &S,

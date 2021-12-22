@@ -508,7 +508,7 @@ impl DiagramN {
             .checked_sub(diagram.dimension())
             .ok_or_else(|| AttachmentError::Dimension(diagram.dimension(), self.dimension()))?;
 
-        attach(self, &BoundaryPath(boundary, depth), |slice| {
+        attach(self, BoundaryPath(boundary, depth), |slice| {
             if slice.embeds(&diagram.slice(boundary.flip()).unwrap(), embedding) {
                 Ok(diagram.cospans().iter().map(|c| c.pad(embedding)).collect())
             } else {

@@ -29,7 +29,7 @@ impl BoundaryPath {
         (boundary_path, interior)
     }
 
-    pub fn follow(&self, diagram: &DiagramN) -> Option<Diagram> {
+    pub fn follow(self, diagram: &DiagramN) -> Option<Diagram> {
         let mut diagram = diagram.clone();
 
         for _ in 0..self.1 {
@@ -41,13 +41,13 @@ impl BoundaryPath {
 
     #[allow(clippy::inline_always)]
     #[inline(always)]
-    pub fn boundary(&self) -> Boundary {
+    pub fn boundary(self) -> Boundary {
         self.0
     }
 
     #[allow(clippy::inline_always)]
     #[inline(always)]
-    pub fn depth(&self) -> usize {
+    pub fn depth(self) -> usize {
         self.1
     }
 }
@@ -58,7 +58,7 @@ impl From<Boundary> for BoundaryPath {
     }
 }
 
-pub fn attach<F, E>(diagram: &DiagramN, path: &BoundaryPath, build: F) -> Result<DiagramN, E>
+pub fn attach<F, E>(diagram: &DiagramN, path: BoundaryPath, build: F) -> Result<DiagramN, E>
 where
     F: FnOnce(Diagram) -> Result<Vec<Cospan>, E>,
 {
@@ -68,7 +68,7 @@ where
 
 fn attach_worker<F, E>(
     diagram: &DiagramN,
-    path: &BoundaryPath,
+    path: BoundaryPath,
     build: F,
 ) -> Result<(DiagramN, usize), E>
 where
@@ -100,7 +100,7 @@ where
         BoundaryPath(boundary, depth) => {
             let source: DiagramN = diagram.source().try_into().unwrap();
             let (source, offset) =
-                attach_worker(&source, &BoundaryPath(*boundary, depth - 1), build)?;
+                attach_worker(&source, BoundaryPath(boundary, depth - 1), build)?;
 
             let cospans = match boundary {
                 Boundary::Source => {

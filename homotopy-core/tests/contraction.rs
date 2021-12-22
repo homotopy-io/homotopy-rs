@@ -10,13 +10,13 @@ fn scalar() {
 
     assert!(d
         .identity()
-        .contract(&Boundary::Target.into(), &[], 0, None, &sig)
+        .contract(Boundary::Target.into(), &[], 0, None, &sig)
         .is_err());
 
     assert_debug_snapshot!(
         "scalar_biased_left",
         d.identity()
-            .contract(&Boundary::Target.into(), &[], 0, Some(Bias::Lower), &sig)
+            .contract(Boundary::Target.into(), &[], 0, Some(Bias::Lower), &sig)
             .unwrap()
             .target()
     );
@@ -24,7 +24,7 @@ fn scalar() {
     assert_debug_snapshot!(
         "scalar_biased_right",
         d.identity()
-            .contract(&Boundary::Target.into(), &[], 0, Some(Bias::Higher), &sig)
+            .contract(Boundary::Target.into(), &[], 0, Some(Bias::Higher), &sig)
             .unwrap()
             .target()
     );
@@ -36,7 +36,7 @@ fn beads() {
 
     let contracted = diagram
         .identity()
-        .contract(&Boundary::Target.into(), &[], 1, None, &sig)
+        .contract(Boundary::Target.into(), &[], 1, None, &sig)
         .unwrap();
 
     typecheck(&contracted.into(), &sig, Mode::Deep).unwrap();
@@ -48,7 +48,7 @@ fn stacks() {
 
     let contracted = diagram
         .identity()
-        .contract(&Boundary::Target.into(), &[], 0, None, &sig)
+        .contract(Boundary::Target.into(), &[], 0, None, &sig)
         .unwrap();
 
     typecheck(&contracted.into(), &sig, Mode::Deep).unwrap();

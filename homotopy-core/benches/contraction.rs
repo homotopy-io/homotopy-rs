@@ -12,14 +12,14 @@ fn contract_scalar(crit: &mut Criterion) {
         b.iter(|| {
             diagram
                 .identity()
-                .contract(&Boundary::Target.into(), &[], 0, Some(Bias::Lower), &sig)
+                .contract(Boundary::Target.into(), &[], 0, Some(Bias::Lower), &sig)
         })
     });
     group.bench_function("right", |b| {
         b.iter(|| {
             diagram
                 .identity()
-                .contract(&Boundary::Target.into(), &[], 0, Some(Bias::Higher), &sig)
+                .contract(Boundary::Target.into(), &[], 0, Some(Bias::Higher), &sig)
         })
     });
 
@@ -34,13 +34,13 @@ fn contract_beads(crit: &mut Criterion) {
         b.iter(|| {
             diagram
                 .identity()
-                .contract(&Boundary::Target.into(), &[], 1, None, &sig)
+                .contract(Boundary::Target.into(), &[], 1, None, &sig)
         })
     });
 
     let contracted = diagram
         .identity()
-        .contract(&Boundary::Target.into(), &[], 1, None, &sig)
+        .contract(Boundary::Target.into(), &[], 1, None, &sig)
         .unwrap()
         .into();
     group.bench_function("typecheck", |b| {
@@ -58,13 +58,13 @@ fn contract_stacks(crit: &mut Criterion) {
         b.iter(|| {
             diagram
                 .identity()
-                .contract(&Boundary::Target.into(), &[], 0, None, &sig)
+                .contract(Boundary::Target.into(), &[], 0, None, &sig)
         })
     });
 
     let contracted = diagram
         .identity()
-        .contract(&Boundary::Target.into(), &[], 0, None, &sig)
+        .contract(Boundary::Target.into(), &[], 0, None, &sig)
         .unwrap()
         .into();
     group.bench_function("typecheck", |b| {
@@ -87,7 +87,7 @@ fn contract_high_dimensions(crit: &mut Criterion) {
                         diagram = diagram.identity();
                         for _ in 0..i {
                             diagram = diagram
-                                .contract(&Boundary::Target.into(), &[], 0, None, &sig)
+                                .contract(Boundary::Target.into(), &[], 0, None, &sig)
                                 .unwrap();
                         }
                     }

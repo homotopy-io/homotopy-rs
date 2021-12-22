@@ -11,7 +11,7 @@ fn expand_matchsticks(crit: &mut Criterion) {
     let (sig, diagram) = examples::matchsticks();
     let contracted = diagram
         .identity()
-        .contract(&Boundary::Target.into(), &[], 0, Some(Bias::Lower), &sig)
+        .contract(Boundary::Target.into(), &[], 0, Some(Bias::Lower), &sig)
         .unwrap()
         .target();
 
@@ -20,7 +20,7 @@ fn expand_matchsticks(crit: &mut Criterion) {
             contracted
                 .identity()
                 .expand(
-                    &Boundary::Target.into(),
+                    Boundary::Target.into(),
                     &[Singular(0), Singular(1)],
                     Direction::Forward,
                     &sig,
@@ -32,7 +32,7 @@ fn expand_matchsticks(crit: &mut Criterion) {
     let expanded = contracted
         .identity()
         .expand(
-            &Boundary::Target.into(),
+            Boundary::Target.into(),
             &[Singular(0), Singular(1)],
             Direction::Forward,
             &sig,
