@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    ops::{Deref, DerefMut},
-};
+use std::{collections::HashMap, ops::Deref};
 
 use web_sys::WebGl2RenderingContext;
 
@@ -58,72 +55,70 @@ impl<'a> Frame<'a> {
 
     fn render(&mut self) {
         self.ctx.resize_to_fit();
-        self.ctx.webgl_ctx.clear_color(
-            self.clear_color.x,
-            self.clear_color.y,
-            self.clear_color.z,
-            1.0,
-        );
-        self.ctx.webgl_ctx.clear(
-            WebGl2RenderingContext::COLOR_BUFFER_BIT | WebGl2RenderingContext::DEPTH_BUFFER_BIT,
-        );
+        self.ctx.with_gl(|gl| {
+            gl.clear_color(
+                self.clear_color.x,
+                self.clear_color.y,
+                self.clear_color.z,
+                1.0,
+            );
+            gl.clear(
+                WebGl2RenderingContext::COLOR_BUFFER_BIT | WebGl2RenderingContext::DEPTH_BUFFER_BIT,
+            );
 
-        for draw in &self.draws {
-            // bind the program the draw expected
-            // NOTE we could sort each draw queue by program to make this much more performant
-            draw.vertex_array.program().bind(|| {
-                // bind the vertex array we're drawing
-                draw.vertex_array.bind(|| {
-                    // set all of the uniforms
-                    for (name, loc) in draw.vertex_array.program().uniforms() {
-                        let data = if let Some(data) = draw.uniforms.get(name) {
-                            data
+            for draw in &self.draws {
+                // bind the program the draw expected
+                // NOTE we could sort each draw queue by program to make this much more performant
+                draw.vertex_array.program().bind(|| {
+                    // bind the vertex array we're drawing
+                    draw.vertex_array.bind(|| {
+                        // set all of the uniforms
+                        for (name, loc) in draw.vertex_array.program().uniforms() {
+                            let data = if let Some(data) = draw.uniforms.get(name) {
+                                data
+                            } else {
+                                // an unset uniform is a programmer error, so just panic
+                                panic!("uniform '{}' is unset", name);
+                            };
+
+                            data.uniform(self.ctx, loc);
+                        }
+
+                        if let Some(elements) = draw.vertex_array.elements() {
+                            // disable depth testing for lines
+                            if elements.kind == ElementKind::Lines {
+                                gl.disable(WebGl2RenderingContext::DEPTH_TEST);
+                            }
+                            // if we're given an element buffer, bind it and draw the appropriate
+                            // number of elements
+
+                            elements.buffer.bind(|| {
+                                gl.draw_elements_with_i32(
+                                    elements.kind as u32,
+                                    elements.buffer.len() as i32,
+                                    WebGl2RenderingContext::UNSIGNED_SHORT,
+                                    0,
+                                );
+                            });
+                            // re-enable depth testing
+                            if elements.kind == ElementKind::Lines {
+                                gl.enable(WebGl2RenderingContext::DEPTH_TEST);
+                            }
                         } else {
-                            // an unset uniform is a programmer error, so just panic
-                            panic!("uniform '{}' is unset", name);
-                        };
-
-                        data.uniform(&self.ctx.webgl_ctx, loc);
-                    }
-
-                    if let Some(elements) = draw.vertex_array.elements() {
-                        // disable depth testing for lines
-                        if elements.kind == ElementKind::Lines {
-                            self.ctx
-                                .webgl_ctx
-                                .disable(WebGl2RenderingContext::DEPTH_TEST);
-                        }
-                        // if we're given an element buffer, bind it and draw the appropriate
-                        // number of elements
-
-                        elements.buffer.bind(|| {
-                            self.ctx.webgl_ctx.draw_elements_with_i32(
-                                elements.kind as u32,
-                                elements.buffer.len() as i32,
-                                WebGl2RenderingContext::UNSIGNED_SHORT,
+                            // if no element buffer was provided, assume we're just drawing an array of
+                            // triangles
+                            gl.draw_arrays(
+                                WebGl2RenderingContext::TRIANGLES,
                                 0,
+                                draw.vertex_array.len() as i32,
                             );
-                        });
-                        // re-enable depth testing
-                        if elements.kind == ElementKind::Lines {
-                            self.ctx
-                                .webgl_ctx
-                                .enable(WebGl2RenderingContext::DEPTH_TEST);
                         }
-                    } else {
-                        // if no element buffer was provided, assume we're just drawing an array of
-                        // triangles
-                        self.ctx.webgl_ctx.draw_arrays(
-                            WebGl2RenderingContext::TRIANGLES,
-                            0,
-                            draw.vertex_array.len() as i32,
-                        );
-                    }
+                    });
                 });
-            });
-        }
+            }
 
-        self.ctx.webgl_ctx.flush();
+            gl.flush();
+        });
     }
 }
 
@@ -132,13 +127,6 @@ impl<'a> Deref for Frame<'a> {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        self.ctx
-    }
-}
-
-impl<'a> DerefMut for Frame<'a> {
-    #[inline]
-    fn deref_mut(&mut self) -> &mut Self::Target {
         self.ctx
     }
 }

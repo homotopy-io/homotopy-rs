@@ -4,7 +4,7 @@ use js_sys;
 use ultraviolet::{Vec2, Vec3, Vec4};
 use web_sys::{WebGl2RenderingContext, WebGlBuffer};
 
-use super::{GlCtx, GlError, Result};
+use super::{GlCtx, GlCtxHandle, GlError, Result};
 
 #[allow(unused)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -43,7 +43,7 @@ impl Default for BufferUsage {
 }
 
 pub(super) struct UntypedBuffer {
-    ctx: WebGl2RenderingContext,
+    ctx: GlCtxHandle,
 
     kind: BufferKind,
     usage: BufferUsage,
@@ -71,24 +71,26 @@ pub struct ElementBuffer {
     pub(super) kind: ElementKind,
 }
 
-impl UntypedBuffer {
+impl<'ctx> UntypedBuffer {
     #[inline]
     pub(super) fn bind<F, U>(&self, f: F) -> U
     where
         F: FnOnce() -> U,
     {
-        self.ctx
-            .bind_buffer(self.kind as u32, Some(&self.webgl_buffer));
-        let result = f();
-        self.ctx.bind_buffer(self.kind as u32, None);
-        result
+        self.ctx.with_gl(|gl| {
+            gl.bind_buffer(self.kind as u32, Some(&self.webgl_buffer));
+            let result = f();
+            gl.bind_buffer(self.kind as u32, None);
+            result
+        })
     }
 }
 
 impl Drop for UntypedBuffer {
     #[inline]
     fn drop(&mut self) {
-        self.ctx.delete_buffer(Some(&self.webgl_buffer));
+        self.ctx
+            .with_gl(|gl| gl.delete_buffer(Some(&self.webgl_buffer)));
     }
 }
 
@@ -187,9 +189,11 @@ impl<T> Buffer<T> {
 
 impl<T> Buffer<T> {
     fn alloc(ctx: &GlCtx, kind: BufferKind, usage: BufferUsage, len: usize) -> Result<Self> {
-        let webgl_buffer = ctx.webgl_ctx.create_buffer().ok_or(GlError::Allocate)?;
+        let webgl_buffer = ctx
+            .with_gl(WebGl2RenderingContext::create_buffer)
+            .ok_or(GlError::Allocate)?;
         let untyped_buffer = UntypedBuffer {
-            ctx: ctx.webgl_ctx.clone(),
+            ctx: ctx.ctx_handle(),
             kind,
             usage,
             len,
@@ -245,11 +249,13 @@ unsafe impl UnsafeBufferable for f32 {
         buffer.bind(|| {
             let view = js_sys::Float32Array::view(data);
             // NOTE no memory can be allocated here or `view` will be invalidated
-            buffer.buffer.ctx.buffer_data_with_array_buffer_view(
-                buffer.buffer.kind as u32,
-                &view,
-                buffer.buffer.usage as u32,
-            );
+            buffer.buffer.ctx.with_gl(|gl| {
+                gl.buffer_data_with_array_buffer_view(
+                    buffer.buffer.kind as u32,
+                    &view,
+                    buffer.buffer.usage as u32,
+                );
+            });
         });
     }
 }
@@ -259,11 +265,13 @@ unsafe impl UnsafeBufferable for u16 {
         buffer.bind(|| {
             let view = js_sys::Uint16Array::view(data);
             // NOTE no memory can be allocated here or `view` will be invalidated
-            buffer.buffer.ctx.buffer_data_with_array_buffer_view(
-                buffer.buffer.kind as u32,
-                &view,
-                buffer.buffer.usage as u32,
-            );
+            buffer.buffer.ctx.with_gl(|gl| {
+                gl.buffer_data_with_array_buffer_view(
+                    buffer.buffer.kind as u32,
+                    &view,
+                    buffer.buffer.usage as u32,
+                );
+            });
         });
     }
 }

@@ -170,7 +170,7 @@ impl GlDiagram {
 }
 
 struct GlDiagramRenderer {
-    gl_ctx: GlCtx,
+    ctx: GlCtx,
     scene: Scene,
     signature: Signature,
     subdivision_depth: u8,
@@ -189,13 +189,13 @@ pub struct OrbitCamera {
 }
 
 impl GlDiagramRenderer {
-    fn new(gl_ctx: GlCtx, settings: &Store<AppSettings>, props: &GlDiagramProps) -> Result<Self> {
+    fn new(ctx: GlCtx, settings: &Store<AppSettings>, props: &GlDiagramProps) -> Result<Self> {
         let depth = *settings.get_subdivision_depth() as u8;
         let samples = *settings.get_geometry_samples() as u8;
 
         Ok(Self {
             scene: Scene::build(
-                &gl_ctx,
+                &ctx,
                 &props.diagram,
                 if props.view.dimension() <= 3 {
                     ViewDimension::Three
@@ -205,10 +205,10 @@ impl GlDiagramRenderer {
                 depth,
                 samples,
             )?,
+            ctx,
             signature: props.signature.clone(),
             subdivision_depth: depth,
             geometry_samples: samples,
-            gl_ctx,
             t: 0.0,
         })
     }
@@ -220,7 +220,7 @@ impl GlDiagramRenderer {
         if self.subdivision_depth != depth || self.geometry_samples != samples {
             self.subdivision_depth = depth;
             self.geometry_samples = samples;
-            self.scene.reload_meshes(&self.gl_ctx, depth, samples)?;
+            self.scene.reload_meshes(&self.ctx, depth, samples)?;
         }
 
         self.t += dt;
@@ -229,7 +229,7 @@ impl GlDiagramRenderer {
     }
 
     fn render(&mut self, dimension: u8, camera: &OrbitCamera, settings: &Store<AppSettings>) {
-        let mut frame = Frame::new(&mut self.gl_ctx);
+        let mut frame = Frame::new(&mut self.ctx);
         let vp = camera.transform(&*frame);
 
         if !*settings.get_mesh_hidden() {
@@ -306,10 +306,10 @@ impl OrbitCamera {
             + self.target
     }
 
-    fn transform(&self, gl_ctx: &GlCtx) -> Mat4 {
+    fn transform(&self, ctx: &GlCtx) -> Mat4 {
         let perspective = if self.ortho {
             let scale = self.distance / 10.;
-            let aspect = gl_ctx.aspect_ratio();
+            let aspect = ctx.aspect_ratio();
             orthographic_gl(
                 -aspect * scale,
                 aspect * scale,
@@ -321,7 +321,7 @@ impl OrbitCamera {
         } else {
             perspective_gl(
                 f32::to_radians(self.fov),
-                gl_ctx.aspect_ratio(),
+                ctx.aspect_ratio(),
                 Self::NEAR,
                 Self::FAR,
             )

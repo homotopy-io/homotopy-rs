@@ -6,20 +6,21 @@ use web_sys::{WebGl2RenderingContext, WebGlVertexArrayObject};
 use super::{
     buffer::{Buffer, ElementBuffer, UntypedBuffer},
     shader::Program,
-    GlError, Result,
+    GlCtx, GlCtxHandle, GlError, Result,
 };
 
 pub const VAO_LIMIT: usize = 0x0001_0000;
 
 #[macro_export]
 macro_rules! vertex_array {
-    ($program:expr, {$($attribute:ident : $value:expr),*$(,)*}) => {{
-        $crate::gl::array::VertexArray::new($program)
+    ($ctx:expr, $program:expr, {$($attribute:ident : $value:expr),*$(,)*}) => {{
+        $crate::gl::array::VertexArray::new($ctx, $program)
             $(.map(|x| x.attribute(stringify!($attribute), $value)))*
     }};
 
-    ($program:expr, $elements:expr, {$($attribute:ident : $value:expr),*$(,)*}) => {{
+    ($ctx:expr, $program:expr, $elements:expr, {$($attribute:ident : $value:expr),*$(,)*}) => {{
         $crate::gl::array::VertexArray::new_with_elements(
+            $ctx,
             $program,
             Some($elements),
         )$(.map(|x| x.attribute(stringify!($attribute), $value)))*
@@ -27,8 +28,9 @@ macro_rules! vertex_array {
 }
 
 pub struct VertexArray {
-    program: Program,
+    ctx: GlCtxHandle,
 
+    program: Program,
     attributes: HashMap<&'static str, Rc<UntypedBuffer>>,
     elements: Option<ElementBuffer>,
     len: usize,
@@ -37,13 +39,17 @@ pub struct VertexArray {
 }
 
 impl VertexArray {
-    pub fn new_with_elements(program: &Program, elements: Option<&ElementBuffer>) -> Result<Self> {
-        let webgl_vao = program
-            .ctx()
-            .create_vertex_array()
+    pub fn new_with_elements(
+        ctx: &GlCtx,
+        program: &Program,
+        elements: Option<&ElementBuffer>,
+    ) -> Result<Self> {
+        let webgl_vao = ctx
+            .with_gl(WebGl2RenderingContext::create_vertex_array)
             .ok_or(GlError::Allocate)?;
 
         Ok(Self {
+            ctx: ctx.ctx_handle(),
             program: program.clone(),
             attributes: HashMap::new(),
             elements: elements.cloned(),
@@ -53,8 +59,8 @@ impl VertexArray {
     }
 
     #[inline]
-    pub fn new(program: &Program) -> Result<Self> {
-        Self::new_with_elements(program, None)
+    pub fn new(ctx: &GlCtx, program: &Program) -> Result<Self> {
+        Self::new_with_elements(ctx, program, None)
     }
 
     #[inline]
@@ -77,10 +83,12 @@ impl VertexArray {
     where
         F: FnOnce() -> U,
     {
-        self.program.ctx().bind_vertex_array(Some(&self.webgl_vao));
-        let result = f();
-        self.program.ctx().bind_vertex_array(None);
-        result
+        self.ctx.with_gl(|gl| {
+            gl.bind_vertex_array(Some(&self.webgl_vao));
+            let result = f();
+            gl.bind_vertex_array(None);
+            result
+        })
     }
 
     pub fn attribute<T>(mut self, attribute: &'static str, src: &Buffer<T>) -> Self
@@ -103,17 +111,12 @@ impl VertexArray {
         self.bind(|| {
             // bind the source buffer
             src.bind(|| {
-                // enable the specified attribute array
-                self.program.ctx().enable_vertex_attrib_array(loc);
-                // pass on the dimension and type information of the buffer
-                self.program.ctx().vertex_attrib_pointer_with_i32(
-                    loc,
-                    T::DIMENSION,
-                    T::TYPE,
-                    false,
-                    0,
-                    0,
-                );
+                self.ctx.with_gl(|gl| {
+                    // enable the specified attribute array
+                    gl.enable_vertex_attrib_array(loc);
+                    // pass on the dimension and type information of the buffer
+                    gl.vertex_attrib_pointer_with_i32(loc, T::DIMENSION, T::TYPE, false, 0, 0);
+                });
             });
         });
 
@@ -127,12 +130,12 @@ impl VertexArray {
     }
 }
 
-impl Drop for VertexArray {
+impl<'ctx> Drop for VertexArray {
     #[inline]
     fn drop(&mut self) {
-        self.program
-            .ctx()
-            .delete_vertex_array(Some(&self.webgl_vao));
+        self.ctx.with_gl(|gl| {
+            gl.delete_vertex_array(Some(&self.webgl_vao));
+        });
     }
 }
 
