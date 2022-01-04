@@ -78,6 +78,7 @@ impl Scene {
                 self.components.push(SceneComponent {
                     generator: tri_buffers.generator,
                     array: vertex_array!(
+                        ctx,
                         &self.solid_program,
                         &tri_buffers.element_buffer,
                         {
@@ -86,6 +87,7 @@ impl Scene {
                         }
                     )?,
                     wireframe_array: vertex_array!(
+                        ctx,
                         &self.wireframe_program,
                         &tri_buffers.wireframe_element_buffer,
                         { position: &tri_buffers.vertex_buffer }
@@ -97,6 +99,7 @@ impl Scene {
             self.components.push(SceneComponent {
                 generator: Generator::new(0, 0),
                 array: vertex_array!(
+                    ctx,
                     &self.solid_program,
                     &tetra_buffers.element_buffer,
                     {
@@ -107,6 +110,7 @@ impl Scene {
                     }
                 )?,
                 wireframe_array: vertex_array!(
+                    ctx,
                     &self.wireframe_program,
                     &tetra_buffers.projected_wireframe_element_buffer,
                     { position: &tetra_buffers.wireframe_vertex_buffer }
@@ -116,6 +120,7 @@ impl Scene {
             self.components.push(SceneComponent {
                 generator: Generator::new(1, 0),
                 array: vertex_array!(
+                    ctx,
                     &self.solid_program,
                     &tetra_buffers.animated_wireframe_element_buffer,
                     {
@@ -126,6 +131,7 @@ impl Scene {
                     }
                 )?,
                 wireframe_array: vertex_array!(
+                    ctx,
                     &self.wireframe_program,
                     &tetra_buffers.projected_wireframe_element_buffer,
                     { position: &tetra_buffers.wireframe_vertex_buffer }
@@ -138,7 +144,7 @@ impl Scene {
 
     pub fn draw<'a, F>(&'a self, frame: &mut Frame<'a>, f: F)
     where
-        F: Fn(Generator, &VertexArray) -> Draw,
+        F: Fn(Generator, &'a VertexArray) -> Draw<'a>,
     {
         for component in &self.components {
             frame.draw(f(component.generator, &component.array));
@@ -182,6 +188,7 @@ fn buffer_axes(ctx: &GlCtx, program: &Program) -> Result<VertexArray> {
     ])?;
 
     vertex_array!(
+        ctx,
         program,
         &axes_elements,
         {

@@ -314,9 +314,10 @@ impl<'a> Subdivider<'a> {
 
     #[inline]
     pub(super) fn subdivide_once(&mut self) {
+        // TODO(@doctorn) see below
         // (0. In debug, clone a copy of the original diagram for sanity checking)
-        #[cfg(debug_assertions)]
-        let unmodified = self.mesh.clone();
+        // #[cfg(debug_assertions)]
+        // let unmodified = self.mesh.clone();
 
         // 1. Remove all elements from mesh
         let mut lines = IdxVec::with_capacity(self.mesh.lines.len() * 2);
@@ -389,6 +390,8 @@ impl<'a> Subdivider<'a> {
         // debug_assert!(self.bounds_preserved(&unmodified));
     }
 
+    // TODO(@doctorn)
+    #[allow(unused)]
     #[cfg(debug_assertions)]
     fn bounds_preserved(&self, unmodified: &CubicalMesh) -> bool {
         let (unmodified_min, unmodified_max) = unmodified.bounds();

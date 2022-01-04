@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use thiserror::Error;
 use ultraviolet::{Vec2, Vec3};
 use wasm_bindgen::JsCast;
@@ -7,7 +9,9 @@ use yew::prelude::*;
 pub mod array;
 pub mod buffer;
 pub mod frame;
+pub mod framebuffer;
 pub mod shader;
+pub mod texture;
 
 #[derive(Error, Debug)]
 pub enum GlError {
@@ -17,6 +21,8 @@ pub enum GlError {
     Allocate,
     #[error("failed to compile shader: {0}")]
     ShaderCompile(String),
+    #[error("failed to generate texture")]
+    Texture,
     #[error("failed to link shader program: {0}")]
     ProgramLink(String),
     #[error("failed to bind vertex array attribute: {0}")]
@@ -25,10 +31,37 @@ pub enum GlError {
     Uniform(String),
 }
 
+mod ctx {
+    use std::rc::Rc;
+
+    use web_sys::WebGl2RenderingContext;
+
+    #[derive(Clone)]
+    pub struct GlCtxHandle(Rc<WebGl2RenderingContext>);
+
+    impl GlCtxHandle {
+        #[inline]
+        pub fn new(ctx: WebGl2RenderingContext) -> Self {
+            Self(Rc::new(ctx))
+        }
+
+        #[allow(clippy::inline_always)]
+        #[inline(always)]
+        pub(super) fn with_gl<F, T>(&self, f: F) -> T
+        where
+            F: FnOnce(&WebGl2RenderingContext) -> T,
+        {
+            f(&self.0)
+        }
+    }
+}
+
+use ctx::GlCtxHandle;
+
 pub type Result<T> = std::result::Result<T, GlError>;
 
 pub struct GlCtx {
-    webgl_ctx: WebGl2RenderingContext,
+    ctx: GlCtxHandle,
     canvas: HtmlCanvasElement,
 
     clear_color: Vec3,
@@ -59,7 +92,7 @@ impl GlCtx {
         webgl_ctx.enable(WebGl2RenderingContext::DEPTH_TEST);
 
         Ok(Self {
-            webgl_ctx,
+            ctx: GlCtxHandle::new(webgl_ctx),
             width: canvas.width(),
             height: canvas.height(),
             clear_color: Vec3::broadcast(1.0),
@@ -76,7 +109,8 @@ impl GlCtx {
             self.height = height;
         }
 
-        self.webgl_ctx.viewport(0, 0, width as i32, height as i32);
+        self.ctx
+            .with_gl(|gl| gl.viewport(0, 0, width as i32, height as i32));
     }
 
     fn resize_to_fit(&mut self) {
@@ -84,6 +118,11 @@ impl GlCtx {
         let height = self.canvas.client_height();
 
         self.resize_to(width as u32, height as u32);
+    }
+
+    #[inline]
+    fn ctx_handle(&self) -> GlCtxHandle {
+        self.ctx.clone()
     }
 
     #[inline]
@@ -114,5 +153,14 @@ impl GlCtx {
     #[inline]
     pub fn aspect_ratio(&self) -> f32 {
         (self.width as f32) / (self.height as f32)
+    }
+}
+
+impl Deref for GlCtx {
+    type Target = GlCtxHandle;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &self.ctx
     }
 }
