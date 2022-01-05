@@ -37,8 +37,9 @@ impl AttachmentPoint {
 }
 
 pub trait Attachable {
-    // SAFETY: attached objects must not be dropped before the bound framebuffer
-    // is dropped
+    /// # Safety
+    ///
+    /// Attached objects must not be dropped before the bound framebuffer is dropped
     unsafe fn attach(&self, gl: &WebGl2RenderingContext, target: u32);
 }
 
@@ -102,7 +103,7 @@ impl Framebuffer {
                     unsafe {
                         attachment
                             .attachable
-                            .attach(gl, attachment.point.into_gl_const())
+                            .attach(gl, attachment.point.into_gl_const());
                     }
                 }
 
