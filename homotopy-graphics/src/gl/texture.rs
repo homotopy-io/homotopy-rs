@@ -2,26 +2,11 @@ use std::rc::Rc;
 
 use web_sys::{WebGl2RenderingContext, WebGlTexture};
 
-use super::{GlCtx, GlCtxHandle, GlError, Result};
-
-struct TextureData {
-    ctx: GlCtxHandle,
-    webgl_texture: WebGlTexture,
-}
+use super::{framebuffer::Attachable, GlCtx, GlCtxHandle, GlError, Result};
 
 pub enum Filter {
     Nearest = WebGl2RenderingContext::NEAREST as isize,
     Linear = WebGl2RenderingContext::LINEAR as isize,
-}
-
-pub enum Kind {
-    Float = WebGl2RenderingContext::FLOAT as isize,
-    UnsignedByte = WebGl2RenderingContext::UNSIGNED_SHORT as isize,
-}
-
-pub enum Format {
-    Rgba16f = WebGl2RenderingContext::RGBA16F as isize,
-    Rgba = WebGl2RenderingContext::RGBA as isize,
 }
 
 impl Default for Filter {
@@ -30,27 +15,17 @@ impl Default for Filter {
     }
 }
 
-impl Default for Kind {
-    fn default() -> Self {
-        Self::Float
-    }
-}
-
-impl Default for Format {
-    fn default() -> Self {
-        Self::Rgba
-    }
-}
-
 #[derive(Default)]
 pub struct TextureOpts {
-    pub format: Format,
-    pub internal_format: Format,
     pub min_filter: Filter,
     pub mag_filter: Filter,
-    pub kind: Kind,
     pub width: Option<u32>,
     pub height: Option<u32>,
+}
+
+struct TextureData {
+    ctx: GlCtxHandle,
+    webgl_texture: WebGlTexture,
 }
 
 #[derive(Clone)]
@@ -81,16 +56,17 @@ impl Texture {
                         WebGl2RenderingContext::TEXTURE_MAG_FILTER,
                         opts.mag_filter as i32,
                     );
+                    // NOTE could pass format and kind as texture options
                     gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_u8_array(
                         WebGl2RenderingContext::TEXTURE_2D,
                         0,
-                        opts.internal_format as i32,
+                        WebGl2RenderingContext::RGBA16F as i32,
                         // FIXME(@doctorn) this needs to be adaptive
                         opts.width.unwrap_or_else(|| ctx.width()) as i32,
                         opts.height.unwrap_or_else(|| ctx.height()) as i32,
                         0,
-                        opts.format as u32,
-                        opts.kind as u32,
+                        WebGl2RenderingContext::RGBA,
+                        WebGl2RenderingContext::FLOAT,
                         None,
                     )
                 })
@@ -117,6 +93,19 @@ impl Texture {
     }
 }
 
+impl Attachable for Texture {
+    #[inline]
+    unsafe fn attach(&self, gl: &WebGl2RenderingContext, target: u32) {
+        gl.framebuffer_texture_2d(
+            WebGl2RenderingContext::FRAMEBUFFER,
+            target,
+            WebGl2RenderingContext::TEXTURE_2D,
+            Some(&self.0.webgl_texture),
+            0,
+        );
+    }
+}
+
 impl Drop for TextureData {
     #[inline]
     fn drop(&mut self) {
@@ -127,7 +116,12 @@ impl Drop for TextureData {
 
 impl GlCtx {
     #[inline]
-    pub fn mk_texture(&self, opts: TextureOpts) -> Result<Texture> {
+    pub fn mk_texture_with_opts(&self, opts: TextureOpts) -> Result<Texture> {
         Texture::alloc(self, opts)
+    }
+
+    #[inline]
+    pub fn mk_texture(&self) -> Result<Texture> {
+        self.mk_texture_with_opts(Default::default())
     }
 }

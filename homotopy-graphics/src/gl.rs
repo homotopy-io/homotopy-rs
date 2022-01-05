@@ -10,15 +10,18 @@ pub mod array;
 pub mod buffer;
 pub mod frame;
 pub mod framebuffer;
+pub mod renderbuffer;
 pub mod shader;
 pub mod texture;
 
 #[derive(Error, Debug)]
 pub enum GlError {
-    #[error("failed to attach to WebGL context")]
-    Attachment(&'static str),
     #[error("failed to allocate WebGL object")]
     Allocate,
+    #[error("failed to attach to WebGL context")]
+    Attachment(&'static str),
+    #[error("incomplete framebuffer")]
+    Framebuffer,
     #[error("failed to compile shader: {0}")]
     ShaderCompile(String),
     #[error("failed to generate texture")]
