@@ -4,6 +4,7 @@ use web_sys::{WebGl2RenderingContext, WebGlTexture};
 
 use super::{framebuffer::Attachable, GlCtx, GlCtxHandle, GlError, Result};
 
+#[derive(Copy, Clone)]
 pub enum Filter {
     Nearest = WebGl2RenderingContext::NEAREST as isize,
     Linear = WebGl2RenderingContext::LINEAR as isize,
@@ -33,7 +34,7 @@ pub struct Texture(Rc<TextureData>);
 
 impl Texture {
     #[allow(clippy::map_err_ignore)]
-    fn alloc(ctx: &GlCtx, opts: TextureOpts) -> Result<Self> {
+    fn alloc(ctx: &GlCtx, opts: &TextureOpts) -> Result<Self> {
         let webgl_texture = ctx
             .with_gl(WebGl2RenderingContext::create_texture)
             .ok_or(GlError::Allocate)?;
@@ -116,12 +117,12 @@ impl Drop for TextureData {
 
 impl GlCtx {
     #[inline]
-    pub fn mk_texture_with_opts(&self, opts: TextureOpts) -> Result<Texture> {
+    pub fn mk_texture_with_opts(&self, opts: &TextureOpts) -> Result<Texture> {
         Texture::alloc(self, opts)
     }
 
     #[inline]
     pub fn mk_texture(&self) -> Result<Texture> {
-        self.mk_texture_with_opts(Default::default())
+        self.mk_texture_with_opts(&Default::default())
     }
 }

@@ -14,9 +14,9 @@ pub struct RenderbufferOpts {
 }
 
 impl Renderbuffer {
-    fn alloc(ctx: &GlCtx, opts: RenderbufferOpts) -> Result<Self> {
+    fn alloc(ctx: &GlCtx, opts: &RenderbufferOpts) -> Result<Self> {
         let webgl_renderbuffer = ctx
-            .with_gl(|gl| gl.create_renderbuffer())
+            .with_gl(WebGl2RenderingContext::create_renderbuffer)
             .ok_or(GlError::Allocate)?;
 
         let renderbuffer = Self {
@@ -34,7 +34,7 @@ impl Renderbuffer {
                     opts.width.unwrap_or_else(|| ctx.width()) as i32,
                     opts.height.unwrap_or_else(|| ctx.height()) as i32,
                 );
-            })
+            });
         });
 
         Ok(renderbuffer)
@@ -79,12 +79,12 @@ impl Drop for Renderbuffer {
 
 impl GlCtx {
     #[inline]
-    pub fn mk_renderbuffer_with_opts(&self, opts: RenderbufferOpts) -> Result<Renderbuffer> {
+    pub fn mk_renderbuffer_with_opts(&self, opts: &RenderbufferOpts) -> Result<Renderbuffer> {
         Renderbuffer::alloc(self, opts)
     }
 
     #[inline]
     pub fn mk_renderbuffer(&self) -> Result<Renderbuffer> {
-        self.mk_renderbuffer_with_opts(Default::default())
+        self.mk_renderbuffer_with_opts(&Default::default())
     }
 }
