@@ -51,9 +51,9 @@ console_error_panic_hook = { version = "0.1.7", optional = true }
 # need latest git version because of https://github.com/bodil/im-rs/issues/143
 im = { git = "https://github.com/bodil/im-rs", features = ["serde"] }
 arrayvec = "0.7.2"
-yew = { git = "https://github.com/yewstack/yew" }
-yew-agent = { git = "https://github.com/yewstack/yew" }
-yew-macro = { git = "https://github.com/yewstack/yew" }
+yew = "0.19.3"
+yew-agent = "0.1.0"
+yew-macro = "0.19.3"
 
 # The `web-sys` crate allows you to interact with the various browser APIs,
 # like the DOM.
