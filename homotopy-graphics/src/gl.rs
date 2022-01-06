@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 use thiserror::Error;
-use ultraviolet::{Vec2, Vec3};
+use ultraviolet::Vec2;
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlCanvasElement, WebGl2RenderingContext};
 use yew::prelude::*;
@@ -20,6 +20,8 @@ pub enum GlError {
     Allocate,
     #[error("failed to attach to WebGL context")]
     Attachment(&'static str),
+    #[error("missing WebGL extension")]
+    ExtensionMissing,
     #[error("incomplete framebuffer")]
     Framebuffer,
     #[error("failed to compile shader: {0}")]
@@ -66,9 +68,6 @@ pub type Result<T> = std::result::Result<T, GlError>;
 pub struct GlCtx {
     ctx: GlCtxHandle,
     canvas: HtmlCanvasElement,
-
-    clear_color: Vec3,
-
     width: u32,
     height: u32,
 }
@@ -92,13 +91,15 @@ impl GlCtx {
             ));
         };
 
-        webgl_ctx.enable(WebGl2RenderingContext::DEPTH_TEST);
+        // We need this for deferred shading
+        webgl_ctx
+            .get_extension("EXT_color_buffer_float")
+            .map_err(|_| GlError::ExtensionMissing)?;
 
         Ok(Self {
             ctx: GlCtxHandle::new(webgl_ctx),
             width: canvas.width(),
             height: canvas.height(),
-            clear_color: Vec3::broadcast(1.0),
             canvas,
         })
     }
@@ -126,11 +127,6 @@ impl GlCtx {
     #[inline]
     fn ctx_handle(&self) -> GlCtxHandle {
         self.ctx.clone()
-    }
-
-    #[inline]
-    pub fn set_clear_color(&mut self, color: Vec3) {
-        self.clear_color = color;
     }
 
     #[inline]
