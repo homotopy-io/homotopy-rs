@@ -16,12 +16,40 @@ impl Default for Filter {
     }
 }
 
+#[derive(Copy, Clone)]
+pub enum InternalFormat {
+    Rgba16F = WebGl2RenderingContext::RGBA16F as isize,
+    Rgba = WebGl2RenderingContext::RGBA as isize,
+}
+
+#[derive(Copy, Clone)]
+pub enum Type {
+    UnsignedByte = WebGl2RenderingContext::UNSIGNED_BYTE as isize,
+    Float = WebGl2RenderingContext::FLOAT as isize,
+}
+
+impl Default for Type {
+    #[inline]
+    fn default() -> Self {
+        Self::UnsignedByte
+    }
+}
+
+impl Default for InternalFormat {
+    #[inline]
+    fn default() -> Self {
+        Self::Rgba
+    }
+}
+
 #[derive(Default)]
 pub struct TextureOpts {
     pub min_filter: Filter,
     pub mag_filter: Filter,
+    pub internal_format: InternalFormat,
     pub width: Option<u32>,
     pub height: Option<u32>,
+    pub type_: Type,
 }
 
 struct TextureData {
@@ -61,13 +89,13 @@ impl Texture {
                     gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_u8_array(
                         WebGl2RenderingContext::TEXTURE_2D,
                         0,
-                        WebGl2RenderingContext::RGBA16F as i32,
+                        opts.internal_format as i32,
                         // FIXME(@doctorn) this needs to be adaptive
                         opts.width.unwrap_or_else(|| ctx.width()) as i32,
                         opts.height.unwrap_or_else(|| ctx.height()) as i32,
                         0,
                         WebGl2RenderingContext::RGBA,
-                        WebGl2RenderingContext::FLOAT,
+                        opts.type_ as u32,
                         None,
                     )
                 })

@@ -5,11 +5,16 @@ use homotopy_core::DiagramN;
 use homotopy_graphics::{
     clay::{Scene, ViewDimension},
     draw,
-    gl::{frame::Frame, GlCtx, Result},
+    gl::{
+        frame::Frame,
+        framebuffer::{Attachment, Framebuffer},
+        texture::{InternalFormat, Texture, TextureOpts, Type},
+        GlCtx, Result,
+    },
 };
 use ultraviolet::{
     projection::rh_yup::{orthographic_gl, perspective_gl},
-    Mat4, Vec2, Vec3,
+    Mat4, Vec2, Vec3, Vec4,
 };
 use yew::prelude::*;
 
@@ -172,10 +177,18 @@ impl GlDiagram {
 struct GlDiagramRenderer {
     ctx: GlCtx,
     scene: Scene,
+    gbuffer: GBuffer,
     signature: Signature,
     subdivision_depth: u8,
     geometry_samples: u8,
     t: f32,
+}
+
+struct GBuffer {
+    framebuffer: Framebuffer,
+    positions: Texture,
+    normals: Texture,
+    albedo: Texture,
 }
 
 pub struct OrbitCamera {
@@ -205,6 +218,7 @@ impl GlDiagramRenderer {
                 depth,
                 samples,
             )?,
+            gbuffer: GBuffer::new(&ctx)?,
             ctx,
             signature: props.signature.clone(),
             subdivision_depth: depth,
@@ -229,7 +243,7 @@ impl GlDiagramRenderer {
     }
 
     fn render(&mut self, dimension: u8, camera: &OrbitCamera, settings: &Store<AppSettings>) {
-        let mut frame = Frame::new(&mut self.ctx);
+        let mut frame = Frame::new(&mut self.ctx).with_clear_color(Vec4::broadcast(1.));
         let vp = camera.transform(&*frame);
 
         if !*settings.get_mesh_hidden() {
@@ -284,6 +298,37 @@ impl GlDiagramRenderer {
         if *settings.get_debug_axes() {
             self.scene.draw_axes(&mut frame, &vp);
         }
+    }
+}
+
+impl GBuffer {
+    fn new(ctx: &GlCtx) -> Result<Self> {
+        let positions = ctx.mk_texture_with_opts(&TextureOpts {
+            internal_format: InternalFormat::Rgba16F,
+            type_: Type::Float,
+            ..Default::default()
+        })?;
+        let normals = ctx.mk_texture_with_opts(&TextureOpts {
+            internal_format: InternalFormat::Rgba16F,
+            type_: Type::Float,
+            ..Default::default()
+        })?;
+        let albedo = ctx.mk_texture()?;
+        let renderbuffer = ctx.mk_renderbuffer()?;
+
+        let framebuffer = ctx.mk_framebuffer(vec![
+            Attachment::color(positions.clone(), 0),
+            Attachment::color(normals.clone(), 1),
+            Attachment::color(albedo.clone(), 2),
+            Attachment::depth(renderbuffer),
+        ])?;
+
+        Ok(Self {
+            framebuffer,
+            positions,
+            normals,
+            albedo,
+        })
     }
 }
 
