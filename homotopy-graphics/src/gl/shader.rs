@@ -9,8 +9,8 @@ use super::{GlCtx, GlCtxHandle, GlError, Result};
 macro_rules! program {
     (
         $ctx:expr,
-        $vertex:literal,
-        $fragment:literal,
+        $vertex:expr,
+        $fragment:expr,
         {$($attribute:ident),*$(,)*},
         {$($uniform:ident),*$(,)*}$(,)*
     ) => {{
@@ -288,6 +288,13 @@ unsafe impl Uniformable for bool {
     #[inline]
     fn uniform(&self, ctx: &GlCtx, loc: &WebGlUniformLocation) {
         ctx.with_gl(|gl| gl.uniform1i(Some(loc), *self as i32));
+    }
+}
+
+unsafe impl Uniformable for i32 {
+    #[inline]
+    fn uniform(&self, ctx: &GlCtx, loc: &WebGlUniformLocation) {
+        ctx.with_gl(|gl| gl.uniform1i(Some(loc), *self));
     }
 }
 

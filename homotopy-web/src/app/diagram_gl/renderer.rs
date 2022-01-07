@@ -1,5 +1,4 @@
 use homotopy_graphics::{
-    clay::{Scene, ViewDimension},
     draw,
     gl::{
         frame::Frame,
@@ -8,14 +7,14 @@ use homotopy_graphics::{
         GlCtx, Result,
     },
 };
-use ultraviolet::{Vec2, Vec3, Vec4};
+use ultraviolet::{Mat4, Vec3, Vec4};
 
-use super::{orbit_camera::OrbitCamera, GlDiagramProps};
-use crate::{
-    app::AppSettings,
-    components::{settings::Store, Finger},
-    model::proof::Signature,
+use super::{
+    orbit_camera::OrbitCamera,
+    scene::{Scene, ViewDimension},
+    GlDiagramProps,
 };
+use crate::{app::AppSettings, components::settings::Store, model::proof::Signature};
 
 pub struct Renderer {
     ctx: GlCtx,
@@ -75,61 +74,59 @@ impl Renderer {
         Ok(())
     }
 
-    pub fn render(&mut self, dimension: u8, camera: &OrbitCamera, settings: &Store<AppSettings>) {
-        let mut frame = Frame::new(&mut self.ctx).with_clear_color(Vec4::broadcast(1.));
-        let vp = camera.transform(&*frame);
+    fn render_meshes<'a>(&'a self, frame: &mut Frame<'a>, vp: &Mat4) {
+        let signature = &self.signature;
 
-        if !*settings.get_mesh_hidden() {
-            let normals = *settings.get_debug_normals();
-            let lighting = *settings.get_disable_lighting();
-            let camera = camera.position();
-            let signature = &self.signature;
-
-            if dimension <= 3 {
-                self.scene.draw(&mut frame, |generator, array| {
-                    let color = signature
-                        .generator_info(generator)
-                        .unwrap()
-                        .color
-                        .0
-                        .into_format();
-                    draw!(array, {
-                        mvp: vp,
-                        debug_normals: normals,
-                        lighting_disable: lighting,
-                        camera_pos: camera,
-                        d: Vec3::new(color.red, color.green, color.blue),
-                    })
+        self.scene.draw(frame, |generator, array| {
+            let color = signature
+                .generator_info(generator)
+                .map(|info| info.color.0.into_format())
+                .unwrap_or(palette::rgb::Rgb {
+                    red: 0.,
+                    green: 0.,
+                    blue: 1.,
+                    ..Default::default()
                 });
-            } else {
-                // TODO(@doctorn) something sensible for time control
-                let t = f32::sin(0.00025 * self.t);
+            draw!(array, &[], {
+                mvp: *vp,
+                albedo: Vec3::new(color.red, color.green, color.blue),
+                t: f32::sin(0.00025 * self.t),
+            })
+        });
+    }
 
-                self.scene.draw(&mut frame, |generator, array| {
-                    let color = if generator.id == 0 {
-                        Vec3::new(30. / 255., 144. / 255., 1.)
-                    } else {
-                        Vec3::zero()
-                    };
+    pub fn render(&mut self, camera: &OrbitCamera, settings: &Store<AppSettings>) {
+        {
+            let mut frame = Frame::new(&self.ctx)
+                .with_frame_buffer(&self.gbuffer.framebuffer)
+                .with_clear_color(Vec4::new(0., 0., 0., 1.));
 
-                    draw!(array, {
-                        mvp: vp,
-                        debug_normals: normals,
-                        lighting_disable: lighting,
-                        camera_pos: camera,
-                        t: t,
-                        d: color,
-                    })
-                });
+            let vp = camera.transform(&*frame);
+
+            if !*settings.get_mesh_hidden() {
+                self.render_meshes(&mut frame, &vp);
+            }
+
+            if *settings.get_wireframe_3d() {
+                self.scene.draw_wireframe(&mut frame, &vp);
+            }
+
+            if *settings.get_debug_axes() {
+                self.scene.draw_axes(&mut frame, &vp);
             }
         }
 
-        if *settings.get_wireframe_3d() {
-            self.scene.draw_wireframe(&mut frame, &vp);
-        }
-
-        if *settings.get_debug_axes() {
-            self.scene.draw_axes(&mut frame, &vp);
+        {
+            let mut frame = Frame::new(&self.ctx).with_clear_color(Vec4::broadcast(1.));
+            self.scene.draw_screen_quad(
+                &mut frame,
+                &[
+                    &self.gbuffer.positions,
+                    &self.gbuffer.normals,
+                    &self.gbuffer.albedo,
+                ],
+                camera.position(),
+            );
         }
     }
 }

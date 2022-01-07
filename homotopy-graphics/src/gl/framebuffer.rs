@@ -1,3 +1,5 @@
+use js_sys::Array;
+use wasm_bindgen::prelude::*;
 use web_sys::{WebGl2RenderingContext, WebGlFramebuffer};
 
 use super::{GlCtx, GlCtxHandle, GlError, Result};
@@ -107,6 +109,19 @@ impl Framebuffer {
                     }
                 }
 
+                let color_attachments = framebuffer
+                    .attachments
+                    .iter()
+                    .filter_map(|attachment| {
+                        if let AttachmentPoint::Color(_) = attachment.point {
+                            Some(JsValue::from(attachment.point.into_gl_const()))
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Array>();
+
+                gl.draw_buffers(&color_attachments.into());
                 gl.check_framebuffer_status(WebGl2RenderingContext::FRAMEBUFFER)
             })
         });

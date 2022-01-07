@@ -120,6 +120,24 @@ impl Texture {
             result
         })
     }
+
+    #[inline]
+    pub(super) fn activate(&self, i: usize) {
+        const GL_TEXTURES: [u32; 3] = [
+            WebGl2RenderingContext::TEXTURE0,
+            WebGl2RenderingContext::TEXTURE1,
+            WebGl2RenderingContext::TEXTURE2,
+        ];
+
+        // TODO(@doctorn) check if we should be unbinding
+        self.0.ctx.with_gl(|gl| {
+            gl.active_texture(GL_TEXTURES[i]);
+            gl.bind_texture(
+                WebGl2RenderingContext::TEXTURE_2D,
+                Some(&self.0.webgl_texture),
+            );
+        })
+    }
 }
 
 impl Attachable for Texture {

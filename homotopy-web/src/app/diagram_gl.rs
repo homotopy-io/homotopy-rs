@@ -20,6 +20,7 @@ use crate::{
 
 mod orbit_camera;
 mod renderer;
+mod scene;
 
 pub enum GlDiagramMessage {
     Render(f64),
@@ -97,7 +98,7 @@ impl Component for GlDiagram {
 
                 if let Some(renderer) = &mut *self.renderer.borrow_mut() {
                     renderer.update(&self.local, dt).unwrap();
-                    renderer.render(ctx.props().view.dimension(), &self.camera, &self.local);
+                    renderer.render(&self.camera, &self.local);
                 }
 
                 // Schedule the next frame
