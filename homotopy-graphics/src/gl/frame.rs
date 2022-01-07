@@ -4,7 +4,7 @@ use ultraviolet::Vec4;
 use web_sys::WebGl2RenderingContext;
 
 use super::{
-    array::VertexArray, buffer::ElementKind, framebuffer::Framebuffer, shader::Uniformable, GlCtx,
+    array::VertexArray, framebuffer::Framebuffer, shader::Uniformable, GlCtx,
 };
 
 #[macro_export]
