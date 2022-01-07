@@ -4,17 +4,17 @@ use ultraviolet::Vec4;
 use web_sys::WebGl2RenderingContext;
 
 use super::{
-    array::VertexArray, framebuffer::Framebuffer, shader::Uniformable, GlCtx,
+    array::VertexArray, framebuffer::Framebuffer, shader::Uniformable, texture::Texture, GlCtx,
 };
 
 #[macro_export]
 macro_rules! draw {
-    ($vao:expr, {$($uniform:ident : $value:expr),*$(,)*}) => {{
-        $crate::gl::frame::Draw::new($vao)
+    ($vao:expr, $textures:expr, {$($uniform:ident : $value:expr),*$(,)*}) => {{
+        $crate::gl::frame::Draw::new($vao, $textures)
             $(.uniform(stringify!($uniform), $value))*
     }};
-    ($vao:expr, $depth:expr, {$($uniform:ident : $value:expr),*$(,)*}) => {{
-        $crate::gl::frame::Draw::new_with_depth($vao, $depth)
+    ($vao:expr, $textures:expr, $depth:expr, {$($uniform:ident : $value:expr),*$(,)*}) => {{
+        $crate::gl::frame::Draw::new_with_depth($vao, $textures, $depth)
             $(.uniform(stringify!($uniform), $value))*
     }};
 }
@@ -27,12 +27,13 @@ pub enum DepthTest {
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum Clear {
+    None,
     Depth,
     Color,
     ColorDepth,
 }
 
-pub struct FrameOpts<'a> {
+struct FrameOpts<'a> {
     clear: Clear,
     clear_color: Vec4,
     framebuffer: Option<&'a Framebuffer>,
@@ -50,7 +51,7 @@ impl<'a> Default for FrameOpts<'a> {
 }
 
 pub struct Frame<'a> {
-    ctx: &'a mut GlCtx,
+    ctx: &'a GlCtx,
     opts: FrameOpts<'a>,
     draws: Vec<Draw<'a>>,
 }
@@ -59,21 +60,27 @@ pub struct Draw<'a> {
     vertex_array: &'a VertexArray,
     depth_test: DepthTest,
     uniforms: HashMap<&'static str, Box<dyn Uniformable>>,
+    textures: Vec<&'a Texture>,
 }
 
 impl<'a> Draw<'a> {
     #[inline]
-    pub fn new_with_depth(vertex_array: &'a VertexArray, depth_test: DepthTest) -> Self {
+    pub fn new_with_depth(
+        vertex_array: &'a VertexArray,
+        textures: &[&'a Texture],
+        depth_test: DepthTest,
+    ) -> Self {
         Self {
             vertex_array,
             depth_test,
             uniforms: HashMap::new(),
+            textures: textures.to_owned(),
         }
     }
 
     #[inline]
-    pub fn new(vertex_array: &'a VertexArray) -> Self {
-        Self::new_with_depth(vertex_array, DepthTest::Enable)
+    pub fn new(vertex_array: &'a VertexArray, textures: &[&'a Texture]) -> Self {
+        Self::new_with_depth(vertex_array, textures, DepthTest::Enable)
     }
 
     #[inline]
@@ -90,7 +97,7 @@ impl<'a> Draw<'a> {
 
 impl<'a> Frame<'a> {
     #[inline]
-    pub fn new(ctx: &'a mut GlCtx) -> Self {
+    pub fn new(ctx: &'a GlCtx) -> Self {
         Self {
             ctx,
             opts: Default::default(),
@@ -121,9 +128,7 @@ impl<'a> Frame<'a> {
         self.draws.push(draw);
     }
 
-    fn render_with_framebuffer(&mut self) {
-        self.ctx.resize_to_fit();
-
+    fn render_with_framebuffer(&self) {
         if let Some(framebuffer) = self.opts.framebuffer {
             framebuffer.bind(|| {
                 self.render();
@@ -136,6 +141,7 @@ impl<'a> Frame<'a> {
     fn render(&self) {
         self.ctx.with_gl(|gl| {
             let clear_opts = match self.opts.clear {
+                Clear::None => 0,
                 Clear::Color => WebGl2RenderingContext::COLOR_BUFFER_BIT,
                 Clear::Depth => WebGl2RenderingContext::DEPTH_BUFFER_BIT,
                 Clear::ColorDepth => {
@@ -157,6 +163,11 @@ impl<'a> Frame<'a> {
                     DepthTest::Enable => gl.enable(WebGl2RenderingContext::DEPTH_TEST),
                     DepthTest::Disable => gl.disable(WebGl2RenderingContext::DEPTH_TEST),
                 }
+
+                for (i, &texture) in draw.textures.iter().enumerate() {
+                    texture.activate(i)
+                }
+
                 // bind the program the draw expected
                 // NOTE we could sort each draw queue by program to make this more performant
                 draw.vertex_array.program().bind(|| {

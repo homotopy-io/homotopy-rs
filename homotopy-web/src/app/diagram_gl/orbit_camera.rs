@@ -6,7 +6,11 @@ use ultraviolet::{
     Mat4, Vec2, Vec3,
 };
 
-use crate::components::{touch_interface::{TouchAction, TouchInterface}, Finger, Point, delta::Delta};
+use crate::components::{
+    delta::Delta,
+    touch_interface::{TouchAction, TouchInterface},
+    Finger, Point,
+};
 
 pub struct OrbitCamera {
     pub phi: f32,
