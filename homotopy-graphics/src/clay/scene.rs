@@ -1,8 +1,9 @@
 use homotopy_core::{DiagramN, Generator};
 use ultraviolet::{Mat4, Vec3};
 
+use super::layout::extract_mesh;
 use crate::{
-    clay::{geom::simplicial::SimplicialMesh, layout::CubicalMeshExtractor},
+    clay::geom::simplicial::SimplicialMesh,
     draw,
     gl::{
         array::VertexArray,
@@ -69,19 +70,7 @@ impl Scene {
     ) -> Result<()> {
         self.components.clear();
 
-        let mut extractor =
-            CubicalMeshExtractor::new(&self.diagram, self.view_dimension as u8 - 1).unwrap();
-
-        if self.view_dimension == ViewDimension::Four {
-            extractor = extractor.extract_cubes();
-        }
-
-        let mut mesh = extractor
-            .extract_squares()
-            .extract_lines()
-            .extract_curves()
-            .extract_points()
-            .build();
+        let mut mesh = extract_mesh(&self.diagram, self.view_dimension as usize).unwrap();
         mesh.subdivide(subdivision_depth);
 
         if self.view_dimension == ViewDimension::Three {

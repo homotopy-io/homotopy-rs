@@ -165,6 +165,27 @@ impl<V, E> Graph<V, E> {
     }
 
     #[inline]
+    pub fn find_edge(&self, s: Node, t: Node) -> Option<Edge> {
+        for e in self.outgoing_edges(s) {
+            if self.target(e) == t {
+                return Some(e);
+            }
+        }
+        None
+    }
+
+    #[inline]
+    pub fn update_edge(&mut self, s: Node, t: Node, e: E) -> Edge {
+        if let Some(id) = self.find_edge(s, t) {
+            if let Some(weight) = self.edge_weight_mut(id) {
+                *weight = e;
+                return id;
+            }
+        }
+        self.add_edge(s, t, e)
+    }
+
+    #[inline]
     pub fn with_node<F, U>(&self, node: Node, f: F) -> U
     where
         F: FnOnce(&NodeData<V>) -> U,
@@ -306,6 +327,20 @@ impl<V, E> Graph<V, E> {
     #[inline]
     pub fn outgoing_edges(&self, node: Node) -> impl Iterator<Item = Edge> + '_ {
         self.nodes[node].outgoing_edges()
+    }
+
+    pub fn sources(&self) -> impl Iterator<Item = Node> + '_ {
+        self.nodes
+            .iter()
+            .filter(|(_, nd)| nd.incoming_edges().next().is_none())
+            .map(|(n, _)| n)
+    }
+
+    pub fn targets(&self) -> impl Iterator<Item = Node> + '_ {
+        self.nodes
+            .iter()
+            .filter(|(_, nd)| nd.outgoing_edges().next().is_none())
+            .map(|(n, _)| n)
     }
 }
 

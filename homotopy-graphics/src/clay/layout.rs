@@ -1,10 +1,6 @@
-use std::{cmp, collections::HashMap};
-
-use homotopy_common::{declare_idx, graph::Edge};
+use homotopy_common::{declare_idx, graph::Node, idx::IdxVec};
 use homotopy_core::{
-    common::DimensionError,
-    cubicalisation::{Bias, CubicalGraph},
-    Diagram, DiagramN, Direction, Generator, Height, SliceIndex,
+    common::DimensionError, layout::Layout, mesh, DiagramN, Generator, Height, SliceIndex,
 };
 use ultraviolet::Vec4;
 
@@ -36,274 +32,120 @@ declare_idx! {
     struct CoordIdx = usize;
 }
 
-pub struct CubicalMeshExtractor {
-    graph: CubicalGraph,
-    coords: HashMap<Vec<SliceIndex>, Vert>,
-    mesh: CubicalMesh,
-}
+pub fn extract_mesh(diagram: &DiagramN, depth: usize) -> Result<CubicalMesh, DimensionError> {
+    let mesh = mesh::Mesh::new(diagram, depth)?;
+    let layout = Layout::new(diagram, depth)?;
 
-impl CubicalMeshExtractor {
-    pub fn new(diagram: &DiagramN, cubicalisation_depth: u8) -> Result<Self, DimensionError> {
-        let diagram = Diagram::from(diagram.clone());
-        let graph = diagram.clone().cubicalise(&[Bias::Left].repeat(cmp::min(
-            cubicalisation_depth as usize,
-            diagram.dimension().saturating_sub(1),
-        )))?;
+    let mut geometry = CubicalMesh::new(diagram.clone().into());
+    let mut node_to_vert: IdxVec<Node, Vert> = IdxVec::with_capacity(mesh.graph.node_count());
 
-        let mut mesh = CubicalMesh::new(diagram);
-        let mut coords = HashMap::new();
-        let mut valence = HashMap::new();
+    for elem in mesh.flatten_elements() {
+        if elem.len() == 1 {
+            let n = elem[0];
+            let path = &mesh.graph[n].0;
 
-        for (node, data) in graph.inner().nodes() {
-            let label = graph.label(node);
             let coord = {
-                let dimension = label.len();
-                let mk_coord = |i: usize| {
-                    if i >= dimension {
-                        0.
-                    } else {
-                        let j = dimension - i - 1;
-                        data.0[j].to_int(graph.size(j)) as f32
-                    }
-                };
-
-                Vec4::new(mk_coord(0), mk_coord(1), mk_coord(2), mk_coord(3))
+                let coord = layout.get(path);
+                if coord.len() == 3 {
+                    Vec4::new(coord[0], coord[1], coord[2], 0.0)
+                } else {
+                    Vec4::new(coord[0], coord[1], coord[2], coord[3])
+                }
             };
-            let vert = coords.get(label).copied().unwrap_or_else(|| {
-                let stratum = label
-                    .iter()
-                    .map(|index| match index {
-                        SliceIndex::Interior(Height::Singular(_)) => 1,
-                        _ => 0,
-                    })
-                    .sum();
-                let boundary = Boundary::at_coord(graph.label(node));
-                let generator = data.1.max_generator();
-                let vert =
-                    mesh.mk(Vec4::zero().with_boundary_and_generator(stratum, boundary, generator));
 
-                coords.insert(label.to_owned(), vert);
-                vert
-            });
+            let stratum = path
+                .iter()
+                .map(|&index| match index {
+                    SliceIndex::Interior(Height::Singular(_)) => 1,
+                    _ => 0,
+                })
+                .sum();
+            let boundary = Boundary::at_coord(path);
+            let generator = mesh.graph[n].1.max_generator();
 
-            *mesh.verts[vert] += coord;
-            *valence.entry(vert).or_insert(0) += 1;
-        }
+            node_to_vert
+                .push(geometry.mk(coord.with_boundary_and_generator(stratum, boundary, generator)));
+        } else {
+            let n = elem.len().log2() as usize;
 
-        for (vert, data) in mesh.verts.iter_mut() {
-            **data /= valence[&vert] as f32;
-        }
-
-        Ok(Self {
-            graph,
-            coords,
-            mesh,
-        })
-    }
-
-    #[inline]
-    fn source_of(&self, edge: Edge) -> Vert {
-        let node = self.graph.inner().source(edge);
-        self.coords[self.graph.label(node)]
-    }
-
-    #[inline]
-    fn target_of(&self, edge: Edge) -> Vert {
-        let node = self.graph.inner().target(edge);
-        self.coords[self.graph.label(node)]
-    }
-
-    #[inline]
-    fn minimum_generator(generators: impl Iterator<Item = Generator>) -> Generator {
-        generators.min_by_key(|g| g.dimension).unwrap()
-    }
-
-    #[inline]
-    fn codimension_visible(&self, generator: Generator, threshold: usize) -> bool {
-        let codimension = self
-            .mesh
-            .diagram
-            .dimension()
-            .saturating_sub(generator.dimension);
-        codimension == threshold
-    }
-
-    #[inline]
-    fn has_n_volume(verts: &[Vert], n: usize) -> bool {
-        let mut verts = verts.to_vec();
-        verts.dedup();
-        verts.len() > n
-    }
-
-    #[inline]
-    pub fn extract_cubes(mut self) -> Self {
-        for cube in self.graph.cubes() {
-            let bl = cube.bottom_left;
-            let br = cube.bottom_right;
-            let tl = cube.top_left;
-            let tr = cube.top_right;
-
-            let mut verts = [
-                self.source_of(bl),
-                self.source_of(br),
-                self.target_of(bl),
-                self.target_of(br),
-                self.source_of(tl),
-                self.source_of(tr),
-                self.target_of(tl),
-                self.target_of(tr),
-            ];
-            let generator =
-                Self::minimum_generator(verts.iter().map(|v| self.mesh.verts[*v].generator));
-
-            if !self.codimension_visible(generator, 3) || !Self::has_n_volume(&verts, 3) {
+            if n >= depth {
                 continue;
             }
 
-            if self.graph.get_direction(cube.bottom_front) == Direction::Backward {
-                verts.swap(0, 1);
-                verts.swap(2, 3);
-                verts.swap(4, 5);
-                verts.swap(6, 7);
-            }
+            let verts = elem.iter().map(|n| node_to_vert[*n]).collect::<Vec<_>>();
+            let generator = minimum_generator(verts.iter().map(|v| geometry.verts[*v].generator));
 
-            if self.graph.get_direction(cube.bottom_left) == Direction::Backward {
-                verts.swap(0, 2);
-                verts.swap(1, 3);
-                verts.swap(4, 6);
-                verts.swap(5, 7);
-            }
-
-            if self.graph.get_direction(cube.left_front) == Direction::Backward {
-                verts.swap(0, 4);
-                verts.swap(1, 5);
-                verts.swap(2, 6);
-                verts.swap(3, 7);
-            }
-
-            self.mesh.mk(verts);
-        }
-
-        self
-    }
-
-    #[inline]
-    pub fn extract_squares(mut self) -> Self {
-        for square in self.graph.squares() {
-            let b = square.bottom;
-            let t = square.top;
-
-            let mut verts = [
-                self.source_of(b),
-                self.target_of(b),
-                self.source_of(t),
-                self.target_of(t),
-            ];
-            let generator =
-                Self::minimum_generator(verts.iter().map(|v| self.mesh.verts[*v].generator));
-
-            if !self.codimension_visible(generator, 2) || !Self::has_n_volume(&verts, 2) {
+            if !codimension_visible(diagram.dimension(), generator, n) {
                 continue;
             }
 
-            if self.graph.get_direction(b) == Direction::Backward {
-                verts.swap(0, 1);
-                verts.swap(2, 3);
+            match n {
+                1 => {
+                    let verts: [Vert; 2] = verts.try_into().unwrap();
+                    geometry.mk(verts);
+                }
+                2 => {
+                    let verts: [Vert; 4] = verts.try_into().unwrap();
+                    geometry.mk(verts);
+                }
+                3 => {
+                    let verts: [Vert; 8] = verts.try_into().unwrap();
+                    geometry.mk(verts);
+                }
+                _ => panic!(),
             }
-
-            if self.graph.get_direction(square.left) == Direction::Backward {
-                verts.swap(0, 2);
-                verts.swap(1, 3);
-            }
-
-            self.mesh.mk(verts);
         }
-
-        self
     }
 
-    #[inline]
-    pub fn extract_lines(mut self) -> Self {
-        for edge in self.graph.inner().edge_keys() {
-            let mut verts = [self.source_of(edge), self.target_of(edge)];
-            let generator =
-                Self::minimum_generator(verts.iter().map(|v| self.mesh.verts[*v].generator));
+    // Extract curves.
+    let mut curves: Vec<CurveData> = vec![];
 
-            if verts[0] == verts[1] || !self.codimension_visible(generator, 1) {
-                continue;
-            }
+    'outer: for ed in mesh.graph.edge_values() {
+        let verts = [ed.source(), ed.target()].map(|n| node_to_vert[n]);
+        let generator = minimum_generator(verts.iter().map(|v| geometry.verts[*v].generator));
 
-            if self.graph.get_direction(edge) == Direction::Backward {
-                verts.swap(0, 1);
-            }
-
-            self.mesh.mk(verts);
+        if !codimension_visible(diagram.dimension(), generator, 1) {
+            continue;
         }
 
-        self
-    }
-
-    #[inline]
-    pub fn extract_curves(mut self) -> Self {
-        let mut curves: Vec<CurveData> = vec![];
-
-        'outer: for edge in self.graph.inner().edge_keys() {
-            let mut verts = [self.source_of(edge), self.target_of(edge)];
-            let generator =
-                Self::minimum_generator(verts.iter().map(|v| self.mesh.verts[*v].generator));
-
-            if verts[0] == verts[1] || !self.codimension_visible(generator, 1) {
-                continue;
-            }
-
-            if self.graph.get_direction(edge) == Direction::Backward {
-                verts.swap(0, 1);
-            }
-
-            for curve in &mut curves {
-                if let Some(&curve_target) = curve.last() {
-                    if self.codimension_visible(self.mesh.verts[curve_target].generator, 1)
-                        && curve_target == verts[0]
-                    {
-                        curve.push(verts[1]);
-                        continue 'outer;
-                    }
+        for curve in &mut curves {
+            if let Some(&curve_target) = curve.last() {
+                if codimension_visible(
+                    diagram.dimension(),
+                    geometry.verts[curve_target].generator,
+                    1,
+                ) && curve_target == verts[0]
+                {
+                    curve.push(verts[1]);
+                    continue 'outer;
                 }
             }
-
-            curves.push(verts.to_vec().with_generator(generator));
         }
 
-        self.mesh.curves = curves.into_iter().collect();
-        self
+        curves.push(verts.to_vec().with_generator(generator));
     }
 
-    #[inline]
-    pub fn extract_points(mut self) -> Self {
-        for node in self.graph.inner().node_keys() {
-            let vert = self.coords[self.graph.label(node)];
+    geometry.curves = curves.into_iter().collect();
 
-            if !self.codimension_visible(self.mesh.verts[vert].generator, 0) {
-                continue;
-            }
+    let (min, max) = geometry.bounds();
+    let translation = 0.5 * (max + min);
+    let duration = 0.5 * (max.w - min.w);
 
-            self.mesh.mk(vert);
-        }
-
-        self
+    for vert in geometry.verts.values_mut() {
+        **vert -= translation;
+        vert.w /= duration;
     }
 
-    #[inline]
-    pub fn build(mut self) -> CubicalMesh {
-        let (min, max) = self.mesh.bounds();
-        let translation = 0.5 * (max + min);
-        let duration = 0.5 * (max.w - min.w);
+    Ok(geometry)
+}
 
-        for vert in self.mesh.verts.values_mut() {
-            **vert -= translation;
-            vert.w /= duration;
-        }
+#[inline]
+fn minimum_generator(generators: impl Iterator<Item = Generator>) -> Generator {
+    generators.min_by_key(|g| g.dimension).unwrap()
+}
 
-        self.mesh
-    }
+#[inline]
+fn codimension_visible(dimension: usize, generator: Generator, threshold: usize) -> bool {
+    let codimension = dimension.saturating_sub(generator.dimension);
+    codimension == threshold
 }
