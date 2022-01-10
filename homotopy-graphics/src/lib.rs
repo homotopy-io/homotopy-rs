@@ -40,6 +40,7 @@
     clippy::similar_names,
     clippy::too_many_lines,
 )]
+#![feature(int_log)]
 
 pub mod clay;
 pub mod gl;

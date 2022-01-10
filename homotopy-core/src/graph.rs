@@ -1,4 +1,4 @@
-use std::convert::{Into, TryInto};
+use std::convert::TryInto;
 
 use homotopy_common::{
     graph::{Graph, Node},
@@ -6,7 +6,7 @@ use homotopy_common::{
 };
 
 use crate::{
-    common::{Boundary, DimensionError, Height, RegularHeight, SliceIndex},
+    common::{Boundary, DimensionError, Height, SliceIndex},
     diagram::{Diagram, DiagramN},
     rewrite::{Rewrite, RewriteN},
 };
@@ -36,17 +36,16 @@ impl GraphBuilder {
         graph.add_node((vec![], diagram));
 
         for _ in 0..depth {
-            graph = explode(&graph, |r, _| Rewrite::identity(r.dimension() - 1))?;
+            graph = explode_graph(&graph)?.0;
         }
 
         Ok(graph)
     }
 }
 
-pub fn explode<F>(graph: &SliceGraph, f: F) -> Result<SliceGraph, DimensionError>
-where
-    F: Fn(&RewriteN, RegularHeight) -> Rewrite,
-{
+pub fn explode_graph(
+    graph: &SliceGraph,
+) -> Result<(SliceGraph, IdxVec<Node, Vec<Node>>), DimensionError> {
     use Height::{Regular, Singular};
 
     let mut exploded_graph: SliceGraph = Graph::new();
@@ -113,21 +112,29 @@ where
     }
 
     for ed in graph.edge_values() {
+        let s = ed.source();
+        let t = ed.target();
         let rewrite: &RewriteN = ed.inner().try_into()?;
 
-        let source_slices = &node_to_slices[ed.source()];
+        let source_diagram: &DiagramN = (&graph[s].1).try_into()?;
+        let source_slices = &node_to_slices[s];
         let source_size = source_slices.len();
-        let target_slices = &node_to_slices[ed.target()];
+        let target_diagram: &DiagramN = (&graph[t].1).try_into()?;
+        let target_slices = &node_to_slices[t];
         let target_size = target_slices.len();
 
         // Identity rewrite between source slices
-        exploded_graph.add_edge(source_slices[0], target_slices[0], f(rewrite, 0));
+        exploded_graph.add_edge(
+            source_slices[0],
+            target_slices[0],
+            Rewrite::identity(rewrite.dimension() - 1),
+        );
 
         // Identity rewrite between target slices
         exploded_graph.add_edge(
             source_slices[source_size - 1],
             target_slices[target_size - 1],
-            f(rewrite, target_size - 1),
+            Rewrite::identity(rewrite.dimension() - 1),
         );
 
         // Singular slices
@@ -146,12 +153,39 @@ where
             exploded_graph.add_edge(
                 source_slices[Regular(source_height).to_int() + 1],
                 target_slices[Regular(target_height).to_int() + 1],
-                f(rewrite, target_height),
+                Rewrite::identity(rewrite.dimension() - 1),
             );
+        }
+
+        // Composite slices
+        for source_height in 0..(source_size - 1) / 2 {
+            let preimage = rewrite.regular_preimage(source_height);
+            if preimage.is_empty() {
+                let target_height = preimage.start;
+                exploded_graph.add_edge(
+                    source_slices[Regular(source_height).to_int() + 1],
+                    target_slices[Singular(target_height).to_int() + 1],
+                    source_diagram.cospans()[source_height]
+                        .forward
+                        .compose(&rewrite.slice(source_height))
+                        .unwrap(),
+                );
+            }
+        }
+        for target_height in 0..(target_size - 3) / 2 {
+            let preimage = rewrite.singular_preimage(target_height);
+            if preimage.is_empty() {
+                let source_height = preimage.start;
+                exploded_graph.add_edge(
+                    source_slices[Regular(source_height).to_int() + 1],
+                    target_slices[Singular(target_height).to_int() + 1],
+                    target_diagram.cospans()[target_height].forward.clone(),
+                );
+            }
         }
     }
 
-    Ok(exploded_graph)
+    Ok((exploded_graph, node_to_slices))
 }
 
 pub struct TopologicalSort(Vec<Node>);

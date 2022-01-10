@@ -1,4 +1,9 @@
-use std::{cmp::Ordering, fmt, iter::FusedIterator};
+use std::{
+    cmp::Ordering,
+    fmt,
+    iter::FusedIterator,
+    ops::{Index, IndexMut},
+};
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use thiserror::Error;
@@ -278,6 +283,30 @@ impl DoubleEndedIterator for SliceIndexIterator {
 }
 
 impl FusedIterator for SliceIndexIterator {}
+
+impl<T> Index<SliceIndex> for Vec<T> {
+    type Output = T;
+
+    fn index(&self, index: SliceIndex) -> &Self::Output {
+        match index {
+            SliceIndex::Boundary(Boundary::Source) => self.first(),
+            SliceIndex::Boundary(Boundary::Target) => self.last(),
+            SliceIndex::Interior(height) => self.get(height.to_int() + 1),
+        }
+        .unwrap()
+    }
+}
+
+impl<T> IndexMut<SliceIndex> for Vec<T> {
+    fn index_mut(&mut self, index: SliceIndex) -> &mut Self::Output {
+        match index {
+            SliceIndex::Boundary(Boundary::Source) => self.first_mut(),
+            SliceIndex::Boundary(Boundary::Target) => self.last_mut(),
+            SliceIndex::Interior(height) => self.get_mut(height.to_int() + 1),
+        }
+        .unwrap()
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum Direction {
