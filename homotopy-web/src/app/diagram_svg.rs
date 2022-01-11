@@ -108,7 +108,7 @@ impl PreparedDiagram {
         let layout = Layout::new(diagram, 2000).unwrap();
         let complex = make_complex(diagram);
         let depths = Depths::new(diagram).unwrap();
-        let graphic = GraphicElement::build(&complex, &layout, &generators, &depths);
+        let graphic = GraphicElement::build(diagram, &complex, &layout, &generators, &depths);
         let actions = ActionRegion::build(&complex, &layout);
 
         let dimensions = layout

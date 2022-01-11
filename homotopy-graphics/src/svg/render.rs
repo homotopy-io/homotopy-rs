@@ -6,6 +6,7 @@ use homotopy_core::{
     common::{Generator, Height, SliceIndex},
     complex::Simplex,
     projection::{Depths, Generators},
+    DiagramN,
 };
 use lyon_path::Path;
 
@@ -142,6 +143,7 @@ impl GraphicElement {
     /// This function can panic or produce undefined results if the simplicial complex, the layout
     /// and the projected generators have not come from the same diagram.
     pub fn build(
+        diagram: &DiagramN,
         complex: &[Simplex],
         layout: &Layout,
         generators: &Generators,
@@ -178,7 +180,9 @@ impl GraphicElement {
                 }
                 Simplex::Point([p]) => {
                     let generator = generators.get(p.0, p.1).unwrap();
-                    point_elements.push(Self::Point(generator, layout.get(p.0, p.1).unwrap()));
+                    if generator.dimension == diagram.dimension() {
+                        point_elements.push(Self::Point(generator, layout.get(p.0, p.1).unwrap()));
+                    }
                 }
             }
         }
