@@ -63,8 +63,13 @@ pub fn extract_mesh(diagram: &DiagramN, depth: usize) -> Result<CubicalMesh, Dim
             let boundary = Boundary::at_coord(path);
             let generator = mesh.graph[n].1.max_generator();
 
-            node_to_vert
-                .push(geometry.mk(coord.with_boundary_and_generator(stratum, boundary, generator)));
+            let vert = geometry.mk(coord.with_boundary_and_generator(stratum, boundary, generator));
+
+            node_to_vert.push(vert);
+
+            if codimension_visible(diagram.dimension(), generator, 0) {
+                geometry.mk(vert);
+            }
         } else {
             let n = elem.len().log2() as usize;
 
