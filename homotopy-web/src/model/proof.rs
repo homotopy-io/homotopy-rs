@@ -807,11 +807,11 @@ fn contains_point(diagram: Diagram, point: &[Height], embedding: &[RegularHeight
             let (shift, embedding) = embedding.split_first().unwrap_or((&0, &[]));
             let shift = Height::Regular(*shift);
 
-            if height.to_int() < shift.to_int() {
+            if usize::from(*height) < usize::from(shift) {
                 return false;
             }
 
-            let height = Height::from_int(height.to_int() - shift.to_int());
+            let height = Height::from(usize::from(*height) - usize::from(shift));
 
             match diagram.slice(height) {
                 Some(slice) => contains_point(slice, point, embedding),

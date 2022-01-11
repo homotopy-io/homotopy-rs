@@ -347,7 +347,7 @@ impl DiagramN {
         match index.into() {
             SliceIndex::Boundary(Boundary::Source) => Some(self.source()),
             SliceIndex::Boundary(Boundary::Target) => Some(self.target()),
-            SliceIndex::Interior(height) => self.slices().nth(height.to_int()),
+            SliceIndex::Interior(height) => self.slices().nth(height.into()),
         }
     }
 
@@ -740,7 +740,7 @@ mod test {
             for p in *point {
                 slice = DiagramN::try_from(slice)
                     .unwrap()
-                    .slice(Height::from_int(*p))
+                    .slice(Height::from(*p))
                     .unwrap();
             }
 

@@ -59,8 +59,8 @@ pub fn make_complex(diagram: &DiagramN) -> Vec<Simplex> {
         let backward: RewriteN = cospans[y].backward.clone().try_into().unwrap();
 
         generate_rewrite(
-            &slices[Regular(y).to_int()],
-            &slices[Singular(y).to_int()],
+            &slices[usize::from(Regular(y))],
+            &slices[usize::from(Singular(y))],
             Regular(y).into(),
             Singular(y).into(),
             &forward,
@@ -68,8 +68,8 @@ pub fn make_complex(diagram: &DiagramN) -> Vec<Simplex> {
         );
 
         generate_rewrite(
-            &slices[Regular(y + 1).to_int()],
-            &slices[Singular(y).to_int()],
+            &slices[usize::from(Regular(y + 1))],
+            &slices[usize::from(Singular(y))],
             Regular(y + 1).into(),
             Singular(y).into(),
             &backward,

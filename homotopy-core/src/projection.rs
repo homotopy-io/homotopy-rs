@@ -52,13 +52,13 @@ impl Generators {
         let slice = match y {
             SliceIndex::Boundary(Boundary::Source) => self.0.first()?,
             SliceIndex::Boundary(Boundary::Target) => self.0.last()?,
-            SliceIndex::Interior(height) => self.0.get(height.to_int())?,
+            SliceIndex::Interior(height) => self.0.get(usize::from(height))?,
         };
 
         match x {
             SliceIndex::Boundary(Boundary::Source) => slice.first().copied(),
             SliceIndex::Boundary(Boundary::Target) => slice.last().copied(),
-            SliceIndex::Interior(height) => slice.get(height.to_int()).copied(),
+            SliceIndex::Interior(height) => slice.get(usize::from(height)).copied(),
         }
     }
 }

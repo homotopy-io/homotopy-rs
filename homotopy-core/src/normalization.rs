@@ -82,8 +82,8 @@ impl Degeneracy {
             .iter()
             .enumerate()
             .map(|(i, slice)| {
-                let middle_slice = &middle_slices[Height::Singular(i).to_int()];
-                let target_slice = &target_slices[Height::Singular(i).to_int()];
+                let middle_slice = &middle_slices[usize::from(Height::Singular(i))];
+                let target_slice = &target_slices[usize::from(Height::Singular(i))];
                 vec![slice.to_rewrite(middle_slice, target_slice)]
             })
             .collect();
@@ -254,7 +254,7 @@ fn normalize_relative(diagram: &Diagram, sink: &[SinkArrow], mode: Normalization
 
     // Normalize the regular levels
     for height in 0..=diagram.size() {
-        let slice = &slices[Regular(height).to_int()];
+        let slice = &slices[usize::from(Regular(height))];
         let (normalized, degeneracy) = match mode {
             NormalizationMode::Full => {
                 let output = normalize_relative(slice, &[], mode);
@@ -274,7 +274,7 @@ fn normalize_relative(diagram: &Diagram, sink: &[SinkArrow], mode: Normalization
         subproblems[i].push(SinkArrow {
             source: regular[i].clone(),
             degeneracy: degeneracies[&Regular(i)].clone(),
-            middle: slices[Regular(i).to_int()].clone(),
+            middle: slices[usize::from(Regular(i))].clone(),
             rewrite: cospan.forward.clone(),
         });
 
@@ -283,7 +283,7 @@ fn normalize_relative(diagram: &Diagram, sink: &[SinkArrow], mode: Normalization
         subproblems[i].push(SinkArrow {
             source: regular[i + 1].clone(),
             degeneracy: degeneracies[&Regular(i + 1)].clone(),
-            middle: slices[Regular(i + 1).to_int()].clone(),
+            middle: slices[usize::from(Regular(i + 1))].clone(),
             rewrite: cospan.backward.clone(),
         });
 
@@ -301,7 +301,7 @@ fn normalize_relative(diagram: &Diagram, sink: &[SinkArrow], mode: Normalization
 
     // Solve the subproblems
     for target_height in 0..diagram.size() {
-        let slice = &slices[Height::Singular(target_height).to_int()];
+        let slice = &slices[usize::from(Height::Singular(target_height))];
         let output = normalize_relative(slice, &subproblems[target_height], mode);
         degeneracies.insert(Singular(target_height), output.degeneracy);
         factors.extend(

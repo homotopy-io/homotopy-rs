@@ -380,12 +380,12 @@ fn colimit_recursive(
             let node = Node(key, height);
             let index = delta.add_node(node);
             node_to_index.insert(node, index);
-            diagram_slices.insert(node, slices[Singular(height).to_int()].clone());
+            diagram_slices.insert(node, slices[usize::from(Singular(height))].clone());
             node_to_cospan.insert(node, cospans[height].clone());
         }
 
         for height in 1..diagram.size() {
-            let slice = slices[Regular(height).to_int()].clone();
+            let slice = slices[usize::from(Regular(height))].clone();
             let backward = cospans[height - 1].backward.clone();
             let forward = cospans[height].forward.clone();
 
@@ -409,7 +409,7 @@ fn colimit_recursive(
         let slices: Vec<_> = diagram.slices().collect();
 
         for height in 0..diagram.size() {
-            let slice = slices[Singular(height).to_int()].clone();
+            let slice = slices[usize::from(Singular(height))].clone();
             let source_node = Node(*source, backward.singular_image(height));
             let target_node = Node(*target, forward.singular_image(height));
 

@@ -53,15 +53,17 @@ pub enum Height {
     Regular(RegularHeight),
 }
 
-impl Height {
-    pub fn to_int(self) -> usize {
-        match self {
-            Self::Regular(i) => i * 2,
-            Self::Singular(i) => i * 2 + 1,
+impl From<Height> for usize {
+    fn from(h: Height) -> Self {
+        match h {
+            Height::Regular(i) => i * 2,
+            Height::Singular(i) => i * 2 + 1,
         }
     }
+}
 
-    pub fn from_int(h: usize) -> Self {
+impl From<usize> for Height {
+    fn from(h: usize) -> Self {
         if h % 2 == 0 {
             Self::Regular(h / 2)
         } else {
@@ -78,7 +80,7 @@ impl PartialOrd for Height {
 
 impl Ord for Height {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.to_int().cmp(&other.to_int())
+        usize::from(*self).cmp(&usize::from(*other))
     }
 }
 
@@ -87,7 +89,7 @@ impl Serialize for Height {
     where
         S: Serializer,
     {
-        serializer.serialize_u32(self.to_int() as u32)
+        serializer.serialize_u32(usize::from(*self) as u32)
     }
 }
 
@@ -96,7 +98,7 @@ impl<'de> Deserialize<'de> for Height {
     where
         D: Deserializer<'de>,
     {
-        Ok(Self::from_int(u32::deserialize(deserializer)? as usize))
+        Ok((u32::deserialize(deserializer)? as usize).into())
     }
 }
 
@@ -117,7 +119,7 @@ impl SliceIndex {
         match self {
             Self::Boundary(Boundary::Source) => -1,
             Self::Boundary(Boundary::Target) => size as isize * 2 + 1,
-            Self::Interior(height) => height.to_int() as isize,
+            Self::Interior(height) => usize::from(height) as isize,
         }
     }
 
@@ -127,7 +129,7 @@ impl SliceIndex {
         } else if h > 2 * size as isize {
             Boundary::Target.into()
         } else {
-            Height::from_int(h as usize).into()
+            Height::from(h as usize).into()
         }
     }
 
@@ -291,7 +293,7 @@ impl<T> Index<SliceIndex> for Vec<T> {
         match index {
             SliceIndex::Boundary(Boundary::Source) => self.first(),
             SliceIndex::Boundary(Boundary::Target) => self.last(),
-            SliceIndex::Interior(height) => self.get(height.to_int() + 1),
+            SliceIndex::Interior(height) => self.get(usize::from(height) + 1),
         }
         .unwrap()
     }
@@ -302,7 +304,7 @@ impl<T> IndexMut<SliceIndex> for Vec<T> {
         match index {
             SliceIndex::Boundary(Boundary::Source) => self.first_mut(),
             SliceIndex::Boundary(Boundary::Target) => self.last_mut(),
-            SliceIndex::Interior(height) => self.get_mut(height.to_int() + 1),
+            SliceIndex::Interior(height) => self.get_mut(usize::from(height) + 1),
         }
         .unwrap()
     }

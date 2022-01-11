@@ -68,7 +68,7 @@ pub fn explode_graph(
 
         // Interior slices
         for (i, slice) in diagram.slices().enumerate() {
-            let slice_coord = mk_coord(coord, Height::from_int(i));
+            let slice_coord = mk_coord(coord, Height::from(i));
             slices.push(exploded_graph.add_node((slice_coord, slice)));
         }
 
@@ -89,14 +89,14 @@ pub fn explode_graph(
         // Rewrites between interior slices
         for (i, cospan) in diagram.cospans().iter().enumerate() {
             exploded_graph.add_edge(
-                slices[Regular(i).to_int() + 1],
-                slices[Singular(i).to_int() + 1],
+                slices[usize::from(Regular(i)) + 1],
+                slices[usize::from(Singular(i)) + 1],
                 cospan.forward.clone(),
             );
 
             exploded_graph.add_edge(
-                slices[Regular(i + 1).to_int() + 1],
-                slices[Singular(i).to_int() + 1],
+                slices[usize::from(Regular(i + 1)) + 1],
+                slices[usize::from(Singular(i)) + 1],
                 cospan.backward.clone(),
             );
         }
@@ -141,8 +141,8 @@ pub fn explode_graph(
         for source_height in 0..(source_size - 3) / 2 {
             let target_height = rewrite.singular_image(source_height);
             exploded_graph.add_edge(
-                source_slices[Singular(source_height).to_int() + 1],
-                target_slices[Singular(target_height).to_int() + 1],
+                source_slices[usize::from(Singular(source_height)) + 1],
+                target_slices[usize::from(Singular(target_height)) + 1],
                 rewrite.slice(source_height),
             );
         }
@@ -151,8 +151,8 @@ pub fn explode_graph(
         for target_height in 0..(target_size - 1) / 2 {
             let source_height = rewrite.regular_image(target_height);
             exploded_graph.add_edge(
-                source_slices[Regular(source_height).to_int() + 1],
-                target_slices[Regular(target_height).to_int() + 1],
+                source_slices[usize::from(Regular(source_height)) + 1],
+                target_slices[usize::from(Regular(target_height)) + 1],
                 Rewrite::identity(rewrite.dimension() - 1),
             );
         }
@@ -163,8 +163,8 @@ pub fn explode_graph(
             if preimage.is_empty() {
                 let target_height = preimage.start;
                 exploded_graph.add_edge(
-                    source_slices[Regular(source_height).to_int() + 1],
-                    target_slices[Singular(target_height).to_int() + 1],
+                    source_slices[usize::from(Regular(source_height)) + 1],
+                    target_slices[usize::from(Singular(target_height)) + 1],
                     source_diagram.cospans()[source_height]
                         .forward
                         .compose(&rewrite.slice(source_height))
@@ -177,8 +177,8 @@ pub fn explode_graph(
             if preimage.is_empty() {
                 let source_height = preimage.start;
                 exploded_graph.add_edge(
-                    source_slices[Regular(source_height).to_int() + 1],
-                    target_slices[Singular(target_height).to_int() + 1],
+                    source_slices[usize::from(Regular(source_height)) + 1],
+                    target_slices[usize::from(Singular(target_height)) + 1],
                     target_diagram.cospans()[target_height].forward.clone(),
                 );
             }

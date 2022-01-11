@@ -33,9 +33,9 @@ impl Constraint {
                 Self(
                     forward
                         .singular_preimage(x)
-                        .map(|xp| (Singular(xp).to_int(), Regular(i).to_int()))
+                        .map(|xp| (Singular(xp).into(), Regular(i).into()))
                         .collect(),
-                    (Singular(x).to_int(), Singular(i).to_int()),
+                    (Singular(x).into(), Singular(i).into()),
                 )
             }));
 
@@ -43,9 +43,9 @@ impl Constraint {
                 Self(
                     backward
                         .singular_preimage(x)
-                        .map(|xp| (Singular(xp).to_int(), Regular(i + 1).to_int()))
+                        .map(|xp| (Singular(xp).into(), Regular(i + 1).into()))
                         .collect(),
-                    (Singular(x).to_int(), Singular(i).to_int()),
+                    (Singular(x).into(), Singular(i).into()),
                 )
             }));
 
@@ -53,9 +53,9 @@ impl Constraint {
                 Self(
                     forward
                         .regular_preimage(x)
-                        .map(|xp| (Regular(xp).to_int(), Singular(i).to_int()))
+                        .map(|xp| (Regular(xp).into(), Singular(i).into()))
                         .collect(),
-                    (Regular(x).to_int(), Regular(i).to_int()),
+                    (Regular(x).into(), Regular(i).into()),
                 )
             }));
 
@@ -63,9 +63,9 @@ impl Constraint {
                 Self(
                     backward
                         .regular_preimage(x)
-                        .map(|xp| (Regular(xp).to_int(), Singular(i).to_int()))
+                        .map(|xp| (Regular(xp).into(), Singular(i).into()))
                         .collect(),
-                    (Regular(x).to_int(), Regular(i + 1).to_int()),
+                    (Regular(x).into(), Regular(i + 1).into()),
                 )
             }));
         }
@@ -235,19 +235,19 @@ impl Layout {
         let slice = match y {
             SliceIndex::Boundary(Boundary::Source) => positions.first()?,
             SliceIndex::Boundary(Boundary::Target) => positions.last()?,
-            SliceIndex::Interior(height) => positions.get(height.to_int())?,
+            SliceIndex::Interior(height) => positions.get(usize::from(height))?,
         };
 
         let y_pos = match y {
             SliceIndex::Boundary(Boundary::Source) => 0.0,
             SliceIndex::Boundary(Boundary::Target) => positions.len() as f32 + 1.0,
-            SliceIndex::Interior(height) => height.to_int() as f32 + 1.0,
+            SliceIndex::Interior(height) => usize::from(height) as f32 + 1.0,
         };
 
         let x_pos = match x {
             SliceIndex::Boundary(Boundary::Source) => 0.0,
             SliceIndex::Boundary(Boundary::Target) => self.width + 2.0,
-            SliceIndex::Interior(height) => slice.get(height.to_int())? + 1.0,
+            SliceIndex::Interior(height) => slice.get(usize::from(height))? + 1.0,
         };
 
         Some((x_pos, y_pos).into())

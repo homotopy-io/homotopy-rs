@@ -506,21 +506,21 @@ impl Component for Diagram1D {
         for height in 0..ctx.props().diagram.size() {
             wires.push(Self::view_wire(
                 ctx,
-                generators[Height::Regular(height).to_int()],
+                generators[usize::from(Height::Regular(height))],
                 Height::Regular(height).into(),
                 Height::Singular(height).into(),
             ));
 
             wires.push(Self::view_wire(
                 ctx,
-                generators[Height::Regular(height + 1).to_int()],
+                generators[usize::from(Height::Regular(height + 1))],
                 Height::Regular(height + 1).into(),
                 Height::Singular(height).into(),
             ));
 
             points.push(Self::view_point(
                 ctx,
-                generators[Height::Singular(height).to_int()],
+                generators[usize::from(Height::Singular(height))],
                 Height::Singular(height).into(),
             ));
         }
@@ -572,7 +572,7 @@ impl Diagram1D {
         match index {
             Boundary(Source) => size.height,
             Boundary(Target) => 0.0,
-            Interior(height) => size.height - (height.to_int() as f32 + 1.0) * scale,
+            Interior(height) => size.height - (usize::from(height) as f32 + 1.0) * scale,
         }
     }
 

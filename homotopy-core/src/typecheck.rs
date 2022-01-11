@@ -72,7 +72,7 @@ where
 
         for (target_embedding, generator) in target_embeddings {
             let source = restrict_diagram(
-                &slices[Height::Regular(i).to_int()],
+                &slices[usize::from(Height::Regular(i))],
                 &target_embedding.preimage(&cospan.forward),
             );
 
