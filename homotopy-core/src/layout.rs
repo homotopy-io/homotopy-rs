@@ -1,10 +1,8 @@
-use std::{collections::HashMap, ops::Range};
+use std::collections::HashMap;
 
-use homotopy_common::{
-    graph::{Graph, Node},
-    idx::IdxVec,
-};
+use homotopy_common::{graph::Node, idx::IdxVec};
 use itertools::Itertools;
+use petgraph::{graph::NodeIndex, visit::EdgeRef};
 
 use crate::{
     common::{DimensionError, SingularHeight},
@@ -101,39 +99,39 @@ impl Layout {
 }
 
 pub type Name = (Node, SingularHeight);
-pub type ConstraintSet = Graph<Name, ()>;
+pub type ConstraintSet = petgraph::Graph<Name, ()>;
 
 fn concat(a: &ConstraintSet, b: &ConstraintSet) -> ConstraintSet {
     let mut union = ConstraintSet::new();
 
     // Maps the nodes of a (resp. b) to the nodes of the union.
-    let mut a_nodes: IdxVec<Node, Node> = IdxVec::new();
-    let mut b_nodes: IdxVec<Node, Node> = IdxVec::new();
+    let mut a_nodes: Vec<NodeIndex> = Vec::new();
+    let mut b_nodes: Vec<NodeIndex> = Vec::new();
 
     // Copy of a
-    for nd in a.node_values() {
-        a_nodes.push(union.add_node(**nd));
+    for n in a.node_indices() {
+        a_nodes.push(union.add_node(a[n]));
     }
-    for ed in a.edge_values() {
+    for ed in a.edge_references() {
         let s = ed.source();
         let t = ed.target();
-        union.add_edge(a_nodes[s], a_nodes[t], ());
+        union.add_edge(a_nodes[s.index()], a_nodes[t.index()], ());
     }
 
     // Copy of b
-    for nd in b.node_values() {
-        b_nodes.push(union.add_node(**nd));
+    for n in b.node_indices() {
+        b_nodes.push(union.add_node(b[n]));
     }
-    for ed in b.edge_values() {
+    for ed in b.edge_references() {
         let s = ed.source();
         let t = ed.target();
-        union.add_edge(b_nodes[s], b_nodes[t], ());
+        union.add_edge(b_nodes[s.index()], b_nodes[t.index()], ());
     }
 
     // Edges from a to b
-    for s in a.targets() {
-        for t in b.sources() {
-            union.add_edge(a_nodes[s], b_nodes[t], ());
+    for s in a.externals(petgraph::EdgeDirection::Outgoing) {
+        for t in b.externals(petgraph::EdgeDirection::Incoming) {
+            union.add_edge(a_nodes[s.index()], b_nodes[t.index()], ());
         }
     }
 
@@ -145,16 +143,15 @@ where
     I: IntoIterator<Item = ConstraintSet>,
 {
     let mut colimit = ConstraintSet::new();
-    let mut name_to_node = HashMap::<Name, Node>::new();
+    let mut name_to_node = HashMap::<Name, NodeIndex>::new();
 
     for constraint in constraints {
-        for nd in constraint.node_values() {
-            let name = **nd;
+        for name in constraint.node_weights() {
             name_to_node
-                .entry(name)
-                .or_insert_with(|| colimit.add_node(name));
+                .entry(*name)
+                .or_insert_with(|| colimit.add_node(*name));
         }
-        for ed in constraint.edge_values() {
+        for ed in constraint.edge_references() {
             let s = ed.source();
             let t = ed.target();
             let name_s = constraint[s];
@@ -231,68 +228,74 @@ fn calculate_layout(
     node_to_constraints: &IdxVec<Node, Vec<ConstraintSet>>,
     colimit: &ConstraintSet,
 ) -> IdxVec<Node, Vec<f32>> {
-    // TOOD: This needs to be topologically sorted first.
-    // TODO: Need to detect cycles.
-    // TODO: Do some kind of averaging.
+    // For each point in the colimit, calculate its min and max positions.
+    let sccs = petgraph::algo::kosaraju_scc(colimit);
     let mut width = 0;
-    let mut name_to_position: HashMap<Name, usize> = HashMap::new();
-    for (n, nd) in colimit.nodes() {
-        let pos = colimit
-            .incoming_edges(n)
-            .map(|e| {
-                let m = colimit.source(e);
-                name_to_position
-                    .get(&colimit[m])
-                    .copied()
-                    .unwrap_or_default()
-            })
+    let mut name_to_min_position: HashMap<Name, usize> = HashMap::new();
+    let mut name_to_max_position: HashMap<Name, usize> = HashMap::new();
+
+    for scc in sccs.iter().rev() {
+        let pos = scc
+            .iter()
+            .flat_map(|&n| colimit.neighbors_directed(n, petgraph::EdgeDirection::Incoming))
+            .filter_map(|s| name_to_min_position.get(&colimit[s]))
             .max()
-            .map_or(0, |a| a + 1);
-        name_to_position.insert(*nd.inner(), pos);
+            .map_or(0, |&a| a + 1);
+        for &n in scc {
+            name_to_min_position.insert(colimit[n], pos);
+        }
         width = std::cmp::max(width, pos + 1);
     }
-
-    // FINAL LAYOUT
-
-    let mut layout = IdxVec::new();
-
-    for (_, constraints) in node_to_constraints.iter() {
-        let mut singular_positions: Vec<Range<usize>> = vec![];
-        for (_, constraint) in constraints.iter().enumerate() {
-            let (min, max) = constraint
-                .node_values()
-                .map(|ix| name_to_position[ix.inner()])
-                .minmax()
-                .into_option()
-                .unwrap();
-            singular_positions.push(min..max + 1);
-        }
-
-        let positions = fill_in_the_gaps(width, &singular_positions);
-
-        // Take left-most coordinate.
-        let positions = positions
+    for scc in &sccs {
+        let pos = scc
             .iter()
-            .map(|range| (range.start + range.end - 1) as f32 / 2.0)
+            .flat_map(|&n| colimit.neighbors_directed(n, petgraph::EdgeDirection::Outgoing))
+            .filter_map(|t| name_to_max_position.get(&colimit[t]))
+            .min()
+            .map_or(width - 1, |&a| a - 1);
+        for &n in scc {
+            name_to_max_position.insert(colimit[n], pos);
+        }
+    }
+
+    // Calculate final layout by taking averages.
+    let mut layout = IdxVec::new();
+    for constraints in node_to_constraints.values() {
+        let singular_positions = constraints
+            .iter()
+            .map(|cs| {
+                let min = cs
+                    .node_weights()
+                    .map(|name| name_to_min_position[name])
+                    .min()
+                    .unwrap();
+                let max = cs
+                    .node_weights()
+                    .map(|name| name_to_max_position[name])
+                    .max()
+                    .unwrap();
+                (min, max)
+            })
             .collect_vec();
-        layout.push(positions);
+        layout.push(compute_averages(width, singular_positions));
     }
 
     layout
 }
 
-fn fill_in_the_gaps(width: usize, singular_positions: &[Range<usize>]) -> Vec<Range<usize>> {
-    let mut positions = vec![0..1];
+// Takes a list of minimum and maximum positions for every singular slice and computes the final positions.
+fn compute_averages(width: usize, singular_positions: Vec<(usize, usize)>) -> Vec<f32> {
+    let mut positions = vec![0.0];
 
-    let mut start = 1;
-    for &Range { start: a, end: b } in singular_positions {
-        let a = 2 * a + 2;
-        let b = 2 * b + 1;
-        positions.push(start..a);
-        positions.push(a..b);
-        start = b;
+    let mut start = 1.0;
+    for (a, b) in singular_positions {
+        let a = (2 * a + 2) as f32;
+        let b = (2 * b + 2) as f32;
+        positions.push((start + a - 1.0) / 2.0);
+        positions.push((a + b) / 2.0);
+        start = b + 1.0;
     }
-    positions.push(start..2 * width + 2);
-    positions.push(2 * width + 2..2 * width + 3);
+    positions.push((start + 2.0 * width as f32 + 1.0) / 2.0);
+    positions.push(2.0 * width as f32 + 2.0);
     positions
 }
