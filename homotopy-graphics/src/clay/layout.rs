@@ -5,8 +5,7 @@ use homotopy_core::{
 use ultraviolet::Vec4;
 
 use crate::clay::geom::{
-    cubical::{CubicalMesh, CurveData},
-    Boundary, Carries, Mesh, Vert, WithBoundaryAndGenerator, WithGenerator,
+    cubical::CubicalMesh, Boundary, Carries, Mesh, Vert, WithBoundaryAndGenerator, WithGenerator,
 };
 
 impl Boundary {
@@ -88,6 +87,23 @@ pub fn extract_mesh(diagram: &DiagramN, depth: usize) -> Result<CubicalMesh, Dim
                 1 => {
                     let verts: [Vert; 2] = verts.try_into().unwrap();
                     geometry.mk(verts);
+
+                    // Extract curves
+                    let curve = geometry.curves.values_mut().find(|curve| {
+                        let &curve_target = curve.last().unwrap();
+                        codimension_visible(
+                            diagram.dimension(),
+                            geometry.verts[curve_target].generator,
+                            1,
+                        ) && curve_target == verts[0]
+                    });
+                    if let Some(curve) = curve {
+                        curve.push(verts[1]);
+                    } else {
+                        geometry
+                            .curves
+                            .push(verts.to_vec().with_generator(generator));
+                    }
                 }
                 2 => {
                     let verts: [Vert; 4] = verts.try_into().unwrap();
@@ -101,36 +117,6 @@ pub fn extract_mesh(diagram: &DiagramN, depth: usize) -> Result<CubicalMesh, Dim
             }
         }
     }
-
-    // Extract curves.
-    let mut curves: Vec<CurveData> = vec![];
-
-    'outer: for ed in mesh.graph.edge_values() {
-        let verts = [ed.source(), ed.target()].map(|n| node_to_vert[n]);
-        let generator = minimum_generator(verts.iter().map(|v| geometry.verts[*v].generator));
-
-        if !codimension_visible(diagram.dimension(), generator, 1) {
-            continue;
-        }
-
-        for curve in &mut curves {
-            if let Some(&curve_target) = curve.last() {
-                if codimension_visible(
-                    diagram.dimension(),
-                    geometry.verts[curve_target].generator,
-                    1,
-                ) && curve_target == verts[0]
-                {
-                    curve.push(verts[1]);
-                    continue 'outer;
-                }
-            }
-        }
-
-        curves.push(verts.to_vec().with_generator(generator));
-    }
-
-    geometry.curves = curves.into_iter().collect();
 
     let (min, max) = geometry.bounds();
     let translation = 0.5 * (max + min);
