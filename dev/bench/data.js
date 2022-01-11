@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1641899916170,
+  "lastUpdate": 1641901140043,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -18359,6 +18359,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 98.772,
             "range": "+/- 0.029",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "a2be14a13bf47488f0910759a001bbfc2e158789",
+          "message": "Remove central dot in homotopies (fix #38)",
+          "timestamp": "2022-01-11T11:25:38Z",
+          "tree_id": "9167e7185315100912ca05797437ae62a6cc8f66",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/a2be14a13bf47488f0910759a001bbfc2e158789"
+        },
+        "date": 1641901134761,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 66.615,
+            "range": "+/- 1.125",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 69.507,
+            "range": "+/- 1.790",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 104.8,
+            "range": "+/- 3.280",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 117.71,
+            "range": "+/- 3.250",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 144.58,
+            "range": "+/- 3.750",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 198.52,
+            "range": "+/- 5.270",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 84.296,
+            "range": "+/- 1.749",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 573.65,
+            "range": "+/- 13.370",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.2093,
+            "range": "+/- 0.040",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 6.6413,
+            "range": "+/- 0.130",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 17.679,
+            "range": "+/- 0.361",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 45.054,
+            "range": "+/- 0.790",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 105.21,
+            "range": "+/- 1.160",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 298.43,
+            "range": "+/- 4.750",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 66.031,
+            "range": "+/- 1.238",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 91.8,
+            "range": "+/- 1.496",
             "unit": "us"
           }
         ]
