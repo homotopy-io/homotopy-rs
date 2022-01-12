@@ -1,12 +1,13 @@
 use yew::prelude::*;
 
 use crate::{
-    app::{Icon, IconSize},
+    app::{diagram_gl::OrbitControl, Icon, IconSize},
     components::panzoom::PanZoom,
 };
 
 pub struct ViewControl {
     panzoom: PanZoom,
+    orbit_control: OrbitControl,
 }
 
 pub enum ViewMessage {
@@ -22,14 +23,24 @@ impl Component for ViewControl {
     fn create(_ctx: &Context<Self>) -> Self {
         Self {
             panzoom: PanZoom::new(),
+            orbit_control: OrbitControl::new(),
         }
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            ViewMessage::ZoomIn => self.panzoom.zoom_in(),
-            ViewMessage::ZoomOut => self.panzoom.zoom_out(),
-            ViewMessage::Reset => self.panzoom.reset(),
+            ViewMessage::ZoomIn => {
+                self.panzoom.zoom_in();
+                self.orbit_control.zoom_in();
+            },
+            ViewMessage::ZoomOut => {
+                self.panzoom.zoom_out();
+                self.orbit_control.zoom_out();
+            }
+            ViewMessage::Reset => {
+                self.panzoom.reset();
+                self.orbit_control.reset();
+            }
         }
         false
     }

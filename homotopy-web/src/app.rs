@@ -15,6 +15,8 @@ use crate::{
     model,
 };
 
+use self::diagram_gl::OrbitControl;
+
 mod attach;
 mod diagram_gl;
 mod diagram_svg;
@@ -35,6 +37,7 @@ pub enum Message {
 pub struct App {
     state: model::State,
     panzoom: PanZoom,
+    orbit_control: OrbitControl,
     signature_stylesheet: SignatureStylesheet,
     toaster: Toaster,
     _settings: AppSettings,
@@ -56,6 +59,7 @@ impl Component for App {
         let mut app = Self {
             state,
             panzoom: PanZoom::new(),
+            orbit_control: OrbitControl::new(),
             signature_stylesheet,
             toaster: Toaster::new(),
             _settings: AppSettings::connect(Callback::noop()),
@@ -72,6 +76,7 @@ impl Component for App {
                 if let model::Action::Proof(ref action) = action {
                     if self.state.with_proof(|p| p.resets_panzoom(action)) {
                         self.panzoom.reset();
+                        self.orbit_control.reset();
                     }
                 }
 

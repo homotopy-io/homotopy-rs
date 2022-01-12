@@ -242,7 +242,7 @@ impl ProofState {
             }
             Action::SelectGenerator(_) => self.workspace.is_none(),
             Action::AscendSlice(i) => i > 0,
-            Action::ClearWorkspace | Action::DescendSlice(_) => true,
+            Action::ClearWorkspace | Action::DescendSlice(_) | Action::UpdateView(_) => true,
             _ => false,
         }
     }
