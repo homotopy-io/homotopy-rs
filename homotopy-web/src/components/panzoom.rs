@@ -144,8 +144,11 @@ impl Component for PanZoomComponent {
 
         let on_mouse_move = PanZoomState::on_mouse_move();
         let on_mouse_up = PanZoomState::on_mouse_up();
-        let on_mouse_down = PanZoomState::on_mouse_down();
-
+        let on_mouse_down = Callback::from(move |e: MouseEvent| {
+            if e.alt_key() {
+                PanZoomState::on_mouse_down().emit(e);
+            }
+        });
         let on_wheel = {
             let on_scroll = ctx.props().on_scroll.clone();
             let node_ref = self.node_ref.clone();
@@ -159,7 +162,6 @@ impl Component for PanZoomComponent {
                 }
             })
         };
-
         let on_touch_move = PanZoomState::on_touch_move(&self.node_ref);
         let on_touch_update = PanZoomState::on_touch_update(&self.node_ref);
 

@@ -53,12 +53,9 @@ pub trait TouchInterface: Default + 'static {
     fn on_mouse_down() -> Callback<MouseEvent> {
         let delta = Delta::<Self>::new();
         Callback::from(closure!(|e: MouseEvent| {
-            e.prevent_default();
-            if e.alt_key() {
-                delta.emit(TouchAction::MouseDown(
-                    (f64::from(e.client_x()), f64::from(e.client_y())).into(),
-                ));
-            }
+            delta.emit(TouchAction::MouseDown(
+                (f64::from(e.client_x()), f64::from(e.client_y())).into(),
+            ));
         }))
     }
 

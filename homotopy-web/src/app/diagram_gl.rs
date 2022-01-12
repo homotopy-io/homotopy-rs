@@ -16,16 +16,18 @@ use yew::prelude::*;
 use crate::{
     app::AppSettings,
     components::{
-        bounding_rect, read_touch_list,
+        delta::{Delta, DeltaAgent},
         settings::{KeyStore, Settings, Store},
         toast::{Toast, Toaster},
-        Finger,
+        touch_interface::{TouchAction, TouchInterface},
+        Finger, Point,
     },
     model::proof::{Signature, View},
 };
 
 pub enum GlDiagramMessage {
     Render(f64),
+    Delta(f32, f32, f32),
     Setting(<Store<AppSettings> as KeyStore>::Message),
 }
 
@@ -40,7 +42,9 @@ pub struct GlDiagram {
     canvas: NodeRef,
     toaster: Toaster,
     _settings: AppSettings,
+    _delta: Delta<OrbitCamera>,
 
+    camera: OrbitCamera,
     renderer: Rc<RefCell<Option<GlDiagramRenderer>>>,
     local: Store<AppSettings>,
     t: f32,
@@ -59,11 +63,24 @@ impl Component for GlDiagram {
 
         settings.subscribe(AppSettings::ALL);
 
+        let delta = Delta::new();
+        let link = ctx.link().clone();
+        delta.register(Box::new(move |agent: &DeltaAgent<OrbitCamera>, _| {
+            let state = agent.state();
+            link.send_message(GlDiagramMessage::Delta(
+                state.phi,
+                state.theta,
+                state.distance,
+            ));
+        }));
+
         Self {
             canvas: Default::default(),
             toaster: Toaster::new(),
             _settings: settings,
+            _delta: delta,
 
+            camera: Default::default(),
             renderer: Default::default(),
             local: Default::default(),
             t: Default::default(),
@@ -79,14 +96,21 @@ impl Component for GlDiagram {
                 let dt = t - self.t;
                 // Update current time
                 self.t = t;
+                // Update camera settings
+                self.camera.ortho = *self.local.get_orthographic_3d();
 
                 if let Some(renderer) = &mut *self.renderer.borrow_mut() {
                     renderer.update(&self.local, dt).unwrap();
-                    renderer.render(ctx.props().view.dimension(), &self.local);
+                    renderer.render(ctx.props().view.dimension(), &self.camera, &self.local);
                 }
 
                 // Schedule the next frame
                 self.schedule_frame(ctx);
+            }
+            GlDiagramMessage::Delta(phi, theta, distance) => {
+                self.camera.phi = phi;
+                self.camera.theta = theta;
+                self.camera.distance = distance;
             }
             GlDiagramMessage::Setting(msg) => self.local.set(&msg),
         }
@@ -95,81 +119,12 @@ impl Component for GlDiagram {
     }
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
-        let on_mouse_move = {
-            let renderer = Rc::clone(&self.renderer);
-            Callback::from(move |e: MouseEvent| {
-                e.prevent_default();
-                if let Some(r) = &mut *renderer.borrow_mut() {
-                    r.on_mouse_move((e.client_x() as f32, e.client_y() as f32).into());
-                }
-            })
-        };
-        let on_mouse_up = {
-            let renderer = Rc::clone(&self.renderer);
-            Callback::from(move |e: MouseEvent| {
-                e.prevent_default();
-                if let Some(r) = &mut *renderer.borrow_mut() {
-                    r.on_mouse_up();
-                }
-            })
-        };
-        let on_mouse_down = {
-            let renderer = Rc::clone(&self.renderer);
-            Callback::from(move |e: MouseEvent| {
-                e.prevent_default();
-                if let Some(r) = &mut *renderer.borrow_mut() {
-                    r.on_mouse_down((e.client_x() as f32, e.client_y() as f32).into());
-                }
-            })
-        };
-        let on_wheel = {
-            let renderer = Rc::clone(&self.renderer);
-            Callback::from(move |e: WheelEvent| {
-                e.prevent_default();
-                if let Some(r) = &mut *renderer.borrow_mut() {
-                    r.on_mouse_wheel(
-                        (e.client_x() as f32, e.client_y() as f32).into(),
-                        e.delta_y() as f32,
-                    );
-                }
-            })
-        };
-        let on_touch_move = {
-            let renderer = Rc::clone(&self.renderer);
-            let node_ref = self.canvas.clone();
-            Callback::from(move |e: TouchEvent| {
-                e.prevent_default();
-                let rect = bounding_rect(&node_ref).unwrap();
-                if let Some(r) = &mut *renderer.borrow_mut() {
-                    let touches = read_touch_list(&e.touches())
-                        .map(|(f, p)| {
-                            let x = (p.x - rect.left()) as f32;
-                            let y = (p.y - rect.top()) as f32;
-                            (f, Vec2::new(x, y))
-                        })
-                        .collect::<Vec<_>>();
-                    r.on_touch_move(&touches);
-                }
-            })
-        };
-        let on_touch_update = {
-            let renderer = Rc::clone(&self.renderer);
-            let node_ref = self.canvas.clone();
-            Callback::from(move |e: TouchEvent| {
-                e.prevent_default();
-                let rect = bounding_rect(&node_ref).unwrap();
-                if let Some(r) = &mut *renderer.borrow_mut() {
-                    let touches = read_touch_list(&e.touches())
-                        .map(|(f, p)| {
-                            let x = (p.x - rect.left()) as f32;
-                            let y = (p.y - rect.top()) as f32;
-                            (f, Vec2::new(x, y))
-                        })
-                        .collect::<Vec<_>>();
-                    r.on_touch_update(&touches);
-                }
-            })
-        };
+        let on_mouse_move = OrbitCamera::on_mouse_move();
+        let on_mouse_up = OrbitCamera::on_mouse_up();
+        let on_mouse_down = OrbitCamera::on_mouse_down();
+        let on_wheel = OrbitCamera::on_wheel(&self.canvas);
+        let on_touch_move = OrbitCamera::on_touch_move(&self.canvas);
+        let on_touch_update = OrbitCamera::on_touch_update(&self.canvas);
 
         html! {
             <canvas
@@ -218,10 +173,8 @@ struct GlDiagramRenderer {
     gl_ctx: GlCtx,
     scene: Scene,
     signature: Signature,
-    camera: OrbitCamera,
     subdivision_depth: u8,
     geometry_samples: u8,
-    mouse: Option<Vec2>,
     t: f32,
 }
 
@@ -232,6 +185,7 @@ pub struct OrbitCamera {
     distance: f32,
     fov: f32,
     ortho: bool,
+    mouse: Option<Vec2>,
 }
 
 impl GlDiagramRenderer {
@@ -252,10 +206,8 @@ impl GlDiagramRenderer {
                 samples,
             )?,
             signature: props.signature.clone(),
-            camera: OrbitCamera::new(Vec3::zero(), 30.0),
             subdivision_depth: depth,
             geometry_samples: samples,
-            mouse: None,
             gl_ctx,
             t: 0.0,
         })
@@ -271,20 +223,18 @@ impl GlDiagramRenderer {
             self.scene.reload_meshes(&self.gl_ctx, depth, samples)?;
         }
 
-        self.camera.ortho = *settings.get_orthographic_3d();
         self.t += dt;
 
         Ok(())
     }
 
-    fn render(&mut self, dimension: u8, settings: &Store<AppSettings>) {
+    fn render(&mut self, dimension: u8, camera: &OrbitCamera, settings: &Store<AppSettings>) {
         let mut frame = Frame::new(&mut self.gl_ctx);
-
-        let vp = self.camera.transform(&*frame);
+        let vp = camera.transform(&*frame);
 
         if !*settings.get_mesh_hidden() {
             let normals = *settings.get_debug_normals();
-            let camera = self.camera.position();
+            let camera = camera.position();
             let signature = &self.signature;
 
             if dimension <= 3 {
@@ -332,56 +282,16 @@ impl GlDiagramRenderer {
             self.scene.draw_axes(&mut frame, &vp);
         }
     }
-
-    fn on_mouse_down(&mut self, point: Vec2) {
-        self.mouse = Some(point);
-    }
-
-    fn on_mouse_up(&mut self) {
-        self.mouse = None;
-    }
-
-    fn on_mouse_move(&mut self, next: Vec2) {
-        if let Some(prev) = self.mouse {
-            let delta = 4. * (next - prev) / self.gl_ctx.size();
-            self.camera.apply_angle_delta(delta);
-            self.mouse = Some(next);
-        }
-    }
-
-    fn on_mouse_wheel(&mut self, _: Vec2, delta: f32) {
-        self.camera.apply_distance_delta(delta);
-    }
-
-    #[allow(clippy::unused_self)]
-    fn on_touch_move(&mut self, _touches: &[(Finger, Vec2)]) {
-        // TODO(@doctorn) touch contorls
-    }
-
-    #[allow(clippy::unused_self)]
-    fn on_touch_update(&mut self, _touches: &[(Finger, Vec2)]) {
-        // TODO(@doctorn) touch contorls
-    }
 }
 
 impl OrbitCamera {
     const DEFAULT_DISTANCE: f32 = 12.;
+    const DEFAULT_FOV: f32 = 30.0;
     const DEFAULT_PHI: f32 = 0.5 * PI;
     const DEFAULT_THETA: f32 = 0.5 * PI;
     const EPSILON: f32 = 0.05;
-    const FAR: f32 = 100.;
+    const FAR: f32 = 1000.;
     const NEAR: f32 = 0.01;
-
-    fn new(target: Vec3, fov: f32) -> Self {
-        Self {
-            target,
-            phi: Self::DEFAULT_PHI,
-            theta: Self::DEFAULT_THETA,
-            distance: Self::DEFAULT_DISTANCE,
-            fov,
-            ortho: false,
-        }
-    }
 
     fn position(&self) -> Vec3 {
         let sin_phi = f32::sin(self.phi);
@@ -425,5 +335,77 @@ impl OrbitCamera {
 
     fn apply_distance_delta(&mut self, delta: f32) {
         self.distance *= if delta > 0. { 1.1 } else { 1.0 / 1.1 };
+    }
+}
+
+impl Default for OrbitCamera {
+    fn default() -> Self {
+        Self {
+            target: Default::default(),
+            phi: Self::DEFAULT_PHI,
+            theta: Self::DEFAULT_THETA,
+            distance: Self::DEFAULT_DISTANCE,
+            fov: Self::DEFAULT_FOV,
+            ortho: false,
+            mouse: None,
+        }
+    }
+}
+
+impl TouchInterface for OrbitCamera {
+    fn mouse_down(&mut self, point: Point) {
+        self.mouse = Some(Vec2::new(point.x as f32, point.y as f32));
+    }
+
+    fn mouse_up(&mut self) {
+        self.mouse = None;
+    }
+
+    fn mouse_move(&mut self, next: Point) {
+        let next = Vec2::new(next.x as f32, next.y as f32);
+        if let Some(prev) = self.mouse {
+            let delta = 4. * (next - prev) / 1000.;
+            // TODO(@doctorn) divide by `self.gl_ctx.size()`
+            self.apply_angle_delta(delta);
+            self.mouse = Some(next);
+        }
+    }
+
+    fn mouse_wheel(&mut self, _: Point, delta: f64) {
+        self.apply_distance_delta(delta as f32);
+    }
+
+    fn touch_move(&mut self, _touches: &[(Finger, Point)]) {
+        // TODO(@doctorn) touch contorls
+    }
+
+    fn touch_update(&mut self, _touches: &[(Finger, Point)]) {
+        // TODO(@doctorn) touch contorls
+    }
+
+    fn reset(&mut self) {
+        *self = Default::default();
+    }
+}
+
+pub struct OrbitControl(Delta<OrbitCamera>);
+
+impl OrbitControl {
+    pub fn new() -> Self {
+        Self(Delta::new())
+    }
+
+    pub fn zoom_in(&self) {
+        self.0
+            .emit(TouchAction::MouseWheel(Default::default(), -20.0));
+    }
+
+    pub fn zoom_out(&self) {
+        self.0
+            .emit(TouchAction::MouseWheel(Default::default(), 20.0));
+    }
+
+    pub fn reset(&self) {
+        self.0.emit(TouchAction::Reset);
     }
 }
