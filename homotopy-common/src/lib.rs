@@ -44,7 +44,6 @@
 )]
 
 pub mod dense;
-pub mod graph;
 pub mod hash;
 pub mod idx;
 pub mod parity;

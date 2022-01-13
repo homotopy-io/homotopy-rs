@@ -1,7 +1,8 @@
-use homotopy_common::{declare_idx, graph::Node, idx::IdxVec};
+use homotopy_common::{declare_idx, idx::IdxVec};
 use homotopy_core::{
     common::DimensionError, layout::Layout, mesh, DiagramN, Generator, Height, SliceIndex,
 };
+use petgraph::graph::NodeIndex;
 use ultraviolet::Vec4;
 
 use crate::clay::geom::{
@@ -36,7 +37,7 @@ pub fn extract_mesh(diagram: &DiagramN, depth: usize) -> Result<CubicalMesh, Dim
     let layout = Layout::new(diagram, depth)?;
 
     let mut geometry = CubicalMesh::new(diagram.clone().into());
-    let mut node_to_vert: IdxVec<Node, Vert> = IdxVec::with_capacity(mesh.graph.node_count());
+    let mut node_to_vert: IdxVec<NodeIndex, Vert> = IdxVec::with_capacity(mesh.graph.node_count());
 
     for elem in mesh.flatten_elements() {
         if elem.len() == 1 {

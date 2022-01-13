@@ -6,10 +6,22 @@ use std::{
     ops::{Index, IndexMut},
 };
 
+use petgraph::graph::IndexType;
+
 pub trait Idx: 'static + Copy + Eq + Hash + fmt::Debug {
     fn index(&self) -> usize;
 
     fn new(index: usize) -> Self;
+}
+
+impl<T: IndexType> Idx for T {
+    fn index(&self) -> usize {
+        self.index()
+    }
+
+    fn new(index: usize) -> Self {
+        Self::new(index)
+    }
 }
 
 #[macro_export]

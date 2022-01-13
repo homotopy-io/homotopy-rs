@@ -1,9 +1,7 @@
 use std::convert::TryInto;
 
-use homotopy_common::{
-    graph::{Graph, Node},
-    idx::IdxVec,
-};
+use homotopy_common::idx::IdxVec;
+use petgraph::{graph::NodeIndex, visit::EdgeRef, Graph};
 
 use crate::{
     common::{Boundary, DimensionError, Height, SliceIndex},
@@ -13,21 +11,17 @@ use crate::{
 
 pub type Coord = Vec<SliceIndex>;
 
-pub fn mk_coord<I>(coord: &[SliceIndex], index: I) -> Coord
-where
-    I: Into<SliceIndex>,
-{
-    let mut coord = coord.to_owned();
-    coord.push(index.into());
-    coord
+pub fn add_coord(coord: SliceIndex, mut acc: Coord) -> Option<Coord> {
+    acc.push(coord);
+    Some(acc)
 }
 
-pub type SliceGraph = Graph<(Coord, Diagram), Rewrite>;
+pub type SliceGraph<NodeKey, EdgeKey> = Graph<(NodeKey, Diagram), (EdgeKey, Rewrite)>;
 
 pub struct GraphBuilder;
 
 impl GraphBuilder {
-    pub fn build(diagram: Diagram, depth: usize) -> Result<SliceGraph, DimensionError> {
+    pub fn build(diagram: Diagram, depth: usize) -> Result<SliceGraph<Coord, ()>, DimensionError> {
         if depth > diagram.dimension() {
             return Err(DimensionError);
         }
@@ -36,183 +30,246 @@ impl GraphBuilder {
         graph.add_node((vec![], diagram));
 
         for _ in 0..depth {
-            graph = explode_graph(&graph)?.0;
+            graph = explode(&graph, add_coord, |_, _| Some(()))?.0;
         }
 
         Ok(graph)
     }
 }
 
-pub fn explode_graph(
-    graph: &SliceGraph,
-) -> Result<(SliceGraph, IdxVec<Node, Vec<Node>>), DimensionError> {
+/// Describes from where a rewrite in the output of explosion originates.
+pub enum RewriteOrigin {
+    /// From a diagram's cospans.
+    Internal,
+    /// Sparse identity from a rewrite.
+    Sparse,
+    /// Cone regular slices from a rewrite.
+    RegularSlice,
+    /// Cone singular `slices` (slice `x` of `y`) from a rewrite.
+    SingularSlice(usize, usize),
+}
+
+pub fn explode<NodeKey, EdgeKey, NodeMap, EdgeMap>(
+    graph: &SliceGraph<NodeKey, EdgeKey>,
+    node_map: NodeMap,
+    edge_map: EdgeMap,
+) -> Result<
+    (
+        SliceGraph<NodeKey, EdgeKey>,
+        IdxVec<NodeIndex, Vec<Option<NodeIndex>>>,
+    ),
+    DimensionError,
+>
+where
+    NodeKey: Clone,
+    EdgeKey: Clone,
+    NodeMap: Fn(SliceIndex, NodeKey) -> Option<NodeKey>,
+    EdgeMap: Fn(RewriteOrigin, Option<EdgeKey>) -> Option<EdgeKey>,
+{
     use Height::{Regular, Singular};
 
-    let mut exploded_graph: SliceGraph = Graph::new();
+    let mut exploded_graph: SliceGraph<NodeKey, EdgeKey> = Graph::new();
 
     // Maps every node in the original graph to its slices in the exploded graph.
-    let mut node_to_slices: IdxVec<Node, Vec<Node>> = IdxVec::with_capacity(graph.node_count());
+    let mut node_to_slices: IdxVec<NodeIndex, Vec<Option<NodeIndex>>> =
+        IdxVec::with_capacity(graph.node_count());
 
-    for nd in graph.node_values() {
-        let coord: &Coord = &nd.0;
-        let diagram: &DiagramN = (&nd.1).try_into()?;
+    for (key, diagram) in graph.node_weights() {
+        let diagram: &DiagramN = diagram.try_into()?;
 
         let mut slices = Vec::with_capacity(diagram.size() * 2 + 3);
 
         // Source slice
-        slices.push(exploded_graph.add_node({
-            let slice_coord = mk_coord(coord, Boundary::Source);
-            let slice = diagram.source();
-            (slice_coord, slice)
-        }));
+        slices.push((
+            node_map(Boundary::Source.into(), key.clone()),
+            diagram.source(),
+        ));
 
         // Interior slices
         for (i, slice) in diagram.slices().enumerate() {
-            let slice_coord = mk_coord(coord, Height::from(i));
-            slices.push(exploded_graph.add_node((slice_coord, slice)));
+            slices.push((node_map(Height::from(i).into(), key.clone()), slice));
         }
 
         // Target slice
-        slices.push(exploded_graph.add_node({
-            let slice_coord = mk_coord(coord, Boundary::Target);
-            let slice = diagram.target();
-            (slice_coord, slice)
-        }));
+        slices.push((
+            node_map(Boundary::Target.into(), key.clone()),
+            diagram.target(),
+        ));
+
+        let nodes: Vec<Option<NodeIndex>> = slices
+            .into_iter()
+            .map(|(k, d)| k.map(|i| exploded_graph.add_node((i, d))))
+            .collect();
 
         // Identity rewrite from source slice
-        exploded_graph.add_edge(
-            slices[0],
-            slices[1],
-            Rewrite::identity(diagram.dimension() - 1),
-        );
+        if let (Some(s), Some(t)) = (nodes[0], nodes[1]) {
+            if let Some(key) = edge_map(RewriteOrigin::Internal, None) {
+                exploded_graph.add_edge(s, t, (key, Rewrite::identity(diagram.dimension() - 1)));
+            }
+        }
 
         // Rewrites between interior slices
         for (i, cospan) in diagram.cospans().iter().enumerate() {
-            exploded_graph.add_edge(
-                slices[usize::from(Regular(i)) + 1],
-                slices[usize::from(Singular(i)) + 1],
-                cospan.forward.clone(),
-            );
+            if let Some(singular) = nodes[usize::from(Singular(i)) + 1] {
+                if let Some(regular) = nodes[usize::from(Regular(i)) + 1] {
+                    if let Some(key) = edge_map(RewriteOrigin::Internal, None) {
+                        exploded_graph.add_edge(regular, singular, (key, cospan.forward.clone()));
+                    }
+                }
 
-            exploded_graph.add_edge(
-                slices[usize::from(Regular(i + 1)) + 1],
-                slices[usize::from(Singular(i)) + 1],
-                cospan.backward.clone(),
-            );
+                if let Some(regular) = nodes[usize::from(Regular(i + 1)) + 1] {
+                    if let Some(key) = edge_map(RewriteOrigin::Internal, None) {
+                        exploded_graph.add_edge(regular, singular, (key, cospan.backward.clone()));
+                    }
+                }
+            }
         }
 
         // Identity rewrite from target slice
-        exploded_graph.add_edge(
-            slices[diagram.size() * 2 + 2],
-            slices[diagram.size() * 2 + 1],
-            Rewrite::identity(diagram.dimension() - 1),
-        );
+        if let (Some(s), Some(t)) = (nodes[diagram.size() * 2 + 2], nodes[diagram.size() * 2 + 1]) {
+            if let Some(key) = edge_map(RewriteOrigin::Internal, None) {
+                exploded_graph.add_edge(s, t, (key, Rewrite::identity(diagram.dimension() - 1)));
+            }
+        }
 
-        node_to_slices.push(slices);
+        node_to_slices.push(nodes);
     }
 
-    for ed in graph.edge_values() {
-        let s = ed.source();
-        let t = ed.target();
-        let rewrite: &RewriteN = ed.inner().try_into()?;
+    for e in graph.edge_references() {
+        let rewrite: &RewriteN = (&e.weight().1).try_into()?;
 
-        let source_diagram: &DiagramN = (&graph[s].1).try_into()?;
-        let source_slices = &node_to_slices[s];
+        let source_slices = &node_to_slices[e.source()];
         let source_size = source_slices.len();
-        let target_diagram: &DiagramN = (&graph[t].1).try_into()?;
-        let target_slices = &node_to_slices[t];
+        let target_slices = &node_to_slices[e.target()];
         let target_size = target_slices.len();
 
         // Identity rewrite between source slices
-        exploded_graph.add_edge(
-            source_slices[0],
-            target_slices[0],
-            Rewrite::identity(rewrite.dimension() - 1),
-        );
+        if let (Some(s), Some(t)) = (source_slices[0], target_slices[0]) {
+            if let Some(key) = edge_map(RewriteOrigin::Sparse, Some(e.weight().0.clone())) {
+                exploded_graph.add_edge(s, t, (key, Rewrite::identity(rewrite.dimension() - 1)));
+            }
+        }
 
         // Identity rewrite between target slices
-        exploded_graph.add_edge(
+        if let (Some(s), Some(t)) = (
             source_slices[source_size - 1],
             target_slices[target_size - 1],
-            Rewrite::identity(rewrite.dimension() - 1),
-        );
+        ) {
+            if let Some(key) = edge_map(RewriteOrigin::Sparse, Some(e.weight().0.clone())) {
+                exploded_graph.add_edge(s, t, (key, Rewrite::identity(rewrite.dimension() - 1)));
+            }
+        }
 
-        // Singular slices
-        for source_height in 0..(source_size - 3) / 2 {
+        // Rewrite slices targeting singular levels
+        let mut source_height = 0;
+        while source_height < (source_size - 3) / 2 {
             let target_height = rewrite.singular_image(source_height);
-            exploded_graph.add_edge(
+            if let (Some(s), Some(t)) = (
                 source_slices[usize::from(Singular(source_height)) + 1],
                 target_slices[usize::from(Singular(target_height)) + 1],
-                rewrite.slice(Height::Singular(source_height)),
-            );
+            ) {
+                if let Some(cone) = rewrite.cone_over_target(target_height) {
+                    for (i, singular) in cone.internal.slices.iter().enumerate() {
+                        if let Some(key) = edge_map(
+                            RewriteOrigin::SingularSlice(i, cone.len()),
+                            Some(e.weight().0.clone()),
+                        ) {
+                            if let Some(r) =
+                                source_slices[usize::from(Singular(source_height + i)) + 1]
+                            {
+                                exploded_graph.add_edge(r, t, (key, singular.clone()));
+                            }
+                        }
+                    }
+                    source_height += cone.len();
+                } else {
+                    if let Some(key) = edge_map(RewriteOrigin::Sparse, Some(e.weight().0.clone())) {
+                        exploded_graph.add_edge(
+                            s,
+                            t,
+                            (key, Rewrite::identity(rewrite.dimension() - 1)),
+                        );
+                    }
+                    source_height += 1;
+                }
+            }
         }
 
-        // Regular slices
+        // Rewrite slices targeting regular levels (identities)
         for target_height in 0..(target_size - 1) / 2 {
             let source_height = rewrite.regular_image(target_height);
-            exploded_graph.add_edge(
+            if let (Some(s), Some(t)) = (
                 source_slices[usize::from(Regular(source_height)) + 1],
                 target_slices[usize::from(Regular(target_height)) + 1],
-                Rewrite::identity(rewrite.dimension() - 1),
-            );
+            ) {
+                if let Some(key) = edge_map(RewriteOrigin::Sparse, Some(e.weight().0.clone())) {
+                    exploded_graph.add_edge(
+                        s,
+                        t,
+                        (key, Rewrite::identity(rewrite.dimension() - 1)),
+                    );
+                }
+            }
         }
 
-        // Composite slices
+        // Rewrite slices from regular levels targeting singular levels
+        // Between singular slices
         for source_height in 0..(source_size - 1) / 2 {
             let preimage = rewrite.regular_preimage(source_height);
             if preimage.is_empty() {
+                // regular slice between two singular slices
                 let target_height = preimage.start;
-                exploded_graph.add_edge(
+                if let (Some(s), Some(t)) = (
                     source_slices[usize::from(Regular(source_height)) + 1],
                     target_slices[usize::from(Singular(target_height)) + 1],
-                    source_diagram.cospans()[source_height]
-                        .forward
-                        .compose(&rewrite.slice(Height::Singular(source_height)))
-                        .unwrap(),
-                );
+                ) {
+                    if let Some(key) =
+                        edge_map(RewriteOrigin::RegularSlice, Some(e.weight().0.clone()))
+                    {
+                        exploded_graph.add_edge(
+                            s,
+                            t,
+                            (
+                                key,
+                                DiagramN::try_from(graph[e.source()].1.clone())?.cospans()
+                                    [source_height]
+                                    .forward
+                                    .compose(&rewrite.slice(Singular(source_height)))
+                                    .unwrap(),
+                            ),
+                        );
+                    }
+                }
             }
         }
+        // Empty cone case
         for target_height in 0..(target_size - 3) / 2 {
             let preimage = rewrite.singular_preimage(target_height);
             if preimage.is_empty() {
                 let source_height = preimage.start;
-                exploded_graph.add_edge(
+                if let (Some(s), Some(t)) = (
                     source_slices[usize::from(Regular(source_height)) + 1],
                     target_slices[usize::from(Singular(target_height)) + 1],
-                    target_diagram.cospans()[target_height].forward.clone(),
-                );
+                ) {
+                    if let Some(key) =
+                        edge_map(RewriteOrigin::RegularSlice, Some(e.weight().0.clone()))
+                    {
+                        exploded_graph.add_edge(
+                            s,
+                            t,
+                            (
+                                key,
+                                DiagramN::try_from(graph[e.target()].1.clone())?.cospans()
+                                    [target_height]
+                                    .forward
+                                    .clone(),
+                            ),
+                        );
+                    }
+                }
             }
         }
     }
 
     Ok((exploded_graph, node_to_slices))
-}
-
-pub struct TopologicalSort(Vec<Node>);
-
-impl TopologicalSort {
-    pub fn new(graph: &SliceGraph) -> Self {
-        let mut nodes: Vec<Node> = graph.node_keys().collect();
-        nodes.sort_by_cached_key(|&n| {
-            graph[n]
-                .0
-                .iter()
-                .map(|&index| match index {
-                    SliceIndex::Boundary(_) => -1,
-                    SliceIndex::Interior(Height::Regular(_)) => 0,
-                    SliceIndex::Interior(Height::Singular(_)) => 1,
-                })
-                .sum::<i32>()
-        });
-        Self(nodes)
-    }
-}
-
-impl IntoIterator for TopologicalSort {
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-    type Item = Node;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
-    }
 }

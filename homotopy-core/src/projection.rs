@@ -10,16 +10,18 @@ use std::{
     convert::{Into, TryFrom},
 };
 
-use homotopy_common::{
-    graph::{Edge, Node},
-    idx::IdxVec,
+use homotopy_common::idx::IdxVec;
+use petgraph::{
+    graph::NodeIndex,
+    visit::{EdgeRef, IntoNodeReferences, Topo, Walker},
+    EdgeDirection,
 };
 use serde::Serialize;
 
 use crate::{
     common::{Boundary, DimensionError, Generator, SliceIndex},
     diagram::DiagramN,
-    graph::{GraphBuilder, SliceGraph, TopologicalSort},
+    graph::{Coord, GraphBuilder, SliceGraph},
     Rewrite,
 };
 
@@ -63,13 +65,16 @@ impl Generators {
     }
 }
 
+// workaround for EdgeIndex not implementing IndexType in petgraph
+type EdgeIndex = usize;
+
 /// Diagram analysis that finds the depth of cells in the 2-dimensional projection of a diagram.
 #[derive(Debug, Clone)]
 pub struct Depths {
-    graph: SliceGraph,
-    node_depths: IdxVec<Node, Option<usize>>,
-    edge_depths: IdxVec<Edge, Option<usize>>,
-    coord_to_node: HashMap<[SliceIndex; 2], Node>,
+    graph: SliceGraph<Coord, ()>,
+    node_depths: IdxVec<NodeIndex, Option<usize>>,
+    edge_depths: IdxVec<EdgeIndex, Option<usize>>,
+    coord_to_node: HashMap<[SliceIndex; 2], NodeIndex>,
 }
 
 impl Depths {
@@ -79,25 +84,25 @@ impl Depths {
         let mut node_depths = IdxVec::splat(None, graph.node_count());
         let mut edge_depths = IdxVec::splat(None, graph.edge_count());
 
-        for node in TopologicalSort::new(&graph) {
-            for edge in graph.incoming_edges(node) {
-                if let Rewrite::RewriteN(r) = &graph[edge] {
-                    edge_depths[edge] =
-                        node_depths[graph.source(edge)].map(|d| r.singular_image(d));
+        let coord_to_node = graph
+            .node_references()
+            .map(|(n, (coord, _))| ([coord[0], coord[1]], n))
+            .collect();
+
+        for node in Topo::new(&graph).iter(&graph) {
+            for edge in graph.edges_directed(node, EdgeDirection::Incoming) {
+                if let ((), Rewrite::RewriteN(r)) = edge.weight() {
+                    edge_depths[edge.id().index()] =
+                        node_depths[edge.source()].map(|d| r.singular_image(d));
 
                     let target_depth = r.targets().first().copied();
                     node_depths[node] = min_defined(
+                        min_defined(node_depths[node], edge_depths[edge.id().index()]),
                         target_depth,
-                        min_defined(node_depths[node], edge_depths[edge]),
                     );
                 }
             }
         }
-
-        let coord_to_node = graph
-            .nodes()
-            .map(|(n, nd)| ([nd.0[0], nd.0[1]], n))
-            .collect();
 
         Ok(Self {
             graph,
@@ -117,9 +122,9 @@ impl Depths {
         let &to = self.coord_to_node.get(&to)?;
         let e = self
             .graph
-            .outgoing_edges(from)
-            .find(|&e| self.graph.target(e) == to)?;
-        self.edge_depths[e]
+            .edges_directed(from, EdgeDirection::Outgoing)
+            .find(|&e| e.target() == to)?;
+        self.edge_depths[e.id().index()]
     }
 
     pub fn edges_above(&self, depth: usize, to: [SliceIndex; 2]) -> Vec<[SliceIndex; 2]> {
@@ -129,11 +134,11 @@ impl Depths {
         };
 
         self.graph
-            .incoming_edges(to)
-            .filter_map(|e| match self.edge_depths[e] {
+            .edges_directed(to, EdgeDirection::Incoming)
+            .filter_map(|e| match self.edge_depths[e.id().index()] {
                 Some(d) if d < depth => self
                     .graph
-                    .node_weight(self.graph.source(e))
+                    .node_weight(e.source())
                     .map(|(coord, _)| [coord[0], coord[1]]),
                 _ => None,
             })

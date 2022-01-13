@@ -589,6 +589,7 @@ name = "homotopy-common"
 version = "0.1.0"
 dependencies = [
  "cargo-husky",
+ "petgraph",
  "rustc-hash",
  "serde",
 ]

@@ -8,6 +8,7 @@ edition = "2021"
 
 [dependencies]
 rustc-hash = "1.1.0"
+petgraph = "0.6.0"
 serde = { features = ["derive"], version = "1.0.133" }
 
 [dev-dependencies]

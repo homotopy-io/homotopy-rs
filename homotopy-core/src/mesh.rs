@@ -1,9 +1,10 @@
-use homotopy_common::{declare_idx, graph::Node, idx::IdxVec};
+use homotopy_common::{declare_idx, idx::IdxVec};
 use itertools::{interleave, Itertools};
+use petgraph::graph::NodeIndex;
 
 use crate::{
     common::DimensionError,
-    graph::{explode_graph, SliceGraph},
+    graph::{add_coord, explode, Coord, SliceGraph},
     DiagramN,
 };
 
@@ -15,13 +16,13 @@ pub type Orientation = usize;
 
 #[derive(Copy, Clone, Debug)]
 pub enum ElementData {
-    Element0(Node),
+    Element0(NodeIndex),
     ElementN(Orientation, Element, Element),
 }
 
 pub struct Mesh {
     pub depth: usize,
-    pub graph: SliceGraph,
+    pub graph: SliceGraph<Coord, ()>,
     pub elements: IdxVec<Element, ElementData>,
 }
 
@@ -37,7 +38,10 @@ impl Mesh {
         let mut elements = IdxVec::from_iter([ElementData::Element0(n)]);
 
         for orientation in 0..depth {
-            let (exploded_graph, node_to_nodes) = explode_graph(&graph)?;
+            let (exploded_graph, node_to_option_nodes) =
+                explode(&graph, add_coord, |_, _| Some(()))?;
+            let node_to_nodes =
+                node_to_option_nodes.map(|x| x.into_iter().collect::<Option<Vec<_>>>().unwrap());
             graph = exploded_graph;
 
             elements = explode_elements(&elements, &graph, &node_to_nodes, orientation);
@@ -53,8 +57,8 @@ impl Mesh {
 
 fn explode_elements(
     elements: &IdxVec<Element, ElementData>,
-    graph: &SliceGraph,
-    node_to_nodes: &IdxVec<Node, Vec<Node>>,
+    graph: &SliceGraph<Coord, ()>,
+    node_to_nodes: &IdxVec<NodeIndex, Vec<NodeIndex>>,
     orientation: Orientation,
 ) -> IdxVec<Element, ElementData> {
     use ElementData::{Element0, ElementN};
@@ -102,7 +106,7 @@ fn make_element(
     orientation: Orientation,
     elem_0: Element,
     elem_1: Element,
-    graph: &SliceGraph,
+    graph: &SliceGraph<Coord, ()>,
     elements: &IdxVec<Element, ElementData>,
 ) -> Option<ElementData> {
     use ElementData::{Element0, ElementN};
@@ -152,7 +156,7 @@ impl Mesh {
         }
     }
 
-    fn flatten(&self, elem: Element, orientation: &[Orientation]) -> Vec<Node> {
+    fn flatten(&self, elem: Element, orientation: &[Orientation]) -> Vec<NodeIndex> {
         match self.elements[elem] {
             ElementData::Element0(n) => vec![n; 2_usize.pow(orientation.len() as u32)],
             ElementData::ElementN(i, elem_0, elem_1) => {
@@ -173,7 +177,7 @@ impl Mesh {
         }
     }
 
-    pub fn flatten_elements(&self) -> impl Iterator<Item = Vec<Node>> + '_ {
+    pub fn flatten_elements(&self) -> impl Iterator<Item = Vec<NodeIndex>> + '_ {
         self.elements
             .keys()
             .map(|elem| self.flatten(elem, &self.orientation_of(elem)))
