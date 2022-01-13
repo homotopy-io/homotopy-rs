@@ -159,7 +159,7 @@ fn target_points(rewrites: &[Rewrite]) -> Vec<(Point, Generator)> {
                 .or_insert_with(Vec::new);
 
             for source_height in rewrite.singular_preimage(target_height) {
-                target_rewrites_at_height.push(rewrite.slice(source_height));
+                target_rewrites_at_height.push(rewrite.slice(Height::Singular(source_height)));
             }
 
             let cone = rewrite.cone_over_target(target_height).unwrap();
@@ -219,7 +219,9 @@ impl Embedding {
                         rewrite
                             .singular_preimage(target_height + height)
                             .map(|source_height| {
-                                Rc::new(slice.preimage(&rewrite.slice(source_height)))
+                                Rc::new(
+                                    slice.preimage(&rewrite.slice(Height::Singular(source_height))),
+                                )
                             })
                             .collect::<Vec<_>>()
                     })

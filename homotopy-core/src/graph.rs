@@ -143,7 +143,7 @@ pub fn explode_graph(
             exploded_graph.add_edge(
                 source_slices[usize::from(Singular(source_height)) + 1],
                 target_slices[usize::from(Singular(target_height)) + 1],
-                rewrite.slice(source_height),
+                rewrite.slice(Height::Singular(source_height)),
             );
         }
 
@@ -167,7 +167,7 @@ pub fn explode_graph(
                     target_slices[usize::from(Singular(target_height)) + 1],
                     source_diagram.cospans()[source_height]
                         .forward
-                        .compose(&rewrite.slice(source_height))
+                        .compose(&rewrite.slice(Height::Singular(source_height)))
                         .unwrap(),
                 );
             }

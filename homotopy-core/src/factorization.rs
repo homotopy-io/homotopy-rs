@@ -116,8 +116,8 @@ impl Iterator for FactorizationInternal {
                         .enumerate()
                         .map(|(si, &ti)| {
                             factorize(
-                                self.f.slice(si),
-                                self.g.slice(ti),
+                                self.f.slice(Height::Singular(si)),
+                                self.g.slice(Height::Singular(ti)),
                                 self.source.slice(Height::Singular(si)).unwrap(),
                                 self.target.slice(Height::Singular(ti)).unwrap(),
                             )

@@ -413,7 +413,11 @@ fn colimit_recursive(
             let source_node = Node(*source, backward.singular_image(height));
             let target_node = Node(*target, forward.singular_image(height));
 
-            let span = Span(backward.slice(height), slice, forward.slice(height));
+            let span = Span(
+                backward.slice(Height::Singular(height)),
+                slice,
+                forward.slice(Height::Singular(height)),
+            );
 
             let source_index = node_to_index[&source_node];
             let target_index = node_to_index[&target_node];
