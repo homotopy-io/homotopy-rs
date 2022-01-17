@@ -51,7 +51,7 @@ impl<'a> Default for FrameOpts<'a> {
 }
 
 pub struct Frame<'a> {
-    ctx: &'a GlCtx,
+    ctx: &'a mut GlCtx,
     opts: FrameOpts<'a>,
     draws: Vec<Draw<'a>>,
 }
@@ -97,7 +97,7 @@ impl<'a> Draw<'a> {
 
 impl<'a> Frame<'a> {
     #[inline]
-    pub fn new(ctx: &'a GlCtx) -> Self {
+    pub fn new(ctx: &'a mut GlCtx) -> Self {
         Self {
             ctx,
             opts: Default::default(),
@@ -128,7 +128,7 @@ impl<'a> Frame<'a> {
         self.draws.push(draw);
     }
 
-    fn render_with_framebuffer(&self) {
+    fn render_with_framebuffer(&mut self) {
         if let Some(framebuffer) = self.opts.framebuffer {
             framebuffer.bind(|| {
                 self.render();
@@ -138,7 +138,8 @@ impl<'a> Frame<'a> {
         }
     }
 
-    fn render(&self) {
+    fn render(&mut self) {
+        self.ctx.resize_to_fit().unwrap();
         self.ctx.with_gl(|gl| {
             let clear_opts = match self.opts.clear {
                 Clear::None => 0,
@@ -165,7 +166,7 @@ impl<'a> Frame<'a> {
                 }
 
                 for (i, &texture) in draw.textures.iter().enumerate() {
-                    texture.activate(i)
+                    texture.activate(i);
                 }
 
                 // bind the program the draw expected

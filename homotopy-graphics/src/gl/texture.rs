@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use web_sys::{WebGl2RenderingContext, WebGlTexture};
 
-use super::{framebuffer::Attachable, GlCtx, GlCtxHandle, GlError, Result};
+use super::{framebuffer::Attachable, GlCtx, GlCtxHandle, GlCtxHook, GlError, Result};
 
 #[derive(Copy, Clone)]
 pub enum Filter {
@@ -42,19 +42,69 @@ impl Default for InternalFormat {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct TextureOpts {
     pub min_filter: Filter,
     pub mag_filter: Filter,
     pub internal_format: InternalFormat,
-    pub width: Option<u32>,
-    pub height: Option<u32>,
+    pub dimensions: Option<(u32, u32)>,
     pub type_: Type,
+}
+
+impl TextureOpts {
+    #[allow(clippy::map_err_ignore)]
+    fn resize(&self, gl: &WebGl2RenderingContext, width: u32, height: u32) -> Result<()> {
+        gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_u8_array(
+            WebGl2RenderingContext::TEXTURE_2D,
+            0,
+            self.internal_format as i32,
+            width as i32,
+            height as i32,
+            0,
+            WebGl2RenderingContext::RGBA,
+            self.type_ as u32,
+            None,
+        )
+        .map_err(|_| GlError::Texture)
+    }
+
+    fn cfg(&self, gl: &WebGl2RenderingContext, width: u32, height: u32) -> Result<()> {
+        gl.tex_parameteri(
+            WebGl2RenderingContext::TEXTURE_2D,
+            WebGl2RenderingContext::TEXTURE_MIN_FILTER,
+            self.min_filter as i32,
+        );
+        gl.tex_parameteri(
+            WebGl2RenderingContext::TEXTURE_2D,
+            WebGl2RenderingContext::TEXTURE_MAG_FILTER,
+            self.mag_filter as i32,
+        );
+
+        let (width, height) = self.dimensions.unwrap_or((width, height));
+        self.resize(gl, width, height)
+    }
+
+    fn build_resize_hook(
+        &self,
+        ctx: GlCtxHandle,
+        webgl_texture: WebGlTexture,
+    ) -> impl Fn(u32, u32) -> Result<()> {
+        let opts = self.clone();
+        move |width, height| {
+            ctx.with_gl(|gl| {
+                gl.bind_texture(WebGl2RenderingContext::TEXTURE_2D, Some(&webgl_texture));
+                opts.resize(gl, width, height)?;
+                gl.bind_texture(WebGl2RenderingContext::TEXTURE_2D, None);
+                Ok(())
+            })
+        }
+    }
 }
 
 struct TextureData {
     ctx: GlCtxHandle,
     webgl_texture: WebGlTexture,
+    hook: Option<GlCtxHook>,
 }
 
 #[derive(Clone)]
@@ -67,39 +117,21 @@ impl Texture {
             .with_gl(WebGl2RenderingContext::create_texture)
             .ok_or(GlError::Allocate)?;
 
+        let hook = if opts.dimensions.is_none() {
+            let hook = opts.build_resize_hook(ctx.ctx_handle(), webgl_texture.clone());
+            Some(ctx.install_resize_hook(hook))
+        } else {
+            None
+        };
+
         let texture = Self(Rc::new(TextureData {
             ctx: ctx.ctx_handle(),
+            hook,
             webgl_texture,
         }));
 
         texture
-            .bind(|| {
-                ctx.with_gl(|gl| {
-                    gl.tex_parameteri(
-                        WebGl2RenderingContext::TEXTURE_2D,
-                        WebGl2RenderingContext::TEXTURE_MIN_FILTER,
-                        opts.min_filter as i32,
-                    );
-                    gl.tex_parameteri(
-                        WebGl2RenderingContext::TEXTURE_2D,
-                        WebGl2RenderingContext::TEXTURE_MAG_FILTER,
-                        opts.mag_filter as i32,
-                    );
-                    // NOTE could pass format and kind as texture options
-                    gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_u8_array(
-                        WebGl2RenderingContext::TEXTURE_2D,
-                        0,
-                        opts.internal_format as i32,
-                        // FIXME(@doctorn) this needs to be adaptive
-                        opts.width.unwrap_or_else(|| ctx.width()) as i32,
-                        opts.height.unwrap_or_else(|| ctx.height()) as i32,
-                        0,
-                        WebGl2RenderingContext::RGBA,
-                        opts.type_ as u32,
-                        None,
-                    )
-                })
-            })
+            .bind(|| ctx.with_gl(|gl| opts.cfg(gl, ctx.width(), ctx.height())))
             .map_err(|_| GlError::Texture)?;
 
         Ok(texture)
@@ -136,7 +168,7 @@ impl Texture {
                 WebGl2RenderingContext::TEXTURE_2D,
                 Some(&self.0.webgl_texture),
             );
-        })
+        });
     }
 }
 
@@ -156,6 +188,10 @@ impl Attachable for Texture {
 impl Drop for TextureData {
     #[inline]
     fn drop(&mut self) {
+        if let Some(hook) = self.hook {
+            self.ctx.remove_resize_hook(hook);
+        }
+
         self.ctx
             .with_gl(|gl| gl.delete_texture(Some(&self.webgl_texture)));
     }

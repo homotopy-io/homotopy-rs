@@ -37,17 +37,34 @@ pub enum GlError {
 }
 
 mod ctx {
-    use std::rc::Rc;
+    use std::{cell::RefCell, rc::Rc};
 
+    use homotopy_common::{declare_idx, dense::DenseVec};
     use web_sys::WebGl2RenderingContext;
 
+    use super::Result;
+
+    declare_idx! {
+        pub struct GlCtxHook = usize;
+    }
+
+    type ResizeHook = Box<dyn Fn(u32, u32) -> Result<()>>;
+
+    pub struct GlCtxInner {
+        ctx: WebGl2RenderingContext,
+        resize_hooks: RefCell<DenseVec<GlCtxHook, ResizeHook>>,
+    }
+
     #[derive(Clone)]
-    pub struct GlCtxHandle(Rc<WebGl2RenderingContext>);
+    pub struct GlCtxHandle(Rc<GlCtxInner>);
 
     impl GlCtxHandle {
         #[inline]
-        pub fn new(ctx: WebGl2RenderingContext) -> Self {
-            Self(Rc::new(ctx))
+        pub(super) fn new(ctx: WebGl2RenderingContext) -> Self {
+            Self(Rc::new(GlCtxInner {
+                ctx,
+                resize_hooks: Default::default(),
+            }))
         }
 
         #[allow(clippy::inline_always)]
@@ -56,12 +73,36 @@ mod ctx {
         where
             F: FnOnce(&WebGl2RenderingContext) -> T,
         {
-            f(&self.0)
+            f(&self.0.ctx)
+        }
+
+        #[inline]
+        pub(super) fn remove_resize_hook(&self, hook: GlCtxHook) {
+            self.0.resize_hooks.borrow_mut().remove(hook);
+        }
+
+        #[inline]
+        pub(super) fn install_resize_hook<F>(&self, f: F) -> GlCtxHook
+        where
+            F: Fn(u32, u32) -> super::Result<()> + 'static,
+        {
+            self.0
+                .resize_hooks
+                .borrow_mut()
+                .push(Box::new(f) as Box<dyn Fn(u32, u32) -> Result<()>>)
+        }
+
+        pub(super) fn run_hooks(&self, width: u32, height: u32) -> Result<()> {
+            for hook in self.0.resize_hooks.borrow().values() {
+                hook(width, height)?;
+            }
+
+            Ok(())
         }
     }
 }
 
-use ctx::GlCtxHandle;
+use ctx::{GlCtxHandle, GlCtxHook};
 
 pub type Result<T> = std::result::Result<T, GlError>;
 
@@ -104,24 +145,28 @@ impl GlCtx {
         })
     }
 
-    fn resize_to(&mut self, width: u32, height: u32) {
+    fn resize_to(&mut self, width: u32, height: u32) -> Result<()> {
         if width != self.canvas.width() || height != self.canvas.height() {
             self.canvas.set_width(width);
             self.canvas.set_height(height);
 
             self.width = width;
             self.height = height;
+
+            self.ctx.run_hooks(width, height)?;
         }
 
         self.ctx
             .with_gl(|gl| gl.viewport(0, 0, width as i32, height as i32));
+
+        Ok(())
     }
 
-    fn resize_to_fit(&mut self) {
+    fn resize_to_fit(&mut self) -> Result<()> {
         let width = self.canvas.client_width();
         let height = self.canvas.client_height();
 
-        self.resize_to(width as u32, height as u32);
+        self.resize_to(width as u32, height as u32)
     }
 
     #[inline]

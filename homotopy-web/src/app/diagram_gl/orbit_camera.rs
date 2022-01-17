@@ -28,7 +28,7 @@ impl OrbitCamera {
     const DEFAULT_PHI: f32 = 0.5 * PI;
     const DEFAULT_THETA: f32 = 0.5 * PI;
     const EPSILON: f32 = 0.05;
-    const FAR: f32 = 100.;
+    const FAR: f32 = 1000.;
     const NEAR: f32 = 0.01;
 
     pub fn position(&self) -> Vec3 {
