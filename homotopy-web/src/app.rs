@@ -5,6 +5,7 @@ use wasm_bindgen::closure::Closure;
 use workspace::WorkspaceView;
 use yew::prelude::*;
 
+use self::diagram_gl::OrbitControl;
 use crate::{
     components::{
         icon::{Icon, IconSize},
@@ -14,8 +15,6 @@ use crate::{
     },
     model,
 };
-
-use self::diagram_gl::OrbitControl;
 
 mod attach;
 mod diagram_gl;

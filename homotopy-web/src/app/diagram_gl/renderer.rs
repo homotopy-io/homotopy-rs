@@ -7,7 +7,7 @@ use homotopy_graphics::{
         GlCtx, Result,
     },
 };
-use ultraviolet::{Mat4, Vec3, Vec4};
+use ultraviolet::{Vec3, Vec4};
 
 use super::{
     orbit_camera::OrbitCamera,
@@ -37,6 +37,7 @@ impl Renderer {
     pub fn new(ctx: GlCtx, settings: &Store<AppSettings>, props: &GlDiagramProps) -> Result<Self> {
         let depth = *settings.get_subdivision_depth() as u8;
         let samples = *settings.get_geometry_samples() as u8;
+        let gbuffer = GBuffer::new(&ctx)?;
 
         Ok(Self {
             scene: Scene::build(
@@ -50,7 +51,7 @@ impl Renderer {
                 depth,
                 samples,
             )?,
-            gbuffer: GBuffer::new(&ctx)?,
+            gbuffer,
             ctx,
             signature: props.signature.clone(),
             subdivision_depth: depth,
@@ -74,37 +75,33 @@ impl Renderer {
         Ok(())
     }
 
-    fn render_meshes<'a>(&'a self, frame: &mut Frame<'a>, vp: &Mat4) {
-        let signature = &self.signature;
-
-        self.scene.draw(frame, |generator, array| {
-            let color = signature
-                .generator_info(generator)
-                .map(|info| info.color.0.into_format())
-                .unwrap_or(palette::rgb::Rgb {
-                    red: 0.,
-                    green: 0.,
-                    blue: 1.,
-                    ..Default::default()
-                });
-            draw!(array, &[], {
-                mvp: *vp,
-                albedo: Vec3::new(color.red, color.green, color.blue),
-                t: f32::sin(0.00025 * self.t),
-            })
-        });
-    }
-
     pub fn render(&mut self, camera: &OrbitCamera, settings: &Store<AppSettings>) {
         {
-            let mut frame = Frame::new(&self.ctx)
+            let mut frame = Frame::new(&mut self.ctx)
                 .with_frame_buffer(&self.gbuffer.framebuffer)
                 .with_clear_color(Vec4::new(0., 0., 0., 1.));
 
             let vp = camera.transform(&*frame);
 
             if !*settings.get_mesh_hidden() {
-                self.render_meshes(&mut frame, &vp);
+                let signature = &self.signature;
+
+                self.scene.draw(&mut frame, |generator, array| {
+                    let color = signature.generator_info(generator).map_or(
+                        palette::rgb::Rgb {
+                            red: 0.,
+                            green: 0.,
+                            blue: 1.,
+                            ..Default::default()
+                        },
+                        |info| info.color.0.into_format(),
+                    );
+                    draw!(array, &[], {
+                        mvp: vp,
+                        albedo: Vec3::new(color.red, color.green, color.blue),
+                        t: f32::sin(0.00025 * self.t),
+                    })
+                });
             }
 
             if *settings.get_wireframe_3d() {
@@ -117,7 +114,7 @@ impl Renderer {
         }
 
         {
-            let mut frame = Frame::new(&self.ctx).with_clear_color(Vec4::broadcast(1.));
+            let mut frame = Frame::new(&mut self.ctx).with_clear_color(Vec4::broadcast(1.));
             self.scene.draw_screen_quad(
                 &mut frame,
                 &[

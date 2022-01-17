@@ -1,16 +1,18 @@
 use std::{collections::VecDeque, fmt, mem};
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     declare_idx,
     idx::{Idx, IdxVec},
 };
 
 declare_idx! {
-    #[derive(serde::Serialize, serde::Deserialize)]
+    #[derive(Serialize, Deserialize)]
     struct AllocId = usize;
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct DenseVec<I, T> {
     forward: IdxVec<I, Option<AllocId>>,
     reverse: IdxVec<AllocId, I>,
@@ -22,24 +24,33 @@ impl<I, T> DenseVec<I, T>
 where
     I: Idx,
 {
-    // Moves the last element in the storage backing `IdxVec` into the slot
+    // Moves the last element in the storage-backing `IdxVec` into the slot
     // provided. This is used to ensure that all `AllocId`s point to valid
     // data. (Note this is a no-op if the backing `IdxVec` is empty.)
     fn realloc(&mut self, slot: AllocId) -> Option<T> {
         let mut elem = self.raw.pop()?;
-        self.forward[self.reverse[slot]] = Some(slot);
+        let idx = self.reverse.pop()?;
+
+        // If we're reallocating the last element of the storage-backing
+        // `IdxVec`, that means it's time for it to be deallocated, so just
+        // fast resturn.
+        if slot.index() == self.raw.len() {
+            return Some(elem);
+        }
+
+        self.forward[idx] = Some(slot);
         mem::swap(&mut self.raw[slot], &mut elem);
         Some(elem)
     }
 
-    fn push_idx(&mut self, idx: I, elem: T) -> AllocId {
-        self.reverse.push(idx);
-        self.raw.push(elem)
-    }
-
     #[inline]
     pub fn new() -> Self {
-        Default::default()
+        Self {
+            forward: Default::default(),
+            reverse: Default::default(),
+            raw: Default::default(),
+            free: Default::default(),
+        }
     }
 
     #[inline]
@@ -58,7 +69,9 @@ where
             .free
             .pop_front()
             .unwrap_or_else(|| self.forward.push(None));
-        let slot = self.push_idx(idx, elem);
+        let slot = self.raw.push(elem);
+
+        self.reverse.push(idx);
         self.forward[idx] = Some(slot);
         idx
     }

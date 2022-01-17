@@ -32,7 +32,7 @@ impl Component for ViewControl {
             ViewMessage::ZoomIn => {
                 self.panzoom.zoom_in();
                 self.orbit_control.zoom_in();
-            },
+            }
             ViewMessage::ZoomOut => {
                 self.panzoom.zoom_out();
                 self.orbit_control.zoom_out();
