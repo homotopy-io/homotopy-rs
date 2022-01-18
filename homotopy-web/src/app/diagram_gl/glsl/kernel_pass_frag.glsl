@@ -16,9 +16,9 @@ void main() {
 
     float valence = 0.;
 
-    for (int i = -4; i <= 4; ++i) {
-        for (int j = -4; j <= 4; ++j) {
-            if (i * i + j * j >= 16) {
+    for (int i = -5; i <= 5; ++i) {
+        for (int j = -5; j <= 5; ++j) {
+            if (i * i + j * j >= 24) {
                 continue;
             }
 
@@ -31,7 +31,11 @@ void main() {
         }
     }
 
-    out_position = position / float(valence);
+    if (valence <= 0.) {
+        discard;
+    }
+
+    out_position = position / valence;
     out_normal = vec3(1., 0., 0.);
     out_albedo = vec4(1., 1., 1., 0.);
 }

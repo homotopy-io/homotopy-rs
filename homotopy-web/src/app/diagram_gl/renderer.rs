@@ -81,7 +81,7 @@ impl Renderer {
     pub fn render(&mut self, camera: &OrbitCamera, settings: &Store<AppSettings>) {
         let vp = camera.transform(&self.ctx);
 
-        // Render wireframe to GBuffer
+        // Render wireframe to kernel GBuffer
         {
             let mut frame = Frame::new(&mut self.ctx)
                 .with_frame_buffer(&self.kernel_gbuffer.framebuffer)
@@ -98,23 +98,11 @@ impl Renderer {
             }
         }
 
-        // Apply kernel effect
-        {
-            let mut frame = Frame::new(&mut self.ctx)
-                // .with_frame_buffer(&self.gbuffer.framebuffer)
-                .with_clear_color(Vec4::new(0., 0., 0., 1.));
-            self.scene.kernel_pass(
-                &mut frame,
-                &[&self.kernel_gbuffer.positions, &self.kernel_gbuffer.albedo],
-            );
-        }
-
-        /*
-        // Render remainder of scene to GBuffer
+        // Surfaces
         {
             let mut frame = Frame::new(&mut self.ctx)
                 .with_frame_buffer(&self.gbuffer.framebuffer)
-                .with_clear_opts(Clear::None);
+                .with_clear_color(Vec4::new(0., 0., 0., 1.));
 
             if !*settings.get_mesh_hidden() {
                 let signature = &self.signature;
@@ -135,6 +123,11 @@ impl Renderer {
                         t: f32::sin(0.00025 * self.t),
                     })
                 });
+
+                self.scene.kernel_pass(
+                    &mut frame,
+                    &[&self.kernel_gbuffer.positions, &self.kernel_gbuffer.albedo],
+                );
             }
 
             if *settings.get_wireframe_3d() {
@@ -145,12 +138,10 @@ impl Renderer {
                 self.scene.draw_axes(&mut frame, &vp);
             }
         }
-        */
 
-        /*
         // Lighting pass
         {
-            let mut frame = Frame::new(&mut self.ctx).with_clear_color(Vec4::new(1., 1., 1., 0.));
+            let mut frame = Frame::new(&mut self.ctx).with_clear_color(Vec4::new(1., 1., 1., 1.));
             self.scene.lighting_pass(
                 &mut frame,
                 &[
@@ -161,7 +152,6 @@ impl Renderer {
                 camera.position(),
             );
         }
-        */
     }
 }
 
