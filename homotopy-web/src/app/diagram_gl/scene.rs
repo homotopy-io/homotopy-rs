@@ -5,7 +5,7 @@ use homotopy_graphics::{
     gl::{
         array::VertexArray,
         buffer::ElementKind,
-        frame::{Draw, Frame},
+        frame::{Draw, Frame, DepthTest},
         shader::Program,
         texture::Texture,
         GlCtx, Result,
@@ -179,6 +179,7 @@ impl Scene {
             frame.draw(draw!(
                 &component.wireframe_array,
                 &[],
+                DepthTest::Disable,
                 { mvp: *transform, albedo: Vec3::zero(), t: 0. }
             ));
         }
