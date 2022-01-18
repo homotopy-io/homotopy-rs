@@ -32,8 +32,10 @@ pub struct Scene {
     program_3d: Program,
     program_4d: Program,
     axes: VertexArray,
-    screen_quad: VertexArray,
+    lighting_screen_quad: VertexArray,
+    kernel_screen_quad: VertexArray,
     components: Vec<SceneComponent>,
+    kernel_components: Vec<SceneComponent>,
 }
 
 impl Scene {
@@ -47,8 +49,10 @@ impl Scene {
         let program_3d = load_program(ctx, ViewDimension::Three)?;
         let program_4d = load_program(ctx, ViewDimension::Four)?;
         let lighting_pass = load_lighting_pass_program(ctx)?;
+        let kernel_pass = load_kernel_pass_program(ctx)?;
         let axes = buffer_axes(ctx, &program_3d)?;
-        let screen_quad = buffer_screen_quad(ctx, &lighting_pass)?;
+        let lighting_screen_quad = buffer_screen_quad(ctx, &lighting_pass)?;
+        let kernel_screen_quad = buffer_screen_quad(ctx, &kernel_pass)?;
         let diagram = diagram.clone();
 
         let mut scene = Self {
@@ -57,8 +61,10 @@ impl Scene {
             program_3d,
             program_4d,
             axes,
-            screen_quad,
+            lighting_screen_quad,
+            kernel_screen_quad,
             components: vec![],
+            kernel_components: vec![],
         };
 
         scene.reload_meshes(ctx, subdivision_depth, geometry_samples)?;
@@ -72,6 +78,7 @@ impl Scene {
         geometry_samples: u8,
     ) -> Result<()> {
         self.components.clear();
+        self.kernel_components.clear();
 
         let mesh = clay(
             &self.diagram,
@@ -124,7 +131,7 @@ impl Scene {
                 )?,
             });
             // TODO(@doctorn) remove
-            self.components.push(SceneComponent {
+            self.kernel_components.push(SceneComponent {
                 generator: Generator::new(1, 0),
                 array: vertex_array!(
                     ctx,
@@ -158,6 +165,15 @@ impl Scene {
         }
     }
 
+    pub fn draw_kernels<'a, F>(&'a self, frame: &mut Frame<'a>, f: F)
+    where
+        F: Fn(Generator, &'a VertexArray) -> Draw<'a>,
+    {
+        for component in &self.kernel_components {
+            frame.draw(f(component.generator, &component.array));
+        }
+    }
+
     pub fn draw_wireframe<'a>(&'a self, frame: &mut Frame<'a>, transform: &Mat4) {
         for component in &self.components {
             frame.draw(draw!(
@@ -168,14 +184,29 @@ impl Scene {
         }
     }
 
-    pub fn draw_screen_quad<'a>(
+    pub fn kernel_pass<'a>(
+        &'a self,
+        frame: &mut Frame<'a>,
+        textures: &[&'a Texture],
+    ) {
+        frame.draw(draw! {
+            &self.kernel_screen_quad,
+            textures,
+            {
+                in_position: 0,
+                in_albedo: 1,
+            }
+        });
+    }
+
+    pub fn lighting_pass<'a>(
         &'a self,
         frame: &mut Frame<'a>,
         textures: &[&'a Texture],
         camera_pos: Vec3,
     ) {
         frame.draw(draw! {
-            &self.screen_quad,
+            &self.lighting_screen_quad,
             textures,
             {
                 g_position: 0,
@@ -266,9 +297,19 @@ fn load_program(ctx: &GlCtx, dimension: ViewDimension) -> Result<Program> {
 fn load_lighting_pass_program(ctx: &GlCtx) -> Result<Program> {
     program!(
         ctx,
-        "glsl/lighting_pass_vert.glsl",
+        "glsl/screen_quad_vert.glsl",
         "glsl/lighting_pass_frag.glsl",
         { position, uv },
         { g_position, g_normal, g_albedo, camera_pos },
+    )
+}
+
+fn load_kernel_pass_program(ctx: &GlCtx) -> Result<Program> {
+    program!(
+        ctx,
+        "glsl/screen_quad_vert.glsl",
+        "glsl/kernel_pass_frag.glsl",
+        { position, uv },
+        { in_position, in_albedo },
     )
 }

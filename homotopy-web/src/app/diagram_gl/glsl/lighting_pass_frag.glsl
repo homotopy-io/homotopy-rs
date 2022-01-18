@@ -22,6 +22,10 @@ void main() {
     vec3 normal = normalize(texture(g_normal, frag_tex_coords).rgb);
     vec3 albedo = normalize(texture(g_albedo, frag_tex_coords).rgb); 
 
+    if (normal == vec3(0.)) {
+        discard;
+    }
+
     vec3 l = normalize(camera_pos + light_offset - frag_pos);
 
     float lambertian = max(dot(l, normal), 0.);

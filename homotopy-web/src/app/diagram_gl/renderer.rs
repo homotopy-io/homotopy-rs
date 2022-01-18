@@ -1,7 +1,7 @@
 use homotopy_graphics::{
     draw,
     gl::{
-        frame::Frame,
+        frame::{Clear, Frame},
         framebuffer::{Attachment, Framebuffer},
         texture::{InternalFormat, Texture, TextureOpts, Type},
         GlCtx, Result,
@@ -20,6 +20,7 @@ pub struct Renderer {
     ctx: GlCtx,
     scene: Scene,
     gbuffer: GBuffer,
+    kernel_gbuffer: GBuffer,
     signature: Signature,
     subdivision_depth: u8,
     geometry_samples: u8,
@@ -37,6 +38,7 @@ impl Renderer {
     pub fn new(ctx: GlCtx, settings: &Store<AppSettings>, props: &GlDiagramProps) -> Result<Self> {
         let depth = *settings.get_subdivision_depth() as u8;
         let samples = *settings.get_geometry_samples() as u8;
+        let kernel_gbuffer = GBuffer::new(&ctx)?;
         let gbuffer = GBuffer::new(&ctx)?;
 
         Ok(Self {
@@ -51,6 +53,7 @@ impl Renderer {
                 depth,
                 samples,
             )?,
+            kernel_gbuffer,
             gbuffer,
             ctx,
             signature: props.signature.clone(),
@@ -76,12 +79,42 @@ impl Renderer {
     }
 
     pub fn render(&mut self, camera: &OrbitCamera, settings: &Store<AppSettings>) {
+        let vp = camera.transform(&self.ctx);
+
+        // Render wireframe to GBuffer
+        {
+            let mut frame = Frame::new(&mut self.ctx)
+                .with_frame_buffer(&self.kernel_gbuffer.framebuffer)
+                .with_clear_color(Vec4::new(0., 0., 0., 1.));
+
+            if !*settings.get_mesh_hidden() {
+                self.scene.draw_kernels(&mut frame, |_, array| {
+                    draw!(array, &[], {
+                        mvp: vp,
+                        albedo: Vec3::new(1., 0., 0.),
+                        t: f32::sin(0.00025 * self.t),
+                    })
+                });
+            }
+        }
+
+        // Apply kernel effect
+        {
+            let mut frame = Frame::new(&mut self.ctx)
+                // .with_frame_buffer(&self.gbuffer.framebuffer)
+                .with_clear_color(Vec4::new(0., 0., 0., 1.));
+            self.scene.kernel_pass(
+                &mut frame,
+                &[&self.kernel_gbuffer.positions, &self.kernel_gbuffer.albedo],
+            );
+        }
+
+        /*
+        // Render remainder of scene to GBuffer
         {
             let mut frame = Frame::new(&mut self.ctx)
                 .with_frame_buffer(&self.gbuffer.framebuffer)
-                .with_clear_color(Vec4::new(0., 0., 0., 1.));
-
-            let vp = camera.transform(&*frame);
+                .with_clear_opts(Clear::None);
 
             if !*settings.get_mesh_hidden() {
                 let signature = &self.signature;
@@ -112,10 +145,13 @@ impl Renderer {
                 self.scene.draw_axes(&mut frame, &vp);
             }
         }
+        */
 
+        /*
+        // Lighting pass
         {
-            let mut frame = Frame::new(&mut self.ctx).with_clear_color(Vec4::broadcast(1.));
-            self.scene.draw_screen_quad(
+            let mut frame = Frame::new(&mut self.ctx).with_clear_color(Vec4::new(1., 1., 1., 0.));
+            self.scene.lighting_pass(
                 &mut frame,
                 &[
                     &self.gbuffer.positions,
@@ -125,6 +161,7 @@ impl Renderer {
                 camera.position(),
             );
         }
+        */
     }
 }
 
