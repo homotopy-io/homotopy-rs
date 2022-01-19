@@ -111,6 +111,7 @@ pub struct GlCtx {
     canvas: HtmlCanvasElement,
     width: u32,
     height: u32,
+    pixel_ratio: f64,
 }
 
 impl GlCtx {
@@ -142,6 +143,7 @@ impl GlCtx {
             width: canvas.width(),
             height: canvas.height(),
             canvas,
+            pixel_ratio: web_sys::window().unwrap().device_pixel_ratio(),
         })
     }
 
@@ -163,10 +165,11 @@ impl GlCtx {
     }
 
     fn resize_to_fit(&mut self) -> Result<()> {
-        let width = self.canvas.client_width();
-        let height = self.canvas.client_height();
+        let correct = |x| f64::ceil(f64::from(x) * self.pixel_ratio) as u32;
+        let width = correct(self.canvas.client_width());
+        let height = correct(self.canvas.client_height());
 
-        self.resize_to(width as u32, height as u32)
+        self.resize_to(width, height)
     }
 
     #[inline]

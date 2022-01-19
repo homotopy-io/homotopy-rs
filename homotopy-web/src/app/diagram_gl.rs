@@ -20,7 +20,6 @@ use crate::{
 
 mod orbit_camera;
 mod renderer;
-mod scene;
 
 pub enum GlDiagramMessage {
     Render(f64),

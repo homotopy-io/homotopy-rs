@@ -4,17 +4,32 @@ use ultraviolet::Vec4;
 use web_sys::WebGl2RenderingContext;
 
 use super::{
-    array::VertexArray, framebuffer::Framebuffer, shader::Uniformable, texture::Texture, GlCtx,
+    array::VertexArray,
+    framebuffer::Framebuffer,
+    shader::{Program, Uniformable},
+    texture::Texture,
+    GlCtx,
 };
 
 #[macro_export]
 macro_rules! draw {
-    ($vao:expr, $textures:expr, {$($uniform:ident : $value:expr),*$(,)*}) => {{
-        $crate::gl::frame::Draw::new($vao, $textures)
+    (
+        $program:expr,
+        $vao:expr,
+        $textures:expr,
+        {$($uniform:ident : $value:expr),*$(,)*}
+    ) => {{
+        $crate::gl::frame::Draw::new($program, $vao, $textures)
             $(.uniform(stringify!($uniform), $value))*
     }};
-    ($vao:expr, $textures:expr, $depth:expr, {$($uniform:ident : $value:expr),*$(,)*}) => {{
-        $crate::gl::frame::Draw::new_with_depth($vao, $textures, $depth)
+    (
+        $program:expr,
+        $vao:expr,
+        $textures:expr,
+        $depth:expr,
+        {$($uniform:ident : $value:expr),*$(,)*}
+    ) => {{
+        $crate::gl::frame::Draw::new_with_depth($program, $vao, $textures, $depth)
             $(.uniform(stringify!($uniform), $value))*
     }};
 }
@@ -57,6 +72,7 @@ pub struct Frame<'a> {
 }
 
 pub struct Draw<'a> {
+    program: &'a Program,
     vertex_array: &'a VertexArray,
     depth_test: DepthTest,
     uniforms: HashMap<&'static str, Box<dyn Uniformable>>,
@@ -66,21 +82,27 @@ pub struct Draw<'a> {
 impl<'a> Draw<'a> {
     #[inline]
     pub fn new_with_depth(
+        program: &'a Program,
         vertex_array: &'a VertexArray,
         textures: &[&'a Texture],
         depth_test: DepthTest,
     ) -> Self {
         Self {
+            program,
             vertex_array,
             depth_test,
-            uniforms: HashMap::new(),
+            uniforms: Default::default(),
             textures: textures.to_owned(),
         }
     }
 
     #[inline]
-    pub fn new(vertex_array: &'a VertexArray, textures: &[&'a Texture]) -> Self {
-        Self::new_with_depth(vertex_array, textures, DepthTest::Enable)
+    pub fn new(
+        program: &'a Program,
+        vertex_array: &'a VertexArray,
+        textures: &[&'a Texture],
+    ) -> Self {
+        Self::new_with_depth(program, vertex_array, textures, DepthTest::Enable)
     }
 
     #[inline]
@@ -88,7 +110,7 @@ impl<'a> Draw<'a> {
     where
         T: Uniformable,
     {
-        assert!(self.vertex_array.program().has_uniform(name));
+        assert!(self.program.has_uniform(name));
         self.uniforms
             .insert(name, Box::new(t) as Box<dyn Uniformable>);
         self
@@ -171,11 +193,11 @@ impl<'a> Frame<'a> {
 
                 // bind the program the draw expected
                 // NOTE we could sort each draw queue by program to make this more performant
-                draw.vertex_array.program().bind(|| {
+                draw.program.bind(|| {
                     // bind the vertex array we're drawing
                     draw.vertex_array.bind(|| {
                         // set all of the uniforms
-                        for (name, loc) in draw.vertex_array.program().uniforms() {
+                        for (name, loc) in draw.program.uniforms() {
                             let data = if let Some(data) = draw.uniforms.get(name) {
                                 data
                             } else {

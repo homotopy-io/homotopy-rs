@@ -1,11 +1,10 @@
-use std::{collections::HashMap, rc::Rc};
+use std::rc::Rc;
 
 use ultraviolet::{Vec2, Vec3, Vec4};
 use web_sys::{WebGl2RenderingContext, WebGlVertexArrayObject};
 
 use super::{
     buffer::{Buffer, ElementBuffer, UntypedBuffer},
-    shader::Program,
     GlCtx, GlCtxHandle, GlError, Result,
 };
 
@@ -13,25 +12,23 @@ pub const VAO_LIMIT: usize = 0x0001_0000;
 
 #[macro_export]
 macro_rules! vertex_array {
-    ($ctx:expr, $program:expr, {$($attribute:ident : $value:expr),*$(,)*}) => {{
-        $crate::gl::array::VertexArray::new($ctx, $program)
-            $(.map(|x| x.attribute(stringify!($attribute), $value)))*
+    ($ctx:expr, [$($value:expr),*$(,)*]) => {{
+        $crate::gl::array::VertexArray::new($ctx)
+            $(.map(|x| x.attribute($value)))*
     }};
 
-    ($ctx:expr, $program:expr, $elements:expr, {$($attribute:ident : $value:expr),*$(,)*}) => {{
+    ($ctx:expr, $elements:expr, [$($value:expr),*$(,)*]) => {{
         $crate::gl::array::VertexArray::new_with_elements(
             $ctx,
-            $program,
             Some($elements),
-        )$(.map(|x| x.attribute(stringify!($attribute), $value)))*
+        )$(.map(|x| x.attribute($value)))*
     }}
 }
 
 pub struct VertexArray {
     ctx: GlCtxHandle,
 
-    program: Program,
-    attributes: HashMap<&'static str, Rc<UntypedBuffer>>,
+    attributes: Vec<Rc<UntypedBuffer>>,
     elements: Option<ElementBuffer>,
     len: usize,
 
@@ -39,19 +36,14 @@ pub struct VertexArray {
 }
 
 impl VertexArray {
-    pub fn new_with_elements(
-        ctx: &GlCtx,
-        program: &Program,
-        elements: Option<&ElementBuffer>,
-    ) -> Result<Self> {
+    pub fn new_with_elements(ctx: &GlCtx, elements: Option<&ElementBuffer>) -> Result<Self> {
         let webgl_vao = ctx
             .with_gl(WebGl2RenderingContext::create_vertex_array)
             .ok_or(GlError::Allocate)?;
 
         Ok(Self {
             ctx: ctx.ctx_handle(),
-            program: program.clone(),
-            attributes: HashMap::new(),
+            attributes: Default::default(),
             elements: elements.cloned(),
             len: 0,
             webgl_vao,
@@ -59,18 +51,13 @@ impl VertexArray {
     }
 
     #[inline]
-    pub fn new(ctx: &GlCtx, program: &Program) -> Result<Self> {
-        Self::new_with_elements(ctx, program, None)
+    pub fn new(ctx: &GlCtx) -> Result<Self> {
+        Self::new_with_elements(ctx, None)
     }
 
     #[inline]
     pub(super) fn len(&self) -> usize {
         self.len
-    }
-
-    #[inline]
-    pub(super) fn program(&self) -> &Program {
-        &self.program
     }
 
     #[inline]
@@ -91,7 +78,7 @@ impl VertexArray {
         })
     }
 
-    pub fn attribute<T>(mut self, attribute: &'static str, src: &Buffer<T>) -> Self
+    pub fn attribute<T>(mut self, src: &Buffer<T>) -> Self
     where
         T: Attributable,
     {
@@ -105,8 +92,8 @@ impl VertexArray {
 
         assert!(src.len() <= VAO_LIMIT, "buffer exceeds maximum VAO size");
 
-        // get the location of the target attribute
-        let loc = self.program.attribute_loc(attribute);
+        // get the next attribute location
+        let loc = self.attributes.len() as u32;
         // bind the VAO
         self.bind(|| {
             // bind the source buffer
@@ -124,7 +111,7 @@ impl VertexArray {
         // no-op unless the array is uninitialised)
         self.len = src.len();
         // hold a reference to the source data to stop it being dropped
-        self.attributes.insert(attribute, src.as_untyped());
+        self.attributes.push(src.as_untyped());
 
         self
     }
