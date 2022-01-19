@@ -56,8 +56,9 @@ pub fn extract_mesh(diagram: &DiagramN, depth: usize) -> Result<CubicalMesh, Dim
             let stratum = path
                 .iter()
                 .map(|&index| match index {
+                    SliceIndex::Boundary(_) => -1,
+                    SliceIndex::Interior(Height::Regular(_)) => 0,
                     SliceIndex::Interior(Height::Singular(_)) => 1,
-                    _ => 0,
                 })
                 .sum();
             let boundary = Boundary::at_coord(path);

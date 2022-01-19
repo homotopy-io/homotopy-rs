@@ -35,7 +35,7 @@ impl Boundary {
 #[derive(Debug, Clone, PartialEq)]
 pub struct VertData {
     pub vert: Vec4,
-    pub stratum: usize,
+    pub stratum: isize,
     pub boundary: Boundary,
     pub generator: Generator,
 }
@@ -78,7 +78,7 @@ impl DerefMut for CurveDataInner {
 pub trait WithBoundaryAndGenerator<T> {
     fn with_boundary_and_generator(
         self,
-        stratum: usize,
+        stratum: isize,
         boundary: Boundary,
         generator: Generator,
     ) -> T;
@@ -88,7 +88,7 @@ impl WithBoundaryAndGenerator<VertData> for Vec4 {
     #[inline]
     fn with_boundary_and_generator(
         self,
-        stratum: usize,
+        stratum: isize,
         boundary: Boundary,
         generator: Generator,
     ) -> VertData {
