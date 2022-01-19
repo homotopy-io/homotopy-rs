@@ -1,48 +1,53 @@
 use homotopy_graphics::{
     draw,
     gl::{
-        frame::{Clear, Frame},
-        framebuffer::{Attachment, Framebuffer},
-        texture::{InternalFormat, Texture, TextureOpts, Type},
+        frame::{DepthTest, Frame},
         GlCtx, Result,
     },
 };
 use ultraviolet::{Vec3, Vec4};
 
-use super::{
-    orbit_camera::OrbitCamera,
-    scene::{Scene, ViewDimension},
-    GlDiagramProps,
-};
+use self::{axes::Axes, gbuffer::GBuffer, quad::Quad, scene::Scene, shaders::Shaders};
+use super::{orbit_camera::OrbitCamera, GlDiagramProps};
 use crate::{app::AppSettings, components::settings::Store, model::proof::Signature};
 
+mod axes;
+mod gbuffer;
+mod quad;
+mod scene;
+mod shaders;
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+pub enum ViewDimension {
+    Three = 3,
+    Four = 4,
+}
+
 pub struct Renderer {
+    // outside world
     ctx: GlCtx,
-    scene: Scene,
-    gbuffer: GBuffer,
-    kernel_gbuffer: GBuffer,
     signature: Signature,
+    // state
     subdivision_depth: u8,
     geometry_samples: u8,
     t: f32,
-}
-
-struct GBuffer {
-    framebuffer: Framebuffer,
-    positions: Texture,
-    normals: Texture,
-    albedo: Texture,
+    // resources
+    shaders: Shaders,
+    scene: Scene,
+    axes: Axes,
+    quad: Quad,
+    // pipeline state
+    gbuffer: GBuffer,
+    cyllinder_buffer: GBuffer,
 }
 
 impl Renderer {
     pub fn new(ctx: GlCtx, settings: &Store<AppSettings>, props: &GlDiagramProps) -> Result<Self> {
         let depth = *settings.get_subdivision_depth() as u8;
         let samples = *settings.get_geometry_samples() as u8;
-        let kernel_gbuffer = GBuffer::new(&ctx)?;
-        let gbuffer = GBuffer::new(&ctx)?;
 
         Ok(Self {
-            scene: Scene::build(
+            scene: Scene::new(
                 &ctx,
                 &props.diagram,
                 if props.view.dimension() <= 3 {
@@ -53,8 +58,11 @@ impl Renderer {
                 depth,
                 samples,
             )?,
-            kernel_gbuffer,
-            gbuffer,
+            shaders: Shaders::new(&ctx)?,
+            axes: Axes::new(&ctx)?,
+            quad: Quad::new(&ctx)?,
+            gbuffer: GBuffer::new(&ctx)?,
+            cyllinder_buffer: GBuffer::new(&ctx)?,
             ctx,
             signature: props.signature.clone(),
             subdivision_depth: depth,
@@ -80,35 +88,42 @@ impl Renderer {
 
     pub fn render(&mut self, camera: &OrbitCamera, settings: &Store<AppSettings>) {
         let vp = camera.transform(&self.ctx);
+        let t = f32::sin(self.t * 3e-4);
 
-        // Render wireframe to kernel GBuffer
+        let program = if self.scene.view_dimension == ViewDimension::Three {
+            &self.shaders.geometry_3d
+        } else {
+            &self.shaders.geometry_4d
+        };
+
+        // Render animated wireframes to cyllinder buffer
         {
             let mut frame = Frame::new(&mut self.ctx)
-                .with_frame_buffer(&self.kernel_gbuffer.framebuffer)
-                .with_clear_color(Vec4::new(0., 0., 0., 1.));
+                .with_frame_buffer(&self.cyllinder_buffer.framebuffer)
+                .with_clear_color(Vec4::new(0., 0., 0., 0.));
 
             if !*settings.get_mesh_hidden() {
-                self.scene.draw_kernels(&mut frame, |_, array| {
-                    draw!(array, &[], {
+                for component in &self.scene.cyllinder_components {
+                    frame.draw(draw!(program, &component.array, &[], {
                         mvp: vp,
                         albedo: Vec3::new(1., 0., 0.),
-                        t: f32::sin(0.00025 * self.t),
-                    })
-                });
+                        t: t,
+                    }));
+                }
             }
         }
 
-        // Surfaces
+        // Render surfaces to GBuffer and cyllindrify anything in the cyllinder buffer
         {
             let mut frame = Frame::new(&mut self.ctx)
                 .with_frame_buffer(&self.gbuffer.framebuffer)
-                .with_clear_color(Vec4::new(0., 0., 0., 1.));
+                .with_clear_color(Vec4::new(0., 0., 0., 0.));
 
             if !*settings.get_mesh_hidden() {
                 let signature = &self.signature;
 
-                self.scene.draw(&mut frame, |generator, array| {
-                    let color = signature.generator_info(generator).map_or(
+                for component in &self.scene.components {
+                    let color = signature.generator_info(component.generator).map_or(
                         palette::rgb::Rgb {
                             red: 0.,
                             green: 0.,
@@ -117,71 +132,73 @@ impl Renderer {
                         },
                         |info| info.color.0.into_format(),
                     );
-                    draw!(array, &[], {
+                    frame.draw(draw!(program, &component.array, &[], {
                         mvp: vp,
                         albedo: Vec3::new(color.red, color.green, color.blue),
-                        t: f32::sin(0.00025 * self.t),
-                    })
+                        t: t,
+                    }));
+                }
+
+                frame.draw(draw! {
+                    &self.shaders.cyllinder_pass,
+                    &self.quad.array,
+                    &[
+                        &self.cyllinder_buffer.positions,
+                        &self.cyllinder_buffer.albedo,
+                    ],
+                    {
+                        in_position: 0,
+                        in_albedo: 1,
+                    }
                 });
-
-                self.scene.kernel_pass(
-                    &mut frame,
-                    &[&self.kernel_gbuffer.positions, &self.kernel_gbuffer.albedo],
-                );
-            }
-
-            if *settings.get_wireframe_3d() {
-                self.scene.draw_wireframe(&mut frame, &vp);
-            }
-
-            if *settings.get_debug_axes() {
-                self.scene.draw_axes(&mut frame, &vp);
             }
         }
 
-        // Lighting pass
+        // Final pass
         {
-            let mut frame = Frame::new(&mut self.ctx).with_clear_color(Vec4::new(1., 1., 1., 1.));
-            self.scene.lighting_pass(
-                &mut frame,
+            // Apply lighting to scene
+            let mut frame = Frame::new(&mut self.ctx).with_clear_color(Vec4::broadcast(1.));
+            frame.draw(draw! {
+                &self.shaders.lighting_pass,
+                &self.quad.array,
                 &[
                     &self.gbuffer.positions,
                     &self.gbuffer.normals,
                     &self.gbuffer.albedo,
                 ],
-                camera.position(),
-            );
+                {
+                    g_position: 0,
+                    g_normal: 1,
+                    g_albedo: 2,
+                    camera_pos: camera.position(),
+                    disable_lighting: *settings.get_disable_lighting(),
+                    debug_normals: *settings.get_debug_normals(),
+                }
+            });
+
+            // Add in relevant wireframes
+            if *settings.get_wireframe_3d() {
+                for component in &self.scene.components {
+                    frame.draw(draw! {
+                        &self.shaders.wireframe,
+                        &component.wireframe_array,
+                        &[],
+                        DepthTest::Disable,
+                        { mvp: vp }
+                    });
+                }
+            }
+
+            // Render axes
+            if *settings.get_debug_axes() {
+                frame.draw(draw! {
+                    &self.shaders.wireframe,
+                    &self.axes.array,
+                    &[],
+                    DepthTest::Disable,
+                    { mvp: vp }
+                });
+            }
         }
-    }
-}
-
-impl GBuffer {
-    fn new(ctx: &GlCtx) -> Result<Self> {
-        let positions = ctx.mk_texture_with_opts(&TextureOpts {
-            internal_format: InternalFormat::Rgba16F,
-            type_: Type::Float,
-            ..Default::default()
-        })?;
-        let normals = ctx.mk_texture_with_opts(&TextureOpts {
-            internal_format: InternalFormat::Rgba16F,
-            type_: Type::Float,
-            ..Default::default()
-        })?;
-        let albedo = ctx.mk_texture()?;
-        let renderbuffer = ctx.mk_renderbuffer()?;
-
-        let framebuffer = ctx.mk_framebuffer(vec![
-            Attachment::color(positions.clone(), 0),
-            Attachment::color(normals.clone(), 1),
-            Attachment::color(albedo.clone(), 2),
-            Attachment::depth(renderbuffer),
-        ])?;
-
-        Ok(Self {
-            framebuffer,
-            positions,
-            normals,
-            albedo,
-        })
     }
 }

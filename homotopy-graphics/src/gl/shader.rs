@@ -217,12 +217,6 @@ impl Program {
     }
 
     #[inline]
-    pub(super) fn attribute_loc(&self, name: &'static str) -> u32 {
-        assert!(self.0.attributes.contains_key(name));
-        self.0.attributes.get(name).copied().unwrap()
-    }
-
-    #[inline]
     pub(super) fn uniforms(
         &self,
     ) -> impl Iterator<Item = (&'static str, &WebGlUniformLocation)> + '_ {
