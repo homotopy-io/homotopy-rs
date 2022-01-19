@@ -180,7 +180,7 @@ impl GraphicElement {
                 }
                 Simplex::Point([p]) => {
                     let generator = generators.get(p.0, p.1).unwrap();
-                    if generator.dimension == diagram.dimension() {
+                    if generator.dimension >= diagram.dimension() {
                         point_elements.push(Self::Point(generator, layout.get(p.0, p.1).unwrap()));
                     }
                 }
