@@ -2,17 +2,17 @@
 
 use homotopy_core::{common::DimensionError, DiagramN};
 
+use crate::geom::{CubicalGeometry, SimplicialGeometry};
+
 mod buffers;
-mod geom;
-mod layout;
 mod subdivision;
 
 pub fn clay(
     diagram: &DiagramN,
     view_dimension: usize,
     subdivision_depth: u8,
-) -> Result<geom::simplicial::SimplicialMesh, DimensionError> {
-    let mut mesh = layout::extract_mesh(diagram, view_dimension)?;
-    mesh.subdivide(subdivision_depth);
-    Ok(mesh.into())
+) -> Result<SimplicialGeometry, DimensionError> {
+    let mut geom = CubicalGeometry::new(diagram, view_dimension)?;
+    geom.subdivide(subdivision_depth);
+    Ok(geom.into())
 }

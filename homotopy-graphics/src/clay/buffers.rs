@@ -1,4 +1,5 @@
 use std::{
+    cmp::Ordering,
     f32::consts::{PI, TAU},
     mem,
 };
@@ -7,15 +8,13 @@ use homotopy_common::{
     declare_idx,
     hash::FastHashMap,
     idx::{Idx, IdxVec},
+    parity,
 };
 use homotopy_core::Generator;
 use ultraviolet::{Mat3, Vec3, Vec4};
 
 use crate::{
-    clay::geom::{
-        simplicial::{Orientation, SimplicialMesh, TetraData, TriData},
-        Vert,
-    },
+    geom::{SimplicialGeometry, Vert},
     gl::{
         array::VAO_LIMIT,
         buffer::{Buffer, ElementBuffer, ElementKind},
@@ -44,17 +43,17 @@ struct TriBufferingState {
 
 struct TriBufferingCtx<'a> {
     ctx: &'a GlCtx,
-    mesh: &'a SimplicialMesh,
+    geom: &'a SimplicialGeometry,
     state: FastHashMap<Generator, TriBufferingState>,
     complete_arrays: Vec<TriVertexArrayData>,
     geometry_samples: u8,
 }
 
 impl<'a> TriBufferingCtx<'a> {
-    fn new(ctx: &'a GlCtx, mesh: &'a SimplicialMesh, geometry_samples: u8) -> Self {
+    fn new(ctx: &'a GlCtx, geom: &'a SimplicialGeometry, geometry_samples: u8) -> Self {
         Self {
             ctx,
-            mesh,
+            geom,
             state: Default::default(),
             complete_arrays: vec![],
             geometry_samples,
@@ -62,7 +61,7 @@ impl<'a> TriBufferingCtx<'a> {
     }
 
     // FIXME(@doctorn) this shouldn't need to know how many vertices are required
-    // up front - should handle 'overflow errors' gracefully and chop meshes
+    // up front - should handle 'overflow errors' gracefully and chop geometries
     // along these boundaries (copying any duplicated normal data?)
     fn with_state<F, U>(&mut self, generator: Generator, required: usize, f: F) -> Result<U>
     where
@@ -80,35 +79,31 @@ impl<'a> TriBufferingCtx<'a> {
         Ok(f(state))
     }
 
-    fn push_tri(&mut self, tri: &TriData) -> Result<()> {
+    fn push_tri(&mut self, tri: [Vert; 3]) -> Result<()> {
         let generator = tri
             .into_iter()
-            .map(|v| &self.mesh.verts[v])
+            .map(|v| &self.geom.verts[v])
             .min_by_key(|v| (v.stratum, v.generator.dimension))
             .unwrap()
             .generator;
-        let mesh = self.mesh;
+        let geom = self.geom;
 
         self.with_state(generator, 3, |state| {
-            let v_0 = state.push_vert(mesh, tri[0]);
-            let v_1 = state.push_vert(mesh, tri[1]);
-            let v_2 = state.push_vert(mesh, tri[2]);
+            let v_0 = state.push_vert(geom, tri[0]);
+            let v_1 = state.push_vert(geom, tri[1]);
+            let v_2 = state.push_vert(geom, tri[2]);
 
-            if tri.orientation == Orientation::Anticlockwise {
-                state.push_tri(v_0, v_1, v_2);
-            } else {
-                state.push_tri(v_0, v_2, v_1);
-            }
+            state.push_tri(v_0, v_1, v_2);
         })
     }
 
     fn push_curve(&mut self, generator: Generator, curve: &[Vert]) -> Result<()> {
-        let mesh = self.mesh;
+        let geom = self.geom;
         let sectors = self.geometry_samples;
 
         self.with_state(generator, curve.len() * sectors as usize, |state| {
             // The direction of the curve in the previous segment
-            let mut d_0 = (*mesh.verts[curve[1]] - *mesh.verts[curve[0]])
+            let mut d_0 = (*geom.verts[curve[1]] - *geom.verts[curve[0]])
                 .xyz()
                 .normalized();
             // A vector in the previous normal plane (initialised to a numerically
@@ -120,11 +115,11 @@ impl<'a> TriBufferingCtx<'a> {
             })
             .normalized();
 
-            state.push_tube_sector(mesh.verts[curve[0]].xyz(), n, d_0.cross(n), false, sectors);
+            state.push_tube_sector(geom.verts[curve[0]].xyz(), n, d_0.cross(n), false, sectors);
 
             for i in 2..curve.len() {
-                let v_0 = mesh.verts[curve[i - 1]].xyz();
-                let v_1 = mesh.verts[curve[i]].xyz();
+                let v_0 = geom.verts[curve[i - 1]].xyz();
+                let v_1 = geom.verts[curve[i]].xyz();
 
                 let d_1 = (v_1 - v_0).normalized();
                 let t = 0.5 * (d_1 + d_0);
@@ -143,8 +138,8 @@ impl<'a> TriBufferingCtx<'a> {
     }
 
     fn push_point(&mut self, point: Vert) -> Result<()> {
-        let mesh = self.mesh;
-        let generator = mesh.verts[point].generator;
+        let geom = self.geom;
+        let generator = geom.verts[point].generator;
 
         let samples = u16::from(self.geometry_samples);
         // Algorithm works with these set independently.
@@ -152,7 +147,7 @@ impl<'a> TriBufferingCtx<'a> {
         let sectors = samples;
 
         self.with_state(generator, (stacks * sectors) as usize + 2, |state| {
-            let origin = mesh.verts[point].xyz();
+            let origin = geom.verts[point].xyz();
             let north_pole = state.push_unmapped_vert(origin + Vec3::unit_y() * SPHERE_RADIUS);
             let south_pole = state.push_unmapped_vert(origin - Vec3::unit_y() * SPHERE_RADIUS);
 
@@ -200,16 +195,16 @@ impl<'a> TriBufferingCtx<'a> {
     }
 
     fn extract_buffers(mut self) -> Result<Vec<TriVertexArrayData>> {
-        for tri in self.mesh.tris.values() {
+        for tri in self.geom.tris() {
             self.push_tri(tri)?;
         }
 
-        for curve in self.mesh.curves.values() {
+        for curve in self.geom.curves() {
             self.push_curve(curve.generator, &*curve)?;
         }
 
-        for point in self.mesh.points.values() {
-            self.push_point(*point)?;
+        for point in self.geom.points() {
+            self.push_point(point)?;
         }
 
         for (generator, state) in self.state {
@@ -237,12 +232,12 @@ impl TriBufferingState {
         self.elements.push(k);
     }
 
-    fn push_vert(&mut self, mesh: &SimplicialMesh, v: Vert) -> u16 {
+    fn push_vert(&mut self, geom: &SimplicialGeometry, v: Vert) -> u16 {
         if let Some(&idx) = self.mapping.get(&v) {
             return idx;
         }
 
-        let idx = self.push_unmapped_vert(mesh.verts[v].xyz());
+        let idx = self.push_unmapped_vert(geom.verts[v].xyz());
         self.mapping.insert(v, idx);
         idx
     }
@@ -352,7 +347,7 @@ pub struct TetraBuffers {
 declare_idx! { struct Segment = u16; }
 
 struct TetraBufferer<'a> {
-    mesh: &'a SimplicialMesh,
+    geom: &'a SimplicialGeometry,
 
     segment_cache: FastHashMap<(Vert, Vert), Segment>,
     elements: Vec<u16>,
@@ -367,12 +362,12 @@ struct TetraBufferer<'a> {
 }
 
 impl<'a> TetraBufferer<'a> {
-    fn new(mesh: &'a SimplicialMesh) -> Self {
-        let len = mesh.tetras.len();
+    fn new(geom: &'a SimplicialGeometry) -> Self {
+        let len = geom.elements.len();
         let segments = 6 * len;
 
         Self {
-            mesh,
+            geom,
 
             segment_cache: FastHashMap::with_capacity_and_hasher(segments, Default::default()),
             elements: Vec::with_capacity(segments),
@@ -380,10 +375,10 @@ impl<'a> TetraBufferer<'a> {
 
             segment_starts: IdxVec::with_capacity(segments),
             segment_ends: IdxVec::with_capacity(segments),
-            normals: IdxVec::splat(Vec4::zero(), mesh.verts.len()),
+            normals: IdxVec::splat(Vec4::zero(), geom.verts.len()),
 
             projected_wireframe_elements: Vec::with_capacity(len * 8),
-            wireframe_vertices: mesh.verts.values().map(|v| v.xyz()).collect(),
+            wireframe_vertices: geom.verts.values().map(|v| v.xyz()).collect(),
         }
     }
 
@@ -391,8 +386,8 @@ impl<'a> TetraBufferer<'a> {
         self.projected_wireframe_elements.push(i.index() as u16);
         self.projected_wireframe_elements.push(j.index() as u16);
 
-        let segment = self.segment_starts.push(*self.mesh.verts[i]);
-        self.segment_ends.push(*self.mesh.verts[j]);
+        let segment = self.segment_starts.push(*self.geom.verts[i]);
+        self.segment_ends.push(*self.geom.verts[j]);
         self.segment_cache.insert((i, j), segment);
         segment
     }
@@ -416,8 +411,9 @@ impl<'a> TetraBufferer<'a> {
         }
     }
 
-    fn push_wireframe_tri(&mut self, tri: &TriData) {
-        let [i, j, k] = **tri;
+    fn push_wireframe_tri(&mut self, mut tri: [Vert; 3]) {
+        parity::sort_3(&mut tri, |i, j| self.time_order(i, j));
+        let [i, j, k] = tri;
 
         let ij = self.mk_segment(i, j);
         let ik = self.mk_segment(i, k);
@@ -435,8 +431,9 @@ impl<'a> TetraBufferer<'a> {
         }
     }
 
-    fn push_tetra(&mut self, tetra: &TetraData) {
-        let [i, j, k, l] = **tetra;
+    fn push_tetra(&mut self, mut tetra: [Vert; 4]) {
+        let parity = parity::sort_4(&mut tetra, |i, j| self.time_order(i, j));
+        let [i, j, k, l] = tetra;
 
         let ij = self.mk_segment(i, j);
         let ik = self.mk_segment(i, k);
@@ -446,10 +443,10 @@ impl<'a> TetraBufferer<'a> {
         let kl = self.mk_segment(k, l);
 
         {
-            let origin = *self.mesh.verts[i];
-            let v_0 = *self.mesh.verts[j] - origin;
-            let v_1 = *self.mesh.verts[k] - origin;
-            let v_2 = *self.mesh.verts[l] - origin;
+            let origin = *self.geom.verts[i];
+            let v_0 = *self.geom.verts[j] - origin;
+            let v_1 = *self.geom.verts[k] - origin;
+            let v_2 = *self.geom.verts[l] - origin;
 
             let xs = Vec3::new(v_0.x, v_1.x, v_2.x);
             let ys = Vec3::new(v_0.y, v_1.y, v_2.y);
@@ -468,7 +465,7 @@ impl<'a> TetraBufferer<'a> {
                 m_3.determinant(),
             );
 
-            if tetra.orientation != Orientation::Anticlockwise {
+            if !parity {
                 normal = -normal;
             }
 
@@ -478,7 +475,7 @@ impl<'a> TetraBufferer<'a> {
             self.normals[l] += normal;
         }
 
-        if tetra.orientation == Orientation::Anticlockwise {
+        if parity {
             self.push_tri(ij, il, ik);
             self.push_tri(jl, ik, jk);
             self.push_tri(jl, il, ik);
@@ -491,12 +488,19 @@ impl<'a> TetraBufferer<'a> {
         }
     }
 
+    fn time_order(&self, i: Vert, j: Vert) -> Ordering {
+        self.geom.verts[i]
+            .w
+            .partial_cmp(&self.geom.verts[j].w)
+            .unwrap_or(Ordering::Equal)
+    }
+
     fn extract_buffers(mut self, ctx: &GlCtx) -> Result<TetraBuffers> {
-        for tetra in self.mesh.tetras.values() {
+        for tetra in self.geom.tetras() {
             self.push_tetra(tetra);
         }
 
-        for tri in self.mesh.tris.values() {
+        for tri in self.geom.tris() {
             self.push_wireframe_tri(tri);
         }
 
@@ -538,7 +542,7 @@ impl<'a> TetraBufferer<'a> {
     }
 }
 
-impl SimplicialMesh {
+impl SimplicialGeometry {
     #[inline]
     pub fn buffer_tris(
         &self,
