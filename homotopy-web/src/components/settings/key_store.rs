@@ -118,6 +118,12 @@ macro_rules! declare_settings {
                 >>,
             }
 
+            pub struct [<$name Dispatch>] {
+                dispatch: std::cell::RefCell<yew_agent::Dispatcher<
+                    $crate::components::settings::SettingsAgent<[<$name KeyStore>]>
+                >>,
+            }
+
             impl $crate::components::settings::Settings for $name {
                 type Store = [<$name KeyStore>];
 
@@ -131,7 +137,7 @@ macro_rules! declare_settings {
 
                     let bridge = SettingsAgent::<[<$name KeyStore>]>::bridge(callback);
 
-                    $name {
+                    Self {
                         bridge,
                     }
                 }
@@ -158,6 +164,29 @@ macro_rules! declare_settings {
                     pub fn [<set_ $key>](&mut self, v: $ty) {
                         use $crate::components::settings::SettingsInput;
                         self.bridge.send(SettingsInput::Update([<$name Msg>]::$key(v)))
+                    }
+                )*
+            }
+
+            impl [<$name Dispatch>] {
+                fn new() -> Self {
+                    use $crate::components::settings::SettingsAgent;
+                    use yew_agent::Dispatched;
+
+                    Self {
+                        dispatch: std::cell::RefCell::new(
+                            SettingsAgent::<[<$name KeyStore>]>::dispatcher()
+                        ),
+                    }
+                }
+
+                $(
+                    #[allow(unused)]
+                    #[inline(always)]
+                    pub fn [<set_ $key>](&self, v: $ty) {
+                        use $crate::components::settings::SettingsInput;
+                        self.dispatch.borrow_mut()
+                            .send(SettingsInput::Update([<$name Msg>]::$key(v)))
                     }
                 )*
             }

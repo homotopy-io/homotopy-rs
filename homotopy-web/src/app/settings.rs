@@ -19,46 +19,33 @@ declare_settings! {
     }
 }
 
-#[derive(Clone)]
-pub enum SettingsMsg {
-    ToggleWireframe,
-    ToggleOrtho,
-    ToggleDebugNormals,
-    ToggleDebugAxes,
-    ToggleMesh,
-    ToggleLighting,
-    SetSubdivisionDepth(u32),
-    SetGeometrySamples(u32),
-    Setting(AppSettingsMsg),
-}
-
 #[derive(Properties, Clone, PartialEq)]
 pub struct SettingsProps {}
 
 pub struct SettingsView {
-    settings: AppSettings,
+    _settings: AppSettings,
     // Maintain a local copy of the global app settings in order to display the current settings
     // state correctly.
     local: AppSettingsKeyStore,
 }
 
 impl Component for SettingsView {
-    type Message = SettingsMsg;
+    type Message = AppSettingsMsg;
     type Properties = SettingsProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let mut settings = AppSettings::connect(ctx.link().callback(SettingsMsg::Setting));
+        let mut settings = AppSettings::connect(ctx.link().callback(|x| x));
         // So that we can keep our local copy of the global settings up to date,
         // we're going to need to subscribe to all changes in the global settings state.
         settings.subscribe(AppSettings::ALL);
 
         Self {
-            settings,
+            _settings: settings,
             local: Default::default(),
         }
     }
 
-    fn view(&self, ctx: &Context<Self>) -> Html {
+    fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
             <div class="settings__segment">
                 <h4>{"3D renderer"}</h4>
@@ -66,60 +53,60 @@ impl Component for SettingsView {
                     self.view_checkbox(
                         "Debug wireframe",
                         |local| *local.get_wireframe_3d(),
-                        ctx.link().callback(|_| SettingsMsg::ToggleWireframe),
+                        |dispatch, checked| dispatch.set_wireframe_3d(!checked),
                     )
                 }
                 {
                     self.view_checkbox(
                         "Orthographic projection",
                         |local| *local.get_orthographic_3d(),
-                        ctx.link().callback(|_| SettingsMsg::ToggleOrtho),
+                        |dispatch, checked| dispatch.set_orthographic_3d(!checked),
                     )
                 }
                 {
                     self.view_checkbox(
                         "Hide mesh",
                         |local| *local.get_mesh_hidden(),
-                        ctx.link().callback(|_| SettingsMsg::ToggleMesh),
+                        |dispatch, checked| dispatch.set_mesh_hidden(!checked),
                     )
                 }
                 {
                     self.view_checkbox(
                         "Debug normals",
                         |local| *local.get_debug_normals(),
-                        ctx.link().callback(|_| SettingsMsg::ToggleDebugNormals),
+                        |dispatch, checked| dispatch.set_debug_normals(!checked),
                     )
                 }
                 {
                     self.view_checkbox(
                         "Disable lighting",
                         |local| *local.get_disable_lighting(),
-                        ctx.link().callback(|_| SettingsMsg::ToggleLighting),
+                        |dispatch, checked| dispatch.set_disable_lighting(!checked),
                     )
                 }
                 {
                     self.view_checkbox(
                         "Debug axes",
                         |local| *local.get_debug_axes(),
-                        ctx.link().callback(|_| SettingsMsg::ToggleDebugAxes),
+                        |dispatch, checked| dispatch.set_debug_axes(!checked),
                     )
                 }
                 {
                     self.view_slider(
                         "Subdivision depth",
                         |local| *local.get_subdivision_depth(),
+                        |dispatch, depth| dispatch.set_subdivision_depth(depth),
                         0,
                         6,
-                        &ctx.link().callback(SettingsMsg::SetSubdivisionDepth),
                     )
                 }
                 {
                     self.view_slider(
                         "Geometry samples",
                         |local| *local.get_geometry_samples(),
+                        |dispatch, samples| dispatch.set_geometry_samples(samples),
                         3,
                         15,
-                        &ctx.link().callback(SettingsMsg::SetGeometrySamples),
                     )
                 }
             </div>
@@ -127,71 +114,51 @@ impl Component for SettingsView {
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
-        match msg {
-            // If we're notified about a setting change, just thread that through
-            // to our local working copy.
-            Self::Message::Setting(msg) => self.local.set(&msg),
-            Self::Message::ToggleWireframe => {
-                self.settings
-                    .set_wireframe_3d(!self.local.get_wireframe_3d());
-            }
-            Self::Message::ToggleOrtho => {
-                self.settings
-                    .set_orthographic_3d(!self.local.get_orthographic_3d());
-            }
-            Self::Message::ToggleMesh => {
-                self.settings.set_mesh_hidden(!self.local.get_mesh_hidden());
-            }
-            Self::Message::ToggleDebugNormals => {
-                self.settings
-                    .set_debug_normals(!self.local.get_debug_normals());
-            }
-            Self::Message::ToggleLighting => {
-                self.settings
-                    .set_disable_lighting(!self.local.get_disable_lighting());
-            }
-            Self::Message::ToggleDebugAxes => {
-                self.settings.set_debug_axes(!self.local.get_debug_axes());
-            }
-            Self::Message::SetSubdivisionDepth(v) => {
-                self.settings.set_subdivision_depth(v);
-            }
-            Self::Message::SetGeometrySamples(v) => {
-                self.settings.set_geometry_samples(v);
-            }
-        }
+        self.local.set(&msg);
         true
     }
 }
 
 impl SettingsView {
-    fn view_checkbox<F>(&self, name: &str, getter: F, on_click: Callback<MouseEvent>) -> Html
+    fn view_checkbox<G, S>(
+        &self,
+        name: &str,
+        getter: G,
+        setter: S,
+    ) -> Html
     where
-        F: Fn(&AppSettingsKeyStore) -> bool,
+        G: Fn(&AppSettingsKeyStore) -> bool,
+        S: Fn(&AppSettingsDispatch, bool) + 'static,
     {
+        let checked = getter(&self.local);
+        let dispatch = AppSettingsDispatch::new();
+
         html! {
             <div class="settings__toggle-setting">
                 <input
                     type="checkbox"
-                    checked={getter(&self.local)}
-                    onclick={on_click}
+                    checked={checked}
+                    onclick={Callback::from(move |_| setter(&dispatch, checked))}
                 />
                 {name}
             </div>
         }
     }
 
-    fn view_slider<F>(
+    fn view_slider<G, S>(
         &self,
         name: &str,
-        getter: F,
+        getter: G,
+        setter: S,
         min: u32,
         max: u32,
-        on_change: &Callback<u32>,
     ) -> Html
     where
-        F: Fn(&AppSettingsKeyStore) -> u32,
+        G: Fn(&AppSettingsKeyStore) -> u32,
+        S: Fn(&AppSettingsDispatch, u32) + 'static,
     {
+        let dispatch = AppSettingsDispatch::new();
+
         html! {
             <div class="settings__slider-setting">
                 {name}
@@ -200,9 +167,10 @@ impl SettingsView {
                     min={min.to_string()}
                     max={max.to_string()}
                     value={getter(&self.local).to_string()}
-                    onchange={on_change.reform(|e: Event| {
+                    onchange={Callback::from(move |e: Event| {
                         let input: HtmlInputElement = e.target_unchecked_into();
-                        input.value().parse::<u32>().unwrap_or(0)
+                        let updated = input.value().parse::<u32>().unwrap_or(0);
+                        setter(&dispatch, updated);
                     })}
                 />
             </div>
