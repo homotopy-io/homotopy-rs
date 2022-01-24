@@ -3,10 +3,7 @@ use std::{cmp, mem};
 use homotopy_common::{hash::FastHashMap, idx::IdxVec};
 use ultraviolet::{Mat4, Vec4};
 
-use crate::clay::geom::{
-    cubical::{Cube, CubeData, CubicalMesh, Line, LineData, Square, SquareData},
-    Boundary, Carries, Mesh, Vert, WithBoundaryAndGenerator, WithGenerator,
-};
+use crate::geom::{Boundary, Cube, CubicalGeometry, Vert, VertData};
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum Pass {
@@ -16,10 +13,10 @@ enum Pass {
 }
 
 struct Subdivider<'a> {
-    mesh: &'a mut CubicalMesh,
+    geom: &'a mut CubicalGeometry,
 
-    edge_division_memory: FastHashMap<LineData, Vert>,
-    face_division_memory: FastHashMap<SquareData, Vert>,
+    edge_division_memory: FastHashMap<[Vert; 2], Vert>,
+    face_division_memory: FastHashMap<[Vert; 4], Vert>,
 
     valence: IdxVec<Vert, u32>,
     smoothed: IdxVec<Vert, Vec4>,
@@ -73,20 +70,20 @@ impl<'a> Subdivider<'a> {
         [[0, 4, 5, 8], [1, 6, 4, 8], [2, 5, 7, 8], [3, 7, 6, 8]];
 
     #[inline]
-    pub(super) fn new(mesh: &'a mut CubicalMesh) -> Self {
+    pub(super) fn new(geom: &'a mut CubicalGeometry) -> Self {
         Self {
             edge_division_memory: FastHashMap::with_capacity_and_hasher(
-                mesh.lines.len(),
+                geom.elements.len(),
                 Default::default(),
             ),
             face_division_memory: FastHashMap::with_capacity_and_hasher(
-                mesh.squares.len(),
+                geom.elements.len(),
                 Default::default(),
             ),
-            valence: IdxVec::with_capacity(mesh.verts.len()),
-            smoothed: IdxVec::with_capacity(mesh.verts.len()),
-            touched: IdxVec::with_capacity(mesh.verts.len()),
-            mesh,
+            valence: IdxVec::with_capacity(geom.verts.len()),
+            smoothed: IdxVec::with_capacity(geom.verts.len()),
+            touched: IdxVec::with_capacity(geom.verts.len()),
+            geom,
         }
     }
 
@@ -104,24 +101,28 @@ impl<'a> Subdivider<'a> {
     }
 
     #[inline]
-    fn interpolate_edge_uncached(&mut self, mut line @ [a, b]: LineData, mk: bool) -> Vert {
+    fn interpolate_edge_uncached(&mut self, mut line @ [a, b]: [Vert; 2], mk: bool) -> Vert {
         // Interpolate
         let v = {
-            let v_0 = &self.mesh.verts[a];
-            let v_1 = &self.mesh.verts[b];
+            let v_0 = &self.geom.verts[a];
+            let v_1 = &self.geom.verts[b];
             let v = 0.5 * (**v_0 + **v_1);
             let stratum = cmp::min(v_0.stratum, v_1.stratum);
             let boundary = cmp::max(Boundary::One, cmp::max(v_0.boundary, v_1.boundary));
             let generator =
                 cmp::min_by_key(v_0, v_1, |v| (v.stratum, v.generator.dimension)).generator;
 
-            self.mesh
-                .mk(v.with_boundary_and_generator(stratum, boundary, generator))
+            self.geom.mk_vert(VertData {
+                vert: v,
+                stratum,
+                boundary,
+                generator,
+            })
         };
 
         if mk {
-            self.mesh.mk([a, v]);
-            self.mesh.mk([b, v]);
+            self.geom.mk_line([a, v]);
+            self.geom.mk_line([v, b]);
         }
 
         // Cache result
@@ -130,7 +131,7 @@ impl<'a> Subdivider<'a> {
         v
     }
 
-    fn interpolate_edge(&mut self, line: LineData, mk: bool) -> Vert {
+    fn interpolate_edge(&mut self, line: [Vert; 2], mk: bool) -> Vert {
         if line[0] == line[1] {
             return line[0];
         }
@@ -147,7 +148,7 @@ impl<'a> Subdivider<'a> {
     #[inline]
     fn interpolate_face_uncached(
         &mut self,
-        mut square @ [a, b, c, d]: SquareData,
+        mut square @ [a, b, c, d]: [Vert; 4],
         mk: bool,
     ) -> Vert {
         // Interpolate
@@ -162,7 +163,8 @@ impl<'a> Subdivider<'a> {
                 let points = [a, b, c, d, v_1, v_2, v_3, v_4, center];
 
                 for [i, j, k, l] in Self::SQUARE_ASSEMBLY_ORDER {
-                    self.mesh.mk([points[i], points[j], points[k], points[l]]);
+                    self.geom
+                        .mk_square([points[i], points[j], points[k], points[l]]);
                 }
             }
 
@@ -175,7 +177,7 @@ impl<'a> Subdivider<'a> {
         v
     }
 
-    fn interpolate_face(&mut self, square: SquareData, mk: bool) -> Vert {
+    fn interpolate_face(&mut self, square: [Vert; 4], mk: bool) -> Vert {
         let mut cloned = square;
         cloned.sort_unstable();
 
@@ -202,7 +204,7 @@ impl<'a> Subdivider<'a> {
             .unwrap_or_else(|| self.interpolate_face_uncached(square, mk))
     }
 
-    fn interpolate_cube(&mut self, cube: CubeData) {
+    fn interpolate_cube(&mut self, cube: [Vert; 8]) {
         let mut points = {
             use homotopy_common::idx::Idx;
             [Vert::new(0); 27]
@@ -222,7 +224,7 @@ impl<'a> Subdivider<'a> {
         points[26] = self.interpolate_edge([points[20], points[25]], false);
 
         for [a, b, c, d, e, f, g, h] in Self::CUBE_ASSEMBLY_ORDER {
-            self.mesh.mk([
+            self.geom.mk_cube([
                 points[a], points[b], points[c], points[d], points[e], points[f], points[g],
                 points[h],
             ]);
@@ -230,33 +232,33 @@ impl<'a> Subdivider<'a> {
     }
 
     #[inline]
-    fn smooth_cube(&mut self, cube: Cube) {
-        let cube @ [a, b, c, d, e, f, g, h] = self.mesh.cubes[cube];
+    fn smooth_cube(&mut self, cube: [Vert; 8]) {
+        let [a, b, c, d, e, f, g, h] = cube;
         // Gather the boundaries of its constituent vertices
         let bounds = [
-            self.mesh.verts[a].boundary,
-            self.mesh.verts[b].boundary,
-            self.mesh.verts[c].boundary,
-            self.mesh.verts[d].boundary,
-            self.mesh.verts[e].boundary,
-            self.mesh.verts[f].boundary,
-            self.mesh.verts[g].boundary,
-            self.mesh.verts[h].boundary,
+            self.geom.verts[a].boundary,
+            self.geom.verts[b].boundary,
+            self.geom.verts[c].boundary,
+            self.geom.verts[d].boundary,
+            self.geom.verts[e].boundary,
+            self.geom.verts[f].boundary,
+            self.geom.verts[g].boundary,
+            self.geom.verts[h].boundary,
         ];
         // and calculate a corresponding weight matrix
         let weights = Self::cube_weight_matrix(bounds);
         // Shape vertices as matrix
         let upper = Mat4::new(
-            *self.mesh.verts[a],
-            *self.mesh.verts[b],
-            *self.mesh.verts[c],
-            *self.mesh.verts[d],
+            *self.geom.verts[a],
+            *self.geom.verts[b],
+            *self.geom.verts[c],
+            *self.geom.verts[d],
         );
         let lower = Mat4::new(
-            *self.mesh.verts[e],
-            *self.mesh.verts[f],
-            *self.mesh.verts[g],
-            *self.mesh.verts[h],
+            *self.geom.verts[e],
+            *self.geom.verts[f],
+            *self.geom.verts[g],
+            *self.geom.verts[h],
         );
         // Tranform
         let upper_transformed = upper * weights[0] + lower * weights[2];
@@ -269,23 +271,23 @@ impl<'a> Subdivider<'a> {
     }
 
     #[inline]
-    fn smooth_square(&mut self, square: Square) {
-        let square @ [a, b, c, d] = self.mesh.squares[square];
+    fn smooth_square(&mut self, square: [Vert; 4]) {
+        let [a, b, c, d] = square;
         // Gather the boundaries of its constituent vertices
         let bounds = [
-            self.mesh.verts[a].boundary,
-            self.mesh.verts[b].boundary,
-            self.mesh.verts[c].boundary,
-            self.mesh.verts[d].boundary,
+            self.geom.verts[a].boundary,
+            self.geom.verts[b].boundary,
+            self.geom.verts[c].boundary,
+            self.geom.verts[d].boundary,
         ];
         // and calculate a corresponding weight matrix
         let weights = Self::square_weight_matrix(bounds);
         // Shape vertices as a matrix
         let square_matrix = Mat4::new(
-            *self.mesh.verts[a],
-            *self.mesh.verts[b],
-            *self.mesh.verts[c],
-            *self.mesh.verts[d],
+            *self.geom.verts[a],
+            *self.geom.verts[b],
+            *self.geom.verts[c],
+            *self.geom.verts[d],
         );
         // Transform
         let transformed = square_matrix * weights;
@@ -296,13 +298,13 @@ impl<'a> Subdivider<'a> {
     }
 
     #[inline]
-    fn smooth_line(&mut self, line: Line) {
-        let line @ [a, b] = self.mesh.lines[line];
-        let bounds = [self.mesh.verts[a].boundary, self.mesh.verts[b].boundary];
+    fn smooth_line(&mut self, line: [Vert; 2]) {
+        let [a, b] = line;
+        let bounds = [self.geom.verts[a].boundary, self.geom.verts[b].boundary];
         let weights = Self::line_weight_matrix(bounds);
         let line_matrix = Mat4::new(
-            *self.mesh.verts[a],
-            *self.mesh.verts[b],
+            *self.geom.verts[a],
+            *self.geom.verts[b],
             Vec4::zero(),
             Vec4::zero(),
         );
@@ -317,62 +319,45 @@ impl<'a> Subdivider<'a> {
         // TODO(@doctorn) see below
         // (0. In debug, clone a copy of the original diagram for sanity checking)
         // #[cfg(debug_assertions)]
-        // let unmodified = self.mesh.clone();
+        // let unmodified = self.geom.clone();
 
-        // 1. Remove all elements from mesh
-        let mut lines = IdxVec::with_capacity(self.mesh.lines.len() * 2);
-        let mut squares = IdxVec::with_capacity(self.mesh.squares.len() * 4);
-        let mut cubes = IdxVec::with_capacity(self.mesh.cubes.len() * 8);
-        let mut curves = IdxVec::with_capacity(self.mesh.curves.len());
-        mem::swap(&mut self.mesh.lines, &mut lines);
-        mem::swap(&mut self.mesh.squares, &mut squares);
-        mem::swap(&mut self.mesh.cubes, &mut cubes);
-        mem::swap(&mut self.mesh.curves, &mut curves);
+        // 1. Remove all elements from geom
+        let mut elements = IdxVec::new();
+        mem::swap(&mut self.geom.elements, &mut elements);
 
         // 2. Subdivide and obtain valence
-        for line in lines.into_values() {
-            self.interpolate_edge(line, true);
-        }
-
-        for curve in curves.into_values() {
-            let mut interpolated = Vec::with_capacity(curve.len() * 2);
-            for i in 0..curve.len() - 1 {
-                interpolated.push(curve[i]);
-                interpolated.push(self.interpolate_edge([curve[i], curve[i + 1]], false));
+        for element in elements.into_values() {
+            match element {
+                Cube::Point(point) => {
+                    self.geom.mk_point(point);
+                }
+                Cube::Line(line) => {
+                    self.interpolate_edge(line, true);
+                }
+                Cube::Square(square) => {
+                    self.interpolate_face(square, true);
+                }
+                Cube::Cube(cube) => {
+                    self.interpolate_cube(cube);
+                }
             }
-
-            if let Some(point) = curve.last() {
-                interpolated.push(*point);
-            }
-
-            self.mesh
-                .curves
-                .push(interpolated.with_generator(curve.generator));
-        }
-
-        for square in squares.into_values() {
-            self.interpolate_face(square, true);
-        }
-
-        for cube in cubes.into_values() {
-            self.interpolate_cube(cube);
         }
 
         // 3. Smooth
-        let len = self.mesh.verts.len();
+        let len = self.geom.verts.len();
         self.valence = IdxVec::splat(0, len);
         self.smoothed = IdxVec::splat(Vec4::zero(), len);
         self.touched = IdxVec::splat(None, len);
 
-        for cube in self.mesh.cubes.keys() {
+        for cube in self.geom.cubes().collect::<Vec<_>>() {
             self.smooth_cube(cube);
         }
 
-        for square in self.mesh.squares.keys() {
+        for square in self.geom.squares().collect::<Vec<_>>() {
             self.smooth_square(square);
         }
 
-        for line in self.mesh.lines.keys() {
+        for line in self.geom.lines().collect::<Vec<_>>() {
             self.smooth_line(line);
         }
 
@@ -380,12 +365,12 @@ impl<'a> Subdivider<'a> {
         for (vert, data) in self.smoothed.iter() {
             let valence = self.valence[vert];
             if valence > 0 {
-                *self.mesh.verts[vert] = *data / valence as f32;
+                *self.geom.verts[vert] = *data / valence as f32;
             }
         }
 
         // TODO(@doctorn) fix spurious failures
-        // (5. In debug, sanity check the subdivided mesh)
+        // (5. In debug, sanity check the subdivided geometry)
         // #[cfg(debug_assertions)]
         // debug_assert!(self.bounds_preserved(&unmodified));
     }
@@ -393,9 +378,9 @@ impl<'a> Subdivider<'a> {
     // TODO(@doctorn)
     #[allow(unused)]
     #[cfg(debug_assertions)]
-    fn bounds_preserved(&self, unmodified: &CubicalMesh) -> bool {
+    fn bounds_preserved(&self, unmodified: &CubicalGeometry) -> bool {
         let (unmodified_min, unmodified_max) = unmodified.bounds();
-        let (min, max) = self.mesh.bounds();
+        let (min, max) = self.geom.bounds();
 
         min.x >= unmodified_min.x
             && min.y >= unmodified_min.y
@@ -452,50 +437,50 @@ impl<'a> Subdivider<'a> {
                 (One, _, _) => (Vec4::new(0.5, 0.5, 0.0, 0.), Vec4::zero()),
                 (_, One, _) => (Vec4::new(0.5, 0., 0.5, 0.), Vec4::zero()),
                 (_, _, One) => (Vec4::new(0.5, 0., 0., 0.), Vec4::new(0.5, 0., 0., 0.)),
-                // if it turns out such mesh is consistent, replace with the identity row
-                _ => panic!("Inconsistent mesh!"),
+                // if it turns out such geometry is consistent, replace with the identity row
+                _ => panic!("Inconsistent geometry!"),
             },
             Two => match (bounds[3], bounds[5], bounds[6]) {
                 (Two, _, _) => (Vec4::broadcast(0.25), Vec4::zero()),
                 (_, Two, _) => (Vec4::new(0.25, 0.25, 0., 0.), Vec4::new(0.25, 0.25, 0., 0.)),
                 (_, _, Two) => (Vec4::new(0.25, 0., 0.25, 0.), Vec4::new(0.25, 0., 0.25, 0.)),
-                // if it turns out such mesh is consistent, replace with the identity row
-                _ => panic!("Inconsistent mesh!"),
+                // if it turns out such geometry is consistent, replace with the identity row
+                _ => panic!("Inconsistent geometry!"),
             },
             Three => (Vec4::broadcast(0.125), Vec4::broadcast(0.125)),
         };
 
         // Edge points
         let (row_10, row_11) = match bounds[1] {
-            Zero => panic!("Inconsistent mesh!"),
+            Zero => panic!("Inconsistent geometry!"),
             One => (Vec4::unit_y(), Vec4::zero()),
             Two => match (bounds[3], bounds[5]) {
                 (Two, _) => (Vec4::new(0.0, 0.5, 0.0, 0.5), Vec4::zero()),
                 (_, Two) => (Vec4::new(0., 0.5, 0., 0.), Vec4::new(0., 0.5, 0., 0.)),
-                // if it turns out such mesh is consistent, replace with the identity row
-                _ => panic!("Inconsistent mesh!"),
+                // if it turns out such geometry is consistent, replace with the identity row
+                _ => panic!("Inconsistent geometry!"),
             },
             Three => (Vec4::new(0., 0.25, 0., 0.25), Vec4::new(0., 0.25, 0., 0.25)),
         };
         let (row_20, row_21) = match bounds[2] {
-            Zero => panic!("Inconsistent mesh!"),
+            Zero => panic!("Inconsistent geometry!"),
             One => (Vec4::unit_z(), Vec4::zero()),
             Two => match (bounds[3], bounds[6]) {
                 (Two, _) => (Vec4::new(0., 0., 0.5, 0.5), Vec4::zero()),
                 (_, Two) => (Vec4::new(0., 0., 0.5, 0.), Vec4::new(0., 0., 0.5, 0.)),
-                // if it turns out such mesh is consistent, replace with the identity row
-                _ => panic!("Inconsistent mesh!"),
+                // if it turns out such geometry is consistent, replace with the identity row
+                _ => panic!("Inconsistent geometry!"),
             },
             Three => (Vec4::new(0., 0., 0.25, 0.25), Vec4::new(0., 0., 0.25, 0.25)),
         };
         let (row_40, row_41) = match bounds[4] {
-            Zero => panic!("Inconsistent mesh!"),
+            Zero => panic!("Inconsistent geometry!"),
             One => (Vec4::zero(), Vec4::unit_x()),
             Two => match (bounds[5], bounds[6]) {
                 (Two, _) => (Vec4::zero(), Vec4::new(0.5, 0.5, 0., 0.)),
                 (_, Two) => (Vec4::zero(), Vec4::new(0.5, 0., 0.5, 0.)),
-                // if it turns out such mesh is consistent, replace with the identity row
-                _ => panic!("Inconsistent mesh!"),
+                // if it turns out such geometry is consistent, replace with the identity row
+                _ => panic!("Inconsistent geometry!"),
             },
             Three => (Vec4::zero(), Vec4::broadcast(0.25)),
         };
@@ -504,17 +489,17 @@ impl<'a> Subdivider<'a> {
         let (row_30, row_31) = match bounds[3] {
             Two => (Vec4::unit_w(), Vec4::zero()),
             Three => (Vec4::new(0., 0., 0., 0.5), Vec4::new(0., 0., 0., 0.5)),
-            _ => panic!("Inconsistent mesh!"),
+            _ => panic!("Inconsistent geometry!"),
         };
         let (row_50, row_51) = match bounds[5] {
             Two => (Vec4::zero(), Vec4::unit_y()),
             Three => (Vec4::zero(), Vec4::new(0., 0.5, 0., 0.5)),
-            _ => panic!("Inconsistent mesh!"),
+            _ => panic!("Inconsistent geometry!"),
         };
         let (row_60, row_61) = match bounds[6] {
             Two => (Vec4::zero(), Vec4::unit_z()),
             Three => (Vec4::zero(), Vec4::new(0., 0., 0.5, 0.5)),
-            _ => panic!("Inconsistent mesh!"),
+            _ => panic!("Inconsistent geometry!"),
         };
 
         // Centroid
@@ -529,7 +514,7 @@ impl<'a> Subdivider<'a> {
     }
 }
 
-impl CubicalMesh {
+impl CubicalGeometry {
     pub fn subdivide(&mut self, depth: u8) {
         if depth == 0 {
             return;
