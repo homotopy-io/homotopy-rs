@@ -8,7 +8,7 @@ edition = "2021"
 
 [dependencies]
 homotopy-common = { path = "../homotopy-common" }
-bimap = "0.6.1"
+bimap = "0.6.2"
 hashconsing = "1.5.0"
 highway = "0.7.0"
 log = "0.4.14"
