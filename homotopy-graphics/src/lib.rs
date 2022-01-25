@@ -30,6 +30,7 @@
     clippy::cast_sign_loss,
     clippy::default_trait_access,
     clippy::doc_markdown,
+    clippy::many_single_char_names,
     clippy::missing_errors_doc,
     clippy::missing_panics_doc,
     clippy::module_name_repetitions,

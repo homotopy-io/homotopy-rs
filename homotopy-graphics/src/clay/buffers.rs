@@ -199,7 +199,7 @@ impl<'a> TriBufferingCtx<'a> {
             self.push_tri(tri)?;
         }
 
-        for curve in self.geom.curves() {
+        for curve in self.geom.curves.values() {
             self.push_curve(curve.generator, &*curve)?;
         }
 

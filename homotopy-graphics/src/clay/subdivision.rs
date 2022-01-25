@@ -3,7 +3,7 @@ use std::{cmp, mem};
 use homotopy_common::{hash::FastHashMap, idx::IdxVec};
 use ultraviolet::{Mat4, Vec4};
 
-use crate::geom::{Boundary, Cube, CubicalGeometry, Vert, VertData};
+use crate::geom::{Boundary, Cube, CubicalGeometry, CurveData, Vert, VertData};
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum Pass {
@@ -122,7 +122,7 @@ impl<'a> Subdivider<'a> {
 
         if mk {
             self.geom.mk_line([a, v]);
-            self.geom.mk_line([v, b]);
+            self.geom.mk_line([b, v]);
         }
 
         // Cache result
@@ -322,7 +322,9 @@ impl<'a> Subdivider<'a> {
         // let unmodified = self.geom.clone();
 
         // 1. Remove all elements from geom
+        let mut curves = IdxVec::new();
         let mut elements = IdxVec::new();
+        mem::swap(&mut self.geom.curves, &mut curves);
         mem::swap(&mut self.geom.elements, &mut elements);
 
         // 2. Subdivide and obtain valence
@@ -341,6 +343,23 @@ impl<'a> Subdivider<'a> {
                     self.interpolate_cube(cube);
                 }
             }
+        }
+
+        for curve in curves.into_values() {
+            let mut interpolated = Vec::with_capacity(curve.len() * 2);
+            for i in 0..curve.len() - 1 {
+                interpolated.push(curve[i]);
+                interpolated.push(self.interpolate_edge([curve[i], curve[i + 1]], false));
+            }
+
+            if let Some(point) = curve.last() {
+                interpolated.push(*point);
+            }
+
+            self.geom.curves.push(CurveData {
+                verts: interpolated,
+                generator: curve.generator,
+            });
         }
 
         // 3. Smooth

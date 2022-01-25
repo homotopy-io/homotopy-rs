@@ -14,12 +14,14 @@ use ultraviolet::Vec4;
 
 declare_idx! {
     pub struct Vert = usize;
+    pub struct Curve = usize;
     pub struct Element = usize;
 }
 
 #[derive(Clone, Debug)]
 pub struct Geometry<ElementData> {
     pub verts: IdxVec<Vert, VertData>,
+    pub curves: IdxVec<Curve, CurveData>,
     pub elements: IdxVec<Element, ElementData>,
 }
 
@@ -82,10 +84,10 @@ pub enum Boundary {
 impl From<usize> for Boundary {
     fn from(boundary: usize) -> Self {
         match boundary {
-            0 => Boundary::Zero,
-            1 => Boundary::One,
-            2 => Boundary::Two,
-            _ => Boundary::Three,
+            0 => Self::Zero,
+            1 => Self::One,
+            2 => Self::Two,
+            _ => Self::Three,
         }
     }
 }
@@ -166,6 +168,7 @@ impl CubicalGeometry {
 
         let mut geom = Self {
             verts: IdxVec::new(),
+            curves: IdxVec::new(),
             elements: IdxVec::new(),
         };
         let mut node_to_vert = IdxVec::with_capacity(mesh.graph.node_count());
@@ -211,7 +214,22 @@ impl CubicalGeometry {
                     geom.mk_point(verts[0]);
                 }
                 2 => {
-                    geom.mk_line(verts.try_into().unwrap());
+                    let verts = verts.try_into().unwrap();
+                    geom.mk_line(verts);
+
+                    // Curve extraction.
+                    let curve = geom.curves.values_mut().find(|curve| {
+                        let &curve_target = curve.last().unwrap();
+                        curve_target == verts[0]
+                    });
+                    if let Some(curve) = curve {
+                        curve.push(verts[1]);
+                    } else {
+                        geom.curves.push(CurveData {
+                            generator,
+                            verts: verts.to_vec(),
+                        });
+                    }
                 }
                 4 => {
                     geom.mk_square(verts.try_into().unwrap());
@@ -348,31 +366,6 @@ impl SimplicialGeometry {
     pub fn mk_tetra(&mut self, verts: [Vert; 4]) -> Element {
         self.mk_element(Simplex::Tetra(verts))
     }
-
-    pub fn curves(&self) -> Vec<CurveData> {
-        let mut curves: Vec<CurveData> = Vec::new();
-        for line in self.lines() {
-            let generator = line
-                .iter()
-                .map(|v| self.verts[*v].generator)
-                .min_by_key(|g| g.dimension)
-                .unwrap();
-
-            let curve = curves.iter_mut().find(|curve| {
-                let &curve_target = curve.last().unwrap();
-                curve_target == line[0]
-            });
-            if let Some(curve) = curve {
-                curve.push(line[1]);
-            } else {
-                curves.push(CurveData {
-                    generator,
-                    verts: line.to_vec(),
-                });
-            }
-        }
-        curves
-    }
 }
 
 // Triangulation
@@ -462,6 +455,7 @@ impl From<CubicalGeometry> for SimplicialGeometry {
     fn from(cubical: CubicalGeometry) -> Self {
         Self {
             verts: cubical.verts.clone(),
+            curves: cubical.curves.clone(),
             elements: cubical
                 .elements
                 .values()
