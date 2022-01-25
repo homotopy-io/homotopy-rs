@@ -16,7 +16,7 @@ lyon_geom = "0.17.5"
 lyon_algorithms = "0.17.6"
 lyon_path = "0.17.7"
 thiserror = "1.0.30"
-serde = { features = ["derive"], version = "1.0.135" }
+serde = { features = ["derive"], version = "1.0.136" }
 serde_json = "1.0.78"
 paste = "1.0.5"
 petgraph = "0.6.0"
