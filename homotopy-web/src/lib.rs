@@ -32,6 +32,7 @@
     clippy::default_trait_access,
     clippy::doc_markdown,
     clippy::expect_used,
+    clippy::match_same_arms,
     clippy::missing_errors_doc,
     clippy::missing_panics_doc,
     clippy::module_name_repetitions,
@@ -43,8 +44,8 @@
     clippy::too_many_lines,
     clippy::unimplemented,
     clippy::unreachable,
+    clippy::unused_unit,
     clippy::shadow_unrelated,
-    clippy::match_same_arms,
 )]
 #![recursion_limit = "1024"]
 
