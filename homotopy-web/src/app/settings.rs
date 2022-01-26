@@ -53,49 +53,49 @@ impl Component for SettingsView {
                     self.view_checkbox(
                         "Debug wireframe",
                         |local| *local.get_wireframe_3d(),
-                        |dispatch, checked| dispatch.set_wireframe_3d(!checked),
+                        AppSettingsDispatch::set_wireframe_3d,
                     )
                 }
                 {
                     self.view_checkbox(
                         "Orthographic projection",
                         |local| *local.get_orthographic_3d(),
-                        |dispatch, checked| dispatch.set_orthographic_3d(!checked),
+                        AppSettingsDispatch::set_orthographic_3d,
                     )
                 }
                 {
                     self.view_checkbox(
                         "Hide mesh",
                         |local| *local.get_mesh_hidden(),
-                        |dispatch, checked| dispatch.set_mesh_hidden(!checked),
+                        AppSettingsDispatch::set_mesh_hidden,
                     )
                 }
                 {
                     self.view_checkbox(
                         "Debug normals",
                         |local| *local.get_debug_normals(),
-                        |dispatch, checked| dispatch.set_debug_normals(!checked),
+                        AppSettingsDispatch::set_debug_normals,
                     )
                 }
                 {
                     self.view_checkbox(
                         "Disable lighting",
                         |local| *local.get_disable_lighting(),
-                        |dispatch, checked| dispatch.set_disable_lighting(!checked),
+                        AppSettingsDispatch::set_disable_lighting,
                     )
                 }
                 {
                     self.view_checkbox(
                         "Debug axes",
                         |local| *local.get_debug_axes(),
-                        |dispatch, checked| dispatch.set_debug_axes(!checked),
+                        AppSettingsDispatch::set_debug_axes,
                     )
                 }
                 {
                     self.view_slider(
                         "Subdivision depth",
                         |local| *local.get_subdivision_depth(),
-                        |dispatch, depth| dispatch.set_subdivision_depth(depth),
+                        AppSettingsDispatch::set_subdivision_depth,
                         0,
                         6,
                     )
@@ -104,7 +104,7 @@ impl Component for SettingsView {
                     self.view_slider(
                         "Geometry samples",
                         |local| *local.get_geometry_samples(),
-                        |dispatch, samples| dispatch.set_geometry_samples(samples),
+                        AppSettingsDispatch::set_geometry_samples,
                         3,
                         15,
                     )
@@ -120,12 +120,7 @@ impl Component for SettingsView {
 }
 
 impl SettingsView {
-    fn view_checkbox<G, S>(
-        &self,
-        name: &str,
-        getter: G,
-        setter: S,
-    ) -> Html
+    fn view_checkbox<G, S>(&self, name: &str, getter: G, setter: S) -> Html
     where
         G: Fn(&AppSettingsKeyStore) -> bool,
         S: Fn(&AppSettingsDispatch, bool) + 'static,
@@ -138,21 +133,14 @@ impl SettingsView {
                 <input
                     type="checkbox"
                     checked={checked}
-                    onclick={Callback::from(move |_| setter(&dispatch, checked))}
+                    onclick={Callback::from(move |_| setter(&dispatch, !checked))}
                 />
                 {name}
             </div>
         }
     }
 
-    fn view_slider<G, S>(
-        &self,
-        name: &str,
-        getter: G,
-        setter: S,
-        min: u32,
-        max: u32,
-    ) -> Html
+    fn view_slider<G, S>(&self, name: &str, getter: G, setter: S, min: u32, max: u32) -> Html
     where
         G: Fn(&AppSettingsKeyStore) -> u32,
         S: Fn(&AppSettingsDispatch, u32) + 'static,

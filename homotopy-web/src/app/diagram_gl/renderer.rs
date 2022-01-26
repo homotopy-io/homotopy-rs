@@ -30,7 +30,6 @@ pub struct Renderer {
     // state
     subdivision_depth: u8,
     geometry_samples: u8,
-    t: f32,
     // resources
     shaders: Shaders,
     scene: Scene,
@@ -67,11 +66,10 @@ impl Renderer {
             signature: props.signature.clone(),
             subdivision_depth: depth,
             geometry_samples: samples,
-            t: 0.0,
         })
     }
 
-    pub fn update(&mut self, settings: &Store<AppSettings>, dt: f32) -> Result<()> {
+    pub fn update(&mut self, settings: &Store<AppSettings>) -> Result<()> {
         let depth = *settings.get_subdivision_depth() as u8;
         let samples = *settings.get_geometry_samples() as u8;
 
@@ -81,14 +79,11 @@ impl Renderer {
             self.scene.reload_meshes(&self.ctx, depth, samples)?;
         }
 
-        self.t += dt;
-
         Ok(())
     }
 
-    pub fn render(&mut self, camera: &OrbitCamera, settings: &Store<AppSettings>) {
+    pub fn render(&mut self, camera: &OrbitCamera, settings: &Store<AppSettings>, t: f32) {
         let vp = camera.transform(&self.ctx);
-        let t = f32::sin(self.t * 3e-4);
 
         let program = if self.scene.view_dimension == ViewDimension::Three {
             &self.shaders.geometry_3d

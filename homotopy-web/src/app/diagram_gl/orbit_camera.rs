@@ -6,6 +6,7 @@ use ultraviolet::{
     Mat4, Vec2, Vec3,
 };
 
+use super::scrub_controls::{ScrubAction, ScrubState};
 use crate::components::{
     delta::Delta,
     touch_interface::{TouchAction, TouchInterface},
@@ -130,24 +131,32 @@ impl TouchInterface for OrbitCamera {
     }
 }
 
-pub struct OrbitControl(Delta<OrbitCamera>);
+// TODO(@doctorn) call this a 3D view control and move out
+pub struct OrbitControl {
+    camera: Delta<OrbitCamera>,
+    scrub_control: Delta<ScrubState>,
+}
 
 impl OrbitControl {
     pub fn new() -> Self {
-        Self(Delta::new())
+        Self {
+            camera: Delta::new(),
+            scrub_control: Delta::new(),
+        }
     }
 
     pub fn zoom_in(&self) {
-        self.0
+        self.camera
             .emit(TouchAction::MouseWheel(Default::default(), -20.0));
     }
 
     pub fn zoom_out(&self) {
-        self.0
+        self.camera
             .emit(TouchAction::MouseWheel(Default::default(), 20.0));
     }
 
     pub fn reset(&self) {
-        self.0.emit(TouchAction::Reset);
+        self.camera.emit(TouchAction::Reset);
+        self.scrub_control.emit(ScrubAction::Scrub(0.));
     }
 }

@@ -6,7 +6,10 @@ use homotopy_graphics::gl::GlCtx;
 use yew::prelude::*;
 
 pub use self::orbit_camera::{OrbitCamera, OrbitControl};
-use self::renderer::Renderer;
+use self::{
+    renderer::Renderer,
+    scrub_controls::{ScrubAction, ScrubComponent, ScrubState},
+};
 use crate::{
     app::AppSettings,
     components::{
@@ -20,10 +23,12 @@ use crate::{
 
 mod orbit_camera;
 mod renderer;
+mod scrub_controls;
 
 pub enum GlDiagramMessage {
     Render(f64),
-    Delta(f32, f32, f32),
+    Camera(f32, f32, f32),
+    Scrub(f32),
     Setting(<Store<AppSettings> as KeyStore>::Message),
 }
 
@@ -38,12 +43,14 @@ pub struct GlDiagram {
     canvas: NodeRef,
     toaster: Toaster,
     _settings: AppSettings,
-    _delta: Delta<OrbitCamera>,
+    _camera_delta: Delta<OrbitCamera>,
+    scrub_delta: Delta<ScrubState>,
 
     camera: OrbitCamera,
     renderer: Rc<RefCell<Option<Renderer>>>,
     local: Store<AppSettings>,
-    t: f32,
+    global_t: f32,
+    t_coord: f32,
 
     // If the render task is dropped, we won't get notified about `requestAnimationFrame()`
     // calls, so store a reference to the task here
@@ -59,27 +66,36 @@ impl Component for GlDiagram {
 
         settings.subscribe(AppSettings::ALL);
 
-        let delta = Delta::new();
+        let camera_delta = Delta::new();
         let link = ctx.link().clone();
-        delta.register(Box::new(move |agent: &DeltaAgent<OrbitCamera>, _| {
+        camera_delta.register(Box::new(move |agent: &DeltaAgent<OrbitCamera>, _| {
             let state = agent.state();
-            link.send_message(GlDiagramMessage::Delta(
+            link.send_message(GlDiagramMessage::Camera(
                 state.phi,
                 state.theta,
                 state.distance,
             ));
         }));
 
+        let scrub_delta = Delta::new();
+        let link = ctx.link().clone();
+        scrub_delta.register(Box::new(move |agent: &DeltaAgent<ScrubState>, _| {
+            let state = agent.state();
+            link.send_message(GlDiagramMessage::Scrub(state.t));
+        }));
+
         Self {
             canvas: Default::default(),
             toaster: Toaster::new(),
             _settings: settings,
-            _delta: delta,
+            _camera_delta: camera_delta,
+            scrub_delta,
 
             camera: Default::default(),
             renderer: Default::default(),
             local: Default::default(),
-            t: Default::default(),
+            global_t: Default::default(),
+            t_coord: Default::default(),
 
             render_loop: None,
         }
@@ -89,24 +105,31 @@ impl Component for GlDiagram {
         match msg {
             GlDiagramMessage::Render(t) => {
                 let t = t as f32;
-                let dt = t - self.t;
-                // Update current time
-                self.t = t;
+                let dt = t - self.global_t;
+                self.global_t = t;
+                if ctx.props().view.dimension() == 4 {
+                    // TODO(@doctorn) set these constants properly
+                    self.scrub_delta.emit(ScrubAction::Advance(1e-4 * dt));
+                }
                 // Update camera settings
                 self.camera.set_ortho(*self.local.get_orthographic_3d());
 
                 if let Some(renderer) = &mut *self.renderer.borrow_mut() {
-                    renderer.update(&self.local, dt).unwrap();
-                    renderer.render(&self.camera, &self.local);
+                    renderer.update(&self.local).unwrap();
+                    renderer.render(&self.camera, &self.local, self.t_coord);
                 }
 
                 // Schedule the next frame
                 self.schedule_frame(ctx);
             }
-            GlDiagramMessage::Delta(phi, theta, distance) => {
+            GlDiagramMessage::Camera(phi, theta, distance) => {
                 self.camera.phi = phi;
                 self.camera.theta = theta;
                 self.camera.distance = distance;
+            }
+            GlDiagramMessage::Scrub(t) => {
+                // TODO(@doctorn) reimplement time bounds
+                self.t_coord = 2. * t - 1.;
             }
             GlDiagramMessage::Setting(msg) => self.local.set(&msg),
         }
@@ -114,7 +137,7 @@ impl Component for GlDiagram {
         false
     }
 
-    fn view(&self, _ctx: &Context<Self>) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         let on_mouse_move = OrbitCamera::on_mouse_move();
         let on_mouse_up = OrbitCamera::on_mouse_up();
         let on_mouse_down = OrbitCamera::on_mouse_down();
@@ -122,19 +145,28 @@ impl Component for GlDiagram {
         let on_touch_move = OrbitCamera::on_touch_move(&self.canvas);
         let on_touch_update = OrbitCamera::on_touch_update(&self.canvas);
 
+        let scrub = if ctx.props().view.dimension() == 4 {
+            html! { <ScrubComponent max_t={60.} /> }
+        } else {
+            Default::default()
+        };
+
         html! {
-            <canvas
-                style="width: 100%; height: 100%; display: block"
-                onmousemove={on_mouse_move}
-                onmouseup={on_mouse_up}
-                onmousedown={on_mouse_down}
-                onwheel={on_wheel}
-                ontouchmove={on_touch_move}
-                ontouchcancel={on_touch_update.clone()}
-                ontouchend={on_touch_update.clone()}
-                ontouchstart={on_touch_update}
-                ref={self.canvas.clone()}
-            />
+            <>
+                <canvas
+                    style="width: 100%; height: 100%; display: block"
+                    onmousemove={on_mouse_move}
+                    onmouseup={on_mouse_up}
+                    onmousedown={on_mouse_down}
+                    onwheel={on_wheel}
+                    ontouchmove={on_touch_move}
+                    ontouchcancel={on_touch_update.clone()}
+                    ontouchend={on_touch_update.clone()}
+                    ontouchstart={on_touch_update}
+                    ref={self.canvas.clone()}
+                />
+                {scrub}
+            </>
         }
     }
 
