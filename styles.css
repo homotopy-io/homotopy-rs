@@ -156,6 +156,10 @@ button, .button {
   display: flex;
 }
 
+.workspace__toolbar__segment {
+  width: 100%;
+}
+
 .workspace__path-segment {
   width: 24px;
   justify-content: center;
@@ -175,6 +179,21 @@ button, .button {
   .workspace__slice-button:hover {
     background: var(--toolbar-hover);
   }
+}
+
+.workspace__scrub {
+  position: absolute;
+  z-index: 10;
+  bottom: 0;
+  left: 50%;
+  width: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  margin: var(--space-0);
+}
+
+.workspace__scrub input[type="range"] {
+  width: 100%;
 }
 
 .workspace__slice-buttons {
