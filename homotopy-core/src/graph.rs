@@ -7,8 +7,10 @@ use petgraph::{
 };
 
 use crate::{
-    common::{DimensionError, RegularHeight, SingularHeight},
-    Boundary, Diagram, DiagramN, Direction, Height, Rewrite, RewriteN, SliceIndex,
+    common::{Boundary, DimensionError, Height, RegularHeight, SingularHeight, SliceIndex},
+    diagram::{Diagram, DiagramN},
+    rewrite::{Rewrite, RewriteN},
+    Direction,
 };
 
 /// The output of explosion consists of the exploded graph and some maps from the original graph into the exploded graph.
