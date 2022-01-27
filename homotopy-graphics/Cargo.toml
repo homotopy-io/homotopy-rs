@@ -22,7 +22,7 @@ lyon_geom = "1.0.1"
 lyon_path = "1.0.0"
 palette = { git = "https://github.com/Ogeon/palette", features = ["serializing"] }
 paste = "1.0.7"
-petgraph = "0.6.2"
+petgraph = { git = "https://github.com/NickHu/petgraph", branch = "filter_map" }
 serde = { features = ["derive"], version = "1.0.140" }
 serde_json = "1.0.82"
 thiserror = "1.0.30"

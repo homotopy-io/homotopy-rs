@@ -11,7 +11,7 @@ build = true
 
 [dependencies]
 rustc-hash = "1.1.0"
-petgraph = "0.6.2"
+petgraph = { git = "https://github.com/NickHu/petgraph", branch = "filter_map" }
 serde = { features = ["derive"], version = "1.0.140" }
 
 [dev-dependencies]
