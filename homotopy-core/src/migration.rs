@@ -214,7 +214,7 @@ impl OldProof {
                 let target: usize = target.parse().unwrap();
                 let target = self.generators[&target];
 
-                Rewrite0::new(source, target).into()
+                Rewrite0::new(source, target, todo!()).into()
             } else {
                 let mut cones: Vec<Cone> = Vec::new();
                 for v in cones_data {
@@ -260,7 +260,7 @@ impl OldProof {
             slices.push(c);
         }
 
-        let cone = Cone::new(cone_index, source, target, slices);
+        let cone = Cone::new(cone_index, source, target, todo!(), slices);
         self.cones.insert(index, cone.clone());
         Ok(cone)
     }
