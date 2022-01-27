@@ -6,7 +6,10 @@ use bimap::BiHashMap;
 use highway::{HighwayHash, HighwayHasher};
 use serde::{Deserialize, Serialize};
 
-use crate::{rewrite::Cone, Cospan, Diagram, DiagramN, Generator, Rewrite, Rewrite0, RewriteN};
+use crate::{
+    rewrite::{Cone, Label},
+    Cospan, Diagram, DiagramN, Generator, Rewrite, Rewrite0, RewriteN,
+};
 
 /// Similar to `Hash`, except supposed to be deterministic and shouldn't collide
 trait Keyed<K> {
@@ -90,13 +93,10 @@ impl Store {
         }
 
         let serialized = match rewrite {
-            Rewrite::Rewrite0(Rewrite0(None)) => RewriteSer::R0 {
-                source: None,
-                target: None,
-            },
-            Rewrite::Rewrite0(Rewrite0(Some((x, y)))) => RewriteSer::R0 {
-                source: Some(*x),
-                target: Some(*y),
+            Rewrite::Rewrite0(r0) => RewriteSer::R0 {
+                source: r0.source(),
+                target: r0.target(),
+                label: r0.label().cloned(),
             },
             Rewrite::RewriteN(rewrite) => {
                 let cones = rewrite
@@ -133,9 +133,16 @@ impl Store {
                 .map(|cospan| self.pack_cospan(cospan))
                 .collect(),
             target: self.pack_cospan(&cone.internal.target),
-            slices: {
+            regular_slices: {
                 cone.internal
-                    .slices
+                    .regular_slices
+                    .iter()
+                    .map(|slice| self.pack_rewrite(slice))
+                    .collect()
+            },
+            singular_slices: {
+                cone.internal
+                    .singular_slices
                     .iter()
                     .map(|slice| self.pack_rewrite(slice))
                     .collect()
@@ -183,10 +190,16 @@ impl Store {
     pub fn unpack_rewrite(&mut self, key: Key<Rewrite>) -> Option<Rewrite> {
         self.rewrite_keys.get_by_right(&key).cloned().or_else(|| {
             let rewrite = match self.rewrites.get(&key)?.clone() {
-                RewriteSer::R0 { source, target, .. } => match (source, target) {
-                    (None, None) => Some(Rewrite0(None).into()),
-                    (Some(source), Some(target)) => Some(Rewrite0(Some((source, target))).into()),
-                    (None, Some(_)) | (Some(_), None) => None,
+                RewriteSer::R0 {
+                    source,
+                    target,
+                    label,
+                } => match (source, target, label) {
+                    (None, None, None) => Some(Rewrite0(None).into()),
+                    (Some(source), Some(target), Some(label)) => {
+                        Some(Rewrite0(Some((source, target, label))).into())
+                    }
+                    _ => None,
                 },
                 RewriteSer::Rn { dimension, cones } => {
                     let cones = cones
@@ -214,7 +227,8 @@ impl Store {
                     cone.index as usize,
                     c.internal.source.clone(),
                     c.internal.target.clone(),
-                    c.internal.slices.clone(),
+                    c.internal.regular_slices.clone(),
+                    c.internal.singular_slices.clone(),
                 )
             })
             .or_else(|| {
@@ -225,12 +239,23 @@ impl Store {
                     .map(|cospan| self.unpack_cospan(&cospan))
                     .collect::<Option<_>>()?;
                 let target = self.unpack_cospan(&serialized.target)?;
-                let slices = serialized
-                    .slices
+                let regular_slices = serialized
+                    .regular_slices
                     .into_iter()
                     .map(|slice| self.unpack_rewrite(slice))
                     .collect::<Option<_>>()?;
-                let cone = Some(Cone::new(cone.index as usize, source, target, slices));
+                let singular_slices = serialized
+                    .singular_slices
+                    .into_iter()
+                    .map(|slice| self.unpack_rewrite(slice))
+                    .collect::<Option<_>>()?;
+                let cone = Some(Cone::new(
+                    cone.index as usize,
+                    source,
+                    target,
+                    regular_slices,
+                    singular_slices,
+                ));
                 cone.as_ref()
                     .cloned()
                     .map(|c| self.cone_keys.insert(c, key));
@@ -268,6 +293,9 @@ enum RewriteSer {
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
         target: Option<Generator>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default)]
+        label: Option<Label>,
     },
     Rn {
         dimension: NonZeroU32,
@@ -279,9 +307,14 @@ enum RewriteSer {
 impl Hash for RewriteSer {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         match self {
-            RewriteSer::R0 { source, target } => {
+            RewriteSer::R0 {
+                source,
+                target,
+                label,
+            } => {
                 source.hash(state);
                 target.hash(state);
+                label.hash(state);
             }
             RewriteSer::Rn { dimension, cones } => {
                 dimension.hash(state);
@@ -310,7 +343,8 @@ struct ConeWithIndexSer {
 struct ConeSer {
     source: Vec<CospanSer>,
     target: CospanSer,
-    slices: Vec<Key<Rewrite>>,
+    regular_slices: Vec<Key<Rewrite>>,
+    singular_slices: Vec<Key<Rewrite>>,
 }
 
 #[allow(clippy::derive_hash_xor_eq)]
@@ -324,7 +358,11 @@ impl Hash for ConeSer {
 
         self.target.hash(state);
 
-        for slice in &self.slices {
+        for slice in &self.regular_slices {
+            slice.hash(state);
+        }
+
+        for slice in &self.singular_slices {
             slice.hash(state);
         }
     }

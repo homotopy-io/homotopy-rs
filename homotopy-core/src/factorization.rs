@@ -29,7 +29,7 @@ pub fn factorize(f: Rewrite, g: Rewrite, source: Diagram, target: Diagram) -> Fa
             assert!(g.source() == None || g.source() == Some(t));
 
             Factorization::Unique(
-                (s == t || s.dimension < t.dimension).then(|| Rewrite0::new(s, t).into()),
+                (s == t || s.dimension < t.dimension).then(|| Rewrite0::new(s, t, todo!()).into()),
             )
         }
         (
@@ -48,6 +48,7 @@ pub fn factorize(f: Rewrite, g: Rewrite, source: Diagram, target: Diagram) -> Fa
                     f.dimension(),
                     source.cospans(),
                     target.cospans(),
+                    todo!(),
                     vec![vec![]; target.size()],
                 );
                 Factorization::Unique(h.check(Mode::Shallow).is_ok().then(|| Rewrite::from(h)))
@@ -129,6 +130,7 @@ impl Iterator for FactorizationInternal {
                             self.source.cospans(),
                             self.target.cospans(),
                             h_mono,
+                            todo!(),
                             &slices,
                         );
                         if h.check(Mode::Shallow).is_ok() {
