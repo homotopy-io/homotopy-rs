@@ -21,7 +21,7 @@ lyon_algorithms = "0.17.6"
 lyon_geom = "0.17.7"
 lyon_path = "0.17.7"
 paste = "1.0.7"
-petgraph = "0.6.2"
+petgraph = { git = "https://github.com/NickHu/petgraph", branch = "filter_map" }
 serde = { features = ["derive"], version = "1.0.138" }
 serde_json = "1.0.82"
 thiserror = "1.0.30"
