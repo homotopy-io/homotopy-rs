@@ -123,6 +123,7 @@ fn expand_base_regular(
                 i,
                 Default::default(),
                 cs.clone(),
+                todo!(),
                 Default::default(),
             )],
         )
@@ -170,6 +171,7 @@ fn expand_base_singular(
                     },
                 ],
                 cospan.clone(),
+                todo!(),
                 vec![
                     expansion.slices[0].clone().into(),
                     expansion.slices[1].clone().into(),
@@ -198,6 +200,7 @@ fn expand_base_singular(
                     },
                 ],
                 cospan.clone(),
+                todo!(),
                 vec![
                     expansion.slices[1].clone().into(),
                     expansion.slices[0].clone().into(),
@@ -375,6 +378,7 @@ fn expand_recursive(
                 height,
                 vec![Cospan { forward, backward }],
                 target_cospan.clone(),
+                todo!(),
                 vec![recursive],
             )],
         ),
@@ -411,6 +415,7 @@ fn expand_recursive(
                         },
                     ],
                     target_cospan.clone(),
+                    todo!(),
                     vec![recursive, inclusion],
                 )],
             )
@@ -448,6 +453,7 @@ fn expand_recursive(
                         },
                     ],
                     target_cospan.clone(),
+                    todo!(),
                     vec![inclusion, recursive],
                 )],
             )
@@ -469,6 +475,7 @@ fn expand_recursive(
                         },
                     ],
                     target_cospan.clone(),
+                    todo!(),
                     vec![
                         Rewrite::identity(diagram.dimension() - 1),
                         Rewrite::identity(diagram.dimension() - 1),
