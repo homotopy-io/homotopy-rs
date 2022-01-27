@@ -311,7 +311,7 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
 
                 let restricted_slices: Vec<_> = cone
                     .internal
-                    .slices
+                    .singular_slices
                     .iter()
                     .map(|cone_slice| restrict_rewrite(cone_slice, embedding_slice))
                     .collect();
@@ -322,7 +322,7 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
                     .iter()
                     .enumerate()
                     .map(|(i, cospan)| {
-                        let embedding = embedding_slice.preimage(&cone.internal.slices[i]);
+                        let embedding = embedding_slice.preimage(&cone.internal.singular_slices[i]);
                         let forward = restrict_rewrite(&cospan.forward, &embedding);
                         let backward = restrict_rewrite(&cospan.backward, &embedding);
                         Cospan { forward, backward }
@@ -340,6 +340,7 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
                     cone.index - rewrite.regular_image(*height),
                     restricted_source,
                     restricted_target,
+                    todo!(),
                     restricted_slices,
                 ));
             }
