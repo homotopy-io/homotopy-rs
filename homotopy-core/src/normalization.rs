@@ -147,7 +147,7 @@ impl SinkArrow {
                 Height::Regular(_) => continue,
             };
 
-            let slice_rewrite = rewrite.slice(Height::Singular(middle_height));
+            let slice_rewrite = rewrite.slice(middle_height);
             let slice_middle = middle.slice(Height::Singular(middle_height)).unwrap();
             let slice_degeneracy = self.degeneracy.slice_into(middle_height).clone();
             let slice_source = source.slice(Height::Singular(source_height)).unwrap();

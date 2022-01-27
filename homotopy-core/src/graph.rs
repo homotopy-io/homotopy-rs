@@ -267,7 +267,7 @@ where
                                 DiagramN::try_from(graph[e.source()].1.clone())?.cospans()
                                     [source_height]
                                     .forward
-                                    .compose(&rewrite.slice(Singular(source_height)))
+                                    .compose(&rewrite.slice(source_height))
                                     .unwrap(),
                             ),
                         );

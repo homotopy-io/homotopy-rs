@@ -14,7 +14,7 @@ use crate::{
     common::{DimensionError, Generator, Mode, RegularHeight, SingularHeight},
     diagram::Diagram,
     util::first_max_generator,
-    Boundary, Height,
+    Boundary,
 };
 
 consign! {
@@ -571,25 +571,13 @@ impl RewriteN {
     }
 
     /// Take a slice of a rewrite
-    pub fn slice(&self, height: Height) -> Rewrite {
-        let singular_height = usize::from(height) / 2;
+    pub fn slice(&self, height: SingularHeight) -> Rewrite {
         self.cones()
             .iter()
-            .find(|cone| cone.index <= singular_height && singular_height < cone.index + cone.len())
-            .map_or(
-                Rewrite::identity(self.dimension() - 1),
-                |cone| match height {
-                    Height::Singular(_) => {
-                        cone.internal.slices[singular_height - cone.index].clone()
-                    }
-                    Height::Regular(h) if h % 2 == 0 => {
-                        cone.internal.source[singular_height - cone.index].forward.compose(&cone.internal.slices[singular_height - cone.index]).unwrap()
-                    }
-                    Height::Regular(_h) /* if _h % 2 == 1 */ => {
-                        cone.internal.source[singular_height - cone.index].backward.compose(&cone.internal.slices[singular_height - cone.index]).unwrap()
-                    }
-                },
-            )
+            .find(|cone| cone.index <= height && height < cone.index + cone.len())
+            .map_or(Rewrite::identity(self.dimension() - 1), |cone| {
+                cone.internal.slices[height - cone.index].clone()
+            })
     }
 
     pub fn compose(&self, g: &Self) -> Result<Self, CompositionError> {
