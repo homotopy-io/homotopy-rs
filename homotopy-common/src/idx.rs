@@ -6,7 +6,7 @@ use std::{
     ops::{Index, IndexMut},
 };
 
-use petgraph::graph::IndexType;
+use petgraph::graph::{EdgeIndex, IndexType, NodeIndex};
 
 pub trait Idx: 'static + Copy + Eq + Hash + fmt::Debug {
     fn index(&self) -> usize;
@@ -14,9 +14,19 @@ pub trait Idx: 'static + Copy + Eq + Hash + fmt::Debug {
     fn new(index: usize) -> Self;
 }
 
-impl<T: IndexType> Idx for T {
+impl<Ix: IndexType> Idx for NodeIndex<Ix> {
     fn index(&self) -> usize {
-        self.index()
+        Self::index(*self)
+    }
+
+    fn new(index: usize) -> Self {
+        Self::new(index)
+    }
+}
+
+impl<Ix: IndexType> Idx for EdgeIndex<Ix> {
+    fn index(&self) -> usize {
+        Self::index(*self)
     }
 
     fn new(index: usize) -> Self {
@@ -34,7 +44,7 @@ macro_rules! declare_idx {
     ) => {
         $(
             $(#[$attrib])*
-            #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+            #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Debug)]
             $vis struct $name($ty);
 
             impl $crate::idx::Idx for $name {
@@ -46,6 +56,23 @@ macro_rules! declare_idx {
                 #[inline(always)]
                 fn new(index: usize) -> Self {
                     $name(index as $ty)
+                }
+            }
+
+            unsafe impl petgraph::graph::IndexType for $name {
+                #[inline(always)]
+                fn new(x: usize) -> Self {
+                    $name(x as $ty)
+                }
+
+                #[inline(always)]
+                fn index(&self) -> usize {
+                    self.0 as usize
+                }
+
+                #[inline(always)]
+                fn max() -> Self {
+                    $name($ty::MAX)
                 }
             }
         )*

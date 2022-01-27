@@ -48,7 +48,7 @@ impl Layout {
                 layout.add_coordinates(path, coords);
             }
 
-            graph = explode(&graph, add_coord, |_, _| Some(()))?.0;
+            graph = explode(&graph, add_coord, |_, _, _| Some(()))?.0;
         }
 
         Ok(layout)

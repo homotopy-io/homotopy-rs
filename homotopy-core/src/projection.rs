@@ -12,7 +12,7 @@ use std::{
 
 use homotopy_common::idx::IdxVec;
 use petgraph::{
-    graph::NodeIndex,
+    graph::{EdgeIndex, NodeIndex},
     visit::{EdgeRef, IntoNodeReferences, Topo, Walker},
     EdgeDirection,
 };
@@ -65,9 +65,6 @@ impl Generators {
     }
 }
 
-// workaround for EdgeIndex not implementing IndexType in petgraph
-type EdgeIndex = usize;
-
 /// Diagram analysis that finds the depth of cells in the 2-dimensional projection of a diagram.
 #[derive(Debug, Clone)]
 pub struct Depths {
@@ -92,12 +89,12 @@ impl Depths {
         for node in Topo::new(&graph).iter(&graph) {
             for edge in graph.edges_directed(node, EdgeDirection::Incoming) {
                 if let ((), Rewrite::RewriteN(r)) = edge.weight() {
-                    edge_depths[edge.id().index()] =
+                    edge_depths[edge.id()] =
                         node_depths[edge.source()].map(|d| r.singular_image(d));
 
                     let target_depth = r.targets().first().copied();
                     node_depths[node] = min_defined(
-                        min_defined(node_depths[node], edge_depths[edge.id().index()]),
+                        min_defined(node_depths[node], edge_depths[edge.id()]),
                         target_depth,
                     );
                 }
@@ -124,7 +121,7 @@ impl Depths {
             .graph
             .edges_directed(from, EdgeDirection::Outgoing)
             .find(|&e| e.target() == to)?;
-        self.edge_depths[e.id().index()]
+        self.edge_depths[e.id()]
     }
 
     pub fn edges_above(&self, depth: usize, to: [SliceIndex; 2]) -> Vec<[SliceIndex; 2]> {
@@ -135,7 +132,7 @@ impl Depths {
 
         self.graph
             .edges_directed(to, EdgeDirection::Incoming)
-            .filter_map(|e| match self.edge_depths[e.id().index()] {
+            .filter_map(|e| match self.edge_depths[e.id()] {
                 Some(d) if d < depth => self
                     .graph
                     .node_weight(e.source())

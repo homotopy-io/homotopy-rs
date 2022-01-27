@@ -39,7 +39,7 @@ impl Mesh {
 
         for orientation in 0..depth {
             let (exploded_graph, node_to_option_nodes) =
-                explode(&graph, add_coord, |_, _| Some(()))?;
+                explode(&graph, add_coord, |_, _, _| Some(()))?;
             let node_to_nodes =
                 node_to_option_nodes.map(|x| x.into_iter().collect::<Option<Vec<_>>>().unwrap());
             graph = exploded_graph;
