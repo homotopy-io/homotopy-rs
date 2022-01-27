@@ -1,7 +1,7 @@
 use std::{
     cell::RefCell,
     cmp::Ordering,
-    convert::{From, Into, TryFrom},
+    convert::{From, Into},
     fmt,
     hash::Hash,
     ops::Range,
@@ -10,13 +10,13 @@ use std::{
 use hashconsing::{HConsed, HConsign, HashConsign};
 use once_cell::unsync::OnceCell;
 // used for debugging only
-use serde::{ser::SerializeStruct, Deserialize, Serialize};
+use serde::{ser::{SerializeStruct, SerializeSeq}, Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{
     common::{DimensionError, Generator, MaxByDimension, Mode, RegularHeight, SingularHeight},
     diagram::Diagram,
-    Boundary,
+    Boundary, Height, SliceIndex,
 };
 
 thread_local! {
@@ -52,8 +52,8 @@ pub struct RewriteInternal {
     max_generator_target: OnceCell<Option<Generator>>,
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord, Serialize, Deserialize)]
-pub struct Rewrite0(pub(crate) Option<(Generator, Generator)>);
+#[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord, Deserialize)]
+pub struct Rewrite0(pub(crate) Option<(Generator, Generator, Label)>);
 
 #[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
 pub struct RewriteN(HConsed<RewriteInternal>);
@@ -83,11 +83,15 @@ pub enum Rewrite {
     RewriteN(RewriteN),
 }
 
+type Coordinate<T> = Vec<T>;
+pub type Label = (Generator, Coordinate<SliceIndex>);
+
 #[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize, Deserialize)]
 pub struct ConeInternal {
     pub(crate) source: Vec<Cospan>,
     pub(crate) target: Cospan,
-    pub(crate) slices: Vec<Rewrite>,
+    pub(crate) regular_slices: Vec<Rewrite>,
+    pub(crate) singular_slices: Vec<Rewrite>,
 }
 
 #[derive(PartialEq, Eq, Clone, Hash)]
@@ -210,25 +214,71 @@ impl TryFrom<Rewrite> for Rewrite0 {
 }
 
 impl Rewrite {
-    pub fn cone_over_generator(generator: Generator, base: Diagram) -> Self {
+    pub fn cone_over_generator(
+        generator: Generator,
+        base: Diagram,
+        prefix: Coordinate<SliceIndex>,
+    ) -> Self {
+        use Height::{Regular, Singular};
+        use SliceIndex::{Boundary, Interior};
+
+        use crate::Boundary::{Source, Target};
+
         match base {
-            Diagram::Diagram0(base) => Rewrite0::new(base, generator).into(),
-            Diagram::DiagramN(base) => RewriteN::new(
-                base.dimension(),
-                vec![Cone::new(
-                    0,
-                    base.cospans().to_vec(),
-                    Cospan {
-                        forward: Self::cone_over_generator(generator, base.source()),
-                        backward: Self::cone_over_generator(generator, base.target()),
-                    },
-                    base.singular_slices()
-                        .into_iter()
-                        .map(|slice| Self::cone_over_generator(generator, slice))
-                        .collect(),
-                )],
-            )
-            .into(),
+            Diagram::Diagram0(base) => Rewrite0::new(base, generator, (generator, prefix)).into(),
+            Diagram::DiagramN(base) => {
+                let mut regular_slices: Vec<_> = Default::default();
+                let mut singular_slices: Vec<_> = Default::default();
+                base.slices()
+                    .into_iter()
+                    .enumerate()
+                    .for_each(|(i, slice)| match Height::from(i) {
+                        Singular(i) => singular_slices.push(Self::cone_over_generator(
+                            generator,
+                            slice.clone(),
+                            [prefix.as_slice(), &[Interior(Singular(i))]].concat(),
+                        )),
+                        Regular(0) if base.size() > 0 => { /* omit first regular slice of non-unit cone */ }
+                        Regular(i) if base.size() > 0 && base.size() == i => { /* omit last regular slice of non-unit cone */ }
+                        Regular(i) => regular_slices.push(Self::cone_over_generator(
+                            generator,
+                            slice.clone(),
+                            [prefix.as_slice(), &[Interior(Regular(i))]].concat(),
+                        )),
+                    });
+                RewriteN::new(
+                    base.dimension(),
+                    vec![Cone::new(
+                        0,
+                        base.cospans().to_vec(),
+                        Cospan {
+                            forward: Self::cone_over_generator(
+                                generator,
+                                base.source(),
+                                [
+                                    &[Interior(Singular(0))],
+                                    &prefix.as_slice()[..prefix.len() - 1],
+                                    &[Boundary(Source)],
+                                ]
+                                .concat(),
+                            ),
+                            backward: Self::cone_over_generator(
+                                generator,
+                                base.target(),
+                                [
+                                    &[Interior(Singular(0))],
+                                    &prefix.as_slice()[..prefix.len() - 1],
+                                    &[Boundary(Target)],
+                                ]
+                                .concat(),
+                            ),
+                        },
+                        regular_slices,
+                        singular_slices,
+                    )],
+                )
+                .into()
+            }
         }
     }
 
@@ -273,29 +323,93 @@ impl Rewrite {
     }
 
     pub(crate) fn pad(&self, embedding: &[usize]) -> Self {
-        match *self {
-            Self::Rewrite0(ref r) => Self::Rewrite0(*r),
-            Self::RewriteN(ref r) => Self::RewriteN(r.pad(embedding)),
+        match self {
+            Self::Rewrite0(r) => Self::Rewrite0(r.clone()),
+            Self::RewriteN(r) => Self::RewriteN(r.pad(embedding)),
         }
     }
 }
 
 impl fmt::Debug for Rewrite0 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.0 {
-            Some((s, t)) => f.debug_tuple("Rewrite0").field(&s).field(&t).finish(),
-            None => f.debug_struct("Rewrite0").finish(),
+        match self {
+            Self(Some((s, t, l))) => f
+                .debug_tuple("Rewrite0")
+                .field(&s)
+                .field(&t)
+                .field(&l)
+                .finish(),
+            Self(None) => f.debug_struct("Rewrite0").finish(),
+        }
+    }
+}
+
+impl Serialize for Rewrite0 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match &self.0 {
+            Some((source, target, label)) => {
+                let mut r0 = serializer.serialize_struct("Rewrite0", 3)?;
+                r0.serialize_field("source", source)?;
+                r0.serialize_field("target", target)?;
+
+                struct Coord<'a>(&'a Coordinate<SliceIndex>);
+
+                impl Serialize for Coord<'_> {
+                    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+                    where
+                        S: serde::Serializer,
+                    {
+                        let mut seq = serializer.serialize_seq(Some(self.0.len()))?;
+                        for i in self.0 {
+                            match i {
+                                SliceIndex::Boundary(Boundary::Source) => {
+                                    seq.serialize_element("source")?
+                                }
+                                SliceIndex::Boundary(Boundary::Target) => {
+                                    seq.serialize_element("target")?
+                                }
+                                SliceIndex::Interior(Height::Regular(i)) => {
+                                    seq.serialize_element(&format!("R{}", i))?
+                                }
+                                SliceIndex::Interior(Height::Singular(i)) => {
+                                    seq.serialize_element(&format!("S{}", i))?
+                                }
+                            }
+                        }
+                        seq.end()
+                    }
+                }
+
+                #[derive(Serialize)]
+                struct Label<'a> {
+                    generator: &'a Generator,
+                    coordinate: &'a Coord<'a>,
+                }
+
+                r0.serialize_field(
+                    "label",
+                    &Label {
+                        generator: &label.0,
+                        coordinate: &Coord(&label.1),
+                    },
+                )?;
+                r0.end()
+            }
+            None => serializer.serialize_unit_struct("Rewrite0"),
         }
     }
 }
 
 impl Rewrite0 {
-    pub fn new(source: Generator, target: Generator) -> Self {
+    pub fn new(source: Generator, target: Generator, label: Label) -> Self {
         assert!(source.dimension <= target.dimension);
         if source == target {
             Self(None)
         } else {
-            Self(Some((source, target)))
+            Self(Some((source, target, label)))
         }
     }
 
@@ -308,26 +422,53 @@ impl Rewrite0 {
     }
 
     pub fn compose(&self, g: &Self) -> Result<Self, CompositionError> {
-        match (self.0, g.0) {
-            (Some((f_s, f_t)), Some((g_s, g_t))) => {
-                if f_t == g_s {
-                    Ok(Self(Some((f_s, g_t))))
-                } else {
-                    Err(CompositionError::Incompatible)
-                }
+        match (&self.0, &g.0) {
+            (Some(_), None) => Ok(self.clone()),
+            (None, Some(_)) => Ok(g.clone()),
+            (None, None) => Ok(Self::identity()),
+            // TODO: check this is the correct notion of labelled composition
+            (Some((f_s, f_t, f_l)), Some((g_s, g_t, g_l)))
+                if f_t == g_s && f_l.0.dimension <= g_l.0.dimension =>
+            {
+                // to compute a regular slice `r` by composition of a source rewrite `b` and a
+                // singular slice `s`:
+                //     sⱼ
+                //    ^ ^
+                // r /  | s
+                //  /   |
+                // rᵢ → sᵢ
+                //    b
+                let result = Rewrite0::new(
+                    *f_s,
+                    *g_t,
+                    (
+                        g_l.0,
+                        [
+                            &g_l.1.as_slice()[..g_l.1.len() - f_l.1.len()],
+                            &f_l.1.as_slice(),
+                        ]
+                        .concat(),
+                    ),
+                );
+                Ok(result)
             }
-            (Some(_), None) => Ok(*self),
-            (None, Some(_)) => Ok(*g),
-            (None, None) => Ok(Self(None)),
+            (f, g) => {
+                log::error!("Failed to compose source: {:?}, target: {:?}", f, g);
+                Err(CompositionError::Incompatible)
+            }
         }
     }
 
     pub fn source(&self) -> Option<Generator> {
-        self.0.map(|(source, _)| source)
+        self.0.as_ref().map(|(source, _, _)| *source)
     }
 
     pub fn target(&self) -> Option<Generator> {
-        self.0.map(|(_, target)| target)
+        self.0.as_ref().map(|(_, target, _)| *target)
+    }
+
+    pub fn label(&self) -> Option<&Label> {
+        self.0.as_ref().map(|(_, _, label)| label)
     }
 
     pub(crate) fn max_generator(&self, boundary: Boundary) -> Option<Generator> {
@@ -407,6 +548,7 @@ impl RewriteN {
                         forward: Rewrite::identity(dimension - 1),
                         backward: Rewrite::identity(dimension - 1),
                     },
+                    vec![Rewrite::identity(dimension - 1)],
                     vec![],
                 )
             })
@@ -420,9 +562,16 @@ impl RewriteN {
         dimension: usize,
         source_cospans: &[Cospan],
         target_cospans: &[Cospan],
-        slices: Vec<Vec<Rewrite>>,
+        regular_slices: Vec<Vec<Rewrite>>,
+        singular_slices: Vec<Vec<Rewrite>>,
     ) -> Self {
-        let rewrite = Self::from_slices_unsafe(dimension, source_cospans, target_cospans, slices);
+        let rewrite = Self::from_slices_unsafe(
+            dimension,
+            source_cospans,
+            target_cospans,
+            regular_slices,
+            singular_slices,
+        );
         if cfg!(feature = "safety-checks") {
             rewrite.check(Mode::Shallow).expect("Rewrite is malformed");
         }
@@ -435,18 +584,20 @@ impl RewriteN {
         dimension: usize,
         source_cospans: &[Cospan],
         target_cospans: &[Cospan],
-        slices: Vec<Vec<Rewrite>>,
+        regular_slices: Vec<Vec<Rewrite>>,
+        singular_slices: Vec<Vec<Rewrite>>,
     ) -> Self {
         let mut cones = Vec::new();
         let mut index = 0;
 
-        for (target, cone_slices) in slices.into_iter().enumerate() {
-            let size = cone_slices.len();
+        for (target, (rss, sss)) in regular_slices.into_iter().zip(singular_slices).enumerate() {
+            let size = sss.len();
             cones.push(Cone::new(
                 index,
                 source_cospans[index..index + size].to_vec(),
                 target_cospans[target].clone(),
-                cone_slices,
+                rss,
+                sss,
             ));
             index += size;
         }
@@ -460,10 +611,17 @@ impl RewriteN {
         source_cospans: &[Cospan],
         target_cospans: &[Cospan],
         mono: &[usize],
-        slices: &[Rewrite],
+        regular_slices: &[Rewrite],
+        singular_slices: &[Rewrite],
     ) -> Self {
-        let rewrite =
-            Self::from_monotone_unsafe(dimension, source_cospans, target_cospans, mono, slices);
+        let rewrite = Self::from_monotone_unsafe(
+            dimension,
+            source_cospans,
+            target_cospans,
+            mono,
+            regular_slices,
+            singular_slices,
+        );
         if cfg!(feature = "safety-checks") {
             rewrite.check(Mode::Shallow).expect("Rewrite is malformed");
         }
@@ -477,14 +635,23 @@ impl RewriteN {
         source_cospans: &[Cospan],
         target_cospans: &[Cospan],
         mono: &[usize],
-        slices: &[Rewrite],
+        regular_slices: &[Rewrite],
+        singular_slices: &[Rewrite],
     ) -> Self {
-        let mut cones_slices: Vec<Vec<Rewrite>> = vec![vec![]; target_cospans.len()];
+        let mut cones_regular_slices: Vec<Vec<Rewrite>> = vec![vec![]; target_cospans.len() + 1];
+        let mut cones_singular_slices: Vec<Vec<Rewrite>> = vec![vec![]; target_cospans.len()];
         for (i, &j) in mono.iter().enumerate() {
-            cones_slices[j].push(slices[i].clone());
+            cones_regular_slices[j].push(regular_slices[i].clone());
+            cones_singular_slices[j].push(singular_slices[i].clone());
         }
 
-        Self::from_slices_unsafe(dimension, source_cospans, target_cospans, cones_slices)
+        Self::from_slices_unsafe(
+            dimension,
+            source_cospans,
+            target_cospans,
+            cones_regular_slices,
+            cones_singular_slices,
+        )
     }
 
     pub(crate) fn collect_garbage() {
@@ -548,7 +715,7 @@ impl RewriteN {
             .iter()
             .find(|cone| cone.index <= height && height < cone.index + cone.len())
             .map_or(Rewrite::identity(self.dimension() - 1), |cone| {
-                cone.internal.slices[height - cone.index].clone()
+                cone.internal.singular_slices[height - cone.index].clone()
             })
     }
 
@@ -601,18 +768,40 @@ impl RewriteN {
                         source.extend(f_cone.internal.source.iter().cloned());
                         source.extend(g_cone.internal.source[index + 1..].iter().cloned());
 
-                        let g_slice = &g_cone.internal.slices[index];
-                        let mut slices = vec![];
-                        slices.extend(g_cone.internal.slices[..index].iter().cloned());
-                        slices.extend(
+                        let g_slice = &g_cone.internal.singular_slices[index];
+                        let mut singular_slices = vec![];
+                        singular_slices
+                            .extend(g_cone.internal.singular_slices[..index].iter().cloned());
+                        singular_slices.extend(
                             f_cone
                                 .internal
-                                .slices
+                                .singular_slices
                                 .iter()
                                 .map(|f_slice| f_slice.compose(g_slice))
                                 .collect::<Result<Vec<_>, _>>()?,
                         );
-                        slices.extend(g_cone.internal.slices[index + 1..].iter().cloned());
+                        singular_slices
+                            .extend(g_cone.internal.singular_slices[index + 1..].iter().cloned());
+
+                        let g_slice_pre = &g_cone.internal.regular_slices[index];
+                        let g_slice_post = &g_cone.internal.regular_slices[index + 1];
+                        let mut regular_slices = vec![];
+                        regular_slices
+                            .extend(g_cone.internal.regular_slices[..index].iter().cloned());
+                        regular_slices.extend(
+                            f_cone
+                                .internal
+                                .regular_slices
+                                .iter()
+                                .map(|f_slice| {
+                                    Ok([
+                                        f_slice.compose(g_slice_pre)?,
+                                        f_slice.compose(g_slice_post)?,
+                                    ])
+                                })
+                                .collect::<Result<Vec<_>, _>>()?
+                                .concat(),
+                        );
 
                         delayed_offset -= 1 - f_cone.len() as isize;
 
@@ -620,7 +809,8 @@ impl RewriteN {
                             g_cone.index,
                             source,
                             g_cone.internal.target.clone(),
-                            slices,
+                            regular_slices,
+                            singular_slices,
                         ));
                     }
                 }
@@ -749,7 +939,8 @@ impl Cone {
         index: usize,
         source: Vec<Cospan>,
         target: Cospan,
-        slices: Vec<Rewrite>,
+        regular_slices: Vec<Rewrite>,
+        singular_slices: Vec<Rewrite>,
     ) -> Self {
         Self {
             index,
@@ -757,7 +948,8 @@ impl Cone {
                 factory.borrow_mut().mk(ConeInternal {
                     source,
                     target,
-                    slices,
+                    regular_slices,
+                    singular_slices,
                 })
             }),
         }
@@ -768,10 +960,11 @@ impl Cone {
     }
 
     pub(crate) fn is_identity(&self) -> bool {
-        self.internal.slices.len() == 1
+        // TODO: do we care about regular slices here?
+        self.internal.singular_slices.len() == 1
             && self.internal.source.len() == 1
             && self.internal.source[0] == self.internal.target
-            && self.internal.slices[0].is_identity()
+            && self.internal.singular_slices[0].is_identity()
     }
 
     pub(crate) fn len(&self) -> usize {
@@ -784,8 +977,19 @@ impl Cone {
                 let index = self.index + offset;
                 let source = self.internal.source.iter().map(|c| c.pad(rest)).collect();
                 let target = self.internal.target.pad(rest);
-                let slices = self.internal.slices.iter().map(|r| r.pad(rest)).collect();
-                Self::new(index, source, target, slices)
+                let regular_slices = self
+                    .internal
+                    .regular_slices
+                    .iter()
+                    .map(|r| r.pad(rest))
+                    .collect();
+                let singular_slices = self
+                    .internal
+                    .singular_slices
+                    .iter()
+                    .map(|r| r.pad(rest))
+                    .collect();
+                Self::new(index, source, target, regular_slices, singular_slices)
             }
             None => self.clone(),
         }

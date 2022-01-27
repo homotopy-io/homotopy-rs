@@ -162,6 +162,7 @@ fn contract_base(
                 forward: cospan0.forward.compose(&result[0]).unwrap(),
                 backward: cospan1.backward.compose(&result[1]).unwrap(),
             },
+            todo!(),
             result,
         )],
     );
@@ -195,6 +196,7 @@ fn contract_in_path(
                             forward: rewrite.clone().into(),
                             backward: rewrite.into(),
                         },
+                        todo!(),
                         vec![],
                     )],
                 )),
@@ -210,6 +212,7 @@ fn contract_in_path(
                                 forward: source_cospan.forward.compose(&rewrite).unwrap(),
                                 backward: source_cospan.backward.compose(&rewrite).unwrap(),
                             },
+                            todo!(),
                             vec![rewrite],
                         )],
                     ))
@@ -280,7 +283,7 @@ fn colimit_base(
         Ok(diagrams
             .iter()
             .map(|(diagram, _)| {
-                Rewrite0::new(diagram.to_generator().unwrap(), max_generator).into()
+                Rewrite0::new(diagram.to_generator().unwrap(), max_generator, todo!()).into()
             })
             .collect())
     } else {
@@ -600,6 +603,7 @@ fn colimit_recursive(
             diagram.dimension(),
             diagram.cospans(),
             target.cospans(),
+            todo!(),
             slices,
         )));
     }

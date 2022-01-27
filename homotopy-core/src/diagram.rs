@@ -116,11 +116,11 @@ impl Diagram {
         use Diagram::{Diagram0, DiagramN};
         match self {
             Diagram0(g) => match &rewrite {
-                Rewrite::Rewrite0(r) => match r.0 {
+                Rewrite::Rewrite0(r) => match &r.0 {
                     None => Ok(self),
-                    Some((source, target)) => {
-                        if g == source {
-                            Ok(Diagram0(target))
+                    Some((source, target, _label)) => {
+                        if g == *source {
+                            Ok(Diagram0(*target))
                         } else {
                             Err(RewritingError::Incompatible)
                         }
@@ -139,11 +139,11 @@ impl Diagram {
         use Diagram::{Diagram0, DiagramN};
         match self {
             Diagram0(g) => match &rewrite {
-                Rewrite::Rewrite0(r) => match r.0 {
+                Rewrite::Rewrite0(r) => match &r.0 {
                     None => Ok(self),
-                    Some((source, target)) => {
-                        if g == target {
-                            Ok(Diagram0(source))
+                    Some((source, target, _label)) => {
+                        if g == *target {
+                            Ok(Diagram0(*source))
                         } else {
                             Err(RewritingError::Incompatible)
                         }
@@ -208,6 +208,10 @@ impl DiagramN {
         S: Into<Diagram>,
         T: Into<Diagram>,
     {
+        use SliceIndex::Boundary;
+
+        use crate::Boundary::{Source, Target};
+
         let source: Diagram = source.into();
         let target: Diagram = target.into();
 
@@ -223,8 +227,12 @@ impl DiagramN {
         }
 
         let cospan = Cospan {
-            forward: Rewrite::cone_over_generator(generator, source.clone()),
-            backward: Rewrite::cone_over_generator(generator, target),
+            forward: Rewrite::cone_over_generator(
+                generator,
+                source.clone(),
+                vec![Boundary(Source)],
+            ),
+            backward: Rewrite::cone_over_generator(generator, target, vec![Boundary(Target)]),
         };
 
         Ok(Self::new_unsafe(source, vec![cospan]))
@@ -472,7 +480,7 @@ impl DiagramN {
             if slice.embeds(&diagram.slice(boundary.flip()).unwrap(), embedding) {
                 Ok(diagram.cospans().iter().map(|c| c.pad(embedding)).collect())
             } else {
-                Err(AttachmentError::Incompatible)
+                Err(AttachmentError::IncompatibleAttachment)
             }
         })
     }
@@ -680,7 +688,7 @@ pub enum AttachmentError {
     Dimension(#[from] DimensionError),
 
     #[error("failed to attach incompatible diagrams")]
-    Incompatible,
+    IncompatibleAttachment,
 }
 
 #[derive(Clone, Debug, Error)]

@@ -92,8 +92,8 @@ pub fn antipushout(
                 let s = std::cmp::min_by_key(*a, *b, |g| g.dimension);
                 vec![(
                     s.into(),
-                    Rewrite0::new(s, *a).into(),
-                    Rewrite0::new(s, *b).into(),
+                    Rewrite0::new(s, *a, todo!()).into(),
+                    Rewrite0::new(s, *b, todo!()).into(),
                 )]
             }
         }
@@ -124,6 +124,7 @@ pub fn antipushout(
                             s.dimension(),
                             &[],
                             a.cospans(),
+                            todo!(),
                             vec![vec![]; a.size()],
                         );
 
@@ -131,6 +132,7 @@ pub fn antipushout(
                             s.dimension(),
                             &[],
                             b.cospans(),
+                            todo!(),
                             vec![vec![]; b.size()],
                         );
 
@@ -163,6 +165,7 @@ pub fn antipushout(
                                     s.cospans(),
                                     a.cospans(),
                                     h_mono,
+                                    todo!(),
                                     &h_slices,
                                 );
 
@@ -171,6 +174,7 @@ pub fn antipushout(
                                     s.cospans(),
                                     b.cospans(),
                                     k_mono,
+                                    todo!(),
                                     &k_slices,
                                 );
 
@@ -263,9 +267,9 @@ fn factorize_inc_helper(
             (
                 sources
                     .into_iter()
-                    .map(|s| Rewrite::from(Rewrite0::new(s, m)))
+                    .map(|s| Rewrite::from(Rewrite0::new(s, m, todo!())))
                     .collect_vec(),
-                Rewrite::from(Rewrite0::new(m, *t)),
+                Rewrite::from(Rewrite0::new(m, *t, todo!())),
             )
         }
         Diagram::DiagramN(target) => {
@@ -334,11 +338,23 @@ fn factorize_inc_helper(
                         for _ in start..end {
                             slices.push(ps.remove(0));
                         }
-                        Cone::new(start, source_cospans, middle_cospan.clone(), slices)
+                        Cone::new(
+                            start,
+                            source_cospans,
+                            middle_cospan.clone(),
+                            todo!(),
+                            slices,
+                        )
                     });
                 }
 
-                q_cones.push(Cone::new(ti, vec![middle_cospan], target_cospan, vec![q]));
+                q_cones.push(Cone::new(
+                    ti,
+                    vec![middle_cospan],
+                    target_cospan,
+                    todo!(),
+                    vec![q],
+                ));
             }
 
             (
