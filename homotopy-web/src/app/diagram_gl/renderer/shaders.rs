@@ -7,7 +7,7 @@ pub struct Shaders {
     pub geometry_3d: Program,
     pub geometry_4d: Program,
     pub wireframe: Program,
-    pub cyllinder_pass: Program,
+    pub cylinder_pass: Program,
     pub lighting_pass: Program,
 }
 
@@ -35,10 +35,10 @@ impl Shaders {
                 { position, albedo },
                 { mvp },
             )?,
-            cyllinder_pass: program!(
+            cylinder_pass: program!(
                 ctx,
                 "glsl/deferred_vert.glsl",
-                "glsl/cyllinder_pass_frag.glsl",
+                "glsl/cylinder_pass_frag.glsl",
                 { position, uv },
                 { in_position, in_albedo },
             )?,

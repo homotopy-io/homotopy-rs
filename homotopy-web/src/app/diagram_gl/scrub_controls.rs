@@ -19,11 +19,49 @@ pub enum LoopingBehaviour {
     Boomerang,
 }
 
+#[derive(Copy, Clone, PartialEq, Eq)]
+enum PlaybackSpeed {
+    Half,
+    Normal,
+    Fast,
+    Faster,
+}
+
+impl PlaybackSpeed {
+    fn next(self) -> Self {
+        match self {
+            Self::Half => Self::Normal,
+            Self::Normal => Self::Fast,
+            Self::Fast => Self::Faster,
+            Self::Faster => Self::Half,
+        }
+    }
+
+    fn modifier(self) -> f32 {
+        match self {
+            Self::Half => 0.5,
+            Self::Normal => 1.,
+            Self::Fast => 1.5,
+            Self::Faster => 2.,
+        }
+    }
+
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Half => "0.5x",
+            Self::Normal => "1x",
+            Self::Fast => "1.5x",
+            Self::Faster => "2x",
+        }
+    }
+}
+
 pub enum ScrubAction {
     SetState(PlayState),
     Push,
     Pop,
     SetLooping(LoopingBehaviour),
+    ChangeSpeed,
     Scrub(f32),
     Advance(f32),
 }
@@ -33,6 +71,7 @@ pub struct ScrubState {
     pub t: f32,
     direction: Direction,
     state: PlayState,
+    speed: PlaybackSpeed,
     behaviour: LoopingBehaviour,
     pushed: Option<PlayState>,
 }
@@ -54,8 +93,10 @@ impl State for ScrubState {
                 self.behaviour = behaviour;
                 self.direction = Direction::Forward;
             }
+            ScrubAction::ChangeSpeed => self.speed = self.speed.next(),
             ScrubAction::Scrub(t) => self.t = t.clamp(0., 1.),
             ScrubAction::Advance(delta) if self.state == PlayState::Playing => {
+                let delta = delta * self.speed.modifier();
                 match self.behaviour {
                     LoopingBehaviour::FillFoward => {
                         self.t += delta;
@@ -69,11 +110,13 @@ impl State for ScrubState {
                             self.t += delta;
                             if self.t > 1. {
                                 self.direction = Direction::Backward;
+                                self.t = 1.;
                             }
                         } else {
                             self.t -= delta;
-                            if self.t < 0. {
+                            if self.t <= 0. {
                                 self.direction = Direction::Forward;
+                                self.t = 0.;
                             }
                         }
                     }
@@ -90,7 +133,8 @@ impl Default for ScrubState {
             t: 0.,
             direction: Direction::Forward,
             state: PlayState::Playing,
-            behaviour: LoopingBehaviour::FillFoward,
+            speed: PlaybackSpeed::Normal,
+            behaviour: LoopingBehaviour::Boomerang,
             pushed: Default::default(),
         }
     }
@@ -173,6 +217,12 @@ impl Component for ScrubComponent {
                 delta.emit(ScrubAction::Scrub(1.));
             })
         };
+        let set_speed = {
+            let delta = Delta::<ScrubState>::new();
+            Callback::from(move |_: MouseEvent| {
+                delta.emit(ScrubAction::ChangeSpeed);
+            })
+        };
         let on_mouse_down = {
             let delta = Delta::<ScrubState>::new();
             Callback::from(move |_: MouseEvent| {
@@ -201,9 +251,9 @@ impl Component for ScrubComponent {
             "pause"
         };
         let looping_icon = if self.local.behaviour == LoopingBehaviour::FillFoward {
-            "loop"
-        } else {
             "keyboard_tab"
+        } else {
+            "loop"
         };
 
         html! {
@@ -241,6 +291,12 @@ impl Component for ScrubComponent {
                         onclick={toggle_looping}
                     >
                         <Icon name={looping_icon} size={IconSize::Icon24} />
+                    </span>
+                    <span
+                        class="workspace__toolbar__button workspace__scrub__speed"
+                        onclick={set_speed}
+                    >
+                        {self.local.speed.as_str()}
                     </span>
                 </div>
             </div>
