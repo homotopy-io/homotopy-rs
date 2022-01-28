@@ -196,6 +196,13 @@ button, .button {
   width: 100%;
 }
 
+.workspace__scrub__speed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+}
+
 .workspace__slice-buttons {
   position: absolute;
   right: 0;
