@@ -528,13 +528,12 @@ dependencies = [
 
 [[package]]
 name = "gloo-timers"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f16c88aa13d2656ef20d1c042086b8767bbe2bdb62526894275a1b062161b2e"
+checksum = "4d12a7f4e95cfe710f1d624fb1210b7d961a5fb05c4fd942f4feab06e61f590e"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
- "web-sys",
 ]
 
 [[package]]
