@@ -17,7 +17,7 @@ pub struct Scene {
     pub diagram: DiagramN,
     pub view_dimension: ViewDimension,
     pub components: Vec<SceneComponent>,
-    pub cyllinder_components: Vec<SceneComponent>,
+    pub cylinder_components: Vec<SceneComponent>,
 }
 
 impl Scene {
@@ -34,7 +34,7 @@ impl Scene {
             diagram,
             view_dimension,
             components: vec![],
-            cyllinder_components: vec![],
+            cylinder_components: vec![],
         };
 
         scene.reload_meshes(ctx, subdivision_depth, geometry_samples)?;
@@ -48,7 +48,7 @@ impl Scene {
         geometry_samples: u8,
     ) -> Result<()> {
         self.components.clear();
-        self.cyllinder_components.clear();
+        self.cylinder_components.clear();
 
         let mesh = clay(
             &self.diagram,
@@ -93,7 +93,7 @@ impl Scene {
                     [&tetra_buffers.wireframe_vertex_buffer]
                 )?,
             });
-            self.cyllinder_components.push(SceneComponent {
+            self.cylinder_components.push(SceneComponent {
                 generator: Generator::new(1, 0),
                 array: vertex_array!(
                     ctx,

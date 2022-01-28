@@ -79,6 +79,17 @@ impl TextureOpts {
             WebGl2RenderingContext::TEXTURE_MAG_FILTER,
             self.mag_filter as i32,
         );
+        // NOTE this could be made configurable, but for now just zero
+        gl.tex_parameteri(
+            WebGl2RenderingContext::TEXTURE_2D,
+            WebGl2RenderingContext::TEXTURE_WRAP_S,
+            WebGl2RenderingContext::CLAMP_TO_EDGE as i32,
+        );
+        gl.tex_parameteri(
+            WebGl2RenderingContext::TEXTURE_2D,
+            WebGl2RenderingContext::TEXTURE_WRAP_T,
+            WebGl2RenderingContext::CLAMP_TO_EDGE as i32,
+        );
 
         let (width, height) = self.dimensions.unwrap_or((width, height));
         self.resize(gl, width, height)

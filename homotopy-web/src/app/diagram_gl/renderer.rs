@@ -37,7 +37,7 @@ pub struct Renderer {
     quad: Quad,
     // pipeline state
     gbuffer: GBuffer,
-    cyllinder_buffer: GBuffer,
+    cylinder_buffer: GBuffer,
 }
 
 impl Renderer {
@@ -61,7 +61,7 @@ impl Renderer {
             axes: Axes::new(&ctx)?,
             quad: Quad::new(&ctx)?,
             gbuffer: GBuffer::new(&ctx)?,
-            cyllinder_buffer: GBuffer::new(&ctx)?,
+            cylinder_buffer: GBuffer::new(&ctx)?,
             ctx,
             signature: props.signature.clone(),
             subdivision_depth: depth,
@@ -91,14 +91,14 @@ impl Renderer {
             &self.shaders.geometry_4d
         };
 
-        // Render animated wireframes to cyllinder buffer
+        // Render animated wireframes to cylinder buffer
         {
             let mut frame = Frame::new(&mut self.ctx)
-                .with_frame_buffer(&self.cyllinder_buffer.framebuffer)
+                .with_frame_buffer(&self.cylinder_buffer.framebuffer)
                 .with_clear_color(Vec4::new(0., 0., 0., 0.));
 
             if !*settings.get_mesh_hidden() {
-                for component in &self.scene.cyllinder_components {
+                for component in &self.scene.cylinder_components {
                     frame.draw(draw!(program, &component.array, &[], {
                         mvp: vp,
                         albedo: Vec3::new(1., 0., 0.),
@@ -108,7 +108,7 @@ impl Renderer {
             }
         }
 
-        // Render surfaces to GBuffer and cyllindrify anything in the cyllinder buffer
+        // Render surfaces to GBuffer and cyllindrify anything in the cylinder buffer
         {
             let mut frame = Frame::new(&mut self.ctx)
                 .with_frame_buffer(&self.gbuffer.framebuffer)
@@ -135,11 +135,11 @@ impl Renderer {
                 }
 
                 frame.draw(draw! {
-                    &self.shaders.cyllinder_pass,
+                    &self.shaders.cylinder_pass,
                     &self.quad.array,
                     &[
-                        &self.cyllinder_buffer.positions,
-                        &self.cyllinder_buffer.albedo,
+                        &self.cylinder_buffer.positions,
+                        &self.cylinder_buffer.albedo,
                     ],
                     {
                         in_position: 0,
