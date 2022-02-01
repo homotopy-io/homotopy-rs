@@ -10,7 +10,7 @@ use petgraph::{
 
 use crate::{
     common::{DimensionError, SingularHeight},
-    graph::{add_coord, explode, Coord, SliceGraph},
+    graph::{RewriteOrigin, SliceGraph},
     DiagramN, RewriteN, SliceIndex,
 };
 
@@ -35,8 +35,7 @@ impl Layout {
             w_coords: HashMap::new(),
         };
 
-        let mut graph = SliceGraph::new();
-        graph.add_node((vec![], diagram.clone().into()));
+        let mut graph = SliceGraph::new(vec![], diagram.clone());
 
         for _ in 0..depth {
             let node_to_constraints = calculate_constraints(&graph)?;
@@ -48,7 +47,20 @@ impl Layout {
                 layout.add_coordinates(path, coords);
             }
 
-            graph = explode(&graph, add_coord, |_, _, _| Some(()))?.0;
+            graph = graph
+                .explode(
+                    |_, key, si| {
+                        let mut key = key.clone();
+                        key.push(si);
+                        Some(key)
+                    },
+                    |_, _, _| Some(()),
+                    |_, _, ro| {
+                        (ro != RewriteOrigin::UnitSlice && ro != RewriteOrigin::RegularSlice)
+                            .then(|| ())
+                    },
+                )?
+                .output;
         }
 
         Ok(layout)
@@ -168,12 +180,12 @@ where
 }
 
 fn calculate_constraints(
-    graph: &SliceGraph<Coord, ()>,
+    graph: &SliceGraph<Vec<SliceIndex>>,
 ) -> Result<IdxVec<NodeIndex, Vec<ConstraintSet>>, DimensionError> {
     let mut node_to_constraints: IdxVec<NodeIndex, Vec<ConstraintSet>> =
         IdxVec::from_iter(vec![vec![]; graph.node_count()]);
 
-    for n in Topo::new(graph).iter(graph) {
+    for n in Topo::new(&**graph).iter(&**graph) {
         let diagram: &DiagramN = (&graph[n].1).try_into()?;
 
         for target_index in 0..diagram.size() {
@@ -211,7 +223,7 @@ fn calculate_constraints(
 }
 
 fn take_colimit(
-    _graph: &SliceGraph<Coord, ()>,
+    _graph: &SliceGraph<Vec<SliceIndex>>,
     node_to_constraints: &IdxVec<NodeIndex, Vec<ConstraintSet>>,
 ) -> ConstraintSet {
     let maximal_constraints = node_to_constraints.iter().filter_map(|(_n, constraints)| {

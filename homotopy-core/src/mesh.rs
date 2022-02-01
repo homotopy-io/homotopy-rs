@@ -4,8 +4,8 @@ use petgraph::graph::NodeIndex;
 
 use crate::{
     common::DimensionError,
-    graph::{add_coord, explode, Coord, SliceGraph},
-    DiagramN,
+    graph::{RewriteOrigin, SliceGraph},
+    DiagramN, SliceIndex,
 };
 
 declare_idx! {
@@ -22,7 +22,7 @@ pub enum ElementData {
 
 pub struct Mesh {
     pub depth: usize,
-    pub graph: SliceGraph<Coord, ()>,
+    pub graph: SliceGraph<Vec<SliceIndex>>,
     pub elements: IdxVec<Element, ElementData>,
 }
 
@@ -32,19 +32,21 @@ impl Mesh {
             return Err(DimensionError);
         }
 
-        let mut graph = SliceGraph::new();
-        let n = graph.add_node((vec![], diagram.clone().into()));
-
-        let mut elements = IdxVec::from_iter([ElementData::Element0(n)]);
+        let mut graph = SliceGraph::new(vec![], diagram.clone());
+        let mut elements = IdxVec::from_iter([ElementData::Element0(NodeIndex::new(0))]);
 
         for orientation in 0..depth {
-            let (exploded_graph, node_to_option_nodes) =
-                explode(&graph, add_coord, |_, _, _| Some(()))?;
-            let node_to_nodes =
-                node_to_option_nodes.map(|x| x.into_iter().collect::<Option<Vec<_>>>().unwrap());
-            graph = exploded_graph;
-
-            elements = explode_elements(&elements, &graph, &node_to_nodes, orientation);
+            let explosion = graph.explode(
+                |_, key, si| {
+                    let mut key = key.clone();
+                    key.push(si);
+                    Some(key)
+                },
+                |_, _, _| Some(()),
+                |_, _, ro| (ro != RewriteOrigin::UnitSlice).then(|| ()),
+            )?;
+            graph = explosion.output;
+            elements = explode_elements(&elements, &graph, &explosion.node_to_nodes, orientation);
         }
 
         Ok(Self {
@@ -57,7 +59,7 @@ impl Mesh {
 
 fn explode_elements(
     elements: &IdxVec<Element, ElementData>,
-    graph: &SliceGraph<Coord, ()>,
+    graph: &SliceGraph<Vec<SliceIndex>>,
     node_to_nodes: &IdxVec<NodeIndex, Vec<NodeIndex>>,
     orientation: Orientation,
 ) -> IdxVec<Element, ElementData> {
@@ -106,7 +108,7 @@ fn make_element(
     orientation: Orientation,
     elem_0: Element,
     elem_1: Element,
-    graph: &SliceGraph<Coord, ()>,
+    graph: &SliceGraph<Vec<SliceIndex>>,
     elements: &IdxVec<Element, ElementData>,
 ) -> Option<ElementData> {
     use ElementData::{Element0, ElementN};
