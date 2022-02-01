@@ -5,10 +5,7 @@
 //! In order to avoid potentially costly recomputations and accidental quadratic complexity when a
 //! diagram is traversed again for every point, the analyses are performed for the entire diagram
 //! at once and the results are cached for efficient random-access retrieval.
-use std::{
-    collections::HashMap,
-    convert::{Into, TryFrom},
-};
+use std::{collections::HashMap, convert::TryFrom};
 
 use homotopy_common::idx::IdxVec;
 use petgraph::{
@@ -21,7 +18,7 @@ use serde::Serialize;
 use crate::{
     common::{Boundary, DimensionError, Generator, SliceIndex},
     diagram::DiagramN,
-    graph::{Coord, GraphBuilder, SliceGraph},
+    graph::{RewriteOrigin, SliceGraph},
     Rewrite,
 };
 
@@ -68,7 +65,7 @@ impl Generators {
 /// Diagram analysis that finds the depth of cells in the 2-dimensional projection of a diagram.
 #[derive(Debug, Clone)]
 pub struct Depths {
-    graph: SliceGraph<Coord, ()>,
+    graph: SliceGraph<[SliceIndex; 2]>,
     node_depths: IdxVec<NodeIndex, Option<usize>>,
     edge_depths: IdxVec<EdgeIndex, Option<usize>>,
     coord_to_node: HashMap<[SliceIndex; 2], NodeIndex>,
@@ -76,17 +73,34 @@ pub struct Depths {
 
 impl Depths {
     pub fn new(diagram: &DiagramN) -> Result<Self, DimensionError> {
-        let graph = GraphBuilder::build(diagram.clone().into(), 2)?;
+        let graph = SliceGraph::<(), ()>::new((), diagram.clone())
+            .explode(
+                |_, (), si| Some(si),
+                |_, _, _| Some(()),
+                |_, _, ro| {
+                    (ro != RewriteOrigin::UnitSlice && ro != RewriteOrigin::RegularSlice)
+                        .then(|| ())
+                },
+            )?
+            .explode(
+                |_n: NodeIndex, key, si| Some([*key, si]),
+                |_, _, _| Some(()),
+                |_, _, ro| {
+                    (ro != RewriteOrigin::UnitSlice && ro != RewriteOrigin::RegularSlice)
+                        .then(|| ())
+                },
+            )?
+            .output;
 
         let mut node_depths = IdxVec::splat(None, graph.node_count());
         let mut edge_depths = IdxVec::splat(None, graph.edge_count());
 
         let coord_to_node = graph
             .node_references()
-            .map(|(n, (coord, _))| ([coord[0], coord[1]], n))
+            .map(|(n, (coord, _))| (*coord, n))
             .collect();
 
-        for node in Topo::new(&graph).iter(&graph) {
+        for node in Topo::new(&*graph).iter(&*graph) {
             for edge in graph.edges_directed(node, EdgeDirection::Incoming) {
                 if let ((), Rewrite::RewriteN(r)) = edge.weight() {
                     edge_depths[edge.id()] =
