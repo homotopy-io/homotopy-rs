@@ -47,7 +47,6 @@
     clippy::type_complexity,
     clippy::unnecessary_wraps
 )]
-#![feature(once_cell)]
 
 pub use common::{Boundary, Direction, Generator, Height, SliceIndex};
 pub use contraction::Bias;

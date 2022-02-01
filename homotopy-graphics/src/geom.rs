@@ -189,7 +189,8 @@ impl CubicalGeometry {
 
         // TOOD(@calintat): Inline `flatten_elements`.
         for element in mesh.flatten_elements() {
-            let n = element.len().log2() as usize;
+            // integer logarithm in base 2
+            let n = (usize::BITS - element.len().leading_zeros()) as usize;
 
             if n >= depth {
                 continue;
@@ -404,7 +405,7 @@ impl Cube {
                     .into_iter()
                     .filter_map(|[i, j, k]| {
                         let tri @ [a, b, c] = [verts[i], verts[j], verts[k]];
-                        (a != b && a != c && b != c).then_some(Simplex::Tri(tri))
+                        (a != b && a != c && b != c).then(|| Simplex::Tri(tri))
                     })
                     .collect()
             }
@@ -443,7 +444,7 @@ impl Cube {
                     .filter_map(|[i, j, k, l]| {
                         let tetra @ [a, b, c, d] = [verts[i], verts[j], verts[k], verts[l]];
                         (a != b && a != c && b != c && b != d && c != d)
-                            .then_some(Simplex::Tetra(tetra))
+                            .then(|| Simplex::Tetra(tetra))
                     })
                     .collect()
             }

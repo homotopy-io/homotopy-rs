@@ -607,6 +607,7 @@ dependencies = [
  "insta",
  "itertools",
  "log",
+ "once_cell",
  "petgraph",
  "quickcheck",
  "quickcheck_macros",

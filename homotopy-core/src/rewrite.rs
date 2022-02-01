@@ -1,21 +1,19 @@
-use std::{
-    cmp::Ordering,
-    convert::{From, Into, TryFrom},
-    fmt,
-    hash::Hash,
-    lazy::SyncOnceCell,
-    ops::Range,
-};
-
-use hashconsing::{consign, HConsed, HashConsign};
-use thiserror::Error;
-
 use crate::{
     common::{DimensionError, Generator, Mode, RegularHeight, SingularHeight},
     diagram::Diagram,
     util::first_max_generator,
     Boundary,
 };
+use hashconsing::{consign, HConsed, HashConsign};
+use once_cell::sync::OnceCell;
+use std::{
+    cmp::Ordering,
+    convert::{From, Into, TryFrom},
+    fmt,
+    hash::Hash,
+    ops::Range,
+};
+use thiserror::Error;
 
 consign! {
     let REWRITE_FACTORY = consign(37) for RewriteInternal;
@@ -43,8 +41,8 @@ pub struct Cospan {
 pub struct RewriteInternal {
     dimension: usize,
     cones: Vec<Cone>,
-    max_generator_source: SyncOnceCell<Option<Generator>>,
-    max_generator_target: SyncOnceCell<Option<Generator>>,
+    max_generator_source: OnceCell<Option<Generator>>,
+    max_generator_target: OnceCell<Option<Generator>>,
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
@@ -340,8 +338,8 @@ impl RewriteN {
         Self(REWRITE_FACTORY.mk(RewriteInternal {
             dimension,
             cones,
-            max_generator_source: SyncOnceCell::new(),
-            max_generator_target: SyncOnceCell::new(),
+            max_generator_source: OnceCell::new(),
+            max_generator_target: OnceCell::new(),
         }))
     }
 
