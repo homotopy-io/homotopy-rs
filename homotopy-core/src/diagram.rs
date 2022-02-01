@@ -1,11 +1,12 @@
 use std::{
+    cell::RefCell,
     collections::HashSet,
     convert::{From, Into, TryFrom},
     fmt,
     hash::Hash,
 };
 
-use hashconsing::{consign, HConsed, HashConsign};
+use hashconsing::{HConsed, HConsign, HashConsign};
 use thiserror::Error;
 
 use crate::{
@@ -171,8 +172,8 @@ pub fn globularity(s: &Diagram, t: &Diagram) -> bool {
 #[derive(PartialEq, Eq, Hash, Clone, PartialOrd, Ord)]
 pub struct DiagramN(HConsed<DiagramInternal>);
 
-consign! {
-   let DIAGRAM_FACTORY = consign(37) for DiagramInternal;
+thread_local! {
+    static DIAGRAM_FACTORY: RefCell<HConsign<DiagramInternal>> = RefCell::new(HConsign::with_capacity(37));
 }
 
 impl DiagramN {
@@ -222,11 +223,14 @@ impl DiagramN {
     /// Unsafe version of `new` which does not check if the diagram is well-formed.
     #[inline]
     pub(crate) fn new_unsafe(source: Diagram, cospans: Vec<Cospan>) -> Self {
-        Self(DIAGRAM_FACTORY.mk(DiagramInternal { source, cospans }))
+        Self(
+            DIAGRAM_FACTORY
+                .with(|factory| factory.borrow_mut().mk(DiagramInternal { source, cospans })),
+        )
     }
 
     pub(crate) fn collect_garbage() {
-        DIAGRAM_FACTORY.collect_to_fit();
+        DIAGRAM_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
     }
 
     /// The dimension of the diagram, which is at least one.

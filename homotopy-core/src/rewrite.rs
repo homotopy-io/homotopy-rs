@@ -4,9 +4,10 @@ use crate::{
     util::first_max_generator,
     Boundary,
 };
-use hashconsing::{consign, HConsed, HashConsign};
-use once_cell::sync::OnceCell;
+use hashconsing::{HConsed, HConsign, HashConsign};
+use once_cell::unsync::OnceCell;
 use std::{
+    cell::RefCell,
     cmp::Ordering,
     convert::{From, Into, TryFrom},
     fmt,
@@ -15,11 +16,12 @@ use std::{
 };
 use thiserror::Error;
 
-consign! {
-    let REWRITE_FACTORY = consign(37) for RewriteInternal;
-}
-consign! {
-    let CONE_FACTORY = consign(37) for ConeInternal;
+thread_local! {
+    static REWRITE_FACTORY: RefCell<HConsign<RewriteInternal>> =
+        RefCell::new(HConsign::with_capacity(37));
+
+    static CONE_FACTORY: RefCell<HConsign<ConeInternal>> =
+        RefCell::new(HConsign::with_capacity(37));
 }
 
 #[derive(Debug, Error)]
@@ -335,11 +337,13 @@ impl RewriteN {
         // cones.
         cones.retain(|cone| !cone.is_identity());
 
-        Self(REWRITE_FACTORY.mk(RewriteInternal {
-            dimension,
-            cones,
-            max_generator_source: OnceCell::new(),
-            max_generator_target: OnceCell::new(),
+        Self(REWRITE_FACTORY.with(|factory| {
+            factory.borrow_mut().mk(RewriteInternal {
+                dimension,
+                cones,
+                max_generator_source: OnceCell::new(),
+                max_generator_target: OnceCell::new(),
+            })
         }))
     }
 
@@ -445,7 +449,7 @@ impl RewriteN {
     }
 
     pub(crate) fn collect_garbage() {
-        REWRITE_FACTORY.collect_to_fit();
+        REWRITE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
     }
 
     pub(crate) fn cones(&self) -> &[Cone] {
@@ -781,16 +785,18 @@ impl Cone {
     ) -> Self {
         Self {
             index,
-            internal: CONE_FACTORY.mk(ConeInternal {
-                source,
-                target,
-                slices,
+            internal: CONE_FACTORY.with(|factory| {
+                factory.borrow_mut().mk(ConeInternal {
+                    source,
+                    target,
+                    slices,
+                })
             }),
         }
     }
 
     pub(crate) fn collect_garbage() {
-        CONE_FACTORY.collect_to_fit();
+        CONE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
     }
 
     pub(crate) fn is_identity(&self) -> bool {
