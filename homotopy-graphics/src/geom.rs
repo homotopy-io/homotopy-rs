@@ -1,5 +1,5 @@
 use std::{
-    cmp::Ordering,
+    cmp::{self, Ordering},
     ops::{Deref, DerefMut},
 };
 
@@ -81,6 +81,18 @@ pub struct VertData {
     pub flow: f32,
     pub boundary: Boundary,
     pub generator: Generator,
+}
+
+impl VertData {
+    pub fn min_generator<'a>(&'a self, other: &'a Self) -> &'a Self {
+        if self.flow < other.flow {
+            self
+        } else if other.flow < self.flow {
+            other
+        } else {
+            cmp::min_by_key(self, other, |v| v.generator.dimension)
+        }
+    }
 }
 
 impl Deref for VertData {
@@ -214,7 +226,7 @@ impl CubicalGeometry {
             }));
         }
 
-        // TOOD(@calintat): Inline `flatten_elements`.
+        // TODO(@calintat): Inline `flatten_elements`.
         for element in mesh.flatten_elements() {
             let n = match element.len() {
                 1 => 0,
@@ -230,9 +242,16 @@ impl CubicalGeometry {
                 .collect::<Vec<_>>();
             let generator = verts
                 .iter()
-                .map(|v| geom.verts[*v].generator)
-                .min_by_key(|g| g.dimension)
-                .unwrap();
+                .map(|v| &geom.verts[*v])
+                .fold(None, |acc: Option<&VertData>, v| {
+                    if let Some(acc) = acc {
+                        Some(acc.min_generator(v))
+                    } else {
+                        Some(v)
+                    }
+                })
+                .unwrap()
+                .generator;
 
             if diagram.dimension().saturating_sub(generator.dimension) != n {
                 continue;
@@ -249,7 +268,7 @@ impl CubicalGeometry {
                     // Curve extraction.
                     let curve = geom.curves.values_mut().find(|curve| {
                         let &curve_target = curve.last().unwrap();
-                        curve_target == verts[0]
+                        curve_target == verts[0] && curve.generator == generator
                     });
                     if let Some(curve) = curve {
                         curve.push(verts[1]);
