@@ -109,10 +109,7 @@ impl<'a> Subdivider<'a> {
             let v = 0.5 * (**v_0 + **v_1);
             let flow = 0.5 * (v_0.flow + v_1.flow);
             let boundary = cmp::max(Boundary::One, cmp::max(v_0.boundary, v_1.boundary));
-            let generator = cmp::min_by_key(v_0, v_1, |v| {
-                (v.flow.floor() as usize, v.generator.dimension)
-            })
-            .generator;
+            let generator = v_0.min_generator(v_1).generator;
 
             self.geom.mk_vert(VertData {
                 vert: v,
