@@ -189,12 +189,13 @@ impl CubicalGeometry {
 
         // TOOD(@calintat): Inline `flatten_elements`.
         for element in mesh.flatten_elements() {
-            // integer logarithm in base 2
-            let n = (usize::BITS - element.len().leading_zeros()) as usize;
-
-            if n >= depth {
-                continue;
-            }
+            let n = match element.len() {
+                1 => 0,
+                2 => 1,
+                4 => 2,
+                8 if depth > 3 => 3,
+                _ => continue,
+            };
 
             let verts = element
                 .into_iter()
