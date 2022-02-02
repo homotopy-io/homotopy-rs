@@ -494,7 +494,7 @@ impl CubicalGeometry {
                         Ordering::Greater => Some(Direction::Backward),
                     }
                 })
-                .unwrap_or(Direction::Forward)
+                .unwrap()
         })
     }
 
@@ -514,7 +514,7 @@ impl CubicalGeometry {
                         Ordering::Greater => Some(Direction::Backward),
                     }
                 })
-                .unwrap_or(Direction::Forward)
+                .unwrap()
         })
     }
 }
