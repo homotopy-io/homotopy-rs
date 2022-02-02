@@ -195,7 +195,7 @@ impl<'a> TriBufferingCtx<'a> {
     }
 
     fn extract_buffers(mut self) -> Result<Vec<TriVertexArrayData>> {
-        for tri in self.geom.tris() {
+        for tri in self.geom.areas.values().copied() {
             self.push_tri(tri)?;
         }
 
@@ -203,7 +203,7 @@ impl<'a> TriBufferingCtx<'a> {
             self.push_curve(curve.generator, &*curve)?;
         }
 
-        for point in self.geom.points() {
+        for point in self.geom.points.values().copied() {
             self.push_point(point)?;
         }
 
@@ -363,7 +363,7 @@ struct TetraBufferer<'a> {
 
 impl<'a> TetraBufferer<'a> {
     fn new(geom: &'a SimplicialGeometry) -> Self {
-        let len = geom.elements.len();
+        let len = geom.volumes.len();
         let segments = 6 * len;
 
         Self {
@@ -496,11 +496,11 @@ impl<'a> TetraBufferer<'a> {
     }
 
     fn extract_buffers(mut self, ctx: &GlCtx) -> Result<TetraBuffers> {
-        for tetra in self.geom.tetras() {
+        for tetra in self.geom.volumes.values().copied() {
             self.push_tetra(tetra);
         }
 
-        for tri in self.geom.tris() {
+        for tri in self.geom.areas.values().copied() {
             self.push_wireframe_tri(tri);
         }
 

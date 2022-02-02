@@ -3,7 +3,7 @@ use std::{cmp, mem};
 use homotopy_common::{hash::FastHashMap, idx::IdxVec};
 use ultraviolet::{Mat4, Vec4};
 
-use crate::geom::{Boundary, Cube, CubicalGeometry, CurveData, Vert, VertData};
+use crate::geom::{Area, Boundary, CubicalGeometry, CurveData, Line, Vert, VertData, Volume};
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum Pass {
@@ -73,11 +73,11 @@ impl<'a> Subdivider<'a> {
     pub(super) fn new(geom: &'a mut CubicalGeometry) -> Self {
         Self {
             edge_division_memory: FastHashMap::with_capacity_and_hasher(
-                geom.elements.len(),
+                geom.lines.len(),
                 Default::default(),
             ),
             face_division_memory: FastHashMap::with_capacity_and_hasher(
-                geom.elements.len(),
+                geom.areas.len(),
                 Default::default(),
             ),
             valence: IdxVec::with_capacity(geom.verts.len()),
@@ -166,7 +166,7 @@ impl<'a> Subdivider<'a> {
 
                 for [i, j, k, l] in Self::SQUARE_ASSEMBLY_ORDER {
                     self.geom
-                        .mk_square([points[i], points[j], points[k], points[l]]);
+                        .mk_area([points[i], points[j], points[k], points[l]]);
                 }
             }
 
@@ -226,7 +226,7 @@ impl<'a> Subdivider<'a> {
         points[26] = self.interpolate_edge([points[20], points[25]], false);
 
         for [a, b, c, d, e, f, g, h] in Self::CUBE_ASSEMBLY_ORDER {
-            self.geom.mk_cube([
+            self.geom.mk_volume([
                 points[a], points[b], points[c], points[d], points[e], points[f], points[g],
                 points[h],
             ]);
@@ -234,8 +234,8 @@ impl<'a> Subdivider<'a> {
     }
 
     #[inline]
-    fn smooth_cube(&mut self, cube: [Vert; 8]) {
-        let [a, b, c, d, e, f, g, h] = cube;
+    fn smooth_cube(&mut self, cube: Volume) {
+        let cube @ [a, b, c, d, e, f, g, h] = self.geom.volumes[cube];
         // Gather the boundaries of its constituent vertices
         let bounds = [
             self.geom.verts[a].boundary,
@@ -273,8 +273,8 @@ impl<'a> Subdivider<'a> {
     }
 
     #[inline]
-    fn smooth_square(&mut self, square: [Vert; 4]) {
-        let [a, b, c, d] = square;
+    fn smooth_square(&mut self, square: Area) {
+        let square @ [a, b, c, d] = self.geom.areas[square];
         // Gather the boundaries of its constituent vertices
         let bounds = [
             self.geom.verts[a].boundary,
@@ -300,8 +300,8 @@ impl<'a> Subdivider<'a> {
     }
 
     #[inline]
-    fn smooth_line(&mut self, line: [Vert; 2]) {
-        let [a, b] = line;
+    fn smooth_line(&mut self, line: Line) {
+        let line @ [a, b] = self.geom.lines[line];
         let bounds = [self.geom.verts[a].boundary, self.geom.verts[b].boundary];
         let weights = Self::line_weight_matrix(bounds);
         let line_matrix = Mat4::new(
@@ -324,27 +324,33 @@ impl<'a> Subdivider<'a> {
         // let unmodified = self.geom.clone();
 
         // 1. Remove all elements from geom
-        let mut curves = IdxVec::new();
-        let mut elements = IdxVec::new();
+        // These capacities are carefully specified to minimise allocations during
+        // subdivision. This keeps the caches hot and avoids wasting time in `malloc`.
+        let mut curves = IdxVec::with_capacity(self.geom.curves.len());
+        let mut lines = IdxVec::with_capacity(2 * self.geom.lines.len());
+        let mut squares = IdxVec::with_capacity(4 * self.geom.areas.len());
+        let mut cubes = IdxVec::with_capacity(8 * self.geom.volumes.len());
         mem::swap(&mut self.geom.curves, &mut curves);
-        mem::swap(&mut self.geom.elements, &mut elements);
+        mem::swap(&mut self.geom.lines, &mut lines);
+        mem::swap(&mut self.geom.areas, &mut squares);
+        mem::swap(&mut self.geom.volumes, &mut cubes);
 
         // 2. Subdivide and obtain valence
-        for element in elements.into_values() {
-            match element {
-                Cube::Point(point) => {
-                    self.geom.mk_point(point);
-                }
-                Cube::Line(line) => {
-                    self.interpolate_edge(line, true);
-                }
-                Cube::Square(square) => {
-                    self.interpolate_face(square, true);
-                }
-                Cube::Cube(cube) => {
-                    self.interpolate_cube(cube);
-                }
-            }
+        //
+        // The order in which these passes are performed is important. We only want to
+        // generate new geometrical elements when they're semantically important. Thus,
+        // if we subdivide an edge of a square, it should only result in new lines if
+        // that edge was already a line. Subdividing lines first gives us this property.
+        for line in lines.into_values() {
+            self.interpolate_edge(line, true);
+        }
+
+        for square in squares.into_values() {
+            self.interpolate_face(square, true);
+        }
+
+        for cube in cubes.into_values() {
+            self.interpolate_cube(cube);
         }
 
         for curve in curves.into_values() {
@@ -365,20 +371,25 @@ impl<'a> Subdivider<'a> {
         }
 
         // 3. Smooth
+        //
+        // Again, the order of these passes is critical. In particular, we smooth in
+        // the reverse order to the order we interpolated. This guarantees that a vertex's
+        // new position reflects its role in the highest-dimensional geometrical element
+        // it participates in.
         let len = self.geom.verts.len();
         self.valence = IdxVec::splat(0, len);
         self.smoothed = IdxVec::splat(Vec4::zero(), len);
         self.touched = IdxVec::splat(None, len);
 
-        for cube in self.geom.cubes().collect::<Vec<_>>() {
+        for cube in self.geom.volumes.keys() {
             self.smooth_cube(cube);
         }
 
-        for square in self.geom.squares().collect::<Vec<_>>() {
+        for square in self.geom.areas.keys() {
             self.smooth_square(square);
         }
 
-        for line in self.geom.lines().collect::<Vec<_>>() {
+        for line in self.geom.lines.keys() {
             self.smooth_line(line);
         }
 

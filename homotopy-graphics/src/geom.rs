@@ -15,23 +15,51 @@ use ultraviolet::Vec4;
 declare_idx! {
     pub struct Vert = usize;
     pub struct Curve = usize;
-    pub struct Element = usize;
+    pub struct Point = usize;
+    pub struct Line = usize;
+    pub struct Area = usize;
+    pub struct Volume = usize;
 }
 
-#[derive(Clone, Debug)]
-pub struct Geometry<ElementData> {
+pub trait ElementData {
+    type Point: Copy + Eq;
+    type Line: Copy + Eq;
+    type Area: Copy + Eq;
+    type Volume: Copy + Eq;
+}
+
+#[derive(Default, Clone, Debug)]
+pub struct Geometry<E: ElementData> {
     pub verts: IdxVec<Vert, VertData>,
     pub curves: IdxVec<Curve, CurveData>,
-    pub elements: IdxVec<Element, ElementData>,
+    pub points: IdxVec<Point, E::Point>,
+    pub lines: IdxVec<Line, E::Line>,
+    pub areas: IdxVec<Area, E::Area>,
+    pub volumes: IdxVec<Volume, E::Volume>,
 }
 
-impl<ElementData> Geometry<ElementData> {
+impl<E> Geometry<E>
+where
+    E: ElementData,
+{
     pub fn mk_vert(&mut self, vert: VertData) -> Vert {
         self.verts.push(vert)
     }
 
-    pub fn mk_element(&mut self, element: ElementData) -> Element {
-        self.elements.push(element)
+    pub fn mk_point(&mut self, point: E::Point) -> Point {
+        self.points.push(point)
+    }
+
+    pub fn mk_line(&mut self, line: E::Line) -> Line {
+        self.lines.push(line)
+    }
+
+    pub fn mk_area(&mut self, area: E::Area) -> Area {
+        self.areas.push(area)
+    }
+
+    pub fn mk_volume(&mut self, volume: E::Volume) -> Volume {
+        self.volumes.push(volume)
     }
 
     pub fn bounds(&self) -> (Vec4, Vec4) {
@@ -137,25 +165,27 @@ impl DerefMut for CurveData {
 
 // Element data
 
-#[allow(clippy::enum_variant_names)]
-#[derive(Clone, Debug)]
-pub enum Cube {
-    Point(Vert),
-    Line([Vert; 2]),
-    Square([Vert; 4]),
-    Cube([Vert; 8]),
+#[derive(Default)]
+pub struct CubeData;
+#[derive(Default)]
+pub struct SimplexData;
+
+impl ElementData for CubeData {
+    type Point = Vert;
+    type Line = [Vert; 2];
+    type Area = [Vert; 4];
+    type Volume = [Vert; 8];
 }
 
-#[derive(Clone, Debug)]
-pub enum Simplex {
-    Point(Vert),
-    Line([Vert; 2]),
-    Tri([Vert; 3]),
-    Tetra([Vert; 4]),
+impl ElementData for SimplexData {
+    type Point = Vert;
+    type Line = [Vert; 2];
+    type Area = [Vert; 3];
+    type Volume = [Vert; 4];
 }
 
-pub type CubicalGeometry = Geometry<Cube>;
-pub type SimplicialGeometry = Geometry<Simplex>;
+pub type CubicalGeometry = Geometry<CubeData>;
+pub type SimplicialGeometry = Geometry<SimplexData>;
 
 impl CubicalGeometry {
     pub fn new(diagram: &DiagramN, depth: usize) -> Result<Self, DimensionError> {
@@ -167,11 +197,7 @@ impl CubicalGeometry {
         let mesh = Mesh::new(diagram, depth)?;
         let layout = Layout::new(diagram, depth)?;
 
-        let mut geom = Self {
-            verts: IdxVec::new(),
-            curves: IdxVec::new(),
-            elements: IdxVec::new(),
-        };
+        let mut geom: Self = Default::default();
         let mut node_to_vert = IdxVec::with_capacity(mesh.graph.node_count());
 
         for (path, diagram) in mesh.graph.node_weights() {
@@ -235,10 +261,10 @@ impl CubicalGeometry {
                     }
                 }
                 4 => {
-                    geom.mk_square(verts.try_into().unwrap());
+                    geom.mk_area(verts.try_into().unwrap());
                 }
                 8 => {
-                    geom.mk_cube(verts.try_into().unwrap());
+                    geom.mk_volume(verts.try_into().unwrap());
                 }
                 _ => (),
             }
@@ -255,231 +281,109 @@ impl CubicalGeometry {
 
         Ok(geom)
     }
-
-    pub fn points(&self) -> impl Iterator<Item = Vert> + '_ {
-        self.elements.values().filter_map(|cube| {
-            if let Cube::Point(vert) = cube {
-                Some(*vert)
-            } else {
-                None
-            }
-        })
-    }
-
-    pub fn lines(&self) -> impl Iterator<Item = [Vert; 2]> + '_ {
-        self.elements.values().filter_map(|cube| {
-            if let Cube::Line(verts) = cube {
-                Some(*verts)
-            } else {
-                None
-            }
-        })
-    }
-
-    pub fn squares(&self) -> impl Iterator<Item = [Vert; 4]> + '_ {
-        self.elements.values().filter_map(|cube| {
-            if let Cube::Square(verts) = cube {
-                Some(*verts)
-            } else {
-                None
-            }
-        })
-    }
-
-    pub fn cubes(&self) -> impl Iterator<Item = [Vert; 8]> + '_ {
-        self.elements.values().filter_map(|cube| {
-            if let Cube::Cube(verts) = cube {
-                Some(*verts)
-            } else {
-                None
-            }
-        })
-    }
-
-    pub fn mk_point(&mut self, vert: Vert) -> Element {
-        self.mk_element(Cube::Point(vert))
-    }
-
-    pub fn mk_line(&mut self, verts: [Vert; 2]) -> Element {
-        self.mk_element(Cube::Line(verts))
-    }
-
-    pub fn mk_square(&mut self, verts: [Vert; 4]) -> Element {
-        self.mk_element(Cube::Square(verts))
-    }
-
-    pub fn mk_cube(&mut self, verts: [Vert; 8]) -> Element {
-        self.mk_element(Cube::Cube(verts))
-    }
-}
-
-impl SimplicialGeometry {
-    pub fn points(&self) -> impl Iterator<Item = Vert> + '_ {
-        self.elements.values().filter_map(|simplex| {
-            if let Simplex::Point(vert) = simplex {
-                Some(*vert)
-            } else {
-                None
-            }
-        })
-    }
-
-    pub fn lines(&self) -> impl Iterator<Item = [Vert; 2]> + '_ {
-        self.elements.values().filter_map(|simplex| {
-            if let Simplex::Line(verts) = simplex {
-                Some(*verts)
-            } else {
-                None
-            }
-        })
-    }
-
-    pub fn tris(&self) -> impl Iterator<Item = [Vert; 3]> + '_ {
-        self.elements.values().filter_map(|simplex| {
-            if let Simplex::Tri(verts) = simplex {
-                Some(*verts)
-            } else {
-                None
-            }
-        })
-    }
-
-    pub fn tetras(&self) -> impl Iterator<Item = [Vert; 4]> + '_ {
-        self.elements.values().filter_map(|simplex| {
-            if let Simplex::Tetra(verts) = simplex {
-                Some(*verts)
-            } else {
-                None
-            }
-        })
-    }
-
-    pub fn mk_point(&mut self, vert: Vert) -> Element {
-        self.mk_element(Simplex::Point(vert))
-    }
-
-    pub fn mk_line(&mut self, verts: [Vert; 2]) -> Element {
-        self.mk_element(Simplex::Line(verts))
-    }
-
-    pub fn mk_tri(&mut self, verts: [Vert; 3]) -> Element {
-        self.mk_element(Simplex::Tri(verts))
-    }
-
-    pub fn mk_tetra(&mut self, verts: [Vert; 4]) -> Element {
-        self.mk_element(Simplex::Tetra(verts))
-    }
 }
 
 // Triangulation
 
-const TRI_ASSEMBLY_ORDER: [[usize; 3]; 2] = [[0, 1, 3], [0, 3, 2]];
+impl CubicalGeometry {
+    fn triangulate_square(&self, square: Area) -> impl Iterator<Item = [Vert; 3]> + '_ {
+        const TRI_ASSEMBLY_ORDER: [[usize; 3]; 2] = [[0, 1, 3], [0, 3, 2]];
 
-const TETRA_ASSEMBLY_ORDER: [[usize; 4]; 6] = [
-    [0, 3, 1, 7],
-    [0, 1, 5, 7],
-    [0, 2, 3, 7],
-    [0, 2, 7, 6],
-    [0, 5, 4, 7],
-    [0, 4, 6, 7],
-];
+        let verts = self.areas[square];
+        // Rotate the square
+        let rotation = match self.orientation_of_square(verts) {
+            [Direction::Forward, Direction::Forward] => [0, 1, 2, 3],
+            [Direction::Forward, Direction::Backward] => [1, 3, 0, 2],
+            [Direction::Backward, Direction::Forward] => [2, 0, 3, 1],
+            [Direction::Backward, Direction::Backward] => [3, 2, 1, 0],
+        };
+        let verts = rotation.map(|i| verts[i]);
 
-impl Cube {
-    fn triangulate(&self, geom: &CubicalGeometry) -> Vec<Simplex> {
-        match *self {
-            Cube::Point(vert) => {
-                vec![Simplex::Point(vert)]
-            }
-            Cube::Line(verts) => {
-                vec![Simplex::Line(verts)]
-            }
-            Cube::Square(verts) => {
-                // Rotate the square
-                let rotation = match geom.orientation_of_square(verts) {
-                    [Direction::Forward, Direction::Forward] => [0, 1, 2, 3],
-                    [Direction::Forward, Direction::Backward] => [1, 3, 0, 2],
-                    [Direction::Backward, Direction::Forward] => [2, 0, 3, 1],
-                    [Direction::Backward, Direction::Backward] => [3, 2, 1, 0],
-                };
-                let verts = rotation.map(|i| verts[i]);
+        TRI_ASSEMBLY_ORDER.into_iter().filter_map(move |[i, j, k]| {
+            let tri @ [a, b, c] = [verts[i], verts[j], verts[k]];
+            (a != b && a != c && b != c).then(|| tri)
+        })
+    }
 
-                TRI_ASSEMBLY_ORDER
-                    .into_iter()
-                    .filter_map(|[i, j, k]| {
-                        let tri @ [a, b, c] = [verts[i], verts[j], verts[k]];
-                        (a != b && a != c && b != c).then(|| Simplex::Tri(tri))
-                    })
-                    .collect()
-            }
-            Cube::Cube(verts) => {
-                // Rotate the cube
-                let rotation = match geom.orientation_of_cube(verts) {
-                    [Direction::Forward, Direction::Forward, Direction::Forward] => {
-                        [0, 1, 2, 3, 4, 5, 6, 7]
-                    }
-                    [Direction::Forward, Direction::Forward, Direction::Backward] => {
-                        [1, 0, 5, 4, 3, 2, 7, 6]
-                    }
-                    [Direction::Forward, Direction::Backward, Direction::Forward] => {
-                        [2, 0, 3, 1, 6, 4, 7, 5]
-                    }
-                    [Direction::Forward, Direction::Backward, Direction::Backward] => {
-                        [3, 1, 7, 5, 2, 0, 6, 4]
-                    }
-                    [Direction::Backward, Direction::Forward, Direction::Forward] => {
-                        [4, 0, 6, 2, 5, 1, 7, 3]
-                    }
-                    [Direction::Backward, Direction::Forward, Direction::Backward] => {
-                        [5, 1, 4, 0, 7, 3, 6, 2]
-                    }
-                    [Direction::Backward, Direction::Backward, Direction::Forward] => {
-                        [6, 2, 7, 3, 4, 0, 5, 1]
-                    }
-                    [Direction::Backward, Direction::Backward, Direction::Backward] => {
-                        [7, 3, 5, 1, 6, 2, 4, 0]
-                    }
-                };
-                let verts = rotation.map(|i| verts[i]);
+    fn triangulate_cube(&self, cube: Volume) -> impl Iterator<Item = [Vert; 4]> + '_ {
+        const TETRA_ASSEMBLY_ORDER: [[usize; 4]; 6] = [
+            [0, 3, 1, 7],
+            [0, 1, 5, 7],
+            [0, 2, 3, 7],
+            [0, 2, 7, 6],
+            [0, 5, 4, 7],
+            [0, 4, 6, 7],
+        ];
 
-                TETRA_ASSEMBLY_ORDER
-                    .into_iter()
-                    .filter_map(|[i, j, k, l]| {
-                        let tetra @ [a, b, c, d] = [verts[i], verts[j], verts[k], verts[l]];
-                        (a != b && a != c && b != c && b != d && c != d)
-                            .then(|| Simplex::Tetra(tetra))
-                    })
-                    .collect()
+        let verts = self.volumes[cube];
+        // Rotate the cube
+        let rotation = match self.orientation_of_cube(verts) {
+            [Direction::Forward, Direction::Forward, Direction::Forward] => {
+                [0, 1, 2, 3, 4, 5, 6, 7]
             }
-        }
+            [Direction::Forward, Direction::Forward, Direction::Backward] => {
+                [1, 0, 5, 4, 3, 2, 7, 6]
+            }
+            [Direction::Forward, Direction::Backward, Direction::Forward] => {
+                [2, 0, 3, 1, 6, 4, 7, 5]
+            }
+            [Direction::Forward, Direction::Backward, Direction::Backward] => {
+                [3, 1, 7, 5, 2, 0, 6, 4]
+            }
+            [Direction::Backward, Direction::Forward, Direction::Forward] => {
+                [4, 0, 6, 2, 5, 1, 7, 3]
+            }
+            [Direction::Backward, Direction::Forward, Direction::Backward] => {
+                [5, 1, 4, 0, 7, 3, 6, 2]
+            }
+            [Direction::Backward, Direction::Backward, Direction::Forward] => {
+                [6, 2, 7, 3, 4, 0, 5, 1]
+            }
+            [Direction::Backward, Direction::Backward, Direction::Backward] => {
+                [7, 3, 5, 1, 6, 2, 4, 0]
+            }
+        };
+        let verts = rotation.map(|i| verts[i]);
+
+        TETRA_ASSEMBLY_ORDER
+            .into_iter()
+            .filter_map(move |[i, j, k, l]| {
+                let tetra @ [a, b, c, d] = [verts[i], verts[j], verts[k], verts[l]];
+                (a != b && a != c && b != c && b != d && c != d).then(|| tetra)
+            })
     }
 }
 
 impl From<CubicalGeometry> for SimplicialGeometry {
-    fn from(cubical: CubicalGeometry) -> Self {
+    fn from(geom: CubicalGeometry) -> Self {
+        let areas = geom
+            .areas
+            .keys()
+            .flat_map(|square| geom.triangulate_square(square))
+            .collect();
+        let volumes = geom
+            .volumes
+            .keys()
+            .flat_map(|cube| geom.triangulate_cube(cube))
+            .collect();
+
         Self {
-            verts: cubical.verts.clone(),
-            curves: cubical.curves.clone(),
-            elements: cubical
-                .elements
-                .values()
-                .flat_map(|cube| cube.triangulate(&cubical))
-                .collect(),
+            verts: geom.verts,
+            curves: geom.curves,
+            points: geom.points,
+            lines: geom.lines,
+            areas,
+            volumes,
         }
     }
 }
 
 // Orientation
 
-const SQUARE_EDGE_ORDER: [[[usize; 2]; 2]; 2] = [[[0, 2], [1, 3]], [[0, 1], [2, 3]]];
-
-const CUBE_EDGE_ORDER: [[[usize; 2]; 4]; 3] = [
-    [[0, 4], [1, 5], [2, 6], [3, 7]],
-    [[0, 2], [1, 3], [4, 6], [5, 7]],
-    [[0, 1], [2, 3], [4, 5], [6, 7]],
-];
-
 impl CubicalGeometry {
     fn orientation_of_square(&self, verts: [Vert; 4]) -> [Direction; 2] {
+        const SQUARE_EDGE_ORDER: [[[usize; 2]; 2]; 2] = [[[0, 2], [1, 3]], [[0, 1], [2, 3]]];
+
         SQUARE_EDGE_ORDER.map(|edges| {
             edges
                 .into_iter()
@@ -500,6 +404,12 @@ impl CubicalGeometry {
     }
 
     fn orientation_of_cube(&self, verts: [Vert; 8]) -> [Direction; 3] {
+        const CUBE_EDGE_ORDER: [[[usize; 2]; 4]; 3] = [
+            [[0, 4], [1, 5], [2, 6], [3, 7]],
+            [[0, 2], [1, 3], [4, 6], [5, 7]],
+            [[0, 1], [2, 3], [4, 5], [6, 7]],
+        ];
+
         CUBE_EDGE_ORDER.map(|edges| {
             edges
                 .into_iter()
