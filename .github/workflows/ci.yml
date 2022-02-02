@@ -1,6 +1,12 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches-ignore:
+      # Don't run on dependabot PRs
+      # https://github.com/actions-rs/clippy-check/issues/2#issuecomment-807852653
+      - 'dependabot/**'
+    pull_request:
 
 jobs:
   check:
@@ -14,7 +20,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2021-11-01
+          toolchain: stable
           target: wasm32-unknown-unknown
           override: true
 
@@ -37,7 +43,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2021-11-01
+          toolchain: stable
           target: wasm32-unknown-unknown
           override: true
 
@@ -50,19 +56,16 @@ jobs:
 
   lint:
     name: Lint
-    # Don't run on dependabot PRs
-    # https://github.com/actions-rs/clippy-check/issues/2#issuecomment-807852653
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Install stable toolchain
+      - name: Install nightly toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2021-11-01
+          toolchain: nightly
           target: wasm32-unknown-unknown
           override: true
           components: rustfmt, clippy
@@ -93,7 +96,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2021-11-01
+          toolchain: stable
           target: wasm32-unknown-unknown
           components: rust-src
           override: true
@@ -161,7 +164,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2021-11-01
+          toolchain: stable
           target: wasm32-unknown-unknown
           override: true
 
