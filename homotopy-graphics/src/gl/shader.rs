@@ -281,7 +281,7 @@ pub unsafe trait Uniformable: 'static {
 unsafe impl Uniformable for bool {
     #[inline]
     fn uniform(&self, ctx: &GlCtx, loc: &WebGlUniformLocation) {
-        ctx.with_gl(|gl| gl.uniform1i(Some(loc), *self as i32));
+        ctx.with_gl(|gl| gl.uniform1i(Some(loc), i32::from(*self)));
     }
 }
 

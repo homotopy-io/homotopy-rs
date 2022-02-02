@@ -82,6 +82,7 @@ jobs:
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          toolchain: stable # unstable clippy tends to give invalid lints
           args: -- -D warnings
 
   build:

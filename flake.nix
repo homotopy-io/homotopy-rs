@@ -19,10 +19,11 @@
             inherit system overlays;
           };
           nativeBuildInputs = with pkgs; [
+            rust-bin.nightly.latest.rustfmt
             (
-              rust-bin.stable.latest.default.override {
+              rust-bin.stable.latest.minimal.override {
                 targets = [ "wasm32-unknown-unknown" ];
-                extensions = [ "rust-src" ];
+                extensions = [ "rust-docs" "rust-src" "clippy" ];
               }
             )
             wasm-pack

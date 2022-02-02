@@ -1,11 +1,3 @@
-use crate::{
-    common::{DimensionError, Generator, Mode, RegularHeight, SingularHeight},
-    diagram::Diagram,
-    util::first_max_generator,
-    Boundary,
-};
-use hashconsing::{HConsed, HConsign, HashConsign};
-use once_cell::unsync::OnceCell;
 use std::{
     cell::RefCell,
     cmp::Ordering,
@@ -14,7 +6,17 @@ use std::{
     hash::Hash,
     ops::Range,
 };
+
+use hashconsing::{HConsed, HConsign, HashConsign};
+use once_cell::unsync::OnceCell;
 use thiserror::Error;
+
+use crate::{
+    common::{DimensionError, Generator, Mode, RegularHeight, SingularHeight},
+    diagram::Diagram,
+    util::first_max_generator,
+    Boundary,
+};
 
 thread_local! {
     static REWRITE_FACTORY: RefCell<HConsign<RewriteInternal>> =

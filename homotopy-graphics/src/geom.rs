@@ -137,6 +137,7 @@ impl DerefMut for CurveData {
 
 // Element data
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Clone, Debug)]
 pub enum Cube {
     Point(Vert),
