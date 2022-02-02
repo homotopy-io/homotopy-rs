@@ -50,7 +50,7 @@ impl<ElementData> Geometry<ElementData> {
 #[derive(Clone, Debug)]
 pub struct VertData {
     pub vert: Vec4,
-    pub stratum: isize,
+    pub stratum: f32,
     pub boundary: Boundary,
     pub generator: Generator,
 }
@@ -92,12 +92,12 @@ impl From<usize> for Boundary {
     }
 }
 
-pub fn calculate_stratum(path: &[SliceIndex]) -> isize {
+pub fn calculate_stratum(path: &[SliceIndex]) -> f32 {
     path.iter()
         .map(|&index| match index {
-            SliceIndex::Boundary(_) => -1,
-            SliceIndex::Interior(Height::Regular(_)) => 0,
-            SliceIndex::Interior(Height::Singular(_)) => 1,
+            SliceIndex::Boundary(_) => -1.0,
+            SliceIndex::Interior(Height::Regular(_)) => 0.0,
+            SliceIndex::Interior(Height::Singular(_)) => 1.0,
         })
         .sum()
 }
@@ -484,7 +484,11 @@ impl CubicalGeometry {
                 .into_iter()
                 .find_map(|[i, j]| {
                     let [v_i, v_j] = [verts[i], verts[j]];
-                    match &self.verts[v_i].stratum.cmp(&self.verts[v_j].stratum) {
+                    match &self.verts[v_i]
+                        .stratum
+                        .partial_cmp(&self.verts[v_j].stratum)
+                        .unwrap()
+                    {
                         Ordering::Less => Some(Direction::Forward),
                         Ordering::Equal => None,
                         Ordering::Greater => Some(Direction::Backward),
@@ -500,7 +504,11 @@ impl CubicalGeometry {
                 .into_iter()
                 .find_map(|[i, j]| {
                     let [v_i, v_j] = [verts[i], verts[j]];
-                    match &self.verts[v_i].stratum.cmp(&self.verts[v_j].stratum) {
+                    match &self.verts[v_i]
+                        .stratum
+                        .partial_cmp(&self.verts[v_j].stratum)
+                        .unwrap()
+                    {
                         Ordering::Less => Some(Direction::Forward),
                         Ordering::Equal => None,
                         Ordering::Greater => Some(Direction::Backward),

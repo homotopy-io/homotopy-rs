@@ -107,10 +107,12 @@ impl<'a> Subdivider<'a> {
             let v_0 = &self.geom.verts[a];
             let v_1 = &self.geom.verts[b];
             let v = 0.5 * (**v_0 + **v_1);
-            let stratum = cmp::min(v_0.stratum, v_1.stratum);
+            let stratum = (v_0.stratum + v_1.stratum) / 2.0;
             let boundary = cmp::max(Boundary::One, cmp::max(v_0.boundary, v_1.boundary));
-            let generator =
-                cmp::min_by_key(v_0, v_1, |v| (v.stratum, v.generator.dimension)).generator;
+            let generator = cmp::min_by_key(v_0, v_1, |v| {
+                (v.stratum.floor() as usize, v.generator.dimension)
+            })
+            .generator;
 
             self.geom.mk_vert(VertData {
                 vert: v,

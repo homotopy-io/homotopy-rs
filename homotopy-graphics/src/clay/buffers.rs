@@ -83,7 +83,7 @@ impl<'a> TriBufferingCtx<'a> {
         let generator = tri
             .into_iter()
             .map(|v| &self.geom.verts[v])
-            .min_by_key(|v| (v.stratum, v.generator.dimension))
+            .min_by_key(|v| (v.stratum.floor() as usize, v.generator.dimension))
             .unwrap()
             .generator;
         let geom = self.geom;
