@@ -78,7 +78,7 @@ where
 #[derive(Clone, Debug)]
 pub struct VertData {
     pub vert: Vec4,
-    pub stratum: f32,
+    pub flow: f32,
     pub boundary: Boundary,
     pub generator: Generator,
 }
@@ -120,7 +120,7 @@ impl From<usize> for Boundary {
     }
 }
 
-pub fn calculate_stratum(path: &[SliceIndex]) -> f32 {
+pub fn calculate_flow(path: &[SliceIndex]) -> f32 {
     path.iter()
         .map(|&index| match index {
             SliceIndex::Boundary(_) => -1.0,
@@ -208,7 +208,7 @@ impl CubicalGeometry {
 
             node_to_vert.push(geom.mk_vert(VertData {
                 vert,
-                stratum: calculate_stratum(path),
+                flow: calculate_flow(path),
                 boundary: calculate_boundary(path),
                 generator: diagram.max_generator(),
             }));
@@ -390,8 +390,8 @@ impl CubicalGeometry {
                 .find_map(|[i, j]| {
                     let [v_i, v_j] = [verts[i], verts[j]];
                     match &self.verts[v_i]
-                        .stratum
-                        .partial_cmp(&self.verts[v_j].stratum)
+                        .flow
+                        .partial_cmp(&self.verts[v_j].flow)
                         .unwrap()
                     {
                         Ordering::Less => Some(Direction::Forward),
@@ -416,8 +416,8 @@ impl CubicalGeometry {
                 .find_map(|[i, j]| {
                     let [v_i, v_j] = [verts[i], verts[j]];
                     match &self.verts[v_i]
-                        .stratum
-                        .partial_cmp(&self.verts[v_j].stratum)
+                        .flow
+                        .partial_cmp(&self.verts[v_j].flow)
                         .unwrap()
                     {
                         Ordering::Less => Some(Direction::Forward),
