@@ -17,6 +17,8 @@ use crate::{
 };
 
 mod attach;
+#[cfg(debug_assertions)]
+mod debug;
 mod diagram_gl;
 mod diagram_svg;
 mod project;
