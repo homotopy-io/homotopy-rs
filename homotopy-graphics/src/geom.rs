@@ -1,5 +1,5 @@
 use std::{
-    cmp::{self, Ordering},
+    cmp,
     ops::{Deref, DerefMut},
 };
 
@@ -244,11 +244,7 @@ impl CubicalGeometry {
                 .iter()
                 .map(|v| &geom.verts[*v])
                 .fold(None, |acc: Option<&VertData>, v| {
-                    if let Some(acc) = acc {
-                        Some(acc.min_generator(v))
-                    } else {
-                        Some(v)
-                    }
+                    acc.map(|acc| acc.min_generator(v)).or(Some(v))
                 })
                 .unwrap()
                 .generator;
@@ -408,14 +404,12 @@ impl CubicalGeometry {
                 .into_iter()
                 .find_map(|[i, j]| {
                     let [v_i, v_j] = [verts[i], verts[j]];
-                    match &self.verts[v_i]
-                        .flow
-                        .partial_cmp(&self.verts[v_j].flow)
-                        .unwrap()
-                    {
-                        Ordering::Less => Some(Direction::Forward),
-                        Ordering::Equal => None,
-                        Ordering::Greater => Some(Direction::Backward),
+                    if self.verts[v_i].flow < self.verts[v_j].flow {
+                        Some(Direction::Forward)
+                    } else if self.verts[v_j].flow < self.verts[v_i].flow {
+                        Some(Direction::Backward)
+                    } else {
+                        None
                     }
                 })
                 .unwrap()
@@ -434,14 +428,12 @@ impl CubicalGeometry {
                 .into_iter()
                 .find_map(|[i, j]| {
                     let [v_i, v_j] = [verts[i], verts[j]];
-                    match &self.verts[v_i]
-                        .flow
-                        .partial_cmp(&self.verts[v_j].flow)
-                        .unwrap()
-                    {
-                        Ordering::Less => Some(Direction::Forward),
-                        Ordering::Equal => None,
-                        Ordering::Greater => Some(Direction::Backward),
+                    if self.verts[v_i].flow < self.verts[v_j].flow {
+                        Some(Direction::Forward)
+                    } else if self.verts[v_j].flow < self.verts[v_i].flow {
+                        Some(Direction::Backward)
+                    } else {
+                        None
                     }
                 })
                 .unwrap()
