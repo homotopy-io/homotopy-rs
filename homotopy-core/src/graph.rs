@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut, Range};
+use std::ops::Range;
 
 use homotopy_common::idx::IdxVec;
 use petgraph::{
@@ -11,40 +11,42 @@ use crate::{
     Boundary, Diagram, DiagramN, Direction, Height, Rewrite, RewriteN, SliceIndex,
 };
 
-/// A graph of diagrams and rewrites obtained by exploding a diagram.
+/// The output of explosion consists of the exploded graph and some maps from the original graph into the exploded graph.
 #[derive(Clone, Debug)]
-pub struct SliceGraph<V = (), E = (), Ix = DefaultIx>(DiGraph<(V, Diagram), (E, Rewrite), Ix>)
+pub struct ExplosionOutput<V, E, Ix1, Ix2>
 where
-    Ix: IndexType;
+    Ix1: IndexType,
+    Ix2: IndexType,
+{
+    pub output: SliceGraph<V, E, Ix2>,
+    pub node_to_nodes: IdxVec<NodeIndex<Ix1>, Vec<NodeIndex<Ix2>>>,
+    pub node_to_edges: IdxVec<NodeIndex<Ix1>, Vec<EdgeIndex<Ix2>>>,
+    pub edge_to_edges: IdxVec<EdgeIndex<Ix1>, Vec<EdgeIndex<Ix2>>>,
+}
 
-impl<V, E, Ix> Default for SliceGraph<V, E, Ix>
+pub trait Explodable<V, E, Ix>
 where
     Ix: IndexType,
 {
-    fn default() -> Self {
-        Self(DiGraph::default())
-    }
+    fn singleton<D>(key: V, diagram: D) -> Self
+    where
+        D: Into<Diagram>;
+
+    fn explode<F, G, H, V2, E2, Ix2>(
+        &self,
+        node_map: F,
+        internal_edge_map: G,
+        external_edge_map: H,
+    ) -> Result<ExplosionOutput<V2, E2, Ix, Ix2>, DimensionError>
+    where
+        Ix2: IndexType,
+        F: FnMut(NodeIndex<Ix>, &V, SliceIndex) -> Option<V2>,
+        G: FnMut(NodeIndex<Ix>, &V, RewriteOrigin) -> Option<E2>,
+        H: FnMut(EdgeIndex<Ix>, &E, RewriteOrigin) -> Option<E2>;
 }
 
-impl<V, E, Ix> Deref for SliceGraph<V, E, Ix>
-where
-    Ix: IndexType,
-{
-    type Target = DiGraph<(V, Diagram), (E, Rewrite), Ix>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<V, E, Ix> DerefMut for SliceGraph<V, E, Ix>
-where
-    Ix: IndexType,
-{
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
+/// A graph of diagrams and rewrites obtained by exploding a diagram.
+pub type SliceGraph<V = (), E = (), Ix = DefaultIx> = DiGraph<(V, Diagram), (E, Rewrite), Ix>;
 
 /// Describes from where a rewrite in the output of explosion originates.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -63,47 +65,12 @@ pub enum RewriteOrigin {
     SingularSlice(SingularHeight),
 }
 
-/// The output of explosion consists of the exploded graph and some maps from the original graph into the exploded graph.
-#[derive(Clone, Debug)]
-pub struct ExplosionOutput<V, E, Ix1, Ix2>
-where
-    Ix1: IndexType,
-    Ix2: IndexType,
-{
-    pub output: SliceGraph<V, E, Ix2>,
-    pub node_to_nodes: IdxVec<NodeIndex<Ix1>, Vec<NodeIndex<Ix2>>>,
-    pub node_to_edges: IdxVec<NodeIndex<Ix1>, Vec<EdgeIndex<Ix2>>>,
-    pub edge_to_edges: IdxVec<EdgeIndex<Ix1>, Vec<EdgeIndex<Ix2>>>,
-}
-
-impl<V, E, Ix1, Ix2> Deref for ExplosionOutput<V, E, Ix1, Ix2>
-where
-    Ix1: IndexType,
-    Ix2: IndexType,
-{
-    type Target = SliceGraph<V, E, Ix2>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.output
-    }
-}
-
-impl<V, E, Ix1, Ix2> DerefMut for ExplosionOutput<V, E, Ix1, Ix2>
-where
-    Ix1: IndexType,
-    Ix2: IndexType,
-{
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.output
-    }
-}
-
-impl<V, E, Ix> SliceGraph<V, E, Ix>
+impl<V, E, Ix> Explodable<V, E, Ix> for SliceGraph<V, E, Ix>
 where
     Ix: IndexType,
 {
     /// Creates a new 0-dimensional slice graph.
-    pub fn new<D>(key: V, diagram: D) -> Self
+    fn singleton<D>(key: V, diagram: D) -> Self
     where
         D: Into<Diagram>,
     {
@@ -113,7 +80,7 @@ where
     }
 
     /// Explodes a slice graph to obtain the slice graph one dimension higher.
-    pub fn explode<F, G, H, V2, E2, Ix2>(
+    fn explode<F, G, H, V2, E2, Ix2>(
         &self,
         mut node_map: F,
         mut internal_edge_map: G,
@@ -291,5 +258,39 @@ where
             node_to_edges: internal_edges.map(|es| es.into_iter().flatten().collect()),
             edge_to_edges: external_edges.map(|es| es.into_iter().flatten().collect()),
         })
+    }
+}
+
+impl<V, E, Ix1, Ix2> Explodable<V, E, Ix2> for ExplosionOutput<V, E, Ix1, Ix2>
+where
+    Ix1: IndexType,
+    Ix2: IndexType,
+{
+    fn singleton<D>(key: V, diagram: D) -> Self
+    where
+        D: Into<Diagram>,
+    {
+        Self {
+            output: SliceGraph::singleton(key, diagram),
+            node_to_nodes: Default::default(),
+            node_to_edges: Default::default(),
+            edge_to_edges: Default::default(),
+        }
+    }
+
+    fn explode<F, G, H, V2, E2, Ix3>(
+        &self,
+        node_map: F,
+        internal_edge_map: G,
+        external_edge_map: H,
+    ) -> Result<ExplosionOutput<V2, E2, Ix2, Ix3>, DimensionError>
+    where
+        Ix3: IndexType,
+        F: FnMut(NodeIndex<Ix2>, &V, SliceIndex) -> Option<V2>,
+        G: FnMut(NodeIndex<Ix2>, &V, RewriteOrigin) -> Option<E2>,
+        H: FnMut(EdgeIndex<Ix2>, &E, RewriteOrigin) -> Option<E2>,
+    {
+        self.output
+            .explode(node_map, internal_edge_map, external_edge_map)
     }
 }

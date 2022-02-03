@@ -10,7 +10,7 @@ use petgraph::{
 
 use crate::{
     common::{DimensionError, SingularHeight},
-    graph::{RewriteOrigin, SliceGraph},
+    graph::{Explodable, RewriteOrigin, SliceGraph},
     DiagramN, RewriteN, SliceIndex,
 };
 
@@ -35,7 +35,7 @@ impl Layout {
             w_coords: HashMap::new(),
         };
 
-        let mut graph = SliceGraph::new(vec![], diagram.clone());
+        let mut graph = SliceGraph::singleton(vec![], diagram.clone());
 
         for _ in 0..depth {
             let node_to_constraints = calculate_constraints(&graph)?;
@@ -185,7 +185,7 @@ fn calculate_constraints(
     let mut node_to_constraints: IdxVec<NodeIndex, Vec<ConstraintSet>> =
         IdxVec::from_iter(vec![vec![]; graph.node_count()]);
 
-    for n in Topo::new(&**graph).iter(&**graph) {
+    for n in Topo::new(&graph).iter(&graph) {
         let diagram: &DiagramN = (&graph[n].1).try_into()?;
 
         for target_index in 0..diagram.size() {
