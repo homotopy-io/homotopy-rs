@@ -11,7 +11,7 @@ use crate::{
 
 macro_rules! declare_sidebar_drawers {
     ($(
-        $(#[$attrib:meta])*
+        $(#[cfg($cfg:meta)])?
         $name:ident {
             $title:literal,
             $class:literal,
@@ -24,7 +24,7 @@ macro_rules! declare_sidebar_drawers {
         #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
         pub enum NavDrawer {
             $(
-                $(#[$attrib])*
+                $(#[cfg($cfg)])*
                 $name
             ),*
         }
@@ -37,7 +37,7 @@ macro_rules! declare_sidebar_drawers {
             ) -> Html {
                 match self {
                     $(
-                        $(#[$attrib])*
+                        $(#[cfg($cfg)])?
                         NavDrawer::$name => {
                             let body = $body;
                             html! {
@@ -59,9 +59,9 @@ macro_rules! declare_sidebar_drawers {
             pub(super) fn nav(&self, ctx: &Context<Self>) -> Html {
                 html! {
                     <nav class="sidebar__nav">
-                    $({
-                        $(#[$attrib])*
-                        html!{
+                    $({{
+                        $(#[cfg($cfg)])?
+                        html! {
                             <SidebarButton
                                 label={$title}
                                 icon={$icon}
@@ -71,7 +71,12 @@ macro_rules! declare_sidebar_drawers {
                                 visibility={Visible}
                             />
                         }
-                    })*
+
+                        $(
+                            #[cfg(not($cfg))]
+                            html! {}
+                        )?
+                    }})*
                     </nav>
                 }
             }
