@@ -106,13 +106,13 @@ impl<'a> Subdivider<'a> {
         let v = {
             let v_0 = &self.geom.verts[a];
             let v_1 = &self.geom.verts[b];
-            let v = 0.5 * (**v_0 + **v_1);
+            let v = 0.5 * (v_0.position + v_1.position);
             let flow = 0.5 * (v_0.flow + v_1.flow);
             let boundary = cmp::max(Boundary::One, cmp::max(v_0.boundary, v_1.boundary));
             let generator = v_0.min_generator(v_1).generator;
 
             self.geom.mk_vert(VertData {
-                vert: v,
+                position: v,
                 flow,
                 boundary,
                 generator,
@@ -248,16 +248,16 @@ impl<'a> Subdivider<'a> {
         let weights = Self::cube_weight_matrix(bounds);
         // Shape vertices as matrix
         let upper = Mat4::new(
-            *self.geom.verts[a],
-            *self.geom.verts[b],
-            *self.geom.verts[c],
-            *self.geom.verts[d],
+            self.geom.verts[a].position,
+            self.geom.verts[b].position,
+            self.geom.verts[c].position,
+            self.geom.verts[d].position,
         );
         let lower = Mat4::new(
-            *self.geom.verts[e],
-            *self.geom.verts[f],
-            *self.geom.verts[g],
-            *self.geom.verts[h],
+            self.geom.verts[e].position,
+            self.geom.verts[f].position,
+            self.geom.verts[g].position,
+            self.geom.verts[h].position,
         );
         // Tranform
         let upper_transformed = upper * weights[0] + lower * weights[2];
@@ -283,10 +283,10 @@ impl<'a> Subdivider<'a> {
         let weights = Self::square_weight_matrix(bounds);
         // Shape vertices as a matrix
         let square_matrix = Mat4::new(
-            *self.geom.verts[a],
-            *self.geom.verts[b],
-            *self.geom.verts[c],
-            *self.geom.verts[d],
+            self.geom.verts[a].position,
+            self.geom.verts[b].position,
+            self.geom.verts[c].position,
+            self.geom.verts[d].position,
         );
         // Transform
         let transformed = square_matrix * weights;
@@ -302,8 +302,8 @@ impl<'a> Subdivider<'a> {
         let bounds = [self.geom.verts[a].boundary, self.geom.verts[b].boundary];
         let weights = Self::line_weight_matrix(bounds);
         let line_matrix = Mat4::new(
-            *self.geom.verts[a],
-            *self.geom.verts[b],
+            self.geom.verts[a].position,
+            self.geom.verts[b].position,
             Vec4::zero(),
             Vec4::zero(),
         );
@@ -351,13 +351,14 @@ impl<'a> Subdivider<'a> {
         }
 
         for curve in curves.into_values() {
-            let mut interpolated = Vec::with_capacity(curve.len() * 2);
-            for i in 0..curve.len() - 1 {
-                interpolated.push(curve[i]);
-                interpolated.push(self.interpolate_edge([curve[i], curve[i + 1]], false));
+            let mut interpolated = Vec::with_capacity(curve.verts.len() * 2);
+            for i in 0..curve.verts.len() - 1 {
+                interpolated.push(curve.verts[i]);
+                interpolated
+                    .push(self.interpolate_edge([curve.verts[i], curve.verts[i + 1]], false));
             }
 
-            if let Some(point) = curve.last() {
+            if let Some(point) = curve.verts.last() {
                 interpolated.push(*point);
             }
 
@@ -394,7 +395,7 @@ impl<'a> Subdivider<'a> {
         for (vert, data) in self.smoothed.iter() {
             let valence = self.valence[vert];
             if valence > 0 {
-                *self.geom.verts[vert] = *data / valence as f32;
+                self.geom.verts[vert].position = *data / valence as f32;
             }
         }
 

@@ -1,6 +1,7 @@
 use std::{
-    cmp,
-    ops::{Deref, DerefMut},
+    cmp::{self, Ordering},
+    f32::consts::{PI, TAU},
+    mem,
 };
 
 use homotopy_common::{declare_idx, idx::IdxVec};
@@ -8,7 +9,7 @@ use homotopy_core::{
     common::DimensionError, layout::Layout, mesh::Mesh, DiagramN, Direction, Generator, Height,
     SliceIndex,
 };
-use ultraviolet::Vec4;
+use ultraviolet::{Mat3, Vec3, Vec4};
 
 // Geometry
 
@@ -46,6 +47,14 @@ where
         self.verts.push(vert)
     }
 
+    pub fn mk_displaced_copy(&mut self, vert: Vert, displacement: Vec4) -> Vert {
+        let vert @ VertData { position, .. } = self.verts[vert].clone();
+        self.mk_vert(VertData {
+            position: position + displacement,
+            ..vert
+        })
+    }
+
     pub fn mk_point(&mut self, point: E::Point) -> Point {
         self.points.push(point)
     }
@@ -68,7 +77,12 @@ where
                 Vec4::broadcast(f32::INFINITY),
                 Vec4::broadcast(f32::NEG_INFINITY),
             ),
-            |(min, max), vert| (min.min_by_component(**vert), max.max_by_component(**vert)),
+            |(min, max), vert| {
+                (
+                    min.min_by_component(vert.position),
+                    max.max_by_component(vert.position),
+                )
+            },
         )
     }
 }
@@ -77,7 +91,7 @@ where
 
 #[derive(Clone, Debug)]
 pub struct VertData {
-    pub vert: Vec4,
+    pub position: Vec4,
     pub flow: f32,
     pub boundary: Boundary,
     pub generator: Generator,
@@ -92,20 +106,6 @@ impl VertData {
         } else {
             cmp::min_by_key(self, other, |v| v.generator.dimension)
         }
-    }
-}
-
-impl Deref for VertData {
-    type Target = Vec4;
-
-    fn deref(&self) -> &Self::Target {
-        &self.vert
-    }
-}
-
-impl DerefMut for VertData {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.vert
     }
 }
 
@@ -161,20 +161,6 @@ pub struct CurveData {
     pub generator: Generator,
 }
 
-impl Deref for CurveData {
-    type Target = Vec<Vert>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.verts
-    }
-}
-
-impl DerefMut for CurveData {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.verts
-    }
-}
-
 // Element data
 
 #[derive(Default)]
@@ -213,13 +199,13 @@ impl CubicalGeometry {
         let mut node_to_vert = IdxVec::with_capacity(mesh.graph.node_count());
 
         for (path, diagram) in mesh.graph.node_weights() {
-            let vert = layout.get(path);
-            let vert = [0, 1, 2, 3]
-                .map(|i| vert.get(i).copied().unwrap_or_default())
+            let position = layout.get(path);
+            let position = [0, 1, 2, 3]
+                .map(|i| position.get(i).copied().unwrap_or_default())
                 .into();
 
             node_to_vert.push(geom.mk_vert(VertData {
-                vert,
+                position,
                 flow: calculate_flow(path),
                 boundary: calculate_boundary(path),
                 generator: diagram.max_generator(),
@@ -243,8 +229,8 @@ impl CubicalGeometry {
             let generator = verts
                 .iter()
                 .map(|v| &geom.verts[*v])
-                .fold(None, |acc: Option<&VertData>, v| {
-                    acc.map(|acc| acc.min_generator(v)).or(Some(v))
+                .fold(None, |acc, v| {
+                    acc.map(|acc| v.min_generator(acc)).or(Some(v))
                 })
                 .unwrap()
                 .generator;
@@ -263,11 +249,11 @@ impl CubicalGeometry {
 
                     // Curve extraction.
                     let curve = geom.curves.values_mut().find(|curve| {
-                        let &curve_target = curve.last().unwrap();
+                        let &curve_target = curve.verts.last().unwrap();
                         curve_target == verts[0] && curve.generator == generator
                     });
                     if let Some(curve) = curve {
-                        curve.push(verts[1]);
+                        curve.verts.push(verts[1]);
                     } else {
                         geom.curves.push(CurveData {
                             generator,
@@ -290,8 +276,8 @@ impl CubicalGeometry {
         let duration = 0.5 * (max.w - min.w);
 
         for vert in geom.verts.values_mut() {
-            **vert -= translation;
-            vert.w /= duration;
+            vert.position -= translation;
+            vert.position.w /= duration;
         }
 
         Ok(geom)
@@ -438,5 +424,229 @@ impl CubicalGeometry {
                 })
                 .unwrap()
         })
+    }
+}
+
+// Geometry synthesis
+//
+// If we every get geometry shaders (via WebGPU) all of this can go
+// and be replaced by real-time geometry synthesis.
+
+impl SimplicialGeometry {
+    fn inflate_point_3d(&mut self, point: Vert, samples: u8) {
+        use homotopy_common::idx::Idx;
+
+        const SPHERE_RADIUS: f32 = 0.1;
+        const STACK_SAMPLE_MODIFIER: usize = 3;
+        const SECTOR_SAMPLE_MODIFIER: usize = 3;
+
+        let stacks = samples as usize + STACK_SAMPLE_MODIFIER;
+        let sectors = samples as usize + SECTOR_SAMPLE_MODIFIER;
+
+        let north_pole = self.mk_displaced_copy(point, Vec4::unit_y() * SPHERE_RADIUS);
+        let south_pole = self.mk_displaced_copy(point, -Vec4::unit_y() * SPHERE_RADIUS);
+
+        for i in 1..stacks {
+            let theta = 0.5 * PI - (i as f32 * PI / stacks as f32);
+            let xz = SPHERE_RADIUS * f32::cos(theta);
+            let y = SPHERE_RADIUS * f32::sin(theta);
+
+            let len = self.verts.len();
+
+            for j in 0..sectors {
+                let phi = j as f32 * TAU / sectors as f32;
+                let x = xz * f32::cos(phi);
+                let z = xz * f32::sin(phi);
+                self.mk_displaced_copy(point, Vec4::new(x, y, z, 0.));
+            }
+
+            if i == 1 {
+                for j in 0..sectors {
+                    let v_0 = Vert::new(len + j);
+                    let v_1 = Vert::new(len + (j + 1) % sectors);
+                    self.mk_area([north_pole, v_1, v_0]);
+                }
+            } else {
+                for j in 0..sectors {
+                    let v_0 = Vert::new(len + j);
+                    let v_1 = Vert::new(len + (j + 1) % sectors);
+                    let v_2 = Vert::new(v_0.index() - sectors);
+                    let v_3 = Vert::new(v_1.index() - sectors);
+
+                    self.mk_area([v_0, v_2, v_1]);
+                    self.mk_area([v_1, v_2, v_3]);
+                }
+            }
+
+            if i == stacks - 1 {
+                for j in 0..sectors {
+                    let v_0 = Vert::new(len + j);
+                    let v_1 = Vert::new(len + (j + 1) % sectors);
+                    self.mk_area([south_pole, v_0, v_1]);
+                }
+            }
+        }
+    }
+
+    fn inflate_tube_segment(
+        &mut self,
+        vert: Vert,
+        normal: Vec3,
+        binormal: Vec3,
+        connect: bool,
+        sectors: u8,
+    ) {
+        use homotopy_common::idx::Idx;
+
+        const TUBE_RADIUS: f32 = 0.05;
+
+        let len = self.verts.len();
+
+        for j in 0..sectors {
+            let theta = f32::from(j) * TAU / f32::from(sectors);
+            self.mk_displaced_copy(
+                vert,
+                (TUBE_RADIUS * (f32::cos(theta) * normal + f32::sin(theta) * binormal)).into(),
+            );
+        }
+
+        if connect {
+            let sectors = sectors as usize;
+
+            for j in 0..sectors {
+                let v_0 = Vert::new(len + j);
+                let v_1 = Vert::new(len + ((j + 1) % sectors));
+                let v_2 = Vert::new(v_0.index() - sectors);
+                let v_3 = Vert::new(v_1.index() - sectors);
+
+                self.mk_area([v_0, v_2, v_1]);
+                self.mk_area([v_1, v_2, v_3]);
+            }
+        }
+    }
+
+    fn inflate_curve_3d(&mut self, curve: Curve, samples: u8) {
+        let mut verts = vec![];
+        let sectors = samples;
+
+        mem::swap(&mut self.curves[curve].verts, &mut verts);
+
+        // The direction of the curve in the previous segment
+        let mut d_0 = (self.verts[verts[1]].position - self.verts[verts[0]].position)
+            .xyz()
+            .normalized();
+        // A vector in the previous normal plane (initialised to a numerically
+        // stable choice of perpendicular vector to the initial value of `d_0`)
+        let mut n = (if d_0.z < d_0.x {
+            Vec3::new(d_0.y, -d_0.x, 0.)
+        } else {
+            Vec3::new(0., -d_0.z, d_0.y)
+        })
+        .normalized();
+
+        self.inflate_tube_segment(verts[0], n, d_0.cross(n), false, sectors);
+
+        for i in 2..verts.len() {
+            let v_0 = verts[i - 1];
+            let v_1 = verts[i];
+
+            let d_1 =
+                (self.verts[v_1].position.xyz() - self.verts[v_0].position.xyz()).normalized();
+            let t = 0.5 * (d_1 + d_0);
+            d_0 = d_1;
+
+            n = t.cross(n).cross(t).normalized();
+            let bn = t.cross(n).normalized();
+
+            self.inflate_tube_segment(v_0, n, bn, true, sectors);
+
+            if i == verts.len() - 1 {
+                self.inflate_tube_segment(v_1, n, bn, true, sectors);
+            }
+        }
+    }
+
+    pub fn inflate_3d(&mut self, samples: u8) {
+        for point in self.points.keys() {
+            self.inflate_point_3d(self.points[point], samples);
+        }
+
+        for curve in self.curves.keys() {
+            self.inflate_curve_3d(curve, samples);
+        }
+
+        self.points.clear();
+        self.lines.clear();
+        self.curves.clear();
+    }
+
+    pub fn compute_normals_3d(&self) -> IdxVec<Vert, Vec3> {
+        let mut normals = IdxVec::splat(Vec3::zero(), self.verts.len());
+
+        for [i, j, k] in self.areas.values().copied() {
+            if i != j && j != k && k != i {
+                let v_1 = self.verts[i].position.xyz();
+                let v_2 = self.verts[j].position.xyz();
+                let v_3 = self.verts[k].position.xyz();
+                let n = (v_2 - v_1).cross(v_3 - v_1);
+
+                normals[i] += n;
+                normals[j] += n;
+                normals[k] += n;
+            }
+        }
+
+        for normal in normals.values_mut() {
+            normal.normalize();
+        }
+
+        normals
+    }
+
+    pub fn compute_normals_4d(&self) -> IdxVec<Vert, Vec4> {
+        let mut normals = IdxVec::splat(Vec4::zero(), self.verts.len());
+
+        for [i, j, k, l] in self.volumes.values().copied() {
+            let origin = self.verts[i].position;
+            let v_0 = self.verts[j].position - origin;
+            let v_1 = self.verts[k].position - origin;
+            let v_2 = self.verts[l].position - origin;
+
+            let xs = Vec3::new(v_0.x, v_1.x, v_2.x);
+            let ys = Vec3::new(v_0.y, v_1.y, v_2.y);
+            let zs = Vec3::new(v_0.z, v_1.z, v_2.z);
+            let ws = Vec3::new(v_0.w, v_1.w, v_2.w);
+
+            let m_0 = Mat3::new(ys, zs, ws);
+            let m_1 = Mat3::new(xs, zs, ws);
+            let m_2 = Mat3::new(xs, ys, ws);
+            let m_3 = Mat3::new(xs, ys, zs);
+
+            let n = Vec4::new(
+                -m_0.determinant(),
+                m_1.determinant(),
+                -m_2.determinant(),
+                m_3.determinant(),
+            );
+
+            normals[i] += n;
+            normals[j] += n;
+            normals[k] += n;
+            normals[l] += n;
+        }
+
+        for normal in normals.values_mut() {
+            normal.normalize();
+        }
+
+        normals
+    }
+
+    pub fn time_order(&self, i: Vert, j: Vert) -> Ordering {
+        self.verts[i]
+            .position
+            .w
+            .partial_cmp(&self.verts[j].position.w)
+            .unwrap_or(Ordering::Equal)
     }
 }
