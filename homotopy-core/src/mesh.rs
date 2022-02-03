@@ -4,7 +4,7 @@ use petgraph::graph::NodeIndex;
 
 use crate::{
     common::DimensionError,
-    graph::{RewriteOrigin, SliceGraph},
+    graph::{Explodable, RewriteOrigin, SliceGraph},
     DiagramN, SliceIndex,
 };
 
@@ -32,7 +32,7 @@ impl Mesh {
             return Err(DimensionError);
         }
 
-        let mut graph = SliceGraph::new(vec![], diagram.clone());
+        let mut graph = SliceGraph::singleton(vec![], diagram.clone());
         let mut elements = IdxVec::from_iter([ElementData::Element0(NodeIndex::new(0))]);
 
         for orientation in 0..depth {

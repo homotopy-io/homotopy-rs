@@ -18,7 +18,7 @@ use serde::Serialize;
 use crate::{
     common::{Boundary, DimensionError, Generator, SliceIndex},
     diagram::DiagramN,
-    graph::{RewriteOrigin, SliceGraph},
+    graph::{Explodable, RewriteOrigin, SliceGraph},
     Rewrite,
 };
 
@@ -73,7 +73,7 @@ pub struct Depths {
 
 impl Depths {
     pub fn new(diagram: &DiagramN) -> Result<Self, DimensionError> {
-        let graph = SliceGraph::<(), ()>::new((), diagram.clone())
+        let graph = SliceGraph::<(), ()>::singleton((), diagram.clone())
             .explode(
                 |_, (), si| Some(si),
                 |_, _, _| Some(()),
@@ -100,7 +100,7 @@ impl Depths {
             .map(|(n, (coord, _))| (*coord, n))
             .collect();
 
-        for node in Topo::new(&*graph).iter(&*graph) {
+        for node in Topo::new(&graph).iter(&graph) {
             for edge in graph.edges_directed(node, EdgeDirection::Incoming) {
                 if let ((), Rewrite::RewriteN(r)) = edge.weight() {
                     edge_depths[edge.id()] =
