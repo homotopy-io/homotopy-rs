@@ -14,6 +14,36 @@ pub trait Idx: 'static + Copy + Eq + Hash + fmt::Debug {
     fn new(index: usize) -> Self;
 }
 
+impl Idx for u16 {
+    fn index(&self) -> usize {
+        *self as usize
+    }
+
+    fn new(index: usize) -> Self {
+        index as Self
+    }
+}
+
+impl Idx for u32 {
+    fn index(&self) -> usize {
+        *self as usize
+    }
+
+    fn new(index: usize) -> Self {
+        index as Self
+    }
+}
+
+impl Idx for u64 {
+    fn index(&self) -> usize {
+        *self as usize
+    }
+
+    fn new(index: usize) -> Self {
+        index as Self
+    }
+}
+
 impl<Ix: IndexType> Idx for NodeIndex<Ix> {
     fn index(&self) -> usize {
         Self::index(*self)
