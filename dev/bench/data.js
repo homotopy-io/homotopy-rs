@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1643903664546,
+  "lastUpdate": 1643917751086,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -21599,6 +21599,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 78.492,
             "range": "+/- 0.082",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "me@nathancorbyn.com",
+            "name": "Nathan Corbyn",
+            "username": "doctorn"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "a586ca1605dafc5f6d1aec62fffeb09963114ca0",
+          "message": "Smart buffering for 4D scenes",
+          "timestamp": "2022-02-03T19:35:24Z",
+          "tree_id": "91293a6dc0bb7b63789ef0b074b58dafb0bda963",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/a586ca1605dafc5f6d1aec62fffeb09963114ca0"
+        },
+        "date": 1643917740334,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 78.143,
+            "range": "+/- 1.540",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 82.034,
+            "range": "+/- 1.243",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 122.7,
+            "range": "+/- 1.940",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 139.31,
+            "range": "+/- 2.400",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 169.34,
+            "range": "+/- 2.540",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 229.79,
+            "range": "+/- 3.410",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 101.83,
+            "range": "+/- 1.050",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 704.05,
+            "range": "+/- 11.110",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.7327,
+            "range": "+/- 0.029",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 8.3712,
+            "range": "+/- 0.086",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 22.285,
+            "range": "+/- 0.296",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 56.188,
+            "range": "+/- 0.929",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 145.87,
+            "range": "+/- 2.420",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 398.11,
+            "range": "+/- 3.230",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 80.159,
+            "range": "+/- 1.093",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 115.45,
+            "range": "+/- 2.280",
             "unit": "us"
           }
         ]
