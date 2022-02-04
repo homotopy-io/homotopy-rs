@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1643968941647,
+  "lastUpdate": 1643991938186,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -21959,6 +21959,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 110.38,
             "range": "+/- 2.470",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "04db12ce942b6cdc77ad2c9bfdf3f98b22f8be1d",
+          "message": "Add debug panel (#378)\n\n* Add debug panel\r\n\r\n* Fix macro in `--profile=release`\r\n\r\n* Dump debug info as interactive JSON\r\n\r\nCo-authored-by: Nathan Corbyn <me@nathancorbyn.com>",
+          "timestamp": "2022-02-04T16:12:08Z",
+          "tree_id": "10d1ba561fa4e0f17d0a264399a6c9158b0c27a9",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/04db12ce942b6cdc77ad2c9bfdf3f98b22f8be1d"
+        },
+        "date": 1643991927646,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 61.644,
+            "range": "+/- 0.032",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 62.747,
+            "range": "+/- 0.023",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 93.598,
+            "range": "+/- 0.305",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 109.08,
+            "range": "+/- 0.050",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 129.61,
+            "range": "+/- 0.060",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 183.2,
+            "range": "+/- 0.070",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 79.136,
+            "range": "+/- 0.032",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 542.06,
+            "range": "+/- 0.360",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.1261,
+            "range": "+/- 0.007",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 6.4633,
+            "range": "+/- 0.003",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 17.176,
+            "range": "+/- 0.008",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 42.386,
+            "range": "+/- 0.025",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 108.88,
+            "range": "+/- 0.350",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 309.77,
+            "range": "+/- 1.480",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 62.034,
+            "range": "+/- 0.009",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 89.199,
+            "range": "+/- 0.033",
             "unit": "us"
           }
         ]
