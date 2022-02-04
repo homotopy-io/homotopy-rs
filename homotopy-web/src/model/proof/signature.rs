@@ -34,7 +34,7 @@ impl fmt::Display for Color {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct GeneratorInfo {
     pub generator: Generator,
     pub name: String,
@@ -42,7 +42,7 @@ pub struct GeneratorInfo {
     pub diagram: Diagram,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub enum SignatureItem {
     Folder(String, bool),
     Item(GeneratorInfo),
@@ -70,7 +70,7 @@ pub enum SignatureEdit {
     Remove(Node),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize)]
 pub struct Signature(Tree<SignatureItem>);
 
 impl Signature {

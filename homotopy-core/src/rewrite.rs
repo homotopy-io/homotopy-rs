@@ -9,6 +9,8 @@ use std::{
 
 use hashconsing::{HConsed, HConsign, HashConsign};
 use once_cell::unsync::OnceCell;
+// used for debugging only
+use serde::{ser::SerializeStruct, Serialize};
 use thiserror::Error;
 
 use crate::{
@@ -35,33 +37,44 @@ pub enum CompositionError {
     Incompatible,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord, Serialize)]
 pub struct Cospan {
     pub forward: Rewrite,
     pub backward: Rewrite,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize)]
 pub struct RewriteInternal {
     dimension: usize,
     cones: Vec<Cone>,
+    #[serde(skip_serializing)]
     max_generator_source: OnceCell<Option<Generator>>,
+    #[serde(skip_serializing)]
     max_generator_target: OnceCell<Option<Generator>>,
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord, Serialize)]
 pub struct Rewrite0(pub(crate) Option<(Generator, Generator)>);
 
 #[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
 pub struct RewriteN(HConsed<RewriteInternal>);
 
-#[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
+impl Serialize for RewriteN {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_newtype_struct("RewriteN", self.0.get())
+    }
+}
+
+#[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord, Serialize)]
 pub enum Rewrite {
     Rewrite0(Rewrite0),
     RewriteN(RewriteN),
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize)]
 pub struct ConeInternal {
     pub(crate) source: Vec<Cospan>,
     pub(crate) target: Cospan,
@@ -72,6 +85,18 @@ pub struct ConeInternal {
 pub struct Cone {
     pub(crate) index: usize,
     pub(crate) internal: HConsed<ConeInternal>,
+}
+
+impl Serialize for Cone {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut state = serializer.serialize_struct("Cone", 2)?;
+        state.serialize_field("index", &self.index)?;
+        state.serialize_field("internal", &self.internal.get())?;
+        state.end()
+    }
 }
 
 impl Cospan {

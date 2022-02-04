@@ -7,6 +7,8 @@ use std::{
 };
 
 use hashconsing::{HConsed, HConsign, HashConsign};
+// used for debugging only
+use serde::Serialize;
 use thiserror::Error;
 
 use crate::{
@@ -18,7 +20,7 @@ use crate::{
     util::first_max_generator,
 };
 
-#[derive(PartialEq, Eq, Hash, Clone, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, Hash, Clone, PartialOrd, Ord, Serialize)]
 pub enum Diagram {
     Diagram0(Generator),
     DiagramN(DiagramN),
@@ -171,6 +173,15 @@ pub fn globularity(s: &Diagram, t: &Diagram) -> bool {
 
 #[derive(PartialEq, Eq, Hash, Clone, PartialOrd, Ord)]
 pub struct DiagramN(HConsed<DiagramInternal>);
+
+impl Serialize for DiagramN {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_newtype_struct("DiagramN", self.0.get())
+    }
+}
 
 thread_local! {
     static DIAGRAM_FACTORY: RefCell<HConsign<DiagramInternal>> = RefCell::new(HConsign::with_capacity(37));
@@ -586,7 +597,7 @@ impl TryFrom<Diagram> for Generator {
     }
 }
 
-#[derive(Eq, Clone)]
+#[derive(Eq, Clone, Serialize)]
 struct DiagramInternal {
     source: Diagram,
     cospans: Vec<Cospan>,
