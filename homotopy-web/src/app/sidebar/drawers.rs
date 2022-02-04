@@ -1,6 +1,8 @@
 use yew::{callback::Callback, prelude::*};
 
 use super::{Sidebar, SidebarButton, SidebarDrawer, SidebarMsg};
+#[cfg(debug_assertions)]
+use crate::app::debug::DebugView;
 use crate::{
     app::{project::ProjectView, settings::SettingsView, signature::SignatureView},
     components::Visible,
@@ -8,17 +10,23 @@ use crate::{
 };
 
 macro_rules! declare_sidebar_drawers {
-    ($($name:ident {
-        $title:literal,
-        $class:literal,
-        $icon:literal,
-        $body:expr,
-    })*) => {
+    ($(
+        $(#[cfg($cfg:meta)])?
+        $name:ident {
+            $title:literal,
+            $class:literal,
+            $icon:literal,
+            $body:expr,
+        }
+    )*) => {
         #[allow(unused)]
         #[allow(non_camel_case_types)]
         #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
         pub enum NavDrawer {
-            $($name),*
+            $(
+                $(#[cfg($cfg)])*
+                $name
+            ),*
         }
 
         impl NavDrawer {
@@ -28,18 +36,21 @@ macro_rules! declare_sidebar_drawers {
                 proof: &Proof,
             ) -> Html {
                 match self {
-                    $(NavDrawer::$name => {
-                        let body = $body;
-                        html! {
-                            <SidebarDrawer
-                                title={$title}
-                                class={$class}
-                                dispatch={dispatch}
-                            >
-                                {body(dispatch, proof)}
-                            </SidebarDrawer>
+                    $(
+                        $(#[cfg($cfg)])?
+                        NavDrawer::$name => {
+                            let body = $body;
+                            html! {
+                                <SidebarDrawer
+                                    title={$title}
+                                    class={$class}
+                                    dispatch={dispatch}
+                                >
+                                    {body(dispatch, proof)}
+                                </SidebarDrawer>
+                            }
                         }
-                    }),*
+                    ),*
                 }
             }
         }
@@ -48,14 +59,24 @@ macro_rules! declare_sidebar_drawers {
             pub(super) fn nav(&self, ctx: &Context<Self>) -> Html {
                 html! {
                     <nav class="sidebar__nav">
-                        $(<SidebarButton
-                            label={$title}
-                            icon={$icon}
-                            action={SidebarMsg::Toggle(NavDrawer::$name)}
-                            shortcut={None}
-                            dispatch={ctx.link().callback(|x| x)}
-                            visibility={Visible}
-                        />)*
+                    $({{
+                        $(#[cfg($cfg)])?
+                        html! {
+                            <SidebarButton
+                                label={$title}
+                                icon={$icon}
+                                action={SidebarMsg::Toggle(NavDrawer::$name)}
+                                shortcut={None}
+                                dispatch={ctx.link().callback(|x| x)}
+                                visibility={Visible}
+                            />
+                        }
+
+                        $(
+                            #[cfg(not($cfg))]
+                            html! {}
+                        )?
+                    }})*
                     </nav>
                 }
             }
@@ -91,6 +112,16 @@ declare_sidebar_drawers! {
                 signature={proof.signature().clone()}
                 dispatch={dispatch.reform(model::Action::Proof)}
             />
+        },
+    }
+
+    #[cfg(debug_assertions)]
+    DRAWER_DEBUG {
+        "Debug",
+        "debug",
+        "bug_report",
+        |_, proof: &Proof| html! {
+            <DebugView proof={proof.clone()} />
         },
     }
 }
