@@ -8,14 +8,17 @@ use crate::{
 
 declare_settings! {
     pub struct AppSettings {
-        wireframe_3d: bool = false,
+        dpr_scale: bool = false,
+        subdivision_depth: u32 = 2,
+        geometry_samples: u32 = 10,
+
         orthographic_3d: bool = false,
+
+        wireframe_3d: bool = false,
+        mesh_hidden: bool = false,
         debug_normals: bool = false,
         disable_lighting: bool = false,
         debug_axes: bool = false,
-        mesh_hidden: bool = false,
-        subdivision_depth: u32 = 3,
-        geometry_samples: u32 = 10,
     }
 }
 
@@ -47,68 +50,84 @@ impl Component for SettingsView {
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
-            <div class="settings__segment">
-                <h4>{"3D renderer"}</h4>
-                {
-                    self.view_checkbox(
-                        "Debug wireframe",
-                        |local| *local.get_wireframe_3d(),
-                        AppSettingsDispatch::set_wireframe_3d,
-                    )
-                }
-                {
-                    self.view_checkbox(
-                        "Orthographic projection",
-                        |local| *local.get_orthographic_3d(),
-                        AppSettingsDispatch::set_orthographic_3d,
-                    )
-                }
-                {
-                    self.view_checkbox(
-                        "Hide mesh",
-                        |local| *local.get_mesh_hidden(),
-                        AppSettingsDispatch::set_mesh_hidden,
-                    )
-                }
-                {
-                    self.view_checkbox(
-                        "Debug normals",
-                        |local| *local.get_debug_normals(),
-                        AppSettingsDispatch::set_debug_normals,
-                    )
-                }
-                {
-                    self.view_checkbox(
-                        "Disable lighting",
-                        |local| *local.get_disable_lighting(),
-                        AppSettingsDispatch::set_disable_lighting,
-                    )
-                }
-                {
-                    self.view_checkbox(
-                        "Debug axes",
-                        |local| *local.get_debug_axes(),
-                        AppSettingsDispatch::set_debug_axes,
-                    )
-                }
-                {
-                    self.view_slider(
-                        "Subdivision depth",
-                        |local| *local.get_subdivision_depth(),
-                        AppSettingsDispatch::set_subdivision_depth,
-                        0,
-                        6,
-                    )
-                }
-                {
-                    self.view_slider(
-                        "Geometry samples",
-                        |local| *local.get_geometry_samples(),
-                        AppSettingsDispatch::set_geometry_samples,
-                        3,
-                        15,
-                    )
-                }
+            <div class="settings">
+                <h3>{"3D renderer"}</h3>
+                <div class="settings__segment">
+                    <h4>{"Quality"}</h4>
+                    {
+                        self.view_checkbox(
+                            "Scale by device pixel ratio",
+                            |local| *local.get_dpr_scale(),
+                            AppSettingsDispatch::set_dpr_scale,
+                        )
+                    }
+                    {
+                        self.view_slider(
+                            "Subdivision depth",
+                            |local| *local.get_subdivision_depth(),
+                            AppSettingsDispatch::set_subdivision_depth,
+                            0,
+                            6,
+                        )
+                    }
+                    {
+                        self.view_slider(
+                            "Geometry samples",
+                            |local| *local.get_geometry_samples(),
+                            AppSettingsDispatch::set_geometry_samples,
+                            3,
+                            15,
+                        )
+                    }
+                </div>
+                <div class="settings__segment">
+                    <h4>{"Style"}</h4>
+                    {
+                        self.view_checkbox(
+                            "Orthographic projection",
+                            |local| *local.get_orthographic_3d(),
+                            AppSettingsDispatch::set_orthographic_3d,
+                        )
+                    }
+                </div>
+                <div class="settings__segment">
+                    <h4>{"Debugging"}</h4>
+                    {
+                        self.view_checkbox(
+                            "Debug wireframe",
+                            |local| *local.get_wireframe_3d(),
+                            AppSettingsDispatch::set_wireframe_3d,
+                        )
+                    }
+                    {
+                        self.view_checkbox(
+                            "Hide mesh",
+                            |local| *local.get_mesh_hidden(),
+                            AppSettingsDispatch::set_mesh_hidden,
+                        )
+                    }
+                    {
+                        self.view_checkbox(
+                            "Debug normals",
+                            |local| *local.get_debug_normals(),
+                            AppSettingsDispatch::set_debug_normals,
+                        )
+                    }
+                    {
+                        self.view_checkbox(
+                            "Disable lighting",
+                            |local| *local.get_disable_lighting(),
+                            AppSettingsDispatch::set_disable_lighting,
+                        )
+                    }
+                    {
+                        self.view_checkbox(
+                            "Debug axes",
+                            |local| *local.get_debug_axes(),
+                            AppSettingsDispatch::set_debug_axes,
+                        )
+                    }
+                </div>
             </div>
         }
     }

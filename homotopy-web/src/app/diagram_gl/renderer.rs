@@ -72,6 +72,13 @@ impl Renderer {
     pub fn update(&mut self, settings: &Store<AppSettings>) -> Result<()> {
         let depth = *settings.get_subdivision_depth() as u8;
         let samples = *settings.get_geometry_samples() as u8;
+        let pixel_ratio = if *settings.get_dpr_scale() {
+            web_sys::window().unwrap().device_pixel_ratio()
+        } else {
+            1.
+        };
+
+        self.ctx.set_pixel_ratio(pixel_ratio)?;
 
         if self.subdivision_depth != depth || self.geometry_samples != samples {
             self.subdivision_depth = depth;
@@ -92,7 +99,7 @@ impl Renderer {
         };
 
         // Render animated wireframes to cylinder buffer
-        {
+        if self.scene.view_dimension == ViewDimension::Four {
             let mut frame = Frame::new(&mut self.ctx)
                 .with_frame_buffer(&self.cylinder_buffer.framebuffer)
                 .with_clear_color(Vec4::new(0., 0., 0., 0.));
@@ -119,7 +126,7 @@ impl Renderer {
             }
         }
 
-        // Render surfaces to GBuffer and cyllindrify anything in the cylinder buffer
+        // Render surfaces to GBuffer and cylindrify anything in the cylinder buffer
         {
             let mut frame = Frame::new(&mut self.ctx)
                 .with_frame_buffer(&self.gbuffer.framebuffer)
@@ -145,18 +152,20 @@ impl Renderer {
                     }));
                 }
 
-                frame.draw(draw! {
-                    &self.shaders.cylinder_pass,
-                    &self.quad.array,
-                    &[
-                        &self.cylinder_buffer.positions,
-                        &self.cylinder_buffer.albedo,
-                    ],
-                    {
-                        in_position: 0,
-                        in_albedo: 1,
-                    }
-                });
+                if self.scene.view_dimension == ViewDimension::Four {
+                    frame.draw(draw! {
+                        &self.shaders.cylinder_pass,
+                        &self.quad.array,
+                        &[
+                            &self.cylinder_buffer.positions,
+                            &self.cylinder_buffer.albedo,
+                        ],
+                        {
+                            in_position: 0,
+                            in_albedo: 1,
+                        }
+                    });
+                }
             }
         }
 

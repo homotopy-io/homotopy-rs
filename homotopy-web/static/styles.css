@@ -517,6 +517,11 @@ svg {
 
 /* Settings */
 
+.settings h3 {
+  margin 0;
+  margin-bottom: var(--space-2);
+}
+
 .settings__segment {
   border-bottom: 1px solid var(--drawer-border);
   padding: var(--space-1) 0;
@@ -539,7 +544,7 @@ svg {
 }
 
 .settings__slider-setting {
-  padding: var(--space-0) var(--space-1);
+  padding: var(--space-0) var(--space-0) var(--space-0) 0;
 }
 
 .settings__slider-setting input {
