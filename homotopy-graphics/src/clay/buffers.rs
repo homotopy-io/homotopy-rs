@@ -1,6 +1,6 @@
 use std::{hash::Hash, mem};
 
-use homotopy_common::{declare_idx, hash::FastHashMap, idx::IdxVec, parity};
+use homotopy_common::{hash::FastHashMap, idx::IdxVec, parity};
 use homotopy_core::Generator;
 use ultraviolet::{Vec3, Vec4};
 
@@ -25,12 +25,13 @@ trait Bufferer: Sized {
     type Vertex: Eq + Hash;
     type Output;
     type State: BuffererState;
+    type Key: Copy + Eq + Hash;
 
     fn new(geom: &SimplicialGeometry) -> Self;
 
     fn buffer(ctx: &mut BufferingCtx<Self>) -> Result<()>;
 
-    fn commit(ctx: &GlCtx, generator: Generator, completed: State<Self>) -> Result<Self::Output>;
+    fn commit(ctx: &GlCtx, key: Self::Key, completed: State<Self>) -> Result<Self::Output>;
 }
 
 type VertexData<B> = <<B as Bufferer>::State as BuffererState>::VertexData;
@@ -45,7 +46,7 @@ struct BufferingCtx<'a, B: Bufferer> {
     ctx: &'a GlCtx,
     geom: &'a SimplicialGeometry,
     global_state: B,
-    local_state: FastHashMap<Generator, State<B>>,
+    local_state: FastHashMap<B::Key, State<B>>,
     complete: Vec<B::Output>,
 }
 
@@ -89,17 +90,16 @@ where
     // FIXME(@doctorn) this shouldn't need to know how many vertices are required
     // up front - should handle 'overflow errors' gracefully and chop geometries
     // along these boundaries (copying any duplicated normal data?)
-    fn with_state<F, U>(&mut self, generator: Generator, required: usize, f: F) -> Result<U>
+    fn with_state<F, U>(&mut self, key: B::Key, required: usize, f: F) -> Result<U>
     where
         F: FnOnce(&B, &mut State<B>) -> U,
     {
-        let state = self.local_state.entry(generator).or_insert_with(State::new);
+        let state = self.local_state.entry(key).or_insert_with(State::new);
 
         if state.mapping.len() + required > VAO_LIMIT {
             let mut completed = State::new();
             mem::swap(state, &mut completed);
-            self.complete
-                .push(B::commit(self.ctx, generator, completed)?);
+            self.complete.push(B::commit(self.ctx, key, completed)?);
         }
 
         Ok(f(&self.global_state, state))
@@ -160,6 +160,7 @@ impl Bufferer for TriBufferer {
     type Vertex = Vert;
     type Output = TriVertexArrayData;
     type State = TriBufferingState;
+    type Key = Generator;
 
     fn new(geom: &SimplicialGeometry) -> Self {
         Self {
@@ -200,7 +201,7 @@ impl Bufferer for TriBufferer {
         Ok(())
     }
 
-    fn commit(ctx: &GlCtx, generator: Generator, completed: State<Self>) -> Result<Self::Output> {
+    fn commit(ctx: &GlCtx, generator: Self::Key, completed: State<Self>) -> Result<Self::Output> {
         let element_buffer =
             ctx.mk_element_buffer(&completed.inner.elements, ElementKind::Triangles)?;
         let wireframe_element_buffer =
@@ -237,8 +238,6 @@ impl TriBufferingState {
     }
 }
 
-declare_idx! { struct PseudoVert = u16; }
-
 struct TetraBufferer {
     normals: IdxVec<Vert, Vec4>,
 }
@@ -250,9 +249,6 @@ struct TetraBufferingState {
     vert_ends: IdxVec<u16, Vec4>,
     normal_starts: IdxVec<u16, Vec4>,
     normal_ends: IdxVec<u16, Vec4>,
-
-    projected_elements: Vec<u16>,
-    projected_verts: Vec<Vec3>,
 }
 
 pub struct TetraVertexArrayData {
@@ -263,9 +259,6 @@ pub struct TetraVertexArrayData {
     pub vert_end_buffer: Buffer<Vec4>,
     pub normal_start_buffer: Buffer<Vec4>,
     pub normal_end_buffer: Buffer<Vec4>,
-
-    pub projected_element_buffer: ElementBuffer,
-    pub projected_vert_buffer: Buffer<Vec3>,
 }
 
 struct PseudoVertData {
@@ -286,9 +279,6 @@ impl BuffererState for TetraBufferingState {
             vert_ends: IdxVec::with_capacity(VAO_LIMIT),
             normal_starts: IdxVec::with_capacity(VAO_LIMIT),
             normal_ends: IdxVec::with_capacity(VAO_LIMIT),
-
-            projected_elements: Vec::with_capacity(VAO_LIMIT),
-            projected_verts: Vec::with_capacity(VAO_LIMIT),
         }
     }
 
@@ -309,6 +299,7 @@ impl Bufferer for TetraBufferer {
     type Vertex = (Vert, Vert);
     type Output = TetraVertexArrayData;
     type State = TetraBufferingState;
+    type Key = Generator;
 
     fn new(geom: &SimplicialGeometry) -> Self {
         Self {
@@ -332,7 +323,7 @@ impl Bufferer for TetraBufferer {
                 let parity = parity::sort_4(&mut tetra, |i, j| geom.time_order(i, j));
                 let [i, j, k, l] = tetra;
 
-                let mut push_vert = |i, j| {
+                let mut push_vert = |i: Vert, j: Vert| {
                     local.push_vert(
                         (i, j),
                         PseudoVertData {
@@ -368,17 +359,13 @@ impl Bufferer for TetraBufferer {
         Ok(())
     }
 
-    fn commit(ctx: &GlCtx, generator: Generator, completed: State<Self>) -> Result<Self::Output> {
+    fn commit(ctx: &GlCtx, generator: Self::Key, completed: State<Self>) -> Result<Self::Output> {
         let element_buffer =
             ctx.mk_element_buffer(&completed.inner.elements, ElementKind::Triangles)?;
         let vert_start_buffer = ctx.mk_buffer(&completed.inner.vert_starts.into_raw())?;
         let vert_end_buffer = ctx.mk_buffer(&completed.inner.vert_ends.into_raw())?;
         let normal_start_buffer = ctx.mk_buffer(&completed.inner.normal_starts.into_raw())?;
         let normal_end_buffer = ctx.mk_buffer(&completed.inner.normal_ends.into_raw())?;
-
-        let projected_element_buffer =
-            ctx.mk_element_buffer(&completed.inner.projected_elements, ElementKind::Lines)?;
-        let projected_vert_buffer = ctx.mk_buffer(&completed.inner.projected_verts)?;
 
         Ok(TetraVertexArrayData {
             generator,
@@ -387,8 +374,6 @@ impl Bufferer for TetraBufferer {
             vert_end_buffer,
             normal_start_buffer,
             normal_end_buffer,
-            projected_element_buffer,
-            projected_vert_buffer,
         })
     }
 }
@@ -403,10 +388,122 @@ impl TetraBufferingState {
     }
 }
 
+struct ProjectedWireBufferer;
+
+struct ProjectedWireBufferingState {
+    elements: Vec<u16>,
+    verts: IdxVec<u16, Vec3>,
+}
+
+pub struct ProjectedWireArrayData {
+    pub element_buffer: ElementBuffer,
+    pub vert_buffer: Buffer<Vec3>,
+}
+
+impl BuffererState for ProjectedWireBufferingState {
+    type VertexData = Vec3;
+
+    fn alloc() -> Self {
+        Self {
+            verts: IdxVec::with_capacity(VAO_LIMIT),
+            elements: Vec::with_capacity(VAO_LIMIT),
+        }
+    }
+
+    fn push_vert(&mut self, v: u16, data: Self::VertexData) {
+        let i = self.verts.push(data);
+
+        debug_assert_eq!(i, v);
+    }
+}
+
+impl Bufferer for ProjectedWireBufferer {
+    type Vertex = Vert;
+    type Output = ProjectedWireArrayData;
+    type State = ProjectedWireBufferingState;
+    type Key = ();
+
+    fn new(_geom: &SimplicialGeometry) -> Self {
+        Self
+    }
+
+    fn buffer(ctx: &mut BufferingCtx<Self>) -> Result<()> {
+        for tri in ctx.geom.areas.values().copied() {
+            let geom = ctx.geom;
+
+            ctx.with_state((), 3, |_, local| {
+                let v_0 = local.push_vert(tri[0], geom.verts[tri[0]].position.xyz());
+                let v_1 = local.push_vert(tri[1], geom.verts[tri[1]].position.xyz());
+                let v_2 = local.push_vert(tri[2], geom.verts[tri[2]].position.xyz());
+
+                local.inner.push_tri(v_0, v_1, v_2);
+            })?;
+        }
+
+        for tetra in ctx.geom.volumes.values().copied() {
+            let geom = ctx.geom;
+
+            ctx.with_state((), 4, |_, local| {
+                let v_0 = local.push_vert(tetra[0], geom.verts[tetra[0]].position.xyz());
+                let v_1 = local.push_vert(tetra[1], geom.verts[tetra[1]].position.xyz());
+                let v_2 = local.push_vert(tetra[2], geom.verts[tetra[2]].position.xyz());
+                let v_3 = local.push_vert(tetra[3], geom.verts[tetra[3]].position.xyz());
+
+                local.inner.push_tetra(v_0, v_1, v_2, v_3);
+            })?;
+        }
+
+        Ok(())
+    }
+
+    fn commit(ctx: &GlCtx, (): Self::Key, completed: State<Self>) -> Result<Self::Output> {
+        let element_buffer =
+            ctx.mk_element_buffer(&completed.inner.elements, ElementKind::Lines)?;
+        let vert_buffer = ctx.mk_buffer(&completed.inner.verts.into_raw())?;
+
+        Ok(ProjectedWireArrayData {
+            element_buffer,
+            vert_buffer,
+        })
+    }
+}
+
+impl ProjectedWireBufferingState {
+    fn push_tri(&mut self, i: u16, j: u16, k: u16) {
+        self.elements.push(i);
+        self.elements.push(j);
+
+        self.elements.push(j);
+        self.elements.push(k);
+
+        self.elements.push(k);
+        self.elements.push(i);
+    }
+
+    fn push_tetra(&mut self, i: u16, j: u16, k: u16, l: u16) {
+        self.elements.push(i);
+        self.elements.push(j);
+
+        self.elements.push(j);
+        self.elements.push(k);
+
+        self.elements.push(k);
+        self.elements.push(l);
+
+        self.elements.push(i);
+        self.elements.push(l);
+    }
+}
+
 impl SimplicialGeometry {
     #[inline]
     pub fn buffer_tris(&self, ctx: &GlCtx) -> Result<Vec<TriVertexArrayData>> {
         BufferingCtx::<TriBufferer>::new(ctx, self).extract_buffers()
+    }
+
+    #[inline]
+    pub fn buffer_projected_wireframe(&self, ctx: &GlCtx) -> Result<Vec<ProjectedWireArrayData>> {
+        BufferingCtx::<ProjectedWireBufferer>::new(ctx, self).extract_buffers()
     }
 
     #[inline]

@@ -7,17 +7,12 @@ use homotopy_graphics::{
 
 use super::ViewDimension;
 
-pub struct SceneComponent {
-    pub generator: Generator,
-    pub array: VertexArray,
-    pub wireframe_array: VertexArray,
-}
-
 pub struct Scene {
     pub diagram: DiagramN,
     pub view_dimension: ViewDimension,
-    pub components: Vec<SceneComponent>,
-    pub cylinder_components: Vec<SceneComponent>,
+    pub components: Vec<(Generator, VertexArray)>,
+    pub wireframe_components: Vec<VertexArray>,
+    pub cylinder_components: Vec<(Generator, VertexArray)>,
 }
 
 impl Scene {
@@ -34,6 +29,7 @@ impl Scene {
             diagram,
             view_dimension,
             components: vec![],
+            wireframe_components: vec![],
             cylinder_components: vec![],
         };
 
@@ -48,6 +44,7 @@ impl Scene {
         geometry_samples: u8,
     ) -> Result<()> {
         self.components.clear();
+        self.wireframe_components.clear();
         self.cylinder_components.clear();
 
         let mut mesh = clay(
@@ -60,25 +57,26 @@ impl Scene {
         if self.view_dimension == ViewDimension::Three {
             mesh.inflate_3d(geometry_samples);
             for tri_buffers in mesh.buffer_tris(ctx)? {
-                self.components.push(SceneComponent {
-                    generator: tri_buffers.generator,
-                    array: vertex_array!(
+                self.components.push((
+                    tri_buffers.generator,
+                    vertex_array!(
                         ctx,
                         &tri_buffers.element_buffer,
                         [&tri_buffers.vertex_buffer, &tri_buffers.normal_buffer]
                     )?,
-                    wireframe_array: vertex_array!(
-                        ctx,
-                        &tri_buffers.wireframe_element_buffer,
-                        [&tri_buffers.vertex_buffer]
-                    )?,
-                });
+                ));
+
+                self.wireframe_components.push(vertex_array!(
+                    ctx,
+                    &tri_buffers.wireframe_element_buffer,
+                    [&tri_buffers.vertex_buffer]
+                )?);
             }
         } else {
             for tetra_buffers in mesh.buffer_tetras(ctx)? {
-                self.components.push(SceneComponent {
-                    generator: tetra_buffers.generator,
-                    array: vertex_array!(
+                self.components.push((
+                    tetra_buffers.generator,
+                    vertex_array!(
                         ctx,
                         &tetra_buffers.element_buffer,
                         [
@@ -88,14 +86,18 @@ impl Scene {
                             &tetra_buffers.normal_end_buffer,
                         ]
                     )?,
-                    wireframe_array: vertex_array!(
-                        ctx,
-                        &tetra_buffers.projected_element_buffer,
-                        [&tetra_buffers.projected_vert_buffer]
-                    )?,
-                });
-                // TODO(@doctorn) bring back cyllinders
+                ));
             }
+
+            for projected_buffers in mesh.buffer_projected_wireframe(ctx)? {
+                self.wireframe_components.push(vertex_array!(
+                    ctx,
+                    &projected_buffers.element_buffer,
+                    [&projected_buffers.vert_buffer]
+                )?);
+            }
+
+            // TODO(@doctorn) bring back cyllinders
         }
 
         Ok(())
