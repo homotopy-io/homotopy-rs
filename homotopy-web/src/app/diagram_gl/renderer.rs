@@ -90,7 +90,8 @@ impl Renderer {
     }
 
     pub fn render(&mut self, camera: &OrbitCamera, settings: &Store<AppSettings>, t: f32) {
-        let vp = camera.transform(&self.ctx);
+        let mv = camera.view_transform(&self.ctx);
+        let p = camera.perspective_transform(&self.ctx);
 
         let program = if self.scene.view_dimension == ViewDimension::Three {
             &self.shaders.geometry_3d
@@ -118,7 +119,8 @@ impl Renderer {
                         |info| info.color.0.into_format(),
                     );
                     frame.draw(draw!(program, array, &[], {
-                        mvp: vp,
+                        mv: mv,
+                        p: p,
                         albedo: Vec3::new(color.red, color.green, color.blue),
                         t: t,
                     }));
@@ -146,7 +148,8 @@ impl Renderer {
                         |info| info.color.0.into_format(),
                     );
                     frame.draw(draw!(program, array, &[], {
-                        mvp: vp,
+                        mv: mv,
+                        p: p,
                         albedo: Vec3::new(color.red, color.green, color.blue),
                         t: t,
                     }));
@@ -163,6 +166,9 @@ impl Renderer {
                         {
                             in_position: 0,
                             in_albedo: 1,
+                            p: p,
+                            scr_width: frame.width() as i32,
+                            scr_height: frame.height() as i32,
                         }
                     });
                 }
@@ -185,7 +191,6 @@ impl Renderer {
                     g_position: 0,
                     g_normal: 1,
                     g_albedo: 2,
-                    camera_pos: camera.position(),
                     disable_lighting: *settings.get_disable_lighting(),
                     debug_normals: *settings.get_debug_normals(),
                 }
@@ -199,7 +204,10 @@ impl Renderer {
                         array,
                         &[],
                         DepthTest::Disable,
-                        { mvp: vp }
+                        {
+                            mv: mv,
+                            p: p,
+                        }
                     });
                 }
             }
@@ -211,7 +219,10 @@ impl Renderer {
                     &self.axes.array,
                     &[],
                     DepthTest::Disable,
-                    { mvp: vp }
+                    {
+                        mv: mv,
+                        p: p,
+                    }
                 });
             }
         }

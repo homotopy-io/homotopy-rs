@@ -14,7 +14,8 @@ out float hidden;
 out vec3 frag_pos;
 out vec3 frag_normal;
 
-uniform mat4 mvp;
+uniform mat4 mv;
+uniform mat4 p;
 
 void main() {
     float lerp = (t - position_start.w) / (position_end.w - position_start.w);
@@ -25,7 +26,13 @@ void main() {
         return;
     }
 
-    frag_pos = position_start.xyz + lerp * (position_end.xyz - position_start.xyz);
-    frag_normal = normal_start.xyz + lerp * (normal_end.xyz - normal_start.xyz);
-    gl_Position = mvp * vec4(frag_pos, 1.);
+    vec3 lerp_normal = normal_start.xyz + lerp * (normal_end.xyz - normal_start.xyz);
+    vec3 lerp_position = position_start.xyz + lerp * (position_end.xyz - position_start.xyz);
+
+    vec4 transformed_normal = mv * vec4(lerp_normal, 0.);
+    vec4 transformed_position = mv * vec4(lerp_position, 1.);
+
+    frag_pos = transformed_position.xyz / transformed_position.w;
+    frag_normal = normalize(transformed_normal.xyz);
+    gl_Position = p * transformed_position;
 }

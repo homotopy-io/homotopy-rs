@@ -97,7 +97,19 @@ impl Scene {
                 )?);
             }
 
-            // TODO(@doctorn) bring back cyllinders
+            for cylinder_buffers in mesh.buffer_cylinder_wireframe(ctx)? {
+                self.cylinder_components.push((
+                    cylinder_buffers.generator,
+                    vertex_array!(
+                        ctx,
+                        &cylinder_buffers.element_buffer,
+                        [
+                            &cylinder_buffers.vert_start_buffer,
+                            &cylinder_buffers.vert_end_buffer
+                        ]
+                    )?,
+                ));
+            }
         }
 
         Ok(())
