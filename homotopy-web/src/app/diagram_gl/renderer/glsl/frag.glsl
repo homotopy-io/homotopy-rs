@@ -24,7 +24,7 @@ void main() {
     }
 
     g_position = frag_pos;
-    g_normal = normal;
+    g_normal = normalize(normal);
     // 4th component 1. implies rendered and lit
     g_albedo = vec4(albedo, 1.);
 }

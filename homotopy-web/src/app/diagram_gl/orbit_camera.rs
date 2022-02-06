@@ -42,8 +42,12 @@ impl OrbitCamera {
             + self.target
     }
 
-    pub fn transform(&self, ctx: &GlCtx) -> Mat4 {
-        let perspective = if self.ortho {
+    pub fn view_transform(&self, _ctx: &GlCtx) -> Mat4 {
+        Mat4::look_at(self.position(), self.target, Vec3::unit_y())
+    }
+
+    pub fn perspective_transform(&self, ctx: &GlCtx) -> Mat4 {
+        if self.ortho {
             let scale = self.distance / 10.;
             let aspect = ctx.aspect_ratio();
             orthographic_gl(
@@ -61,10 +65,7 @@ impl OrbitCamera {
                 Self::NEAR,
                 Self::FAR,
             )
-        };
-        let view = Mat4::look_at(self.position(), self.target, Vec3::unit_y());
-
-        perspective * view
+        }
     }
 
     pub fn apply_angle_delta(&mut self, delta: Vec2) {

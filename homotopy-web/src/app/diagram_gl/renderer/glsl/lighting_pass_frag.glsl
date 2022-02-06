@@ -8,7 +8,6 @@ uniform sampler2D g_position;
 uniform sampler2D g_normal;
 uniform sampler2D g_albedo;
 
-uniform vec3 camera_pos;
 uniform bool disable_lighting;
 uniform bool debug_normals;
 
@@ -34,13 +33,13 @@ void main() {
     } else if (disable_lighting) {
         frag_color = vec4(albedo, 1.);
     } else if (lighting_enable == 1.) {
-        vec3 l = normalize(camera_pos + light_offset - frag_pos);
+        vec3 l = normalize(light_offset - frag_pos);
 
         float lambertian = max(dot(l, normal), 0.);
         float specular = 0.;
 
         if (lambertian > 0.) {
-            vec3 view = normalize(camera_pos - frag_pos);
+            vec3 view = normalize(-frag_pos);
             vec3 halfway = normalize(l + view);
             float theta = max(dot(halfway, normal), 0.);
             specular = pow(theta, alpha);

@@ -495,6 +495,102 @@ impl ProjectedWireBufferingState {
     }
 }
 
+struct CylinderWireBufferer;
+
+struct CylinderWireBufferingState {
+    elements: Vec<u16>,
+    vert_starts: IdxVec<u16, Vec4>,
+    vert_ends: IdxVec<u16, Vec4>,
+}
+
+pub struct CylinderWireArrayData {
+    pub generator: Generator,
+    pub element_buffer: ElementBuffer,
+    pub vert_start_buffer: Buffer<Vec4>,
+    pub vert_end_buffer: Buffer<Vec4>,
+}
+
+impl BuffererState for CylinderWireBufferingState {
+    type VertexData = (Vec4, Vec4);
+
+    fn alloc() -> Self {
+        Self {
+            vert_starts: IdxVec::with_capacity(VAO_LIMIT),
+            vert_ends: IdxVec::with_capacity(VAO_LIMIT),
+            elements: Vec::with_capacity(VAO_LIMIT),
+        }
+    }
+
+    fn push_vert(&mut self, v: u16, data: Self::VertexData) {
+        let i = self.vert_starts.push(data.0);
+        let j = self.vert_ends.push(data.1);
+
+        debug_assert_eq!(i, v);
+        debug_assert_eq!(j, v);
+    }
+}
+
+impl Bufferer for CylinderWireBufferer {
+    type Vertex = (Vert, Vert);
+    type Output = CylinderWireArrayData;
+    type State = CylinderWireBufferingState;
+    type Key = Generator;
+
+    fn new(_geom: &SimplicialGeometry) -> Self {
+        Self
+    }
+
+    fn buffer(ctx: &mut BufferingCtx<Self>) -> Result<()> {
+        for mut tri in ctx.geom.areas.values().copied() {
+            let generator = tri
+                .into_iter()
+                .map(|v| &ctx.geom.verts[v])
+                .fold(None, |acc, v| {
+                    acc.map(|acc| v.min_generator(acc)).or(Some(v))
+                })
+                .unwrap()
+                .generator;
+            let geom = ctx.geom;
+
+            ctx.with_state(generator, 3, |_, local| {
+                parity::sort_3(&mut tri, |i, j| geom.time_order(i, j));
+                let [i, j, k] = tri;
+
+                let mut push_vert = |i: Vert, j: Vert| {
+                    local.push_vert((i, j), (geom.verts[i].position, geom.verts[j].position))
+                };
+
+                let ij = push_vert(i, j);
+                let ik = push_vert(i, k);
+                let jk = push_vert(j, k);
+
+                if ij != ik && ik != jk {
+                    local.inner.elements.push(ij);
+                    local.inner.elements.push(ik);
+                    local.inner.elements.push(jk);
+                    local.inner.elements.push(ik);
+                }
+            })?;
+        }
+
+        Ok(())
+    }
+
+    fn commit(ctx: &GlCtx, generator: Self::Key, completed: State<Self>) -> Result<Self::Output> {
+        let element_buffer =
+            ctx.mk_element_buffer(&completed.inner.elements, ElementKind::Lines)?;
+        let vert_start_buffer = ctx.mk_buffer(&completed.inner.vert_starts.into_raw())?;
+        let vert_end_buffer = ctx.mk_buffer(&completed.inner.vert_ends.into_raw())?;
+
+        Ok(CylinderWireArrayData {
+            generator,
+            element_buffer,
+            vert_start_buffer,
+            vert_end_buffer,
+        })
+    }
+}
+
 impl SimplicialGeometry {
     #[inline]
     pub fn buffer_tris(&self, ctx: &GlCtx) -> Result<Vec<TriVertexArrayData>> {
@@ -504,6 +600,11 @@ impl SimplicialGeometry {
     #[inline]
     pub fn buffer_projected_wireframe(&self, ctx: &GlCtx) -> Result<Vec<ProjectedWireArrayData>> {
         BufferingCtx::<ProjectedWireBufferer>::new(ctx, self).extract_buffers()
+    }
+
+    #[inline]
+    pub fn buffer_cylinder_wireframe(&self, ctx: &GlCtx) -> Result<Vec<CylinderWireArrayData>> {
+        BufferingCtx::<CylinderWireBufferer>::new(ctx, self).extract_buffers()
     }
 
     #[inline]

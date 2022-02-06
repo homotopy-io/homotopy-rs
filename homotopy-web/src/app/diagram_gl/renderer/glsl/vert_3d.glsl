@@ -10,12 +10,16 @@ out vec3 frag_pos;
 out vec3 frag_normal;
 
 uniform float t;
-uniform mat4 mvp;
+uniform mat4 mv;
+uniform mat4 p;
 
 void main() {
-    frag_pos = position;
-    frag_normal = normal;
+    vec4 transformed_normal = mv * vec4(normal, 0.);
+    vec4 transformed_position = mv * vec4(position, max(t, 1.));
+
+    frag_pos = transformed_position.xyz / transformed_position.w;
+    frag_normal = normalize(transformed_normal.xyz);
     hidden = 0.;
     // use `t` here so it isn't optimised out
-    gl_Position = mvp * vec4(position, max(t, 1.));
+    gl_Position = p * transformed_position;
 }
