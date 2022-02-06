@@ -143,7 +143,7 @@ impl GlCtx {
             width: canvas.width(),
             height: canvas.height(),
             canvas,
-            pixel_ratio: web_sys::window().unwrap().device_pixel_ratio(),
+            pixel_ratio: 1.,
         })
     }
 
@@ -170,6 +170,15 @@ impl GlCtx {
         let height = correct(self.canvas.client_height());
 
         self.resize_to(width, height)
+    }
+
+    pub fn set_pixel_ratio(&mut self, pixel_ratio: f64) -> Result<()> {
+        if (pixel_ratio - self.pixel_ratio).abs() > f64::EPSILON {
+            self.pixel_ratio = pixel_ratio;
+            self.resize_to_fit()?;
+        }
+
+        Ok(())
     }
 
     #[inline]
