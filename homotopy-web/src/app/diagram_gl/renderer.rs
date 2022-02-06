@@ -98,10 +98,21 @@ impl Renderer {
                 .with_clear_color(Vec4::new(0., 0., 0., 0.));
 
             if !*settings.get_mesh_hidden() {
-                for component in &self.scene.cylinder_components {
-                    frame.draw(draw!(program, &component.array, &[], {
+                let signature = &self.signature;
+
+                for (generator, array) in &self.scene.cylinder_components {
+                    let color = signature.generator_info(*generator).map_or(
+                        palette::rgb::Rgb {
+                            red: 0.,
+                            green: 0.,
+                            blue: 1.,
+                            ..Default::default()
+                        },
+                        |info| info.color.0.into_format(),
+                    );
+                    frame.draw(draw!(program, array, &[], {
                         mvp: vp,
-                        albedo: Vec3::new(1., 0., 0.),
+                        albedo: Vec3::new(color.red, color.green, color.blue),
                         t: t,
                     }));
                 }
@@ -117,8 +128,8 @@ impl Renderer {
             if !*settings.get_mesh_hidden() {
                 let signature = &self.signature;
 
-                for component in &self.scene.components {
-                    let color = signature.generator_info(component.generator).map_or(
+                for (generator, array) in &self.scene.components {
+                    let color = signature.generator_info(*generator).map_or(
                         palette::rgb::Rgb {
                             red: 0.,
                             green: 0.,
@@ -127,7 +138,7 @@ impl Renderer {
                         },
                         |info| info.color.0.into_format(),
                     );
-                    frame.draw(draw!(program, &component.array, &[], {
+                    frame.draw(draw!(program, array, &[], {
                         mvp: vp,
                         albedo: Vec3::new(color.red, color.green, color.blue),
                         t: t,
@@ -173,10 +184,10 @@ impl Renderer {
 
             // Add in relevant wireframes
             if *settings.get_wireframe_3d() {
-                for component in &self.scene.components {
+                for array in &self.scene.wireframe_components {
                     frame.draw(draw! {
                         &self.shaders.wireframe,
-                        &component.wireframe_array,
+                        array,
                         &[],
                         DepthTest::Disable,
                         { mvp: vp }
