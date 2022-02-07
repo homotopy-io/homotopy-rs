@@ -9,6 +9,7 @@ WASM_PACK_FLAGS = "--release"
 
 [tasks.build-wasm]
 script = '''
+mkdir -p dist
 wasm-pack build --target web --no-typescript ${WASM_PACK_FLAGS}
 mv pkg/homotopy_web.js pkg/homotopy_web_bg.wasm dist
 rm -rf pkg
