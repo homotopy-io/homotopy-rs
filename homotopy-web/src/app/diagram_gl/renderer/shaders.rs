@@ -40,7 +40,7 @@ impl Shaders {
                 "glsl/deferred_vert.glsl",
                 "glsl/cylinder_pass_frag.glsl",
                 { position, uv },
-                { in_position, in_albedo, p, scr_width, scr_height },
+                { in_position, in_albedo, p },
             )?,
             lighting_pass: program!(
                 ctx,
