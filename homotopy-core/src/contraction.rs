@@ -142,11 +142,11 @@ fn contract_base(
     };
 
     let mut graph = DiGraph::new();
-    let r0 = graph.add_node(regular0.clone());
-    let s0 = graph.add_node(singular0.clone());
-    let r1 = graph.add_node(regular1.clone());
-    let s1 = graph.add_node(singular1.clone());
-    let r2 = graph.add_node(regular2.clone());
+    let r0 = graph.add_node((regular0.clone(), Default::default()));
+    let s0 = graph.add_node((singular0.clone(), bias0));
+    let r1 = graph.add_node((regular1.clone(), Default::default()));
+    let s1 = graph.add_node((singular1.clone(), bias1));
+    let r2 = graph.add_node((regular2.clone(), Default::default()));
     graph.add_edge(r0, s0, cospan0.forward.clone());
     graph.add_edge(r1, s0, cospan0.backward.clone());
     graph.add_edge(r1, s1, cospan1.forward.clone());
@@ -238,14 +238,15 @@ struct Cocone {
     legs: IdxVec<NodeIndex<RestrictionIx>, Rewrite>,
 }
 
-fn collapse(graph: &DiGraph<Diagram, Rewrite>) -> Result<Cocone, ContractionError> {
+fn collapse(graph: &DiGraph<(Diagram, BiasValue), Rewrite>) -> Result<Cocone, ContractionError> {
     let dimension = graph
         .node_weights()
         .next()
         .ok_or(ContractionError::Invalid)?
+        .0
         .dimension();
 
-    for diagram in graph.node_weights() {
+    for (diagram, _bias) in graph.node_weights() {
         assert_eq!(diagram.dimension(), dimension);
     }
 
@@ -260,9 +261,11 @@ fn collapse(graph: &DiGraph<Diagram, Rewrite>) -> Result<Cocone, ContractionErro
     }
 }
 
-fn collapse_base(graph: &DiGraph<Diagram, Rewrite>) -> Result<Cocone, ContractionError> {
+fn collapse_base(
+    graph: &DiGraph<(Diagram, BiasValue), Rewrite>,
+) -> Result<Cocone, ContractionError> {
     let mut zero_graph: DiGraph<(NodeIndex, Generator), Option<Rewrite0>> = graph.map(
-        |i, n| (i, n.clone().try_into().unwrap()),
+        |i, (d, _bias)| (i, d.clone().try_into().unwrap()),
         |_, e| Some(e.clone().try_into().unwrap()),
     );
 
@@ -424,7 +427,9 @@ fn collapse_base(graph: &DiGraph<Diagram, Rewrite>) -> Result<Cocone, Contractio
     Ok(Cocone { colimit, legs })
 }
 
-fn collapse_recursive(graph: &DiGraph<Diagram, Rewrite>) -> Result<Cocone, ContractionError> {
+fn collapse_recursive(
+    graph: &DiGraph<(Diagram, BiasValue), Rewrite>,
+) -> Result<Cocone, ContractionError> {
     // Input: graph of n-diagrams and n-rewrites
 
     // marker for edges in Δ
@@ -442,13 +447,13 @@ fn collapse_recursive(graph: &DiGraph<Diagram, Rewrite>) -> Result<Cocone, Contr
         node_to_nodes: node_to_slices,
         ..
     }: ExplosionOutput<_, _, _, ExplodedIx> = graph
-        .map(|_, n| ((), n.clone()), |_, e| ((), e.clone()))
+        .map(|_, (d, bias)| (bias, d.clone()), |_, e| ((), e.clone()))
         .explode(
-            |parent_node, (), si| match si {
+            |parent_node, _bias, si| match si {
                 SliceIndex::Boundary(_) => None,
                 SliceIndex::Interior(h) => Some((parent_node, h)),
             },
-            |_parent_node, (), internal| match internal {
+            |_parent_node, _bias, internal| match internal {
                 InternalRewrite::Boundary(_) => None,
                 InternalRewrite::Interior(i, dir) => Some(Some(DeltaSlice::Internal(i, dir))),
             },
@@ -517,12 +522,15 @@ fn collapse_recursive(graph: &DiGraph<Diagram, Rewrite>) -> Result<Cocone, Contr
     let scc_to_priority: IdxVec<NodeIndex<QuotientIx>, (usize, BiasValue)> = {
         let mut scc_to_priority: IdxVec<NodeIndex<QuotientIx>, (usize, BiasValue)> =
             IdxVec::splat(Default::default(), quotient.node_count());
-        for (i, _scc) in quotient.node_references().rev() {
+        for (i, scc) in quotient.node_references().rev() {
             let priority = quotient
                 .neighbors_directed(i, Incoming)
                 .map(|prev| scc_to_priority[prev].0 + 1) // defined because SCCs are already topologically sorted
                 .fold(usize::MIN, std::cmp::max);
-            let bias = 0; // TODO: proper biasing
+            let bias = scc
+                .iter()
+                .map(|&n| graph[exploded[n].0 .0].1)
+                .fold(BiasValue::MAX, std::cmp::min);
             scc_to_priority[i] = (priority, bias);
         }
         scc_to_priority
@@ -553,7 +561,7 @@ fn collapse_recursive(graph: &DiGraph<Diagram, Rewrite>) -> Result<Cocone, Contr
             // the subproblem for each SCC is the subgraph of the exploded graph containing the SCC
             // closed under reverse-reachability
             let mut restriction_to_exploded = IdxVec::new();
-            let restriction: DiGraph<Diagram, _, RestrictionIx> = exploded.filter_map(
+            let restriction: DiGraph<(Diagram, BiasValue), _, RestrictionIx> = exploded.filter_map(
                 |i, (_, diagram)| {
                     scc.iter()
                         .any(|&c| {
@@ -561,7 +569,7 @@ fn collapse_recursive(graph: &DiGraph<Diagram, Rewrite>) -> Result<Cocone, Contr
                         })
                         .then(|| {
                             restriction_to_exploded.push(i);
-                            diagram.clone()
+                            (diagram.clone(), graph[exploded[i].0 .0].1)
                         })
                 },
                 |_, (ds, rewrite)| Some((ds, rewrite.clone())),
@@ -646,7 +654,7 @@ fn collapse_recursive(graph: &DiGraph<Diagram, Rewrite>) -> Result<Cocone, Contr
             Some(
                 RewriteN::from_slices(
                     dimension,
-                    <&DiagramN>::try_from(&graph[n]).ok()?.cospans(),
+                    <&DiagramN>::try_from(&graph[n].0).ok()?.cospans(),
                     colimit.cospans(),
                     regular_slices,
                     singular_slices,
