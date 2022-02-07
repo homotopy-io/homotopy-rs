@@ -271,6 +271,7 @@ impl CubicalGeometry {
             }
         }
 
+        // Center animation on origin and make time interval [-1,1]
         let (min, max) = geom.bounds();
         let translation = 0.5 * (max + min);
         let duration = 0.5 * (max.w - min.w);

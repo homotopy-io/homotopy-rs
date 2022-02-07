@@ -3,9 +3,10 @@ use std::{cell::RefCell, rc::Rc};
 use gloo::render::{request_animation_frame, AnimationFrame};
 use homotopy_core::DiagramN;
 use homotopy_graphics::gl::GlCtx;
+use ultraviolet::Vec3;
 use yew::prelude::*;
 
-pub use self::orbit_camera::{OrbitCamera, OrbitControl};
+pub use self::orbit_camera::OrbitCamera;
 use self::{
     renderer::Renderer,
     scrub_controls::{ScrubAction, ScrubComponent, ScrubState},
@@ -16,7 +17,7 @@ use crate::{
         delta::{Delta, DeltaAgent},
         settings::{KeyStore, Settings, Store},
         toast::{Toast, Toaster},
-        touch_interface::TouchInterface,
+        touch_interface::{TouchAction, TouchInterface},
     },
     model::proof::{Signature, View},
 };
@@ -25,9 +26,38 @@ mod orbit_camera;
 mod renderer;
 mod scrub_controls;
 
+pub struct GlViewControl {
+    camera: Delta<OrbitCamera>,
+    scrub_control: Delta<ScrubState>,
+}
+
+impl GlViewControl {
+    pub fn new() -> Self {
+        Self {
+            camera: Delta::new(),
+            scrub_control: Delta::new(),
+        }
+    }
+
+    pub fn zoom_in(&self) {
+        self.camera
+            .emit(TouchAction::MouseWheel(Default::default(), -20.0));
+    }
+
+    pub fn zoom_out(&self) {
+        self.camera
+            .emit(TouchAction::MouseWheel(Default::default(), 20.0));
+    }
+
+    pub fn reset(&self) {
+        self.camera.emit(TouchAction::Reset);
+        self.scrub_control.emit(ScrubAction::Scrub(0.));
+    }
+}
+
 pub enum GlDiagramMessage {
     Render(f64),
-    Camera(f32, f32, f32),
+    Camera(f32, f32, f32, Vec3),
     Scrub(f32),
     Setting(<Store<AppSettings> as KeyStore>::Message),
 }
@@ -51,6 +81,7 @@ pub struct GlDiagram {
     local: Store<AppSettings>,
     global_t: f32,
     t_coord: f32,
+    duration: f32,
 
     // If the render task is dropped, we won't get notified about `requestAnimationFrame()`
     // calls, so store a reference to the task here
@@ -74,6 +105,7 @@ impl Component for GlDiagram {
                 state.phi,
                 state.theta,
                 state.distance,
+                state.target,
             ));
         }));
 
@@ -96,6 +128,7 @@ impl Component for GlDiagram {
             local: Default::default(),
             global_t: Default::default(),
             t_coord: Default::default(),
+            duration: ctx.props().diagram.size() as f32,
 
             render_loop: None,
         }
@@ -108,8 +141,9 @@ impl Component for GlDiagram {
                 let dt = t - self.global_t;
                 self.global_t = t;
                 if ctx.props().view.dimension() == 4 {
-                    // TODO(@doctorn) set these constants properly
-                    self.scrub_delta.emit(ScrubAction::Advance(1e-4 * dt));
+                    // Slow the animation such that we get 1s per cospan
+                    self.scrub_delta
+                        .emit(ScrubAction::Advance(1e-3 * dt / self.duration));
                 }
                 // Update camera settings
                 self.camera.set_ortho(*self.local.get_orthographic_3d());
@@ -122,13 +156,14 @@ impl Component for GlDiagram {
                 // Schedule the next frame
                 self.schedule_frame(ctx);
             }
-            GlDiagramMessage::Camera(phi, theta, distance) => {
+            GlDiagramMessage::Camera(phi, theta, distance, target) => {
                 self.camera.phi = phi;
                 self.camera.theta = theta;
                 self.camera.distance = distance;
+                self.camera.target = target;
             }
             GlDiagramMessage::Scrub(t) => {
-                // TODO(@doctorn) reimplement time bounds
+                // Scrub controls are [0,1], but animation is [-1,1] so map between
                 self.t_coord = 2. * t - 1.;
             }
             GlDiagramMessage::Setting(msg) => self.local.set(&msg),
@@ -146,7 +181,7 @@ impl Component for GlDiagram {
         let on_touch_update = OrbitCamera::on_touch_update(&self.canvas);
 
         let scrub = if ctx.props().view.dimension() == 4 {
-            html! { <ScrubComponent max_t={60.} /> }
+            html! { <ScrubComponent slices={ctx.props().diagram.size()} /> }
         } else {
             Default::default()
         };

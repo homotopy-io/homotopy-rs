@@ -11,18 +11,18 @@ pub enum TouchAction {
     TouchUpdate(Vec<(Finger, Point)>),
     TouchMove(Vec<(Finger, Point)>),
     MouseWheel(Point, f64),
-    MouseDown(Point),
-    MouseMove(Point),
+    MouseDown(bool, Point),
+    MouseMove(bool, Point),
     MouseUp,
     Reset,
 }
 
 pub trait TouchInterface: Default + 'static {
-    fn mouse_down(&mut self, point: Point);
+    fn mouse_down(&mut self, alt_key: bool, point: Point);
 
     fn mouse_up(&mut self);
 
-    fn mouse_move(&mut self, next: Point);
+    fn mouse_move(&mut self, alt_key: bool, next: Point);
 
     fn mouse_wheel(&mut self, point: Point, delta: f64);
 
@@ -37,6 +37,7 @@ pub trait TouchInterface: Default + 'static {
         Callback::from(closure!(|e: MouseEvent| {
             e.prevent_default();
             delta.emit(TouchAction::MouseMove(
+                e.alt_key(),
                 (f64::from(e.client_x()), f64::from(e.client_y())).into(),
             ));
         }))
@@ -54,6 +55,7 @@ pub trait TouchInterface: Default + 'static {
         let delta = Delta::<Self>::new();
         Callback::from(closure!(|e: MouseEvent| {
             delta.emit(TouchAction::MouseDown(
+                e.alt_key(),
                 (f64::from(e.client_x()), f64::from(e.client_y())).into(),
             ));
         }))
@@ -113,9 +115,9 @@ where
 
     fn update(&mut self, action: &Self::Action) {
         match action {
-            TouchAction::MouseDown(point) => self.mouse_down(*point),
+            TouchAction::MouseDown(alt_key, point) => self.mouse_down(*alt_key, *point),
             TouchAction::MouseUp => self.mouse_up(),
-            TouchAction::MouseMove(next) => self.mouse_move(*next),
+            TouchAction::MouseMove(alt_key, next) => self.mouse_move(*alt_key, *next),
             TouchAction::MouseWheel(point, delta) => self.mouse_wheel(*point, *delta),
             TouchAction::TouchMove(touches) => self.touch_move(touches),
             TouchAction::TouchUpdate(touches) => self.touch_update(touches),

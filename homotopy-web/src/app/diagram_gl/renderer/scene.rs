@@ -21,6 +21,7 @@ pub struct Scene {
     pub animation_curves: Vec<AnimationCurve>,
     pub animation_singularities: Vec<(Generator, Vec4)>,
     pub sphere: Option<VertexArray>,
+    pub duration: f32,
 }
 
 pub struct AnimationCurve {
@@ -48,7 +49,7 @@ impl AnimationCurve {
             .iter()
             .copied()
             .zip(self.key_frames.iter().copied().skip(1))
-            .find(|(u, v)| u.w <= t && v.w > t)
+            .find(|(u, v)| u.w <= t && v.w >= t)
     }
 }
 
@@ -71,6 +72,7 @@ impl Scene {
             animation_curves: vec![],
             animation_singularities: vec![],
             sphere: None,
+            duration: 0.,
         };
 
         scene.reload_meshes(ctx, subdivision_depth, geometry_samples)?;
