@@ -86,6 +86,8 @@ impl Scene {
         self.components.clear();
         self.wireframe_components.clear();
         self.cylinder_components.clear();
+        self.animation_curves.clear();
+        self.animation_singularities.clear();
         self.sphere = None;
 
         let mut sphere_mesh: SimplicialGeometry = Default::default();
