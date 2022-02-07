@@ -323,10 +323,10 @@ impl DiagramN {
         for cone in rewrite.cones() {
             let start = (cone.index as isize + offset) as usize;
             let stop = (cone.index as isize + cone.len() as isize + offset) as usize;
-            if cospans[start..stop] != cone.internal.source {
+            if &cospans[start..stop] != cone.source() {
                 return Err(RewritingError::Incompatible);
             }
-            cospans.splice(start..stop, std::iter::once(cone.internal.target.clone()));
+            cospans.splice(start..stop, std::iter::once(cone.target().clone()));
             offset -= cone.len() as isize - 1;
         }
 
@@ -346,10 +346,10 @@ impl DiagramN {
         for cone in rewrite.cones() {
             let start = cone.index;
             let stop = cone.index + 1;
-            if cospans[start] != cone.internal.target {
+            if &cospans[start] != cone.target() {
                 return Err(RewritingError::Incompatible);
             }
-            cospans.splice(start..stop, cone.internal.source.iter().cloned());
+            cospans.splice(start..stop, cone.source().iter().cloned());
         }
 
         Ok(Self::new_unsafe(self.source(), cospans))
