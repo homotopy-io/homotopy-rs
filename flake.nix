@@ -26,6 +26,7 @@
                 extensions = [ "rust-docs" "rust-src" "clippy" ];
               }
             )
+            wasm-bindgen-cli
             wasm-pack
           ];
         in

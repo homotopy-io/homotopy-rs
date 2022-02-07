@@ -10,26 +10,38 @@ WASM_PACK_FLAGS = "--release"
 [tasks.build-wasm]
 script = '''
 wasm-pack build --target web --no-typescript ${WASM_PACK_FLAGS}
-rm pkg/package.json pkg/README.md
+mv pkg/homotopy_web.js pkg/homotopy_web_bg.wasm dist
+rm -rf pkg
 '''
 
-[tasks.dist]
+[tasks.build-wasm-watch]
+run_task = { name = ["build-wasm"] }
+watch = { watch = ["src", "../homotopy-core/src", "../homotopy-common/src", "../homotopy-graphics/src"] }
+
+[tasks.dist-static]
 script = '''
-rm -rf dist
-mkdir dist
-cp -r pkg/* dist/
+mkdir -p dist
+echo "Cleaning old files"
+find dist ! -name homotopy_web.js ! -name homotopy_web_bg.wasm -type f -exec rm -f {} +
 cp -r static/* dist/
+ls dist
 '''
-dependencies = ["build-wasm"]
+
+[tasks.dist-static-watch]
+run_task = { name = ["dist-static"] }
+watch = { watch = ["static"] }
+
+[tasks.dist]
+run_task = { name = ["build-wasm", "dist-static"] }
 
 [tasks.clean]
 clear = true
 script = '''
-rm -rf dist pkg
+rm -rf dist
 cargo clean
 '''
 
-[tasks.serve]
+[tasks.devserver]
 command = "devserver"
 args = [
   "--path"
@@ -39,5 +51,6 @@ args = [
 , "--header"
 , "Cross-Origin-Embedder-Policy=require-corp"
 ]
-dependencies = ["dist"]
-watch = { ignore_pattern = "README.md" }
+
+[tasks.serve]
+run_task = { name = ["devserver", "build-wasm-watch", "dist-static-watch"], parallel = true }
