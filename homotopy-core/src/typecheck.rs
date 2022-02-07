@@ -162,7 +162,7 @@ fn target_points(rewrites: &[Rewrite]) -> Vec<(Point, Generator)> {
             }
 
             let cone = rewrite.cone_over_target(target_height).unwrap();
-            let cone_target = &cone.internal.target;
+            let cone_target = &cone.target();
 
             target_rewrites_at_height.push(cone_target.forward.clone());
             target_rewrites_at_height.push(cone_target.backward.clone());
@@ -225,7 +225,7 @@ impl Embedding {
                     .collect();
 
                 if preimage_slices.is_empty() {
-                    let cospan = &rewrite.cone_over_target(*height).unwrap().internal.target;
+                    let cospan = &rewrite.cone_over_target(*height).unwrap().target();
                     Self::Regular(
                         preimage_height,
                         Rc::new(slices[0].preimage(&cospan.forward)),
@@ -310,19 +310,17 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
                 let cone = rewrite.cone_over_target(target_height).unwrap();
 
                 let restricted_slices: Vec<_> = cone
-                    .internal
-                    .singular_slices
+                    .singular_slices()
                     .iter()
                     .map(|cone_slice| restrict_rewrite(cone_slice, embedding_slice))
                     .collect();
 
                 let restricted_source: Vec<_> = cone
-                    .internal
-                    .source
+                    .source()
                     .iter()
                     .enumerate()
                     .map(|(i, cospan)| {
-                        let embedding = embedding_slice.preimage(&cone.internal.singular_slices[i]);
+                        let embedding = embedding_slice.preimage(&cone.singular_slices()[i]);
                         let forward = restrict_rewrite(&cospan.forward, &embedding);
                         let backward = restrict_rewrite(&cospan.backward, &embedding);
                         Cospan { forward, backward }
@@ -331,8 +329,8 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
 
                 let restricted_target = {
                     let slice = embedding_slice;
-                    let forward = restrict_rewrite(&cone.internal.target.forward, slice);
-                    let backward = restrict_rewrite(&cone.internal.target.backward, slice);
+                    let forward = restrict_rewrite(&cone.target().forward, slice);
+                    let backward = restrict_rewrite(&cone.target().backward, slice);
                     Cospan { forward, backward }
                 };
 
