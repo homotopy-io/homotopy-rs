@@ -1,13 +1,13 @@
 use yew::prelude::*;
 
 use crate::{
-    app::{diagram_gl::OrbitControl, Icon, IconSize},
+    app::{diagram_gl::GlViewControl, Icon, IconSize},
     components::panzoom::PanZoom,
 };
 
 pub struct ViewControl {
     panzoom: PanZoom,
-    orbit_control: OrbitControl,
+    orbit_control: GlViewControl,
 }
 
 pub enum ViewMessage {
@@ -23,7 +23,7 @@ impl Component for ViewControl {
     fn create(_ctx: &Context<Self>) -> Self {
         Self {
             panzoom: PanZoom::new(),
-            orbit_control: OrbitControl::new(),
+            orbit_control: GlViewControl::new(),
         }
     }
 

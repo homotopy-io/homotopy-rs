@@ -5,7 +5,7 @@ use wasm_bindgen::closure::Closure;
 use workspace::WorkspaceView;
 use yew::prelude::*;
 
-use self::diagram_gl::OrbitControl;
+use self::diagram_gl::GlViewControl;
 use crate::{
     components::{
         icon::{Icon, IconSize},
@@ -38,7 +38,7 @@ pub enum Message {
 pub struct App {
     state: model::State,
     panzoom: PanZoom,
-    orbit_control: OrbitControl,
+    orbit_control: GlViewControl,
     signature_stylesheet: SignatureStylesheet,
     toaster: Toaster,
     _settings: AppSettings,
@@ -60,7 +60,7 @@ impl Component for App {
         let mut app = Self {
             state,
             panzoom: PanZoom::new(),
-            orbit_control: OrbitControl::new(),
+            orbit_control: GlViewControl::new(),
             signature_stylesheet,
             toaster: Toaster::new(),
             _settings: AppSettings::connect(Callback::noop()),

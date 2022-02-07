@@ -52,7 +52,10 @@ impl Shaders {
                     g_normal,
                     g_albedo,
                     disable_lighting,
-                    debug_normals
+                    debug_normals,
+                    spec,
+                    alpha,
+                    gamma,
                 },
             )?,
         })

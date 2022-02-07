@@ -26,15 +26,17 @@ impl Default for PanZoomState {
 }
 
 impl TouchInterface for PanZoomState {
-    fn mouse_down(&mut self, point: Point) {
-        self.mouse = Some(point);
+    fn mouse_down(&mut self, alt_key: bool, point: Point) {
+        if alt_key {
+            self.mouse = Some(point);
+        }
     }
 
     fn mouse_up(&mut self) {
         self.mouse = None;
     }
 
-    fn mouse_move(&mut self, next: Point) {
+    fn mouse_move(&mut self, _alt_key: bool, next: Point) {
         if let Some(prev) = self.mouse {
             self.translate += next - prev;
             self.mouse = Some(next);
@@ -144,11 +146,7 @@ impl Component for PanZoomComponent {
 
         let on_mouse_move = PanZoomState::on_mouse_move();
         let on_mouse_up = PanZoomState::on_mouse_up();
-        let on_mouse_down = Callback::from(move |e: MouseEvent| {
-            if e.alt_key() {
-                PanZoomState::on_mouse_down().emit(e);
-            }
-        });
+        let on_mouse_down = PanZoomState::on_mouse_down();
         let on_wheel = {
             let on_scroll = ctx.props().on_scroll.clone();
             let node_ref = self.node_ref.clone();

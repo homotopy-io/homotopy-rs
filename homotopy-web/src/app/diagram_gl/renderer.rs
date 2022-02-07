@@ -216,6 +216,9 @@ impl Renderer {
                     g_albedo: 2,
                     disable_lighting: *settings.get_disable_lighting(),
                     debug_normals: *settings.get_debug_normals(),
+                    spec: 1e-2 * *settings.get_specularity() as f32,
+                    alpha: *settings.get_shininess() as f32,
+                    gamma: 0.1 * *settings.get_gamma() as f32,
                 }
             });
 

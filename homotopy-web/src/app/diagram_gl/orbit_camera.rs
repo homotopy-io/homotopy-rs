@@ -6,18 +6,13 @@ use ultraviolet::{
     Mat4, Vec2, Vec3,
 };
 
-use super::scrub_controls::{ScrubAction, ScrubState};
-use crate::components::{
-    delta::Delta,
-    touch_interface::{TouchAction, TouchInterface},
-    Finger, Point,
-};
+use crate::components::{touch_interface::TouchInterface, Finger, Point};
 
 pub struct OrbitCamera {
     pub phi: f32,
     pub theta: f32,
     pub distance: f32,
-    target: Vec3,
+    pub target: Vec3,
     fov: f32,
     ortho: bool,
     mouse: Option<Vec2>,
@@ -33,13 +28,7 @@ impl OrbitCamera {
     const NEAR: f32 = 0.01;
 
     pub fn position(&self) -> Vec3 {
-        let sin_phi = f32::sin(self.phi);
-        let cos_phi = f32::cos(self.phi);
-        let sin_theta = f32::sin(self.theta);
-        let cos_theta = f32::cos(self.theta);
-
-        self.distance * Vec3::new(cos_phi * sin_theta, -cos_theta, -sin_phi * sin_theta)
-            + self.target
+        self.distance * self.offset() + self.target
     }
 
     pub fn view_transform(&self, _ctx: &GlCtx) -> Mat4 {
@@ -77,8 +66,26 @@ impl OrbitCamera {
         self.distance *= if delta > 0. { 1.1 } else { 1.0 / 1.1 };
     }
 
+    pub fn apply_target_delta(&mut self, delta: Vec2) {
+        let z = -self.offset();
+        let up = Vec3::unit_y();
+        let x = up.cross(z).normalized();
+        let y = z.cross(x).normalized();
+
+        self.target += delta.x * x + delta.y * y;
+    }
+
     pub fn set_ortho(&mut self, ortho: bool) {
         self.ortho = ortho;
+    }
+
+    fn offset(&self) -> Vec3 {
+        let sin_phi = f32::sin(self.phi);
+        let cos_phi = f32::cos(self.phi);
+        let sin_theta = f32::sin(self.theta);
+        let cos_theta = f32::cos(self.theta);
+
+        Vec3::new(cos_phi * sin_theta, -cos_theta, -sin_phi * sin_theta)
     }
 }
 
@@ -97,7 +104,7 @@ impl Default for OrbitCamera {
 }
 
 impl TouchInterface for OrbitCamera {
-    fn mouse_down(&mut self, point: Point) {
+    fn mouse_down(&mut self, _alt_key: bool, point: Point) {
         self.mouse = Some(Vec2::new(point.x as f32, point.y as f32));
     }
 
@@ -105,12 +112,16 @@ impl TouchInterface for OrbitCamera {
         self.mouse = None;
     }
 
-    fn mouse_move(&mut self, next: Point) {
+    fn mouse_move(&mut self, alt_key: bool, next: Point) {
         let next = Vec2::new(next.x as f32, next.y as f32);
         if let Some(prev) = self.mouse {
-            let delta = 4. * (next - prev) / 1000.;
-            // TODO(@doctorn) divide by `self.gl_ctx.size()`
-            self.apply_angle_delta(delta);
+            let delta = next - prev;
+            if alt_key {
+                self.apply_target_delta(1.5e-2 * delta);
+            } else {
+                // TODO(@doctorn) divide by `self.gl_ctx.size()`
+                self.apply_angle_delta(4e-3 * delta);
+            }
             self.mouse = Some(next);
         }
     }
@@ -129,35 +140,5 @@ impl TouchInterface for OrbitCamera {
 
     fn reset(&mut self) {
         *self = Default::default();
-    }
-}
-
-// TODO(@doctorn) call this a 3D view control and move out
-pub struct OrbitControl {
-    camera: Delta<OrbitCamera>,
-    scrub_control: Delta<ScrubState>,
-}
-
-impl OrbitControl {
-    pub fn new() -> Self {
-        Self {
-            camera: Delta::new(),
-            scrub_control: Delta::new(),
-        }
-    }
-
-    pub fn zoom_in(&self) {
-        self.camera
-            .emit(TouchAction::MouseWheel(Default::default(), -20.0));
-    }
-
-    pub fn zoom_out(&self) {
-        self.camera
-            .emit(TouchAction::MouseWheel(Default::default(), 20.0));
-    }
-
-    pub fn reset(&self) {
-        self.camera.emit(TouchAction::Reset);
-        self.scrub_control.emit(ScrubAction::Scrub(0.));
     }
 }

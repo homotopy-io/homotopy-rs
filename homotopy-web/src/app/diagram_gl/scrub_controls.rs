@@ -142,7 +142,7 @@ impl Default for ScrubState {
 
 #[derive(Properties, PartialEq)]
 pub struct ScrubProperties {
-    pub max_t: f32,
+    pub slices: usize,
 }
 
 pub enum ScrubMessage {

@@ -13,6 +13,9 @@ declare_settings! {
         geometry_samples: u32 = 10,
 
         orthographic_3d: bool = false,
+        specularity: u32 = 100,
+        shininess: u32 = 64,
+        gamma: u32 = 14,
 
         wireframe_3d: bool = false,
         mesh_hidden: bool = false,
@@ -87,6 +90,33 @@ impl Component for SettingsView {
                             "Orthographic projection",
                             |local| *local.get_orthographic_3d(),
                             AppSettingsDispatch::set_orthographic_3d,
+                        )
+                    }
+                    {
+                        self.view_slider(
+                            "Specularity",
+                            |local| *local.get_specularity(),
+                            AppSettingsDispatch::set_specularity,
+                            0,
+                            100,
+                        )
+                    }
+                    {
+                        self.view_slider(
+                            "Shininess",
+                            |local| *local.get_shininess(),
+                            AppSettingsDispatch::set_shininess,
+                            20,
+                            80,
+                        )
+                    }
+                    {
+                        self.view_slider(
+                            "Gamma",
+                            |local| *local.get_gamma(),
+                            AppSettingsDispatch::set_gamma,
+                            10,
+                            22,
                         )
                     }
                 </div>
