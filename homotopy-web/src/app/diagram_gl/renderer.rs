@@ -1,3 +1,4 @@
+use homotopy_core::Generator;
 use homotopy_graphics::{
     draw,
     gl::{
@@ -5,7 +6,7 @@ use homotopy_graphics::{
         GlCtx, Result,
     },
 };
-use ultraviolet::{Vec3, Vec4};
+use ultraviolet::{Mat4, Vec3, Vec4};
 
 use self::{axes::Axes, gbuffer::GBuffer, quad::Quad, scene::Scene, shaders::Shaders};
 use super::{orbit_camera::OrbitCamera, GlDiagramProps};
@@ -90,13 +91,27 @@ impl Renderer {
     }
 
     pub fn render(&mut self, camera: &OrbitCamera, settings: &Store<AppSettings>, t: f32) {
-        let mv = camera.view_transform(&self.ctx);
+        let v = camera.view_transform(&self.ctx);
         let p = camera.perspective_transform(&self.ctx);
 
         let program = if self.scene.view_dimension == ViewDimension::Three {
             &self.shaders.geometry_3d
         } else {
             &self.shaders.geometry_4d
+        };
+
+        let signature = &self.signature;
+        let color_of = |generator: &Generator| {
+            let color = signature.generator_info(*generator).map_or(
+                palette::rgb::Rgb {
+                    red: 0.,
+                    green: 0.,
+                    blue: 1.,
+                    ..Default::default()
+                },
+                |info| info.color.0.into_format(),
+            );
+            Vec3::new(color.red, color.green, color.blue)
         };
 
         // Render animated wireframes to cylinder buffer
@@ -106,22 +121,11 @@ impl Renderer {
                 .with_clear_color(Vec4::new(0., 0., 0., 0.));
 
             if !*settings.get_mesh_hidden() {
-                let signature = &self.signature;
-
                 for (generator, array) in &self.scene.cylinder_components {
-                    let color = signature.generator_info(*generator).map_or(
-                        palette::rgb::Rgb {
-                            red: 0.,
-                            green: 0.,
-                            blue: 1.,
-                            ..Default::default()
-                        },
-                        |info| info.color.0.into_format(),
-                    );
                     frame.draw(draw!(program, array, &[], {
-                        mv: mv,
+                        mv: v,
                         p: p,
-                        albedo: Vec3::new(color.red, color.green, color.blue),
+                        albedo: color_of(generator),
                         t: t,
                     }));
                 }
@@ -135,27 +139,48 @@ impl Renderer {
                 .with_clear_color(Vec4::new(0., 0., 0., 0.));
 
             if !*settings.get_mesh_hidden() {
-                let signature = &self.signature;
-
                 for (generator, array) in &self.scene.components {
-                    let color = signature.generator_info(*generator).map_or(
-                        palette::rgb::Rgb {
-                            red: 0.,
-                            green: 0.,
-                            blue: 1.,
-                            ..Default::default()
-                        },
-                        |info| info.color.0.into_format(),
-                    );
                     frame.draw(draw!(program, array, &[], {
-                        mv: mv,
+                        mv: v,
                         p: p,
-                        albedo: Vec3::new(color.red, color.green, color.blue),
+                        albedo: color_of(generator),
                         t: t,
                     }));
                 }
 
                 if self.scene.view_dimension == ViewDimension::Four {
+                    for animation_curve in &self.scene.animation_curves {
+                        if let (Some(position), Some(sphere)) =
+                            (animation_curve.at(t), self.scene.sphere.as_ref())
+                        {
+                            frame.draw(draw!(&self.shaders.geometry_3d, sphere, &[], {
+                                mv: v * Mat4::from_translation(position.xyz()),
+                                p: p,
+                                albedo: color_of(&animation_curve.generator),
+                                t: t,
+                            }));
+                        }
+                    }
+
+                    for (generator, point) in &self.scene.animation_singularities {
+                        const MAX_RADIUS: f32 = 0.1;
+
+                        let dt = (point.w - t).abs();
+                        if dt > MAX_RADIUS {
+                            continue;
+                        }
+
+                        if let Some(sphere) = self.scene.sphere.as_ref() {
+                            let scale = 1.4 * f32::sqrt(1. - dt / MAX_RADIUS);
+                            frame.draw(draw!(&self.shaders.geometry_3d, sphere, &[], {
+                                mv: v * Mat4::from_translation(point.xyz()) * Mat4::from_scale(scale),
+                                p: p,
+                                albedo: color_of(generator),
+                                t: t,
+                            }));
+                        }
+                    }
+
                     frame.draw(draw! {
                         &self.shaders.cylinder_pass,
                         &self.quad.array,
@@ -205,7 +230,7 @@ impl Renderer {
                         &[],
                         DepthTest::Disable,
                         {
-                            mv: mv,
+                            mv: v,
                             p: p,
                         }
                     });
@@ -220,7 +245,7 @@ impl Renderer {
                     &[],
                     DepthTest::Disable,
                     {
-                        mv: mv,
+                        mv: v,
                         p: p,
                     }
                 });
