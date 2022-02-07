@@ -41,8 +41,8 @@ where
     where
         Ix2: IndexType,
         F: FnMut(NodeIndex<Ix>, &V, SliceIndex) -> Option<V2>,
-        G: FnMut(NodeIndex<Ix>, &V, RewriteOrigin) -> Option<E2>,
-        H: FnMut(EdgeIndex<Ix>, &E, RewriteOrigin) -> Option<E2>;
+        G: FnMut(NodeIndex<Ix>, &V, InternalRewrite) -> Option<E2>,
+        H: FnMut(EdgeIndex<Ix>, &E, ExternalRewrite) -> Option<E2>;
 }
 
 /// A graph of diagrams and rewrites obtained by exploding a diagram.
@@ -50,11 +50,18 @@ pub type SliceGraph<V = (), E = (), Ix = DefaultIx> = DiGraph<(V, Diagram), (E, 
 
 /// Describes from where a rewrite in the output of explosion originates.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum RewriteOrigin {
+pub enum InternalRewrite {
     /// Padded identity along boundary.
     Boundary(Boundary),
     /// From a diagram's cospans.
-    Internal(SingularHeight, Direction),
+    Interior(SingularHeight, Direction),
+}
+
+/// Describes from where a rewrite in the output of explosion originates.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum ExternalRewrite {
+    /// Padded identity along boundary.
+    Boundary(Boundary),
     /// Sparse identity from a rewrite.
     Sparse(RegularHeight),
     /// Unit slices from a rewrite.
@@ -89,8 +96,8 @@ where
     where
         Ix2: IndexType,
         F: FnMut(NodeIndex<Ix>, &V, SliceIndex) -> Option<V2>,
-        G: FnMut(NodeIndex<Ix>, &V, RewriteOrigin) -> Option<E2>,
-        H: FnMut(EdgeIndex<Ix>, &E, RewriteOrigin) -> Option<E2>,
+        G: FnMut(NodeIndex<Ix>, &V, InternalRewrite) -> Option<E2>,
+        H: FnMut(EdgeIndex<Ix>, &E, ExternalRewrite) -> Option<E2>,
     {
         let mut graph = SliceGraph::default();
 
@@ -120,13 +127,11 @@ where
             add_node(Boundary::Target.into(), diagram.target());
 
             let mut add_edge =
-                |si: SliceIndex, ti: SliceIndex, ro: RewriteOrigin, rewrite: Rewrite| {
-                    let si = (si.to_int(diagram.size()) + 1) as usize;
-                    let ti = (ti.to_int(diagram.size()) + 1) as usize;
+                |si: SliceIndex, ti: SliceIndex, r: InternalRewrite, rewrite: Rewrite| {
                     internal_edges[n].push(|| -> Option<_> {
                         let a = nodes[n][si]?;
                         let b = nodes[n][ti]?;
-                        let key = internal_edge_map(n, key, ro)?;
+                        let key = internal_edge_map(n, key, r)?;
                         graph.add_edge(a, b, (key, rewrite)).into()
                     }());
                 };
@@ -135,7 +140,7 @@ where
             add_edge(
                 Boundary::Source.into(),
                 Height::Regular(0).into(),
-                RewriteOrigin::Boundary(Boundary::Source),
+                InternalRewrite::Boundary(Boundary::Source),
                 Rewrite::identity(diagram.dimension() - 1),
             );
 
@@ -144,13 +149,13 @@ where
                 add_edge(
                     Height::Regular(i).into(),
                     Height::Singular(i).into(),
-                    RewriteOrigin::Internal(i, Direction::Forward),
+                    InternalRewrite::Interior(i, Direction::Forward),
                     cospan.forward.clone(),
                 );
                 add_edge(
                     Height::Regular(i + 1).into(),
                     Height::Singular(i).into(),
-                    RewriteOrigin::Internal(i, Direction::Backward),
+                    InternalRewrite::Interior(i, Direction::Backward),
                     cospan.backward.clone(),
                 );
             }
@@ -159,7 +164,7 @@ where
             add_edge(
                 Boundary::Target.into(),
                 Height::Regular(diagram.size()).into(),
-                RewriteOrigin::Boundary(Boundary::Target),
+                InternalRewrite::Boundary(Boundary::Target),
                 Rewrite::identity(diagram.dimension() - 1),
             );
         }
@@ -174,13 +179,11 @@ where
             let target_diagram: &DiagramN = (&self[t].1).try_into()?;
 
             let mut add_edge =
-                |si: SliceIndex, ti: SliceIndex, ro: RewriteOrigin, rewrite: Rewrite| {
-                    let si = (si.to_int(source_diagram.size()) + 1) as usize;
-                    let ti = (ti.to_int(target_diagram.size()) + 1) as usize;
+                |si: SliceIndex, ti: SliceIndex, r: ExternalRewrite, rewrite: Rewrite| {
                     external_edges[e.id()].push(|| -> Option<_> {
                         let a = nodes[s][si]?;
                         let b = nodes[t][ti]?;
-                        let key = external_edge_map(e.id(), key, ro)?;
+                        let key = external_edge_map(e.id(), key, r)?;
                         graph.add_edge(a, b, (key, rewrite)).into()
                     }());
                 };
@@ -192,7 +195,7 @@ where
                         add_edge(
                             ti,
                             ti,
-                            RewriteOrigin::Boundary(b),
+                            ExternalRewrite::Boundary(b),
                             Rewrite::identity(rewrite.dimension() - 1),
                         );
                     }
@@ -202,7 +205,7 @@ where
                         add_edge(
                             SliceIndex::Interior(Height::Regular(source_height)),
                             ti,
-                            RewriteOrigin::Sparse(target_height),
+                            ExternalRewrite::Sparse(target_height),
                             Rewrite::identity(rewrite.dimension() - 1),
                         );
                     }
@@ -213,15 +216,15 @@ where
                         for source_height in start..end {
                             let singular_slice = rewrite.slice(source_height);
 
-                            let ro = if source_height == start {
-                                RewriteOrigin::UnitSlice
+                            let r = if source_height == start {
+                                ExternalRewrite::UnitSlice
                             } else {
-                                RewriteOrigin::RegularSlice
+                                ExternalRewrite::RegularSlice
                             };
                             add_edge(
                                 SliceIndex::Interior(Height::Regular(source_height)),
                                 ti,
-                                ro,
+                                r,
                                 source_diagram.cospans()[source_height]
                                     .forward
                                     .compose(&singular_slice)
@@ -231,20 +234,20 @@ where
                             add_edge(
                                 SliceIndex::Interior(Height::Singular(source_height)),
                                 ti,
-                                RewriteOrigin::SingularSlice(source_height),
+                                ExternalRewrite::SingularSlice(source_height),
                                 singular_slice,
                             );
                         }
 
-                        let ro = if start < end {
-                            RewriteOrigin::UnitSlice
+                        let r = if start < end {
+                            ExternalRewrite::UnitSlice
                         } else {
-                            RewriteOrigin::RegularSlice
+                            ExternalRewrite::RegularSlice
                         };
                         add_edge(
                             SliceIndex::Interior(Height::Regular(end)),
                             ti,
-                            ro,
+                            r,
                             target_diagram.cospans()[target_height].backward.clone(),
                         );
                     }
@@ -287,8 +290,8 @@ where
     where
         Ix3: IndexType,
         F: FnMut(NodeIndex<Ix2>, &V, SliceIndex) -> Option<V2>,
-        G: FnMut(NodeIndex<Ix2>, &V, RewriteOrigin) -> Option<E2>,
-        H: FnMut(EdgeIndex<Ix2>, &E, RewriteOrigin) -> Option<E2>,
+        G: FnMut(NodeIndex<Ix2>, &V, InternalRewrite) -> Option<E2>,
+        H: FnMut(EdgeIndex<Ix2>, &E, ExternalRewrite) -> Option<E2>,
     {
         self.output
             .explode(node_map, internal_edge_map, external_edge_map)

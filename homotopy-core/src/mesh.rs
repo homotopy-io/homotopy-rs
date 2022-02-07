@@ -4,7 +4,7 @@ use petgraph::graph::NodeIndex;
 
 use crate::{
     common::DimensionError,
-    graph::{Explodable, RewriteOrigin, SliceGraph},
+    graph::{Explodable, ExternalRewrite, SliceGraph},
     DiagramN, SliceIndex,
 };
 
@@ -43,7 +43,7 @@ impl Mesh {
                     Some(key)
                 },
                 |_, _, _| Some(()),
-                |_, _, ro| (ro != RewriteOrigin::UnitSlice).then(|| ()),
+                |_, _, ro| (ro != ExternalRewrite::UnitSlice).then(|| ()),
             )?;
             graph = explosion.output;
             elements = explode_elements(&elements, &graph, &explosion.node_to_nodes, orientation);

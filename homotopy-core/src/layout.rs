@@ -10,7 +10,7 @@ use petgraph::{
 
 use crate::{
     common::{DimensionError, SingularHeight},
-    graph::{Explodable, RewriteOrigin, SliceGraph},
+    graph::{Explodable, ExternalRewrite, SliceGraph},
     DiagramN, RewriteN, SliceIndex,
 };
 
@@ -56,7 +56,7 @@ impl Layout {
                     },
                     |_, _, _| Some(()),
                     |_, _, ro| {
-                        (ro != RewriteOrigin::UnitSlice && ro != RewriteOrigin::RegularSlice)
+                        (ro != ExternalRewrite::UnitSlice && ro != ExternalRewrite::RegularSlice)
                             .then(|| ())
                     },
                 )?
