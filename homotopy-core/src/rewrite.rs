@@ -81,17 +81,23 @@ type Coordinate<T> = Vec<T>;
 pub type Label = (Generator, Coordinate<SliceIndex>);
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize)]
-pub struct ConeInternal {
-    pub(crate) source: Vec<Cospan>,
-    pub(crate) target: Cospan,
-    pub(crate) regular_slices: Vec<Rewrite>,
-    pub(crate) singular_slices: Vec<Rewrite>,
+enum ConeInternal {
+    Cone0 {
+        target: Cospan,
+        regular_slice: Rewrite,
+    },
+    ConeN {
+        source: Vec<Cospan>,
+        target: Cospan,
+        regular_slices: Vec<Rewrite>,
+        singular_slices: Vec<Rewrite>,
+    },
 }
 
 #[derive(PartialEq, Eq, Clone, Hash)]
 pub struct Cone {
     pub(crate) index: usize,
-    pub(crate) internal: HConsed<ConeInternal>,
+    internal: HConsed<ConeInternal>,
 }
 
 impl Serialize for Cone {
@@ -692,7 +698,7 @@ impl RewriteN {
             .iter()
             .find(|cone| cone.index <= height && height < cone.index + cone.len())
             .map_or(Rewrite::identity(self.dimension() - 1), |cone| {
-                cone.internal.singular_slices[height - cone.index].clone()
+                cone.singular_slices()[height - cone.index].clone()
             })
     }
 
@@ -736,39 +742,35 @@ impl RewriteN {
                     } else {
                         let index = index as usize;
 
-                        if f_cone.internal.target != g_cone.internal.source[index] {
+                        if f_cone.target() != &g_cone.source()[index] {
                             return Err(CompositionError::Incompatible);
                         }
 
                         let mut source = vec![];
-                        source.extend(g_cone.internal.source[..index].iter().cloned());
-                        source.extend(f_cone.internal.source.iter().cloned());
-                        source.extend(g_cone.internal.source[index + 1..].iter().cloned());
+                        source.extend(g_cone.source()[..index].iter().cloned());
+                        source.extend(f_cone.source().iter().cloned());
+                        source.extend(g_cone.source()[index + 1..].iter().cloned());
 
-                        let g_slice = &g_cone.internal.singular_slices[index];
+                        let g_slice = &g_cone.singular_slices()[index];
                         let mut singular_slices = vec![];
-                        singular_slices
-                            .extend(g_cone.internal.singular_slices[..index].iter().cloned());
+                        singular_slices.extend(g_cone.singular_slices()[..index].iter().cloned());
                         singular_slices.extend(
                             f_cone
-                                .internal
-                                .singular_slices
+                                .singular_slices()
                                 .iter()
                                 .map(|f_slice| f_slice.compose(g_slice))
                                 .collect::<Result<Vec<_>, _>>()?,
                         );
                         singular_slices
-                            .extend(g_cone.internal.singular_slices[index + 1..].iter().cloned());
+                            .extend(g_cone.singular_slices()[index + 1..].iter().cloned());
 
-                        let g_slice_pre = &g_cone.internal.regular_slices[index];
-                        let g_slice_post = &g_cone.internal.regular_slices[index + 1];
+                        let g_slice_pre = &g_cone.regular_slices()[index];
+                        let g_slice_post = &g_cone.regular_slices()[index + 1];
                         let mut regular_slices = vec![];
-                        regular_slices
-                            .extend(g_cone.internal.regular_slices[..index].iter().cloned());
+                        regular_slices.extend(g_cone.regular_slices()[..index].iter().cloned());
                         regular_slices.extend(
                             f_cone
-                                .internal
-                                .regular_slices
+                                .regular_slices()
                                 .iter()
                                 .map(|f_slice| {
                                     Ok([
@@ -785,7 +787,7 @@ impl RewriteN {
                         g_cones.push(Cone::new(
                             g_cone.index,
                             source,
-                            g_cone.internal.target.clone(),
+                            g_cone.target().clone(),
                             regular_slices,
                             singular_slices,
                         ));
@@ -880,7 +882,7 @@ impl RewriteN {
                 first_max_generator(
                     self.cones()
                         .iter()
-                        .flat_map(|cone| &cone.internal.source)
+                        .flat_map(|cone| cone.source())
                         .filter_map(Cospan::max_generator),
                 )
             }),
@@ -888,7 +890,7 @@ impl RewriteN {
                 first_max_generator(
                     self.cones()
                         .iter()
-                        .filter_map(|cone| cone.internal.target.max_generator()),
+                        .filter_map(|cone| cone.target().max_generator()),
                 )
             }),
         }
@@ -921,16 +923,60 @@ impl Cone {
         regular_slices: Vec<Rewrite>,
         singular_slices: Vec<Rewrite>,
     ) -> Self {
-        Self {
-            index,
-            internal: CONE_FACTORY.with(|factory| {
-                factory.borrow_mut().mk(ConeInternal {
-                    source,
-                    target,
-                    regular_slices,
-                    singular_slices,
-                })
-            }),
+        debug_assert_eq!(source.len(), singular_slices.len());
+        if source.len() == 0 {
+            debug_assert_eq!(regular_slices.len(), 1);
+            Self {
+                index,
+                internal: CONE_FACTORY.with(|factory| {
+                    factory.borrow_mut().mk(ConeInternal::Cone0 {
+                        target,
+                        regular_slice: regular_slices.into_iter().next().unwrap(),
+                    })
+                }),
+            }
+        } else {
+            Self {
+                index,
+                internal: CONE_FACTORY.with(|factory| {
+                    factory.borrow_mut().mk(ConeInternal::ConeN {
+                        source,
+                        target,
+                        regular_slices,
+                        singular_slices,
+                    })
+                }),
+            }
+        }
+    }
+
+    pub(crate) fn source(&self) -> &[Cospan] {
+        match self.internal.get() {
+            ConeInternal::Cone0 { .. } => &[],
+            ConeInternal::ConeN { source, .. } => &source,
+        }
+    }
+
+    pub(crate) fn target(&self) -> &Cospan {
+        match self.internal.get() {
+            ConeInternal::Cone0 { target, .. } => target,
+            ConeInternal::ConeN { target, .. } => target,
+        }
+    }
+
+    pub(crate) fn regular_slices(&self) -> &[Rewrite] {
+        match self.internal.get() {
+            ConeInternal::Cone0 { regular_slice, .. } => std::slice::from_ref(regular_slice),
+            ConeInternal::ConeN { regular_slices, .. } => &regular_slices,
+        }
+    }
+
+    pub(crate) fn singular_slices(&self) -> &[Rewrite] {
+        match self.internal.get() {
+            ConeInternal::Cone0 { .. } => &[],
+            ConeInternal::ConeN {
+                singular_slices, ..
+            } => &singular_slices,
         }
     }
 
@@ -938,36 +984,40 @@ impl Cone {
         CONE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
     }
 
+    pub(crate) fn is_unit(&self) -> bool {
+        match self.internal.get() {
+            ConeInternal::Cone0 { .. } => true,
+            ConeInternal::ConeN { .. } => false,
+        }
+    }
+
     pub(crate) fn is_identity(&self) -> bool {
-        // TODO: do we care about regular slices here?
-        self.internal.singular_slices.len() == 1
-            && self.internal.source.len() == 1
-            && self.internal.source[0] == self.internal.target
-            && self.internal.singular_slices[0].is_identity()
+        match self.internal.get() {
+            ConeInternal::Cone0 { .. } => false,
+            ConeInternal::ConeN {
+                source,
+                target,
+                singular_slices,
+                ..
+            } => {
+                debug_assert_eq!(singular_slices.len(), source.len());
+                &source[0] == target && singular_slices[0].is_identity()
+            }
+        }
     }
 
     pub(crate) fn len(&self) -> usize {
-        self.internal.source.len()
+        self.source().len()
     }
 
     pub(crate) fn pad(&self, embedding: &[usize]) -> Self {
         match embedding.split_first() {
             Some((offset, rest)) => {
                 let index = self.index + offset;
-                let source = self.internal.source.iter().map(|c| c.pad(rest)).collect();
-                let target = self.internal.target.pad(rest);
-                let regular_slices = self
-                    .internal
-                    .regular_slices
-                    .iter()
-                    .map(|r| r.pad(rest))
-                    .collect();
-                let singular_slices = self
-                    .internal
-                    .singular_slices
-                    .iter()
-                    .map(|r| r.pad(rest))
-                    .collect();
+                let source = self.source().iter().map(|c| c.pad(rest)).collect();
+                let target = self.target().pad(rest);
+                let regular_slices = self.regular_slices().iter().map(|r| r.pad(rest)).collect();
+                let singular_slices = self.singular_slices().iter().map(|r| r.pad(rest)).collect();
                 Self::new(index, source, target, regular_slices, singular_slices)
             }
             None => self.clone(),
