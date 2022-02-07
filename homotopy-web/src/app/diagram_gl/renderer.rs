@@ -192,8 +192,6 @@ impl Renderer {
                             in_position: 0,
                             in_albedo: 1,
                             p: p,
-                            scr_width: frame.width() as i32,
-                            scr_height: frame.height() as i32,
                         }
                     });
                 }
