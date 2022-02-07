@@ -127,22 +127,19 @@ impl Store {
 
         let serialized = ConeSer {
             source: cone
-                .internal
-                .source
+                .source()
                 .iter()
                 .map(|cospan| self.pack_cospan(cospan))
                 .collect(),
-            target: self.pack_cospan(&cone.internal.target),
+            target: self.pack_cospan(&cone.target()),
             regular_slices: {
-                cone.internal
-                    .regular_slices
+                cone.regular_slices()
                     .iter()
                     .map(|slice| self.pack_rewrite(slice))
                     .collect()
             },
             singular_slices: {
-                cone.internal
-                    .singular_slices
+                cone.singular_slices()
                     .iter()
                     .map(|slice| self.pack_rewrite(slice))
                     .collect()
@@ -225,10 +222,10 @@ impl Store {
             .map(|c| {
                 Cone::new(
                     cone.index as usize,
-                    c.internal.source.clone(),
-                    c.internal.target.clone(),
-                    c.internal.regular_slices.clone(),
-                    c.internal.singular_slices.clone(),
+                    c.source().to_vec(),
+                    c.target().clone(),
+                    c.regular_slices().to_vec(),
+                    c.singular_slices().to_vec(),
                 )
             })
             .or_else(|| {
