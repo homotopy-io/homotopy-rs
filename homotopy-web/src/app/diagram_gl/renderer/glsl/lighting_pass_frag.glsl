@@ -15,8 +15,17 @@ uniform float alpha;
 uniform float spec;
 uniform float gamma;
 
-const float a = 0.3;
-const vec3 light_offset = vec3(-.75, .25, -.5);
+uniform vec3 camera_pos;
+
+const float a = 0.25;
+const int LIGHTS = 5;
+const vec3 light_offsets[LIGHTS] = vec3[LIGHTS](
+  vec3(0., 0., .25 * sqrt(3.)),
+  vec3(-.5, 0., -.25 * sqrt(3.)),
+  vec3(.5, 0., -.25 * sqrt(3.)),
+  vec3(0., 1., 0.),
+  vec3(0., -1., 0.)
+);
 
 out vec4 frag_color;
 
@@ -28,6 +37,8 @@ void main() {
     vec3 normal = normalize(texture(g_normal, frag_tex_coords).rgb);
     vec3 frag_pos = texture(g_position, frag_tex_coords).rgb;
 
+    float camera_distance = length(camera_pos);
+
     if (lighting_enable == 0.) {
         discard;
     } else if (debug_normals) {
@@ -35,20 +46,25 @@ void main() {
     } else if (disable_lighting) {
         frag_color = vec4(albedo, 1.);
     } else if (lighting_enable == 1.) {
-        vec3 s = vec3(spec);
-        vec3 l = normalize(light_offset - frag_pos);
+        vec3 color = a * albedo;
+        for (int i = 0; i < LIGHTS; i++) {
+            vec3 s = vec3(spec);
+            vec3 d = 300. * light_offsets[i] + vec3(0., 0., -camera_distance) - frag_pos;
+            vec3 l = normalize(d);
 
-        float lambertian = max(dot(l, normal), 0.);
-        float specular = 0.;
+            float lambertian = max(dot(l, normal), 0.);
+            float specular = 0.;
 
-        if (lambertian > 0.) {
-            vec3 view = normalize(-frag_pos);
-            vec3 halfway = normalize(l + view);
-            float theta = max(dot(halfway, normal), 0.);
-            specular = pow(theta, alpha);
+            if (lambertian > 0.) {
+                vec3 view = normalize(-frag_pos);
+                vec3 halfway = normalize(l + view);
+                float theta = max(dot(halfway, normal), 0.);
+                specular = pow(theta, alpha);
+            }
+
+            color += 0.60 * (albedo * lambertian + s * specular);
         }
 
-        vec3 color = albedo * (a + lambertian) + .25 * s * specular;
         frag_color = vec4(pow(color, vec3(1. / gamma)), 1.);
     } else {
         frag_color = vec4(1., 0., 1., 1.);

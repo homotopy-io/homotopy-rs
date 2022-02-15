@@ -91,6 +91,9 @@ impl Renderer {
     }
 
     pub fn render(&mut self, camera: &OrbitCamera, settings: &Store<AppSettings>, t: f32) {
+        let duration = self.scene.diagram.size() as f32;
+        let geometry_scale = *settings.get_geometry_scale() as f32 / 10.;
+
         let v = camera.view_transform(&self.ctx);
         let p = camera.perspective_transform(&self.ctx);
 
@@ -154,7 +157,7 @@ impl Renderer {
                             (animation_curve.at(t), self.scene.sphere.as_ref())
                         {
                             frame.draw(draw!(&self.shaders.geometry_3d, sphere, &[], {
-                                mv: v * Mat4::from_translation(position.xyz()),
+                                mv: v * Mat4::from_translation(position.xyz()) * Mat4::from_scale(geometry_scale),
                                 p: p,
                                 albedo: color_of(&animation_curve.generator),
                                 t: t,
@@ -162,22 +165,24 @@ impl Renderer {
                         }
                     }
 
-                    for (generator, point) in &self.scene.animation_singularities {
-                        const MAX_RADIUS: f32 = 0.1;
+                    if *settings.get_animate_singularities() {
+                        let radius = *settings.get_singularity_duration() as f32 / 10.;
 
-                        let dt = (point.w - t).abs();
-                        if dt > MAX_RADIUS {
-                            continue;
-                        }
+                        for (generator, point) in &self.scene.animation_singularities {
+                            let dt = duration * (point.w - t).abs();
+                            if dt > radius {
+                                continue;
+                            }
 
-                        if let Some(sphere) = self.scene.sphere.as_ref() {
-                            let scale = 1.4 * f32::sqrt(1. - dt / MAX_RADIUS);
-                            frame.draw(draw!(&self.shaders.geometry_3d, sphere, &[], {
+                            if let Some(sphere) = self.scene.sphere.as_ref() {
+                                let scale = geometry_scale * 1.4 * f32::sqrt(1. - dt / radius);
+                                frame.draw(draw!(&self.shaders.geometry_3d, sphere, &[], {
                                 mv: v * Mat4::from_translation(point.xyz()) * Mat4::from_scale(scale),
                                 p: p,
                                 albedo: color_of(generator),
                                 t: t,
                             }));
+                            }
                         }
                     }
 
@@ -219,6 +224,7 @@ impl Renderer {
                     spec: 1e-2 * *settings.get_specularity() as f32,
                     alpha: *settings.get_shininess() as f32,
                     gamma: 0.1 * *settings.get_gamma() as f32,
+                    camera_pos: camera.position(),
                 }
             });
 

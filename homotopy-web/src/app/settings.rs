@@ -8,14 +8,17 @@ use crate::{
 
 declare_settings! {
     pub struct AppSettings {
-        dpr_scale: bool = false,
+        dpr_scale: bool = true,
         subdivision_depth: u32 = 2,
         geometry_samples: u32 = 10,
 
         orthographic_3d: bool = false,
-        specularity: u32 = 100,
+        specularity: u32 = 25,
         shininess: u32 = 64,
         gamma: u32 = 14,
+        animate_singularities: bool = true,
+        singularity_duration: u32 = 5,
+        geometry_scale: u32 = 10,
 
         wireframe_3d: bool = false,
         mesh_hidden: bool = false,
@@ -111,12 +114,28 @@ impl Component for SettingsView {
                         )
                     }
                     {
+                        self.view_checkbox(
+                            "Animate singularities",
+                            |local| *local.get_animate_singularities(),
+                            AppSettingsDispatch::set_animate_singularities,
+                        )
+                    }
+                    {
                         self.view_slider(
-                            "Gamma",
-                            |local| *local.get_gamma(),
-                            AppSettingsDispatch::set_gamma,
-                            10,
-                            22,
+                            "Singularity duration",
+                            |local| *local.get_singularity_duration(),
+                            AppSettingsDispatch::set_singularity_duration,
+                            1,
+                            9,
+                        )
+                    }
+                    {
+                        self.view_slider(
+                            "4D geometry scale",
+                            |local| *local.get_geometry_scale(),
+                            AppSettingsDispatch::set_geometry_scale,
+                            5,
+                            20,
                         )
                     }
                 </div>

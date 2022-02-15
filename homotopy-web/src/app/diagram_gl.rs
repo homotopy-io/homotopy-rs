@@ -81,7 +81,6 @@ pub struct GlDiagram {
     local: Store<AppSettings>,
     global_t: f32,
     t_coord: f32,
-    duration: f32,
 
     // If the render task is dropped, we won't get notified about `requestAnimationFrame()`
     // calls, so store a reference to the task here
@@ -128,7 +127,6 @@ impl Component for GlDiagram {
             local: Default::default(),
             global_t: Default::default(),
             t_coord: Default::default(),
-            duration: ctx.props().diagram.size() as f32,
 
             render_loop: None,
         }
@@ -142,8 +140,9 @@ impl Component for GlDiagram {
                 self.global_t = t;
                 if ctx.props().view.dimension() == 4 {
                     // Slow the animation such that we get 1s per cospan
-                    self.scrub_delta
-                        .emit(ScrubAction::Advance(1e-3 * dt / self.duration));
+                    self.scrub_delta.emit(ScrubAction::Advance(
+                        1e-3 * dt / ctx.props().diagram.size() as f32,
+                    ));
                 }
                 // Update camera settings
                 self.camera.set_ortho(*self.local.get_orthographic_3d());
