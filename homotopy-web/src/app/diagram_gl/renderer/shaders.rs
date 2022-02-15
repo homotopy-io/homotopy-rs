@@ -56,6 +56,7 @@ impl Shaders {
                     spec,
                     alpha,
                     gamma,
+                    camera_pos,
                 },
             )?,
         })
