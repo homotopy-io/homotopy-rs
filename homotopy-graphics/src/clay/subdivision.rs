@@ -395,7 +395,9 @@ impl<'a> Subdivider<'a> {
         for (vert, data) in self.smoothed.iter() {
             let valence = self.valence[vert];
             if valence > 0 {
-                self.geom.verts[vert].position = *data / valence as f32;
+                let old = &mut self.geom.verts[vert].position;
+                let new = *data / valence as f32;
+                *old = Vec4::new(new.x, new.y, new.z, old.w);
             }
         }
 
