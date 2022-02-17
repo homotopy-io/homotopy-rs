@@ -7,9 +7,9 @@ use crate::geom::{Area, Boundary, CubicalGeometry, CurveData, Line, Vert, VertDa
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum Pass {
-    Cubes,
-    Squares,
     Lines,
+    Squares,
+    Cubes,
 }
 
 struct Subdivider<'a> {
@@ -379,16 +379,16 @@ impl<'a> Subdivider<'a> {
         self.smoothed = IdxVec::splat(Vec4::zero(), len);
         self.touched = IdxVec::splat(None, len);
 
-        for cube in self.geom.volumes.keys() {
-            self.smooth_cube(cube);
+        for line in self.geom.lines.keys() {
+            self.smooth_line(line);
         }
 
         for square in self.geom.areas.keys() {
             self.smooth_square(square);
         }
 
-        for line in self.geom.lines.keys() {
-            self.smooth_line(line);
+        for cube in self.geom.volumes.keys() {
+            self.smooth_cube(cube);
         }
 
         // 4. Update vertex positions and divide by valence
