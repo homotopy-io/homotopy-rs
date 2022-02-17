@@ -77,7 +77,7 @@ impl Mesh {
                     Some(key)
                 },
                 |_, _, _| Some(false),
-                |_, &is_partial, ro| Some(is_partial || ro == ExternalRewrite::UnitSlice),
+                |_, &is_partial, ro| Some(is_partial || ro == ExternalRewrite::Flange),
             )?;
             graph = explosion.output;
             elements = explode_elements(&elements, &graph, &explosion.node_to_nodes, orientation);

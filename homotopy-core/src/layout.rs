@@ -10,7 +10,7 @@ use petgraph::{
 
 use crate::{
     common::{DimensionError, SingularHeight},
-    graph::{Explodable, ExternalRewrite, SliceGraph},
+    graph::{Explodable, SliceGraph},
     DiagramN, RewriteN, SliceIndex,
 };
 
@@ -55,10 +55,7 @@ impl Layout {
                         Some(key)
                     },
                     |_, _, _| Some(()),
-                    |_, _, ro| {
-                        (ro != ExternalRewrite::UnitSlice && ro != ExternalRewrite::RegularSlice)
-                            .then(|| ())
-                    },
+                    |_, _, r| r.is_atomic().then(|| ()),
                 )?
                 .output;
         }

@@ -18,7 +18,7 @@ use serde::Serialize;
 use crate::{
     common::{Boundary, DimensionError, Generator, SliceIndex},
     diagram::DiagramN,
-    graph::{Explodable, ExternalRewrite, SliceGraph},
+    graph::{Explodable, SliceGraph},
     Rewrite,
 };
 
@@ -77,18 +77,12 @@ impl Depths {
             .explode(
                 |_, (), si| Some(si),
                 |_, _, _| Some(()),
-                |_, _, ro| {
-                    (ro != ExternalRewrite::UnitSlice && ro != ExternalRewrite::RegularSlice)
-                        .then(|| ())
-                },
+                |_, _, r| r.is_atomic().then(|| ()),
             )?
             .explode(
-                |_n: NodeIndex, key, si| Some([*key, si]),
+                |_: NodeIndex, key, si| Some([*key, si]),
                 |_, _, _| Some(()),
-                |_, _, ro| {
-                    (ro != ExternalRewrite::UnitSlice && ro != ExternalRewrite::RegularSlice)
-                        .then(|| ())
-                },
+                |_, _, r| r.is_atomic().then(|| ()),
             )?
             .output;
 

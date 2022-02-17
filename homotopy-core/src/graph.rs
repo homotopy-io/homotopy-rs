@@ -62,14 +62,22 @@ pub enum InternalRewrite {
 pub enum ExternalRewrite {
     /// Padded identity along boundary.
     Boundary(Boundary),
-    /// Sparse identity from a rewrite.
+    /// Sparse identity between regular slices.
     Sparse(RegularHeight),
-    /// Unit slices from a rewrite.
+    /// Side flange.
+    Flange,
+    /// Unique slice of a unit cone.
     UnitSlice,
-    /// Cone regular slices from a rewrite.
+    /// Regular slice of a non-unit cone.
     RegularSlice,
-    /// Cone singular slices from a rewrite.
+    /// Singular slice of a non-unit cone.
     SingularSlice(SingularHeight),
+}
+
+impl ExternalRewrite {
+    pub fn is_atomic(&self) -> bool {
+        matches!(self, Self::Flange | Self::UnitSlice | Self::RegularSlice)
+    }
 }
 
 impl<V, E, Ix> Explodable<V, E, Ix> for SliceGraph<V, E, Ix>
@@ -217,7 +225,7 @@ where
                             let singular_slice = rewrite.slice(source_height);
 
                             let r = if source_height == start {
-                                ExternalRewrite::UnitSlice
+                                ExternalRewrite::Flange
                             } else {
                                 ExternalRewrite::RegularSlice
                             };
@@ -240,9 +248,9 @@ where
                         }
 
                         let r = if start < end {
-                            ExternalRewrite::UnitSlice
+                            ExternalRewrite::Flange
                         } else {
-                            ExternalRewrite::RegularSlice
+                            ExternalRewrite::UnitSlice
                         };
                         add_edge(
                             SliceIndex::Interior(Height::Regular(end)),
