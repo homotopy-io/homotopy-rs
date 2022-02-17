@@ -52,11 +52,7 @@ pub fn factorize(f: Rewrite, g: Rewrite, source: Diagram, target: Diagram) -> Fa
                     target.cospans(),
                     vec![vec![]; target.size()],
                 );
-                Factorization::Unique(
-                    h.check_well_formed(Mode::Shallow)
-                        .is_ok()
-                        .then(|| Rewrite::from(h)),
-                )
+                Factorization::Unique(h.check(Mode::Shallow).is_ok().then(|| Rewrite::from(h)))
             } else {
                 let constraints: Vec<Range<usize>> = (0..source.size())
                     .map(|i| g.singular_preimage(f.singular_image(i)))
@@ -137,7 +133,7 @@ impl Iterator for FactorizationInternal {
                             h_mono,
                             &slices,
                         );
-                        if h.check_well_formed(Mode::Shallow).is_ok() {
+                        if h.check(Mode::Shallow).is_ok() {
                             return Some(Rewrite::from(h));
                         }
                     }

@@ -99,12 +99,12 @@ impl State {
                     serialize::deserialize(&Vec::<u8>::from(data)).ok_or(ModelError::Import)?;
                 for g in signature.iter() {
                     g.diagram
-                        .check_well_formed(Mode::Deep)
+                        .check(Mode::Deep)
                         .map_err(|_err| ModelError::Import)?;
                 }
                 if let Some(w) = workspace.as_ref() {
                     w.diagram
-                        .check_well_formed(Mode::Deep)
+                        .check(Mode::Deep)
                         .map_err(|_err| ModelError::Import)?;
                 }
                 let mut proof: Proof = Default::default();

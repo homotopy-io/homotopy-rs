@@ -53,6 +53,7 @@ pub use diagram::{Diagram, DiagramN};
 pub use rewrite::{Cospan, Rewrite, Rewrite0, RewriteN};
 
 pub mod attach;
+pub mod check;
 pub mod common;
 pub mod complex;
 pub mod contraction;

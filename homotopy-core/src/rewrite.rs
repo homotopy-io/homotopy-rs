@@ -28,7 +28,7 @@ thread_local! {
         RefCell::new(HConsign::with_capacity(37));
 }
 
-#[derive(Debug, Error)]
+#[derive(Clone, Debug, Error)]
 pub enum CompositionError {
     #[error("can't compose rewrites of dimensions {0} and {1}")]
     Dimension(usize, usize),
@@ -231,14 +231,6 @@ impl Rewrite {
     }
 
     #[inline]
-    pub fn check_well_formed(&self, mode: Mode) -> Result<(), Vec<MalformedRewrite>> {
-        match self {
-            Self::Rewrite0(_) => Ok(()),
-            Self::RewriteN(r) => r.check_well_formed(mode),
-        }
-    }
-
-    #[inline]
     pub fn compose(&self, g: &Self) -> Result<Self, CompositionError> {
         match (self, g) {
             (Self::Rewrite0(ref f), Self::Rewrite0(ref g)) => Ok(f.compose(g)?.into()),
@@ -348,9 +340,7 @@ impl RewriteN {
     pub(crate) fn new(dimension: usize, cones: Vec<Cone>) -> Self {
         let rewrite = Self::new_unsafe(dimension, cones);
         if cfg!(feature = "safety-checks") {
-            rewrite
-                .check_well_formed(Mode::Shallow)
-                .expect("Rewrite is malformed");
+            rewrite.check(Mode::Shallow).expect("Rewrite is malformed");
         }
         rewrite
     }
@@ -408,9 +398,7 @@ impl RewriteN {
     ) -> Self {
         let rewrite = Self::from_slices_unsafe(dimension, source_cospans, target_cospans, slices);
         if cfg!(feature = "safety-checks") {
-            rewrite
-                .check_well_formed(Mode::Shallow)
-                .expect("Rewrite is malformed");
+            rewrite.check(Mode::Shallow).expect("Rewrite is malformed");
         }
         rewrite
     }
@@ -451,9 +439,7 @@ impl RewriteN {
         let rewrite =
             Self::from_monotone_unsafe(dimension, source_cospans, target_cospans, mono, slices);
         if cfg!(feature = "safety-checks") {
-            rewrite
-                .check_well_formed(Mode::Shallow)
-                .expect("Rewrite is malformed");
+            rewrite.check(Mode::Shallow).expect("Rewrite is malformed");
         }
         rewrite
     }
@@ -495,75 +481,6 @@ impl RewriteN {
     #[inline]
     pub fn is_identity(&self) -> bool {
         self.0.cones.is_empty()
-    }
-
-    #[inline]
-    pub fn check_well_formed(&self, mode: Mode) -> Result<(), Vec<MalformedRewrite>> {
-        let mut errors: Vec<MalformedRewrite> = Default::default();
-        for cone in &self.0.cones {
-            if cone.len() == 0 {
-                if cone.internal.target.forward != cone.internal.target.backward {
-                    errors.push(MalformedRewrite::NotSingularity(cone.index));
-                }
-            } else {
-                // Check that the subslices are well-formed.
-                if mode == Mode::Deep {
-                    for (i, slice) in cone.internal.slices.iter().enumerate() {
-                        if let Err(e) = slice.check_well_formed(mode) {
-                            errors.push(MalformedRewrite::Slice(i, e));
-                        }
-                    }
-                }
-
-                // Check that the squares commute.
-                let len = cone.len();
-
-                match cone.internal.source[0]
-                    .forward
-                    .compose(&cone.internal.slices[0])
-                {
-                    Ok(f) if f == cone.internal.target.forward => { /* no error */ }
-                    Ok(_) => errors.push(MalformedRewrite::NotCommutativeLeft(cone.index)),
-                    Err(ce) => errors.push(ce.into()),
-                };
-
-                for i in 0..len - 1 {
-                    let f = cone.internal.source[i]
-                        .backward
-                        .compose(&cone.internal.slices[i]);
-                    let g = cone.internal.source[i + 1]
-                        .forward
-                        .compose(&cone.internal.slices[i + 1]);
-                    match (f, g) {
-                        (Ok(f), Ok(g)) if f == g => { /* no error */ }
-                        (Ok(_), Ok(_)) => errors.push(MalformedRewrite::NotCommutativeMiddle(
-                            cone.index + i,
-                            cone.index + i + 1,
-                        )),
-                        (Ok(_), Err(ce)) | (Err(ce), Ok(_)) => errors.push(ce.into()),
-                        (Err(f_ce), Err(g_ce)) => {
-                            errors.push(f_ce.into());
-                            errors.push(g_ce.into());
-                        }
-                    }
-                }
-
-                match cone.internal.source[len - 1]
-                    .backward
-                    .compose(&cone.internal.slices[len - 1])
-                {
-                    Ok(f) if f == cone.internal.target.backward => { /* no error */ }
-                    Ok(_) => errors.push(MalformedRewrite::NotCommutativeRight(len - 1)),
-                    Err(ce) => errors.push(ce.into()),
-                };
-            }
-        }
-
-        if errors.is_empty() {
-            Ok(())
-        } else {
-            Err(errors)
-        }
     }
 
     pub fn dimension(&self) -> usize {
@@ -849,27 +766,6 @@ impl Cone {
             None => self.clone(),
         }
     }
-}
-
-#[derive(Debug, Error)]
-pub enum MalformedRewrite {
-    #[error(transparent)]
-    Composition(#[from] CompositionError),
-
-    #[error("slice {0:?} is malformed: {1:?}")]
-    Slice(usize, Vec<MalformedRewrite>),
-
-    #[error("slice {0} of target cannot be a singularity.")]
-    NotSingularity(usize),
-
-    #[error("square to the left of slice {0} does not commute.")]
-    NotCommutativeLeft(usize),
-
-    #[error("square to the right of slice {0} does not commute.")]
-    NotCommutativeRight(usize),
-
-    #[error("square between slices {0} and {1} does not commute.")]
-    NotCommutativeMiddle(usize, usize),
 }
 
 #[cfg(test)]
