@@ -1,6 +1,10 @@
-use std::{cmp, mem};
+use std::{
+    cmp::{self, Ordering},
+    mem,
+};
 
 use homotopy_common::{hash::FastHashMap, idx::IdxVec};
+use homotopy_core::Direction;
 use ultraviolet::{Mat4, Vec4};
 
 use crate::geom::{Area, Boundary, CubicalGeometry, CurveData, Line, Vert, VertData, Volume};
@@ -16,7 +20,6 @@ struct Subdivider<'a> {
     geom: &'a mut CubicalGeometry,
 
     edge_division_memory: FastHashMap<[Vert; 2], Vert>,
-    face_division_memory: FastHashMap<[Vert; 4], Vert>,
 
     valence: IdxVec<Vert, u32>,
     smoothed: IdxVec<Vert, Vec4>,
@@ -76,10 +79,6 @@ impl<'a> Subdivider<'a> {
                 geom.lines.len(),
                 Default::default(),
             ),
-            face_division_memory: FastHashMap::with_capacity_and_hasher(
-                geom.areas.len(),
-                Default::default(),
-            ),
             valence: IdxVec::with_capacity(geom.verts.len()),
             smoothed: IdxVec::with_capacity(geom.verts.len()),
             touched: IdxVec::with_capacity(geom.verts.len()),
@@ -101,7 +100,7 @@ impl<'a> Subdivider<'a> {
     }
 
     #[inline]
-    fn interpolate_edge_uncached(&mut self, mut line @ [a, b]: [Vert; 2], mk: bool) -> Vert {
+    fn interpolate_edge_uncached(&mut self, [a, b]: [Vert; 2], mk: bool) -> Vert {
         // Interpolate
         let v = {
             let v_0 = &self.geom.verts[a];
@@ -124,86 +123,92 @@ impl<'a> Subdivider<'a> {
             self.geom.mk_line([b, v]);
         }
 
-        // Cache result
-        line.sort_unstable();
-        self.edge_division_memory.insert(line, v);
         v
     }
 
-    fn interpolate_edge(&mut self, line: [Vert; 2], mk: bool) -> Vert {
-        if line[0] == line[1] {
-            return line[0];
-        }
-
-        let mut cloned = line;
-        cloned.sort_unstable();
+    fn interpolate_edge(&mut self, line @ [a, b]: [Vert; 2], mk: bool) -> Vert {
+        let key = match self.direction_of_line(line) {
+            None => return a,
+            Some(Direction::Forward) => [a, b],
+            Some(Direction::Backward) => [b, a],
+        };
 
         self.edge_division_memory
-            .get(&cloned)
+            .get(&key)
             .copied()
-            .unwrap_or_else(|| self.interpolate_edge_uncached(line, mk))
+            .unwrap_or_else(|| {
+                let v = self.interpolate_edge_uncached(line, mk);
+                self.edge_division_memory.insert(key, v);
+                v
+            })
     }
 
-    #[inline]
-    fn interpolate_face_uncached(
-        &mut self,
-        mut square @ [a, b, c, d]: [Vert; 4],
-        mk: bool,
-    ) -> Vert {
+    fn interpolate_face(&mut self, square @ [a, b, c, d]: [Vert; 4], mk: bool) -> Vert {
+        // Find the leading diagonal.
+        let key = match self.direction_of_face(square) {
+            [None, None] => return a,
+            [None, Some(_)] => return self.interpolate_edge([a, b], false),
+            [Some(_), None] => return self.interpolate_edge([a, c], false),
+            [Some(Direction::Forward), Some(Direction::Forward)] => [a, d],
+            [Some(Direction::Forward), Some(Direction::Backward)] => [b, c],
+            [Some(Direction::Backward), Some(Direction::Forward)] => [c, b],
+            [Some(Direction::Backward), Some(Direction::Backward)] => [d, a],
+        };
+
         // Interpolate
-        let v = {
+        let center = self.interpolate_edge(key, false);
+
+        if mk {
             let v_1 = self.interpolate_edge([a, b], false);
             let v_2 = self.interpolate_edge([a, c], false);
             let v_3 = self.interpolate_edge([b, d], false);
             let v_4 = self.interpolate_edge([c, d], false);
-            let center = self.interpolate_edge([v_1, v_4], false);
 
-            if mk {
-                let points = [a, b, c, d, v_1, v_2, v_3, v_4, center];
+            let points = [a, b, c, d, v_1, v_2, v_3, v_4, center];
 
-                for [i, j, k, l] in Self::SQUARE_ASSEMBLY_ORDER {
-                    self.geom
-                        .mk_area([points[i], points[j], points[k], points[l]]);
+            for square in Self::SQUARE_ASSEMBLY_ORDER {
+                let square = square.map(|i| points[i]);
+
+                // Ignore the square if it doesn't have any area.
+                if matches!(self.direction_of_face(square), [Some(_), Some(_)]) {
+                    self.geom.mk_area(square);
                 }
             }
-
-            center
-        };
-
-        // Cache result
-        square.sort_unstable();
-        self.face_division_memory.insert(square, v);
-        v
-    }
-
-    fn interpolate_face(&mut self, square: [Vert; 4], mk: bool) -> Vert {
-        let mut cloned = square;
-        cloned.sort_unstable();
-
-        // After sorting, we know that all the vertices are identical
-        // if and only if the first vertex equals the last vertex. In
-        // this case, we just return this unique vertex.
-        if cloned[0] == cloned[3] {
-            return cloned[0];
         }
 
-        // In any of these three cases, we have a single pair of vertices.
-        // As this corresponds to an edge, we just need to divide that edge
-        // and move on.
-        if (cloned[0] != cloned[1] && cloned[1] == cloned[3])
-            || (cloned[0] == cloned[1] && cloned[2] == cloned[3])
-            || (cloned[0] == cloned[2] && cloned[2] != cloned[3])
-        {
-            return self.interpolate_edge([cloned[0], cloned[3]], false);
-        }
-
-        self.face_division_memory
-            .get(&cloned)
-            .copied()
-            .unwrap_or_else(|| self.interpolate_face_uncached(square, mk))
+        center
     }
 
     fn interpolate_cube(&mut self, cube: [Vert; 8]) {
+        // Find the leading diagonal.
+        let diagonal = match self.direction_of_cube(cube) {
+            [Some(Direction::Forward), Some(Direction::Forward), Some(Direction::Forward)] => {
+                [cube[0], cube[7]]
+            }
+            [Some(Direction::Forward), Some(Direction::Forward), Some(Direction::Backward)] => {
+                [cube[1], cube[6]]
+            }
+            [Some(Direction::Forward), Some(Direction::Backward), Some(Direction::Forward)] => {
+                [cube[2], cube[5]]
+            }
+            [Some(Direction::Forward), Some(Direction::Backward), Some(Direction::Backward)] => {
+                [cube[3], cube[4]]
+            }
+            [Some(Direction::Backward), Some(Direction::Forward), Some(Direction::Forward)] => {
+                [cube[4], cube[3]]
+            }
+            [Some(Direction::Backward), Some(Direction::Forward), Some(Direction::Backward)] => {
+                [cube[5], cube[2]]
+            }
+            [Some(Direction::Backward), Some(Direction::Backward), Some(Direction::Forward)] => {
+                [cube[6], cube[1]]
+            }
+            [Some(Direction::Backward), Some(Direction::Backward), Some(Direction::Backward)] => {
+                [cube[7], cube[0]]
+            }
+            _ => panic!(),
+        };
+
         let mut points = {
             use homotopy_common::idx::Idx;
             [Vert::new(0); 27]
@@ -220,14 +225,55 @@ impl<'a> Subdivider<'a> {
                 self.interpolate_face([points[a], points[b], points[c], points[d]], false);
         }
 
-        points[26] = self.interpolate_edge([points[20], points[25]], false);
+        points[26] = self.interpolate_edge(diagonal, false);
 
-        for [a, b, c, d, e, f, g, h] in Self::CUBE_ASSEMBLY_ORDER {
-            self.geom.mk_volume([
-                points[a], points[b], points[c], points[d], points[e], points[f], points[g],
-                points[h],
-            ]);
+        for cube in Self::CUBE_ASSEMBLY_ORDER {
+            let cube = cube.map(|i| points[i]);
+
+            // Ignore the cube if it doesn't have any volume.
+            if matches!(self.direction_of_cube(cube), [Some(_), Some(_), Some(_)]) {
+                self.geom.mk_volume(cube);
+            }
         }
+    }
+
+    #[inline]
+    fn direction_of_line(&self, [a, b]: [Vert; 2]) -> Option<Direction> {
+        match self.geom.verts[a]
+            .flow
+            .partial_cmp(&self.geom.verts[b].flow)
+            .unwrap()
+        {
+            Ordering::Less => Some(Direction::Forward),
+            Ordering::Equal => None,
+            Ordering::Greater => Some(Direction::Backward),
+        }
+    }
+
+    #[inline]
+    fn direction_of_face(&self, verts: [Vert; 4]) -> [Option<Direction>; 2] {
+        const SQUARE_EDGE_ORDER: [[[usize; 2]; 2]; 2] = [[[0, 2], [1, 3]], [[0, 1], [2, 3]]];
+
+        SQUARE_EDGE_ORDER.map(|edges| {
+            edges
+                .into_iter()
+                .find_map(|[i, j]| self.direction_of_line([verts[i], verts[j]]))
+        })
+    }
+
+    #[inline]
+    fn direction_of_cube(&self, verts: [Vert; 8]) -> [Option<Direction>; 3] {
+        const CUBE_EDGE_ORDER: [[[usize; 2]; 4]; 3] = [
+            [[0, 4], [1, 5], [2, 6], [3, 7]],
+            [[0, 2], [1, 3], [4, 6], [5, 7]],
+            [[0, 1], [2, 3], [4, 5], [6, 7]],
+        ];
+
+        CUBE_EDGE_ORDER.map(|edges| {
+            edges
+                .into_iter()
+                .find_map(|[i, j]| self.direction_of_line([verts[i], verts[j]]))
+        })
     }
 
     #[inline]
