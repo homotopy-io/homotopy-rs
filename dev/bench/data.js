@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1645113435325,
+  "lastUpdate": 1645211241716,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -23399,6 +23399,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 109.57,
             "range": "+/- 2.690",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "605876d7249131b2ad0a545fb0adbc929ae8dec7",
+          "message": "Adjust subdivision scheme\n\n* Centroids are now chosen as the midpoint of the leading diagonal.\n* This guarantees that shared faces get subdivided in a consistent manner.\n* This also means degenerate squares/cubes get subdivided into fewer entities.\n* Face subdivision is no longer cached as we can recover it from the edge subdivision cache.",
+          "timestamp": "2022-02-18T18:53:05Z",
+          "tree_id": "6087110762171c256588de56fdf81db19877398b",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/605876d7249131b2ad0a545fb0adbc929ae8dec7"
+        },
+        "date": 1645211226323,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 63.962,
+            "range": "+/- 0.024",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 65.761,
+            "range": "+/- 0.035",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 98.387,
+            "range": "+/- 0.041",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 114.98,
+            "range": "+/- 0.050",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 134.15,
+            "range": "+/- 0.060",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 188.6,
+            "range": "+/- 0.750",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 84.021,
+            "range": "+/- 0.048",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 563.48,
+            "range": "+/- 0.450",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.1958,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 6.6795,
+            "range": "+/- 0.003",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 17.747,
+            "range": "+/- 0.008",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 43.635,
+            "range": "+/- 0.033",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 111.24,
+            "range": "+/- 0.260",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 312.02,
+            "range": "+/- 0.790",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 66.936,
+            "range": "+/- 0.019",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 95.905,
+            "range": "+/- 0.036",
             "unit": "us"
           }
         ]
