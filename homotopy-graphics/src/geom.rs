@@ -93,7 +93,7 @@ where
 pub struct VertData {
     pub position: Vec4,
     pub flow: f32,
-    pub boundary: Boundary,
+    pub boundary: Vec<bool>,
     pub generator: Generator,
 }
 
@@ -109,29 +109,6 @@ impl VertData {
     }
 }
 
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Boundary {
-    /// Corner - no freedom to move
-    Zero = 0,
-    /// Edge - free to move along line
-    One = 1,
-    /// Surface - free to move in space
-    Two = 2,
-    /// Volume - free to move in time and space
-    Three = 3,
-}
-
-impl From<usize> for Boundary {
-    fn from(boundary: usize) -> Self {
-        match boundary {
-            0 => Self::Zero,
-            1 => Self::One,
-            2 => Self::Two,
-            _ => Self::Three,
-        }
-    }
-}
-
 pub fn calculate_flow(path: &[SliceIndex]) -> f32 {
     path.iter()
         .map(|&index| match index {
@@ -142,15 +119,11 @@ pub fn calculate_flow(path: &[SliceIndex]) -> f32 {
         .sum()
 }
 
-pub fn calculate_boundary(path: &[SliceIndex]) -> Boundary {
+pub fn calculate_boundary(path: &[SliceIndex]) -> Vec<bool> {
     path.iter()
-        .take(path.len().saturating_sub(1))
-        .map(|index| match index {
-            SliceIndex::Boundary(_) => 0,
-            SliceIndex::Interior(_) => 1,
-        })
-        .sum::<usize>()
-        .into()
+        .map(|index| matches!(index, SliceIndex::Boundary(_)))
+        .rev()
+        .collect()
 }
 
 // Curve data
@@ -204,10 +177,15 @@ impl CubicalGeometry {
                 .map(|i| position.get(i).copied().unwrap_or_default())
                 .into();
 
+            let boundary = calculate_boundary(path);
+            let boundary = [0, 1, 2, 3]
+                .map(|i| boundary.get(i).copied().unwrap_or_default())
+                .into();
+
             node_to_vert.push(geom.mk_vert(VertData {
                 position,
                 flow: calculate_flow(path),
-                boundary: calculate_boundary(path),
+                boundary,
                 generator: diagram.max_generator(),
             }));
         }

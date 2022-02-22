@@ -1,13 +1,10 @@
-use std::{
-    cmp::{self, Ordering},
-    mem,
-};
+use std::{cmp::Ordering, mem};
 
 use homotopy_common::{hash::FastHashMap, idx::IdxVec};
 use homotopy_core::Direction;
 use ultraviolet::{Mat4, Vec4};
 
-use crate::geom::{Area, Boundary, CubicalGeometry, CurveData, Line, Vert, VertData, Volume};
+use crate::geom::{Area, CubicalGeometry, CurveData, Line, Vert, VertData, Volume};
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum Pass {
@@ -107,7 +104,12 @@ impl<'a> Subdivider<'a> {
             let v_1 = &self.geom.verts[b];
             let v = 0.5 * (v_0.position + v_1.position);
             let flow = 0.5 * (v_0.flow + v_1.flow);
-            let boundary = cmp::max(Boundary::One, cmp::max(v_0.boundary, v_1.boundary));
+            let boundary = v_0
+                .boundary
+                .iter()
+                .zip(&v_1.boundary)
+                .map(|(a, b)| *a && *b)
+                .collect();
             let generator = v_0.min_generator(v_1).generator;
 
             self.geom.mk_vert(VertData {
@@ -279,19 +281,8 @@ impl<'a> Subdivider<'a> {
     #[inline]
     fn smooth_cube(&mut self, cube: Volume) {
         let cube @ [a, b, c, d, e, f, g, h] = self.geom.volumes[cube];
-        // Gather the boundaries of its constituent vertices
-        let bounds = [
-            self.geom.verts[a].boundary,
-            self.geom.verts[b].boundary,
-            self.geom.verts[c].boundary,
-            self.geom.verts[d].boundary,
-            self.geom.verts[e].boundary,
-            self.geom.verts[f].boundary,
-            self.geom.verts[g].boundary,
-            self.geom.verts[h].boundary,
-        ];
-        // and calculate a corresponding weight matrix
-        let weights = Self::cube_weight_matrix(bounds);
+        // Calculate a corresponding weight matrix
+        let weights = Self::cube_weight_matrix();
         // Shape vertices as matrix
         let upper = Mat4::new(
             self.geom.verts[a].position,
@@ -318,15 +309,8 @@ impl<'a> Subdivider<'a> {
     #[inline]
     fn smooth_square(&mut self, square: Area) {
         let square @ [a, b, c, d] = self.geom.areas[square];
-        // Gather the boundaries of its constituent vertices
-        let bounds = [
-            self.geom.verts[a].boundary,
-            self.geom.verts[b].boundary,
-            self.geom.verts[c].boundary,
-            self.geom.verts[d].boundary,
-        ];
-        // and calculate a corresponding weight matrix
-        let weights = Self::square_weight_matrix(bounds);
+        // Calculate a corresponding weight matrix
+        let weights = Self::square_weight_matrix();
         // Shape vertices as a matrix
         let square_matrix = Mat4::new(
             self.geom.verts[a].position,
@@ -345,8 +329,7 @@ impl<'a> Subdivider<'a> {
     #[inline]
     fn smooth_line(&mut self, line: Line) {
         let line @ [a, b] = self.geom.lines[line];
-        let bounds = [self.geom.verts[a].boundary, self.geom.verts[b].boundary];
-        let weights = Self::line_weight_matrix(bounds);
+        let weights = Self::line_weight_matrix();
         let line_matrix = Mat4::new(
             self.geom.verts[a].position,
             self.geom.verts[b].position,
@@ -425,25 +408,33 @@ impl<'a> Subdivider<'a> {
         self.smoothed = IdxVec::splat(Vec4::zero(), len);
         self.touched = IdxVec::splat(None, len);
 
-        for line in self.geom.lines.keys() {
-            self.smooth_line(line);
+        for cube in self.geom.volumes.keys() {
+            self.smooth_cube(cube);
         }
 
         for square in self.geom.areas.keys() {
             self.smooth_square(square);
         }
 
-        for cube in self.geom.volumes.keys() {
-            self.smooth_cube(cube);
+        for line in self.geom.lines.keys() {
+            self.smooth_line(line);
         }
 
         // 4. Update vertex positions and divide by valence
         for (vert, data) in self.smoothed.iter() {
             let valence = self.valence[vert];
             if valence > 0 {
-                let old = &mut self.geom.verts[vert].position;
+                let vert = &mut self.geom.verts[vert];
                 let new = *data / valence as f32;
-                *old = Vec4::new(new.x, new.y, new.z, old.w);
+                vert.position = [0, 1, 2, 3]
+                    .map(|i| {
+                        if i == 4 || vert.boundary[i] {
+                            vert.position[i]
+                        } else {
+                            new[i]
+                        }
+                    })
+                    .into();
             }
         }
 
@@ -470,124 +461,50 @@ impl<'a> Subdivider<'a> {
             && max.w <= unmodified_max.w
     }
 
-    fn line_weight_matrix(bounds: [Boundary; 2]) -> Mat4 {
-        let row_0 = match bounds[0] {
-            Boundary::Zero => Vec4::unit_x(),
-            _ => Vec4::new(0.5, 0.5, 0., 0.),
-        };
-        let row_1 = Vec4::unit_y();
-
-        Mat4::new(row_0, row_1, Vec4::zero(), Vec4::zero())
+    fn line_weight_matrix() -> Mat4 {
+        Mat4::new(
+            Vec4::new(0.5, 0.5, 0., 0.),
+            Vec4::new(0.5, 0.5, 0., 0.),
+            Vec4::zero(),
+            Vec4::zero(),
+        )
     }
 
-    fn square_weight_matrix(bounds: [Boundary; 4]) -> Mat4 {
-        use Boundary::{One, Zero};
-        // Vertex point
-        let row_0 = match bounds[0] {
-            Zero => Vec4::unit_x(),
-            One => match (bounds[1], bounds[2]) {
-                (One, _) => Vec4::new(0.5, 0.5, 0., 0.),
-                (_, One) => Vec4::new(0.5, 0., 0.5, 0.),
-                _ => Vec4::unit_x(),
-            },
-            _ => Vec4::broadcast(0.25),
-        };
-        let row_1 = match bounds[1] {
-            One => Vec4::unit_y(),
-            _ => Vec4::new(0., 0.5, 0., 0.5),
-        };
-        let row_2 = match bounds[2] {
-            One => Vec4::unit_z(),
-            _ => Vec4::new(0., 0., 0.5, 0.5),
-        };
-        let row_3 = Vec4::unit_w();
-
-        Mat4::new(row_0, row_1, row_2, row_3)
+    fn square_weight_matrix() -> Mat4 {
+        Mat4::new(
+            Vec4::broadcast(0.25),
+            Vec4::broadcast(0.25),
+            Vec4::broadcast(0.25),
+            Vec4::broadcast(0.25),
+        )
     }
 
-    fn cube_weight_matrix(bounds: [Boundary; 8]) -> [Mat4; 4] {
-        use Boundary::{One, Three, Two, Zero};
-
-        // Vertex point
-        let (row_00, row_01) = match bounds[0] {
-            Zero => (Vec4::unit_x(), Vec4::zero()),
-            One => match (bounds[1], bounds[2], bounds[4]) {
-                (One, _, _) => (Vec4::new(0.5, 0.5, 0.0, 0.), Vec4::zero()),
-                (_, One, _) => (Vec4::new(0.5, 0., 0.5, 0.), Vec4::zero()),
-                (_, _, One) => (Vec4::new(0.5, 0., 0., 0.), Vec4::new(0.5, 0., 0., 0.)),
-                // if it turns out such geometry is consistent, replace with the identity row
-                _ => panic!("Inconsistent geometry!"),
-            },
-            Two => match (bounds[3], bounds[5], bounds[6]) {
-                (Two, _, _) => (Vec4::broadcast(0.25), Vec4::zero()),
-                (_, Two, _) => (Vec4::new(0.25, 0.25, 0., 0.), Vec4::new(0.25, 0.25, 0., 0.)),
-                (_, _, Two) => (Vec4::new(0.25, 0., 0.25, 0.), Vec4::new(0.25, 0., 0.25, 0.)),
-                // if it turns out such geometry is consistent, replace with the identity row
-                _ => panic!("Inconsistent geometry!"),
-            },
-            Three => (Vec4::broadcast(0.125), Vec4::broadcast(0.125)),
-        };
-
-        // Edge points
-        let (row_10, row_11) = match bounds[1] {
-            Zero => panic!("Inconsistent geometry!"),
-            One => (Vec4::unit_y(), Vec4::zero()),
-            Two => match (bounds[3], bounds[5]) {
-                (Two, _) => (Vec4::new(0.0, 0.5, 0.0, 0.5), Vec4::zero()),
-                (_, Two) => (Vec4::new(0., 0.5, 0., 0.), Vec4::new(0., 0.5, 0., 0.)),
-                // if it turns out such geometry is consistent, replace with the identity row
-                _ => panic!("Inconsistent geometry!"),
-            },
-            Three => (Vec4::new(0., 0.25, 0., 0.25), Vec4::new(0., 0.25, 0., 0.25)),
-        };
-        let (row_20, row_21) = match bounds[2] {
-            Zero => panic!("Inconsistent geometry!"),
-            One => (Vec4::unit_z(), Vec4::zero()),
-            Two => match (bounds[3], bounds[6]) {
-                (Two, _) => (Vec4::new(0., 0., 0.5, 0.5), Vec4::zero()),
-                (_, Two) => (Vec4::new(0., 0., 0.5, 0.), Vec4::new(0., 0., 0.5, 0.)),
-                // if it turns out such geometry is consistent, replace with the identity row
-                _ => panic!("Inconsistent geometry!"),
-            },
-            Three => (Vec4::new(0., 0., 0.25, 0.25), Vec4::new(0., 0., 0.25, 0.25)),
-        };
-        let (row_40, row_41) = match bounds[4] {
-            Zero => panic!("Inconsistent geometry!"),
-            One => (Vec4::zero(), Vec4::unit_x()),
-            Two => match (bounds[5], bounds[6]) {
-                (Two, _) => (Vec4::zero(), Vec4::new(0.5, 0.5, 0., 0.)),
-                (_, Two) => (Vec4::zero(), Vec4::new(0.5, 0., 0.5, 0.)),
-                // if it turns out such geometry is consistent, replace with the identity row
-                _ => panic!("Inconsistent geometry!"),
-            },
-            Three => (Vec4::zero(), Vec4::broadcast(0.25)),
-        };
-
-        // Face points
-        let (row_30, row_31) = match bounds[3] {
-            Two => (Vec4::unit_w(), Vec4::zero()),
-            Three => (Vec4::new(0., 0., 0., 0.5), Vec4::new(0., 0., 0., 0.5)),
-            _ => panic!("Inconsistent geometry!"),
-        };
-        let (row_50, row_51) = match bounds[5] {
-            Two => (Vec4::zero(), Vec4::unit_y()),
-            Three => (Vec4::zero(), Vec4::new(0., 0.5, 0., 0.5)),
-            _ => panic!("Inconsistent geometry!"),
-        };
-        let (row_60, row_61) = match bounds[6] {
-            Two => (Vec4::zero(), Vec4::unit_z()),
-            Three => (Vec4::zero(), Vec4::new(0., 0., 0.5, 0.5)),
-            _ => panic!("Inconsistent geometry!"),
-        };
-
-        // Centroid
-        let (row_70, row_71) = (Vec4::zero(), Vec4::unit_w());
-
+    fn cube_weight_matrix() -> [Mat4; 4] {
         [
-            Mat4::new(row_00, row_10, row_20, row_30),
-            Mat4::new(row_40, row_50, row_60, row_70),
-            Mat4::new(row_01, row_11, row_21, row_31),
-            Mat4::new(row_41, row_51, row_61, row_71),
+            Mat4::new(
+                Vec4::broadcast(0.125),
+                Vec4::broadcast(0.125),
+                Vec4::broadcast(0.125),
+                Vec4::broadcast(0.125),
+            ),
+            Mat4::new(
+                Vec4::broadcast(0.125),
+                Vec4::broadcast(0.125),
+                Vec4::broadcast(0.125),
+                Vec4::broadcast(0.125),
+            ),
+            Mat4::new(
+                Vec4::broadcast(0.125),
+                Vec4::broadcast(0.125),
+                Vec4::broadcast(0.125),
+                Vec4::broadcast(0.125),
+            ),
+            Mat4::new(
+                Vec4::broadcast(0.125),
+                Vec4::broadcast(0.125),
+                Vec4::broadcast(0.125),
+                Vec4::broadcast(0.125),
+            ),
         ]
     }
 }

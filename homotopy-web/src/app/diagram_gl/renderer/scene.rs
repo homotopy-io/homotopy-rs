@@ -4,7 +4,7 @@ use homotopy_common::idx::IdxVec;
 use homotopy_core::{DiagramN, Generator};
 use homotopy_graphics::{
     clay::clay,
-    geom::{Boundary, SimplicialGeometry, VertData},
+    geom::{SimplicialGeometry, VertData},
     gl::{array::VertexArray, GlCtx, Result},
     vertex_array,
 };
@@ -96,7 +96,7 @@ impl Scene {
         let p = sphere_mesh.mk_vert(VertData {
             position: Vec4::zero(),
             flow: 0.,
-            boundary: Boundary::Zero,
+            boundary: vec![false; 4],
             generator: Generator::new(0, 0),
         });
         sphere_mesh.mk_point(p);
