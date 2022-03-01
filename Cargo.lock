@@ -579,9 +579,9 @@ dependencies = [
 
 [[package]]
 name = "highway"
-version = "0.7.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a310093553e2397bd2936564960446b23233864bbffee554ec5847572e2dfd93"
+checksum = "3688f13e7735ae5ca93edc490f6c5885b77d473255bc1fed92b9c805f972bf94"
 
 [[package]]
 name = "homotopy-common"
