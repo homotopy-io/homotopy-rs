@@ -40,7 +40,7 @@ impl Layout {
         for i in 0..depth {
             let node_to_constraints = calculate_constraints(&graph, i)?;
             let colimit = take_colimit(&graph, &node_to_constraints);
-            let positions = calculate_layout(&node_to_constraints, colimit);
+            let positions = calculate_layout(&node_to_constraints, &colimit);
 
             for (n, coords) in positions {
                 let path = &graph[n].0;
@@ -116,10 +116,27 @@ pub type Name = (NodeIndex, SingularHeight);
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum NameEdge {
     Full,
-    Partial,
+    Partial(Extremum),
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Extremum {
+    Min,
+    Max,
 }
 
 pub type ConstraintSet = Graph<Name, NameEdge>;
+
+fn extrema(cs: &ConstraintSet, ext: Extremum) -> impl Iterator<Item = NodeIndex> + '_ {
+    let dir = match ext {
+        Extremum::Min => EdgeDirection::Incoming,
+        Extremum::Max => EdgeDirection::Outgoing,
+    };
+    cs.node_indices().filter(move |&n| {
+        !cs.edges_directed(n, dir)
+            .any(|e| *e.weight() == NameEdge::Full)
+    })
+}
 
 fn concat(a: &ConstraintSet, b: &ConstraintSet) -> ConstraintSet {
     let mut union = ConstraintSet::new();
@@ -149,8 +166,8 @@ fn concat(a: &ConstraintSet, b: &ConstraintSet) -> ConstraintSet {
     }
 
     // Edges from a to b
-    for s in a.externals(EdgeDirection::Outgoing) {
-        for t in b.externals(EdgeDirection::Incoming) {
+    for s in extrema(a, Extremum::Max) {
+        for t in extrema(b, Extremum::Min) {
             union.add_edge(a_nodes[s], b_nodes[t], NameEdge::Full);
         }
     }
@@ -181,15 +198,17 @@ fn colimit(constraints: &[ConstraintSet], partial: bool) -> ConstraintSet {
         for (i, constraint1) in constraints.iter().enumerate() {
             for (j, constraint2) in constraints.iter().enumerate() {
                 if i != j {
-                    for s in constraint1.externals(EdgeDirection::Incoming) {
-                        let name_s = constraint1[s];
-                        for t in constraint2.externals(EdgeDirection::Outgoing) {
-                            let name_t = constraint2[t];
-                            colimit.update_edge(
-                                name_to_node[&name_s],
-                                name_to_node[&name_t],
-                                NameEdge::Partial,
-                            );
+                    for ext in [Extremum::Min, Extremum::Max] {
+                        for s in extrema(constraint1, ext) {
+                            let name_s = constraint1[s];
+                            for t in extrema(constraint2, ext) {
+                                let name_t = constraint2[t];
+                                colimit.update_edge(
+                                    name_to_node[&name_s],
+                                    name_to_node[&name_t],
+                                    NameEdge::Partial(ext),
+                                );
+                            }
                         }
                     }
                 }
@@ -272,20 +291,23 @@ fn take_colimit(
 
 fn calculate_layout(
     node_to_constraints: &IdxVec<NodeIndex, Vec<ConstraintSet>>,
-    mut colimit: ConstraintSet,
+    colimit: &ConstraintSet,
 ) -> IdxVec<NodeIndex, Vec<f32>> {
     // For each point in the colimit, calculate its min and max positions.
     let mut width = 0;
     let mut name_to_min_position: HashMap<Name, usize> = HashMap::new();
     let mut name_to_max_position: HashMap<Name, usize> = HashMap::new();
 
-    let sccs = petgraph::algo::kosaraju_scc(&colimit);
-    colimit.retain_edges(|graph, e| graph[e] == NameEdge::Full);
+    let mut full_colimit = colimit.clone();
+    full_colimit.retain_edges(|graph, e| graph[e] == NameEdge::Full);
 
-    for scc in sccs.iter().rev() {
+    // Left alignment
+    let mut left_colimit = colimit.clone();
+    left_colimit.retain_edges(|graph, e| graph[e] != NameEdge::Partial(Extremum::Max));
+    for scc in petgraph::algo::kosaraju_scc(&left_colimit).iter().rev() {
         let pos = scc
             .iter()
-            .flat_map(|&n| colimit.neighbors_directed(n, EdgeDirection::Incoming))
+            .flat_map(|&n| full_colimit.neighbors_directed(n, EdgeDirection::Incoming))
             .filter_map(|s| name_to_min_position.get(&colimit[s]))
             .max()
             .map_or(0, |&a| a + 1);
@@ -294,14 +316,18 @@ fn calculate_layout(
         }
         width = std::cmp::max(width, pos + 1);
     }
-    for scc in &sccs {
+
+    // Right alignment
+    let mut right_colimit = colimit.clone();
+    right_colimit.retain_edges(|graph, e| graph[e] != NameEdge::Partial(Extremum::Min));
+    for scc in petgraph::algo::kosaraju_scc(&right_colimit) {
         let pos = scc
             .iter()
-            .flat_map(|&n| colimit.neighbors_directed(n, EdgeDirection::Outgoing))
+            .flat_map(|&n| full_colimit.neighbors_directed(n, EdgeDirection::Outgoing))
             .filter_map(|t| name_to_max_position.get(&colimit[t]))
             .min()
             .map_or(width - 1, |&a| a - 1);
-        for &n in scc {
+        for n in scc {
             name_to_max_position.insert(colimit[n], pos);
         }
     }
