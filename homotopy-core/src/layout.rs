@@ -190,7 +190,7 @@ fn colimit(constraints: &[ConstraintSet], partial: bool) -> ConstraintSet {
             let t = e.target();
             let name_s = constraint[s];
             let name_t = constraint[t];
-            colimit.update_edge(name_to_node[&name_s], name_to_node[&name_t], *e.weight());
+            colimit.add_edge(name_to_node[&name_s], name_to_node[&name_t], *e.weight());
         }
     }
 
@@ -203,7 +203,7 @@ fn colimit(constraints: &[ConstraintSet], partial: bool) -> ConstraintSet {
                             let name_s = constraint1[s];
                             for t in extrema(constraint2, ext) {
                                 let name_t = constraint2[t];
-                                colimit.update_edge(
+                                colimit.add_edge(
                                     name_to_node[&name_s],
                                     name_to_node[&name_t],
                                     NameEdge::Partial(ext),
