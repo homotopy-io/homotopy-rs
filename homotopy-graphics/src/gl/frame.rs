@@ -106,6 +106,7 @@ impl<'a> Draw<'a> {
     }
 
     #[inline]
+    #[must_use]
     pub fn uniform<T>(mut self, name: &'static str, t: T) -> Self
     where
         T: Uniformable,
@@ -119,6 +120,7 @@ impl<'a> Draw<'a> {
 
 impl<'a> Frame<'a> {
     #[inline]
+    #[must_use]
     pub fn new(ctx: &'a mut GlCtx) -> Self {
         Self {
             ctx,
@@ -128,18 +130,21 @@ impl<'a> Frame<'a> {
     }
 
     #[inline]
+    #[must_use]
     pub fn with_clear_color(mut self, color: Vec4) -> Self {
         self.opts.clear_color = color;
         self
     }
 
     #[inline]
+    #[must_use]
     pub fn with_clear_opts(mut self, clear: Clear) -> Self {
         self.opts.clear = clear;
         self
     }
 
     #[inline]
+    #[must_use]
     pub fn with_frame_buffer(mut self, framebuffer: &'a Framebuffer) -> Self {
         self.opts.framebuffer = Some(framebuffer);
         self

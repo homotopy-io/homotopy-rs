@@ -32,6 +32,7 @@ pub enum ActionRegion {
 
 impl ActionRegion {
     /// Apply an affine coordinate transformation to the region.
+    #[must_use]
     pub fn transformed(&self, transform: &Transform2D<f32>) -> Self {
         use ActionRegion::{Point, Surface, Wire};
         match self {
@@ -112,6 +113,7 @@ pub enum GraphicElement {
 
 impl GraphicElement {
     /// Apply an affine coordinate transformation to the element.
+    #[must_use]
     pub fn transformed(&self, transform: &Transform2D<f32>) -> Self {
         use GraphicElement::{Point, Surface, Wire};
         match self {

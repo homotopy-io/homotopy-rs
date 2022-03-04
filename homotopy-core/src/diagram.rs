@@ -433,6 +433,7 @@ impl DiagramN {
         first_max_generator(generators).unwrap()
     }
 
+    #[must_use]
     pub fn identity(&self) -> Self {
         Diagram::from(self.clone()).identity()
     }

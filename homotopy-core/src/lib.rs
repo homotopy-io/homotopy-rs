@@ -44,6 +44,7 @@
     clippy::multiple_inherent_impl,
     clippy::shadow_unrelated,
     clippy::match_on_vec_items,
+    clippy::unnecessary_to_owned,
     clippy::unnecessary_wraps
 )]
 
