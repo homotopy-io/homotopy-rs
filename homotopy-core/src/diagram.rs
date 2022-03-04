@@ -78,6 +78,7 @@ impl Diagram {
         }
     }
 
+    #[must_use]
     pub fn identity(&self) -> DiagramN {
         DiagramN::new_unsafe(self.clone(), vec![])
     }
@@ -459,6 +460,7 @@ impl DiagramN {
         })
     }
 
+    #[must_use]
     pub fn behead(&self, max_height: RegularHeight) -> Self {
         Self::new(self.source(), self.cospans()[0..max_height].to_vec())
     }

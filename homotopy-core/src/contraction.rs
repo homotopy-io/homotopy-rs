@@ -48,6 +48,7 @@ pub enum Bias {
 }
 
 impl Bias {
+    #[must_use]
     pub fn flip(self) -> Self {
         match self {
             Self::Higher => Self::Lower,
