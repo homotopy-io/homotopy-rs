@@ -45,6 +45,7 @@
     clippy::unimplemented,
     clippy::unreachable,
     clippy::unused_unit,
+    clippy::use_self,
     clippy::shadow_unrelated,
 )]
 #![recursion_limit = "1024"]
