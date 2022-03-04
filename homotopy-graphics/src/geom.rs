@@ -172,10 +172,19 @@ impl CubicalGeometry {
         let mut node_to_vert = IdxVec::with_capacity(mesh.graph.node_count());
 
         for (path, diagram) in mesh.graph.node_weights() {
-            let position = layout.get(path);
-            let position = [0, 1, 2, 3]
-                .map(|i| position.get(i).copied().unwrap_or_default())
-                .into();
+            let position = match depth {
+                3 => {
+                    let path: [SliceIndex; 3] =
+                        path.clone().try_into().map_err(|_err| DimensionError)?;
+                    Vec3::from(layout.get(path)).into()
+                }
+                4 => {
+                    let path: [SliceIndex; 4] =
+                        path.clone().try_into().map_err(|_err| DimensionError)?;
+                    layout.get(path).into()
+                }
+                _ => return Err(DimensionError),
+            };
 
             let boundary = calculate_boundary(path);
             let boundary = [0, 1, 2, 3]

@@ -111,10 +111,11 @@ impl PreparedDiagram {
         let graphic = GraphicElement::build(diagram, &complex, &layout, &generators, &depths);
         let actions = ActionRegion::build(&complex, &layout);
 
-        let dimensions = Point::from(layout.get2(Boundary::Target, Boundary::Target))
-            .to_vector()
-            .to_size()
-            * style.scale;
+        let dimensions =
+            Point::from(layout.get([Boundary::Target.into(), Boundary::Target.into()]))
+                .to_vector()
+                .to_size()
+                * style.scale;
 
         let transform = Transform2D::scale(style.scale, -style.scale)
             .then_translate((0.0, dimensions.height).into());
@@ -403,7 +404,7 @@ impl Diagram2D {
     }
 
     fn position(&self, point: [SliceIndex; 2]) -> Point2D<f32> {
-        let point = self.diagram.layout.get2(point[0], point[1]).into();
+        let point = self.diagram.layout.get([point[1], point[0]]).into();
         self.diagram.transform.transform_point(point)
     }
 

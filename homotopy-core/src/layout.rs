@@ -1,26 +1,18 @@
 use std::collections::HashMap;
 
-use homotopy_common::idx::IdxVec;
+use homotopy_common::{hash::FastHashMap, idx::IdxVec};
 use itertools::Itertools;
-use petgraph::{
-    graph::NodeIndex,
-    visit::{EdgeRef, Topo, Walker},
-    EdgeDirection, Graph,
-};
+use petgraph::{graph::NodeIndex, visit::EdgeRef, EdgeDirection, Graph};
 
 use crate::{
     common::{DimensionError, SingularHeight},
     graph::{Explodable, SliceGraph},
-    DiagramN, RewriteN, SliceIndex,
+    DiagramN, Height, RewriteN, SliceIndex,
 };
 
-// TODO(@calintat): Clean this up.
 #[derive(Clone, Debug)]
 pub struct Layout {
-    pub x_coords: Vec<f32>,
-    pub y_coords: HashMap<SliceIndex, Vec<f32>>,
-    pub z_coords: HashMap<(SliceIndex, SliceIndex), Vec<f32>>,
-    pub w_coords: HashMap<(SliceIndex, SliceIndex, SliceIndex), Vec<f32>>,
+    positions: FastHashMap<Vec<SliceIndex>, Vec<f32>>,
 }
 
 impl Layout {
@@ -28,30 +20,17 @@ impl Layout {
         if depth > diagram.dimension() {
             return Err(DimensionError);
         }
-        let mut layout = Self {
-            x_coords: vec![],
-            y_coords: HashMap::new(),
-            z_coords: HashMap::new(),
-            w_coords: HashMap::new(),
-        };
 
-        let mut graph = SliceGraph::singleton(vec![], diagram.clone());
+        let mut graph = SliceGraph::singleton((vec![], vec![]), diagram.clone());
 
         for i in 0..depth {
-            let node_to_constraints = calculate_constraints(&graph, i)?;
-            let colimit = take_colimit(&graph, &node_to_constraints);
-            let positions = calculate_layout(&node_to_constraints, &colimit);
-
-            for (n, coords) in positions {
-                let path = &graph[n].0;
-                layout.add_coordinates(path, coords);
-            }
-
+            let positions = layout(&graph, i)?;
             graph = graph
                 .explode(
-                    |_, key, si| {
+                    |n, key, si| {
                         let mut key = key.clone();
-                        key.push(si);
+                        key.0.push(si);
+                        key.1.insert(0, positions[n][si]);
                         Some(key)
                     },
                     |_, _, _| Some(i),
@@ -60,54 +39,18 @@ impl Layout {
                 .output;
         }
 
-        Ok(layout)
+        let positions = graph
+            .into_nodes_edges()
+            .0
+            .into_iter()
+            .map(|n| n.weight.0)
+            .collect();
+
+        Ok(Self { positions })
     }
 
-    fn add_coordinates(&mut self, path: &[SliceIndex], coords: Vec<f32>) {
-        match path.len() {
-            0 => {
-                self.x_coords = coords;
-            }
-            1 => {
-                self.y_coords.insert(path[0], coords);
-            }
-            2 => {
-                self.z_coords.insert((path[0], path[1]), coords);
-            }
-            3 => {
-                self.w_coords.insert((path[0], path[1], path[2]), coords);
-            }
-            _ => {
-                panic!("Only 4D coordinates are supported!");
-            }
-        }
-    }
-
-    pub fn get(&self, path: &[SliceIndex]) -> Vec<f32> {
-        let mut coord = vec![];
-        if !path.is_empty() {
-            coord.push(self.x_coords[path[0]]);
-        }
-        if path.len() > 1 {
-            coord.push(self.y_coords[&path[0]][path[1]]);
-        }
-        if path.len() > 2 {
-            coord.push(self.z_coords[&(path[0], path[1])][path[2]]);
-        }
-        if path.len() > 3 {
-            coord.push(self.w_coords[&(path[0], path[1], path[2])][path[3]]);
-        }
-        coord.reverse();
-        coord
-    }
-
-    pub fn get2<I, J>(&self, x: I, y: J) -> (f32, f32)
-    where
-        I: Into<SliceIndex>,
-        J: Into<SliceIndex>,
-    {
-        let (y, x) = (x.into(), y.into());
-        (self.y_coords[&x][y], self.x_coords[x])
+    pub fn get<const N: usize>(&self, path: [SliceIndex; N]) -> [f32; N] {
+        self.positions[&path.to_vec()].clone().try_into().unwrap()
     }
 }
 
@@ -219,14 +162,28 @@ fn colimit(constraints: &[ConstraintSet], partial: bool) -> ConstraintSet {
     colimit
 }
 
-fn calculate_constraints(
-    graph: &SliceGraph<Vec<SliceIndex>, usize>,
+fn layout(
+    graph: &SliceGraph<(Vec<SliceIndex>, Vec<f32>), usize>,
     orientation: usize,
-) -> Result<IdxVec<NodeIndex, Vec<ConstraintSet>>, DimensionError> {
-    let mut node_to_constraints: IdxVec<NodeIndex, Vec<ConstraintSet>> =
-        IdxVec::from_iter(vec![vec![]; graph.node_count()]);
+) -> Result<IdxVec<NodeIndex, Vec<f32>>, DimensionError> {
+    // Sort nodes by stratum.
+    let nodes = graph.node_indices().sorted_by_cached_key(|&n| {
+        graph[n]
+            .0
+             .0
+            .iter()
+            .map(|&si| match si {
+                SliceIndex::Boundary(_) => -1,
+                SliceIndex::Interior(Height::Regular(_)) => 0,
+                SliceIndex::Interior(Height::Singular(_)) => 1,
+            })
+            .sum::<isize>()
+    });
 
-    for n in Topo::new(&graph).iter(&graph) {
+    // Injectification
+    let mut node_to_constraints: IdxVec<NodeIndex, Vec<ConstraintSet>> =
+        IdxVec::splat(vec![], graph.node_count());
+    for n in nodes {
         let diagram: &DiagramN = (&graph[n].1).try_into()?;
 
         for target_index in 0..diagram.size() {
@@ -265,13 +222,7 @@ fn calculate_constraints(
         }
     }
 
-    Ok(node_to_constraints)
-}
-
-fn take_colimit(
-    _graph: &SliceGraph<Vec<SliceIndex>, usize>,
-    node_to_constraints: &IdxVec<NodeIndex, Vec<ConstraintSet>>,
-) -> ConstraintSet {
+    // Colimit
     let maximal_constraints = node_to_constraints
         .iter()
         .filter_map(|(_n, constraints)| {
@@ -285,14 +236,8 @@ fn take_colimit(
                 .reduce(|a, b| concat(&a, &b))
         })
         .collect_vec();
+    let colimit = colimit(&maximal_constraints, false);
 
-    colimit(&maximal_constraints, false)
-}
-
-fn calculate_layout(
-    node_to_constraints: &IdxVec<NodeIndex, Vec<ConstraintSet>>,
-    colimit: &ConstraintSet,
-) -> IdxVec<NodeIndex, Vec<f32>> {
     // For each point in the colimit, calculate its min and max positions.
     let mut width = 0;
     let mut name_to_min_position: HashMap<Name, usize> = HashMap::new();
@@ -354,7 +299,7 @@ fn calculate_layout(
         layout.push(compute_averages(width, singular_positions));
     }
 
-    layout
+    Ok(layout)
 }
 
 // Takes a list of minimum and maximum positions for every singular slice and computes the final positions.

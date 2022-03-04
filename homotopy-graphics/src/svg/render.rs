@@ -63,7 +63,7 @@ impl ActionRegion {
                     region_wires.push(Self::Wire(*ps, path));
                 }
                 Simplex::Point([p]) => {
-                    let center = layout.get2(p.0, p.1).into();
+                    let center = layout.get([p.1, p.0]).into();
                     region_points.push(Self::Point([*p], center));
                 }
             }
@@ -181,7 +181,7 @@ impl GraphicElement {
                 Simplex::Point([p]) => {
                     let generator = generators.get(p.0, p.1).unwrap();
                     if generator.dimension >= diagram.dimension() {
-                        point_elements.push(Self::Point(generator, layout.get2(p.0, p.1).into()));
+                        point_elements.push(Self::Point(generator, layout.get([p.1, p.0]).into()));
                     }
                 }
             }
@@ -328,7 +328,7 @@ fn make_path(
     layout: &Layout,
     builder: &mut lyon_path::builder::WithSvg<lyon_path::path::Builder>,
 ) {
-    let start = layout.get2(points[0].0, points[0].1).into();
+    let start = layout.get([points[0].1, points[0].0]).into();
     builder.move_to(start);
 
     for i in 1..points.len() {
@@ -351,8 +351,8 @@ fn make_path_segment(
         SliceIndex::Interior,
     };
 
-    let layout_start: Point = layout.get2(start.0, start.1).into();
-    let layout_end: Point = layout.get2(end.0, end.1).into();
+    let layout_start: Point = layout.get([start.1, start.0]).into();
+    let layout_end: Point = layout.get([end.1, end.0]).into();
 
     match (start, end) {
         ((_, Interior(Regular(_))), (Interior(Singular(_)), Interior(Singular(_)))) => builder
