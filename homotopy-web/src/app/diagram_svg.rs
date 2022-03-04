@@ -11,14 +11,14 @@ use homotopy_core::{
     common::Direction,
     complex::{make_complex, Simplex},
     contraction::Bias,
+    layout::Layout,
     projection::{Depths, Generators},
     rewrite::RewriteN,
     Boundary, DiagramN, Generator, Height, SliceIndex,
 };
 use homotopy_graphics::svg::{
     geom,
-    geom::path_to_svg,
-    layout::Layout,
+    geom::{path_to_svg, Point},
     render::{ActionRegion, GraphicElement},
 };
 use web_sys::Element;
@@ -105,15 +105,13 @@ impl PreparedDiagram {
         let time_start = web_sys::window().unwrap().performance().unwrap().now();
 
         let generators = Generators::new(diagram);
-        let layout = Layout::new(diagram, 2000).unwrap();
+        let layout = Layout::new(diagram, 2).unwrap();
         let complex = make_complex(diagram);
         let depths = Depths::new(diagram).unwrap();
         let graphic = GraphicElement::build(diagram, &complex, &layout, &generators, &depths);
         let actions = ActionRegion::build(&complex, &layout);
 
-        let dimensions = layout
-            .get(Boundary::Target.into(), Boundary::Target.into())
-            .unwrap()
+        let dimensions = Point::from(layout.get2(Boundary::Target, Boundary::Target))
             .to_vector()
             .to_size()
             * style.scale;
@@ -405,7 +403,7 @@ impl Diagram2D {
     }
 
     fn position(&self, point: [SliceIndex; 2]) -> Point2D<f32> {
-        let point = self.diagram.layout.get(point[0], point[1]).unwrap();
+        let point = self.diagram.layout.get2(point[0], point[1]).into();
         self.diagram.transform.transform_point(point)
     }
 
