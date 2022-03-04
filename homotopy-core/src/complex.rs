@@ -25,15 +25,15 @@ impl Simplex {
     }
 }
 
-impl IntoIterator for Simplex {
-    type IntoIter = std::vec::IntoIter<Coordinate>;
+impl<'a> IntoIterator for &'a Simplex {
+    type IntoIter = std::iter::Copied<std::slice::Iter<'a, Coordinate>>;
     type Item = Coordinate;
 
     fn into_iter(self) -> Self::IntoIter {
         match self {
-            Self::Surface(p) => p.to_vec().into_iter(),
-            Self::Wire(p) => p.to_vec().into_iter(),
-            Self::Point(p) => p.to_vec().into_iter(),
+            Simplex::Surface(p) => p.iter().copied(),
+            Simplex::Wire(p) => p.iter().copied(),
+            Simplex::Point(p) => p.iter().copied(),
         }
     }
 }

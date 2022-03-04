@@ -1,4 +1,5 @@
 #![allow(clippy::enum_variant_names)]
+#![allow(clippy::use_self)]
 
 use homotopy_common::tree::Tree;
 use homotopy_core::{
