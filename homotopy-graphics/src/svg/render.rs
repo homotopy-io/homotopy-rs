@@ -13,7 +13,7 @@ use lyon_path::Path;
 
 use crate::svg::geom::{Circle, Fill, Point, Shape, Stroke};
 
-type Coordinate = (SliceIndex, SliceIndex);
+type Coordinate = [SliceIndex; 2];
 
 /// An action region in the diagram.
 ///
@@ -63,7 +63,7 @@ impl ActionRegion {
                     region_wires.push(Self::Wire(*ps, path));
                 }
                 Simplex::Point([p]) => {
-                    let center = layout.get([p.1, p.0]).into();
+                    let center = layout.get(*p).into();
                     region_points.push(Self::Point([*p], center));
                 }
             }
@@ -158,20 +158,20 @@ impl GraphicElement {
         for simplex in complex {
             match simplex {
                 Simplex::Surface(ps) => {
-                    let generator = generators.get(ps[0].0, ps[0].1).unwrap();
+                    let generator = generators.get(ps[0]).unwrap();
                     grouped_surfaces
                         .entry(generator)
                         .or_default()
                         .push(orient_surface(ps));
                 }
                 Simplex::Wire(ps) => {
-                    let generator = generators.get(ps[0].0, ps[0].1).unwrap();
+                    let generator = generators.get(ps[0]).unwrap();
 
-                    let mask = match depths.edge_depth([ps[0].1, ps[0].0], [ps[1].1, ps[1].0]) {
+                    let mask = match depths.edge_depth(ps[0], ps[1]) {
                         Some(depth) => depths
-                            .edges_above(depth, [ps[1].1, ps[1].0])
+                            .edges_above(depth, ps[1])
                             .into_iter()
-                            .map(|s| build_path(&[(s[1], s[0]), ps[1]], false, layout))
+                            .map(|s| build_path(&[s, ps[1]], false, layout))
                             .collect(),
                         None => vec![],
                     };
@@ -179,9 +179,9 @@ impl GraphicElement {
                     wire_elements.push(Self::Wire(generator, build_path(ps, false, layout), mask));
                 }
                 Simplex::Point([p]) => {
-                    let generator = generators.get(p.0, p.1).unwrap();
+                    let generator = generators.get(*p).unwrap();
                     if generator.dimension >= diagram.dimension() {
-                        point_elements.push(Self::Point(generator, layout.get([p.1, p.0]).into()));
+                        point_elements.push(Self::Point(generator, layout.get(*p).into()));
                     }
                 }
             }
@@ -217,10 +217,10 @@ fn orient_surface(surface: &[Coordinate; 3]) -> [Coordinate; 3] {
         }
     }
 
-    let a0 = ordering_to_int(surface[1].0.cmp(&surface[0].0));
-    let a1 = ordering_to_int(surface[1].1.cmp(&surface[0].1));
-    let b0 = ordering_to_int(surface[2].0.cmp(&surface[1].0));
-    let b1 = ordering_to_int(surface[2].1.cmp(&surface[1].1));
+    let a0 = ordering_to_int(surface[1][1].cmp(&surface[0][1]));
+    let a1 = ordering_to_int(surface[1][0].cmp(&surface[0][0]));
+    let b0 = ordering_to_int(surface[2][1].cmp(&surface[1][1]));
+    let b1 = ordering_to_int(surface[2][0].cmp(&surface[1][0]));
 
     if a0 * b1 - a1 * b0 < 0 {
         [surface[1], surface[0], surface[2]]
@@ -328,7 +328,7 @@ fn make_path(
     layout: &Layout,
     builder: &mut lyon_path::builder::WithSvg<lyon_path::path::Builder>,
 ) {
-    let start = layout.get([points[0].1, points[0].0]).into();
+    let start = layout.get(points[0]).into();
     builder.move_to(start);
 
     for i in 1..points.len() {
@@ -351,17 +351,17 @@ fn make_path_segment(
         SliceIndex::Interior,
     };
 
-    let layout_start: Point = layout.get([start.1, start.0]).into();
-    let layout_end: Point = layout.get([end.1, end.0]).into();
+    let layout_start: Point = layout.get(start).into();
+    let layout_end: Point = layout.get(end).into();
 
     match (start, end) {
-        ((_, Interior(Regular(_))), (Interior(Singular(_)), Interior(Singular(_)))) => builder
+        ([Interior(Regular(_)), _], [Interior(Singular(_)), Interior(Singular(_))]) => builder
             .cubic_bezier_to(
                 (layout_start.x, 0.8 * layout_end.y + 0.2 * layout_start.y).into(),
                 (layout_start.x, layout_end.y).into(),
                 layout_end,
             ),
-        ((Interior(Singular(_)), Interior(Singular(_))), (_, Interior(Regular(_)))) => builder
+        ([Interior(Singular(_)), Interior(Singular(_))], [Interior(Regular(_)), _]) => builder
             .cubic_bezier_to(
                 (layout_end.x, layout_start.y).into(),
                 (layout_end.x, 0.2 * layout_end.y + 0.8 * layout_start.y).into(),

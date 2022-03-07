@@ -459,7 +459,7 @@ impl Diagram2D {
             if let Some(simplex) = self.simplex_at(point) {
                 ctx.props()
                     .on_select
-                    .emit(simplex.into_iter().map(|(x, y)| vec![y, x]).collect());
+                    .emit(simplex.into_iter().map(|p| p.to_vec()).collect());
             }
         }
     }
@@ -707,22 +707,22 @@ fn drag_to_homotopy(
 
     let (point, boundary) = match simplex {
         Simplex::Surface([p0, _, _]) => (p0, false),
-        Simplex::Wire([_, p1 @ (_, Boundary(_))]) => (p1, true),
+        Simplex::Wire([_, p1 @ [Boundary(_), _]]) => (p1, true),
         Simplex::Wire([p0, _]) => (p0, false),
         Simplex::Point([p0]) => (p0, false),
     };
 
     // Handle horizontal and vertical drags
     let (prefix, y, x, diagram) = if horizontal || boundary {
-        let depth = match point.0 {
-            Interior(Singular(_)) => Height::Singular(depths.node_depth([point.1, point.0])?),
+        let depth = match point[1] {
+            Interior(Singular(_)) => Height::Singular(depths.node_depth(*point)?),
             _ => return None,
         };
 
-        let diagram: DiagramN = diagram.slice(point.1)?.try_into().ok()?;
-        (Some(point.1), point.0, depth.into(), diagram)
+        let diagram: DiagramN = diagram.slice(point[0])?.try_into().ok()?;
+        (Some(point[0]), point[1], depth.into(), diagram)
     } else {
-        (None, point.1, point.0, diagram)
+        (None, point[0], point[1], diagram)
     };
 
     // TODO: Are there valid homotopies on boundary coordinates?

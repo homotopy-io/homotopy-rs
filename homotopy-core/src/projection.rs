@@ -47,7 +47,7 @@ impl Generators {
         )
     }
 
-    pub fn get(&self, x: SliceIndex, y: SliceIndex) -> Option<Generator> {
+    pub fn get(&self, [y, x]: [SliceIndex; 2]) -> Option<Generator> {
         let slice = match y {
             SliceIndex::Boundary(Boundary::Source) => self.0.first()?,
             SliceIndex::Boundary(Boundary::Target) => self.0.last()?,

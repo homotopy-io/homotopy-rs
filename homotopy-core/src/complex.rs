@@ -6,7 +6,7 @@ use crate::{
     rewrite::RewriteN,
 };
 
-pub type Coordinate = (SliceIndex, SliceIndex);
+pub type Coordinate = [SliceIndex; 2];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Simplex {
@@ -85,7 +85,7 @@ pub fn make_complex(diagram: &DiagramN) -> Vec<Simplex> {
         };
 
         for x in targets {
-            complex.push(Simplex::Point([(Singular(x).into(), Singular(y).into())]));
+            complex.push(Simplex::Point([[Singular(y).into(), Singular(x).into()]]));
         }
     }
 
@@ -126,37 +126,37 @@ fn generate_cell(
     for rx in rxs.clone() {
         // Surface to the left of a wire
         complex.push(Simplex::Surface([
-            (Regular(rx).into(), ry),
-            (Singular(rx).into(), ry),
-            (Singular(sx).into(), sy),
+            [ry, Regular(rx).into()],
+            [ry, Singular(rx).into()],
+            [sy, Singular(sx).into()],
         ]));
 
         // Surface to the right of a wire
         complex.push(Simplex::Surface([
-            (Regular(rx + 1).into(), ry),
-            (Singular(rx).into(), ry),
-            (Singular(sx).into(), sy),
+            [ry, Regular(rx + 1).into()],
+            [ry, Singular(rx).into()],
+            [sy, Singular(sx).into()],
         ]));
 
         // Wire
         complex.push(Simplex::Wire([
-            (Singular(rx).into(), ry),
-            (Singular(sx).into(), sy),
+            [ry, Singular(rx).into()],
+            [sy, Singular(sx).into()],
         ]));
     }
 
     // Surface to the left
     complex.push(Simplex::Surface([
-        (Regular(rxs.start).into(), ry),
-        (Regular(sx).into(), sy),
-        (Singular(sx).into(), sy),
+        [ry, Regular(rxs.start).into()],
+        [sy, Regular(sx).into()],
+        [sy, Singular(sx).into()],
     ]));
 
     // Surface to the right
     complex.push(Simplex::Surface([
-        (Regular(rxs.end).into(), ry),
-        (Regular(sx + 1).into(), sy),
-        (Singular(sx).into(), sy),
+        [ry, Regular(rxs.end).into()],
+        [sy, Regular(sx + 1).into()],
+        [sy, Singular(sx).into()],
     ]));
 }
 
@@ -177,10 +177,10 @@ fn generate_rewrite(
 
     // Left boundary
     generate_square(
-        (Regular(0).into(), ry),
-        (Boundary::Source.into(), ry),
-        (Regular(0).into(), sy),
-        (Boundary::Source.into(), sy),
+        [ry, Regular(0).into()],
+        [ry, Boundary::Source.into()],
+        [sy, Regular(0).into()],
+        [sy, Boundary::Source.into()],
         complex,
     );
 
@@ -189,10 +189,10 @@ fn generate_rewrite(
     let end_singular = Regular(ss.size()).into();
 
     generate_square(
-        (end_regular, ry),
-        (Boundary::Target.into(), ry),
-        (end_singular, sy),
-        (Boundary::Target.into(), sy),
+        [ry, end_regular],
+        [ry, Boundary::Target.into()],
+        [sy, end_singular],
+        [sy, Boundary::Target.into()],
         complex,
     );
 }
