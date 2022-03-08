@@ -61,7 +61,7 @@ pub struct Mesh {
 }
 
 impl Mesh {
-    pub fn new(diagram: &DiagramN, depth: usize) -> Result<Self, DimensionError> {
+    pub fn new(diagram: &DiagramN, directed: bool, depth: usize) -> Result<Self, DimensionError> {
         if depth > diagram.dimension() {
             return Err(DimensionError);
         }
@@ -80,7 +80,13 @@ impl Mesh {
                 |_, &is_partial, ro| Some(is_partial || ro == ExternalRewrite::Flange),
             )?;
             graph = explosion.output;
-            elements = explode_elements(&elements, &graph, &explosion.node_to_nodes, orientation);
+            elements = explode_elements(
+                directed,
+                &elements,
+                &graph,
+                &explosion.node_to_nodes,
+                orientation,
+            );
         }
 
         Ok(Self { graph, elements })
@@ -88,6 +94,7 @@ impl Mesh {
 }
 
 fn explode_elements(
+    directed: bool,
     elements: &IdxVec<Element, ElementData>,
     graph: &SliceGraph<Vec<SliceIndex>, bool>,
     node_to_nodes: &IdxVec<NodeIndex, Vec<NodeIndex>>,
@@ -108,9 +115,14 @@ fn explode_elements(
                     children.push(exploded_elements.push(Element0(node_to_nodes[n][i])));
                 }
                 for i in 0..size - 1 {
+                    let faces = if !directed || i == 0 || i < size - 2 && i % 2 == 1 {
+                        [children[i], children[i + 1]]
+                    } else {
+                        [children[i + 1], children[i]]
+                    };
                     children.push(exploded_elements.push(ElementN(CubeInternal {
                         orientation,
-                        faces: [children[i], children[i + 1]],
+                        faces,
                         is_partial: false,
                     })));
                 }
