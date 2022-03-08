@@ -6,6 +6,9 @@ license = "BSD-3-Clause"
 repository = "https://github.com/homotopy-io/homotopy-rs"
 edition = "2021"
 
+[package.metadata.nix]
+build = true
+
 [dependencies]
 homotopy-common = { path = "../homotopy-common" }
 homotopy-core = { path = "../homotopy-core" }
