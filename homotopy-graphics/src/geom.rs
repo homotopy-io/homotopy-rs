@@ -199,8 +199,7 @@ impl CubicalGeometry {
             }));
         }
 
-        // TODO(@calintat): Inline `flatten_elements`.
-        for element in mesh.flatten_elements() {
+        for element in mesh.elements() {
             let n = match element.len() {
                 1 => 0,
                 2 => 1,

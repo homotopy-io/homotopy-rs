@@ -224,12 +224,26 @@ impl Mesh {
         }
     }
 
-    pub fn flatten_elements(&self) -> impl Iterator<Item = Vec<NodeIndex>> + '_ {
+    /// Returns all non-partial visible elements of the mesh.
+    pub fn elements(&self) -> impl Iterator<Item = Vec<NodeIndex>> + '_ {
+        use crate::{Height::Singular, SliceIndex::Interior};
+
         self.elements.iter().filter_map(|(e, elem)| {
             if elem.is_partial() {
                 None
             } else {
-                self.flatten(e, &self.orientation_of(e)).into()
+                let orientation = self.orientation_of(e);
+                let dim = orientation.len();
+
+                Some(self.flatten(e, &orientation)).filter(|nodes| {
+                    // Check that the element is visible.
+                    nodes.iter().all(|n| {
+                        let coord = &self.graph[*n].0;
+                        coord[dim..]
+                            .iter()
+                            .all(|si| matches!(si, Interior(Singular(_))))
+                    })
+                })
             }
         })
     }
