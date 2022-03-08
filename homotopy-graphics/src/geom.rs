@@ -221,7 +221,7 @@ impl CubicalGeometry {
                 .unwrap()
                 .generator;
 
-            if diagram.dimension().saturating_sub(generator.dimension) != n {
+            if n < depth - 1 && diagram.dimension().saturating_sub(generator.dimension) != n {
                 continue;
             }
 
@@ -230,7 +230,7 @@ impl CubicalGeometry {
                     geom.mk_point(verts[0]);
                 }
                 2 => {
-                    let verts = verts.try_into().unwrap();
+                    let verts: [Vert; 2] = verts.try_into().map_err(|_err| DimensionError)?;
                     geom.mk_line(verts);
 
                     // Curve extraction.
@@ -248,10 +248,12 @@ impl CubicalGeometry {
                     }
                 }
                 4 => {
-                    geom.mk_area(verts.try_into().unwrap());
+                    let verts: [Vert; 4] = verts.try_into().map_err(|_err| DimensionError)?;
+                    geom.mk_area(verts);
                 }
                 8 => {
-                    geom.mk_volume(verts.try_into().unwrap());
+                    let verts: [Vert; 8] = verts.try_into().map_err(|_err| DimensionError)?;
+                    geom.mk_volume(verts);
                 }
                 _ => (),
             }
