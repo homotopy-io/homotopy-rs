@@ -463,7 +463,15 @@ impl DiagramN {
 
     #[must_use]
     pub fn behead(&self, max_height: RegularHeight) -> Self {
-        Self::new(self.source(), self.cospans()[0..max_height].to_vec())
+        Self::new(self.source(), self.cospans()[..max_height].to_vec())
+    }
+
+    #[must_use]
+    pub fn befoot(&self, min_height: RegularHeight) -> Self {
+        Self::new(
+            self.slice(Height::Regular(min_height)).unwrap(),
+            self.cospans()[min_height..].to_vec(),
+        )
     }
 }
 

@@ -157,6 +157,8 @@ pub enum Action {
 
     Behead,
 
+    Befoot,
+
     Restrict,
 
     Theorem,
@@ -225,6 +227,7 @@ impl ProofState {
                 self.homotopy_contraction(homotopy)?;
             }
             Action::Behead => self.behead()?,
+            Action::Befoot => self.befoot()?,
             Action::Restrict => self.restrict()?,
             Action::Theorem => self.theorem()?,
             Action::EditSignature(edit) => self.edit_signature(edit),
@@ -571,15 +574,43 @@ impl ProofState {
                     SliceIndex::Boundary(Boundary::Source) => 0,
                     SliceIndex::Boundary(Boundary::Target) => diagram.size(),
                     SliceIndex::Interior(Height::Regular(j)) => j,
-                    SliceIndex::Interior(Height::Singular(_)) => {
-                        return Err(ModelError::InvalidAction)
-                    }
+                    _ => return Err(ModelError::InvalidAction),
                 },
                 _ => return Err(ModelError::InvalidAction),
             };
             let beheaded_diagram = diagram.behead(max_height).into();
 
             ws.diagram = beheaded_diagram;
+            ws.path = Default::default();
+            self.clear_attach();
+        }
+
+        Ok(())
+    }
+
+    /// Handler for [Action::Befoot].
+    fn befoot(&mut self) -> Result<(), ModelError> {
+        if let Some(ws) = &mut self.workspace {
+            let diagram: &DiagramN = (&ws.diagram)
+                .try_into()
+                .map_err(|_dimerr| ModelError::InvalidAction)?;
+            if diagram.size() == 0 {
+                return Err(ModelError::InvalidAction);
+            }
+
+            let min_height = match ws.path.len() {
+                0 => 1,
+                1 => match ws.path[0] {
+                    SliceIndex::Boundary(Boundary::Source) => 0,
+                    SliceIndex::Boundary(Boundary::Target) => diagram.size(),
+                    SliceIndex::Interior(Height::Regular(j)) => j,
+                    _ => return Err(ModelError::InvalidAction),
+                },
+                _ => return Err(ModelError::InvalidAction),
+            };
+            let befooted_diagram = diagram.befoot(min_height).into();
+
+            ws.diagram = befooted_diagram;
             ws.path = Default::default();
             self.clear_attach();
         }

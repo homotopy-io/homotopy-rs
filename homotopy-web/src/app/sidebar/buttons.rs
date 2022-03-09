@@ -96,9 +96,28 @@ declare_sidebar_tools! {
 
     BUTTON_BEHEAD {
         "Behead",
-        "content_cut",
+        "align_vertical_top",
         model::Action::Proof(model::proof::Action::Behead),
-        Some('b'),
+        Some('d'),
+        |proof: &Proof| {
+            proof.workspace()
+                .map_or(false, |ws| {
+                    match &ws.diagram {
+                        Diagram::Diagram0(_) => false,
+                        Diagram::DiagramN(d) => d.size() > 0 &&
+                            (ws.path.is_empty() || (ws.path.len() == 1 &&
+                                matches!(ws.path[0], SliceIndex::Boundary(_) | SliceIndex::Interior(Height::Regular(_)))))
+                    }
+                })
+                .into()
+        },
+    }
+
+    BUTTON_BEFOOT {
+        "Befoot",
+        "align_vertical_bottom",
+        model::Action::Proof(model::proof::Action::Befoot),
+        Some('f'),
         |proof: &Proof| {
             proof.workspace()
                 .map_or(false, |ws| {
