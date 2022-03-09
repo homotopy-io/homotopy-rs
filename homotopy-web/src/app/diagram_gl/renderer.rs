@@ -29,6 +29,7 @@ pub struct Renderer {
     ctx: GlCtx,
     signature: Signature,
     // state
+    smooth_time: bool,
     subdivision_depth: u8,
     geometry_samples: u8,
     // resources
@@ -43,7 +44,8 @@ pub struct Renderer {
 
 impl Renderer {
     pub fn new(ctx: GlCtx, settings: &Store<AppSettings>, props: &GlDiagramProps) -> Result<Self> {
-        let depth = *settings.get_subdivision_depth() as u8;
+        let smooth_time = *settings.get_smooth_time();
+        let subdivision_depth = *settings.get_subdivision_depth() as u8;
         let samples = *settings.get_geometry_samples() as u8;
 
         Ok(Self {
@@ -55,7 +57,8 @@ impl Renderer {
                 } else {
                     ViewDimension::Four
                 },
-                depth,
+                smooth_time,
+                subdivision_depth,
                 samples,
             )?,
             shaders: Shaders::new(&ctx)?,
@@ -65,13 +68,15 @@ impl Renderer {
             cylinder_buffer: GBuffer::new(&ctx)?,
             ctx,
             signature: props.signature.clone(),
-            subdivision_depth: depth,
+            smooth_time,
+            subdivision_depth,
             geometry_samples: samples,
         })
     }
 
     pub fn update(&mut self, settings: &Store<AppSettings>) -> Result<()> {
-        let depth = *settings.get_subdivision_depth() as u8;
+        let smooth_time = *settings.get_smooth_time();
+        let subdivision_depth = *settings.get_subdivision_depth() as u8;
         let samples = *settings.get_geometry_samples() as u8;
         let pixel_ratio = if *settings.get_dpr_scale() {
             web_sys::window().unwrap().device_pixel_ratio()
@@ -81,10 +86,15 @@ impl Renderer {
 
         self.ctx.set_pixel_ratio(pixel_ratio)?;
 
-        if self.subdivision_depth != depth || self.geometry_samples != samples {
-            self.subdivision_depth = depth;
+        if self.smooth_time != smooth_time
+            || self.subdivision_depth != subdivision_depth
+            || self.geometry_samples != samples
+        {
+            self.smooth_time = smooth_time;
+            self.subdivision_depth = subdivision_depth;
             self.geometry_samples = samples;
-            self.scene.reload_meshes(&self.ctx, depth, samples)?;
+            self.scene
+                .reload_meshes(&self.ctx, smooth_time, subdivision_depth, samples)?;
         }
 
         Ok(())

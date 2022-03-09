@@ -15,6 +15,7 @@ enum Pass {
 
 struct Subdivider<'a> {
     geom: &'a mut CubicalGeometry,
+    smooth_time: bool,
 
     edge_division_memory: FastHashMap<[Vert; 2], Vert>,
 
@@ -70,7 +71,7 @@ impl<'a> Subdivider<'a> {
         [[0, 4, 5, 8], [1, 6, 4, 8], [2, 5, 7, 8], [3, 7, 6, 8]];
 
     #[inline]
-    pub(super) fn new(geom: &'a mut CubicalGeometry) -> Self {
+    pub(super) fn new(geom: &'a mut CubicalGeometry, smooth_time: bool) -> Self {
         Self {
             edge_division_memory: FastHashMap::with_capacity_and_hasher(
                 geom.lines.len(),
@@ -80,6 +81,7 @@ impl<'a> Subdivider<'a> {
             smoothed: IdxVec::with_capacity(geom.verts.len()),
             touched: IdxVec::with_capacity(geom.verts.len()),
             geom,
+            smooth_time,
         }
     }
 
@@ -426,15 +428,12 @@ impl<'a> Subdivider<'a> {
             if valence > 0 {
                 let vert = &mut self.geom.verts[vert];
                 let new = *data / valence as f32;
-                vert.position = [0, 1, 2, 3]
-                    .map(|i| {
-                        if i == 4 || vert.boundary[i] {
-                            vert.position[i]
-                        } else {
-                            new[i]
-                        }
-                    })
-                    .into();
+
+                for i in 0..4 {
+                    if !vert.boundary[i] && (i != 3 || self.smooth_time) {
+                        vert.position[i] = new[i];
+                    }
+                }
             }
         }
 
@@ -510,12 +509,12 @@ impl<'a> Subdivider<'a> {
 }
 
 impl CubicalGeometry {
-    pub fn subdivide(&mut self, depth: u8) {
+    pub fn subdivide(&mut self, smooth_time: bool, depth: u8) {
         if depth == 0 {
             return;
         }
 
-        let mut engine = Subdivider::new(self);
+        let mut engine = Subdivider::new(self, smooth_time);
         for _ in 0..depth {
             engine.subdivide_once();
         }
