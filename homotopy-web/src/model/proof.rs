@@ -397,6 +397,10 @@ impl ProofState {
 
             // Update workspace
             workspace.path = path;
+            if workspace.visible_dimension() < workspace.view.dimension() as usize {
+                workspace.view = workspace.view.dec();
+            }
+
             self.clear_attach();
         }
 
