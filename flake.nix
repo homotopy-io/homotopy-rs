@@ -8,13 +8,37 @@
       url = "github:edolstra/flake-compat";
       flake = false;
     };
+    devshell = {
+      inputs = {
+        flake-utils.follows = "flake-utils";
+        nixpkgs.follows = "nixpkgs";
+      };
+      url = "github:numtide/devshell";
+    };
     # last version before dream2nix
-    nix-cargo-integration.url = "github:yusdacra/nix-cargo-integration?rev=7fe944f24f1a7014b58ddafbdc8cf1ffae4de1ab";
-    # switch to upstream after both of these get merged:
-    # https://github.com/nix-community/naersk/pull/167
-    # https://github.com/nix-community/naersk/pull/227
-    naersk.url = "github:NickHu/naersk";
-    rust-overlay.url = "github:oxalica/rust-overlay";
+    nix-cargo-integration = {
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        devshell.follows = "devshell";
+      };
+      url = "github:yusdacra/nix-cargo-integration?rev=7fe944f24f1a7014b58ddafbdc8cf1ffae4de1ab";
+    };
+    naersk = {
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+      };
+      # switch to upstream after both of these get merged:
+      # https://github.com/nix-community/naersk/pull/167
+      # https://github.com/nix-community/naersk/pull/227
+      url = "github:NickHu/naersk";
+    };
+    rust-overlay = {
+      inputs = {
+        flake-utils.follows = "flake-utils";
+        nixpkgs.follows = "nixpkgs";
+      };
+      url = "github:oxalica/rust-overlay";
+    };
   };
 
   outputs = inputs: let
@@ -47,6 +71,7 @@
               {package = gdb;}
               {package = rust-analyzer;}
               {package = wasm-bindgen-cli;}
+              {package = wasm-pack;}
             ]);
         };
       };
