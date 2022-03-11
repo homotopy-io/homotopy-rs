@@ -6,7 +6,7 @@ fn serialize_associator() {
     let (_, diagram) = examples::associator();
 
     let (serialized, key) = {
-        let mut store = Store::new();
+        let mut store: Store = Default::default();
         let key = store.pack_diagram(&diagram.clone().into());
         let serialized = rmp_serde::encode::to_vec_named(&store).unwrap();
         (serialized, key)

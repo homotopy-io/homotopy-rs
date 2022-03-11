@@ -134,7 +134,7 @@ struct GeneratorData {
 
 pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> {
     let mut data = Data {
-        store: Store::new(),
+        store: Default::default(),
         signature: Default::default(),
         workspace: Default::default(),
     };

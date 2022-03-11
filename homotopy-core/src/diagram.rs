@@ -212,7 +212,7 @@ impl DiagramN {
     }
 
     #[allow(clippy::expect_used, clippy::let_and_return)]
-    pub(crate) fn new(source: Diagram, cospans: Vec<Cospan>) -> Self {
+    pub fn new(source: Diagram, cospans: Vec<Cospan>) -> Self {
         let diagram = Self::new_unsafe(source, cospans);
         #[cfg(feature = "safety-checks")]
         {
@@ -531,6 +531,17 @@ impl TryFrom<Diagram> for Generator {
         match from {
             Diagram::DiagramN(_) => Err(DimensionError),
             Diagram::Diagram0(g) => Ok(g),
+        }
+    }
+}
+
+impl<'a> TryFrom<&'a Diagram> for Generator {
+    type Error = DimensionError;
+
+    fn try_from(from: &'a Diagram) -> Result<Self, Self::Error> {
+        match from {
+            Diagram::DiagramN(_) => Err(DimensionError),
+            Diagram::Diagram0(g) => Ok(*g),
         }
     }
 }
