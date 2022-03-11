@@ -6,8 +6,7 @@ use homotopy_core::{
     common::{Generator, Height, SliceIndex},
     complex::Simplex,
     layout::Layout,
-    projection::{Depths, Generators},
-    DiagramN,
+    projection::{Depths, Homotopy, Projection},
 };
 use lyon_path::Path;
 
@@ -47,7 +46,7 @@ impl ActionRegion {
     ///
     /// This function can panic or produce undefined results if the simplicial complex and the
     /// layout have not come from the same diagram.
-    pub fn build(complex: &[Simplex], layout: &Layout) -> Vec<Self> {
+    pub fn build(complex: &[Simplex], layout: &Layout, projection: &Projection) -> Vec<Self> {
         let mut region_surfaces = Vec::new();
         let mut region_wires = Vec::new();
         let mut region_points = Vec::new();
@@ -55,11 +54,11 @@ impl ActionRegion {
         for simplex in complex {
             match simplex {
                 Simplex::Surface(ps) => {
-                    let path = build_path(ps, true, layout);
+                    let path = build_path(ps, true, layout, projection);
                     region_surfaces.push(Self::Surface(*ps, path));
                 }
                 Simplex::Wire(ps) => {
-                    let path = build_path(ps, false, layout);
+                    let path = build_path(ps, false, layout, projection);
                     region_wires.push(Self::Wire(*ps, path));
                 }
                 Simplex::Point([p]) => {
@@ -143,10 +142,9 @@ impl GraphicElement {
     /// This function can panic or produce undefined results if the simplicial complex, the layout
     /// and the projected generators have not come from the same diagram.
     pub fn build(
-        diagram: &DiagramN,
         complex: &[Simplex],
         layout: &Layout,
-        generators: &Generators,
+        projection: &Projection,
         depths: &Depths,
     ) -> Vec<Self> {
         let mut wire_elements = Vec::new();
@@ -158,29 +156,33 @@ impl GraphicElement {
         for simplex in complex {
             match simplex {
                 Simplex::Surface(ps) => {
-                    let generator = generators.get(ps[0]).unwrap();
+                    let generator = projection.generator(ps[0]);
                     grouped_surfaces
                         .entry(generator)
                         .or_default()
                         .push(orient_surface(ps));
                 }
                 Simplex::Wire(ps) => {
-                    let generator = generators.get(ps[0]).unwrap();
+                    let generator = projection.generator(ps[0]);
 
                     let mask = match depths.edge_depth(ps[0], ps[1]) {
                         Some(depth) => depths
                             .edges_above(depth, ps[1])
                             .into_iter()
-                            .map(|s| build_path(&[s, ps[1]], false, layout))
+                            .map(|s| build_path(&[s, ps[1]], false, layout, projection))
                             .collect(),
                         None => vec![],
                     };
 
-                    wire_elements.push(Self::Wire(generator, build_path(ps, false, layout), mask));
+                    wire_elements.push(Self::Wire(
+                        generator,
+                        build_path(ps, false, layout, projection),
+                        mask,
+                    ));
                 }
                 Simplex::Point([p]) => {
-                    let generator = generators.get(*p).unwrap();
-                    if generator.dimension >= diagram.dimension() {
+                    let generator = projection.generator(*p);
+                    if matches!(projection.homotopy(*p), None | Some(Homotopy::Complex)) {
                         point_elements.push(Self::Point(generator, layout.get(*p).into()));
                     }
                 }
@@ -191,7 +193,7 @@ impl GraphicElement {
             let mut path_builder = Path::svg_builder();
 
             for points in merge_simplices(surfaces) {
-                make_path(&points, true, layout, &mut path_builder);
+                make_path(&points, true, layout, projection, &mut path_builder);
             }
 
             let path = path_builder.build();
@@ -316,9 +318,14 @@ where
     paths
 }
 
-fn build_path(points: &[Coordinate], closed: bool, layout: &Layout) -> Path {
+fn build_path(
+    points: &[Coordinate],
+    closed: bool,
+    layout: &Layout,
+    projection: &Projection,
+) -> Path {
     let mut builder = Path::svg_builder();
-    make_path(points, closed, layout, &mut builder);
+    make_path(points, closed, layout, projection, &mut builder);
     builder.build()
 }
 
@@ -326,17 +333,24 @@ fn make_path(
     points: &[Coordinate],
     closed: bool,
     layout: &Layout,
+    projection: &Projection,
     builder: &mut lyon_path::builder::WithSvg<lyon_path::path::Builder>,
 ) {
     let start = layout.get(points[0]).into();
     builder.move_to(start);
 
     for i in 1..points.len() {
-        make_path_segment(points[i - 1], points[i], layout, builder);
+        make_path_segment(points[i - 1], points[i], layout, projection, builder);
     }
 
     if closed {
-        make_path_segment(*points.last().unwrap(), points[0], layout, builder);
+        make_path_segment(
+            *points.last().unwrap(),
+            points[0],
+            layout,
+            projection,
+            builder,
+        );
     }
 }
 
@@ -344,6 +358,7 @@ fn make_path_segment(
     start: Coordinate,
     end: Coordinate,
     layout: &Layout,
+    projection: &Projection,
     builder: &mut lyon_path::builder::WithSvg<lyon_path::path::Builder>,
 ) {
     use self::{
@@ -355,18 +370,38 @@ fn make_path_segment(
     let layout_end: Point = layout.get(end).into();
 
     match (start, end) {
-        ([Interior(Regular(_)), _], [Interior(Singular(_)), Interior(Singular(_))]) => builder
-            .cubic_bezier_to(
-                (layout_start.x, 0.8 * layout_end.y + 0.2 * layout_start.y).into(),
-                (layout_start.x, layout_end.y).into(),
-                layout_end,
-            ),
-        ([Interior(Singular(_)), Interior(Singular(_))], [Interior(Regular(_)), _]) => builder
-            .cubic_bezier_to(
-                (layout_end.x, layout_start.y).into(),
-                (layout_end.x, 0.2 * layout_end.y + 0.8 * layout_start.y).into(),
-                layout_end,
-            ),
+        ([Interior(Regular(_)), _], [Interior(Singular(_)), Interior(Singular(_))]) => {
+            match projection.homotopy(end) {
+                // Vertical tangent
+                Some(Homotopy::HalfBraid) => builder.cubic_bezier_to(
+                    (layout_start.x, 0.2 * layout_start.y + 0.8 * layout_end.y).into(),
+                    (layout_end.x, 0.2 * layout_start.y + 0.8 * layout_end.y).into(),
+                    layout_end,
+                ),
+                // Horizontal tangent
+                _ => builder.cubic_bezier_to(
+                    (layout_start.x, 0.2 * layout_start.y + 0.8 * layout_end.y).into(),
+                    (0.8 * layout_start.x + 0.2 * layout_end.x, layout_end.y).into(),
+                    layout_end,
+                ),
+            }
+        }
+        ([Interior(Singular(_)), Interior(Singular(_))], [Interior(Regular(_)), _]) => {
+            match projection.homotopy(start) {
+                // Vertical tangent
+                Some(Homotopy::HalfBraid) => builder.cubic_bezier_to(
+                    (layout_start.x, 0.2 * layout_end.y + 0.8 * layout_start.y).into(),
+                    (layout_end.x, 0.2 * layout_end.y + 0.8 * layout_start.y).into(),
+                    layout_end,
+                ),
+                // Horizontal tangent
+                _ => builder.cubic_bezier_to(
+                    (0.8 * layout_end.x + 0.2 * layout_start.x, layout_start.y).into(),
+                    (layout_end.x, 0.2 * layout_end.y + 0.8 * layout_start.y).into(),
+                    layout_end,
+                ),
+            }
+        }
         _ => builder.line_to(layout_end),
     };
 }

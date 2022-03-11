@@ -57,6 +57,17 @@ pub enum InternalRewrite {
     Interior(SingularHeight, Direction),
 }
 
+impl InternalRewrite {
+    pub fn direction(self) -> Direction {
+        use Boundary::{Source, Target};
+        match self {
+            Self::Boundary(Source) => Direction::Forward,
+            Self::Boundary(Target) => Direction::Backward,
+            Self::Interior(_, direction) => direction,
+        }
+    }
+}
+
 /// Describes from where a rewrite in the output of explosion originates.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum ExternalRewrite {

@@ -12,7 +12,7 @@ use homotopy_core::{
     complex::{make_complex, Simplex},
     contraction::Bias,
     layout::Layout,
-    projection::{Depths, Generators},
+    projection::{Depths, Projection},
     rewrite::RewriteN,
     Boundary, DiagramN, Generator, Height, SliceIndex,
 };
@@ -104,12 +104,12 @@ impl PreparedDiagram {
 
         let time_start = web_sys::window().unwrap().performance().unwrap().now();
 
-        let generators = Generators::new(diagram);
         let layout = Layout::new(diagram, 2).unwrap();
         let complex = make_complex(diagram);
         let depths = Depths::new(diagram).unwrap();
-        let graphic = GraphicElement::build(diagram, &complex, &layout, &generators, &depths);
-        let actions = ActionRegion::build(&complex, &layout);
+        let projection = Projection::new(diagram, &layout, &depths).unwrap();
+        let graphic = GraphicElement::build(&complex, &layout, &projection, &depths);
+        let actions = ActionRegion::build(&complex, &layout, &projection);
 
         let dimensions =
             Point::from(layout.get([Boundary::Target.into(), Boundary::Target.into()]))
