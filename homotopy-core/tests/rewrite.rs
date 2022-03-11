@@ -1,92 +1,139 @@
-use homotopy_core::*;
-use quickcheck::*;
-use quickcheck_macros::quickcheck;
+use homotopy_core::{Cospan, DiagramN, Generator, Rewrite0, RewriteN};
+use proptest::prelude::*;
 
-fn gen_generator_1d(g: &mut Gen) -> Generator {
-    let id = *g.choose(&[1, 2]).unwrap();
-    Generator::new(id, 1)
-}
-
-fn create_cospan(generator: Generator) -> Cospan {
-    let x = Generator::new(0, 0);
-    Cospan {
-        forward: Rewrite0::new(x, generator).into(),
-        backward: Rewrite0::new(x, generator).into(),
+prop_compose! {
+    fn f_or_g()
+        (id in 1..3usize)
+    -> Generator {
+        Generator::new(id, 1)
     }
 }
 
-fn gen_rewrite(g: &mut Gen, source: &[Generator]) -> (RewriteN, Vec<Generator>) {
-    let mut slices: Vec<Vec<Rewrite>> = Vec::new();
-    let mut source_remaining = source;
-    let mut target = Vec::new();
+const MAX_SIZE: usize = 5;
 
-    loop {
-        if source_remaining.is_empty() && bool::arbitrary(g) {
-            break;
+// choose cone size of 0 with probability 2/7
+// choose cone size of 1 with probability 3/7
+// choose cone size of 2 with probability 1/7
+// choose cone size of 3 with probability 1/7
+fn choose(i: usize) -> usize {
+    match i {
+        i if i < 2 => 0,
+        i if i < 5 => 1,
+        i if i < 6 => 2,
+        i if i < 7 => 3,
+        _ => unreachable!(),
+    }
+}
+
+fn arb_cone_sizes_fixed_width(target: usize) -> impl Strategy<Value = Vec<(usize, Generator)>> {
+    match target {
+        s if s == 0 => prop::collection::vec((0..2usize, f_or_g()), 0..2).boxed(),
+        s if s == 1 => (0..5usize, f_or_g()).prop_flat_map(move |(i, g)| arb_cone_sizes_fixed_width(target - choose(i)).prop_map(move |mut vec| {vec.push((i, g)); vec })).boxed(),
+        s if s == 2 => (0..6usize, f_or_g()).prop_flat_map(move |(i, g)| arb_cone_sizes_fixed_width(target - choose(i)).prop_map(move |mut vec| {vec.push((i, g)); vec })).boxed(),
+        _ /* pick any size */ => (0..7usize, f_or_g()).prop_flat_map(move |(i, g)| arb_cone_sizes_fixed_width(target - choose(i)).prop_map(move |mut vec| {vec.push((i, g)); vec })).boxed(),
+    }
+}
+
+prop_compose! {
+    pub(crate) fn arb_rewrite_1d(sources: Vec<Generator>)
+        (mut cone_sizes in arb_cone_sizes_fixed_width(sources.len()))
+    -> (RewriteN, Vec<Generator>) {
+        let x = Generator::new(0, 0);
+        let internal = |g: Generator| -> Cospan {
+            Cospan {
+                forward: Rewrite0::new(x, g).into(),
+                backward: Rewrite0::new(x, g).into(),
+            }
+        };
+
+        let mut singular_slices = Vec::new();
+        let mut sources_remaining = sources.as_slice();
+        let mut targets = Vec::new();
+        while !sources_remaining.is_empty() && !cone_sizes.is_empty() {
+            // add a new cone
+            let (size_index, target) = cone_sizes.pop().unwrap();
+            let size = std::cmp::min(sources_remaining.len(), choose(size_index));
+            targets.push(target);
+
+            singular_slices.push(
+                sources_remaining[..size]
+                    .iter()
+                    .map(|&source| {
+                        Rewrite0::new(
+                            source,
+                            target,
+                        )
+                        .into()
+                    })
+                    .collect(),
+            );
+
+            sources_remaining = &sources_remaining[size..];
         }
 
-        let sizes: Vec<usize> = [0, 0, 1, 1, 1, 2, 3]
-            .iter()
-            .copied()
-            .filter(|i| *i <= source_remaining.len())
+        let source_cospans: Vec<_> = sources.iter().copied().map(internal).collect();
+        let target_cospans: Vec<_> = targets.iter().copied().map(internal).collect();
+        let rewrite = RewriteN::from_slices(
+            1,
+            &source_cospans,
+            &target_cospans,
+            singular_slices,
+        );
+        (rewrite, targets)
+    }
+}
+
+pub(crate) fn arb_rewrites_1d_composable() -> impl Strategy<Value = (usize, RewriteN, RewriteN)> {
+    prop::collection::vec(f_or_g(), 1..MAX_SIZE).prop_flat_map(|sources| {
+        let source_size = sources.len();
+        arb_rewrite_1d(sources).prop_flat_map(move |(first, middle)| {
+            arb_rewrite_1d(middle).prop_map(move |(second, _)| (source_size, first.clone(), second))
+        })
+    })
+}
+
+prop_compose! {
+    pub(crate) fn arb_rewrite_1d_with_source_and_target()
+        (sources in prop::collection::vec(f_or_g(), 1..MAX_SIZE))
+        ((rewrite, targets) in arb_rewrite_1d(sources.clone()), sources in Just(sources))
+    -> (RewriteN, DiagramN, DiagramN) {
+        let x = Generator::new(0, 0);
+        let internal = |g: Generator| -> Cospan {
+            Cospan {
+                forward: Rewrite0::new(x, g).into(),
+                backward: Rewrite0::new(x, g).into(),
+            }
+        };
+        (
+            rewrite,
+            DiagramN::new(
+                x.into(),
+                sources.into_iter().map(|source| internal(source)).collect(),
+            ),
+            DiagramN::new(
+                x.into(),
+                targets.into_iter().map(|target| internal(target)).collect(),
+            ),
+        )
+    }
+}
+
+proptest! {
+    #[test]
+    fn compose_monotone((source_size, first, second) in arb_rewrites_1d_composable()) {
+        let composed = RewriteN::compose(&first, &second);
+        prop_assert!(composed.is_ok());
+        let actual: Vec<usize> = (0..source_size)
+            .map(|i| composed.as_ref().unwrap().singular_image(i))
             .collect();
 
-        let size = *g.choose(&sizes).unwrap();
-        let target_generator = gen_generator_1d(g);
+        let expected: Vec<usize> = (0..source_size)
+            .map(|i| {
+                    second
+                    .singular_image(first.singular_image(i))
+            })
+            .collect();
 
-        target.push(target_generator);
-
-        slices.push(
-            source_remaining[..size]
-                .iter()
-                .map(|source_generator| Rewrite0::new(*source_generator, target_generator).into())
-                .collect(),
-        );
-
-        source_remaining = &source_remaining[size..];
+        prop_assert_eq!(actual, expected);
     }
-
-    let source_cospans: Vec<_> = source.iter().copied().map(create_cospan).collect();
-    let target_cospans: Vec<_> = target.iter().copied().map(create_cospan).collect();
-    let rewrite = RewriteN::from_slices(1, &source_cospans, &target_cospans, slices);
-    (rewrite, target)
-}
-
-#[derive(Debug, Clone)]
-struct ComposableRewrites {
-    source_size: usize,
-    first: RewriteN,
-    second: RewriteN,
-}
-
-impl Arbitrary for ComposableRewrites {
-    fn arbitrary(g: &mut Gen) -> Self {
-        let source_size = usize::arbitrary(g) % g.size();
-        let source: Vec<_> = (0..source_size).map(|_| gen_generator_1d(g)).collect();
-        let (first, middle) = gen_rewrite(g, &source);
-        let (second, _) = gen_rewrite(g, &middle);
-        ComposableRewrites {
-            source_size,
-            first,
-            second,
-        }
-    }
-}
-
-#[quickcheck]
-fn compose_monotone(rewrites: ComposableRewrites) {
-    let composed = RewriteN::compose(&rewrites.first, &rewrites.second).unwrap();
-    let actual: Vec<usize> = (0..rewrites.source_size)
-        .map(|i| composed.singular_image(i))
-        .collect();
-
-    let expected: Vec<usize> = (0..rewrites.source_size)
-        .map(|i| {
-            rewrites
-                .second
-                .singular_image(rewrites.first.singular_image(i))
-        })
-        .collect();
-
-    assert_eq!(actual, expected);
 }
