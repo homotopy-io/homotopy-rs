@@ -82,14 +82,14 @@ pub enum ExternalRewrite {
     /// Unique slice of a unit cone.
     UnitSlice,
     /// Regular slice of a non-unit cone.
-    RegularSlice,
+    RegularSlice(RegularHeight),
     /// Singular slice of a non-unit cone.
     SingularSlice(SingularHeight),
 }
 
 impl ExternalRewrite {
     pub fn is_atomic(self) -> bool {
-        !matches!(self, Self::Flange | Self::UnitSlice | Self::RegularSlice)
+        !matches!(self, Self::Flange | Self::UnitSlice | Self::RegularSlice(_))
     }
 }
 
@@ -196,7 +196,6 @@ where
 
             let key = &e.weight().0;
             let rewrite: &RewriteN = (&e.weight().1).try_into()?;
-            let source_diagram: &DiagramN = (&self[s].1).try_into()?;
             let target_diagram: &DiagramN = (&self[t].1).try_into()?;
 
             let mut add_edge =
@@ -232,45 +231,56 @@ where
                     }
                     // Unit, regular, and singular slices.
                     SliceIndex::Interior(Height::Singular(target_height)) => {
-                        let Range { start, end } = rewrite.singular_preimage(target_height);
+                        let cone = rewrite.cone_over_target(target_height);
+                        let preimage = rewrite.singular_preimage(target_height);
 
-                        for source_height in start..end {
-                            let singular_slice = rewrite.slice(source_height);
-
-                            let r = if source_height == start {
-                                ExternalRewrite::Flange
-                            } else {
-                                ExternalRewrite::RegularSlice
-                            };
+                        if preimage.is_empty() {
+                            // unit slice
                             add_edge(
-                                SliceIndex::Interior(Height::Regular(source_height)),
+                                SliceIndex::Interior(Height::Regular(preimage.start)),
                                 ti,
-                                r,
-                                source_diagram.cospans()[source_height]
-                                    .forward
-                                    .compose(&singular_slice)
-                                    .unwrap(),
+                                ExternalRewrite::UnitSlice,
+                                cone.unwrap().regular_slices()[0].clone(),
                             );
-
+                        } else {
+                            let Range { start, end } = preimage;
+                            // add first flange slice
                             add_edge(
-                                SliceIndex::Interior(Height::Singular(source_height)),
+                                SliceIndex::Interior(Height::Regular(start)),
                                 ti,
-                                ExternalRewrite::SingularSlice(source_height),
-                                singular_slice,
+                                ExternalRewrite::Flange,
+                                target_diagram.cospans()[target_height].forward.clone(),
+                            );
+                            // add singular singular slice, then regular slice, …
+                            for source_height in start..end {
+                                add_edge(
+                                    SliceIndex::Interior(Height::Singular(source_height)),
+                                    ti,
+                                    ExternalRewrite::SingularSlice(source_height),
+                                    cone.map_or(Rewrite::identity(rewrite.dimension() - 1), |c| {
+                                        c.singular_slices()[source_height - start].clone()
+                                    }),
+                                );
+                                if source_height < end - 1 {
+                                    // one regular slice between each adjacent pair of singular
+                                    // slices
+                                    add_edge(
+                                        SliceIndex::Interior(Height::Regular(source_height + 1)),
+                                        ti,
+                                        ExternalRewrite::RegularSlice(source_height + 1),
+                                        cone.unwrap().regular_slices()[source_height - start]
+                                            .clone(),
+                                    );
+                                }
+                            }
+                            // add last flange slice
+                            add_edge(
+                                SliceIndex::Interior(Height::Regular(end)),
+                                ti,
+                                ExternalRewrite::Flange,
+                                target_diagram.cospans()[target_height].backward.clone(),
                             );
                         }
-
-                        let r = if start < end {
-                            ExternalRewrite::Flange
-                        } else {
-                            ExternalRewrite::UnitSlice
-                        };
-                        add_edge(
-                            SliceIndex::Interior(Height::Regular(end)),
-                            ti,
-                            r,
-                            target_diagram.cospans()[target_height].backward.clone(),
-                        );
                     }
                 }
             }
