@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1646907091838,
+  "lastUpdate": 1647018041537,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -26279,6 +26279,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 104.86,
             "range": "+/- 3.210",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "a4c6381cc61514e9733611a40505901d10236e78",
+          "message": "Vertical tangents for half-braids and dots for complex homotopies (fix #18)",
+          "timestamp": "2022-03-11T16:41:55Z",
+          "tree_id": "473586a50bb83625baee9fa07f2c522f6ef5636b",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/a4c6381cc61514e9733611a40505901d10236e78"
+        },
+        "date": 1647018034683,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 62.247,
+            "range": "+/- 0.013",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 63.719,
+            "range": "+/- 0.015",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 95.707,
+            "range": "+/- 0.045",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 111.75,
+            "range": "+/- 0.060",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 130.97,
+            "range": "+/- 0.470",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 186.25,
+            "range": "+/- 0.070",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 81.663,
+            "range": "+/- 0.026",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 550.75,
+            "range": "+/- 0.230",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.155,
+            "range": "+/- 0.010",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 6.5376,
+            "range": "+/- 0.003",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 17.309,
+            "range": "+/- 0.007",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 42.861,
+            "range": "+/- 0.088",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 109.58,
+            "range": "+/- 0.500",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 303.91,
+            "range": "+/- 1.190",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 64.503,
+            "range": "+/- 0.022",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 92.113,
+            "range": "+/- 0.029",
             "unit": "us"
           }
         ]
