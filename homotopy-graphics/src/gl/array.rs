@@ -78,6 +78,7 @@ impl VertexArray {
         })
     }
 
+    #[must_use]
     pub fn attribute<T>(mut self, src: &Buffer<T>) -> Self
     where
         T: Attributable,

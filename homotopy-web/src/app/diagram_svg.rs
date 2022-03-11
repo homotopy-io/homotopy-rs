@@ -11,14 +11,14 @@ use homotopy_core::{
     common::Direction,
     complex::{make_complex, Simplex},
     contraction::Bias,
-    projection::{Depths, Generators},
+    layout::Layout,
+    projection::{Depths, Projection},
     rewrite::RewriteN,
     Boundary, DiagramN, Generator, Height, SliceIndex,
 };
 use homotopy_graphics::svg::{
     geom,
-    geom::path_to_svg,
-    layout::Layout,
+    geom::{path_to_svg, Point},
     render::{ActionRegion, GraphicElement},
 };
 use web_sys::Element;
@@ -104,19 +104,18 @@ impl PreparedDiagram {
 
         let time_start = web_sys::window().unwrap().performance().unwrap().now();
 
-        let generators = Generators::new(diagram);
-        let layout = Layout::new(diagram, 2000).unwrap();
+        let layout = Layout::new(diagram, 2).unwrap();
         let complex = make_complex(diagram);
         let depths = Depths::new(diagram).unwrap();
-        let graphic = GraphicElement::build(diagram, &complex, &layout, &generators, &depths);
-        let actions = ActionRegion::build(&complex, &layout);
+        let projection = Projection::new(diagram, &layout, &depths).unwrap();
+        let graphic = GraphicElement::build(&complex, &layout, &projection, &depths);
+        let actions = ActionRegion::build(&complex, &layout, &projection);
 
-        let dimensions = layout
-            .get(Boundary::Target.into(), Boundary::Target.into())
-            .unwrap()
-            .to_vector()
-            .to_size()
-            * style.scale;
+        let dimensions =
+            Point::from(layout.get([Boundary::Target.into(), Boundary::Target.into()]))
+                .to_vector()
+                .to_size()
+                * style.scale;
 
         let transform = Transform2D::scale(style.scale, -style.scale)
             .then_translate((0.0, dimensions.height).into());
@@ -405,7 +404,7 @@ impl Diagram2D {
     }
 
     fn position(&self, point: [SliceIndex; 2]) -> Point2D<f32> {
-        let point = self.diagram.layout.get(point[0], point[1]).unwrap();
+        let point = self.diagram.layout.get([point[1], point[0]]).into();
         self.diagram.transform.transform_point(point)
     }
 
@@ -460,7 +459,7 @@ impl Diagram2D {
             if let Some(simplex) = self.simplex_at(point) {
                 ctx.props()
                     .on_select
-                    .emit(simplex.into_iter().map(|(x, y)| vec![y, x]).collect());
+                    .emit(simplex.into_iter().map(|p| p.to_vec()).collect());
             }
         }
     }
@@ -708,22 +707,22 @@ fn drag_to_homotopy(
 
     let (point, boundary) = match simplex {
         Simplex::Surface([p0, _, _]) => (p0, false),
-        Simplex::Wire([_, p1 @ (_, Boundary(_))]) => (p1, true),
+        Simplex::Wire([_, p1 @ [Boundary(_), _]]) => (p1, true),
         Simplex::Wire([p0, _]) => (p0, false),
         Simplex::Point([p0]) => (p0, false),
     };
 
     // Handle horizontal and vertical drags
     let (prefix, y, x, diagram) = if horizontal || boundary {
-        let depth = match point.0 {
-            Interior(Singular(_)) => Height::Singular(depths.node_depth([point.1, point.0])?),
+        let depth = match point[1] {
+            Interior(Singular(_)) => Height::Singular(depths.node_depth(*point)?),
             _ => return None,
         };
 
-        let diagram: DiagramN = diagram.slice(point.1)?.try_into().ok()?;
-        (Some(point.1), point.0, depth.into(), diagram)
+        let diagram: DiagramN = diagram.slice(point[0])?.try_into().ok()?;
+        (Some(point[0]), point[1], depth.into(), diagram)
     } else {
-        (None, point.1, point.0, diagram)
+        (None, point[0], point[1], diagram)
     };
 
     // TODO: Are there valid homotopies on boundary coordinates?

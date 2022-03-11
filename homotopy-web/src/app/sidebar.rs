@@ -186,7 +186,7 @@ impl Sidebar {
     }
 
     fn install_keyboard_shortcuts(&mut self, ctx: &Context<Self>) {
-        use homotopy_core::Direction;
+        use homotopy_core::{Boundary::Source, Direction, SliceIndex};
 
         let dispatch = ctx.link().callback(SidebarMsg::Dispatch);
         let bindings = Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
@@ -204,6 +204,8 @@ impl Sidebar {
                 dispatch.emit(proof::Action::SwitchSlice(Direction::Backward).into());
             } else if key == "arrowleft" {
                 dispatch.emit(proof::Action::AscendSlice(1).into());
+            } else if key == "arrowright" {
+                dispatch.emit(proof::Action::DescendSlice(SliceIndex::Boundary(Source)).into());
             }
         }) as Box<dyn FnMut(_)>);
 

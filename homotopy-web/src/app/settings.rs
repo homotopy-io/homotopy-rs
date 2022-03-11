@@ -9,6 +9,7 @@ use crate::{
 declare_settings! {
     pub struct AppSettings {
         dpr_scale: bool = true,
+        smooth_time: bool = true,
         subdivision_depth: u32 = 2,
         geometry_samples: u32 = 10,
 
@@ -65,6 +66,13 @@ impl Component for SettingsView {
                             "Scale by device pixel ratio",
                             |local| *local.get_dpr_scale(),
                             AppSettingsDispatch::set_dpr_scale,
+                        )
+                    }
+                    {
+                        self.view_checkbox(
+                            "Smooth in the time axis",
+                            |local| *local.get_smooth_time(),
+                            AppSettingsDispatch::set_smooth_time,
                         )
                     }
                     {

@@ -58,6 +58,7 @@ impl Scene {
         ctx: &GlCtx,
         diagram: &DiagramN,
         view_dimension: ViewDimension,
+        smooth_time: bool,
         subdivision_depth: u8,
         geometry_samples: u8,
     ) -> Result<Self> {
@@ -75,13 +76,14 @@ impl Scene {
             duration: 0.,
         };
 
-        scene.reload_meshes(ctx, subdivision_depth, geometry_samples)?;
+        scene.reload_meshes(ctx, smooth_time, subdivision_depth, geometry_samples)?;
         Ok(scene)
     }
 
     pub fn reload_meshes(
         &mut self,
         ctx: &GlCtx,
+        smooth_time: bool,
         subdivision_depth: u8,
         geometry_samples: u8,
     ) -> Result<()> {
@@ -112,6 +114,7 @@ impl Scene {
         let mut mesh = clay(
             &self.diagram,
             self.view_dimension as usize,
+            smooth_time,
             subdivision_depth,
         )
         .unwrap();

@@ -35,6 +35,7 @@ pub enum Boundary {
 }
 
 impl Boundary {
+    #[must_use]
     pub fn flip(self) -> Self {
         match self {
             Self::Source => Self::Target,

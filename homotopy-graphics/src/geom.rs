@@ -165,17 +165,26 @@ impl CubicalGeometry {
         }
 
         // Extract the mesh and layout.
-        let mesh = Mesh::new(diagram, depth)?;
+        let mesh = Mesh::new(diagram, false, depth)?;
         let layout = Layout::new(diagram, depth)?;
 
         let mut geom: Self = Default::default();
         let mut node_to_vert = IdxVec::with_capacity(mesh.graph.node_count());
 
         for (path, diagram) in mesh.graph.node_weights() {
-            let position = layout.get(path);
-            let position = [0, 1, 2, 3]
-                .map(|i| position.get(i).copied().unwrap_or_default())
-                .into();
+            let position = match depth {
+                3 => {
+                    let path: [SliceIndex; 3] =
+                        path.clone().try_into().map_err(|_err| DimensionError)?;
+                    Vec3::from(layout.get(path)).into()
+                }
+                4 => {
+                    let path: [SliceIndex; 4] =
+                        path.clone().try_into().map_err(|_err| DimensionError)?;
+                    layout.get(path).into()
+                }
+                _ => return Err(DimensionError),
+            };
 
             let boundary = calculate_boundary(path);
             let boundary = [0, 1, 2, 3]
@@ -190,8 +199,7 @@ impl CubicalGeometry {
             }));
         }
 
-        // TODO(@calintat): Inline `flatten_elements`.
-        for element in mesh.flatten_elements() {
+        for element in mesh.elements() {
             let n = match element.len() {
                 1 => 0,
                 2 => 1,
@@ -213,7 +221,7 @@ impl CubicalGeometry {
                 .unwrap()
                 .generator;
 
-            if diagram.dimension().saturating_sub(generator.dimension) != n {
+            if n < depth - 1 && diagram.dimension().saturating_sub(generator.dimension) != n {
                 continue;
             }
 
@@ -222,7 +230,7 @@ impl CubicalGeometry {
                     geom.mk_point(verts[0]);
                 }
                 2 => {
-                    let verts = verts.try_into().unwrap();
+                    let verts: [Vert; 2] = verts.try_into().map_err(|_err| DimensionError)?;
                     geom.mk_line(verts);
 
                     // Curve extraction.
@@ -240,10 +248,12 @@ impl CubicalGeometry {
                     }
                 }
                 4 => {
-                    geom.mk_area(verts.try_into().unwrap());
+                    let verts: [Vert; 4] = verts.try_into().map_err(|_err| DimensionError)?;
+                    geom.mk_area(verts);
                 }
                 8 => {
-                    geom.mk_volume(verts.try_into().unwrap());
+                    let verts: [Vert; 8] = verts.try_into().map_err(|_err| DimensionError)?;
+                    geom.mk_volume(verts);
                 }
                 _ => (),
             }

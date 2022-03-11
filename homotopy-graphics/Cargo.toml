@@ -1,10 +1,13 @@
 [package]
 name = "homotopy-graphics"
 version = "0.1.0"
-authors = ["Lukas Heidemann <lukas@heidemann.me>", "Nathan Corbyn <me@nathancorbyn.com>"]
+authors = ["Lukas Heidemann <lukas@heidemann.me>", "Nathan Corbyn <me@nathancorbyn.com>", "Calin Tataru <calintat@gmail.com>"]
 license = "BSD-3-Clause"
 repository = "https://github.com/homotopy-io/homotopy-rs"
 edition = "2021"
+
+[package.metadata.nix]
+build = true
 
 [dependencies]
 homotopy-common = { path = "../homotopy-common" }
@@ -17,7 +20,7 @@ lyon_algorithms = "0.17.6"
 lyon_path = "0.17.7"
 thiserror = "1.0.30"
 serde = { features = ["derive"], version = "1.0.136" }
-serde_json = "1.0.78"
+serde_json = "1.0.79"
 paste = "1.0.5"
 petgraph = "0.6.0"
 log = "0.4.14"
@@ -42,4 +45,4 @@ features = [
 
 [dev-dependencies]
 cargo-husky = { features = ["precommit-hook", "run-cargo-check", "run-cargo-test", "run-cargo-fmt", "run-cargo-clippy"], version = "1.5.0" }
-insta = "1.12.0"
+insta = "1.13.0"
