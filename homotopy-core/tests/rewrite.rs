@@ -1,4 +1,8 @@
-use homotopy_core::{Cospan, DiagramN, Generator, Rewrite0, RewriteN};
+use std::ops::Index;
+
+use homotopy_core::{
+    Boundary::*, Cospan, DiagramN, Generator, Height::*, Rewrite0, RewriteN, SliceIndex::*,
+};
 use proptest::prelude::*;
 
 prop_compose! {
@@ -38,14 +42,34 @@ prop_compose! {
     pub(crate) fn arb_rewrite_1d(sources: Vec<Generator>)
         (mut cone_sizes in arb_cone_sizes_fixed_width(sources.len()))
     -> (RewriteN, Vec<Generator>) {
+        // map ([x, y, ...], target) to its corresponding 2D generator
+        fn generator_2d(source: &[Generator], target: Generator) -> Generator {
+            Generator::new(
+                if source.is_empty() {
+                    match target.id {
+                            1 /* x to f */ => 3,
+                            2 /* x to g */ => 4,
+                            _ => unreachable!(),
+                        }
+                } else {
+                    4 + source
+                        .iter()
+                        .enumerate()
+                        .map(|(i, s)| [2, 3, 5, 7].index(i) ^ s.id)
+                        .product::<usize>()
+                },
+                2,
+            )
+        }
         let x = Generator::new(0, 0);
         let internal = |g: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, g).into(),
-                backward: Rewrite0::new(x, g).into(),
+                forward: Rewrite0::new(x, g, (g, vec![Boundary(Source)]).into()).into(),
+                backward: Rewrite0::new(x, g, (g, vec![Boundary(Target)]).into()).into(),
             }
         };
 
+        let mut regular_slices = Vec::new();
         let mut singular_slices = Vec::new();
         let mut sources_remaining = sources.as_slice();
         let mut targets = Vec::new();
@@ -53,15 +77,39 @@ prop_compose! {
             // add a new cone
             let (size_index, target) = cone_sizes.pop().unwrap();
             let size = std::cmp::min(sources_remaining.len(), choose(size_index));
+            let filler_generator = generator_2d(&sources_remaining[..size], target);
             targets.push(target);
 
             singular_slices.push(
                 sources_remaining[..size]
                     .iter()
-                    .map(|&source| {
+                    .enumerate()
+                    .map(|(i, &source)| {
                         Rewrite0::new(
                             source,
                             target,
+                            (
+                                filler_generator,
+                                vec![Boundary(Source), Interior(Singular(i))],
+                            )
+                                .into(),
+                        )
+                        .into()
+                    })
+                    .collect(),
+            );
+
+            regular_slices.push(
+                (0..=size)
+                    .map(|r| {
+                        Rewrite0::new(
+                            x,
+                            target,
+                            (
+                                filler_generator,
+                                vec![Boundary(Source), Interior(Regular(r))],
+                            )
+                                .into(),
                         )
                         .into()
                     })
@@ -77,6 +125,7 @@ prop_compose! {
             1,
             &source_cospans,
             &target_cospans,
+            regular_slices,
             singular_slices,
         );
         (rewrite, targets)
@@ -100,8 +149,8 @@ prop_compose! {
         let x = Generator::new(0, 0);
         let internal = |g: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, g).into(),
-                backward: Rewrite0::new(x, g).into(),
+                forward: Rewrite0::new(x, g, (g, vec![Boundary(Source)]).into()).into(),
+                backward: Rewrite0::new(x, g, (g, vec![Boundary(Target)]).into()).into(),
             }
         };
         (
