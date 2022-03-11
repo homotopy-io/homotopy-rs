@@ -38,7 +38,7 @@ proptest! {
                     | ExternalRewrite::Sparse(_)
                     | ExternalRewrite::Flange => None,
                     ExternalRewrite::UnitSlice => Some(ExternalRewrite::UnitSlice.into()),
-                    ExternalRewrite::RegularSlice => Some(ExternalRewrite::RegularSlice.into()),
+                    ExternalRewrite::RegularSlice(h) => Some(ExternalRewrite::RegularSlice(h).into()),
                     ExternalRewrite::SingularSlice(h) => Some(ExternalRewrite::SingularSlice(h).into()),
                 },
             )
@@ -96,7 +96,7 @@ proptest! {
                 .for_each(|(cur, next)| match (cur.0, next.0) {
                     // last slice
                     (
-                        ExternalRewrite::UnitSlice | ExternalRewrite::RegularSlice,
+                        ExternalRewrite::UnitSlice | ExternalRewrite::RegularSlice(_),
                         ExternalRewrite::Boundary(_),
                     ) => {
                         regular_slices.last_mut().unwrap().push(cur.1);
@@ -107,17 +107,17 @@ proptest! {
                     // not last slice
                     (ExternalRewrite::UnitSlice, _)
                     | (
-                        ExternalRewrite::RegularSlice,
-                        ExternalRewrite::UnitSlice | ExternalRewrite::RegularSlice,
+                        ExternalRewrite::RegularSlice(_),
+                        ExternalRewrite::UnitSlice | ExternalRewrite::RegularSlice(_),
                     ) => {
                         regular_slices.last_mut().unwrap().push(cur.1);
                         regular_slices.push(vec![]);
                         singular_slices.push(vec![]);
                     }
-                    (ExternalRewrite::RegularSlice, ExternalRewrite::SingularSlice(_)) => {
+                    (ExternalRewrite::RegularSlice(_), ExternalRewrite::SingularSlice(_)) => {
                         regular_slices.last_mut().unwrap().push(cur.1);
                     }
-                    (ExternalRewrite::SingularSlice(_), ExternalRewrite::RegularSlice) => {
+                    (ExternalRewrite::SingularSlice(_), ExternalRewrite::RegularSlice(_)) => {
                         singular_slices.last_mut().unwrap().push(cur.1);
                     }
                     (
@@ -134,6 +134,7 @@ proptest! {
                 1,
                 &source_cospans,
                 &target_cospans,
+                regular_slices,
                 singular_slices,
             )
         };
