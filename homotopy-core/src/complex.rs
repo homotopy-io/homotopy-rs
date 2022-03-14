@@ -29,10 +29,10 @@ pub fn make_complex(diagram: &DiagramN) -> Vec<Simplex> {
     const TRI_ASSEMBLY_ORDER: [[usize; 3]; 2] = [[0, 1, 3], [0, 3, 2]];
 
     // Extract cubical mesh.
-    let mesh = Mesh::new(diagram, true, 2).unwrap();
+    let mesh = Mesh::new(diagram, 2).unwrap();
 
     let mut complex = vec![];
-    for elem in mesh.elements() {
+    for elem in mesh.elements(true) {
         let points: Vec<_> = elem
             .iter()
             .map(|n| {

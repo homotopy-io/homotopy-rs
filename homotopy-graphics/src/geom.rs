@@ -165,7 +165,7 @@ impl CubicalGeometry {
         }
 
         // Extract the mesh and layout.
-        let mesh = Mesh::new(diagram, false, depth)?;
+        let mesh = Mesh::new(diagram, depth)?;
         let layout = Layout::new(diagram, depth)?;
 
         let mut geom: Self = Default::default();
@@ -199,7 +199,7 @@ impl CubicalGeometry {
             }));
         }
 
-        for element in mesh.elements() {
+        for element in mesh.elements(false) {
             let n = match element.len() {
                 1 => 0,
                 2 => 1,

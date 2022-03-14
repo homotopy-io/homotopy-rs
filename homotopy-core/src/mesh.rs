@@ -1,7 +1,4 @@
-use std::{
-    cmp::Ordering,
-    ops::{Deref, DerefMut},
-};
+use std::{cmp::Ordering, ops::Index};
 
 use homotopy_common::{declare_idx, idx::IdxVec};
 use itertools::{interleave, Itertools};
@@ -10,14 +7,14 @@ use petgraph::graph::NodeIndex;
 use crate::{
     common::DimensionError,
     graph::{Explodable, ExternalRewrite, SliceGraph},
-    DiagramN, SliceIndex,
+    DiagramN, Direction, SliceIndex,
 };
 
 declare_idx! {
     pub struct Element = usize;
 }
 
-pub type Orientation = usize;
+type Orientation = usize;
 
 #[derive(Copy, Clone, Debug)]
 pub enum ElementData {
@@ -27,31 +24,17 @@ pub enum ElementData {
 
 #[derive(Copy, Clone, Debug)]
 pub struct CubeInternal {
-    faces: [Element; 2],
-    is_partial: bool,
-    orientation: Orientation,
+    pub faces: [Element; 2],
+    pub partial: bool,
+    pub direction: Direction,
+    pub orientation: Orientation,
 }
 
-impl Deref for CubeInternal {
-    type Target = [Element; 2];
+impl Index<usize> for CubeInternal {
+    type Output = Element;
 
-    fn deref(&self) -> &Self::Target {
-        &self.faces
-    }
-}
-
-impl DerefMut for CubeInternal {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.faces
-    }
-}
-
-impl ElementData {
-    fn is_partial(&self) -> bool {
-        match self {
-            Self::Element0(_) => false,
-            Self::ElementN(cube) => cube.is_partial,
-        }
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.faces[index]
     }
 }
 
@@ -61,145 +44,133 @@ pub struct Mesh {
 }
 
 impl Mesh {
-    pub fn new(diagram: &DiagramN, directed: bool, depth: usize) -> Result<Self, DimensionError> {
+    pub fn new(diagram: &DiagramN, depth: usize) -> Result<Self, DimensionError> {
         if depth > diagram.dimension() {
             return Err(DimensionError);
         }
 
-        let mut graph = SliceGraph::singleton(vec![], diagram.clone());
-        let mut elements = IdxVec::from_iter([ElementData::Element0(NodeIndex::new(0))]);
+        let mut mesh = Self {
+            graph: SliceGraph::singleton(vec![], diagram.clone()),
+            elements: IdxVec::from_iter([ElementData::Element0(NodeIndex::new(0))]),
+        };
 
         for orientation in 0..depth {
-            let explosion = graph.explode(
-                |_, key, si| {
-                    let mut key = key.clone();
-                    key.push(si);
-                    Some(key)
-                },
-                |_, _, _| Some(false),
-                |_, &is_partial, ro| Some(is_partial || ro == ExternalRewrite::Flange),
-            )?;
-            graph = explosion.output;
-            elements = explode_elements(
-                directed,
-                &elements,
-                &graph,
-                &explosion.node_to_nodes,
-                orientation,
-            );
+            mesh = mesh.explode(orientation)?;
         }
 
-        Ok(Self { graph, elements })
+        Ok(mesh)
     }
-}
 
-fn explode_elements(
-    directed: bool,
-    elements: &IdxVec<Element, ElementData>,
-    graph: &SliceGraph<Vec<SliceIndex>, bool>,
-    node_to_nodes: &IdxVec<NodeIndex, Vec<NodeIndex>>,
-    orientation: Orientation,
-) -> IdxVec<Element, ElementData> {
-    use ElementData::{Element0, ElementN};
-    let mut exploded_elements: IdxVec<Element, ElementData> = IdxVec::new();
+    fn explode(&self, orientation: usize) -> Result<Self, DimensionError> {
+        use ElementData::{Element0, ElementN};
 
-    // Maps every element in the original mesh to its corresponding elements in the exploded mesh.
-    let mut element_to_children: IdxVec<Element, Vec<Element>> = IdxVec::new();
+        let explosion = self.graph.explode(
+            |_, coord, si| {
+                let mut coord = coord.clone();
+                coord.push(si);
+                Some(coord)
+            },
+            |_, _, _| Some(false),
+            |_, partial, r| Some(*partial || r == ExternalRewrite::Flange),
+        )?;
 
-    for &element in elements.values() {
-        let mut children = vec![];
-        match element {
-            Element0(n) => {
-                let size = node_to_nodes[n].len();
-                for i in 0..size {
-                    children.push(exploded_elements.push(Element0(node_to_nodes[n][i])));
+        let mut mesh = Self {
+            graph: explosion.output,
+            elements: IdxVec::default(),
+        };
+
+        // Maps every element in the original mesh to its corresponding elements in the exploded mesh.
+        let mut element_to_elements: IdxVec<Element, Vec<Element>> = IdxVec::default();
+
+        for &element in self.elements.values() {
+            let mut children = vec![];
+            match element {
+                Element0(n) => {
+                    let nodes = &explosion.node_to_nodes[n];
+                    let size = nodes.len();
+                    for m in nodes {
+                        children.push(mesh.elements.push(Element0(*m)));
+                    }
+                    for i in 0..size - 1 {
+                        let mut faces = [children[i], children[i + 1]];
+                        let direction = if i == 0 || i < size - 2 && i % 2 == 1 {
+                            Direction::Forward
+                        } else {
+                            faces.swap(0, 1);
+                            Direction::Backward
+                        };
+                        children.push(mesh.elements.push(ElementN(CubeInternal {
+                            faces,
+                            direction,
+                            orientation,
+                            partial: false,
+                        })));
+                    }
                 }
-                for i in 0..size - 1 {
-                    let faces = if !directed || i == 0 || i < size - 2 && i % 2 == 1 {
-                        [children[i], children[i + 1]]
-                    } else {
-                        [children[i + 1], children[i]]
-                    };
-                    children.push(exploded_elements.push(ElementN(CubeInternal {
-                        orientation,
-                        faces,
-                        is_partial: false,
-                    })));
-                }
-            }
-            ElementN(cube) => {
-                for &elem_0 in &element_to_children[cube[0]] {
-                    for &elem_1 in &element_to_children[cube[1]] {
-                        if let Some(ed) = make_element(
-                            cube.orientation,
-                            elem_0,
-                            elem_1,
-                            graph,
-                            &exploded_elements,
-                        ) {
-                            children.push(exploded_elements.push(ed));
+                ElementN(cube) => {
+                    for &e_0 in &element_to_elements[cube[0]] {
+                        for &e_1 in &element_to_elements[cube[1]] {
+                            if let Some(partial) = mesh.mk_element(e_0, e_1) {
+                                children.push(mesh.elements.push(ElementN(CubeInternal {
+                                    partial,
+                                    faces: [e_0, e_1],
+                                    direction: cube.direction,
+                                    orientation: cube.orientation,
+                                })));
+                            }
                         }
                     }
                 }
             }
+
+            element_to_elements.push(children);
         }
 
-        element_to_children.push(children);
+        Ok(mesh)
     }
 
-    exploded_elements
-}
+    fn mk_element(&self, e_0: Element, e_1: Element) -> Option<bool> {
+        use ElementData::{Element0, ElementN};
 
-// TODO(@calintat): We can cache the results instead of recursing.
-fn make_element(
-    orientation: Orientation,
-    elem_0: Element,
-    elem_1: Element,
-    graph: &SliceGraph<Vec<SliceIndex>, bool>,
-    elements: &IdxVec<Element, ElementData>,
-) -> Option<ElementData> {
-    use ElementData::{Element0, ElementN};
+        assert_ne!(e_0, e_1);
 
-    let [elem_00, elem_01, elem_10, elem_11] = match (elements[elem_0], elements[elem_1]) {
-        (Element0(s), Element0(t)) => {
-            if s == t {
-                return Some(Element0(s));
+        let elem_0 = self.elements[e_0];
+        let elem_1 = self.elements[e_1];
+
+        let [e_00, e_01, e_10, e_11] = match (elem_0, elem_1) {
+            (Element0(a), Element0(b)) => {
+                let e = self.graph.find_edge(a, b)?;
+                return Some(self.graph[e].0);
             }
-            return Some(ElementN(CubeInternal {
-                orientation,
-                faces: [elem_0, elem_1],
-                is_partial: graph[graph.find_edge_undirected(s, t)?.0].0,
-            }));
-        }
-        (Element0(_), ElementN(cube_1)) => [elem_0, elem_0, cube_1[0], cube_1[1]],
-        (ElementN(cube_0), Element0(_)) => [cube_0[0], cube_0[1], elem_1, elem_1],
-        (ElementN(cube_0), ElementN(cube_1)) => match cube_0.orientation.cmp(&cube_1.orientation) {
-            Ordering::Less => [cube_0[0], cube_0[1], elem_1, elem_1],
-            Ordering::Equal => [cube_0[0], cube_0[1], cube_1[0], cube_1[1]],
-            Ordering::Greater => [elem_0, elem_0, cube_1[0], cube_1[1]],
-        },
-    };
+            (Element0(_), ElementN(cube_1)) => [e_0, e_0, cube_1[0], cube_1[1]],
+            (ElementN(cube_0), Element0(_)) => [cube_0[0], cube_0[1], e_1, e_1],
+            (ElementN(cube_0), ElementN(cube_1)) => {
+                match cube_0.orientation.cmp(&cube_1.orientation) {
+                    Ordering::Less => [cube_0[0], cube_0[1], e_1, e_1],
+                    Ordering::Equal => [cube_0[0], cube_0[1], cube_1[0], cube_1[1]],
+                    Ordering::Greater => [e_0, e_0, cube_1[0], cube_1[1]],
+                }
+            }
+        };
 
-    if let Some(cube_0) = make_element(orientation, elem_00, elem_10, graph, elements) {
-        if let Some(cube_1) = make_element(orientation, elem_01, elem_11, graph, elements) {
-            return Some(ElementN(CubeInternal {
-                orientation,
-                faces: [elem_0, elem_1],
-                is_partial: cube_0.is_partial()
-                    || cube_1.is_partial()
-                    || (elements[elem_0].is_partial() && elements[elem_1].is_partial())
-                    || (elements[elem_0].is_partial()
-                        && matches!(elements[elem_1], ElementData::Element0(_)))
-                    || (elements[elem_1].is_partial()
-                        && matches!(elements[elem_0], ElementData::Element0(_))),
-            }));
+        let partial_0 = self.mk_element(e_00, e_10)?;
+        let partial_1 = self.mk_element(e_01, e_11)?;
+        Some(
+            partial_0
+                || partial_1
+                || self.is_partial(e_0) && self.is_partial(e_1)
+                || self.is_partial(e_0) && matches!(elem_1, Element0(_))
+                || self.is_partial(e_1) && matches!(elem_0, Element0(_)),
+        )
+    }
+
+    fn is_partial(&self, e: Element) -> bool {
+        match self.elements[e] {
+            ElementData::Element0(_) => false,
+            ElementData::ElementN(cube) => cube.partial,
         }
     }
 
-    None
-}
-
-impl Mesh {
     fn orientation_of(&self, elem: Element) -> Vec<Orientation> {
         match self.elements[elem] {
             ElementData::Element0(_) => vec![],
@@ -212,7 +183,12 @@ impl Mesh {
         }
     }
 
-    fn flatten(&self, elem: Element, orientation: &[Orientation]) -> Vec<NodeIndex> {
+    fn flatten(
+        &self,
+        elem: Element,
+        orientation: &[Orientation],
+        directed: bool,
+    ) -> Vec<NodeIndex> {
         match self.elements[elem] {
             ElementData::Element0(n) => vec![n; 2_usize.pow(orientation.len() as u32)],
             ElementData::ElementN(cube) => {
@@ -223,8 +199,12 @@ impl Mesh {
                     .unwrap();
                 orientation.remove(index);
 
-                let cube_0 = self.flatten(cube[0], &orientation);
-                let cube_1 = self.flatten(cube[1], &orientation);
+                let mut cube_0 = self.flatten(cube[0], &orientation, directed);
+                let mut cube_1 = self.flatten(cube[1], &orientation, directed);
+
+                if !directed && cube.direction == Direction::Backward {
+                    std::mem::swap(&mut cube_0, &mut cube_1);
+                }
 
                 let chunk_size = 2_usize.pow((orientation.len() - index) as u32);
 
@@ -237,17 +217,17 @@ impl Mesh {
     }
 
     /// Returns all non-partial visible elements of the mesh.
-    pub fn elements(&self) -> impl Iterator<Item = Vec<NodeIndex>> + '_ {
+    pub fn elements(&self, directed: bool) -> impl Iterator<Item = Vec<NodeIndex>> + '_ {
         use crate::{Height::Singular, SliceIndex::Interior};
 
-        self.elements.iter().filter_map(|(e, elem)| {
-            if elem.is_partial() {
+        self.elements.keys().filter_map(move |e| {
+            if self.is_partial(e) {
                 None
             } else {
                 let orientation = self.orientation_of(e);
                 let dim = orientation.len();
 
-                Some(self.flatten(e, &orientation)).filter(|nodes| {
+                Some(self.flatten(e, &orientation, directed)).filter(|nodes| {
                     // Check that the element is visible.
                     nodes.iter().all(|n| {
                         let coord = &self.graph[*n].0;
