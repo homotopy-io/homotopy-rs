@@ -1,6 +1,6 @@
 use std::{cmp::Ordering, ops::Index};
 
-use homotopy_common::{declare_idx, idx::IdxVec};
+use homotopy_common::{declare_idx, hash::FastHashMap, idx::IdxVec};
 use itertools::{interleave, Itertools};
 use petgraph::graph::NodeIndex;
 
@@ -79,6 +79,8 @@ impl Mesh {
             elements: IdxVec::default(),
         };
 
+        let mut memory: FastHashMap<[Element; 2], Element> = FastHashMap::default();
+
         // Maps every element in the original mesh to its corresponding elements in the exploded mesh.
         let mut element_to_elements: IdxVec<Element, Vec<Element>> = IdxVec::default();
 
@@ -110,13 +112,15 @@ impl Mesh {
                 ElementN(cube) => {
                     for &e_0 in &element_to_elements[cube[0]] {
                         for &e_1 in &element_to_elements[cube[1]] {
-                            if let Some(partial) = mesh.mk_element(e_0, e_1) {
-                                children.push(mesh.elements.push(ElementN(CubeInternal {
+                            if let Some(partial) = mesh.mk_element(e_0, e_1, &memory) {
+                                let e = mesh.elements.push(ElementN(CubeInternal {
                                     partial,
                                     faces: [e_0, e_1],
                                     direction: cube.direction,
                                     orientation: cube.orientation,
-                                })));
+                                }));
+                                children.push(e);
+                                memory.insert([e_0, e_1], e);
                             }
                         }
                     }
@@ -129,7 +133,12 @@ impl Mesh {
         Ok(mesh)
     }
 
-    fn mk_element(&self, e_0: Element, e_1: Element) -> Option<bool> {
+    fn mk_element(
+        &self,
+        e_0: Element,
+        e_1: Element,
+        memory: &FastHashMap<[Element; 2], Element>,
+    ) -> Option<bool> {
         use ElementData::{Element0, ElementN};
 
         assert_ne!(e_0, e_1);
@@ -153,11 +162,11 @@ impl Mesh {
             }
         };
 
-        let partial_0 = self.mk_element(e_00, e_10)?;
-        let partial_1 = self.mk_element(e_01, e_11)?;
+        let a = memory.get(&[e_00, e_10])?;
+        let b = memory.get(&[e_01, e_11])?;
         Some(
-            partial_0
-                || partial_1
+            self.is_partial(*a)
+                || self.is_partial(*b)
                 || self.is_partial(e_0) && self.is_partial(e_1)
                 || self.is_partial(e_0) && matches!(elem_1, Element0(_))
                 || self.is_partial(e_1) && matches!(elem_0, Element0(_)),
