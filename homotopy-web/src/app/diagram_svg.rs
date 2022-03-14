@@ -404,7 +404,7 @@ impl Diagram2D {
     }
 
     fn position(&self, point: [SliceIndex; 2]) -> Point2D<f32> {
-        let point = self.diagram.layout.get([point[1], point[0]]).into();
+        let point = self.diagram.layout.get(point).into();
         self.diagram.transform.transform_point(point)
     }
 

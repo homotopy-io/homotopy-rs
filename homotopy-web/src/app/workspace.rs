@@ -178,23 +178,23 @@ fn highlight_attachment(workspace: &Workspace, signature: &Signature) -> Option<
                 .unwrap();
             let size = slice.size();
             Some(Highlight2D {
-                from: [Regular(embedding[0]).into(), bp.boundary().into()],
-                to: [Regular(embedding[0] + size).into(), bp.boundary().into()],
+                from: [bp.boundary().into(), Regular(embedding[0]).into()],
+                to: [bp.boundary().into(), Regular(embedding[0] + size).into()],
                 kind: HighlightKind::Attach,
             })
         }
         Some(bp) if bp.depth() > workspace.path.len() => Some(Highlight2D {
-            from: [bp.boundary().into(), Boundary::Source.into()],
-            to: [bp.boundary().into(), Boundary::Target.into()],
+            from: [Boundary::Source.into(), bp.boundary().into()],
+            to: [Boundary::Target.into(), bp.boundary().into()],
             kind: HighlightKind::Attach,
         }),
         Some(bp) if bp.boundary() == Boundary::Source => {
             let embedding = embedding.skip(workspace.path.len() - bp.depth() - 1);
             Some(Highlight2D {
-                from: [Regular(embedding[1]).into(), Regular(embedding[0]).into()],
+                from: [Regular(embedding[0]).into(), Regular(embedding[1]).into()],
                 to: [
-                    Regular(embedding[1] + 1).into(),
                     Regular(embedding[0]).into(),
+                    Regular(embedding[1] + 1).into(),
                 ],
                 kind: HighlightKind::Attach,
             })
@@ -210,10 +210,10 @@ fn highlight_attachment(workspace: &Workspace, signature: &Signature) -> Option<
             let needle_st: DiagramN = needle_s.target().try_into().unwrap();
 
             Some(Highlight2D {
-                from: [Regular(embedding[1]).into(), Regular(embedding[0]).into()],
+                from: [Regular(embedding[0]).into(), Regular(embedding[1]).into()],
                 to: [
-                    Regular(embedding[1] + needle_st.size()).into(),
                     Regular(embedding[0] + needle_s.size()).into(),
+                    Regular(embedding[1] + needle_st.size()).into(),
                 ],
                 kind: HighlightKind::Attach,
             })
@@ -225,8 +225,8 @@ fn highlight_slice(workspace: &Workspace) -> Option<Highlight2D> {
     let slice = workspace.slice_highlight.as_ref()?;
 
     Some(Highlight2D {
-        from: [Boundary::Source.into(), *slice],
-        to: [Boundary::Target.into(), *slice],
+        from: [*slice, Boundary::Source.into()],
+        to: [*slice, Boundary::Target.into()],
         kind: HighlightKind::Slice,
     })
 }
