@@ -11,7 +11,7 @@ use homotopy_core::{
     common::Direction,
     complex::{make_complex, Simplex},
     contraction::Bias,
-    layout::Layout,
+    layout::Layout2D,
     projection::{Depths, Projection},
     rewrite::RewriteN,
     Boundary, DiagramN, Generator, Height, SliceIndex,
@@ -84,7 +84,7 @@ struct PreparedDiagram {
     graphic: Vec<GraphicElement>,
     actions: Vec<(Simplex, geom::Shape)>,
     depths: Depths,
-    layout: Layout,
+    layout: Layout2D,
 
     /// The width and height of the diagram image in pixels.
     ///
@@ -104,7 +104,7 @@ impl PreparedDiagram {
 
         let time_start = web_sys::window().unwrap().performance().unwrap().now();
 
-        let layout = Layout::new(diagram, 2).unwrap();
+        let layout = Layout2D::new(diagram).unwrap();
         let complex = make_complex(diagram);
         let depths = Depths::new(diagram).unwrap();
         let projection = Projection::new(diagram, &layout, &depths).unwrap();

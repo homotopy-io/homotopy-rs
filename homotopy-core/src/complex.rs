@@ -1,6 +1,6 @@
 use std::hash::Hash;
 
-use crate::{common::SliceIndex, diagram::DiagramN, mesh::Mesh};
+use crate::{common::SliceIndex, diagram::DiagramN, mesh::Mesh2D};
 
 pub type Coordinate = [SliceIndex; 2];
 
@@ -29,28 +29,20 @@ pub fn make_complex(diagram: &DiagramN) -> Vec<Simplex> {
     const TRI_ASSEMBLY_ORDER: [[usize; 3]; 2] = [[0, 1, 3], [0, 3, 2]];
 
     // Extract cubical mesh.
-    let mesh = Mesh::new(diagram, 2).unwrap();
+    let mesh = Mesh2D::new(diagram).unwrap();
 
     let mut complex = vec![];
-    for elem in mesh.elements(true) {
-        let points: Vec<_> = elem
-            .iter()
-            .map(|n| {
-                let coord = &mesh.graph[*n].0;
-                [coord[0], coord[1]]
-            })
-            .collect();
-
-        match points.len() {
+    for element in mesh.elements(true) {
+        match element.len() {
             1 => {
-                complex.push(Simplex::Point([points[0]]));
+                complex.push(Simplex::Point([element[0]]));
             }
             2 => {
-                complex.push(Simplex::Wire([points[0], points[1]]));
+                complex.push(Simplex::Wire([element[0], element[1]]));
             }
             4 => {
                 complex.extend(TRI_ASSEMBLY_ORDER.into_iter().filter_map(|[i, j, k]| {
-                    let tri @ [a, b, c] = [points[i], points[j], points[k]];
+                    let tri @ [a, b, c] = [element[i], element[j], element[k]];
                     (a != b && a != c && b != c).then(|| Simplex::Surface(tri))
                 }));
             }

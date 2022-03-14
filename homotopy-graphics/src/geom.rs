@@ -4,7 +4,7 @@ use std::{
     mem,
 };
 
-use homotopy_common::{declare_idx, idx::IdxVec};
+use homotopy_common::{declare_idx, hash::FastHashMap, idx::IdxVec};
 use homotopy_core::{
     common::DimensionError, layout::Layout, mesh::Mesh, DiagramN, Direction, Generator, Height,
     SliceIndex,
@@ -93,7 +93,7 @@ where
 pub struct VertData {
     pub position: Vec4,
     pub flow: f32,
-    pub boundary: Vec<bool>,
+    pub boundary: [bool; 4],
     pub generator: Generator,
 }
 
@@ -159,44 +159,33 @@ pub type CubicalGeometry = Geometry<CubeData>;
 pub type SimplicialGeometry = Geometry<SimplexData>;
 
 impl CubicalGeometry {
-    pub fn new(diagram: &DiagramN, depth: usize) -> Result<Self, DimensionError> {
-        if depth > diagram.dimension() {
+    pub fn new<const N: usize>(diagram: &DiagramN) -> Result<Self, DimensionError> {
+        if diagram.dimension() < N {
             return Err(DimensionError);
         }
 
         // Extract the mesh and layout.
-        let mesh = Mesh::new(diagram, depth)?;
-        let layout = Layout::new(diagram, depth)?;
+        let mesh = Mesh::new(diagram)?;
+        let layout = Layout::new(diagram)?;
 
-        let mut geom: Self = Default::default();
-        let mut node_to_vert = IdxVec::with_capacity(mesh.graph.node_count());
+        let mut geom = Self::default();
+        let mut coord_to_vert: FastHashMap<[SliceIndex; N], Vert> = FastHashMap::default();
 
         for (path, diagram) in mesh.graph.node_weights() {
-            let position = match depth {
-                3 => {
-                    let path: [SliceIndex; 3] =
-                        path.clone().try_into().map_err(|_err| DimensionError)?;
-                    Vec3::from(layout.get(path)).into()
-                }
-                4 => {
-                    let path: [SliceIndex; 4] =
-                        path.clone().try_into().map_err(|_err| DimensionError)?;
-                    layout.get(path).into()
-                }
-                _ => return Err(DimensionError),
-            };
+            let position = layout.get(*path);
+            let position =
+                Vec4::from([0, 1, 2, 3].map(|i| position.get(i).copied().unwrap_or_default()));
 
             let boundary = calculate_boundary(path);
-            let boundary = [0, 1, 2, 3]
-                .map(|i| boundary.get(i).copied().unwrap_or_default())
-                .into();
+            let boundary = [0, 1, 2, 3].map(|i| boundary.get(i).copied().unwrap_or_default());
 
-            node_to_vert.push(geom.mk_vert(VertData {
+            let vert = geom.mk_vert(VertData {
                 position,
                 flow: calculate_flow(path),
                 boundary,
                 generator: diagram.max_generator(),
-            }));
+            });
+            coord_to_vert.insert(*path, vert);
         }
 
         for element in mesh.elements(false) {
@@ -204,13 +193,13 @@ impl CubicalGeometry {
                 1 => 0,
                 2 => 1,
                 4 => 2,
-                8 if depth > 3 => 3,
+                8 if N > 3 => 3,
                 _ => continue,
             };
 
             let verts = element
                 .into_iter()
-                .map(|n| node_to_vert[n])
+                .map(|coord| coord_to_vert[&coord])
                 .collect::<Vec<_>>();
             let generator = verts
                 .iter()
@@ -221,7 +210,7 @@ impl CubicalGeometry {
                 .unwrap()
                 .generator;
 
-            if n < depth - 1 && diagram.dimension().saturating_sub(generator.dimension) != n {
+            if n < N - 1 && diagram.dimension().saturating_sub(generator.dimension) != n {
                 continue;
             }
 

@@ -106,12 +106,7 @@ impl<'a> Subdivider<'a> {
             let v_1 = &self.geom.verts[b];
             let v = 0.5 * (v_0.position + v_1.position);
             let flow = 0.5 * (v_0.flow + v_1.flow);
-            let boundary = v_0
-                .boundary
-                .iter()
-                .zip(&v_1.boundary)
-                .map(|(a, b)| *a && *b)
-                .collect();
+            let boundary = [0, 1, 2, 3].map(|i| v_0.boundary[i] && v_1.boundary[i]);
             let generator = v_0.min_generator(v_1).generator;
 
             self.geom.mk_vert(VertData {

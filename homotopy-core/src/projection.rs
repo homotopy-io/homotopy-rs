@@ -21,7 +21,7 @@ use crate::{
     common::{DimensionError, Generator, SliceIndex},
     diagram::DiagramN,
     graph::{Explodable, SliceGraph},
-    layout::Layout,
+    layout::Layout2D,
     Direction, Height, Rewrite,
 };
 
@@ -47,7 +47,7 @@ pub struct Projection {
 impl Projection {
     pub fn new(
         diagram: &DiagramN,
-        layout: &Layout,
+        layout: &Layout2D,
         depths: &Depths,
     ) -> Result<Self, DimensionError> {
         use Height::Singular;

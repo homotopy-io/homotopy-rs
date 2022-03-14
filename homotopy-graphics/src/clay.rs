@@ -13,7 +13,11 @@ pub fn clay(
     smooth_time: bool,
     subdivision_depth: u8,
 ) -> Result<SimplicialGeometry, DimensionError> {
-    let mut geom = CubicalGeometry::new(diagram, view_dimension)?;
+    let mut geom = match view_dimension {
+        3 => CubicalGeometry::new::<3>(diagram)?,
+        4 => CubicalGeometry::new::<4>(diagram)?,
+        _ => return Err(DimensionError),
+    };
     geom.subdivide(smooth_time, subdivision_depth);
     Ok(geom.into())
 }

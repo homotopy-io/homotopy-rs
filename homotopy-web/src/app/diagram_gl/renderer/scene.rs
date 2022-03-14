@@ -98,7 +98,7 @@ impl Scene {
         let p = sphere_mesh.mk_vert(VertData {
             position: Vec4::zero(),
             flow: 0.,
-            boundary: vec![false; 4],
+            boundary: [false; 4],
             generator: Generator::new(0, 0),
         });
         sphere_mesh.mk_point(p);

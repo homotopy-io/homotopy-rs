@@ -7,30 +7,33 @@ use petgraph::{graph::NodeIndex, visit::EdgeRef, EdgeDirection, Graph};
 use crate::{
     common::{DimensionError, SingularHeight},
     graph::{Explodable, SliceGraph},
-    DiagramN, Height, RewriteN, SliceIndex,
+    Boundary, DiagramN, Height, RewriteN, SliceIndex,
 };
 
+pub type Layout2D = Layout<2>;
+
 #[derive(Clone, Debug)]
-pub struct Layout {
-    positions: FastHashMap<Vec<SliceIndex>, Vec<f32>>,
+pub struct Layout<const N: usize> {
+    positions: FastHashMap<[SliceIndex; N], [f32; N]>,
 }
 
-impl Layout {
-    pub fn new(diagram: &DiagramN, depth: usize) -> Result<Self, DimensionError> {
-        if depth > diagram.dimension() {
+impl<const N: usize> Layout<N> {
+    pub fn new(diagram: &DiagramN) -> Result<Self, DimensionError> {
+        if diagram.dimension() < N {
             return Err(DimensionError);
         }
 
-        let mut graph = SliceGraph::singleton((vec![], vec![]), diagram.clone());
+        let mut graph =
+            SliceGraph::singleton(([Boundary::Source.into(); N], [0.0; N]), diagram.clone());
 
-        for i in 0..depth {
-            let positions = layout(&graph, i)?;
+        for i in 0..N {
+            let positions = layout(&graph, i, |v| &v.0, |e| *e)?;
             graph = graph
                 .explode(
                     |n, key, si| {
-                        let mut key = key.clone();
-                        key.0.push(si);
-                        key.1.insert(0, positions[n][si]);
+                        let mut key = *key;
+                        key.0[i] = si;
+                        key.1[i] = positions[n][si];
                         Some(key)
                     },
                     |_, _, _| Some(i),
@@ -43,14 +46,16 @@ impl Layout {
             .into_nodes_edges()
             .0
             .into_iter()
-            .map(|n| n.weight.0)
+            .map(|node| node.weight.0)
             .collect();
 
         Ok(Self { positions })
     }
 
-    pub fn get<const N: usize>(&self, path: [SliceIndex; N]) -> [f32; N] {
-        self.positions[&path.to_vec()].clone().try_into().unwrap()
+    pub fn get(&self, path: [SliceIndex; N]) -> [f32; N] {
+        let mut position = self.positions[&path];
+        position.reverse();
+        position
     }
 }
 
@@ -162,15 +167,19 @@ fn colimit(constraints: &[ConstraintSet], partial: bool) -> ConstraintSet {
     colimit
 }
 
-fn layout(
-    graph: &SliceGraph<(Vec<SliceIndex>, Vec<f32>), usize>,
-    orientation: usize,
-) -> Result<IdxVec<NodeIndex, Vec<f32>>, DimensionError> {
+fn layout<V, E, F, G>(
+    graph: &SliceGraph<V, E>,
+    index: usize,
+    coord_map: F,
+    orientation_map: G,
+) -> Result<IdxVec<NodeIndex, Vec<f32>>, DimensionError>
+where
+    F: Fn(&V) -> &[SliceIndex],
+    G: Fn(&E) -> usize,
+{
     // Sort nodes by stratum.
     let nodes = graph.node_indices().sorted_by_cached_key(|&n| {
-        graph[n]
-            .0
-             .0
+        coord_map(&graph[n].0)
             .iter()
             .map(|&si| match si {
                 SliceIndex::Boundary(_) => -1,
@@ -201,7 +210,7 @@ fn layout(
 
                 if let Some(preimage) = preimage {
                     preimages.push(preimage);
-                    orientations.push(e.weight().0);
+                    orientations.push(orientation_map(&e.weight().0));
                 }
             }
 
@@ -214,7 +223,7 @@ fn layout(
                 // Otherwise, we take a colimit of the preimages.
                 colimit(
                     &preimages,
-                    orientation > 0 && orientations == vec![orientation - 1, orientation - 1],
+                    index > 0 && orientations == vec![index - 1, index - 1],
                 )
             };
 

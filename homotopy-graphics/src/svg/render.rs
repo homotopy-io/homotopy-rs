@@ -5,7 +5,7 @@ use homotopy_common::hash::FastHashMap;
 use homotopy_core::{
     common::{Generator, Height, SliceIndex},
     complex::Simplex,
-    layout::Layout,
+    layout::Layout2D,
     projection::{Depths, Homotopy, Projection},
 };
 use lyon_path::Path;
@@ -46,7 +46,7 @@ impl ActionRegion {
     ///
     /// This function can panic or produce undefined results if the simplicial complex and the
     /// layout have not come from the same diagram.
-    pub fn build(complex: &[Simplex], layout: &Layout, projection: &Projection) -> Vec<Self> {
+    pub fn build(complex: &[Simplex], layout: &Layout2D, projection: &Projection) -> Vec<Self> {
         let mut region_surfaces = Vec::new();
         let mut region_wires = Vec::new();
         let mut region_points = Vec::new();
@@ -143,7 +143,7 @@ impl GraphicElement {
     /// and the projected generators have not come from the same diagram.
     pub fn build(
         complex: &[Simplex],
-        layout: &Layout,
+        layout: &Layout2D,
         projection: &Projection,
         depths: &Depths,
     ) -> Vec<Self> {
@@ -321,7 +321,7 @@ where
 fn build_path(
     points: &[Coordinate],
     closed: bool,
-    layout: &Layout,
+    layout: &Layout2D,
     projection: &Projection,
 ) -> Path {
     let mut builder = Path::svg_builder();
@@ -332,7 +332,7 @@ fn build_path(
 fn make_path(
     points: &[Coordinate],
     closed: bool,
-    layout: &Layout,
+    layout: &Layout2D,
     projection: &Projection,
     builder: &mut lyon_path::builder::WithSvg<lyon_path::path::Builder>,
 ) {
@@ -357,7 +357,7 @@ fn make_path(
 fn make_path_segment(
     start: Coordinate,
     end: Coordinate,
-    layout: &Layout,
+    layout: &Layout2D,
     projection: &Projection,
     builder: &mut lyon_path::builder::WithSvg<lyon_path::path::Builder>,
 ) {
