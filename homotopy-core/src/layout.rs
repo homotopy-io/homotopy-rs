@@ -279,11 +279,12 @@ where
             .iter()
             .flat_map(|&n| full_colimit.neighbors_directed(n, EdgeDirection::Outgoing))
             .filter_map(|t| name_to_max_position.get(&colimit[t]))
-            .min()
-            .map_or(width - 1, |&a| a - 1);
+            .max()
+            .map_or(0, |&a| a + 1);
         for n in scc {
             name_to_max_position.insert(colimit[n], pos);
         }
+        width = std::cmp::max(width, pos + 1);
     }
 
     // Calculate final layout by taking averages.
@@ -299,7 +300,7 @@ where
                     .unwrap();
                 let max = cs
                     .node_weights()
-                    .map(|name| name_to_max_position[name])
+                    .map(|name| width - name_to_max_position[name] - 1)
                     .max()
                     .unwrap();
                 (min, max)
