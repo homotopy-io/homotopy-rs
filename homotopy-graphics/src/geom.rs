@@ -171,21 +171,21 @@ impl CubicalGeometry {
         let mut geom = Self::default();
         let mut coord_to_vert: FastHashMap<[SliceIndex; N], Vert> = FastHashMap::default();
 
-        for (path, diagram) in mesh.graph.node_weights() {
-            let position = layout.get(*path);
+        for (path, diagram) in mesh.nodes() {
+            let position = layout.get(path);
             let position =
                 Vec4::from([0, 1, 2, 3].map(|i| position.get(i).copied().unwrap_or_default()));
 
-            let boundary = calculate_boundary(path);
+            let boundary = calculate_boundary(&path);
             let boundary = [0, 1, 2, 3].map(|i| boundary.get(i).copied().unwrap_or_default());
 
             let vert = geom.mk_vert(VertData {
                 position,
-                flow: calculate_flow(path),
+                flow: calculate_flow(&path),
                 boundary,
                 generator: diagram.max_generator(),
             });
-            coord_to_vert.insert(*path, vert);
+            coord_to_vert.insert(path, vert);
         }
 
         for element in mesh.elements(false) {

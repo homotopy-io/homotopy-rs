@@ -7,29 +7,29 @@ use petgraph::graph::NodeIndex;
 use crate::{
     common::DimensionError,
     graph::{Explodable, ExternalRewrite, SliceGraph},
-    Boundary, DiagramN, Direction, SliceIndex,
+    Boundary, Diagram, DiagramN, Direction, Height, SliceIndex,
 };
 
 declare_idx! {
     pub struct Element = usize;
 }
 
-type Orientation = usize;
+type Orientation = u8;
 
 #[derive(Copy, Clone, Debug)]
-pub enum ElementData {
+enum ElementData {
     Element0(NodeIndex),
     ElementN(CubeInternal),
 }
 
-pub use ElementData::*;
+use ElementData::{Element0, ElementN};
 
 #[derive(Copy, Clone, Debug)]
-pub struct CubeInternal {
-    pub faces: [Element; 2],
-    pub partial: bool,
-    pub direction: Direction,
-    pub orientation: Orientation,
+struct CubeInternal {
+    faces: [Element; 2],
+    partial: bool,
+    direction: Direction,
+    orientation: Orientation,
 }
 
 impl Index<usize> for CubeInternal {
@@ -44,11 +44,12 @@ pub type Mesh2D = Mesh<2>;
 
 #[derive(Clone, Debug)]
 pub struct Mesh<const N: usize> {
-    pub graph: SliceGraph<[SliceIndex; N], bool>,
-    pub elements: IdxVec<Element, ElementData>,
+    graph: SliceGraph<[SliceIndex; N], bool>,
+    elements: IdxVec<Element, ElementData>,
 }
 
 impl<const N: usize> Mesh<N> {
+    /// Constructs the mesh of depth `N` for the given diagram.
     pub fn new(diagram: &DiagramN) -> Result<Self, DimensionError> {
         if diagram.dimension() < N {
             return Err(DimensionError);
@@ -64,6 +65,34 @@ impl<const N: usize> Mesh<N> {
         }
 
         Ok(mesh)
+    }
+
+    /// Iterator of all nodes in the mesh.
+    pub fn nodes(&self) -> impl Iterator<Item = ([SliceIndex; N], &Diagram)> {
+        self.graph
+            .node_weights()
+            .map(|(coord, diagram)| (*coord, diagram))
+    }
+
+    /// Iterator of all non-partial visible elements in the mesh.
+    pub fn elements(&self, directed: bool) -> impl Iterator<Item = Vec<[SliceIndex; N]>> + '_ {
+        self.elements.keys().filter_map(move |elem| {
+            if self.is_partial(elem).unwrap_or_default() {
+                return None;
+            }
+
+            let orientation = self.orientation_of(elem);
+            let n = orientation.len();
+
+            Some(self.flatten(elem, directed, &orientation)).filter(|points| {
+                // Check that the element is visible by looking at the coordinates.
+                points.iter().all(|coord| {
+                    coord[n..]
+                        .iter()
+                        .all(|si| matches!(si, SliceIndex::Interior(Height::Singular(_))))
+                })
+            })
+        })
     }
 
     fn explode(&self, index: usize) -> Result<Self, DimensionError> {
@@ -109,7 +138,7 @@ impl<const N: usize> Mesh<N> {
                             faces,
                             direction,
                             partial: false,
-                            orientation: index,
+                            orientation: index as u8,
                         })));
                     }
                 }
@@ -195,15 +224,16 @@ impl<const N: usize> Mesh<N> {
         directed: bool,
         orientation: &[Orientation],
     ) -> Vec<[SliceIndex; N]> {
+        let dim = orientation.len();
         match self.elements[elem] {
             Element0(n) => {
-                vec![self.graph[n].0; 2_usize.pow(orientation.len() as u32)]
+                vec![self.graph[n].0; 2_usize.pow(dim as u32)]
             }
             ElementN(cube) => {
                 let mut orientation = orientation.to_owned();
                 let index = orientation
                     .iter()
-                    .position(|&j| j == cube.orientation)
+                    .position(|i| *i == cube.orientation)
                     .unwrap();
                 orientation.remove(index);
 
@@ -214,7 +244,7 @@ impl<const N: usize> Mesh<N> {
                     std::mem::swap(&mut cube_0, &mut cube_1);
                 }
 
-                let chunk_size = 2_usize.pow((orientation.len() - index) as u32);
+                let chunk_size = 2_usize.pow((dim - index - 1) as u32);
 
                 interleave(cube_0.chunks(chunk_size), cube_1.chunks(chunk_size))
                     .flatten()
@@ -222,28 +252,5 @@ impl<const N: usize> Mesh<N> {
                     .collect_vec()
             }
         }
-    }
-
-    /// Returns all non-partial visible elements of the mesh.
-    pub fn elements(&self, directed: bool) -> impl Iterator<Item = Vec<[SliceIndex; N]>> + '_ {
-        use crate::{Height::Singular, SliceIndex::Interior};
-
-        self.elements.keys().filter_map(move |elem| {
-            if self.is_partial(elem).unwrap_or_default() {
-                None
-            } else {
-                let orientation = self.orientation_of(elem);
-                let dim = orientation.len();
-
-                Some(self.flatten(elem, directed, &orientation)).filter(|points| {
-                    // Check that the element is visible.
-                    points.iter().all(|coord| {
-                        coord[dim..]
-                            .iter()
-                            .all(|si| matches!(si, Interior(Singular(_))))
-                    })
-                })
-            }
-        })
     }
 }
