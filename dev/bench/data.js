@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1647345208595,
+  "lastUpdate": 1647443638692,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -27719,6 +27719,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 94.115,
             "range": "+/- 0.050",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "caca72382760b6358f3cbb431adb310efc28548c",
+          "message": "Keyboard shortcuts overhaul (fix #423)\n\n* Actions check if they are valid given the current proof.\n* Keybindings are declared via a macro in `keybindings.rs`.\n* Keyboard shortcuts are now part of `App` rather than `Sidebar`.",
+          "timestamp": "2022-03-16T14:58:58Z",
+          "tree_id": "cc10fde5c1ba55f4c0e9d1c77267dac8cf999d06",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/caca72382760b6358f3cbb431adb310efc28548c"
+        },
+        "date": 1647443629102,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 63.588,
+            "range": "+/- 0.033",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 64.773,
+            "range": "+/- 0.029",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 95.932,
+            "range": "+/- 0.094",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 113.68,
+            "range": "+/- 0.060",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 132.71,
+            "range": "+/- 0.060",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 186.06,
+            "range": "+/- 0.730",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 82.574,
+            "range": "+/- 0.035",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 556.43,
+            "range": "+/- 0.240",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.1736,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 6.6194,
+            "range": "+/- 0.003",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 17.572,
+            "range": "+/- 0.012",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 43.71,
+            "range": "+/- 0.033",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 113.86,
+            "range": "+/- 0.340",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 316.45,
+            "range": "+/- 0.720",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 64.011,
+            "range": "+/- 0.256",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 91.859,
+            "range": "+/- 0.052",
             "unit": "us"
           }
         ]
