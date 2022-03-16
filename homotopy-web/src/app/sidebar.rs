@@ -1,5 +1,3 @@
-pub use buttons::TOOL_BUTTONS;
-use wasm_bindgen::{closure::Closure, JsCast};
 use yew::prelude::*;
 use yew_macro::function_component;
 
@@ -21,7 +19,7 @@ pub struct SidebarButtonProps {
     pub icon: &'static str,
     pub action: SidebarMsg,
     #[prop_or_default]
-    pub shortcut: Option<char>,
+    pub shortcut: Option<&'static str>,
     pub dispatch: Callback<SidebarMsg>,
     #[prop_or(Visibility::Visible)]
     pub visibility: Visibility,
@@ -96,23 +94,17 @@ pub enum SidebarMsg {
     Dispatch(model::Action),
 }
 
+#[derive(Default)]
 pub struct Sidebar {
     open: Option<drawers::NavDrawer>,
-    // Hold onto bindings so that they are dropped when the app is destroyed
-    bindings: Option<Closure<dyn FnMut(KeyboardEvent)>>,
 }
 
 impl Component for Sidebar {
     type Message = SidebarMsg;
     type Properties = SidebarProps;
 
-    fn create(ctx: &Context<Self>) -> Self {
-        let mut sidebar = Self {
-            open: None,
-            bindings: None,
-        };
-        sidebar.install_keyboard_shortcuts(ctx);
-        sidebar
+    fn create(_ctx: &Context<Self>) -> Self {
+        Self::default()
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
@@ -183,37 +175,5 @@ impl Sidebar {
         self.open
             .map(|drawer| drawer.view(dispatch, &ctx.props().proof))
             .unwrap_or_default()
-    }
-
-    fn install_keyboard_shortcuts(&mut self, ctx: &Context<Self>) {
-        use homotopy_core::{Boundary::Source, Direction, SliceIndex};
-
-        let dispatch = ctx.link().callback(SidebarMsg::Dispatch);
-        let bindings = Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
-            let key = event.key().to_ascii_lowercase();
-            let button = TOOL_BUTTONS.iter().find(|button| match button.shortcut() {
-                Some(shortcut) => shortcut.to_string() == key,
-                None => false,
-            });
-
-            if let Some(button) = button {
-                dispatch.emit(button.action());
-            } else if key == "arrowup" {
-                dispatch.emit(proof::Action::SwitchSlice(Direction::Forward).into());
-            } else if key == "arrowdown" {
-                dispatch.emit(proof::Action::SwitchSlice(Direction::Backward).into());
-            } else if key == "arrowleft" {
-                dispatch.emit(proof::Action::AscendSlice(1).into());
-            } else if key == "arrowright" {
-                dispatch.emit(proof::Action::DescendSlice(SliceIndex::Boundary(Source)).into());
-            }
-        }) as Box<dyn FnMut(_)>);
-
-        web_sys::window()
-            .unwrap()
-            .add_event_listener_with_callback("keyup", bindings.as_ref().unchecked_ref())
-            .unwrap();
-
-        self.bindings = Some(bindings);
     }
 }

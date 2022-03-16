@@ -1,11 +1,11 @@
 use settings::AppSettings;
 use sidebar::Sidebar;
 use signature_stylesheet::SignatureStylesheet;
-use wasm_bindgen::closure::Closure;
+use wasm_bindgen::{closure::Closure, JsCast};
 use workspace::WorkspaceView;
 use yew::prelude::*;
 
-use self::diagram_gl::GlViewControl;
+use self::{diagram_gl::GlViewControl, keybindings::Keybindings};
 use crate::{
     components::{
         icon::{Icon, IconSize},
@@ -21,6 +21,7 @@ mod attach;
 mod debug;
 mod diagram_gl;
 mod diagram_svg;
+mod keybindings;
 mod project;
 mod settings;
 mod sidebar;
@@ -43,6 +44,8 @@ pub struct App {
     toaster: Toaster,
     _settings: AppSettings,
     before_unload: Option<Closure<dyn FnMut(web_sys::BeforeUnloadEvent)>>,
+    // Hold onto bindings so that they are dropped when the app is destroyed
+    keybindings: Option<Closure<dyn FnMut(KeyboardEvent)>>,
 }
 
 impl Component for App {
@@ -65,15 +68,22 @@ impl Component for App {
             toaster: Toaster::new(),
             _settings: AppSettings::connect(Callback::noop()),
             before_unload: None,
+            keybindings: None,
         };
         app.install_unload_hook();
+        app.install_keyboard_shortcuts(ctx);
         app
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Message::Dispatch(action) => {
+                if !self.state.with_proof(|proof| action.is_valid(proof)) {
+                    return false;
+                }
+
                 log::info!("Received action: {:?}", action);
+
                 if let model::Action::Proof(ref action) = action {
                     if self.state.with_proof(|p| p.resets_panzoom(action)) {
                         self.panzoom.reset();
@@ -112,8 +122,6 @@ impl Component for App {
 
 impl App {
     fn install_unload_hook(&mut self) {
-        use wasm_bindgen::JsCast;
-
         let before_unload = Closure::wrap(Box::new(move |event: web_sys::BeforeUnloadEvent| {
             event.set_return_value("Are you sure you want to leave? Unsaved changes will be lost!");
         }) as Box<dyn FnMut(_)>);
@@ -123,6 +131,23 @@ impl App {
             .set_onbeforeunload(Some(before_unload.as_ref().unchecked_ref()));
 
         self.before_unload = Some(before_unload);
+    }
+
+    pub fn install_keyboard_shortcuts(&mut self, ctx: &Context<Self>) {
+        let dispatch = ctx.link().callback(Message::Dispatch);
+        let keybindings = Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
+            let key = event.key().to_ascii_lowercase();
+            if let Some(action) = Keybindings::get_action(&key) {
+                dispatch.emit(action);
+            }
+        }) as Box<dyn FnMut(_)>);
+
+        web_sys::window()
+            .unwrap()
+            .add_event_listener_with_callback("keyup", keybindings.as_ref().unchecked_ref())
+            .unwrap();
+
+        self.keybindings = Some(keybindings);
     }
 
     fn render(ctx: &Context<Self>, state: &model::State) -> Html {
