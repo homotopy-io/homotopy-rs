@@ -1,5 +1,5 @@
-use history::History;
 pub use history::Proof;
+use history::{History, UndoState};
 use homotopy_core::common::Mode;
 use proof::{Color, GeneratorInfo, Signature, Workspace};
 use serde::{Deserialize, Serialize};
@@ -15,6 +15,22 @@ pub enum Action {
     History(history::Action),
     ImportProof(SerializedData),
     ExportProof,
+}
+
+impl Action {
+    /// Determines if a given [Action] is valid given the current [Proof].
+    pub fn is_valid(&self, proof: &Proof) -> bool {
+        use homotopy_core::Direction::{Backward, Forward};
+
+        match self {
+            Action::Proof(action) => proof.is_valid(action),
+            Action::History(history::Action::Move(dir)) => match dir {
+                history::Direction::Linear(Forward) => proof.can_redo(),
+                history::Direction::Linear(Backward) => proof.can_undo(),
+            },
+            _ => true,
+        }
+    }
 }
 
 impl From<proof::Action> for Action {

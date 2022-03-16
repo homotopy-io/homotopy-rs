@@ -8,7 +8,7 @@ use homotopy_core::{
     attach::BoundaryPath,
     common::{Boundary, DimensionError, Direction, Generator, Height, RegularHeight, SliceIndex},
     contraction::ContractionError,
-    diagram::NewDiagramError,
+    diagram::{globularity, NewDiagramError},
     expansion::ExpansionError,
     signature::SignatureClosure,
     typecheck::TypeError,
@@ -249,6 +249,59 @@ impl ProofState {
             Action::AscendSlice(i) => i > 0,
             Action::ClearWorkspace | Action::DescendSlice(_) | Action::UpdateView(_) => true,
             _ => false,
+        }
+    }
+
+    /// Determines if a given [Action] is valid, given the current [ProofState].
+    pub fn is_valid(&self, action: &Action) -> bool {
+        use homotopy_core::{
+            Height::Regular,
+            SliceIndex::{Boundary, Interior},
+        };
+        match *action {
+            Action::CreateGeneratorZero => true,
+            Action::SetBoundary(boundary) => self.workspace.as_ref().map_or(false, |ws| {
+                self.boundary.as_ref().map_or(true, |selected| {
+                    selected.boundary == boundary || globularity(&selected.diagram, &ws.diagram)
+                })
+            }),
+            Action::TakeIdentityDiagram | Action::ClearWorkspace => self.workspace.is_some(),
+            Action::Theorem => self
+                .workspace
+                .as_ref()
+                .map_or(false, |ws| ws.diagram.dimension() > 0),
+            Action::Restrict => self.workspace().as_ref().map_or(false, |ws| {
+                !ws.path.is_empty()
+                    && ws
+                        .path
+                        .iter()
+                        .all(|si| matches!(si, Boundary(_) | Interior(Regular(_))))
+            }),
+            Action::Behead | Action::Befoot => {
+                self.workspace
+                    .as_ref()
+                    .map_or(false, |ws| match &ws.diagram {
+                        Diagram::Diagram0(_) => false,
+                        Diagram::DiagramN(d) => {
+                            d.size() > 0
+                                && (ws.path.is_empty()
+                                    || (ws.path.len() == 1
+                                        && matches!(
+                                            ws.path[0],
+                                            Boundary(_) | Interior(Regular(_))
+                                        )))
+                        }
+                    })
+            }
+            Action::AscendSlice(_) | Action::SwitchSlice(_) => self
+                .workspace
+                .as_ref()
+                .map_or(false, |ws| !ws.path.is_empty()),
+            Action::DescendSlice(_) => self
+                .workspace
+                .as_ref()
+                .map_or(false, |ws| ws.visible_dimension() > 0),
+            _ => true,
         }
     }
 
