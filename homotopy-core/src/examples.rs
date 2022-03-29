@@ -75,6 +75,26 @@ pub fn two_scalars() -> (impl Signature, DiagramN) {
 }
 
 // | |
+// | b
+// a |
+// | |
+pub fn two_beads() -> (impl Signature, DiagramN) {
+    let mut sig = SignatureBuilder::new();
+
+    let x = sig.add_zero();
+    let f = sig.add(x.clone(), x).unwrap();
+    let a = sig.add(f.clone(), f.clone()).unwrap();
+    let b = sig.add(f.clone(), f.clone()).unwrap();
+    (
+        sig,
+        a.attach(&f, Boundary::Target, &[])
+            .unwrap()
+            .attach(&b, Boundary::Target, &[1])
+            .unwrap(),
+    )
+}
+
+// | |
 // c |
 // | b
 // a |
@@ -100,7 +120,6 @@ pub fn three_beads() -> (impl Signature, DiagramN) {
     )
 }
 
-// project out 1 dimension:
 //   m
 // m |
 // | |
@@ -108,8 +127,8 @@ pub fn stacks() -> (impl Signature, DiagramN) {
     let mut sig = SignatureBuilder::new();
 
     let x = sig.add_zero();
-    let f = sig.add(x.identity(), x.identity()).unwrap();
-    let m = sig.add(f.clone(), x.identity().identity()).unwrap();
+    let f = sig.add(x.clone(), x.clone()).unwrap();
+    let m = sig.add(f.clone(), x.identity()).unwrap();
 
     (
         sig,
