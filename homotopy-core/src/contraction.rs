@@ -8,11 +8,12 @@ use itertools::Itertools;
 use petgraph::{
     adj::UnweightedList,
     algo::{
-        condensation, tarjan_scc, toposort,
+        condensation, toposort,
         tred::{dag_to_toposorted_adjacency_list, dag_transitive_reduction_closure},
     },
-    graph::{DefaultIx, DiGraph, NodeIndex},
+    graph::{DefaultIx, DiGraph, IndexType, NodeIndex},
     graphmap::DiGraphMap,
+    unionfind::UnionFind,
     visit::{EdgeRef, IntoNodeReferences},
     EdgeDirection::{Incoming, Outgoing},
 };
@@ -25,7 +26,7 @@ use crate::{
     diagram::{Diagram, DiagramN},
     graph::{Explodable, ExplosionOutput, ExternalRewrite, InternalRewrite},
     normalization,
-    rewrite::{Cone, Cospan, Rewrite, Rewrite0, RewriteN},
+    rewrite::{Cone, Cospan, Label, Rewrite, Rewrite0, RewriteN},
     signature::Signature,
     typecheck::{typecheck_cospan, TypeError},
     Direction, Generator, SliceIndex,
@@ -154,7 +155,7 @@ fn contract_base(
     let result = collapse(&graph)?;
     let mut regular_slices = vec![];
     let mut singular_slices = vec![];
-    for (i, r) in result.legs.into_iter() {
+    for (i, r) in result.legs {
         if i.index() % 2 == 0 {
             regular_slices.push(r);
         } else {
@@ -233,12 +234,17 @@ fn contract_in_path(
 
 declare_idx! { struct RestrictionIx = DefaultIx; }
 #[derive(Debug)]
-struct Cocone {
+struct Cocone<Ix = DefaultIx>
+where
+    Ix: IndexType,
+{
     colimit: Diagram,
-    legs: IdxVec<NodeIndex<RestrictionIx>, Rewrite>,
+    legs: IdxVec<NodeIndex<Ix>, Rewrite>,
 }
 
-fn collapse(graph: &DiGraph<(Diagram, BiasValue), Rewrite>) -> Result<Cocone, ContractionError> {
+fn collapse<Ix: IndexType>(
+    graph: &DiGraph<(Diagram, BiasValue), Rewrite, Ix>,
+) -> Result<Cocone<Ix>, ContractionError> {
     let dimension = graph
         .node_weights()
         .next()
@@ -261,175 +267,106 @@ fn collapse(graph: &DiGraph<(Diagram, BiasValue), Rewrite>) -> Result<Cocone, Co
     }
 }
 
-fn collapse_base(
-    graph: &DiGraph<(Diagram, BiasValue), Rewrite>,
-) -> Result<Cocone, ContractionError> {
-    let mut zero_graph: DiGraph<(NodeIndex, Generator), Option<Rewrite0>> = graph.map(
-        |i, (d, _bias)| (i, d.clone().try_into().unwrap()),
-        |_, e| Some(e.clone().try_into().unwrap()),
-    );
+fn collapse_base<'a, Ix: IndexType>(
+    graph: &'a DiGraph<(Diagram, BiasValue), Rewrite, Ix>,
+) -> Result<Cocone<Ix>, ContractionError> {
+    let mut union_find = UnionFind::new(graph.node_count());
+
+    let label = |r: &'a Rewrite| -> Option<&'a Label> {
+        let r0: &Rewrite0 = r.try_into().unwrap();
+        r0.label()
+    };
 
     // find collapsible edges
-    let mut backedges: Vec<_> = Default::default();
-    for (s, t) in zero_graph.edge_references().filter_map(|e| {
-        e.weight()
-            .as_ref()
-            .map(|r| r.is_identity().then(|| (e.source(), e.target())))
-            .flatten()
+    for (s, t) in graph.edge_references().filter_map(|e| {
+        let r: &Rewrite0 = e.weight().try_into().unwrap();
+        r.is_identity().then(|| (e.source(), e.target()))
     }) {
-        if (zero_graph.edges_directed(s, Incoming).all(|p| {
-            if let Some(c) = zero_graph.find_edge(p.source(), t) {
-                p.weight().as_ref().map(|r| r.label())
-                    == zero_graph
-                        .edge_weight(c)
-                        .unwrap()
-                        .as_ref()
-                        .map(|r| r.label())
+        if (graph.edges_directed(s, Incoming).all(|p| {
+            if let Some(c) = graph.find_edge(p.source(), t) {
+                label(p.weight()) == label(graph.edge_weight(c).unwrap())
             } else {
                 true
             }
-        })) && (zero_graph.edges_directed(t, Outgoing).all(|n| {
-            if let Some(c) = zero_graph.find_edge(s, n.target()) {
-                n.weight().as_ref().map(|r| r.label())
-                    == zero_graph
-                        .edge_weight(c)
-                        .unwrap()
-                        .as_ref()
-                        .map(|r| r.label())
+        })) && (graph.edges_directed(t, Outgoing).all(|n| {
+            if let Some(c) = graph.find_edge(s, n.target()) {
+                label(n.weight()) == label(graph.edge_weight(c).unwrap())
             } else {
                 true
             }
         })) {
-            // (s, t) is collapsible
-            backedges.push((t, s));
+            // (s, t) collapsible
+            union_find.union(s, t);
         }
     }
-    for (t, s) in backedges {
-        zero_graph.add_edge(t, s, None);
-    }
-
-    declare_idx! { struct QuotientIx = DefaultIx; }
-    let (mut quotient, node_to_scc): (DiGraph<(Vec<_>, Generator), Rewrite0, QuotientIx>, _) = {
-        // compute the quotient graph with respect to strongly-connected components
-        let sccs = tarjan_scc(&zero_graph);
-        let mut quotient: DiGraph<(Vec<_>, Generator), Rewrite0, QuotientIx> =
-            DiGraph::with_capacity(sccs.len(), zero_graph.edge_count());
-
-        let mut node_to_scc =
-            IdxVec::splat(<NodeIndex<QuotientIx>>::end(), zero_graph.node_count());
-        for scc in sccs {
-            let first = scc[0];
-            if scc.iter().map(|&i| zero_graph[i].1).all_equal() {
-                let s = quotient.add_node((Default::default(), zero_graph[first].1));
-                for node in scc {
-                    node_to_scc[node] = s;
-                }
-            } else {
-                return Err(ContractionError::Invalid);
-            }
-        }
-
-        let (nodes, edges) = zero_graph.into_nodes_edges();
-        for (i, n) in nodes.into_iter().enumerate() {
-            quotient[node_to_scc[NodeIndex::new(i)]].0.push(n.weight);
-        }
-        for e in edges.into_iter().filter(|e| e.weight.is_some()) {
-            let source = node_to_scc[e.source()];
-            let target = node_to_scc[e.target()];
-            let r = e.weight.unwrap();
-            if source != target {
-                if let Some(i) = quotient.find_edge(source, target) {
-                    if quotient.edge_weight(i).unwrap() != &r {
-                        return Err(ContractionError::Invalid);
-                    }
-                } else {
-                    quotient.add_edge(source, target, r);
-                }
-            }
-        }
-
-        (quotient, node_to_scc)
-    };
-
-    let (max_dim_index, (_, max_dim_diagram)) = quotient
-        .node_references()
-        .max_by_key(|&(_, (_, g))| g.dimension)
-        .ok_or(ContractionError::Invalid)?;
-
-    let colimit = Diagram::Diagram0(*max_dim_diagram);
 
     // unify all equivalence classes of maximal dimension
-    let mut other_max: Vec<_> = Default::default();
-    for (i, &(_, g)) in quotient
+    let (max_dim_index, (max_dim_diagram, _)) = graph
         .node_references()
-        .filter(|&(i, (_, g))| i != max_dim_index && g.dimension == max_dim_diagram.dimension)
+        .max_by_key(|&(_i, (d, _bias))| {
+            let g: Generator = d.try_into().unwrap();
+            g.dimension
+        })
+        .ok_or(ContractionError::Invalid)?;
+    let max_dim_generator: Generator = max_dim_diagram
+        .try_into()
+        .map_err(|_err| ContractionError::Invalid)?;
+    for (x, y) in graph
+        .node_references()
+        .filter_map(|(i, (d, _bias))| {
+            let g: Generator = d.try_into().unwrap();
+            (g.dimension == max_dim_generator.dimension).then(|| i)
+        })
+        .tuple_windows()
     {
-        if quotient[i].1 != g {
-            // found distinct generators of maximal dimension
+        if graph[x].0 != graph[y].0 {
+            // found distinct elements of maximal dimension
             return Err(ContractionError::Invalid);
         }
-        let mut incoming: Vec<_> = Default::default();
-        let mut outgoing: Vec<_> = Default::default();
-        for e in quotient.edges_directed(i, Incoming) {
-            if let Some(existing) = quotient.find_edge(e.source(), max_dim_index) {
-                if quotient.edge_weight(existing).unwrap() != e.weight() {
-                    return Err(ContractionError::Invalid);
-                }
-            } else {
-                incoming.push(e.id());
-            }
-        }
-        for e in quotient.edges_directed(i, Outgoing) {
-            if let Some(existing) = quotient.find_edge(max_dim_index, e.target()) {
-                if quotient.edge_weight(existing).unwrap() != e.weight() {
-                    return Err(ContractionError::Invalid);
-                }
-            } else {
-                outgoing.push(e.id());
-            }
-        }
-        other_max.push((i, incoming, outgoing));
+        union_find.union(x, y);
     }
-    for (n, incoming, outgoing) in other_max {
-        // redirect edges and remove node from quotient graph
-        for e in incoming {
-            let (source, _) = quotient.edge_endpoints(e).unwrap();
-            let w = quotient.remove_edge(e).unwrap();
-            quotient.add_edge(source, max_dim_index, w);
+
+    // compute quotient graph
+    let mut quotient = DiGraphMap::new();
+    for e in graph.edge_references() {
+        let s = union_find.find_mut(e.source());
+        let t = union_find.find_mut(e.target());
+        if s != t {
+            if let Some(old) = quotient.add_edge(s, t, e.weight()) {
+                if old != e.weight() {
+                    // quotient graph not well-defined
+                    return Err(ContractionError::Invalid);
+                }
+            }
         }
-        for e in outgoing {
-            let (_, target) = quotient.edge_endpoints(e).unwrap();
-            let w = quotient.remove_edge(e).unwrap();
-            quotient.add_edge(max_dim_index, target, w);
-        }
-        quotient.remove_node(n);
     }
 
     // construct colimit legs
-    let mut legs = IdxVec::with_capacity(graph.node_count());
-    for i in graph.node_indices() {
-        let leg = if node_to_scc[i] == max_dim_index {
-            Rewrite::identity(0)
-        } else {
-            quotient
-                .edge_weight(
-                    quotient
-                        .find_edge(node_to_scc[i], max_dim_index)
-                        .ok_or(ContractionError::Invalid)?,
-                )
-                .unwrap()
-                .clone()
-                .into()
-        };
-        legs.push(leg);
-    }
+    let legs = {
+        let mut legs = IdxVec::with_capacity(graph.node_count());
+        graph.node_indices().for_each(|n| {
+            legs.push({
+                let (p, q) = (union_find.find_mut(n), union_find.find_mut(max_dim_index));
+                if p == q {
+                    Rewrite::identity(0)
+                } else {
+                    quotient[(p, q)].clone()
+                }
+            });
+        });
+        legs
+    };
 
-    Ok(Cocone { colimit, legs })
+    let cocone = Cocone {
+        colimit: max_dim_diagram.clone(),
+        legs,
+    };
+    Ok(cocone)
 }
 
-fn collapse_recursive(
-    graph: &DiGraph<(Diagram, BiasValue), Rewrite>,
-) -> Result<Cocone, ContractionError> {
+fn collapse_recursive<Ix: IndexType>(
+    graph: &DiGraph<(Diagram, BiasValue), Rewrite, Ix>,
+) -> Result<Cocone<Ix>, ContractionError> {
     // Input: graph of n-diagrams and n-rewrites
 
     // marker for edges in Δ
@@ -457,14 +394,14 @@ fn collapse_recursive(
                 InternalRewrite::Boundary(_) => None,
                 InternalRewrite::Interior(i, dir) => Some(Some(DeltaSlice::Internal(i, dir))),
             },
-            |parent_edge, _, external| match external {
+            |_parent_edge, _, external| match external {
                 ExternalRewrite::SingularSlice(_) | ExternalRewrite::Sparse(_) => {
                     Some(Some(DeltaSlice::SingularSlice))
                 }
                 _ => Some(None),
             },
         )
-        .map_err(|_| ContractionError::Invalid)?;
+        .map_err(|_err| ContractionError::Invalid)?;
 
     // Find colimit in Δ (determines the order of subproblem solutions as singular heights in the
     // constructed colimit)
@@ -479,19 +416,29 @@ fn collapse_recursive(
 
     // each node of delta is keyed by the NodeIndex of exploded from where it originates
     let mut delta: DiGraphMap<NodeIndex<ExplodedIx>, ()> = Default::default();
+    let mut delta_height = 0;
 
     // construct each object of the Δ diagram
     // these should be the singular heights of the n-diagrams from the input which themselves
     // originate from singular heights (which can be determined by ensuring adjacent edges are all
     // incoming)
     for singular in graph.externals(Outgoing) {
-        for (&s, &snext) in node_to_slices[singular]
-            .iter()
-            .filter(|&i| matches!(exploded[*i], ((_, Height::Singular(_)), _)))
-            .tuple_windows::<(_, _)>()
-        {
-            // uni-directional edges between singular heights originating from the same diagram
-            delta.add_edge(s, snext, ());
+        delta_height += 1;
+        if node_to_slices[singular].len() == 3 {
+            // only one singular level
+            // R -> S <- R
+            delta.add_node(node_to_slices[singular][1]);
+        } else {
+            // more than one singular level
+            // R -> S <- ... -> S <- R
+            for (&s, &snext) in node_to_slices[singular]
+                .iter()
+                .filter(|&i| matches!(exploded[*i], ((_, Height::Singular(_)), _)))
+                .tuple_windows::<(_, _)>()
+            {
+                // uni-directional edges between singular heights originating from the same diagram
+                delta.add_edge(s, snext, ());
+            }
         }
     }
 
@@ -519,6 +466,9 @@ fn collapse_recursive(
     let quotient: DiGraph<_, _, QuotientIx> = condensation(delta.into_graph(), true);
 
     // linearize the quotient graph
+    //  * each node in the quotient graph is a singular height in the colimit
+    //  * the monotone function on singular heights is determined by the inclusion of Δ into the
+    //    quotient graph
     let scc_to_priority: IdxVec<NodeIndex<QuotientIx>, (usize, BiasValue)> = {
         let mut scc_to_priority: IdxVec<NodeIndex<QuotientIx>, (usize, BiasValue)> =
             IdxVec::splat(Default::default(), quotient.node_count());
@@ -535,13 +485,47 @@ fn collapse_recursive(
         }
         scc_to_priority
     };
+    // linear_components is the inverse image of the singular monotone
     let linear_components: Vec<_> = {
         let mut components: Vec<_> = quotient.node_references().collect();
         components.sort_by_key(|(i, _)| scc_to_priority[*i]);
         is_strictly_increasing(&components, |(i, _)| scc_to_priority[*i])
-            .then(|| components)
+            .then(|| components.into_iter().map(|(_, scc)| scc).collect())
             .ok_or(ContractionError::Ambiguous)
     }?;
+
+    // determine the dual monotone on regular heights
+    let regular_monotone: Vec<Vec<_>> = {
+        let mut regular_monotone: Vec<Vec<_>> = Vec::with_capacity(linear_components.len() + 1);
+        regular_monotone.push(
+            exploded
+                .node_references()
+                .filter_map(|(i, ((p, h), _))| {
+                    (matches!(Height::from(p.index()), Height::Singular(_))
+                        && *h == Height::Regular(0))
+                    .then(|| i)
+                })
+                .collect(),
+        );
+        for &scc in &linear_components {
+            regular_monotone.push(
+                (0..delta_height)
+                    .map(|h| {
+                        scc.iter()
+                            .filter(|&n| {
+                                Height::from(exploded[*n].0 .0.index()) == Height::Singular(h)
+                            })
+                            .max_by_key(|&n| exploded[*n].0 .1)
+                            .map_or_else(
+                                || regular_monotone.last().unwrap()[h],
+                                |i| NodeIndex::new(i.index() + 1),
+                            )
+                    })
+                    .collect(),
+            );
+        }
+        regular_monotone
+    };
 
     // solve recursive subproblems
     let (topo, revmap): (
@@ -549,21 +533,25 @@ fn collapse_recursive(
         Vec<NodeIndex<ExplodedIx>>,
     ) = dag_to_toposorted_adjacency_list(&exploded, &toposort(&exploded, None).unwrap());
     let (_, closure) = dag_transitive_reduction_closure(&topo);
+    #[allow(clippy::type_complexity)]
     let cocones: Vec<(
         NodeIndex<RestrictionIx>,
-        Cocone,
+        Cocone<RestrictionIx>,
         NodeIndex<RestrictionIx>,
         IdxVec<NodeIndex<RestrictionIx>, NodeIndex<ExplodedIx>>,
     )> = linear_components
         .into_iter()
-        .map(|(_, scc)| -> Result<_, ContractionError> {
+        .zip(regular_monotone.windows(2))
+        .map(|(scc, adjacent_regulars)| -> Result<_, ContractionError> {
             // construct subproblem for each SCC
             // the subproblem for each SCC is the subgraph of the exploded graph containing the SCC
-            // closed under reverse-reachability
+            // and its adjacent regulars closed under reverse-reachability
             let mut restriction_to_exploded = IdxVec::new();
             let restriction: DiGraph<(Diagram, BiasValue), _, RestrictionIx> = exploded.filter_map(
                 |i, (_, diagram)| {
                     scc.iter()
+                        .chain(adjacent_regulars[0].iter())
+                        .chain(adjacent_regulars[1].iter())
                         .any(|&c| {
                             i == c || closure.contains_edge(revmap[i.index()], revmap[c.index()])
                         })
@@ -603,7 +591,7 @@ fn collapse_recursive(
             // throw away extra information used to compute source and target
             let restriction =
                 restriction.filter_map(|_, d| d.clone().into(), |_, (_, r)| r.clone().into());
-            let cocone = collapse(&restriction)?;
+            let cocone: Cocone<RestrictionIx> = collapse(&restriction)?;
             Ok((source, cocone, target, restriction_to_exploded))
         })
         .fold_ok(vec![], |mut acc, x| {
@@ -612,14 +600,13 @@ fn collapse_recursive(
         })?;
 
     // assemble solutions
-    let first = cocones.first().ok_or(ContractionError::Invalid)?;
+    let (s, first, _, _) = cocones.first().ok_or(ContractionError::Invalid)?;
     let colimit: DiagramN = DiagramN::new(
         first
-            .1
             .colimit
             .clone()
-            .rewrite_backward(&first.1.legs[first.0])
-            .map_err(|_| ContractionError::Invalid)?,
+            .rewrite_backward(&first.legs[*s])
+            .map_err(|_err| ContractionError::Invalid)?,
         cocones
             .iter()
             .map(|(source, cocone, target, _)| Cospan {
@@ -630,41 +617,46 @@ fn collapse_recursive(
     );
 
     let dimension = colimit.dimension();
-    let legs = node_to_slices
-        .into_iter()
-        .map(|(n, _)| {
-            let mut regular_slices: Vec<Vec<_>> = Default::default();
-            let mut singular_slices: Vec<Vec<_>> = Default::default();
-            for (_, cocone, _, restriction_to_exploded) in &cocones {
-                let subrewrites = cocone.legs.iter().filter(|&(i, _)| {
-                    let ((parent, _), _) = exploded[restriction_to_exploded[i]];
-                    parent == n
-                });
-                let mut rs: Vec<_> = Default::default();
-                let mut ss: Vec<_> = Default::default();
-                for (i, r) in subrewrites {
-                    match &exploded[restriction_to_exploded[i]] {
-                        ((_, Height::Regular(_)), _) => rs.push(r.clone()),
-                        ((_, Height::Singular(_)), _) => ss.push(r.clone()),
+    let (regular_slices_by_height, singular_slices_by_height) = {
+        let mut regular_slices_by_height: IdxVec<NodeIndex<Ix>, Vec<Vec<Rewrite>>> =
+            IdxVec::splat(Vec::with_capacity(cocones.len()), graph.node_count());
+        let mut singular_slices_by_height: IdxVec<NodeIndex<Ix>, Vec<Vec<Rewrite>>> =
+            IdxVec::splat(Vec::with_capacity(cocones.len()), graph.node_count());
+        for (_, cocone, _, restriction_to_exploded) in cocones {
+            for (graph_ix, slices) in &cocone.legs.iter().group_by(|(restriction_ix, _)| {
+                exploded[restriction_to_exploded[*restriction_ix]].0 .0
+            }) {
+                let mut cone_regular_slices: Vec<Rewrite> = Default::default();
+                let mut cone_singular_slices: Vec<Rewrite> = Default::default();
+                for (restriction_ix, slice) in slices {
+                    match exploded[restriction_to_exploded[restriction_ix]].0 .1 {
+                        Height::Regular(_) => cone_regular_slices.push(slice.clone()),
+                        Height::Singular(_) => cone_singular_slices.push(slice.clone()),
                     }
                 }
-                regular_slices.push(rs);
-                singular_slices.push(ss);
+                regular_slices_by_height[graph_ix].push(cone_regular_slices);
+                singular_slices_by_height[graph_ix].push(cone_singular_slices);
             }
-            Some(
-                RewriteN::from_slices(
-                    dimension,
-                    <&DiagramN>::try_from(&graph[n].0).ok()?.cospans(),
-                    colimit.cospans(),
-                    regular_slices,
-                    singular_slices,
-                )
-                .into(),
-            )
-        })
-        .collect::<Option<Vec<_>>>()
-        .ok_or(ContractionError::Invalid)?
+        }
+        (regular_slices_by_height, singular_slices_by_height)
+    };
+    let legs = regular_slices_by_height
+        .into_raw()
         .into_iter()
+        .zip(singular_slices_by_height.into_raw())
+        .enumerate()
+        .map(|(n, (regular_slices, singular_slices))| {
+            RewriteN::from_slices(
+                dimension,
+                <&DiagramN>::try_from(&graph[NodeIndex::new(n)].0)
+                    .unwrap()
+                    .cospans(),
+                colimit.cospans(),
+                regular_slices,
+                singular_slices,
+            )
+            .into()
+        })
         .collect();
 
     Ok(Cocone {
@@ -684,4 +676,416 @@ where
         }
     }
     true
+}
+
+#[cfg(test)]
+mod test {
+    use petgraph::graph::EdgeIndex;
+
+    use super::*;
+    use crate::{
+        examples::{stacks, two_beads},
+        graph::SliceGraph,
+        Boundary::{Source, Target},
+        Height::{Regular, Singular},
+        SliceIndex::{Boundary, Interior},
+    };
+
+    fn keep_interior_nodes(_: NodeIndex, _: &'_ (), si: SliceIndex) -> Option<()> {
+        match si {
+            SliceIndex::Boundary(_) => None,
+            SliceIndex::Interior(_) => Some(()),
+        }
+    }
+    fn keep_internal_edges(_: NodeIndex, _: &'_ (), ir: InternalRewrite) -> Option<()> {
+        match ir {
+            InternalRewrite::Boundary(_) => None,
+            InternalRewrite::Interior(_, _) => Some(()),
+        }
+    }
+    fn keep_external_edges(_: EdgeIndex, _: &'_ (), _: ExternalRewrite) -> Option<()> {
+        Some(())
+    }
+
+    fn internal_cospan(g: Generator) -> Cospan {
+        let x_generator = Generator::new(0, 0);
+        Cospan {
+            forward: Rewrite0::new(
+                x_generator,
+                g,
+                (g, vec![Interior(Singular(0)), Boundary(Source)]).into(),
+            )
+            .into(),
+            backward: Rewrite0::new(
+                x_generator,
+                g,
+                (g, vec![Interior(Singular(0)), Boundary(Target)]).into(),
+            )
+            .into(),
+        }
+    }
+
+    fn forward_regular(src: Generator, tgt: Generator) -> Rewrite {
+        Rewrite0::new(
+            src,
+            tgt,
+            (tgt, vec![Interior(Singular(0)), Boundary(Source)]).into(),
+        )
+        .into()
+    }
+
+    fn backward_regular(src: Generator, tgt: Generator) -> Rewrite {
+        Rewrite0::new(
+            src,
+            tgt,
+            (tgt, vec![Interior(Singular(0)), Boundary(Target)]).into(),
+        )
+        .into()
+    }
+
+    fn vertical_cospan(g: Generator) -> Cospan {
+        let f_generator = Generator::new(1, 1);
+        Cospan {
+            forward: Rewrite0::new(
+                f_generator,
+                g,
+                (g, vec![Boundary(Source), Interior(Singular(0))]).into(),
+            )
+            .into(),
+            backward: Rewrite0::new(
+                f_generator,
+                g,
+                (g, vec![Boundary(Target), Interior(Singular(0))]).into(),
+            )
+            .into(),
+        }
+    }
+
+    #[test]
+    fn collapse_two_beads_base_case() {
+        let x_generator = Generator::new(0, 0);
+        let f_generator = Generator::new(1, 1);
+        let a_generator = Generator::new(2, 2);
+        let b_generator = Generator::new(3, 2);
+        let (_sig, two_beads) = two_beads();
+        let ExplosionOutput { output: graph, .. }: ExplosionOutput<(), (), DefaultIx, DefaultIx> =
+            SliceGraph::singleton((), Diagram::from(two_beads))
+                .explode(
+                    keep_interior_nodes,
+                    keep_internal_edges,
+                    keep_external_edges,
+                )
+                .unwrap()
+                .explode(
+                    keep_interior_nodes,
+                    keep_internal_edges,
+                    keep_external_edges,
+                )
+                .unwrap();
+        {
+            // left side
+            let subproblem = graph.filter_map(
+                |i, ((), diagram)| (i.index() % 5 <= 2).then(|| (diagram.clone(), 0)),
+                |_, ((), edge)| Some(edge.clone()),
+            );
+            let actual: Cocone<DefaultIx> = collapse_base(&subproblem).unwrap();
+            assert_eq!(actual.colimit, Diagram::Diagram0(a_generator));
+            assert_eq!(actual.legs.len(), 15);
+
+            let left = Rewrite0::new(
+                x_generator,
+                a_generator,
+                (a_generator, vec![Interior(Singular(0)), Boundary(Source)]).into(),
+            )
+            .into();
+            let right = Rewrite0::new(
+                x_generator,
+                a_generator,
+                (a_generator, vec![Interior(Singular(0)), Boundary(Target)]).into(),
+            )
+            .into();
+            let top = Rewrite0::new(
+                f_generator,
+                a_generator,
+                (a_generator, vec![Boundary(Target), Interior(Singular(0))]).into(),
+            )
+            .into();
+            let bottom = Rewrite0::new(
+                f_generator,
+                a_generator,
+                (a_generator, vec![Boundary(Source), Interior(Singular(0))]).into(),
+            )
+            .into();
+            [
+                (NodeIndex::new(0), &left),
+                (NodeIndex::new(1), &bottom),
+                (NodeIndex::new(2), &right),
+                (NodeIndex::new(3), &left),
+                (NodeIndex::new(4), &Rewrite::identity(0)),
+                (NodeIndex::new(5), &right),
+                (NodeIndex::new(6), &left),
+                (NodeIndex::new(7), &top),
+                (NodeIndex::new(8), &right),
+                (NodeIndex::new(9), &left),
+                (NodeIndex::new(10), &top),
+                (NodeIndex::new(11), &right),
+                (NodeIndex::new(12), &left),
+                (NodeIndex::new(13), &top),
+                (NodeIndex::new(14), &right),
+            ]
+            .into_iter()
+            .for_each(|(i, expected_rewrite)| {
+                assert_eq!(actual.legs.get(i).unwrap(), expected_rewrite)
+            });
+        }
+        {
+            // right side
+            let subproblem = graph.filter_map(
+                |i, ((), diagram)| (i.index() % 5 >= 2).then(|| (diagram.clone(), 0)),
+                |_, ((), edge)| Some(edge.clone()),
+            );
+            let actual: Cocone<DefaultIx> = collapse_base(&subproblem).unwrap();
+            assert_eq!(actual.legs.len(), 15);
+            assert_eq!(actual.colimit, Diagram::Diagram0(b_generator));
+
+            let left = Rewrite0::new(
+                x_generator,
+                b_generator,
+                (b_generator, vec![Interior(Singular(0)), Boundary(Source)]).into(),
+            )
+            .into();
+            let right = Rewrite0::new(
+                x_generator,
+                b_generator,
+                (b_generator, vec![Interior(Singular(0)), Boundary(Target)]).into(),
+            )
+            .into();
+            let top = Rewrite0::new(
+                f_generator,
+                b_generator,
+                (b_generator, vec![Boundary(Target), Interior(Singular(0))]).into(),
+            )
+            .into();
+            let bottom = Rewrite0::new(
+                f_generator,
+                b_generator,
+                (b_generator, vec![Boundary(Source), Interior(Singular(0))]).into(),
+            )
+            .into();
+            [
+                (NodeIndex::new(0), &left),
+                (NodeIndex::new(1), &bottom),
+                (NodeIndex::new(2), &right),
+                (NodeIndex::new(3), &left),
+                (NodeIndex::new(4), &bottom),
+                (NodeIndex::new(5), &right),
+                (NodeIndex::new(6), &left),
+                (NodeIndex::new(7), &bottom),
+                (NodeIndex::new(8), &right),
+                (NodeIndex::new(9), &left),
+                (NodeIndex::new(10), &Rewrite::identity(0)),
+                (NodeIndex::new(11), &right),
+                (NodeIndex::new(12), &left),
+                (NodeIndex::new(13), &top),
+                (NodeIndex::new(14), &right),
+            ]
+            .into_iter()
+            .for_each(|(i, expected_rewrite)| {
+                assert_eq!(actual.legs.get(i).unwrap(), expected_rewrite)
+            });
+        }
+    }
+
+    #[test]
+    fn collapse_two_beads_recursive_case() {
+        let x_generator = Generator::new(0, 0);
+        let _f_generator = Generator::new(1, 1);
+        let a_generator = Generator::new(2, 2);
+        let b_generator = Generator::new(3, 2);
+        let (_sig, two_beads) = two_beads();
+        let ExplosionOutput { output: graph, .. }: ExplosionOutput<(), (), DefaultIx, DefaultIx> =
+            SliceGraph::singleton((), Diagram::from(two_beads.clone()))
+                .explode(
+                    keep_interior_nodes,
+                    keep_internal_edges,
+                    keep_external_edges,
+                )
+                .unwrap();
+        let problem = graph.map(
+            |_, ((), diagram)| (diagram.clone(), 0),
+            |_, ((), edge)| edge.clone(),
+        );
+        let actual: Cocone<DefaultIx> = collapse_recursive(&problem).unwrap();
+        assert_eq!(actual.legs.len(), 5);
+        assert_eq!(
+            actual.colimit,
+            DiagramN::new(
+                x_generator.into(),
+                vec![internal_cospan(a_generator), internal_cospan(b_generator)]
+            )
+            .into()
+        );
+
+        two_beads
+            .slices()
+            .enumerate()
+            .map(|(i, slice)| {
+                (
+                    NodeIndex::new(i),
+                    RewriteN::from_slices(
+                        1,
+                        DiagramN::try_from(slice).unwrap().cospans(),
+                        &[internal_cospan(a_generator), internal_cospan(b_generator)],
+                        // regular slices
+                        vec![
+                            vec![
+                                forward_regular(x_generator, a_generator),
+                                backward_regular(x_generator, a_generator),
+                            ],
+                            vec![
+                                forward_regular(x_generator, b_generator),
+                                backward_regular(x_generator, b_generator),
+                            ],
+                        ],
+                        // singular slices
+                        match i {
+                            i if i == 0 => vec![
+                                vec![vertical_cospan(a_generator).forward],
+                                vec![vertical_cospan(b_generator).forward],
+                            ],
+                            i if i == 1 => vec![
+                                vec![Rewrite::identity(0)],
+                                vec![vertical_cospan(b_generator).forward],
+                            ],
+                            i if i == 2 => vec![
+                                vec![vertical_cospan(a_generator).backward],
+                                vec![vertical_cospan(b_generator).forward],
+                            ],
+                            i if i == 3 => vec![
+                                vec![vertical_cospan(a_generator).backward],
+                                vec![Rewrite::identity(0)],
+                            ],
+                            i if i == 4 => vec![
+                                vec![vertical_cospan(a_generator).backward],
+                                vec![vertical_cospan(b_generator).backward],
+                            ],
+                            _ => unreachable!(),
+                        },
+                    )
+                    .into(),
+                )
+            })
+            .for_each(|(i, expected_rewrite): (NodeIndex, Rewrite)| {
+                assert_eq!(
+                    actual.legs.get(i).unwrap(),
+                    &expected_rewrite,
+                    "mismatch at slice {}",
+                    i.index()
+                )
+            });
+    }
+
+    #[test]
+    fn collapse_stacks() {
+        let x_generator = Generator::new(0, 0);
+        let _f_generator = Generator::new(1, 1);
+        let m_generator = Generator::new(2, 2);
+        let (_sig, stacks) = stacks();
+        let ExplosionOutput { output: graph, .. }: ExplosionOutput<(), (), DefaultIx, DefaultIx> =
+            SliceGraph::singleton((), Diagram::from(stacks.clone()))
+                .explode(
+                    keep_interior_nodes,
+                    keep_internal_edges,
+                    keep_external_edges,
+                )
+                .unwrap();
+        let problem = graph.map(
+            |_, ((), diagram)| (diagram.clone(), 0),
+            |_, ((), edge)| edge.clone(),
+        );
+        let actual: Cocone<DefaultIx> = collapse_recursive(&problem).unwrap();
+        assert_eq!(actual.legs.len(), 5);
+        assert_eq!(
+            actual.colimit,
+            DiagramN::new(
+                x_generator.into(),
+                vec![internal_cospan(m_generator), internal_cospan(m_generator)]
+            )
+            .into()
+        );
+
+        let upper_regular: Rewrite = Rewrite0::new(
+            x_generator,
+            m_generator,
+            (m_generator, vec![Boundary(Target), Interior(Regular(0))]).into(),
+        )
+        .into();
+
+        stacks
+            .slices()
+            .enumerate()
+            .map(|(i, slice)| {
+                (
+                    NodeIndex::new(i),
+                    RewriteN::from_slices(
+                        1,
+                        DiagramN::try_from(slice).unwrap().cospans(),
+                        &[internal_cospan(m_generator), internal_cospan(m_generator)],
+                        match i {
+                            i if i <= 1 => vec![
+                                vec![
+                                    forward_regular(x_generator, m_generator),
+                                    backward_regular(x_generator, m_generator),
+                                ],
+                                vec![
+                                    forward_regular(x_generator, m_generator),
+                                    backward_regular(x_generator, m_generator),
+                                ],
+                            ],
+                            i if i == 2 => vec![
+                                vec![upper_regular.clone()],
+                                vec![
+                                    forward_regular(x_generator, m_generator),
+                                    backward_regular(x_generator, m_generator),
+                                ],
+                            ],
+                            i if i == 3 => vec![
+                                vec![upper_regular.clone()],
+                                vec![
+                                    forward_regular(x_generator, m_generator),
+                                    backward_regular(x_generator, m_generator),
+                                ],
+                            ],
+                            i if i == 4 => {
+                                vec![vec![upper_regular.clone()], vec![upper_regular.clone()]]
+                            }
+                            _ => unreachable!(),
+                        },
+                        match i {
+                            i if i == 0 => vec![
+                                vec![vertical_cospan(m_generator).forward],
+                                vec![vertical_cospan(m_generator).forward],
+                            ],
+                            i if i == 1 => vec![
+                                vec![Rewrite::identity(0)],
+                                vec![vertical_cospan(m_generator).forward],
+                            ],
+                            i if i == 2 => vec![vec![], vec![vertical_cospan(m_generator).forward]],
+                            i if i == 3 => vec![vec![], vec![Rewrite::identity(0)]],
+                            i if i == 4 => vec![vec![], vec![]],
+                            _ => unreachable!(),
+                        },
+                    )
+                    .into(),
+                )
+            })
+            .for_each(|(i, expected_rewrite): (NodeIndex, Rewrite)| {
+                assert_eq!(
+                    actual.legs.get(i).unwrap(),
+                    &expected_rewrite,
+                    "mismatch at slice {}",
+                    i.index()
+                )
+            });
+    }
 }
