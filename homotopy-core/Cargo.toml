@@ -14,7 +14,7 @@ homotopy-common = { path = "../homotopy-common" }
 bimap = "0.6.2"
 hashconsing = "1.5.0"
 highway = "0.8.0"
-log = "0.4.14"
+log = "0.4.16"
 once_cell = "1.10.0"
 petgraph = "0.6.0"
 serde = { features = ["derive"], version = "1.0.136" }
