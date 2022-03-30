@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1648647740524,
+  "lastUpdate": 1648647763397,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -28679,6 +28679,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 90.839,
             "range": "+/- 0.039",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "6c36974eaba13050f3c0768f3579cf56970eb803",
+          "message": "Bump quote from 1.0.15 to 1.0.17\n\nBumps [quote](https://github.com/dtolnay/quote) from 1.0.15 to 1.0.17.\n- [Release notes](https://github.com/dtolnay/quote/releases)\n- [Commits](https://github.com/dtolnay/quote/compare/1.0.15...1.0.17)\n\n---\nupdated-dependencies:\n- dependency-name: quote\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>",
+          "timestamp": "2022-03-30T14:19:29+01:00",
+          "tree_id": "3213fce14799bfaf699097bcf5e51fad40953902",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/6c36974eaba13050f3c0768f3579cf56970eb803"
+        },
+        "date": 1648647751776,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 75.528,
+            "range": "+/- 0.224",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 77.158,
+            "range": "+/- 0.245",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 115.92,
+            "range": "+/- 0.210",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 135,
+            "range": "+/- 0.290",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 92.107,
+            "range": "+/- 0.233",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 107.67,
+            "range": "+/- 0.260",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 98.399,
+            "range": "+/- 0.247",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 667.99,
+            "range": "+/- 0.600",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.6079,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 7.9125,
+            "range": "+/- 0.003",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 20.934,
+            "range": "+/- 0.011",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 51.444,
+            "range": "+/- 0.063",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 130.17,
+            "range": "+/- 0.410",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 355.07,
+            "range": "+/- 1.140",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 76.641,
+            "range": "+/- 0.031",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 110.72,
+            "range": "+/- 0.110",
             "unit": "us"
           }
         ]
