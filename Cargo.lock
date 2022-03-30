@@ -738,9 +738,9 @@ dependencies = [
 
 [[package]]
 name = "insta"
-version = "1.13.0"
+version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30a7e1911532a662f6b08b68f884080850f2fd9544963c3ab23a5af42bda1eac"
+checksum = "689960f187c43c01650c805fb6bc6f55ab944499d86d4ffe9474ad78991d8e94"
 dependencies = [
  "console",
  "once_cell",
@@ -919,7 +919,7 @@ checksum = "0ab1bc2a289d34bd04a330323ac98a1b4bc82c9d9fcb1e66b63caa84da26b575"
 [[package]]
 name = "palette"
 version = "0.6.0"
-source = "git+https://github.com/Ogeon/palette#a81fb97580c34f68863c32492e32c6d7ab1d95e4"
+source = "git+https://github.com/Ogeon/palette#f4a0f68129b29aa96c969970121fd34cf964beb2"
 dependencies = [
  "approx",
  "palette_derive",
@@ -930,7 +930,7 @@ dependencies = [
 [[package]]
 name = "palette_derive"
 version = "0.6.0"
-source = "git+https://github.com/Ogeon/palette#a81fb97580c34f68863c32492e32c6d7ab1d95e4"
+source = "git+https://github.com/Ogeon/palette#f4a0f68129b29aa96c969970121fd34cf964beb2"
 dependencies = [
  "find-crate",
  "proc-macro2",
@@ -940,9 +940,9 @@ dependencies = [
 
 [[package]]
 name = "paste"
-version = "1.0.6"
+version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0744126afe1a6dd7f394cb50a716dbe086cb06e255e53d8d0185d82828358fb5"
+checksum = "0c520e05135d6e763148b6426a837e239041653ba7becd2e538c076c738025fc"
 
 [[package]]
 name = "petgraph"
@@ -1139,9 +1139,9 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "1.0.15"
+version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "864d3e96a899863136fc6e99f3d7cae289dafe43bf2c5ac19b70df7210c0a145"
+checksum = "632d02bff7f874a36f33ea8bb416cd484b90cc66c1194b1a1110d067a7013f58"
 dependencies = [
  "proc-macro2",
 ]
