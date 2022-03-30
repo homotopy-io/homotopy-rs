@@ -14,7 +14,7 @@ pub type Layout2D = Layout<2>;
 
 #[derive(Clone, Debug)]
 pub struct Layout<const N: usize> {
-    positions: FastHashMap<[SliceIndex; N], [f32; N]>,
+    pub positions: FastHashMap<[SliceIndex; N], [f32; N]>,
 }
 
 impl<const N: usize> Layout<N> {
