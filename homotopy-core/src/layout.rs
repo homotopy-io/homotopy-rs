@@ -268,7 +268,7 @@ fn solve_2d(
         .nodes()
         .map(|n| positions[&n].0 as f32 + 1.0)
         .max_by(|x, y| x.partial_cmp(y).unwrap())
-        .unwrap();
+        .unwrap_or_default();
 
     (width, positions)
 }
