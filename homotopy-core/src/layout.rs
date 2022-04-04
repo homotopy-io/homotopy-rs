@@ -27,7 +27,7 @@ impl<const N: usize> Layout<N> {
             SliceGraph::singleton(([Boundary::Source.into(); N], [0.0; N]), diagram.clone());
 
         for i in 0..N {
-            let positions = layout(&graph, |key| &key.0[..i])?;
+            let positions = layout(&graph, i, |key| &key.0[..i])?;
             graph = graph
                 .explode(
                     |n, key, si| {
@@ -114,6 +114,7 @@ fn colimit(constraints: &[ConstraintSet]) -> ConstraintSet {
 
 fn layout<V, E, F>(
     graph: &SliceGraph<V, E>,
+    dim: usize,
     coord_map: F,
 ) -> Result<IdxVec<NodeIndex, Vec<f32>>, DimensionError>
 where
@@ -172,10 +173,6 @@ where
     let maximal_constraints = node_to_constraints
         .iter()
         .filter_map(|(_n, constraints)| {
-            // let maximal = graph[n].0.iter().all(|index| match index {
-            //     SliceIndex::Interior(Height::Singular(_)) => true,
-            //     _ => false,
-            // });
             constraints
                 .clone()
                 .into_iter()
@@ -184,6 +181,107 @@ where
         .collect_vec();
     let colimit = colimit(&maximal_constraints);
 
+    let (width, positions) = if dim <= 1 {
+        solve_2d(&node_to_constraints, &colimit)
+    } else {
+        solve_3d(graph, coord_map, &node_to_constraints, &colimit)
+    };
+
+    // Calculate final layout by taking averages.
+    let mut layout = IdxVec::new();
+    for constraints in node_to_constraints.values() {
+        let singular_positions = constraints
+            .iter()
+            .map(|cs| {
+                let min = cs
+                    .nodes()
+                    .map(|n| positions[&n].0)
+                    .min_by(|x, y| x.partial_cmp(y).unwrap())
+                    .unwrap();
+                let max = cs
+                    .nodes()
+                    .map(|n| positions[&n].1)
+                    .max_by(|x, y| x.partial_cmp(y).unwrap())
+                    .unwrap();
+                (min, max)
+            })
+            .collect_vec();
+        layout.push(compute_averages(width, singular_positions));
+    }
+
+    Ok(layout)
+}
+
+fn solve_2d(
+    node_to_constraints: &IdxVec<NodeIndex, Vec<ConstraintSet>>,
+    colimit: &ConstraintSet,
+) -> (f32, HashMap<Point, (f32, f32)>) {
+    let mut problem = minilp::Problem::new(minilp::OptimizationDirection::Minimize);
+
+    // Variables
+    let mut variables = HashMap::new();
+    for n in colimit.nodes() {
+        variables.insert(n, problem.add_var(0.0, (0.0, f64::INFINITY)));
+    }
+
+    // Distance constraints.
+    for (a, b, _) in colimit.all_edges() {
+        let x = variables[&a];
+        let y = variables[&b];
+        problem.add_constraint(&[(x, -1.0), (y, 1.0)], minilp::ComparisonOp::Ge, 1.0);
+    }
+
+    // Fair averaging constraints (inc. straight wires).
+    for css in node_to_constraints.values() {
+        for cs in css {
+            let mut paths: Vec<Vec<Point>> = vec![];
+            for min in extrema(cs, EdgeDirection::Incoming) {
+                for max in extrema(cs, EdgeDirection::Outgoing) {
+                    if min == max {
+                        paths.push(vec![min]);
+                    } else if petgraph::algo::has_path_connecting(cs, min, max, None) {
+                        paths.push(vec![min, max]);
+                    }
+                }
+            }
+            if paths.len() > 1 {
+                let c = problem.add_var(0.0, (0.0, f64::INFINITY));
+                for path in paths {
+                    problem.add_constraint(
+                        std::iter::once((c, path.len() as f64))
+                            .chain(path.iter().map(|p| (variables[p], -1.0))),
+                        minilp::ComparisonOp::Eq,
+                        0.0,
+                    );
+                }
+            }
+        }
+    }
+
+    let solution = problem.solve().unwrap();
+    let positions: HashMap<Point, (f32, f32)> = variables
+        .into_iter()
+        .map(|(p, x)| (p, (solution[x] as f32, solution[x] as f32)))
+        .collect();
+
+    let width = colimit
+        .nodes()
+        .map(|n| positions[&n].0 as f32 + 1.0)
+        .max_by(|x, y| x.partial_cmp(y).unwrap())
+        .unwrap();
+
+    (width, positions)
+}
+
+fn solve_3d<V, E, F>(
+    graph: &SliceGraph<V, E>,
+    coord_map: F,
+    node_to_constraints: &IdxVec<NodeIndex, Vec<ConstraintSet>>,
+    colimit: &ConstraintSet,
+) -> (f32, HashMap<Point, (f32, f32)>)
+where
+    F: Fn(&V) -> &[SliceIndex],
+{
     // For each point in the colimit, calculate its min and max positions.
     let mut width = 0;
     let mut min_positions: HashMap<Point, usize> = HashMap::new();
@@ -248,40 +346,36 @@ where
         width = std::cmp::max(width, pos + 1);
     }
 
-    // Calculate final layout by taking averages.
-    let mut layout = IdxVec::new();
-    for constraints in node_to_constraints.values() {
-        let singular_positions = constraints
-            .iter()
-            .map(|cs| {
-                let min = cs.nodes().map(|n| min_positions[&n]).min().unwrap();
-                let max = cs
-                    .nodes()
-                    .map(|n| width - max_positions[&n] - 1)
-                    .max()
-                    .unwrap();
-                (min, max)
+    (
+        width as f32,
+        colimit
+            .nodes()
+            .map(|n| {
+                (
+                    n,
+                    (
+                        min_positions[&n] as f32,
+                        (width - max_positions[&n] - 1) as f32,
+                    ),
+                )
             })
-            .collect_vec();
-        layout.push(compute_averages(width, singular_positions));
-    }
-
-    Ok(layout)
+            .collect(),
+    )
 }
 
 // Takes a list of minimum and maximum positions for every singular slice and computes the final positions.
-fn compute_averages(width: usize, singular_positions: Vec<(usize, usize)>) -> Vec<f32> {
+fn compute_averages(width: f32, singular_positions: Vec<(f32, f32)>) -> Vec<f32> {
     let mut positions = vec![0.0];
 
     let mut start = 1.0;
     for (a, b) in singular_positions {
-        let a = (2 * a + 2) as f32;
-        let b = (2 * b + 2) as f32;
+        let a = 2.0 * a + 2.0;
+        let b = 2.0 * b + 2.0;
         positions.push((start + a - 1.0) / 2.0);
         positions.push((a + b) / 2.0);
         start = b + 1.0;
     }
-    positions.push((start + 2.0 * width as f32 + 1.0) / 2.0);
-    positions.push(2.0 * width as f32 + 2.0);
+    positions.push((start + 2.0 * width + 1.0) / 2.0);
+    positions.push(2.0 * width + 2.0);
     positions
 }
