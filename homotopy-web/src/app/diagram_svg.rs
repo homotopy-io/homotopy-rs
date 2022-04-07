@@ -34,7 +34,9 @@ use crate::{
 };
 
 pub struct Diagram2D {
-    diagram: PreparedDiagram,
+    diagram: DiagramN,
+    style: RenderStyle,
+    prepared: PreparedDiagram,
     node_ref: NodeRef,
     drag_start: Option<Point2D<f32>>,
 }
@@ -152,11 +154,15 @@ impl Component for Diagram2D {
     type Properties = Props2D;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let diagram = PreparedDiagram::new(&ctx.props().diagram, ctx.props().style);
+        let diagram = ctx.props().diagram.clone();
+        let style = ctx.props().style;
+        let prepared = PreparedDiagram::new(&diagram, style);
         let node_ref = NodeRef::default();
         let drag_start = Default::default();
         Self {
             diagram,
+            style,
+            prepared,
             node_ref,
             drag_start,
         }
@@ -194,12 +200,18 @@ impl Component for Diagram2D {
     }
 
     fn changed(&mut self, ctx: &Context<Self>) -> bool {
-        self.diagram = PreparedDiagram::new(&ctx.props().diagram, ctx.props().style);
-        true
+        if self.diagram != ctx.props().diagram || self.style != ctx.props().style {
+            self.diagram = ctx.props().diagram.clone();
+            self.style = ctx.props().style;
+            self.prepared = PreparedDiagram::new(&ctx.props().diagram, ctx.props().style);
+            true
+        } else {
+            false
+        }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let size = self.diagram.dimensions;
+        let size = self.prepared.dimensions;
 
         let on_mouse_down = {
             let link = ctx.link().clone();
@@ -269,7 +281,7 @@ impl Component for Diagram2D {
                 ontouchcancel={on_touch_update.clone()}
                 ref={self.node_ref.clone()}
             >
-                {self.diagram.graphic.iter().enumerate().map(|(i, e)| self.view_element(ctx, i, e)).collect::<Html>()}
+                {self.prepared.graphic.iter().enumerate().map(|(i, e)| self.view_element(ctx, i, e)).collect::<Html>()}
                 {self.view_highlight(ctx)}
             </svg>
         }
@@ -287,7 +299,7 @@ impl Diagram2D {
             .get_bounding_client_rect();
 
         let screen_size = Size2D::new(rect.width() as f32, rect.height() as f32);
-        let image_size = self.diagram.dimensions;
+        let image_size = self.prepared.dimensions;
 
         Transform2D::translation(-rect.left() as f32, -rect.top() as f32).then_scale(
             image_size.width / screen_size.width,
@@ -302,14 +314,14 @@ impl Diagram2D {
         match element {
             GraphicElement::Surface(_, path) => {
                 let class = SignatureStylesheet::name("generator", generator, "surface");
-                let path = path_to_svg(&path.clone().transformed(&self.diagram.transform));
+                let path = path_to_svg(&path.clone().transformed(&self.prepared.transform));
                 html! {
                     <path d={path} class={class} stroke-width={1} />
                 }
             }
             GraphicElement::Wire(_, path, mask) => {
                 let class = SignatureStylesheet::name("generator", generator, "wire");
-                let path = path_to_svg(&path.clone().transformed(&self.diagram.transform));
+                let path = path_to_svg(&path.clone().transformed(&self.prepared.transform));
 
                 if mask.is_empty() {
                     html! {
@@ -326,7 +338,7 @@ impl Diagram2D {
                         .map(|mask_path| {
                             html! {
                                 <path
-                                    d={path_to_svg(&mask_path.clone().transformed(&self.diagram.transform))}
+                                    d={path_to_svg(&mask_path.clone().transformed(&self.prepared.transform))}
                                     stroke-width={(ctx.props().style.wire_thickness * 2.0).to_string()}
                                     fill="none"
                                     stroke="black"
@@ -359,7 +371,7 @@ impl Diagram2D {
             }
             GraphicElement::Point(_, point) => {
                 let class = SignatureStylesheet::name("generator", generator, "point");
-                let point = self.diagram.transform.transform_point(*point);
+                let point = self.prepared.transform.transform_point(*point);
                 html! {
                     <circle r={ctx.props().style.point_radius.to_string()} cx={point.x.to_string()} cy={point.y.to_string()} class={class} />
                 }
@@ -404,13 +416,13 @@ impl Diagram2D {
     }
 
     fn position(&self, point: [SliceIndex; 2]) -> Point2D<f32> {
-        let point = self.diagram.layout.get(point).into();
-        self.diagram.transform.transform_point(point)
+        let point = self.prepared.layout.get(point).into();
+        self.prepared.transform.transform_point(point)
     }
 
     fn simplex_at(&self, point: Point2D<f32>) -> Option<Simplex> {
         let point = self.transform_screen_to_image().transform_point(point);
-        self.diagram
+        self.prepared
             .actions
             .iter()
             .find(|(_, shape)| shape.contains_point(point, 0.01))
@@ -438,7 +450,7 @@ impl Diagram2D {
                 angle,
                 &simplex,
                 ctx.props().diagram.clone(),
-                &self.diagram.depths,
+                &self.prepared.depths,
             );
 
             if let Some(homotopy) = homotopy {
