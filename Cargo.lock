@@ -981,7 +981,7 @@ checksum = "0ab1bc2a289d34bd04a330323ac98a1b4bc82c9d9fcb1e66b63caa84da26b575"
 [[package]]
 name = "palette"
 version = "0.6.0"
-source = "git+https://github.com/Ogeon/palette#f4a0f68129b29aa96c969970121fd34cf964beb2"
+source = "git+https://github.com/Ogeon/palette#05df1d62966b746212a4232102ccf037ea860965"
 dependencies = [
  "approx",
  "palette_derive",
@@ -992,7 +992,7 @@ dependencies = [
 [[package]]
 name = "palette_derive"
 version = "0.6.0"
-source = "git+https://github.com/Ogeon/palette#f4a0f68129b29aa96c969970121fd34cf964beb2"
+source = "git+https://github.com/Ogeon/palette#05df1d62966b746212a4232102ccf037ea860965"
 dependencies = [
  "find-crate",
  "proc-macro2",
