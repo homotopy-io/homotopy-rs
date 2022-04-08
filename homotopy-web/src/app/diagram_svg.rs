@@ -198,16 +198,15 @@ impl Component for Diagram2D {
 
     fn changed(&mut self, ctx: &Context<Self>) -> bool {
         // self.props contains the old props
-        if &self.props != ctx.props() {
+        if &self.props == ctx.props() {
+            false
+        } else {
             if self.props.diagram != ctx.props().diagram || self.props.style != ctx.props().style {
                 // re-layout
                 self.prepared = PreparedDiagram::new(&ctx.props().diagram, ctx.props().style);
             }
             self.props = ctx.props().clone();
             true
-        } else {
-            // self.props == ctx.props()
-            false
         }
     }
 
