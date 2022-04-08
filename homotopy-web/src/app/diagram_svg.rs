@@ -34,8 +34,7 @@ use crate::{
 };
 
 pub struct Diagram2D {
-    diagram: DiagramN,
-    style: RenderStyle,
+    props: Props2D,
     prepared: PreparedDiagram,
     node_ref: NodeRef,
     drag_start: Option<Point2D<f32>>,
@@ -154,14 +153,12 @@ impl Component for Diagram2D {
     type Properties = Props2D;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let diagram = ctx.props().diagram.clone();
-        let style = ctx.props().style;
-        let prepared = PreparedDiagram::new(&diagram, style);
+        let props = ctx.props().clone();
+        let prepared = PreparedDiagram::new(&props.diagram, props.style);
         let node_ref = NodeRef::default();
         let drag_start = Default::default();
         Self {
-            diagram,
-            style,
+            props,
             prepared,
             node_ref,
             drag_start,
@@ -200,12 +197,16 @@ impl Component for Diagram2D {
     }
 
     fn changed(&mut self, ctx: &Context<Self>) -> bool {
-        if self.diagram != ctx.props().diagram || self.style != ctx.props().style {
-            self.diagram = ctx.props().diagram.clone();
-            self.style = ctx.props().style;
-            self.prepared = PreparedDiagram::new(&ctx.props().diagram, ctx.props().style);
+        // self.props contains the old props
+        if &self.props != ctx.props() {
+            if self.props.diagram != ctx.props().diagram || self.props.style != ctx.props().style {
+                // re-layout
+                self.prepared = PreparedDiagram::new(&ctx.props().diagram, ctx.props().style);
+            }
+            self.props = ctx.props().clone();
             true
         } else {
+            // self.props == ctx.props()
             false
         }
     }
