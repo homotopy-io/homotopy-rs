@@ -87,6 +87,18 @@
         rust = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
       in rec {
         apps = {
+          bench = {
+            type = "app";
+            program = let
+              bench = pkgs.writeShellApplication {
+                name = "bench";
+                runtimeInputs = [rust];
+                text = ''
+                  cargo bench | tee output.txt
+                '';
+              };
+            in "${bench}/bin/bench";
+          };
           lint = {
             type = "app";
             program = let
@@ -101,14 +113,14 @@
               };
             in "${lint}/bin/lint";
           };
-        };
-        defaultApp = {
-          type = "app";
-          program = toString (pkgs.writeShellScript
-          "homotopy-web"
-          ''
-            ${pkgs.devserver}/bin/devserver --path ${defaultPackage} --header Cross-Origin-Opener-Policy=same-origin --header Cross-Origin-Embedder-Policy=require-corp
-          '');
+          default = {
+            type = "app";
+            program = toString (pkgs.writeShellScript
+            "homotopy-web"
+            ''
+              ${pkgs.devserver}/bin/devserver --path ${defaultPackage} --header Cross-Origin-Opener-Policy=same-origin --header Cross-Origin-Embedder-Policy=require-corp
+            '');
+          };
         };
         defaultPackage = let
           rust = pkgs.rust-bin.stable.latest.minimal.override {

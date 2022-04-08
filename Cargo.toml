@@ -14,3 +14,6 @@ lto = true
 [profile.dev]
 lto = "thin"
 opt-level = 3
+
+[workspace.metadata.nix]
+cachix = { name = "homotopy-io", key = "homotopy-io.cachix.org-1:W30ZjMFglzQwLtem4DQXbFqaMqhsee53pGvQPp82kCc=" }
