@@ -1,4 +1,7 @@
-use std::collections::HashMap;
+use std::{
+    collections::{HashMap, HashSet},
+    ops::{Deref, DerefMut},
+};
 
 use homotopy_common::{hash::FastHashMap, idx::IdxVec};
 use itertools::Itertools;
@@ -6,8 +9,8 @@ use petgraph::{graph::NodeIndex, graphmap::DiGraphMap, visit::EdgeRef, EdgeDirec
 
 use crate::{
     common::{DimensionError, SingularHeight},
-    graph::{Explodable, SliceGraph},
-    Boundary, DiagramN, Height, RewriteN, SliceIndex,
+    graph::{Explodable, ExternalRewrite, SliceGraph},
+    Boundary, DiagramN, Direction, Height, RewriteN, SliceIndex,
 };
 
 pub type Layout2D = Layout<2>;
@@ -27,7 +30,7 @@ impl<const N: usize> Layout<N> {
             SliceGraph::singleton(([Boundary::Source.into(); N], [0.0; N]), diagram.clone());
 
         for i in 0..N {
-            let positions = layout(&graph, i, |key| &key.0[..i])?;
+            let positions = layout(&graph, i, |key| &key.0[..i], |key| *key)?;
             graph = graph
                 .explode(
                     |n, key, si| {
@@ -36,8 +39,8 @@ impl<const N: usize> Layout<N> {
                         key.1[i] = positions[n][si];
                         Some(key)
                     },
-                    |_, _, _| Some(()),
-                    |_, _, r| r.is_atomic().then(|| ()),
+                    |_, _, r| Some((i, r.direction())),
+                    |_, key, r| (r != ExternalRewrite::Flange).then(|| *key),
                 )?
                 .output;
         }
@@ -61,7 +64,27 @@ impl<const N: usize> Layout<N> {
 
 pub type Point = (NodeIndex, SingularHeight);
 
-pub type ConstraintSet = DiGraphMap<Point, ()>;
+#[derive(Clone, Debug, Default)]
+pub struct ConstraintSet {
+    graph: DiGraphMap<Point, ()>,
+    ins: HashSet<Point>,
+    outs: HashSet<Point>,
+    orientation: Option<usize>,
+}
+
+impl Deref for ConstraintSet {
+    type Target = DiGraphMap<Point, ()>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.graph
+    }
+}
+
+impl DerefMut for ConstraintSet {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.graph
+    }
+}
 
 fn extrema(cs: &ConstraintSet, dir: EdgeDirection) -> impl Iterator<Item = Point> + '_ {
     cs.nodes()
@@ -69,7 +92,7 @@ fn extrema(cs: &ConstraintSet, dir: EdgeDirection) -> impl Iterator<Item = Point
 }
 
 fn concat(lhs: &ConstraintSet, rhs: &ConstraintSet) -> ConstraintSet {
-    let mut union = ConstraintSet::new();
+    let mut union = ConstraintSet::default();
 
     // Copy of `lhs`.
     for n in lhs.nodes() {
@@ -98,7 +121,7 @@ fn concat(lhs: &ConstraintSet, rhs: &ConstraintSet) -> ConstraintSet {
 }
 
 fn colimit(constraints: &[ConstraintSet]) -> ConstraintSet {
-    let mut colimit = ConstraintSet::new();
+    let mut colimit = ConstraintSet::default();
 
     for constraint in constraints {
         for n in constraint.nodes() {
@@ -112,13 +135,15 @@ fn colimit(constraints: &[ConstraintSet]) -> ConstraintSet {
     colimit
 }
 
-fn layout<V, E, F>(
+fn layout<V, E, F, G>(
     graph: &SliceGraph<V, E>,
     dim: usize,
     coord_map: F,
+    direction_map: G,
 ) -> Result<IdxVec<NodeIndex, Vec<f32>>, DimensionError>
 where
     F: Fn(&V) -> &[SliceIndex],
+    G: Fn(&E) -> (usize, Direction),
 {
     // Sort nodes by stratum.
     let nodes = graph.node_indices().sorted_by_cached_key(|&n| {
@@ -141,6 +166,7 @@ where
         for target_index in 0..diagram.size() {
             // Collect preimages.
             let mut preimages = vec![];
+            let mut directions = vec![];
             for e in graph.edges_directed(n, EdgeDirection::Incoming) {
                 let s = e.source();
                 let rewrite: &RewriteN = (&e.weight().1).try_into()?;
@@ -152,17 +178,32 @@ where
 
                 if let Some(preimage) = preimage {
                     preimages.push(preimage);
+                    directions.push(direction_map(&e.weight().0));
                 }
             }
 
             let constraint = if preimages.is_empty() {
                 // If there are no preimages, we insert a singleton constraint.
-                let mut singleton = ConstraintSet::new();
+                let mut singleton = ConstraintSet::default();
                 singleton.add_node((n, target_index));
                 singleton
             } else {
                 // Otherwise, we take a colimit of the preimages.
-                colimit(&preimages)
+                let mut colimit = colimit(&preimages);
+
+                let j = directions.iter().map(|p| p.0).min().unwrap();
+                colimit.orientation = Some(j);
+
+                for (preimage, &(i, dir)) in std::iter::zip(preimages, &directions) {
+                    if i == j {
+                        match dir {
+                            Direction::Forward => colimit.ins.extend(preimage.nodes()),
+                            Direction::Backward => colimit.outs.extend(preimage.nodes()),
+                        }
+                    }
+                }
+
+                colimit
             };
 
             node_to_constraints[n].push(constraint);
@@ -181,11 +222,7 @@ where
         .collect_vec();
     let colimit = colimit(&maximal_constraints);
 
-    let (width, positions) = if dim <= 1 {
-        solve_2d(&node_to_constraints, &colimit)
-    } else {
-        solve_3d(graph, coord_map, &node_to_constraints, &colimit)
-    };
+    let (width, positions) = solve(dim, &node_to_constraints, &colimit);
 
     // Calculate final layout by taking averages.
     let mut layout = IdxVec::new();
@@ -195,12 +232,12 @@ where
             .map(|cs| {
                 let min = cs
                     .nodes()
-                    .map(|n| positions[&n].0)
+                    .map(|n| positions[&n])
                     .min_by(|x, y| x.partial_cmp(y).unwrap())
                     .unwrap();
                 let max = cs
                     .nodes()
-                    .map(|n| positions[&n].1)
+                    .map(|n| positions[&n])
                     .max_by(|x, y| x.partial_cmp(y).unwrap())
                     .unwrap();
                 (min, max)
@@ -212,10 +249,11 @@ where
     Ok(layout)
 }
 
-fn solve_2d(
+fn solve(
+    dim: usize,
     node_to_constraints: &IdxVec<NodeIndex, Vec<ConstraintSet>>,
     colimit: &ConstraintSet,
-) -> (f32, HashMap<Point, (f32, f32)>) {
+) -> (f32, HashMap<Point, f32>) {
     let mut problem = minilp::Problem::new(minilp::OptimizationDirection::Minimize);
 
     // Variables
@@ -234,23 +272,76 @@ fn solve_2d(
     // Fair averaging constraints (inc. straight wires).
     for css in node_to_constraints.values() {
         for cs in css {
-            let mut paths: Vec<Vec<Point>> = vec![];
-            for min in extrema(cs, EdgeDirection::Incoming) {
-                for max in extrema(cs, EdgeDirection::Outgoing) {
-                    if min == max {
-                        paths.push(vec![min]);
-                    } else if petgraph::algo::has_path_connecting(cs, min, max, None) {
-                        paths.push(vec![min, max]);
-                    }
+            if let Some(orientation) = cs.orientation {
+                let ins = cs
+                    .ins
+                    .iter()
+                    .filter_map(|p| {
+                        let external = cs
+                            .edges_directed(*p, EdgeDirection::Incoming)
+                            .next()
+                            .is_none()
+                            || cs
+                                .edges_directed(*p, EdgeDirection::Outgoing)
+                                .next()
+                                .is_none();
+                        external.then(|| variables[p])
+                    })
+                    .sorted()
+                    .collect_vec();
+
+                let outs = cs
+                    .outs
+                    .iter()
+                    .filter_map(|p| {
+                        let external = cs
+                            .edges_directed(*p, EdgeDirection::Incoming)
+                            .next()
+                            .is_none()
+                            || cs
+                                .edges_directed(*p, EdgeDirection::Outgoing)
+                                .next()
+                                .is_none();
+                        external.then(|| variables[p])
+                    })
+                    .sorted()
+                    .collect_vec();
+
+                if ins.is_empty() || outs.is_empty() {
+                    continue;
                 }
-            }
-            if paths.len() > 1 {
-                let c = problem.add_var(0.0, (0.0, f64::INFINITY));
-                for path in paths {
+
+                let n = ins.len();
+                let m = outs.len();
+
+                if orientation == dim - 1 {
+                    // Strict constraint: avg(ins) = avg(outs)
+                    let c = problem.add_var(0.0, (0.0, f64::INFINITY));
                     problem.add_constraint(
-                        std::iter::once((c, path.len() as f64))
-                            .chain(path.iter().map(|p| (variables[p], -1.0))),
+                        std::iter::once((c, n as f64)).chain(ins.iter().map(|i| (*i, -1.0))),
                         minilp::ComparisonOp::Eq,
+                        0.0,
+                    );
+                    problem.add_constraint(
+                        std::iter::once((c, m as f64)).chain(outs.iter().map(|o| (*o, -1.0))),
+                        minilp::ComparisonOp::Eq,
+                        0.0,
+                    );
+                } else {
+                    // Weak constraints: |avg(ins) - avg(outs)| <= c.
+                    let c = problem.add_var(1.0, (0.0, f64::INFINITY));
+                    problem.add_constraint(
+                        std::iter::once((c, (n * m) as f64))
+                            .chain(ins.iter().map(|i| (*i, m as f64)))
+                            .chain(outs.iter().map(|o| (*o, -(n as f64)))),
+                        minilp::ComparisonOp::Ge,
+                        0.0,
+                    );
+                    problem.add_constraint(
+                        std::iter::once((c, (n * m) as f64))
+                            .chain(ins.iter().map(|i| (*i, -(m as f64))))
+                            .chain(outs.iter().map(|o| (*o, n as f64))),
+                        minilp::ComparisonOp::Ge,
                         0.0,
                     );
                 }
@@ -259,108 +350,18 @@ fn solve_2d(
     }
 
     let solution = problem.solve().unwrap();
-    let positions: HashMap<Point, (f32, f32)> = variables
+    let positions: HashMap<Point, f32> = variables
         .into_iter()
-        .map(|(p, x)| (p, (solution[x] as f32, solution[x] as f32)))
+        .map(|(p, x)| (p, solution[x] as f32))
         .collect();
 
     let width = colimit
         .nodes()
-        .map(|n| positions[&n].0 as f32 + 1.0)
+        .map(|n| positions[&n] as f32 + 1.0)
         .max_by(|x, y| x.partial_cmp(y).unwrap())
         .unwrap_or_default();
 
     (width, positions)
-}
-
-fn solve_3d<V, E, F>(
-    graph: &SliceGraph<V, E>,
-    coord_map: F,
-    node_to_constraints: &IdxVec<NodeIndex, Vec<ConstraintSet>>,
-    colimit: &ConstraintSet,
-) -> (f32, HashMap<Point, (f32, f32)>)
-where
-    F: Fn(&V) -> &[SliceIndex],
-{
-    // For each point in the colimit, calculate its min and max positions.
-    let mut width = 0;
-    let mut min_positions: HashMap<Point, usize> = HashMap::new();
-    let mut max_positions: HashMap<Point, usize> = HashMap::new();
-
-    // Straight wires.
-    let mut left_colimit = colimit.clone();
-    let mut right_colimit = colimit.clone();
-    for n in graph.node_indices() {
-        let coord = coord_map(&graph[n].0);
-        let dim = coord.len();
-        if dim > 0
-            && coord[..dim - 1]
-                .iter()
-                .all(|si| matches!(si, SliceIndex::Interior(Height::Regular(_))))
-            && matches!(coord[dim - 1], SliceIndex::Interior(Height::Singular(_)))
-        {
-            for constraints in &node_to_constraints[n] {
-                for a in extrema(constraints, EdgeDirection::Incoming) {
-                    for b in extrema(constraints, EdgeDirection::Incoming) {
-                        if a != b {
-                            left_colimit.add_edge(a, b, ());
-                        }
-                    }
-                }
-                for a in extrema(constraints, EdgeDirection::Outgoing) {
-                    for b in extrema(constraints, EdgeDirection::Outgoing) {
-                        if a != b {
-                            right_colimit.add_edge(a, b, ());
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // Left alignment
-    for scc in petgraph::algo::kosaraju_scc(&left_colimit).iter().rev() {
-        let pos = scc
-            .iter()
-            .flat_map(|&n| colimit.neighbors_directed(n, EdgeDirection::Incoming))
-            .filter_map(|s| min_positions.get(&s))
-            .max()
-            .map_or(0, |&a| a + 1);
-        for &n in scc {
-            min_positions.insert(n, pos);
-        }
-        width = std::cmp::max(width, pos + 1);
-    }
-
-    // Right alignment
-    for scc in petgraph::algo::kosaraju_scc(&right_colimit) {
-        let pos = scc
-            .iter()
-            .flat_map(|&n| colimit.neighbors_directed(n, EdgeDirection::Outgoing))
-            .filter_map(|t| max_positions.get(&t))
-            .max()
-            .map_or(0, |&a| a + 1);
-        for n in scc {
-            max_positions.insert(n, pos);
-        }
-        width = std::cmp::max(width, pos + 1);
-    }
-
-    (
-        width as f32,
-        colimit
-            .nodes()
-            .map(|n| {
-                (
-                    n,
-                    (
-                        min_positions[&n] as f32,
-                        (width - max_positions[&n] - 1) as f32,
-                    ),
-                )
-            })
-            .collect(),
-    )
 }
 
 // Takes a list of minimum and maximum positions for every singular slice and computes the final positions.
