@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1649492830215,
+  "lastUpdate": 1649494629359,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -30479,6 +30479,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 105.54,
             "range": "+/- 0.760",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5e2eb1bb0a527ddfe617f420e7db378ce9406289",
+          "message": "Bump js-sys from 0.3.56 to 0.3.57 (#446)\n\n* Bump js-sys from 0.3.56 to 0.3.57\r\n\r\nBumps [js-sys](https://github.com/rustwasm/wasm-bindgen) from 0.3.56 to 0.3.57.\r\n- [Release notes](https://github.com/rustwasm/wasm-bindgen/releases)\r\n- [Changelog](https://github.com/rustwasm/wasm-bindgen/blob/main/CHANGELOG.md)\r\n- [Commits](https://github.com/rustwasm/wasm-bindgen/commits)\r\n\r\n---\r\nupdated-dependencies:\r\n- dependency-name: js-sys\r\n  dependency-type: direct:production\r\n  update-type: version-update:semver-patch\r\n...\r\n\r\nSigned-off-by: dependabot[bot] <support@github.com>\r\n\r\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\r\nCo-authored-by: Nick Hu <me@nickhu.co.uk>",
+          "timestamp": "2022-04-09T08:43:53Z",
+          "tree_id": "fe5716be16ad2b3043901b055858a63f4844ca26",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/5e2eb1bb0a527ddfe617f420e7db378ce9406289"
+        },
+        "date": 1649494604203,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 62.354,
+            "range": "+/- 0.167",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 63.42,
+            "range": "+/- 0.027",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 94.661,
+            "range": "+/- 0.284",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 110.6,
+            "range": "+/- 0.040",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 75.844,
+            "range": "+/- 0.024",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 88.475,
+            "range": "+/- 0.041",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 80.303,
+            "range": "+/- 0.032",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 546.59,
+            "range": "+/- 0.240",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.1351,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 6.4937,
+            "range": "+/- 0.002",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 17.203,
+            "range": "+/- 0.008",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 42.138,
+            "range": "+/- 0.013",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 105.65,
+            "range": "+/- 0.220",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 290.44,
+            "range": "+/- 1.010",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 63.244,
+            "range": "+/- 0.021",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 90.166,
+            "range": "+/- 0.030",
             "unit": "us"
           }
         ]
