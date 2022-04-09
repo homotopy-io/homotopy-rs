@@ -8,119 +8,79 @@ on:
       - 'dependabot/**'
   pull_request:
 
+env:
+  CARGO_HUSKY_DONT_INSTALL_HOOKS: true
+  NIX_BUILD: nix build -L --show-trace
+  NIX_BUILD_UNCACHED: nix run nixpkgs#nix-build-uncached -- -build-flags -L
+  FLAKE: 'github:homotopy-io/homotopy-rs?rev=${{ github.sha }}'
+
 jobs:
-  check:
-    name: Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          target: wasm32-unknown-unknown
-          override: true
-
-      - uses: Swatinem/rust-cache@v1
-
-      - name: Run cargo check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --target=wasm32-unknown-unknown
-
   test:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
+      - name: Install Nix
+        uses: cachix/install-nix-action@v17
         with:
-          profile: minimal
-          toolchain: stable
-          target: wasm32-unknown-unknown
-          override: true
-
-      - uses: Swatinem/rust-cache@v1
-
-      - name: Run cargo test
-        uses: actions-rs/cargo@v1
+          extra_nix_config: |
+            max-jobs = 4
+      - name: Setup cachix
+        uses: cachix/cachix-action@v10
         with:
-          command: test
+          name: homotopy-io
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+      - name: Test
+        run: |
+          set -euo pipefail
+          $NIX_BUILD_UNCACHED https://github.com/homotopy-io/homotopy-rs/archive/$GITHUB_SHA.tar.gz -A checks.x86_64-linux.homotopy-common-tests
+          $NIX_BUILD_UNCACHED https://github.com/homotopy-io/homotopy-rs/archive/$GITHUB_SHA.tar.gz -A checks.x86_64-linux.homotopy-core-tests
+          $NIX_BUILD_UNCACHED https://github.com/homotopy-io/homotopy-rs/archive/$GITHUB_SHA.tar.gz -A checks.x86_64-linux.homotopy-graphics-tests
 
   lint:
     name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Install nightly toolchain
-        uses: actions-rs/toolchain@v1
+        uses: actions/checkout@v3
+      - name: Install Nix
+        uses: cachix/install-nix-action@v17
         with:
-          profile: minimal
-          toolchain: nightly
-          target: wasm32-unknown-unknown
-          override: true
-          components: rustfmt, clippy
-
-      - uses: Swatinem/rust-cache@v1
-
-      - name: Check formatting with rustfmt
-        uses: actions-rs/cargo@v1
+          extra_nix_config: |
+            max-jobs = 4
+      - name: Setup cachix
+        uses: cachix/cachix-action@v10
         with:
-          command: fmt
-          args: --all -- --check
-
-      - name: Lint with clippy
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          toolchain: stable # unstable clippy tends to give invalid lints
-          args: -- -D warnings
+          name: homotopy-io
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+      - name: Run lint
+        run: |
+          nix run .#lint
 
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [check, test]
+    needs: [test]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
+      - name: Install Nix
+        uses: cachix/install-nix-action@v17
         with:
-          profile: minimal
-          toolchain: stable
-          target: wasm32-unknown-unknown
-          components: rust-src
-          override: true
-
-      - uses: Swatinem/rust-cache@v1
-
-      - name: Install wasm-pack
-        uses: jetli/wasm-pack-action@v0.3.0
-
-      - name: Install cargo-make
-        uses: davidB/rust-cargo-make@v1
-
+          extra_nix_config: |
+            max-jobs = 4
+      - name: Setup cachix
+        uses: cachix/cachix-action@v10
+        with:
+          name: homotopy-io
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+      # https://github.com/actions/upload-artifact/issues/92#issuecomment-1080347032
       - name: Build
         run: |
-          cd homotopy-web
-          cargo make -p production dist
-
+          $NIX_BUILD $FLAKE
+          echo "UPLOAD_PATH=$(readlink -f result)" >> $GITHUB_ENV
       - name: Archive build artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: web
-          path: homotopy-web/dist/
-
+          path: ${{ env.UPLOAD_PATH }}
 
   deploy:
     name: Deploy
@@ -130,25 +90,21 @@ jobs:
     if: github.ref == 'refs/heads/master'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
-
+        uses: actions/checkout@v3
       - name: Download build artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: web
           path: homotopy-web/dist
-
       - name: Checkout historical benchmarking data
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: gh-pages
           path: olddist
-
       - name: Merge historical benchmarking data
         run: mv olddist/dev homotopy-web/dist/dev
-
       - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@4.0.0
+        uses: JamesIves/github-pages-deploy-action@v4.3.0
         with:
           branch: gh-pages
           folder: homotopy-web/dist
@@ -159,21 +115,20 @@ jobs:
     needs: [build]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
+        uses: actions/checkout@v3
+      - name: Install Nix
+        uses: cachix/install-nix-action@v17
         with:
-          profile: minimal
-          toolchain: stable
-          target: wasm32-unknown-unknown
-          override: true
-
-      - uses: Swatinem/rust-cache@v1
-
+          extra_nix_config: |
+            max-jobs = 4
+      - name: Setup cachix
+        uses: cachix/cachix-action@v10
+        with:
+          name: homotopy-io
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Run cargo bench
-        run: CARGO_HUSKY_DONT_INSTALL_HOOKS=true cargo bench | tee output.txt
-
+        run: |
+          nix run .#bench
       - name: Store benchmark result
         uses: NickHu/github-action-benchmark@v1
         with:
