@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1649457212279,
+  "lastUpdate": 1649492830215,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -30359,6 +30359,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 92.024,
             "range": "+/- 0.027",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5398d36d0813aecbbf8dc536932c02fddb23a2f7",
+          "message": "Bump syn from 1.0.90 to 1.0.91 (#444)\n\n* Bump syn from 1.0.90 to 1.0.91\r\n\r\nBumps [syn](https://github.com/dtolnay/syn) from 1.0.90 to 1.0.91.\r\n- [Release notes](https://github.com/dtolnay/syn/releases)\r\n- [Commits](https://github.com/dtolnay/syn/compare/1.0.90...1.0.91)\r\n\r\n---\r\nupdated-dependencies:\r\n- dependency-name: syn\r\n  dependency-type: direct:production\r\n  update-type: version-update:semver-patch\r\n...\r\n\r\nSigned-off-by: dependabot[bot] <support@github.com>\r\n\r\nCo-authored-by: Nick Hu <me@nickhu.co.uk>\r\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2022-04-09T08:13:17Z",
+          "tree_id": "f512dc09936ca05b317b13deb300c58188f1c7e3",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/5398d36d0813aecbbf8dc536932c02fddb23a2f7"
+        },
+        "date": 1649492816231,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 76.542,
+            "range": "+/- 1.678",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 78.89,
+            "range": "+/- 2.156",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 113.76,
+            "range": "+/- 2.100",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 128.98,
+            "range": "+/- 1.270",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 93.601,
+            "range": "+/- 2.011",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 103.49,
+            "range": "+/- 0.880",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 93.468,
+            "range": "+/- 0.675",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 634.89,
+            "range": "+/- 4.330",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.5028,
+            "range": "+/- 0.016",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 7.6316,
+            "range": "+/- 0.044",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 20.093,
+            "range": "+/- 0.107",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 49.717,
+            "range": "+/- 0.252",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 123.25,
+            "range": "+/- 0.960",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 338.12,
+            "range": "+/- 1.860",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 74.078,
+            "range": "+/- 0.508",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 105.54,
+            "range": "+/- 0.760",
             "unit": "us"
           }
         ]
