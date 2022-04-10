@@ -93,19 +93,19 @@ fn concat(lhs: &ConstraintSet, rhs: &ConstraintSet) -> ConstraintSet {
     // Copy of `lhs`.
     let mut lhs_nodes: IdxVec<NodeIndex, NodeIndex> = IdxVec::default();
     for n in lhs.node_weights() {
-        lhs_nodes.push(union.add_node(n.clone()));
+        lhs_nodes.push(union.add_node(*n));
     }
     for e in lhs.edge_references() {
-        union.add_edge(lhs_nodes[e.source()], lhs_nodes[e.target()], *e.weight());
+        union.add_edge(lhs_nodes[e.source()], lhs_nodes[e.target()], ());
     }
 
     // Copy of `rhs`.
     let mut rhs_nodes: IdxVec<NodeIndex, NodeIndex> = IdxVec::default();
     for n in rhs.node_weights() {
-        rhs_nodes.push(union.add_node(n.clone()));
+        rhs_nodes.push(union.add_node(*n));
     }
     for e in rhs.edge_references() {
-        union.add_edge(rhs_nodes[e.source()], rhs_nodes[e.target()], *e.weight());
+        union.add_edge(rhs_nodes[e.source()], rhs_nodes[e.target()], ());
     }
 
     // Edges from `lhs` to `rhs`.
@@ -131,7 +131,7 @@ fn colimit(constraints: &[ConstraintSet]) -> (ConstraintSet, FastHashMap<Point, 
         for e in constraint.edge_references() {
             let s = constraint[e.source()];
             let t = constraint[e.target()];
-            colimit.add_edge(point_to_node[&s], point_to_node[&t], *e.weight());
+            colimit.add_edge(point_to_node[&s], point_to_node[&t], ());
         }
     }
 
