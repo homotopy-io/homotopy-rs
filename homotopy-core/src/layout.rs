@@ -1,9 +1,9 @@
-use std::{
-    collections::{HashMap, HashSet},
-    ops::{Deref, DerefMut},
-};
+use std::ops::{Deref, DerefMut};
 
-use homotopy_common::{hash::FastHashMap, idx::IdxVec};
+use homotopy_common::{
+    hash::{FastHashMap, FastHashSet},
+    idx::IdxVec,
+};
 use itertools::Itertools;
 use minilp::Variable;
 use petgraph::{graph::NodeIndex, visit::EdgeRef, EdgeDirection, Graph};
@@ -68,8 +68,8 @@ pub type Point = (NodeIndex, SingularHeight);
 #[derive(Clone, Debug, Default)]
 pub struct ConstraintSet {
     graph: Graph<Point, ()>,
-    ins: HashSet<NodeIndex>,
-    outs: HashSet<NodeIndex>,
+    ins: FastHashSet<NodeIndex>,
+    outs: FastHashSet<NodeIndex>,
     orientation: Option<usize>,
 }
 
@@ -118,9 +118,9 @@ fn concat(lhs: &ConstraintSet, rhs: &ConstraintSet) -> ConstraintSet {
     union
 }
 
-fn colimit(constraints: &[ConstraintSet]) -> (ConstraintSet, HashMap<Point, NodeIndex>) {
+fn colimit(constraints: &[ConstraintSet]) -> (ConstraintSet, FastHashMap<Point, NodeIndex>) {
     let mut colimit = ConstraintSet::default();
-    let mut point_to_node = HashMap::<Point, NodeIndex>::new();
+    let mut point_to_node = FastHashMap::<Point, NodeIndex>::default();
 
     for constraint in constraints {
         for p in constraint.node_weights() {
@@ -263,12 +263,12 @@ fn solve(
     dim: usize,
     node_to_constraints: &IdxVec<NodeIndex, Vec<ConstraintSet>>,
     colimit: &Graph<Vec<Point>, ()>,
-) -> (f32, HashMap<Point, f32>) {
+) -> (f32, FastHashMap<Point, f32>) {
     let mut problem = minilp::Problem::new(minilp::OptimizationDirection::Minimize);
 
     // Variables
     let mut variables: IdxVec<NodeIndex, Variable> = IdxVec::default();
-    let mut point_to_variable: HashMap<Point, Variable> = HashMap::default();
+    let mut point_to_variable: FastHashMap<Point, Variable> = FastHashMap::default();
     for ps in colimit.node_weights() {
         let v = problem.add_var(0.0, (0.0, f64::INFINITY));
         variables.push(v);
@@ -365,7 +365,7 @@ fn solve(
     let solution = problem.solve().unwrap();
 
     let mut width = 0.0;
-    let mut positions: HashMap<Point, f32> = HashMap::default();
+    let mut positions: FastHashMap<Point, f32> = FastHashMap::default();
 
     for n in colimit.node_indices() {
         let v = variables[n];
