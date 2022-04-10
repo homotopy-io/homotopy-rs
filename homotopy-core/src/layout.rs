@@ -5,7 +5,7 @@ use std::{
 
 use homotopy_common::{hash::FastHashMap, idx::IdxVec};
 use itertools::Itertools;
-use petgraph::{graph::NodeIndex, graphmap::DiGraphMap, visit::EdgeRef, EdgeDirection};
+use petgraph::{graph::NodeIndex, visit::EdgeRef, EdgeDirection, Graph};
 
 use crate::{
     common::{DimensionError, SingularHeight},
@@ -66,14 +66,14 @@ pub type Point = (NodeIndex, SingularHeight);
 
 #[derive(Clone, Debug, Default)]
 pub struct ConstraintSet {
-    graph: DiGraphMap<Point, ()>,
-    ins: HashSet<Point>,
-    outs: HashSet<Point>,
+    graph: Graph<Point, ()>,
+    ins: HashSet<NodeIndex>,
+    outs: HashSet<NodeIndex>,
     orientation: Option<usize>,
 }
 
 impl Deref for ConstraintSet {
-    type Target = DiGraphMap<Point, ()>;
+    type Target = Graph<Point, ()>;
 
     fn deref(&self) -> &Self::Target {
         &self.graph
@@ -86,53 +86,55 @@ impl DerefMut for ConstraintSet {
     }
 }
 
-fn extrema(cs: &ConstraintSet, dir: EdgeDirection) -> impl Iterator<Item = Point> + '_ {
-    cs.nodes()
-        .filter(move |p| cs.edges_directed(*p, dir).next().is_none())
-}
-
 fn concat(lhs: &ConstraintSet, rhs: &ConstraintSet) -> ConstraintSet {
     let mut union = ConstraintSet::default();
 
     // Copy of `lhs`.
-    for n in lhs.nodes() {
-        union.add_node(n);
+    let mut lhs_nodes: IdxVec<NodeIndex, NodeIndex> = IdxVec::default();
+    for n in lhs.node_weights() {
+        lhs_nodes.push(union.add_node(n.clone()));
     }
-    for (a, b, _) in lhs.all_edges() {
-        union.add_edge(a, b, ());
+    for e in lhs.edge_references() {
+        union.add_edge(lhs_nodes[e.source()], lhs_nodes[e.target()], *e.weight());
     }
 
     // Copy of `rhs`.
-    for n in rhs.nodes() {
-        union.add_node(n);
+    let mut rhs_nodes: IdxVec<NodeIndex, NodeIndex> = IdxVec::default();
+    for n in rhs.node_weights() {
+        rhs_nodes.push(union.add_node(n.clone()));
     }
-    for (a, b, _) in rhs.all_edges() {
-        union.add_edge(a, b, ());
+    for e in rhs.edge_references() {
+        union.add_edge(rhs_nodes[e.source()], rhs_nodes[e.target()], *e.weight());
     }
 
     // Edges from `lhs` to `rhs`.
-    for a in extrema(lhs, EdgeDirection::Outgoing) {
-        for b in extrema(rhs, EdgeDirection::Incoming) {
-            union.add_edge(a, b, ());
+    for a in lhs.externals(EdgeDirection::Outgoing) {
+        for b in rhs.externals(EdgeDirection::Incoming) {
+            union.add_edge(lhs_nodes[a], rhs_nodes[b], ());
         }
     }
 
     union
 }
 
-fn colimit(constraints: &[ConstraintSet]) -> ConstraintSet {
+fn colimit(constraints: &[ConstraintSet]) -> (ConstraintSet, HashMap<Point, NodeIndex>) {
     let mut colimit = ConstraintSet::default();
+    let mut point_to_node = HashMap::<Point, NodeIndex>::new();
 
     for constraint in constraints {
-        for n in constraint.nodes() {
-            colimit.add_node(n);
+        for p in constraint.node_weights() {
+            point_to_node
+                .entry(*p)
+                .or_insert_with(|| colimit.add_node(*p));
         }
-        for (a, b, _) in constraint.all_edges() {
-            colimit.add_edge(a, b, ());
+        for e in constraint.edge_references() {
+            let s = constraint[e.source()];
+            let t = constraint[e.target()];
+            colimit.add_edge(point_to_node[&s], point_to_node[&t], *e.weight());
         }
     }
 
-    colimit
+    (colimit, point_to_node)
 }
 
 fn layout<V, E, F, G>(
@@ -189,7 +191,7 @@ where
                 singleton
             } else {
                 // Otherwise, we take a colimit of the preimages.
-                let mut colimit = colimit(&preimages);
+                let (mut colimit, point_to_node) = colimit(&preimages);
 
                 let j = directions.iter().map(|p| p.0).min().unwrap();
                 colimit.orientation = Some(j);
@@ -197,8 +199,8 @@ where
                 for (preimage, &(i, dir)) in std::iter::zip(preimages, &directions) {
                     if i == j {
                         match dir {
-                            Direction::Forward => colimit.ins.extend(preimage.nodes()),
-                            Direction::Backward => colimit.outs.extend(preimage.nodes()),
+                            Direction::Forward => colimit.ins.extend(preimage.node_weights().map(|p| point_to_node[p])),
+                            Direction::Backward => colimit.outs.extend(preimage.node_weights().map(|p| point_to_node[p])),
                         }
                     }
                 }
@@ -220,7 +222,7 @@ where
                 .reduce(|a, b| concat(&a, &b))
         })
         .collect_vec();
-    let colimit = colimit(&maximal_constraints);
+    let colimit = colimit(&maximal_constraints).0;
 
     let (width, positions) = solve(dim, &node_to_constraints, &colimit);
 
@@ -231,13 +233,13 @@ where
             .iter()
             .map(|cs| {
                 let min = cs
-                    .nodes()
-                    .map(|n| positions[&n])
+                    .node_weights()
+                    .map(|n| positions[n])
                     .min_by(|x, y| x.partial_cmp(y).unwrap())
                     .unwrap();
                 let max = cs
-                    .nodes()
-                    .map(|n| positions[&n])
+                    .node_weights()
+                    .map(|n| positions[n])
                     .max_by(|x, y| x.partial_cmp(y).unwrap())
                     .unwrap();
                 (min, max)
@@ -258,14 +260,14 @@ fn solve(
 
     // Variables
     let mut variables = HashMap::new();
-    for n in colimit.nodes() {
-        variables.insert(n, problem.add_var(0.0, (0.0, f64::INFINITY)));
+    for n in colimit.node_weights() {
+        variables.insert(*n, problem.add_var(0.0, (0.0, f64::INFINITY)));
     }
 
     // Distance constraints.
-    for (a, b, _) in colimit.all_edges() {
-        let x = variables[&a];
-        let y = variables[&b];
+    for e in colimit.edge_references() {
+        let x = variables[&colimit[e.source()]];
+        let y = variables[&colimit[e.target()]];
         problem.add_constraint(&[(x, -1.0), (y, 1.0)], minilp::ComparisonOp::Ge, 1.0);
     }
 
@@ -276,16 +278,16 @@ fn solve(
                 let ins = cs
                     .ins
                     .iter()
-                    .filter_map(|p| {
+                    .filter_map(|n| {
                         let external = cs
-                            .edges_directed(*p, EdgeDirection::Incoming)
+                            .edges_directed(*n, EdgeDirection::Incoming)
                             .next()
                             .is_none()
                             || cs
-                                .edges_directed(*p, EdgeDirection::Outgoing)
+                                .edges_directed(*n, EdgeDirection::Outgoing)
                                 .next()
                                 .is_none();
-                        external.then(|| variables[p])
+                        external.then(|| variables[&cs[*n]])
                     })
                     .sorted()
                     .collect_vec();
@@ -293,16 +295,16 @@ fn solve(
                 let outs = cs
                     .outs
                     .iter()
-                    .filter_map(|p| {
+                    .filter_map(|n| {
                         let external = cs
-                            .edges_directed(*p, EdgeDirection::Incoming)
+                            .edges_directed(*n, EdgeDirection::Incoming)
                             .next()
                             .is_none()
                             || cs
-                                .edges_directed(*p, EdgeDirection::Outgoing)
+                                .edges_directed(*n, EdgeDirection::Outgoing)
                                 .next()
                                 .is_none();
-                        external.then(|| variables[p])
+                        external.then(|| variables[&cs[*n]])
                     })
                     .sorted()
                     .collect_vec();
@@ -356,8 +358,8 @@ fn solve(
         .collect();
 
     let width = colimit
-        .nodes()
-        .map(|n| positions[&n] as f32 + 1.0)
+        .node_weights()
+        .map(|n| positions[n] as f32 + 1.0)
         .max_by(|x, y| x.partial_cmp(y).unwrap())
         .unwrap_or_default();
 
