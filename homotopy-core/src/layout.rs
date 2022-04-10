@@ -5,6 +5,7 @@ use std::{
 
 use homotopy_common::{hash::FastHashMap, idx::IdxVec};
 use itertools::Itertools;
+use minilp::Variable;
 use petgraph::{graph::NodeIndex, visit::EdgeRef, EdgeDirection, Graph};
 
 use crate::{
@@ -199,8 +200,12 @@ where
                 for (preimage, &(i, dir)) in std::iter::zip(preimages, &directions) {
                     if i == j {
                         match dir {
-                            Direction::Forward => colimit.ins.extend(preimage.node_weights().map(|p| point_to_node[p])),
-                            Direction::Backward => colimit.outs.extend(preimage.node_weights().map(|p| point_to_node[p])),
+                            Direction::Forward => colimit
+                                .ins
+                                .extend(preimage.node_weights().map(|p| point_to_node[p])),
+                            Direction::Backward => colimit
+                                .outs
+                                .extend(preimage.node_weights().map(|p| point_to_node[p])),
                         }
                     }
                 }
@@ -224,7 +229,10 @@ where
         .collect_vec();
     let colimit = colimit(&maximal_constraints).0;
 
-    let (width, positions) = solve(dim, &node_to_constraints, &colimit);
+    // Condense the colimit.
+    let condensed_colimit = petgraph::algo::condensation(colimit.graph, true);
+
+    let (width, positions) = solve(dim, &node_to_constraints, &condensed_colimit);
 
     // Calculate final layout by taking averages.
     let mut layout = IdxVec::new();
@@ -254,20 +262,23 @@ where
 fn solve(
     dim: usize,
     node_to_constraints: &IdxVec<NodeIndex, Vec<ConstraintSet>>,
-    colimit: &ConstraintSet,
+    colimit: &Graph<Vec<Point>, ()>,
 ) -> (f32, HashMap<Point, f32>) {
     let mut problem = minilp::Problem::new(minilp::OptimizationDirection::Minimize);
 
     // Variables
-    let mut variables = HashMap::new();
-    for n in colimit.node_weights() {
-        variables.insert(*n, problem.add_var(0.0, (0.0, f64::INFINITY)));
+    let mut variables: IdxVec<NodeIndex, Variable> = IdxVec::default();
+    let mut point_to_variable: HashMap<Point, Variable> = HashMap::default();
+    for ps in colimit.node_weights() {
+        let v = problem.add_var(0.0, (0.0, f64::INFINITY));
+        variables.push(v);
+        point_to_variable.extend(ps.iter().copied().zip(std::iter::repeat(v)));
     }
 
     // Distance constraints.
     for e in colimit.edge_references() {
-        let x = variables[&colimit[e.source()]];
-        let y = variables[&colimit[e.target()]];
+        let x = variables[e.source()];
+        let y = variables[e.target()];
         problem.add_constraint(&[(x, -1.0), (y, 1.0)], minilp::ComparisonOp::Ge, 1.0);
     }
 
@@ -287,7 +298,7 @@ fn solve(
                                 .edges_directed(*n, EdgeDirection::Outgoing)
                                 .next()
                                 .is_none();
-                        external.then(|| variables[&cs[*n]])
+                        external.then(|| point_to_variable[&cs[*n]])
                     })
                     .sorted()
                     .collect_vec();
@@ -304,7 +315,7 @@ fn solve(
                                 .edges_directed(*n, EdgeDirection::Outgoing)
                                 .next()
                                 .is_none();
-                        external.then(|| variables[&cs[*n]])
+                        external.then(|| point_to_variable[&cs[*n]])
                     })
                     .sorted()
                     .collect_vec();
@@ -352,16 +363,20 @@ fn solve(
     }
 
     let solution = problem.solve().unwrap();
-    let positions: HashMap<Point, f32> = variables
-        .into_iter()
-        .map(|(p, x)| (p, solution[x] as f32))
-        .collect();
 
-    let width = colimit
-        .node_weights()
-        .map(|n| positions[n] as f32 + 1.0)
-        .max_by(|x, y| x.partial_cmp(y).unwrap())
-        .unwrap_or_default();
+    let mut width = 0.0;
+    let mut positions: HashMap<Point, f32> = HashMap::default();
+
+    for n in colimit.node_indices() {
+        let v = variables[n];
+        let position = solution[v] as f32;
+
+        for p in &colimit[n] {
+            positions.insert(*p, position);
+        }
+
+        width = std::cmp::max_by(width, position + 1.0, |x, y| x.partial_cmp(y).unwrap());
+    }
 
     (width, positions)
 }
