@@ -343,6 +343,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "fast-srgb8"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd2e7510819d6fbf51a5545c8f922716ecfb14df168a3242f7d33e0239efe6a1"
+
+[[package]]
 name = "fastrand"
 version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -981,9 +987,10 @@ checksum = "0ab1bc2a289d34bd04a330323ac98a1b4bc82c9d9fcb1e66b63caa84da26b575"
 [[package]]
 name = "palette"
 version = "0.6.0"
-source = "git+https://github.com/Ogeon/palette#05df1d62966b746212a4232102ccf037ea860965"
+source = "git+https://github.com/Ogeon/palette#03a31f159bd062d2305d7ce3966318b70101a8ea"
 dependencies = [
  "approx",
+ "fast-srgb8",
  "palette_derive",
  "phf",
  "serde",
@@ -992,7 +999,7 @@ dependencies = [
 [[package]]
 name = "palette_derive"
 version = "0.6.0"
-source = "git+https://github.com/Ogeon/palette#05df1d62966b746212a4232102ccf037ea860965"
+source = "git+https://github.com/Ogeon/palette#03a31f159bd062d2305d7ce3966318b70101a8ea"
 dependencies = [
  "find-crate",
  "proc-macro2",
