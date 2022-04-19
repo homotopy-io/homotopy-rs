@@ -12,7 +12,7 @@ use yew::prelude::*;
 use crate::{
     app::{
         diagram_gl::GlDiagram,
-        diagram_svg::{Diagram0D, Diagram1D, Diagram2D, Highlight2D, HighlightKind},
+        diagram_svg::{Diagram0D, Diagram1D, Diagram2D, Highlight1D, Highlight2D, HighlightKind},
     },
     components::panzoom::PanZoomComponent,
     model::proof::{homotopy::Homotopy, Action, Signature, Workspace},
@@ -110,6 +110,9 @@ impl WorkspaceView {
                 }
             }
             Diagram::DiagramN(diagram) if diagram.dimension() == 1 => {
+                let highlight =
+                    highlight_attachment_1d(&ctx.props().workspace, &ctx.props().signature)
+                        .or_else(|| highlight_slice_1d(&ctx.props().workspace));
                 html! {
                     <PanZoomComponent
                         on_scroll={ctx.props().dispatch.reform(Action::SwitchSlice)}
@@ -117,6 +120,7 @@ impl WorkspaceView {
                         <Diagram1D
                             diagram={diagram}
                             on_select={self.on_select.clone()}
+                            highlight={highlight}
                             ref={self.diagram_ref.clone()}
                         />
                     </PanZoomComponent>
@@ -132,8 +136,8 @@ impl WorkspaceView {
                 },
                 _ => {
                     let highlight =
-                        highlight_attachment(&ctx.props().workspace, &ctx.props().signature)
-                            .or_else(|| highlight_slice(&ctx.props().workspace));
+                        highlight_attachment_2d(&ctx.props().workspace, &ctx.props().signature)
+                            .or_else(|| highlight_slice_2d(&ctx.props().workspace));
 
                     html! {
                         <PanZoomComponent
@@ -155,7 +159,60 @@ impl WorkspaceView {
     }
 }
 
-fn highlight_attachment(workspace: &Workspace, signature: &Signature) -> Option<Highlight2D> {
+// TODO: highlighting needs better documentation and maybe a refactor
+
+fn highlight_attachment_1d(workspace: &Workspace, signature: &Signature) -> Option<Highlight1D> {
+    use Height::Regular;
+
+    let attach_option = workspace.attachment_highlight.as_ref()?;
+    let needle: DiagramN = signature
+        .generator_info(attach_option.generator)?
+        .diagram
+        .clone()
+        .try_into()
+        .unwrap();
+
+    let boundary_path = attach_option.boundary_path;
+    let embedding = &attach_option.embedding;
+
+    match boundary_path {
+        Some(bp) if bp.depth() == workspace.path.len() => Some(Highlight1D {
+            from: bp.boundary().into(),
+            to: bp.boundary().into(),
+            kind: HighlightKind::Attach,
+        }),
+        Some(bp) if bp.depth() > workspace.path.len() => Some(Highlight1D {
+            from: Boundary::Source.into(),
+            to: Boundary::Target.into(),
+            kind: HighlightKind::Attach,
+        }),
+        Some(bp) if bp.boundary() == Boundary::Source => {
+            let embedding = embedding.skip(workspace.path.len() - bp.depth() - 1);
+            Some(Highlight1D {
+                from: Regular(embedding[0]).into(),
+                to: Regular(embedding[0]).into(),
+                kind: HighlightKind::Attach,
+            })
+        }
+        _ => {
+            // Note: An empty boundary path implies that `needle` is one dimension
+            // higher than the currently displayed diagram. Since this function
+            // computes highlights for 1d diagrams, the `needle` diagram is at
+            // least two-dimensional.
+            let depth = boundary_path.map_or(0, |bp| bp.depth() + 1);
+            let embedding = embedding.skip(workspace.path.len() - depth);
+            let needle_s: DiagramN = needle.source().try_into().unwrap();
+
+            Some(Highlight1D {
+                from: Regular(embedding[0]).into(),
+                to: Regular(embedding[0] + needle_s.size()).into(),
+                kind: HighlightKind::Attach,
+            })
+        }
+    }
+}
+
+fn highlight_attachment_2d(workspace: &Workspace, signature: &Signature) -> Option<Highlight2D> {
     use Height::Regular;
 
     let attach_option = workspace.attachment_highlight.as_ref()?;
@@ -221,7 +278,15 @@ fn highlight_attachment(workspace: &Workspace, signature: &Signature) -> Option<
     }
 }
 
-fn highlight_slice(workspace: &Workspace) -> Option<Highlight2D> {
+fn highlight_slice_1d(workspace: &Workspace) -> Option<Highlight1D> {
+    workspace.slice_highlight.map(|slice| Highlight1D {
+        from: slice,
+        to: slice,
+        kind: HighlightKind::Slice,
+    })
+}
+
+fn highlight_slice_2d(workspace: &Workspace) -> Option<Highlight2D> {
     let slice = workspace.slice_highlight.as_ref()?;
 
     Some(Highlight2D {

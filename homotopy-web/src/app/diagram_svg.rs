@@ -484,6 +484,15 @@ pub struct Props1D {
     pub style: RenderStyle,
     #[prop_or_default]
     pub on_select: Callback<Vec<Vec<SliceIndex>>>,
+    #[prop_or_default]
+    pub highlight: Option<Highlight1D>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Highlight1D {
+    pub from: SliceIndex,
+    pub to: SliceIndex,
+    pub kind: HighlightKind,
 }
 
 pub enum Message1D {}
@@ -558,6 +567,7 @@ impl Component for Diagram1D {
             >
                 {wires.into_iter().collect::<Html>()}
                 {points.into_iter().collect::<Html>()}
+                {Self::view_highlight(ctx)}
             </svg>
         }
     }
@@ -639,6 +649,37 @@ impl Diagram1D {
                 class={class}
                 onclick={onclick}
             />
+        }
+    }
+
+    fn view_highlight(ctx: &Context<Self>) -> Html {
+        let highlight = if let Some(highlight) = ctx.props().highlight {
+            highlight
+        } else {
+            return Default::default();
+        };
+
+        let padding = match highlight.kind {
+            HighlightKind::Attach => ctx.props().style.scale * 0.25,
+            HighlightKind::Slice => ctx.props().style.scale * 0.5,
+        };
+
+        let from = Self::to_y(ctx, highlight.from) + padding;
+        let to = Self::to_y(ctx, highlight.to) - padding;
+
+        let path = format!(
+            "M {left} {from} V {to} H {right} V {from} Z",
+            left = 0.25 * padding,
+            right = Self::dimensions(ctx).width - 0.25 * padding,
+        );
+
+        let class = match highlight.kind {
+            HighlightKind::Attach => "diagram-svg__attach-highlight",
+            HighlightKind::Slice => "diagram-svg__slice-highlight",
+        };
+
+        html! {
+            <path d={path} class={class}/>
         }
     }
 }
