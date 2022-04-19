@@ -59,7 +59,6 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [test]
     steps:
       - name: Install Nix
         uses: cachix/install-nix-action@v17
@@ -86,7 +85,7 @@ jobs:
     name: Deploy
     concurrency: deploy
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [build, test]
     if: github.ref == 'refs/heads/master'
     steps:
       - name: Checkout repository
@@ -112,7 +111,7 @@ jobs:
   benchmark:
     name: Benchmark
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [build, test]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3

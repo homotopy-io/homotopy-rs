@@ -63,14 +63,14 @@ impl SignatureStylesheet {
                 style,
                 ".{name} {{ fill: {color}; stroke: {color}; }}",
                 name = Self::name(&self.prefix, info.generator, "surface"),
-                color = Color((info.color.into_format().into_linear().lighten(0.1)).into())
+                color = Color((info.color.into_linear().lighten(0.1)).into())
             )
             .unwrap();
             writeln!(
                 style,
                 ".{name} {{ stroke: {color}; }}",
                 name = Self::name(&self.prefix, info.generator, "wire"),
-                color = Color((info.color.into_format().into_linear().lighten(0.05)).into())
+                color = Color((info.color.into_linear().lighten(0.05)).into())
             )
             .unwrap();
             writeln!(
