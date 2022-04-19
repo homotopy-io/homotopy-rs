@@ -140,28 +140,29 @@ impl History {
     }
 
     pub fn add(&mut self, action: super::proof::Action, proof: Proof) {
-        // check if this action has been performed at this state previously
-        let existing = self.with_proof_internal(|n| {
-            n.children().find(|id| {
-                self.snapshots
-                    .with(*id, |n| n.action.as_ref() == Some(&action))
-            })
-        });
-
-        if let Some(child) = existing {
-            // update timestamp and ensure the action was deterministic
-            self.snapshots.with_mut(child, |n| {
-                assert_eq!(proof.proof, n.proof);
-                n.touch();
+        if action.relevant() {
+            // check if this action has been performed at this state previously
+            let existing = self.with_proof_internal(|n| {
+                n.children().find(|id| {
+                    self.snapshots
+                        .with(*id, |n| n.action.as_ref() == Some(&action))
+                })
             });
-            self.current = child;
-        } else if action.relevant() {
-            // fresh action
-            let child = self.snapshots.push_onto(
-                self.current,
-                Snapshot::new(Some(action), proof.into_inner().proof),
-            );
-            self.current = child;
+            if let Some(child) = existing {
+                // update timestamp and ensure the action was deterministic
+                self.snapshots.with_mut(child, |n| {
+                    assert_eq!(proof.proof, n.proof);
+                    n.touch();
+                });
+                self.current = child;
+            } else {
+                // fresh action
+                let child = self.snapshots.push_onto(
+                    self.current,
+                    Snapshot::new(Some(action), proof.into_inner().proof),
+                );
+                self.current = child;
+            }
             self.overlay = None;
         } else {
             self.overlay = Some(proof.into_inner().proof);
