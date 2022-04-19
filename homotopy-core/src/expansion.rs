@@ -69,7 +69,8 @@ impl DiagramN {
                 },
             };
 
-            typecheck_cospan(slice, cospan.clone(), boundary_path.boundary(), signature)?;
+            // TODO
+            // typecheck_cospan(slice, cospan.clone(), boundary_path.boundary(), signature)?;
 
             Ok(vec![cospan])
         })
@@ -152,14 +153,12 @@ fn expand_base_singular(
     }
 
     let cospan = &diagram.cospans()[h0];
+    let forward: &RewriteN = (&cospan.forward).try_into().unwrap();
+    let backward: &RewriteN = (&cospan.backward).try_into().unwrap();
 
     match direction {
         Direction::Forward => {
-            let expansion = expand_cospan(
-                h1,
-                &cospan.forward.clone().try_into().unwrap(),
-                &cospan.backward.clone().try_into().unwrap(),
-            )?;
+            let expansion = expand_cospan(h1, forward, backward)?;
 
             let cone = Cone::new(
                 h0,
@@ -174,21 +173,21 @@ fn expand_base_singular(
                     },
                 ],
                 cospan.clone(),
-                todo!(),
                 vec![
-                    expansion.slices[0].clone().into(),
-                    expansion.slices[1].clone().into(),
+                    forward.slice(h1),
+                    expansion.regular_slice.into(),
+                    backward.slice(h1),
+                ],
+                vec![
+                    expansion.singular_slices[0].clone().into(),
+                    expansion.singular_slices[1].clone().into(),
                 ],
             );
 
             Ok(RewriteN::new(diagram.dimension(), vec![cone]).into())
         }
         Direction::Backward => {
-            let expansion = expand_cospan(
-                h1,
-                &cospan.backward.clone().try_into().unwrap(),
-                &cospan.forward.clone().try_into().unwrap(),
-            )?;
+            let expansion = expand_cospan(h1, backward, forward)?;
 
             let cone = Cone::new(
                 h0,
@@ -203,10 +202,14 @@ fn expand_base_singular(
                     },
                 ],
                 cospan.clone(),
-                todo!(),
                 vec![
-                    expansion.slices[1].clone().into(),
-                    expansion.slices[0].clone().into(),
+                    forward.slice(h1),
+                    expansion.regular_slice.into(),
+                    backward.slice(h1),
+                ],
+                vec![
+                    expansion.singular_slices[1].clone().into(),
+                    expansion.singular_slices[0].clone().into(),
                 ],
             );
 
@@ -215,9 +218,15 @@ fn expand_base_singular(
     }
 }
 
+/// rewrites forms 2 cospans
+/// singular_slices are the singular slices of the expanding rewrite from the expansion to the
+/// original diagram
+/// regular_slice is the middle regular slice of the expanding rewrite from the expansion to the
+/// original diagram (the other two are given by input data)
 struct ExpandedCospan {
     rewrites: [RewriteN; 4],
-    slices: [RewriteN; 2],
+    regular_slice: RewriteN,
+    singular_slices: [RewriteN; 2],
 }
 
 fn expand_cospan(
@@ -225,6 +234,7 @@ fn expand_cospan(
     forward: &RewriteN,
     backward: &RewriteN,
 ) -> Result<ExpandedCospan, ExpansionError> {
+    debug_assert_eq!(forward.dimension(), backward.dimension());
     let forward_targets = forward.targets();
     let backward_targets = backward.targets();
 
@@ -304,7 +314,7 @@ fn expand_cospan(
         Some(index) => RewriteN::new(backward.dimension(), vec![backward.cones()[index].clone()]),
     };
 
-    let new_slice0 = match forward_index {
+    let new_singular_slice0 = match forward_index {
         None => RewriteN::identity(forward.dimension()),
         Some(index) => {
             let mut cone = forward.cones()[index].clone();
@@ -313,7 +323,7 @@ fn expand_cospan(
         }
     };
 
-    let new_slice1 = match backward_index {
+    let new_singular_slice1 = match backward_index {
         None => backward.clone(),
         Some(index) => RewriteN::new(
             backward.dimension(),
@@ -334,9 +344,18 @@ fn expand_cospan(
         ),
     };
 
+    let new_regular_slice = {
+        let mut cones = new_backward0.cones().to_vec();
+        if let Some(index) = backward_index {
+            cones.insert(index, new_forward1.cones()[0].clone());
+        }
+        RewriteN::new(forward.dimension(), cones)
+    };
+
     Ok(ExpandedCospan {
         rewrites: [new_forward0, new_backward0, new_forward1, new_backward1],
-        slices: [new_slice0, new_slice1],
+        regular_slice: new_regular_slice,
+        singular_slices: [new_singular_slice0, new_singular_slice1],
     })
 }
 
