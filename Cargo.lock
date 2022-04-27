@@ -731,7 +731,7 @@ dependencies = [
  "proptest",
  "quickcheck",
  "quickcheck_macros",
- "rmp-serde",
+ "rmp-serde 1.1.0",
  "serde",
  "serde_json",
  "thiserror",
@@ -786,7 +786,7 @@ dependencies = [
  "palette",
  "paste",
  "quote",
- "rmp-serde",
+ "rmp-serde 0.15.5",
  "serde",
  "syn",
  "thiserror",
@@ -1467,12 +1467,13 @@ dependencies = [
 
 [[package]]
 name = "rmp"
-version = "0.8.10"
+version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f55e5fa1446c4d5dd1f5daeed2a4fe193071771a2636274d0d7a3b082aa7ad6"
+checksum = "44519172358fd6d58656c86ab8e7fbc9e1490c3e8f14d35ed78ca0dd07403c9f"
 dependencies = [
  "byteorder",
  "num-traits 0.2.14",
+ "paste",
 ]
 
 [[package]]
@@ -1480,6 +1481,17 @@ name = "rmp-serde"
 version = "0.15.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "723ecff9ad04f4ad92fe1c8ca6c20d2196d9286e9c60727c4cb5511629260e9d"
+dependencies = [
+ "byteorder",
+ "rmp",
+ "serde",
+]
+
+[[package]]
+name = "rmp-serde"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25786b0d276110195fa3d6f3f31299900cf71dfbd6c28450f3f58a0e7f7a347e"
 dependencies = [
  "byteorder",
  "rmp",

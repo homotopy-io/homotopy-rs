@@ -19,7 +19,7 @@ minilp = "0.2.2"
 once_cell = "1.10.0"
 petgraph = "0.6.0"
 serde = { features = ["derive"], version = "1.0.136" }
-rmp-serde = { features = ["serde128"], version = "0.15.5" } # u128 support is new
+rmp-serde = "1.1.0"
 itertools = "0.10.3"
 thiserror = "1.0.30"
 
