@@ -5,14 +5,15 @@ use homotopy_common::hash::FastHashMap;
 use homotopy_core::{
     common::{Generator, Height, SliceIndex},
     complex::Simplex,
-    layout::Layout2D,
+    layout::Layout,
     projection::{Depths, Homotopy, Projection},
 };
 use lyon_path::Path;
 
+use super::geom::project_2d;
 use crate::svg::geom::{Circle, Fill, Point, Shape, Stroke};
 
-type Coordinate = [SliceIndex; 2];
+type Coordinate<const N: usize> = [SliceIndex; N];
 
 /// An action region in the diagram.
 ///
@@ -21,13 +22,13 @@ type Coordinate = [SliceIndex; 2];
 /// also be used for drawing the diagram, surfaces and wires are subdivided into numerous parts
 /// which can slow down drawing or increase the size of generated vector images unneccessarily.
 #[derive(Debug, Clone)]
-pub enum ActionRegion {
-    Surface([Coordinate; 3], Path),
-    Wire([Coordinate; 2], Path),
-    Point([Coordinate; 1], Point),
+pub enum ActionRegion<const N: usize> {
+    Surface([Coordinate<N>; 3], Path),
+    Wire([Coordinate<N>; 2], Path),
+    Point([Coordinate<N>; 1], Point),
 }
 
-impl ActionRegion {
+impl<const N: usize> ActionRegion<N> {
     /// Apply an affine coordinate transformation to the region.
     #[must_use]
     pub fn transformed(&self, transform: &Transform2D<f32>) -> Self {
@@ -41,12 +42,16 @@ impl ActionRegion {
 
     /// Construct action regions from the simplicial complex of a diagram.
     ///
-    /// THe regions have to be tested for hits in the order they are returned to
-    /// ahieve the correct result since they may overlap.
+    /// The regions have to be tested for hits in the order they are returned to
+    /// achieve the correct result since they may overlap.
     ///
     /// This function can panic or produce undefined results if the simplicial complex and the
     /// layout have not come from the same diagram.
-    pub fn build(complex: &[Simplex], layout: &Layout2D, projection: &Projection) -> Vec<Self> {
+    pub fn build(
+        complex: &[Simplex<N>],
+        layout: &Layout<N>,
+        projection: &Projection<N>,
+    ) -> Vec<Self> {
         let mut region_surfaces = Vec::new();
         let mut region_wires = Vec::new();
         let mut region_points = Vec::new();
@@ -62,7 +67,7 @@ impl ActionRegion {
                     region_wires.push(Self::Wire(*ps, path));
                 }
                 Simplex::Point([p]) => {
-                    let center = layout.get(*p).into();
+                    let center = project_2d(layout.get(*p)).into();
                     region_points.push(Self::Point([*p], center));
                 }
             }
@@ -83,8 +88,8 @@ impl ActionRegion {
     }
 }
 
-impl From<&ActionRegion> for Simplex {
-    fn from(ar: &ActionRegion) -> Self {
+impl<const N: usize> From<&ActionRegion<N>> for Simplex<N> {
+    fn from(ar: &ActionRegion<N>) -> Self {
         match ar {
             ActionRegion::Surface(ps, _) => Self::Surface(*ps),
             ActionRegion::Wire(ps, _) => Self::Wire(*ps),
@@ -99,7 +104,7 @@ impl From<&ActionRegion> for Simplex {
 /// reasons. This gives produces vastly fewer path elements or draw instructions, but does not
 /// distinguish between regions in the diagram that map to different actions when interacted with.
 #[derive(Debug, Clone)]
-pub enum GraphicElement {
+pub enum GraphicElement<const N: usize> {
     /// A surface given by a closed path to be filled.
     Surface(Generator, Path),
     /// A wire given by a path to be stroked.
@@ -108,7 +113,7 @@ pub enum GraphicElement {
     Point(Generator, Point),
 }
 
-impl GraphicElement {
+impl<const N: usize> GraphicElement<N> {
     /// Apply an affine coordinate transformation to the element.
     #[must_use]
     pub fn transformed(&self, transform: &Transform2D<f32>) -> Self {
@@ -142,16 +147,16 @@ impl GraphicElement {
     /// This function can panic or produce undefined results if the simplicial complex, the layout
     /// and the projected generators have not come from the same diagram.
     pub fn build(
-        complex: &[Simplex],
-        layout: &Layout2D,
-        projection: &Projection,
-        depths: &Depths,
+        complex: &[Simplex<N>],
+        layout: &Layout<N>,
+        projection: &Projection<N>,
+        depths: &Depths<N>,
     ) -> Vec<Self> {
         let mut wire_elements = Vec::new();
         let mut surface_elements = Vec::new();
         let mut point_elements = Vec::new();
 
-        let mut grouped_surfaces = FastHashMap::<Generator, Vec<[Coordinate; 3]>>::default();
+        let mut grouped_surfaces = FastHashMap::<Generator, Vec<[Coordinate<N>; 3]>>::default();
 
         for simplex in complex {
             match simplex {
@@ -183,7 +188,8 @@ impl GraphicElement {
                 Simplex::Point([p]) => {
                     let generator = projection.generator(*p);
                     if matches!(projection.homotopy(*p), None | Some(Homotopy::Complex)) {
-                        point_elements.push(Self::Point(generator, layout.get(*p).into()));
+                        point_elements
+                            .push(Self::Point(generator, project_2d(layout.get(*p)).into()));
                     }
                 }
             }
@@ -210,7 +216,7 @@ impl GraphicElement {
     }
 }
 
-fn orient_surface(surface: &[Coordinate; 3]) -> [Coordinate; 3] {
+fn orient_surface<const N: usize>(surface: &[Coordinate<N>; 3]) -> [Coordinate<N>; 3] {
     fn ordering_to_int(ordering: Ordering) -> isize {
         match ordering {
             Ordering::Less => (-1),
@@ -318,25 +324,25 @@ where
     paths
 }
 
-fn build_path(
-    points: &[Coordinate],
+fn build_path<const N: usize>(
+    points: &[Coordinate<N>],
     closed: bool,
-    layout: &Layout2D,
-    projection: &Projection,
+    layout: &Layout<N>,
+    projection: &Projection<N>,
 ) -> Path {
     let mut builder = Path::svg_builder();
     make_path(points, closed, layout, projection, &mut builder);
     builder.build()
 }
 
-fn make_path(
-    points: &[Coordinate],
+fn make_path<const N: usize>(
+    points: &[Coordinate<N>],
     closed: bool,
-    layout: &Layout2D,
-    projection: &Projection,
+    layout: &Layout<N>,
+    projection: &Projection<N>,
     builder: &mut lyon_path::builder::WithSvg<lyon_path::path::Builder>,
 ) {
-    let start = layout.get(points[0]).into();
+    let start = project_2d(layout.get(points[0])).into();
     builder.move_to(start);
 
     for i in 1..points.len() {
@@ -354,11 +360,11 @@ fn make_path(
     }
 }
 
-fn make_path_segment(
-    start: Coordinate,
-    end: Coordinate,
-    layout: &Layout2D,
-    projection: &Projection,
+fn make_path_segment<const N: usize>(
+    start: Coordinate<N>,
+    end: Coordinate<N>,
+    layout: &Layout<N>,
+    projection: &Projection<N>,
     builder: &mut lyon_path::builder::WithSvg<lyon_path::path::Builder>,
 ) {
     use self::{
@@ -366,11 +372,14 @@ fn make_path_segment(
         SliceIndex::Interior,
     };
 
-    let layout_start: Point = layout.get(start).into();
-    let layout_end: Point = layout.get(end).into();
+    let layout_start: Point = project_2d(layout.get(start)).into();
+    let layout_end: Point = project_2d(layout.get(end)).into();
 
-    match (start, end) {
-        ([Interior(Regular(_)), _], [Interior(Singular(_)), Interior(Singular(_))]) => {
+    match ((start.get(0), start.get(1)), (end.get(0), end.get(1))) {
+        (
+            (Some(Interior(Regular(_))), _),
+            (Some(Interior(Singular(_))), Some(Interior(Singular(_)))),
+        ) => {
             match projection.homotopy(end) {
                 // Vertical tangent
                 Some(Homotopy::HalfBraid) => builder.cubic_bezier_to(
@@ -386,7 +395,10 @@ fn make_path_segment(
                 ),
             }
         }
-        ([Interior(Singular(_)), Interior(Singular(_))], [Interior(Regular(_)), _]) => {
+        (
+            (Some(Interior(Singular(_))), Some(Interior(Singular(_)))),
+            (Some(Interior(Regular(_))), _),
+        ) => {
             match projection.homotopy(start) {
                 // Vertical tangent
                 Some(Homotopy::HalfBraid) => builder.cubic_bezier_to(

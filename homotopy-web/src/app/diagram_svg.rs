@@ -11,14 +11,14 @@ use homotopy_core::{
     common::Direction,
     complex::{make_complex, Simplex},
     contraction::Bias,
-    layout::Layout2D,
+    layout::Layout,
     projection::{Depths, Projection},
     rewrite::RewriteN,
     Boundary, DiagramN, Generator, Height, SliceIndex,
 };
 use homotopy_graphics::svg::{
     geom,
-    geom::{path_to_svg, Point},
+    geom::{path_to_svg, project_2d, Point},
     render::{ActionRegion, GraphicElement},
 };
 use web_sys::Element;
@@ -33,15 +33,15 @@ use crate::{
     },
 };
 
-pub struct Diagram2D {
-    props: Props2D,
-    prepared: PreparedDiagram,
+pub struct DiagramSvg<const N: usize> {
+    props: PropsSvg<N>,
+    prepared: PreparedDiagram<N>,
     node_ref: NodeRef,
     drag_start: Option<Point2D<f32>>,
 }
 
 #[derive(Clone, PartialEq, Properties)]
-pub struct Props2D {
+pub struct PropsSvg<const N: usize> {
     pub diagram: DiagramN,
     pub id: String,
     #[prop_or_default]
@@ -51,7 +51,7 @@ pub struct Props2D {
     #[prop_or_default]
     pub on_homotopy: Callback<Homotopy>,
     #[prop_or_default]
-    pub highlight: Option<Highlight2D>,
+    pub highlight: Option<HighlightSvg<N>>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -61,9 +61,9 @@ pub enum HighlightKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Highlight2D {
-    pub from: [SliceIndex; 2],
-    pub to: [SliceIndex; 2],
+pub struct HighlightSvg<const N: usize> {
+    pub from: [SliceIndex; N],
+    pub to: [SliceIndex; N],
     pub kind: HighlightKind,
 }
 
@@ -71,7 +71,7 @@ pub struct Highlight2D {
 // TODO: Highlights in props
 
 #[allow(clippy::enum_variant_names)]
-pub enum Message2D {
+pub enum MessageSvg {
     OnMouseDown(Point2D<f32>),
     OnMouseMove(Point2D<f32>),
     OnMouseUp,
@@ -81,11 +81,11 @@ pub enum Message2D {
 
 /// The computed properties of a diagram that are potentially expensive to compute but can be
 /// cached if the diagram does not change.
-struct PreparedDiagram {
-    graphic: Vec<GraphicElement>,
-    actions: Vec<(Simplex, geom::Shape)>,
-    depths: Depths,
-    layout: Layout2D,
+struct PreparedDiagram<const N: usize> {
+    graphic: Vec<GraphicElement<N>>,
+    actions: Vec<(Simplex<N>, geom::Shape)>,
+    depths: Depths<N>,
+    layout: Layout<N>,
 
     /// The width and height of the diagram image in pixels.
     ///
@@ -99,24 +99,24 @@ struct PreparedDiagram {
     transform: Transform2D<f32>,
 }
 
-impl PreparedDiagram {
+impl<const N: usize> PreparedDiagram<N> {
     fn new(diagram: &DiagramN, style: RenderStyle) -> Self {
-        assert!(diagram.dimension() >= 2);
+        assert!(diagram.dimension() >= N);
 
         let time_start = web_sys::window().unwrap().performance().unwrap().now();
 
-        let layout = Layout2D::new(diagram).unwrap();
+        let layout = Layout::new(diagram).unwrap();
         let complex = make_complex(diagram);
         let depths = Depths::new(diagram).unwrap();
         let projection = Projection::new(diagram, &layout, &depths).unwrap();
         let graphic = GraphicElement::build(&complex, &layout, &projection, &depths);
         let actions = ActionRegion::build(&complex, &layout, &projection);
 
-        let dimensions =
-            Point::from(layout.get([Boundary::Target.into(), Boundary::Target.into()]))
-                .to_vector()
-                .to_size()
-                * style.scale;
+        let dimensions = Point::from(project_2d(layout.get([Boundary::Target.into(); N])))
+            .max((1.0, 0.0).into())
+            .to_vector()
+            .to_size()
+            * style.scale;
 
         let transform = Transform2D::scale(style.scale, -style.scale)
             .then_translate((0.0, dimensions.height).into());
@@ -148,9 +148,9 @@ impl PreparedDiagram {
     }
 }
 
-impl Component for Diagram2D {
-    type Message = Message2D;
-    type Properties = Props2D;
+impl<const N: usize> Component for DiagramSvg<N> {
+    type Message = MessageSvg;
+    type Properties = PropsSvg<N>;
 
     fn create(ctx: &Context<Self>) -> Self {
         let props = ctx.props().clone();
@@ -167,19 +167,19 @@ impl Component for Diagram2D {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Message2D::OnMouseDown(point) => {
+            MessageSvg::OnMouseDown(point) => {
                 self.drag_start = Some(point);
                 false
             }
-            Message2D::OnMouseMove(point) => {
+            MessageSvg::OnMouseMove(point) => {
                 self.pointer_move(ctx, point);
                 false
             }
-            Message2D::OnMouseUp => {
+            MessageSvg::OnMouseUp => {
                 self.pointer_stop(ctx);
                 false
             }
-            Message2D::OnTouchUpdate(touches) => {
+            MessageSvg::OnTouchUpdate(touches) => {
                 if self.drag_start.is_none() && touches.len() == 1 {
                     self.drag_start = Some(touches[0].1);
                 } else if touches.is_empty() {
@@ -187,7 +187,7 @@ impl Component for Diagram2D {
                 }
                 false
             }
-            Message2D::OnTouchMove(touches) => {
+            MessageSvg::OnTouchMove(touches) => {
                 if touches.len() == 1 {
                     self.pointer_move(ctx, touches[0].1);
                 }
@@ -219,7 +219,7 @@ impl Component for Diagram2D {
                 if !e.alt_key() {
                     let x = e.client_x() as f32;
                     let y = e.client_y() as f32;
-                    link.send_message(Message2D::OnMouseDown((x, y).into()));
+                    link.send_message(MessageSvg::OnMouseDown((x, y).into()));
                 }
             })
         };
@@ -230,7 +230,7 @@ impl Component for Diagram2D {
                 if !e.alt_key() {
                     let x = e.client_x() as f32;
                     let y = e.client_y() as f32;
-                    link.send_message(Message2D::OnMouseMove((x, y).into()));
+                    link.send_message(MessageSvg::OnMouseMove((x, y).into()));
                 }
             })
         };
@@ -238,7 +238,7 @@ impl Component for Diagram2D {
         let on_mouse_up = {
             let link = ctx.link().clone();
             Callback::from(move |_e: MouseEvent| {
-                link.send_message(Message2D::OnMouseUp);
+                link.send_message(MessageSvg::OnMouseUp);
             })
         };
 
@@ -248,7 +248,7 @@ impl Component for Diagram2D {
                 let touches = read_touch_list_abs(&e.touches())
                     .map(|(finger, point)| (finger, point.cast()))
                     .collect();
-                link.send_message(Message2D::OnTouchMove(touches));
+                link.send_message(MessageSvg::OnTouchMove(touches));
             })
         };
 
@@ -258,7 +258,7 @@ impl Component for Diagram2D {
                 let touches = read_touch_list_abs(&e.touches())
                     .map(|(finger, point)| (finger, point.cast()))
                     .collect();
-                link.send_message(Message2D::OnTouchUpdate(touches));
+                link.send_message(MessageSvg::OnTouchUpdate(touches));
             })
         };
 
@@ -288,7 +288,7 @@ impl Component for Diagram2D {
     }
 }
 
-impl Diagram2D {
+impl<const N: usize> DiagramSvg<N> {
     /// Transform coordinates on the screen (such as those in `MouseEvent`s) to coordinates in the
     /// SVG image. This incorporates translation and zoom of the diagram component.
     fn transform_screen_to_image(&self) -> Transform2D<f32> {
@@ -308,7 +308,7 @@ impl Diagram2D {
     }
 
     /// Creates the SVG elements for the diagram.
-    fn view_element(&self, ctx: &Context<Self>, index: usize, element: &GraphicElement) -> Html {
+    fn view_element(&self, ctx: &Context<Self>, index: usize, element: &GraphicElement<N>) -> Html {
         let generator = element.generator();
 
         match element {
@@ -399,9 +399,13 @@ impl Diagram2D {
 
         let path = format!(
             "M {from_x} {from_y} L {from_x} {to_y} L {to_x} {to_y} L {to_x} {from_y} Z",
-            from_x = from.x,
+            from_x = if N == 1 { 0.0 } else { from.x },
             from_y = from.y,
-            to_x = to.x,
+            to_x = if N == 1 {
+                ctx.props().style.scale
+            } else {
+                to.x
+            },
             to_y = to.y
         );
 
@@ -415,12 +419,12 @@ impl Diagram2D {
         }
     }
 
-    fn position(&self, point: [SliceIndex; 2]) -> Point2D<f32> {
-        let point = self.prepared.layout.get(point).into();
+    fn position(&self, point: [SliceIndex; N]) -> Point2D<f32> {
+        let point = project_2d(self.prepared.layout.get(point)).into();
         self.prepared.transform.transform_point(point)
     }
 
-    fn simplex_at(&self, point: Point2D<f32>) -> Option<Simplex> {
+    fn simplex_at(&self, point: Point2D<f32>) -> Option<Simplex<N>> {
         let point = self.transform_screen_to_image().transform_point(point);
         self.prepared
             .actions
@@ -473,213 +477,6 @@ impl Diagram2D {
                     .on_select
                     .emit(simplex.into_iter().map(|p| p.to_vec()).collect());
             }
-        }
-    }
-}
-
-#[derive(Clone, PartialEq, Properties)]
-pub struct Props1D {
-    pub diagram: DiagramN,
-    #[prop_or_default]
-    pub style: RenderStyle,
-    #[prop_or_default]
-    pub on_select: Callback<Vec<Vec<SliceIndex>>>,
-    #[prop_or_default]
-    pub highlight: Option<Highlight1D>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Highlight1D {
-    pub from: SliceIndex,
-    pub to: SliceIndex,
-    pub kind: HighlightKind,
-}
-
-pub enum Message1D {}
-
-pub struct Diagram1D;
-
-impl Component for Diagram1D {
-    type Message = Message1D;
-    type Properties = Props1D;
-
-    fn create(_ctx: &Context<Self>) -> Self {
-        Self
-    }
-
-    fn update(&mut self, _ctx: &Context<Self>, _msg: Self::Message) -> bool {
-        false
-    }
-
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        let size = Self::dimensions(ctx);
-        let generators: Vec<_> = ctx
-            .props()
-            .diagram
-            .slices()
-            .map(|slice| slice.max_generator())
-            .collect();
-
-        let mut points = Vec::new();
-        let mut wires = Vec::new();
-
-        for height in 0..ctx.props().diagram.size() {
-            wires.push(Self::view_wire(
-                ctx,
-                generators[usize::from(Height::Regular(height))],
-                Height::Regular(height).into(),
-                Height::Singular(height).into(),
-            ));
-
-            wires.push(Self::view_wire(
-                ctx,
-                generators[usize::from(Height::Regular(height + 1))],
-                Height::Regular(height + 1).into(),
-                Height::Singular(height).into(),
-            ));
-
-            points.push(Self::view_point(
-                ctx,
-                generators[usize::from(Height::Singular(height))],
-                Height::Singular(height).into(),
-            ));
-        }
-
-        wires.push(Self::view_wire(
-            ctx,
-            generators[0],
-            Height::Regular(0).into(),
-            Boundary::Source.into(),
-        ));
-
-        wires.push(Self::view_wire(
-            ctx,
-            *generators.last().unwrap(),
-            Height::Regular(ctx.props().diagram.size()).into(),
-            Boundary::Target.into(),
-        ));
-
-        html! {
-            <svg
-                xmlns={"http://www.w3.org/2000/svg"}
-                 width={size.width.to_string()}
-                 height={size.height.to_string()}
-            >
-                {wires.into_iter().collect::<Html>()}
-                {points.into_iter().collect::<Html>()}
-                {Self::view_highlight(ctx)}
-            </svg>
-        }
-    }
-}
-
-impl Diagram1D {
-    fn dimensions(ctx: &Context<Self>) -> Size2D<f32> {
-        let style = &ctx.props().style;
-        let width = f32::max(style.point_radius, style.wire_thickness) * 2.0;
-        let height = (ctx.props().diagram.size() as f32 + 1.0) * 2.0 * style.scale;
-        Size2D::new(width, height)
-    }
-
-    fn to_y(ctx: &Context<Self>, index: SliceIndex) -> f32 {
-        use self::{
-            Boundary::{Source, Target},
-            SliceIndex::{Boundary, Interior},
-        };
-
-        let scale = ctx.props().style.scale;
-        let size = Self::dimensions(ctx);
-
-        match index {
-            Boundary(Source) => size.height,
-            Boundary(Target) => 0.0,
-            Interior(height) => size.height - (usize::from(height) as f32 + 1.0) * scale,
-        }
-    }
-
-    fn view_wire(
-        ctx: &Context<Self>,
-        generator: Generator,
-        from: SliceIndex,
-        to: SliceIndex,
-    ) -> Html {
-        let path = format!(
-            "M {x} {from} L {x} {to}",
-            from = Self::to_y(ctx, from),
-            to = Self::to_y(ctx, to),
-            x = Self::dimensions(ctx).width * 0.5
-        );
-        let class = SignatureStylesheet::name("generator", generator, "wire");
-        let style = &ctx.props().style;
-
-        let onselect = ctx.props().on_select.clone();
-        let onclick = Callback::from(move |e: MouseEvent| {
-            if !e.ctrl_key() {
-                onselect.emit(vec![vec![from], vec![to]]);
-            }
-        });
-
-        html! {
-            <path
-                d={path}
-                class={class}
-                stroke-width={style.wire_thickness.to_string()}
-                fill="none"
-                onclick={onclick}
-            />
-        }
-    }
-
-    fn view_point(ctx: &Context<Self>, generator: Generator, point: SliceIndex) -> Html {
-        let class = SignatureStylesheet::name("generator", generator, "point");
-        let style = &ctx.props().style;
-
-        let onselect = ctx.props().on_select.clone();
-        let onclick = Callback::from(move |e: MouseEvent| {
-            if !e.ctrl_key() {
-                onselect.emit(vec![vec![point]]);
-            }
-        });
-
-        html! {
-            <circle
-                cx={(Self::dimensions(ctx).width * 0.5).to_string()}
-                cy={Self::to_y(ctx, point).to_string()}
-                r={style.point_radius.to_string()}
-                class={class}
-                onclick={onclick}
-            />
-        }
-    }
-
-    fn view_highlight(ctx: &Context<Self>) -> Html {
-        let highlight = if let Some(highlight) = ctx.props().highlight {
-            highlight
-        } else {
-            return Default::default();
-        };
-
-        let padding = match highlight.kind {
-            HighlightKind::Attach => ctx.props().style.scale * 0.25,
-            HighlightKind::Slice => ctx.props().style.scale * 0.5,
-        };
-
-        let from = Self::to_y(ctx, highlight.from) + padding;
-        let to = Self::to_y(ctx, highlight.to) - padding;
-
-        let path = format!(
-            "M {left} {from} V {to} H {right} V {from} Z",
-            left = 0.25 * padding,
-            right = Self::dimensions(ctx).width - 0.25 * padding,
-        );
-
-        let class = match highlight.kind {
-            HighlightKind::Attach => "diagram-svg__attach-highlight",
-            HighlightKind::Slice => "diagram-svg__slice-highlight",
-        };
-
-        html! {
-            <path d={path} class={class}/>
         }
     }
 }
@@ -746,11 +543,11 @@ impl Diagram0D {
     }
 }
 
-fn drag_to_homotopy(
+fn drag_to_homotopy<const N: usize>(
     angle: Angle<f32>,
-    simplex: &Simplex,
+    simplex: &Simplex<N>,
     diagram: DiagramN,
-    depths: &Depths,
+    depths: &Depths<N>,
 ) -> Option<Homotopy> {
     use Height::{Regular, Singular};
     use SliceIndex::{Boundary, Interior};
@@ -760,92 +557,130 @@ fn drag_to_homotopy(
 
     let (point, boundary) = match simplex {
         Simplex::Surface([p0, _, _]) => (p0, false),
-        Simplex::Wire([_, p1 @ [Boundary(_), _]]) => (p1, true),
+        Simplex::Wire([_, p1]) if matches!(p1[0], Boundary(_)) => (p1, true),
         Simplex::Wire([p0, _]) => (p0, false),
         Simplex::Point([p0]) => (p0, false),
     };
 
-    // Handle horizontal and vertical drags
-    let (prefix, y, x, diagram) = if horizontal || boundary {
-        let depth = match point[1] {
-            Interior(Singular(_)) => Height::Singular(depths.node_depth(*point)?),
-            _ => return None,
-        };
+    match N {
+        1 => {
+            // Always contraction
 
-        let diagram: DiagramN = diagram.slice(point[0])?.try_into().ok()?;
-        (Some(point[0]), point[1], depth.into(), diagram)
-    } else {
-        (None, point[0], point[1], diagram)
-    };
+            let y = match point[0] {
+                Interior(y) => y,
+                Boundary(_) => return None,
+            };
 
-    // TODO: Are there valid homotopies on boundary coordinates?
-    let y = match y {
-        Interior(y) => y,
-        Boundary(_) => return None,
-    };
+            let height = match y {
+                Regular(_) => unreachable!(),
+                Singular(height) => height,
+            };
 
-    let x = match x {
-        Interior(y) => y,
-        Boundary(_) => return None,
-    };
-
-    // Decide if the drag is an expansion or a contraction
-    let expansion = match y {
-        Regular(_) => true,
-        Singular(height) => {
-            let cospan = &diagram.cospans()[height];
-            let forward: &RewriteN = (&cospan.forward).try_into().unwrap();
-            let backward: &RewriteN = (&cospan.backward).try_into().unwrap();
-
-            // TODO: This should probably be a method on Cospan.
-            let mut targets: Vec<_> = forward.targets();
-            targets.extend(backward.targets());
-            targets.sort_unstable();
-            targets.dedup();
-            targets.len() > 1
+            Some(Homotopy::Contract(Contract {
+                bias: None,
+                location: Default::default(),
+                height,
+                direction: if angle.radians <= 0.0 {
+                    Direction::Forward
+                } else {
+                    Direction::Backward
+                },
+            }))
         }
-    };
+        2 => {
+            // Handle horizontal and vertical drags
+            log::debug!("Point: {:?}", point);
+            let (prefix, y, x, diagram) = if horizontal || boundary {
+                let depth = match point[1] {
+                    Interior(Singular(_)) =>
+                    /* TODO: cancellation moves by invertibility */
+                    {
+                        Height::Singular(depths.node_depth(*point).unwrap_or_default())
+                    }
+                    _ => return None,
+                };
 
-    let direction = if horizontal || boundary {
-        if (-0.5 * PI..0.5 * PI).contains(&angle.radians) {
-            Direction::Forward
-        } else {
-            Direction::Backward
+                let diagram: DiagramN = diagram.slice(point[0])?.try_into().ok()?;
+                (Some(point[0]), point[1], depth.into(), diagram)
+            } else {
+                (None, point[0], point[1], diagram)
+            };
+
+            // TODO: Are there valid homotopies on boundary coordinates?
+            let y = match y {
+                Interior(y) => y,
+                Boundary(_) => return None,
+            };
+
+            let x = match x {
+                Interior(y) => y,
+                Boundary(_) => return None,
+            };
+
+            // Decide if the drag is an expansion or a contraction
+            let expansion = match y {
+                Regular(_) => true,
+                Singular(height) => {
+                    if diagram.dimension() == 1 {
+                        false
+                    } else {
+                        let cospan = &diagram.cospans()[height];
+                        let forward: &RewriteN = (&cospan.forward).try_into().unwrap();
+                        let backward: &RewriteN = (&cospan.backward).try_into().unwrap();
+
+                        // TODO: This should probably be a method on Cospan.
+                        let mut targets: Vec<_> = forward.targets();
+                        targets.extend(backward.targets());
+                        targets.sort_unstable();
+                        targets.dedup();
+                        targets.len() > 1
+                    }
+                }
+            };
+
+            let direction = if horizontal || boundary {
+                if (-0.5 * PI..0.5 * PI).contains(&angle.radians) {
+                    Direction::Forward
+                } else {
+                    Direction::Backward
+                }
+            } else if angle.radians <= 0.0 {
+                Direction::Forward
+            } else {
+                Direction::Backward
+            };
+
+            if expansion {
+                let mut location: Vec<_> = prefix.into_iter().collect();
+                location.push(y.into());
+                location.push(x.into());
+
+                Some(Homotopy::Expand(Expand {
+                    location,
+                    direction,
+                }))
+            } else {
+                let bias = if horizontal || boundary || abs_radians >= PI / 2.0 {
+                    Bias::Lower
+                } else {
+                    Bias::Higher
+                };
+
+                let bias = Some(bias);
+
+                let height = match y {
+                    Regular(_) => unreachable!(),
+                    Singular(height) => height,
+                };
+
+                Some(Homotopy::Contract(Contract {
+                    bias,
+                    location: prefix.into_iter().collect(),
+                    height,
+                    direction,
+                }))
+            }
         }
-    } else if angle.radians <= 0.0 {
-        Direction::Forward
-    } else {
-        Direction::Backward
-    };
-
-    if expansion {
-        let mut location: Vec<_> = prefix.into_iter().collect();
-        location.push(y.into());
-        location.push(x.into());
-
-        Some(Homotopy::Expand(Expand {
-            location,
-            direction,
-        }))
-    } else {
-        let bias = if horizontal || boundary || abs_radians >= PI / 2.0 {
-            Bias::Lower
-        } else {
-            Bias::Higher
-        };
-
-        let bias = Some(bias);
-
-        let height = match y {
-            Regular(_) => unreachable!(),
-            Singular(height) => height,
-        };
-
-        Some(Homotopy::Contract(Contract {
-            bias,
-            location: prefix.into_iter().collect(),
-            height,
-            direction,
-        }))
+        _ => unreachable!(),
     }
 }

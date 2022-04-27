@@ -40,8 +40,6 @@ impl Index<usize> for CubeInternal {
     }
 }
 
-pub type Mesh2D = Mesh<2>;
-
 #[derive(Clone, Debug)]
 pub struct Mesh<const N: usize> {
     graph: SliceGraph<[SliceIndex; N], bool>,

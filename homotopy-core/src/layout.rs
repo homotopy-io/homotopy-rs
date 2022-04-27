@@ -14,8 +14,6 @@ use crate::{
     Boundary, DiagramN, Direction, Height, RewriteN, SliceIndex,
 };
 
-pub type Layout2D = Layout<2>;
-
 #[derive(Clone, Debug)]
 pub struct Layout<const N: usize> {
     pub positions: FastHashMap<[SliceIndex; N], [f32; N]>,
@@ -324,19 +322,19 @@ fn solve(
                     continue;
                 }
 
-                let n = ins.len();
-                let m = outs.len();
+                let n: f64 = u32::try_from(ins.len()).unwrap().into();
+                let m: f64 = u32::try_from(outs.len()).unwrap().into();
 
                 if orientation == dim - 1 {
                     // Strict constraint: avg(ins) = avg(outs)
                     let c = problem.add_var(0.0, (0.0, f64::INFINITY));
                     problem.add_constraint(
-                        std::iter::once((c, n as f64)).chain(ins.iter().map(|i| (*i, -1.0))),
+                        std::iter::once((c, n)).chain(ins.iter().map(|i| (*i, -1.0))),
                         minilp::ComparisonOp::Eq,
                         0.0,
                     );
                     problem.add_constraint(
-                        std::iter::once((c, m as f64)).chain(outs.iter().map(|o| (*o, -1.0))),
+                        std::iter::once((c, m)).chain(outs.iter().map(|o| (*o, -1.0))),
                         minilp::ComparisonOp::Eq,
                         0.0,
                     );
@@ -344,16 +342,16 @@ fn solve(
                     // Weak constraints: |avg(ins) - avg(outs)| <= c.
                     let c = problem.add_var(1.0, (0.0, f64::INFINITY));
                     problem.add_constraint(
-                        std::iter::once((c, (n * m) as f64))
-                            .chain(ins.iter().map(|i| (*i, m as f64)))
-                            .chain(outs.iter().map(|o| (*o, -(n as f64)))),
+                        std::iter::once((c, (n * m)))
+                            .chain(ins.iter().map(|i| (*i, m)))
+                            .chain(outs.iter().map(|o| (*o, -n))),
                         minilp::ComparisonOp::Ge,
                         0.0,
                     );
                     problem.add_constraint(
-                        std::iter::once((c, (n * m) as f64))
-                            .chain(ins.iter().map(|i| (*i, -(m as f64))))
-                            .chain(outs.iter().map(|o| (*o, n as f64))),
+                        std::iter::once((c, (n * m)))
+                            .chain(ins.iter().map(|i| (*i, -m)))
+                            .chain(outs.iter().map(|o| (*o, n))),
                         minilp::ComparisonOp::Ge,
                         0.0,
                     );

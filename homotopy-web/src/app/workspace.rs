@@ -12,7 +12,7 @@ use yew::prelude::*;
 use crate::{
     app::{
         diagram_gl::GlDiagram,
-        diagram_svg::{Diagram0D, Diagram1D, Diagram2D, Highlight1D, Highlight2D, HighlightKind},
+        diagram_svg::{Diagram0D, DiagramSvg, HighlightKind, HighlightSvg},
     },
     components::panzoom::PanZoomComponent,
     model::proof::{homotopy::Homotopy, Action, Signature, Workspace},
@@ -111,15 +111,17 @@ impl WorkspaceView {
             }
             Diagram::DiagramN(diagram) if diagram.dimension() == 1 => {
                 let highlight =
-                    highlight_attachment_1d(&ctx.props().workspace, &ctx.props().signature)
-                        .or_else(|| highlight_slice_1d(&ctx.props().workspace));
+                    highlight_attachment::<1>(&ctx.props().workspace, &ctx.props().signature)
+                        .or_else(|| highlight_slice::<1>(&ctx.props().workspace));
                 html! {
                     <PanZoomComponent
                         on_scroll={ctx.props().dispatch.reform(Action::SwitchSlice)}
                     >
-                        <Diagram1D
+                        <DiagramSvg<1>
                             diagram={diagram}
+                            id="workspace__diagram"
                             on_select={self.on_select.clone()}
+                            on_homotopy={self.on_homotopy.clone()}
                             highlight={highlight}
                             ref={self.diagram_ref.clone()}
                         />
@@ -136,14 +138,14 @@ impl WorkspaceView {
                 },
                 _ => {
                     let highlight =
-                        highlight_attachment_2d(&ctx.props().workspace, &ctx.props().signature)
-                            .or_else(|| highlight_slice_2d(&ctx.props().workspace));
+                        highlight_attachment::<2>(&ctx.props().workspace, &ctx.props().signature)
+                            .or_else(|| highlight_slice::<2>(&ctx.props().workspace));
 
                     html! {
                         <PanZoomComponent
                             on_scroll={ctx.props().dispatch.reform(Action::SwitchSlice)}
                         >
-                            <Diagram2D
+                            <DiagramSvg<2>
                                 diagram={diagram}
                                 id="workspace__diagram"
                                 on_select={self.on_select.clone()}
@@ -161,59 +163,21 @@ impl WorkspaceView {
 
 // TODO: highlighting needs better documentation and maybe a refactor
 
-fn highlight_attachment_1d(workspace: &Workspace, signature: &Signature) -> Option<Highlight1D> {
+fn highlight_attachment<const N: usize>(
+    workspace: &Workspace,
+    signature: &Signature,
+) -> Option<HighlightSvg<N>> {
     use Height::Regular;
 
-    let attach_option = workspace.attachment_highlight.as_ref()?;
-    let needle: DiagramN = signature
-        .generator_info(attach_option.generator)?
-        .diagram
-        .clone()
-        .try_into()
-        .unwrap();
-
-    let boundary_path = attach_option.boundary_path;
-    let embedding = &attach_option.embedding;
-
-    match boundary_path {
-        Some(bp) if bp.depth() == workspace.path.len() => Some(Highlight1D {
-            from: bp.boundary().into(),
-            to: bp.boundary().into(),
-            kind: HighlightKind::Attach,
-        }),
-        Some(bp) if bp.depth() > workspace.path.len() => Some(Highlight1D {
-            from: Boundary::Source.into(),
-            to: Boundary::Target.into(),
-            kind: HighlightKind::Attach,
-        }),
-        Some(bp) if bp.boundary() == Boundary::Source => {
-            let embedding = embedding.skip(workspace.path.len() - bp.depth() - 1);
-            Some(Highlight1D {
-                from: Regular(embedding[0]).into(),
-                to: Regular(embedding[0]).into(),
-                kind: HighlightKind::Attach,
-            })
+    fn extend<const N: usize>(slices: [SliceIndex; 2]) -> [SliceIndex; N] {
+        let mut extension = [SliceIndex::Interior(Regular(0)); N];
+        for (i, &slice) in slices.iter().enumerate() {
+            if let Some(x) = extension.get_mut(i) {
+                *x = slice;
+            }
         }
-        _ => {
-            // Note: An empty boundary path implies that `needle` is one dimension
-            // higher than the currently displayed diagram. Since this function
-            // computes highlights for 1d diagrams, the `needle` diagram is at
-            // least two-dimensional.
-            let depth = boundary_path.map_or(0, |bp| bp.depth() + 1);
-            let embedding = embedding.skip(workspace.path.len() - depth);
-            let needle_s: DiagramN = needle.source().try_into().unwrap();
-
-            Some(Highlight1D {
-                from: Regular(embedding[0]).into(),
-                to: Regular(embedding[0] + needle_s.size()).into(),
-                kind: HighlightKind::Attach,
-            })
-        }
+        extension
     }
-}
-
-fn highlight_attachment_2d(workspace: &Workspace, signature: &Signature) -> Option<Highlight2D> {
-    use Height::Regular;
 
     let attach_option = workspace.attachment_highlight.as_ref()?;
     let needle: DiagramN = signature
@@ -228,70 +192,78 @@ fn highlight_attachment_2d(workspace: &Workspace, signature: &Signature) -> Opti
 
     match boundary_path {
         Some(bp) if bp.depth() == workspace.path.len() => {
-            let slice: DiagramN = needle
-                .slice(bp.boundary().flip())
-                .unwrap()
-                .try_into()
-                .unwrap();
-            let size = slice.size();
-            Some(Highlight2D {
-                from: [bp.boundary().into(), Regular(embedding[0]).into()],
-                to: [bp.boundary().into(), Regular(embedding[0] + size).into()],
+            let slice: Result<DiagramN, _> = needle.slice(bp.boundary().flip()).unwrap().try_into();
+            let size = slice.map(|slice| slice.size()).unwrap_or_default();
+            Some(HighlightSvg {
+                from: extend([
+                    bp.boundary().into(),
+                    Regular(embedding.get(0).copied().unwrap_or_default()).into(),
+                ]),
+                to: extend([
+                    bp.boundary().into(),
+                    Regular(embedding.get(0).copied().unwrap_or_default() + size).into(),
+                ]),
                 kind: HighlightKind::Attach,
             })
         }
-        Some(bp) if bp.depth() > workspace.path.len() => Some(Highlight2D {
-            from: [Boundary::Source.into(), bp.boundary().into()],
-            to: [Boundary::Target.into(), bp.boundary().into()],
+        Some(bp) if bp.depth() > workspace.path.len() => Some(HighlightSvg {
+            from: extend([Boundary::Source.into(), bp.boundary().into()]),
+            to: extend([Boundary::Target.into(), bp.boundary().into()]),
             kind: HighlightKind::Attach,
         }),
         Some(bp) if bp.boundary() == Boundary::Source => {
             let embedding = embedding.skip(workspace.path.len() - bp.depth() - 1);
-            Some(Highlight2D {
-                from: [Regular(embedding[0]).into(), Regular(embedding[1]).into()],
-                to: [
-                    Regular(embedding[0]).into(),
-                    Regular(embedding[1] + 1).into(),
-                ],
+            Some(HighlightSvg {
+                from: extend([
+                    Regular(embedding.get(0).copied().unwrap_or_default()).into(),
+                    Regular(embedding.get(1).copied().unwrap_or_default()).into(),
+                ]),
+                to: extend([
+                    Regular(embedding.get(0).copied().unwrap_or_default()).into(),
+                    Regular(embedding.get(1).copied().unwrap_or_default() + 1).into(),
+                ]),
                 kind: HighlightKind::Attach,
             })
         }
         _ => {
-            // Note: An empty boundary path implies that `needle` is one dimension
-            // higher than the currently displayed diagram. Since this function
-            // computes highlights for 2d diagrams, the `needle` diagram is at
-            // least three-dimensional.
+            // Note: An empty boundary path implies that `needle` is one dimension higher than the
+            // currently displayed diagram. Since this function computes highlights for at least 1D
+            // diagrams, the `needle` diagram is at least two-dimensional. When it computes a
+            // highlight for a 2D diagram, `needle` is at least three-dimensional.
             let depth = boundary_path.map_or(0, |bp| bp.depth() + 1);
             let embedding = embedding.skip(workspace.path.len() - depth);
             let needle_s: DiagramN = needle.source().try_into().unwrap();
-            let needle_st: DiagramN = needle_s.target().try_into().unwrap();
+            let needle_st_size: usize = needle_s
+                .target()
+                .try_into()
+                .map(|d: DiagramN| d.size())
+                .unwrap_or_default();
 
-            Some(Highlight2D {
-                from: [Regular(embedding[0]).into(), Regular(embedding[1]).into()],
-                to: [
-                    Regular(embedding[0] + needle_s.size()).into(),
-                    Regular(embedding[1] + needle_st.size()).into(),
-                ],
+            Some(HighlightSvg {
+                from: extend([
+                    Regular(embedding.get(0).copied().unwrap_or_default()).into(),
+                    Regular(embedding.get(1).copied().unwrap_or_default()).into(),
+                ]),
+                to: extend([
+                    Regular(embedding.get(0).copied().unwrap_or_default() + needle_s.size()).into(),
+                    Regular(embedding.get(1).copied().unwrap_or_default() + needle_st_size).into(),
+                ]),
                 kind: HighlightKind::Attach,
             })
         }
     }
 }
 
-fn highlight_slice_1d(workspace: &Workspace) -> Option<Highlight1D> {
-    workspace.slice_highlight.map(|slice| Highlight1D {
-        from: slice,
-        to: slice,
-        kind: HighlightKind::Slice,
-    })
-}
-
-fn highlight_slice_2d(workspace: &Workspace) -> Option<Highlight2D> {
+fn highlight_slice<const N: usize>(workspace: &Workspace) -> Option<HighlightSvg<N>> {
     let slice = workspace.slice_highlight.as_ref()?;
+    let mut from = [Boundary::Source.into(); N];
+    from[0] = *slice;
+    let mut to = [Boundary::Target.into(); N];
+    to[0] = *slice;
 
-    Some(Highlight2D {
-        from: [*slice, Boundary::Source.into()],
-        to: [*slice, Boundary::Target.into()],
+    Some(HighlightSvg {
+        from,
+        to,
         kind: HighlightKind::Slice,
     })
 }

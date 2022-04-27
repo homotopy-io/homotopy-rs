@@ -5,7 +5,7 @@
 //! In order to avoid potentially costly recomputations and accidental quadratic complexity when a
 //! diagram is traversed again for every point, the analyses are performed for the entire diagram
 //! at once and the results are cached for efficient random-access retrieval.
-use std::{cmp::Ordering, collections::HashMap};
+use std::cmp::Ordering;
 
 use homotopy_common::{
     hash::{FastHashMap, FastHasher},
@@ -21,11 +21,11 @@ use crate::{
     common::{DimensionError, Generator, SliceIndex},
     diagram::DiagramN,
     graph::{Explodable, SliceGraph},
-    layout::Layout2D,
+    layout::Layout,
     Direction, Height, Rewrite,
 };
 
-type Coordinate = [SliceIndex; 2];
+type Coordinate<const N: usize> = [SliceIndex; N];
 
 #[derive(Copy, Clone, Debug)]
 pub enum Homotopy {
@@ -38,39 +38,48 @@ pub enum Homotopy {
 /// Diagram analysis that determines the generator displayed at any point in the 2-dimensional
 /// projection of a diagram, as well as information about homotopies.
 #[derive(Clone, Debug)]
-pub struct Projection {
+pub struct Projection<const N: usize> {
     generators: IdxVec<NodeIndex, Generator>,
     homotopies: IdxVec<NodeIndex, Option<Homotopy>>,
-    coord_to_node: FastHashMap<Coordinate, NodeIndex>,
+    coord_to_node: FastHashMap<Coordinate<N>, NodeIndex>,
 }
 
-impl Projection {
+impl<const N: usize> Projection<N> {
     pub fn new(
         diagram: &DiagramN,
-        layout: &Layout2D,
-        depths: &Depths,
+        layout: &Layout<N>,
+        depths: &Depths<N>,
     ) -> Result<Self, DimensionError> {
         use Height::Singular;
         use SliceIndex::Interior;
 
-        if diagram.dimension() < 2 {
+        if diagram.dimension() < N {
             return Err(DimensionError);
         }
 
         // Construct the exploded graph.
-        let graph: SliceGraph<[SliceIndex; 2], Direction> =
-            SliceGraph::<(), ()>::singleton((), diagram.clone())
-                .explode(
-                    |_, (), si| Some(si),
-                    |_, _, r| Some(r.direction()),
-                    |_, _, _| None,
-                )?
-                .explode(
-                    |_: NodeIndex, key, si| Some([*key, si]),
-                    |_, _, _| None,
-                    |_, key, r| r.is_atomic().then(|| *key),
-                )?
-                .output;
+        let mut graph = SliceGraph::<(), ()>::singleton((), diagram.clone()).explode(
+            |_, (), si| Some(vec![si]),
+            |_, _, r| Some(r.direction()),
+            |_, _, _| None,
+        )?;
+        for _ in 1..N {
+            graph = graph.explode(
+                |_, key, si| {
+                    Some({
+                        let mut v = key.clone();
+                        v.push(si);
+                        v
+                    })
+                },
+                |_, _, _| None,
+                |_, key, r| r.is_atomic().then(|| *key),
+            )?;
+        }
+        let graph: SliceGraph<Coordinate<N>, _> = graph.output.map(
+            |_, (indices, diagram)| (indices.clone().try_into().unwrap(), diagram.clone()),
+            |_, e| e.clone(),
+        );
 
         let mut generators = IdxVec::with_capacity(graph.node_count());
         let mut homotopies = IdxVec::with_capacity(graph.node_count());
@@ -87,7 +96,7 @@ impl Projection {
                 if diagram.dimension().saturating_sub(g.dimension) == 0 {
                     return None;
                 }
-                if !matches!(coord, [Interior(Singular(_)), Interior(Singular(_))]) {
+                if coord.iter().any(|x| !matches!(x, Interior(Singular(_)))) {
                     return None;
                 }
 
@@ -200,38 +209,48 @@ impl Projection {
         })
     }
 
-    pub fn generator(&self, p: Coordinate) -> Generator {
+    pub fn generator(&self, p: Coordinate<N>) -> Generator {
         self.generators[self.coord_to_node[&p]]
     }
 
-    pub fn homotopy(&self, p: Coordinate) -> Option<Homotopy> {
+    pub fn homotopy(&self, p: Coordinate<N>) -> Option<Homotopy> {
         self.homotopies[self.coord_to_node[&p]]
     }
 }
 
 /// Diagram analysis that finds the depth of cells in the 2-dimensional projection of a diagram.
 #[derive(Debug, Clone)]
-pub struct Depths {
-    graph: SliceGraph<[SliceIndex; 2]>,
+pub struct Depths<const N: usize> {
+    graph: SliceGraph<Coordinate<N>>,
     node_depths: IdxVec<NodeIndex, Option<usize>>,
     edge_depths: IdxVec<EdgeIndex, Option<usize>>,
-    coord_to_node: HashMap<[SliceIndex; 2], NodeIndex>,
+    coord_to_node: FastHashMap<Coordinate<N>, NodeIndex>,
 }
 
-impl Depths {
+impl<const N: usize> Depths<N> {
     pub fn new(diagram: &DiagramN) -> Result<Self, DimensionError> {
-        let graph = SliceGraph::<(), ()>::singleton((), diagram.clone())
-            .explode(
-                |_, (), si| Some(si),
+        let mut graph = SliceGraph::<(), ()>::singleton((), diagram.clone()).explode(
+            |_, (), si| Some(vec![si]),
+            |_, _, _| Some(()),
+            |_, _, r| r.is_atomic().then(|| ()),
+        )?;
+        for _ in 1..N {
+            graph = graph.explode(
+                |_, key, si| {
+                    Some({
+                        let mut v = key.clone();
+                        v.push(si);
+                        v
+                    })
+                },
                 |_, _, _| Some(()),
                 |_, _, r| r.is_atomic().then(|| ()),
-            )?
-            .explode(
-                |_: NodeIndex, key, si| Some([*key, si]),
-                |_, _, _| Some(()),
-                |_, _, r| r.is_atomic().then(|| ()),
-            )?
-            .output;
+            )?;
+        }
+        let graph: SliceGraph<Coordinate<N>, _> = graph.output.map(
+            |_, (indices, diagram)| (indices.clone().try_into().unwrap(), diagram.clone()),
+            |_, e| e.clone(),
+        );
 
         let mut node_depths = IdxVec::splat(None, graph.node_count());
         let mut edge_depths = IdxVec::splat(None, graph.edge_count());
@@ -264,12 +283,12 @@ impl Depths {
         })
     }
 
-    pub fn node_depth(&self, coord: [SliceIndex; 2]) -> Option<usize> {
+    pub fn node_depth(&self, coord: Coordinate<N>) -> Option<usize> {
         let &n = self.coord_to_node.get(&coord)?;
         self.node_depths[n]
     }
 
-    pub fn edge_depth(&self, from: [SliceIndex; 2], to: [SliceIndex; 2]) -> Option<usize> {
+    pub fn edge_depth(&self, from: Coordinate<N>, to: Coordinate<N>) -> Option<usize> {
         let &from = self.coord_to_node.get(&from)?;
         let &to = self.coord_to_node.get(&to)?;
         let e = self
@@ -279,7 +298,7 @@ impl Depths {
         self.edge_depths[e.id()]
     }
 
-    pub fn edges_above(&self, depth: usize, to: [SliceIndex; 2]) -> Vec<[SliceIndex; 2]> {
+    pub fn edges_above(&self, depth: usize, to: Coordinate<N>) -> Vec<Coordinate<N>> {
         let to = match self.coord_to_node.get(&to) {
             Some(to) => *to,
             None => return vec![],

@@ -200,3 +200,13 @@ impl Shape {
         }
     }
 }
+
+#[allow(clippy::unreachable)]
+pub fn project_2d<const N: usize>(point: [f32; N]) -> [f32; 2] {
+    match N {
+        0 => [0.5, 0.5],
+        1 => [0.5, point[0]],
+        2 => [point[0], point[1]],
+        _ => unreachable!(),
+    }
+}

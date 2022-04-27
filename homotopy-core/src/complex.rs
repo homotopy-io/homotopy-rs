@@ -1,19 +1,19 @@
 use std::hash::Hash;
 
-use crate::{common::SliceIndex, diagram::DiagramN, mesh::Mesh2D};
+use crate::{common::SliceIndex, diagram::DiagramN, mesh::Mesh};
 
-pub type Coordinate = [SliceIndex; 2];
+pub type Coordinate<const N: usize> = [SliceIndex; N];
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Simplex {
-    Surface([Coordinate; 3]),
-    Wire([Coordinate; 2]),
-    Point([Coordinate; 1]),
+pub enum Simplex<const N: usize> {
+    Surface([Coordinate<N>; 3]),
+    Wire([Coordinate<N>; 2]),
+    Point([Coordinate<N>; 1]),
 }
 
-impl<'a> IntoIterator for &'a Simplex {
-    type IntoIter = std::iter::Copied<std::slice::Iter<'a, Coordinate>>;
-    type Item = Coordinate;
+impl<'a, const N: usize> IntoIterator for &'a Simplex<N> {
+    type IntoIter = std::iter::Copied<std::slice::Iter<'a, Coordinate<N>>>;
+    type Item = Coordinate<N>;
 
     fn into_iter(self) -> Self::IntoIter {
         match self {
@@ -25,11 +25,11 @@ impl<'a> IntoIterator for &'a Simplex {
 }
 
 /// Generate a 2-dimensional simplicial complex for a diagram.
-pub fn make_complex(diagram: &DiagramN) -> Vec<Simplex> {
+pub fn make_complex<const N: usize>(diagram: &DiagramN) -> Vec<Simplex<N>> {
     const TRI_ASSEMBLY_ORDER: [[usize; 3]; 2] = [[0, 1, 3], [0, 3, 2]];
 
     // Extract cubical mesh.
-    let mesh = Mesh2D::new(diagram).unwrap();
+    let mesh = Mesh::new(diagram).unwrap();
 
     let mut complex = vec![];
     for element in mesh.elements(true) {
