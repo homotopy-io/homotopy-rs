@@ -46,3 +46,4 @@ pub mod clay;
 pub mod geom;
 pub mod gl;
 pub mod svg;
+pub mod tikz;

@@ -109,4 +109,10 @@ declare_sidebar_tools! {
         "clear",
         model::Action::Proof(model::proof::Action::ClearWorkspace),
     }
+
+    BUTTON_TIKZ {
+        "Export to TikZ",
+        "download",
+        model::Action::ExportTikz,
+    }
 }

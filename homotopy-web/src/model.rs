@@ -1,6 +1,9 @@
+use std::fmt::Write;
+
 pub use history::Proof;
 use history::{History, UndoState};
 use homotopy_core::common::Mode;
+use homotopy_graphics::tikz;
 use proof::{Color, GeneratorInfo, Signature, Workspace};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -15,6 +18,7 @@ pub enum Action {
     History(history::Action),
     ImportProof(SerializedData),
     ExportProof,
+    ExportTikz,
 }
 
 impl Action {
@@ -24,6 +28,10 @@ impl Action {
 
         match self {
             Action::Proof(action) => proof.is_valid(action),
+            Action::ExportTikz => proof
+                .workspace
+                .as_ref()
+                .map_or(false, |ws| ws.view.dimension() == 2),
             Action::History(history::Action::Move(dir)) => match dir {
                 history::Direction::Linear(Forward) => proof.can_redo(),
                 history::Direction::Linear(Backward) => proof.can_undo(),
@@ -101,12 +109,34 @@ impl State {
                 };
             }
 
+            Action::ExportTikz => {
+                let signature = self.with_proof(|p| p.signature.clone());
+                let diagram = self.with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram());
+
+                let mut stylesheet = String::new();
+                for info in signature.iter() {
+                    writeln!(
+                        stylesheet,
+                        "\\definecolor{{{generator}}}{{RGB}}{{{r}, {g}, {b}}}",
+                        generator = tikz::color(info.generator),
+                        r = info.color.red,
+                        g = info.color.green,
+                        b = info.color.blue,
+                    )
+                    .unwrap();
+                }
+
+                let data = tikz::render(&diagram, &stylesheet).unwrap();
+                serialize::generate_download("filename_todo", "tikz", data.as_bytes())
+                    .map_err(ModelError::Export)?;
+            }
+
             Action::ExportProof => {
                 let data = serialize::serialize(
                     self.with_proof(|p| p.signature.clone()),
                     self.with_proof(|p| p.workspace.clone()),
                 );
-                serialize::generate_download("filename_todo", data.as_slice())
+                serialize::generate_download("filename_todo", "hom", data.as_slice())
                     .map_err(ModelError::Export)?;
             }
 

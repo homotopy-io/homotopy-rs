@@ -12,21 +12,22 @@ build = true
 [dependencies]
 homotopy-common = { path = "../homotopy-common" }
 homotopy-core = { path = "../homotopy-core" }
-ultraviolet = "0.9.0"
 # TODO(@doctorn) remove if/when we switch to GL-backed 2D rendering
 euclid = "0.22.7"
-lyon_geom = "0.17.5"
+itertools = "0.10.3"
+js-sys = "0.3.57"
+log = "0.4.16"
 lyon_algorithms = "0.17.6"
+lyon_geom = "0.17.5"
 lyon_path = "0.17.7"
-thiserror = "1.0.30"
-serde = { features = ["derive"], version = "1.0.136" }
-serde_json = "1.0.79"
 paste = "1.0.7"
 petgraph = "0.6.0"
-log = "0.4.16"
-js-sys = "0.3.57"
-yew = "0.19.3"
+serde = { features = ["derive"], version = "1.0.136" }
+serde_json = "1.0.79"
+thiserror = "1.0.30"
+ultraviolet = "0.9.0"
 wasm-bindgen = "0.2.80"
+yew = "0.19.3"
 
 [dependencies.web-sys]
 version = "0.3.57"

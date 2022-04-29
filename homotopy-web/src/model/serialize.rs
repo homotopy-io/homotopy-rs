@@ -16,7 +16,7 @@ use super::{
     Color, GeneratorInfo, Signature, Workspace,
 };
 
-pub fn generate_download(name: &str, data: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
+pub fn generate_download(name: &str, ext: &str, data: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
     let val: js_sys::Uint8Array = data.into();
     let mut options = web_sys::BlobPropertyBag::new();
     options.type_("application/msgpack");
@@ -33,7 +33,7 @@ pub fn generate_download(name: &str, data: &[u8]) -> Result<(), wasm_bindgen::Js
         .dyn_ref::<web_sys::HtmlElement>()
         .ok_or("failed to create anchor")?;
     a.set_attribute("href", &url)?;
-    a.set_attribute("download", &format!("{}.hom", &name))?;
+    a.set_attribute("download", &format!("{}.{}", &name, &ext))?;
     body.append_child(a)?;
     a.click();
     a.remove();
