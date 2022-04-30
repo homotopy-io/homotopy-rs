@@ -362,6 +362,8 @@ impl ProofState {
             Some(workspace) => {
                 if workspace.diagram.dimension() + workspace.path.len() >= 2 {
                     workspace.path.push_front(Boundary::Target.into());
+                } else {
+                    workspace.view = workspace.view.inc();
                 }
 
                 workspace.diagram = workspace.diagram.identity().into();
