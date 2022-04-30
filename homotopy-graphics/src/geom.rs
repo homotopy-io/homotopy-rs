@@ -6,7 +6,7 @@ use std::{
 
 use homotopy_common::{declare_idx, hash::FastHashMap, idx::IdxVec};
 use homotopy_core::{
-    common::DimensionError, layout::Layout, mesh::Mesh, DiagramN, Direction, Generator, Height,
+    common::DimensionError, layout::Layout, mesh::Mesh, Diagram, Direction, Generator, Height,
     SliceIndex,
 };
 use ultraviolet::{Mat3, Vec3, Vec4};
@@ -159,7 +159,7 @@ pub type CubicalGeometry = Geometry<CubeData>;
 pub type SimplicialGeometry = Geometry<SimplexData>;
 
 impl CubicalGeometry {
-    pub fn new<const N: usize>(diagram: &DiagramN) -> Result<Self, DimensionError> {
+    pub fn new<const N: usize>(diagram: &Diagram) -> Result<Self, DimensionError> {
         if diagram.dimension() < N {
             return Err(DimensionError);
         }

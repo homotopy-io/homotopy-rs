@@ -25,6 +25,13 @@ pub enum Diagram {
 }
 
 impl Diagram {
+    pub fn size(&self) -> Option<usize> {
+        match self {
+            Self::Diagram0(_) => None,
+            Self::DiagramN(d) => Some(d.size()),
+        }
+    }
+
     pub fn to_generator(&self) -> Option<Generator> {
         use Diagram::{Diagram0, DiagramN};
         match self {

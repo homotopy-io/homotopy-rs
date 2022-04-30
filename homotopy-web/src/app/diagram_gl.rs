@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use gloo::render::{request_animation_frame, AnimationFrame};
-use homotopy_core::DiagramN;
+use homotopy_core::Diagram;
 use homotopy_graphics::gl::GlCtx;
 use ultraviolet::Vec3;
 use yew::prelude::*;
@@ -55,7 +55,7 @@ impl GlViewControl {
     }
 }
 
-pub enum GlDiagramMessage {
+pub enum DiagramGlMessage {
     Render(f64),
     Camera(f32, f32, f32, Vec3),
     Scrub(f32),
@@ -63,13 +63,13 @@ pub enum GlDiagramMessage {
 }
 
 #[derive(Properties, PartialEq, Clone)]
-pub struct GlDiagramProps {
-    pub diagram: DiagramN,
+pub struct DiagramGlProps {
+    pub diagram: Diagram,
     pub signature: Signature,
     pub view: View,
 }
 
-pub struct GlDiagram {
+pub struct DiagramGl {
     canvas: NodeRef,
     toaster: Toaster,
     _settings: AppSettings,
@@ -87,12 +87,12 @@ pub struct GlDiagram {
     render_loop: Option<AnimationFrame>,
 }
 
-impl Component for GlDiagram {
-    type Message = GlDiagramMessage;
-    type Properties = GlDiagramProps;
+impl Component for DiagramGl {
+    type Message = DiagramGlMessage;
+    type Properties = DiagramGlProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let mut settings = AppSettings::connect(ctx.link().callback(GlDiagramMessage::Setting));
+        let mut settings = AppSettings::connect(ctx.link().callback(DiagramGlMessage::Setting));
 
         settings.subscribe(AppSettings::ALL);
 
@@ -100,7 +100,7 @@ impl Component for GlDiagram {
         let link = ctx.link().clone();
         camera_delta.register(Box::new(move |agent: &DeltaAgent<OrbitCamera>, _| {
             let state = agent.state();
-            link.send_message(GlDiagramMessage::Camera(
+            link.send_message(DiagramGlMessage::Camera(
                 state.phi,
                 state.theta,
                 state.distance,
@@ -112,7 +112,7 @@ impl Component for GlDiagram {
         let link = ctx.link().clone();
         scrub_delta.register(Box::new(move |agent: &DeltaAgent<ScrubState>, _| {
             let state = agent.state();
-            link.send_message(GlDiagramMessage::Scrub(state.t));
+            link.send_message(DiagramGlMessage::Scrub(state.t));
         }));
 
         Self {
@@ -134,14 +134,14 @@ impl Component for GlDiagram {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            GlDiagramMessage::Render(t) => {
+            DiagramGlMessage::Render(t) => {
                 let t = t as f32;
                 let dt = t - self.global_t;
                 self.global_t = t;
                 if ctx.props().view.dimension() == 4 {
                     // Slow the animation such that we get 1s per cospan
                     self.scrub_delta.emit(ScrubAction::Advance(
-                        1e-3 * dt / ctx.props().diagram.size() as f32,
+                        1e-3 * dt / ctx.props().diagram.size().unwrap() as f32,
                     ));
                 }
                 // Update camera settings
@@ -155,17 +155,17 @@ impl Component for GlDiagram {
                 // Schedule the next frame
                 self.schedule_frame(ctx);
             }
-            GlDiagramMessage::Camera(phi, theta, distance, target) => {
+            DiagramGlMessage::Camera(phi, theta, distance, target) => {
                 self.camera.phi = phi;
                 self.camera.theta = theta;
                 self.camera.distance = distance;
                 self.camera.target = target;
             }
-            GlDiagramMessage::Scrub(t) => {
+            DiagramGlMessage::Scrub(t) => {
                 // Scrub controls are [0,1], but animation is [-1,1] so map between
                 self.t_coord = 2. * t - 1.;
             }
-            GlDiagramMessage::Setting(msg) => self.local.set(&msg),
+            DiagramGlMessage::Setting(msg) => self.local.set(&msg),
         }
 
         false
@@ -180,7 +180,7 @@ impl Component for GlDiagram {
         let on_touch_update = OrbitCamera::on_touch_update(&self.canvas);
 
         let scrub = if ctx.props().view.dimension() == 4 {
-            html! { <ScrubComponent slices={ctx.props().diagram.size()} /> }
+            html! { <ScrubComponent slices={ctx.props().diagram.size().unwrap()} /> }
         } else {
             Default::default()
         };
@@ -222,11 +222,11 @@ impl Component for GlDiagram {
     }
 }
 
-impl GlDiagram {
+impl DiagramGl {
     fn schedule_frame(&mut self, ctx: &Context<Self>) {
         let link = ctx.link().clone();
         self.render_loop = Some(request_animation_frame(move |t| {
-            link.send_message(GlDiagramMessage::Render(t));
+            link.send_message(DiagramGlMessage::Render(t));
         }));
     }
 }

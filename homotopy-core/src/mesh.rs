@@ -7,7 +7,7 @@ use petgraph::graph::NodeIndex;
 use crate::{
     common::DimensionError,
     graph::{Explodable, ExternalRewrite, SliceGraph},
-    Boundary, Diagram, DiagramN, Direction, Height, SliceIndex,
+    Boundary, Diagram, Direction, Height, SliceIndex,
 };
 
 declare_idx! {
@@ -48,7 +48,7 @@ pub struct Mesh<const N: usize> {
 
 impl<const N: usize> Mesh<N> {
     /// Constructs the mesh of depth `N` for the given diagram.
-    pub fn new(diagram: &DiagramN) -> Result<Self, DimensionError> {
+    pub fn new(diagram: &Diagram) -> Result<Self, DimensionError> {
         if diagram.dimension() < N {
             return Err(DimensionError);
         }

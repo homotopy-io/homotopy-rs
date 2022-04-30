@@ -5,7 +5,7 @@ use insta::assert_debug_snapshot;
 fn monoid_unit() {
     let (_, diagram) = examples::monoid_unit();
 
-    let layout = Layout::<2>::new(&diagram).unwrap();
+    let layout = Layout::<2>::new(&diagram.into()).unwrap();
 
     assert_debug_snapshot!(layout.positions);
 }
@@ -14,7 +14,7 @@ fn monoid_unit() {
 fn scalar_and_beads() {
     let (_, diagram) = examples::scalar_and_beads();
 
-    let layout = Layout::<2>::new(&diagram).unwrap();
+    let layout = Layout::<2>::new(&diagram.into()).unwrap();
 
     assert_debug_snapshot!(layout.positions);
 }
@@ -23,7 +23,7 @@ fn scalar_and_beads() {
 fn associator() {
     let (_, diagram) = examples::associator();
 
-    let layout = Layout::<3>::new(&diagram).unwrap();
+    let layout = Layout::<3>::new(&diagram.into()).unwrap();
 
     assert_debug_snapshot!(layout.positions);
 }
@@ -32,7 +32,7 @@ fn associator() {
 fn snake() {
     let (_, diagram) = examples::snake();
 
-    let layout = Layout::<3>::new(&diagram).unwrap();
+    let layout = Layout::<3>::new(&diagram.into()).unwrap();
 
     assert_debug_snapshot!(layout.positions);
 }
@@ -41,7 +41,7 @@ fn snake() {
 fn lips() {
     let (_, diagram) = examples::lips();
 
-    let layout = Layout::<4>::new(&diagram).unwrap();
+    let layout = Layout::<4>::new(&diagram.into()).unwrap();
 
     assert_debug_snapshot!(layout.positions);
 }
@@ -50,7 +50,7 @@ fn lips() {
 fn pants_unit() {
     let (_, diagram) = examples::pants_unit();
 
-    let layout = Layout::<4>::new(&diagram).unwrap();
+    let layout = Layout::<4>::new(&diagram.into()).unwrap();
 
     assert_debug_snapshot!(layout.positions);
 }

@@ -25,7 +25,7 @@ mod signature;
 
 pub mod homotopy;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct View {
     dimension: u8,
 }
@@ -60,8 +60,8 @@ impl Workspace {
 }
 
 impl View {
+    const MIN: u8 = 0;
     const MAX: u8 = 4;
-    const MIN: u8 = 2;
 
     #[must_use]
     pub fn inc(self) -> Self {
@@ -79,14 +79,6 @@ impl View {
 
     pub fn dimension(self) -> u8 {
         self.dimension
-    }
-}
-
-impl Default for View {
-    fn default() -> Self {
-        Self {
-            dimension: Self::MIN,
-        }
     }
 }
 
@@ -412,7 +404,9 @@ impl ProofState {
         self.workspace = Some(Workspace {
             diagram: info.diagram.clone(),
             path: Default::default(),
-            view: Default::default(),
+            view: View {
+                dimension: info.generator.dimension.min(2) as u8,
+            },
             attach: Default::default(),
             attachment_highlight: Default::default(),
             slice_highlight: Default::default(),

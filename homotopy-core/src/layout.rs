@@ -11,7 +11,7 @@ use petgraph::{graph::NodeIndex, visit::EdgeRef, EdgeDirection, Graph};
 use crate::{
     common::{DimensionError, SingularHeight},
     graph::{Explodable, ExternalRewrite, SliceGraph},
-    Boundary, DiagramN, Direction, Height, RewriteN, SliceIndex,
+    Boundary, Diagram, DiagramN, Direction, Height, RewriteN, SliceIndex,
 };
 
 #[derive(Clone, Debug)]
@@ -20,7 +20,7 @@ pub struct Layout<const N: usize> {
 }
 
 impl<const N: usize> Layout<N> {
-    pub fn new(diagram: &DiagramN) -> Result<Self, DimensionError> {
+    pub fn new(diagram: &Diagram) -> Result<Self, DimensionError> {
         if diagram.dimension() < N {
             return Err(DimensionError);
         }

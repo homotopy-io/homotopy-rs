@@ -1,6 +1,6 @@
 //! C(ubical) Lay(out) Engine
 
-use homotopy_core::{common::DimensionError, DiagramN};
+use homotopy_core::{common::DimensionError, Diagram};
 
 use crate::geom::{CubicalGeometry, SimplicialGeometry};
 
@@ -8,7 +8,7 @@ mod buffers;
 mod subdivision;
 
 pub fn clay(
-    diagram: &DiagramN,
+    diagram: &Diagram,
     view_dimension: usize,
     smooth_time: bool,
     subdivision_depth: u8,

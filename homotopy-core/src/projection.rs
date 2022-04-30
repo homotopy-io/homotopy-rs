@@ -19,10 +19,9 @@ use petgraph::{
 
 use crate::{
     common::{DimensionError, Generator, SliceIndex},
-    diagram::DiagramN,
     graph::{Explodable, SliceGraph},
     layout::Layout,
-    Direction, Height, Rewrite,
+    Diagram, Direction, Height, Rewrite,
 };
 
 type Coordinate<const N: usize> = [SliceIndex; N];
@@ -46,7 +45,7 @@ pub struct Projection<const N: usize> {
 
 impl<const N: usize> Projection<N> {
     pub fn new(
-        diagram: &DiagramN,
+        diagram: &Diagram,
         layout: &Layout<N>,
         depths: &Depths<N>,
     ) -> Result<Self, DimensionError> {
@@ -58,25 +57,22 @@ impl<const N: usize> Projection<N> {
         }
 
         // Construct the exploded graph.
-        let mut graph = SliceGraph::<(), ()>::singleton((), diagram.clone()).explode(
-            |_, (), si| Some(vec![si]),
-            |_, _, r| Some(r.direction()),
-            |_, _, _| None,
-        )?;
-        for _ in 1..N {
-            graph = graph.explode(
-                |_, key, si| {
-                    Some({
+        let mut graph: SliceGraph<Vec<SliceIndex>, _> =
+            SliceGraph::singleton(vec![], diagram.clone());
+        for i in 0..N {
+            graph = graph
+                .explode(
+                    |_, key, si| {
                         let mut v = key.clone();
                         v.push(si);
-                        v
-                    })
-                },
-                |_, _, _| None,
-                |_, key, r| r.is_atomic().then(|| *key),
-            )?;
+                        Some(v)
+                    },
+                    |_, _, r| (i == 0).then(|| r.direction()),
+                    |_, key, r| (i > 0 && r.is_atomic()).then(|| *key),
+                )?
+                .output;
         }
-        let graph: SliceGraph<Coordinate<N>, _> = graph.output.map(
+        let graph: SliceGraph<Coordinate<N>, _> = graph.map(
             |_, (indices, diagram)| (indices.clone().try_into().unwrap(), diagram.clone()),
             |_, e| e.clone(),
         );
@@ -228,26 +224,22 @@ pub struct Depths<const N: usize> {
 }
 
 impl<const N: usize> Depths<N> {
-    pub fn new(diagram: &DiagramN) -> Result<Self, DimensionError> {
-        let mut graph = SliceGraph::<(), ()>::singleton((), diagram.clone()).explode(
-            |_, (), si| Some(vec![si]),
-            |_, _, _| Some(()),
-            |_, _, r| r.is_atomic().then(|| ()),
-        )?;
-        for _ in 1..N {
-            graph = graph.explode(
-                |_, key, si| {
-                    Some({
+    pub fn new(diagram: &Diagram) -> Result<Self, DimensionError> {
+        let mut graph: SliceGraph<Vec<SliceIndex>> = SliceGraph::singleton(vec![], diagram.clone());
+        for _ in 0..N {
+            graph = graph
+                .explode(
+                    |_, key, si| {
                         let mut v = key.clone();
                         v.push(si);
-                        v
-                    })
-                },
-                |_, _, _| Some(()),
-                |_, _, r| r.is_atomic().then(|| ()),
-            )?;
+                        Some(v)
+                    },
+                    |_, _, _| Some(()),
+                    |_, _, r| r.is_atomic().then(|| ()),
+                )?
+                .output;
         }
-        let graph: SliceGraph<Coordinate<N>, _> = graph.output.map(
+        let graph: SliceGraph<Coordinate<N>, _> = graph.map(
             |_, (indices, diagram)| (indices.clone().try_into().unwrap(), diagram.clone()),
             |_, e| e.clone(),
         );

@@ -7,7 +7,7 @@ use homotopy_core::{
     complex::make_complex,
     layout::Layout,
     projection::{Depths, Projection},
-    Diagram, DiagramN, Generator,
+    Diagram, Generator,
 };
 use itertools::Itertools;
 use lyon_geom::{CubicBezierSegment, Line, LineSegment};
@@ -22,8 +22,6 @@ pub fn color(generator: Generator) -> String {
 }
 
 pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionError> {
-    let diagram: &DiagramN = diagram.try_into()?;
-
     let layout = Layout::<2>::new(diagram)?;
     let complex = make_complex(diagram);
     let depths = Depths::<2>::new(diagram)?;

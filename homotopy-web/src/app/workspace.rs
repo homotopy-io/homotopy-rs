@@ -11,8 +11,8 @@ use yew::prelude::*;
 
 use crate::{
     app::{
-        diagram_gl::GlDiagram,
-        diagram_svg::{Diagram0D, DiagramSvg, HighlightKind, HighlightSvg},
+        diagram_gl::DiagramGl,
+        diagram_svg::{DiagramSvg, HighlightKind, HighlightSvg},
     },
     components::panzoom::PanZoomComponent,
     model::proof::{homotopy::Homotopy, Action, Signature, Workspace},
@@ -96,67 +96,38 @@ impl WorkspaceView {
     }
 
     fn view_diagram(&self, ctx: &Context<Self>) -> Html {
-        match Self::visible_diagram(ctx) {
-            Diagram::Diagram0(generator) => {
+        match ctx.props().workspace.view.dimension() {
+            0 => Self::view_diagram_svg::<0>(self, ctx),
+            1 => Self::view_diagram_svg::<1>(self, ctx),
+            2 => Self::view_diagram_svg::<2>(self, ctx),
+            _ => {
                 html! {
-                    <PanZoomComponent
-                        on_scroll={ctx.props().dispatch.reform(Action::SwitchSlice)}
-                    >
-                        <Diagram0D
-                            diagram={generator}
-                            ref={self.diagram_ref.clone()}
-                        />
-                    </PanZoomComponent>
-                }
-            }
-            Diagram::DiagramN(diagram) if diagram.dimension() == 1 => {
-                let highlight =
-                    highlight_attachment::<1>(&ctx.props().workspace, &ctx.props().signature)
-                        .or_else(|| highlight_slice::<1>(&ctx.props().workspace));
-                html! {
-                    <PanZoomComponent
-                        on_scroll={ctx.props().dispatch.reform(Action::SwitchSlice)}
-                    >
-                        <DiagramSvg<1>
-                            diagram={diagram}
-                            id="workspace__diagram"
-                            on_select={self.on_select.clone()}
-                            on_homotopy={self.on_homotopy.clone()}
-                            highlight={highlight}
-                            ref={self.diagram_ref.clone()}
-                        />
-                    </PanZoomComponent>
-                }
-            }
-            Diagram::DiagramN(diagram) => match ctx.props().workspace.view.dimension() {
-                3 | 4 => html! {
-                    <GlDiagram
-                        diagram={diagram}
+                    <DiagramGl
+                        diagram={Self::visible_diagram(ctx)}
                         signature={ctx.props().signature.clone()}
                         view={ctx.props().workspace.view}
                     />
-                },
-                _ => {
-                    let highlight =
-                        highlight_attachment::<2>(&ctx.props().workspace, &ctx.props().signature)
-                            .or_else(|| highlight_slice::<2>(&ctx.props().workspace));
-
-                    html! {
-                        <PanZoomComponent
-                            on_scroll={ctx.props().dispatch.reform(Action::SwitchSlice)}
-                        >
-                            <DiagramSvg<2>
-                                diagram={diagram}
-                                id="workspace__diagram"
-                                on_select={self.on_select.clone()}
-                                on_homotopy={self.on_homotopy.clone()}
-                                highlight={highlight}
-                                ref={self.diagram_ref.clone()}
-                            />
-                        </PanZoomComponent>
-                    }
                 }
-            },
+            }
+        }
+    }
+
+    fn view_diagram_svg<const N: usize>(&self, ctx: &Context<Self>) -> Html {
+        let highlight = highlight_attachment::<N>(&ctx.props().workspace, &ctx.props().signature)
+            .or_else(|| highlight_slice::<N>(&ctx.props().workspace));
+        html! {
+            <PanZoomComponent
+                on_scroll={ctx.props().dispatch.reform(Action::SwitchSlice)}
+            >
+                <DiagramSvg<N>
+                    diagram={Self::visible_diagram(ctx)}
+                    id="workspace__diagram"
+                    on_select={self.on_select.clone()}
+                    on_homotopy={self.on_homotopy.clone()}
+                    highlight={highlight}
+                    ref={self.diagram_ref.clone()}
+                />
+            </PanZoomComponent>
         }
     }
 }

@@ -1,7 +1,7 @@
 use std::mem;
 
 use homotopy_common::idx::IdxVec;
-use homotopy_core::{DiagramN, Generator};
+use homotopy_core::{Diagram, Generator};
 use homotopy_graphics::{
     clay::clay,
     geom::{SimplicialGeometry, VertData},
@@ -13,7 +13,7 @@ use ultraviolet::Vec4;
 use super::ViewDimension;
 
 pub struct Scene {
-    pub diagram: DiagramN,
+    pub diagram: Diagram,
     pub view_dimension: ViewDimension,
     pub components: Vec<(Generator, VertexArray)>,
     pub wireframe_components: Vec<VertexArray>,
@@ -56,7 +56,7 @@ impl AnimationCurve {
 impl Scene {
     pub fn new(
         ctx: &GlCtx,
-        diagram: &DiagramN,
+        diagram: &Diagram,
         view_dimension: ViewDimension,
         smooth_time: bool,
         subdivision_depth: u8,

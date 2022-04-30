@@ -5,7 +5,7 @@ use insta::assert_debug_snapshot;
 fn associator() {
     let (_, diagram) = examples::associator();
 
-    let mesh = Mesh::<3>::new(&diagram).unwrap();
+    let mesh = Mesh::<3>::new(&diagram.into()).unwrap();
     let elements = mesh.elements(true).collect::<Vec<_>>();
 
     assert_debug_snapshot!(elements);
@@ -15,7 +15,7 @@ fn associator() {
 fn snake() {
     let (_, diagram) = examples::snake();
 
-    let mesh = Mesh::<3>::new(&diagram).unwrap();
+    let mesh = Mesh::<3>::new(&diagram.into()).unwrap();
     let elements = mesh.elements(true).collect::<Vec<_>>();
 
     assert_debug_snapshot!(elements);
@@ -25,7 +25,7 @@ fn snake() {
 fn lips() {
     let (_, diagram) = examples::lips();
 
-    let mesh = Mesh::<4>::new(&diagram).unwrap();
+    let mesh = Mesh::<4>::new(&diagram.into()).unwrap();
     let elements = mesh.elements(true).collect::<Vec<_>>();
 
     assert_debug_snapshot!(elements);
@@ -35,7 +35,7 @@ fn lips() {
 fn pants_unit() {
     let (_, diagram) = examples::pants_unit();
 
-    let mesh = Mesh::<4>::new(&diagram).unwrap();
+    let mesh = Mesh::<4>::new(&diagram.into()).unwrap();
     let elements = mesh.elements(true).collect::<Vec<_>>();
 
     assert_debug_snapshot!(elements);

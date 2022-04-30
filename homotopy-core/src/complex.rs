@@ -1,6 +1,6 @@
 use std::hash::Hash;
 
-use crate::{common::SliceIndex, diagram::DiagramN, mesh::Mesh};
+use crate::{common::SliceIndex, mesh::Mesh, Diagram};
 
 pub type Coordinate<const N: usize> = [SliceIndex; N];
 
@@ -25,7 +25,7 @@ impl<'a, const N: usize> IntoIterator for &'a Simplex<N> {
 }
 
 /// Generate a 2-dimensional simplicial complex for a diagram.
-pub fn make_complex<const N: usize>(diagram: &DiagramN) -> Vec<Simplex<N>> {
+pub fn make_complex<const N: usize>(diagram: &Diagram) -> Vec<Simplex<N>> {
     const TRI_ASSEMBLY_ORDER: [[usize; 3]; 2] = [[0, 1, 3], [0, 3, 2]];
 
     // Extract cubical mesh.

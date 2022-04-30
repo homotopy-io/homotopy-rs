@@ -14,7 +14,7 @@ use homotopy_core::{
     layout::Layout,
     projection::{Depths, Projection},
     rewrite::RewriteN,
-    Boundary, DiagramN, Generator, Height, SliceIndex,
+    Boundary, Diagram, DiagramN, Height, SliceIndex,
 };
 use homotopy_graphics::svg::{
     geom,
@@ -34,15 +34,15 @@ use crate::{
 };
 
 pub struct DiagramSvg<const N: usize> {
-    props: PropsSvg<N>,
+    props: DiagramSvgProps<N>,
     prepared: PreparedDiagram<N>,
     node_ref: NodeRef,
     drag_start: Option<Point2D<f32>>,
 }
 
 #[derive(Clone, PartialEq, Properties)]
-pub struct PropsSvg<const N: usize> {
-    pub diagram: DiagramN,
+pub struct DiagramSvgProps<const N: usize> {
+    pub diagram: Diagram,
     pub id: String,
     #[prop_or_default]
     pub style: RenderStyle,
@@ -71,7 +71,7 @@ pub struct HighlightSvg<const N: usize> {
 // TODO: Highlights in props
 
 #[allow(clippy::enum_variant_names)]
-pub enum MessageSvg {
+pub enum DiagramSvgMessage {
     OnMouseDown(Point2D<f32>),
     OnMouseMove(Point2D<f32>),
     OnMouseUp,
@@ -100,7 +100,7 @@ struct PreparedDiagram<const N: usize> {
 }
 
 impl<const N: usize> PreparedDiagram<N> {
-    fn new(diagram: &DiagramN, style: RenderStyle) -> Self {
+    fn new(diagram: &Diagram, style: RenderStyle) -> Self {
         assert!(diagram.dimension() >= N);
 
         let time_start = web_sys::window().unwrap().performance().unwrap().now();
@@ -113,7 +113,7 @@ impl<const N: usize> PreparedDiagram<N> {
         let actions = ActionRegion::build(&complex, &layout, &projection);
 
         let dimensions = Point::from(project_2d(layout.get([Boundary::Target.into(); N])))
-            .max((1.0, 0.0).into())
+            .max((1.0, 1.0).into())
             .to_vector()
             .to_size()
             * style.scale;
@@ -149,8 +149,8 @@ impl<const N: usize> PreparedDiagram<N> {
 }
 
 impl<const N: usize> Component for DiagramSvg<N> {
-    type Message = MessageSvg;
-    type Properties = PropsSvg<N>;
+    type Message = DiagramSvgMessage;
+    type Properties = DiagramSvgProps<N>;
 
     fn create(ctx: &Context<Self>) -> Self {
         let props = ctx.props().clone();
@@ -167,19 +167,19 @@ impl<const N: usize> Component for DiagramSvg<N> {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            MessageSvg::OnMouseDown(point) => {
+            DiagramSvgMessage::OnMouseDown(point) => {
                 self.drag_start = Some(point);
                 false
             }
-            MessageSvg::OnMouseMove(point) => {
+            DiagramSvgMessage::OnMouseMove(point) => {
                 self.pointer_move(ctx, point);
                 false
             }
-            MessageSvg::OnMouseUp => {
+            DiagramSvgMessage::OnMouseUp => {
                 self.pointer_stop(ctx);
                 false
             }
-            MessageSvg::OnTouchUpdate(touches) => {
+            DiagramSvgMessage::OnTouchUpdate(touches) => {
                 if self.drag_start.is_none() && touches.len() == 1 {
                     self.drag_start = Some(touches[0].1);
                 } else if touches.is_empty() {
@@ -187,7 +187,7 @@ impl<const N: usize> Component for DiagramSvg<N> {
                 }
                 false
             }
-            MessageSvg::OnTouchMove(touches) => {
+            DiagramSvgMessage::OnTouchMove(touches) => {
                 if touches.len() == 1 {
                     self.pointer_move(ctx, touches[0].1);
                 }
@@ -219,7 +219,7 @@ impl<const N: usize> Component for DiagramSvg<N> {
                 if !e.alt_key() {
                     let x = e.client_x() as f32;
                     let y = e.client_y() as f32;
-                    link.send_message(MessageSvg::OnMouseDown((x, y).into()));
+                    link.send_message(DiagramSvgMessage::OnMouseDown((x, y).into()));
                 }
             })
         };
@@ -230,7 +230,7 @@ impl<const N: usize> Component for DiagramSvg<N> {
                 if !e.alt_key() {
                     let x = e.client_x() as f32;
                     let y = e.client_y() as f32;
-                    link.send_message(MessageSvg::OnMouseMove((x, y).into()));
+                    link.send_message(DiagramSvgMessage::OnMouseMove((x, y).into()));
                 }
             })
         };
@@ -238,7 +238,7 @@ impl<const N: usize> Component for DiagramSvg<N> {
         let on_mouse_up = {
             let link = ctx.link().clone();
             Callback::from(move |_e: MouseEvent| {
-                link.send_message(MessageSvg::OnMouseUp);
+                link.send_message(DiagramSvgMessage::OnMouseUp);
             })
         };
 
@@ -248,7 +248,7 @@ impl<const N: usize> Component for DiagramSvg<N> {
                 let touches = read_touch_list_abs(&e.touches())
                     .map(|(finger, point)| (finger, point.cast()))
                     .collect();
-                link.send_message(MessageSvg::OnTouchMove(touches));
+                link.send_message(DiagramSvgMessage::OnTouchMove(touches));
             })
         };
 
@@ -258,7 +258,7 @@ impl<const N: usize> Component for DiagramSvg<N> {
                 let touches = read_touch_list_abs(&e.touches())
                     .map(|(finger, point)| (finger, point.cast()))
                     .collect();
-                link.send_message(MessageSvg::OnTouchUpdate(touches));
+                link.send_message(DiagramSvgMessage::OnTouchUpdate(touches));
             })
         };
 
@@ -481,72 +481,10 @@ impl<const N: usize> DiagramSvg<N> {
     }
 }
 
-#[derive(Clone, PartialEq, Properties)]
-pub struct Props0D {
-    pub diagram: Generator,
-    #[prop_or_default]
-    pub style: RenderStyle,
-}
-
-pub enum Message0D {}
-
-pub struct Diagram0D;
-
-impl Component for Diagram0D {
-    type Message = Message0D;
-    type Properties = Props0D;
-
-    fn create(_ctx: &Context<Self>) -> Self {
-        Self
-    }
-
-    fn update(&mut self, _ctx: &Context<Self>, _msg: Self::Message) -> bool {
-        false
-    }
-
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        let size = Self::dimensions(ctx);
-
-        html! {
-            <svg
-                xmlns={"http://www.w3.org/2000/svg"}
-                 width={size.width.to_string()}
-                 height={size.height.to_string()}
-            >
-                {Self::view_point(ctx, ctx.props().diagram)}
-            </svg>
-        }
-    }
-}
-
-impl Diagram0D {
-    const RADIUS_SCALE: f32 = 3.0;
-
-    fn dimensions(ctx: &Context<Self>) -> Size2D<f32> {
-        let style = &ctx.props().style;
-        let dimension = style.point_radius * 2.0 * Self::RADIUS_SCALE;
-        Size2D::new(dimension, dimension)
-    }
-
-    fn view_point(ctx: &Context<Self>, generator: Generator) -> Html {
-        let class = SignatureStylesheet::name("generator", generator, "point");
-        let style = &ctx.props().style;
-
-        html! {
-            <circle
-                cx={(Self::dimensions(ctx).width * 0.5).to_string()}
-                cy={(Self::dimensions(ctx).height * 0.5).to_string()}
-                r={(style.point_radius * Self::RADIUS_SCALE).to_string()}
-                class={class}
-            />
-        }
-    }
-}
-
 fn drag_to_homotopy<const N: usize>(
     angle: Angle<f32>,
     simplex: &Simplex<N>,
-    diagram: DiagramN,
+    diagram: Diagram,
     depths: &Depths<N>,
 ) -> Option<Homotopy> {
     use Height::{Regular, Singular};
@@ -588,6 +526,8 @@ fn drag_to_homotopy<const N: usize>(
             }))
         }
         2 => {
+            let diagram: DiagramN = diagram.try_into().ok()?;
+
             // Handle horizontal and vertical drags
             log::debug!("Point: {:?}", point);
             let (prefix, y, x, diagram) = if horizontal || boundary {

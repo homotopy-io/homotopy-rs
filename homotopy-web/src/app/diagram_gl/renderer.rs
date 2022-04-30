@@ -9,7 +9,7 @@ use homotopy_graphics::{
 use ultraviolet::{Mat4, Vec3, Vec4};
 
 use self::{axes::Axes, gbuffer::GBuffer, quad::Quad, scene::Scene, shaders::Shaders};
-use super::{orbit_camera::OrbitCamera, GlDiagramProps};
+use super::{orbit_camera::OrbitCamera, DiagramGlProps};
 use crate::{app::AppSettings, components::settings::Store, model::proof::Signature};
 
 mod axes;
@@ -43,7 +43,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(ctx: GlCtx, settings: &Store<AppSettings>, props: &GlDiagramProps) -> Result<Self> {
+    pub fn new(ctx: GlCtx, settings: &Store<AppSettings>, props: &DiagramGlProps) -> Result<Self> {
         let smooth_time = *settings.get_smooth_time();
         let subdivision_depth = *settings.get_subdivision_depth() as u8;
         let samples = *settings.get_geometry_samples() as u8;
@@ -101,7 +101,7 @@ impl Renderer {
     }
 
     pub fn render(&mut self, camera: &OrbitCamera, settings: &Store<AppSettings>, t: f32) {
-        let duration = self.scene.diagram.size() as f32;
+        let duration = self.scene.diagram.size().unwrap() as f32;
         let geometry_scale = *settings.get_geometry_scale() as f32 / 10.;
 
         let v = camera.view_transform(&self.ctx);
