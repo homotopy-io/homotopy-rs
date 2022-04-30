@@ -58,10 +58,11 @@ impl Component for WorkspaceView {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let slice_buttons = match Self::visible_diagram(ctx) {
-            Diagram::DiagramN(d) if ctx.props().workspace.view.dimension() == 2 => html! {
+        let diagram = Self::visible_diagram(ctx);
+        let slice_buttons = match ctx.props().workspace.view.dimension() {
+            1 | 2 => html! {
                 <SliceControl
-                    number_slices={d.size()}
+                    number_slices={diagram.size().unwrap()}
                     descend_slice={ctx.props().dispatch.reform(Action::DescendSlice)}
                     diagram_ref={self.diagram_ref.clone()}
                     on_hover={ctx.props().dispatch.reform(Action::HighlightSlice)}
