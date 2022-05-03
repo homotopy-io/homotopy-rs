@@ -85,7 +85,19 @@ impl DiagramN {
             let singular = slice.clone().rewrite_forward(&contract).unwrap();
             // TODO: normalization
             // let normalize = normalization::normalize_singular(&singular.into());
-            let normalize = Rewrite::identity(contract.dimension());
+            let normalize = RewriteN::new(
+                contract.dimension(),
+                singular
+                    .cospans()
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, cs)| cs.forward == cs.backward)
+                    .map(|(i, cs)| {
+                        Cone::new(i, vec![], cs.clone(), vec![cs.forward.clone()], vec![])
+                    })
+                    .collect(),
+            )
+            .into();
 
             let cospan = match boundary_path.boundary() {
                 Boundary::Source => Cospan {
@@ -687,7 +699,7 @@ mod test {
 
     use super::*;
     use crate::{
-        examples::{stacks, two_beads},
+        examples::{stacks, two_beads, two_endomorphism},
         graph::SliceGraph,
         Boundary::{Source, Target},
         Height::{Regular, Singular},
@@ -1090,5 +1102,125 @@ mod test {
                     i.index()
                 )
             });
+    }
+
+    #[test]
+    fn contract_invertible_1d() {
+        let x_generator = Generator::new(0, 0);
+        let f_generator = Generator::new(1, 1);
+        let forward: Rewrite = Rewrite0::new(
+            x_generator,
+            f_generator,
+            (f_generator, vec![Boundary(Source)]).into(),
+        )
+        .into();
+        let backward: Rewrite = Rewrite0::new(
+            x_generator,
+            f_generator,
+            (f_generator, vec![Boundary(Target)]).into(),
+        )
+        .into();
+        let f_cospan = Cospan {
+            forward: forward.clone(),
+            backward: backward.clone(),
+        };
+        let f_inverse_cospan = Cospan {
+            forward: backward.clone(),
+            backward: forward.clone(),
+        };
+
+        let f_then_inverse = DiagramN::new(
+            Diagram::Diagram0(x_generator).into(),
+            vec![f_cospan.clone(), f_inverse_cospan.clone()],
+        );
+        assert_eq!(
+            contract_base(&f_then_inverse, 0, None).unwrap(),
+            RewriteN::from_slices(
+                1,
+                f_then_inverse.cospans(),
+                &[Cospan {
+                    forward: forward.clone(),
+                    backward: forward.clone(),
+                }],
+                vec![vec![forward.clone(), backward.clone(), forward.clone()]],
+                vec![vec![Rewrite::identity(0), Rewrite::identity(0)]]
+            )
+        );
+
+        let inverse_then_f = DiagramN::new(
+            Diagram::Diagram0(x_generator).into(),
+            vec![f_inverse_cospan, f_cospan.clone()],
+        );
+        assert_eq!(
+            contract_base(&inverse_then_f, 0, None).unwrap(),
+            RewriteN::from_slices(
+                1,
+                inverse_then_f.cospans(),
+                &[Cospan {
+                    forward: backward.clone(),
+                    backward: backward.clone(),
+                }],
+                vec![vec![backward.clone(), forward, backward]],
+                vec![vec![Rewrite::identity(0), Rewrite::identity(0)]]
+            )
+        );
+
+        let f_then_f = DiagramN::new(
+            Diagram::Diagram0(x_generator).into(),
+            vec![f_cospan.clone(), f_cospan],
+        );
+        assert!(contract_base(&f_then_f, 0, None).is_err())
+    }
+
+    #[test]
+    fn contract_invertible_2d() {
+        let (_sig, e) = two_endomorphism();
+
+        let e_then_inverse = DiagramN::new(
+            e.source(),
+            [e.cospans(), e.inverse().unwrap().cospans()].concat(),
+        );
+        assert_eq!(
+            contract_base(&e_then_inverse, 0, Some(Bias::Higher)).unwrap(),
+            RewriteN::from_slices(
+                2,
+                e_then_inverse.cospans(),
+                &[Cospan {
+                    forward: e.cospans()[0].forward.clone(),
+                    backward: e.cospans()[0].forward.clone(),
+                }],
+                vec![vec![
+                    e.cospans()[0].forward.clone(),
+                    e.cospans()[0].backward.clone(),
+                    e.cospans()[0].forward.clone()
+                ]],
+                vec![vec![Rewrite::identity(1), Rewrite::identity(1)]]
+            )
+        );
+
+        let inverse_then_e = DiagramN::new(
+            e.source(),
+            [e.inverse().unwrap().cospans(), e.cospans()].concat(),
+        );
+        assert_eq!(
+            contract_base(&inverse_then_e, 0, None).unwrap(),
+            RewriteN::from_slices(
+                2,
+                inverse_then_e.cospans(),
+                &[Cospan {
+                    forward: e.cospans()[0].backward.clone(),
+                    backward: e.cospans()[0].backward.clone(),
+                }],
+                vec![vec![
+                    e.cospans()[0].backward.clone(),
+                    e.cospans()[0].forward.clone(),
+                    e.cospans()[0].backward.clone()
+                ]],
+                vec![vec![Rewrite::identity(1), Rewrite::identity(1)]]
+            )
+        );
+
+        let e_then_e = DiagramN::new(e.source(), [e.cospans(), e.cospans()].concat());
+        assert!(contract_base(&e_then_e, 0, None).is_err());
     }
 }
