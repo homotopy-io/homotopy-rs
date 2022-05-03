@@ -23,7 +23,7 @@ lyon_path = "0.17.7"
 paste = "1.0.7"
 petgraph = "0.6.0"
 serde = { features = ["derive"], version = "1.0.136" }
-serde_json = "1.0.79"
+serde_json = "1.0.80"
 thiserror = "1.0.30"
 ultraviolet = "0.9.0"
 wasm-bindgen = "0.2.80"
