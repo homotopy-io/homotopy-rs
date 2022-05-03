@@ -21,7 +21,7 @@ petgraph = "0.6.0"
 serde = { features = ["derive"], version = "1.0.136" }
 rmp-serde = "1.1.0"
 itertools = "0.10.3"
-thiserror = "1.0.30"
+thiserror = "1.0.31"
 
 [dev-dependencies]
 cargo-husky = { features = ["precommit-hook", "run-cargo-check", "run-cargo-test", "run-cargo-fmt", "run-cargo-clippy"], version = "1.5.0" }
