@@ -485,6 +485,20 @@ impl DiagramN {
         })
     }
 
+    pub fn inverse(&self) -> Result<Self, NewDiagramError> {
+        if let [cs] = self.cospans() {
+            Ok(Self::new_unsafe(
+                self.slices().last().unwrap(),
+                vec![Cospan {
+                    forward: cs.backward.clone(),
+                    backward: cs.forward.clone(),
+                }],
+            ))
+        } else {
+            Err(NewDiagramError::NonInvertible)
+        }
+    }
+
     #[must_use]
     pub fn behead(&self, max_height: RegularHeight) -> Self {
         Self::new(self.source(), self.cospans()[..max_height].to_vec())
@@ -680,6 +694,9 @@ pub enum NewDiagramError {
 
     #[error("can't create diagram with non-globular boundaries")]
     NonGlobular,
+
+    #[error("can't create inverse diagram")]
+    NonInvertible,
 }
 
 #[derive(Debug, Error)]
