@@ -12,11 +12,16 @@ use thiserror::Error;
 pub struct Generator {
     pub dimension: usize,
     pub id: usize,
+    pub invertible: bool,
 }
 
 impl Generator {
     pub fn new(id: usize, dimension: usize) -> Self {
-        Self { dimension, id }
+        Self {
+            dimension,
+            id,
+            invertible: true, // TODO: default to off, make toggle-able
+        }
     }
 }
 

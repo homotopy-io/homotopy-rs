@@ -152,12 +152,25 @@ fn highlight_attachment<const N: usize>(
     }
 
     let attach_option = workspace.attachment_highlight.as_ref()?;
-    let needle: DiagramN = signature
-        .generator_info(attach_option.generator)?
-        .diagram
-        .clone()
-        .try_into()
-        .unwrap();
+    let needle: DiagramN = if attach_option.inverse {
+        DiagramN::try_from(
+            signature
+                .generator_info(attach_option.generator)?
+                .diagram
+                .clone(),
+        )
+        .ok()?
+        .inverse()
+        .ok()?
+    } else {
+        DiagramN::try_from(
+            signature
+                .generator_info(attach_option.generator)?
+                .diagram
+                .clone(),
+        )
+        .ok()?
+    };
 
     let boundary_path = attach_option.boundary_path;
     let embedding = &attach_option.embedding;
