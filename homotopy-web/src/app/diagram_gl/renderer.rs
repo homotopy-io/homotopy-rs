@@ -18,12 +18,6 @@ mod quad;
 mod scene;
 mod shaders;
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
-pub enum ViewDimension {
-    Three = 3,
-    Four = 4,
-}
-
 pub struct Renderer {
     // outside world
     ctx: GlCtx,
@@ -52,11 +46,7 @@ impl Renderer {
             scene: Scene::new(
                 &ctx,
                 &props.diagram,
-                if props.view.dimension() <= 3 {
-                    ViewDimension::Three
-                } else {
-                    ViewDimension::Four
-                },
+                props.view,
                 smooth_time,
                 subdivision_depth,
                 samples,
@@ -107,7 +97,7 @@ impl Renderer {
         let v = camera.view_transform(&self.ctx);
         let p = camera.perspective_transform(&self.ctx);
 
-        let program = if self.scene.view_dimension == ViewDimension::Three {
+        let program = if self.scene.view.dimension() <= 3 {
             &self.shaders.geometry_3d
         } else {
             &self.shaders.geometry_4d
@@ -128,7 +118,7 @@ impl Renderer {
         };
 
         // Render animated wireframes to cylinder buffer
-        if self.scene.view_dimension == ViewDimension::Four {
+        if self.scene.view.dimension() == 4 {
             let mut frame = Frame::new(&mut self.ctx)
                 .with_frame_buffer(&self.cylinder_buffer.framebuffer)
                 .with_clear_color(Vec4::new(0., 0., 0., 0.));
@@ -161,7 +151,7 @@ impl Renderer {
                     }));
                 }
 
-                if self.scene.view_dimension == ViewDimension::Four {
+                if self.scene.view.dimension() == 4 {
                     for animation_curve in &self.scene.animation_curves {
                         if let (Some(position), Some(sphere)) =
                             (animation_curve.at(t), self.scene.sphere.as_ref())

@@ -10,11 +10,11 @@ use homotopy_graphics::{
 };
 use ultraviolet::Vec4;
 
-use super::ViewDimension;
+use crate::model::proof::View;
 
 pub struct Scene {
     pub diagram: Diagram,
-    pub view_dimension: ViewDimension,
+    pub view: View,
     pub components: Vec<(Generator, VertexArray)>,
     pub wireframe_components: Vec<VertexArray>,
     pub cylinder_components: Vec<(Generator, VertexArray)>,
@@ -57,7 +57,7 @@ impl Scene {
     pub fn new(
         ctx: &GlCtx,
         diagram: &Diagram,
-        view_dimension: ViewDimension,
+        view: View,
         smooth_time: bool,
         subdivision_depth: u8,
         geometry_samples: u8,
@@ -66,7 +66,7 @@ impl Scene {
 
         let mut scene = Self {
             diagram,
-            view_dimension,
+            view,
             components: vec![],
             wireframe_components: vec![],
             cylinder_components: vec![],
@@ -113,13 +113,13 @@ impl Scene {
 
         let mut mesh = clay(
             &self.diagram,
-            self.view_dimension as usize,
+            self.view.dimension(),
             smooth_time,
             subdivision_depth,
         )
         .unwrap();
 
-        if self.view_dimension == ViewDimension::Three {
+        if self.view.dimension() <= 3 {
             mesh.inflate_3d(geometry_samples);
             for tri_buffers in mesh.buffer_tris(ctx)? {
                 self.components.push((

@@ -210,7 +210,7 @@ impl CubicalGeometry {
                 .unwrap()
                 .generator;
 
-            if n < N - 1 && diagram.dimension().saturating_sub(generator.dimension) != n {
+            if n + 1 < N && diagram.dimension().saturating_sub(generator.dimension) != n {
                 continue;
             }
 
