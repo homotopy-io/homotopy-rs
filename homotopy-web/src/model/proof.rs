@@ -223,7 +223,7 @@ impl ProofState {
             Action::SwitchSlice(direction) => self.switch_slice(*direction),
             Action::UpdateView(view) => self.update_view(*view),
             Action::SelectPoints(points) => self.select_points(points)?,
-            Action::Attach(option) => self.attach(option),
+            Action::Attach(option) => self.attach(option)?,
             Action::HighlightAttachment(option) => self.highlight_attachment(option.clone()),
             Action::HighlightSlice(slice) => self.highlight_slice(*slice),
             Action::Homotopy(Homotopy::Expand(homotopy)) => self.homotopy_expansion(homotopy)?,
@@ -626,8 +626,30 @@ impl ProofState {
                                 embedding: embedding.into_iter().collect(),
                                 boundary_path,
                                 generator: info.generator,
+                                inverse: false,
                             }),
                     );
+
+                    if info.invertible {
+                        let inverse_needle = DiagramN::try_from(info.diagram.clone())
+                            .unwrap()
+                            .slice(boundary)
+                            .unwrap();
+
+                        matches.extend(
+                            haystack
+                                .embeddings(&inverse_needle)
+                                .filter(|embedding| {
+                                    contains_point(inverse_needle.clone(), &point, embedding)
+                                })
+                                .map(|embedding| AttachOption {
+                                    embedding: embedding.into_iter().collect(),
+                                    boundary_path,
+                                    generator: info.generator,
+                                    inverse: true,
+                                }),
+                        );
+                    }
                 }
             }
         }
@@ -637,10 +659,7 @@ impl ProofState {
                 self.clear_attach();
                 Err(ModelError::NoAttachment)
             }
-            1 => {
-                self.attach(&matches.into_iter().next().unwrap());
-                Ok(())
-            }
+            1 => self.attach(&matches.into_iter().next().unwrap()),
             _ => {
                 let workspace = self.workspace.as_mut().unwrap();
                 workspace.attach = Some(matches.into_iter().collect());
@@ -650,18 +669,23 @@ impl ProofState {
         }
     }
 
-    fn attach(&mut self, option: &AttachOption) {
+    fn attach(&mut self, option: &AttachOption) -> Result<(), ModelError> {
         if let Some(workspace) = &mut self.workspace {
             // TODO: Better error handling, although none of these errors should occur
             let diagram: DiagramN = workspace.diagram.clone().try_into().unwrap();
-            let generator: DiagramN = self
-                .signature
-                .generator_info(option.generator)
-                .unwrap()
-                .diagram
-                .clone()
-                .try_into()
-                .unwrap();
+            let generator: DiagramN = {
+                let generating_diagram = self
+                    .signature
+                    .generator_info(option.generator)
+                    .unwrap()
+                    .diagram
+                    .clone();
+                if option.inverse {
+                    DiagramN::try_from(generating_diagram)?.inverse()?
+                } else {
+                    DiagramN::try_from(generating_diagram)?
+                }
+            };
             let embedding: Vec<_> = option.embedding.iter().copied().collect();
 
             let result = match &option.boundary_path {
@@ -682,6 +706,7 @@ impl ProofState {
         }
 
         self.clear_attach();
+        Ok(())
     }
 
     /// Handler for [Action::HighlightAttachment].
@@ -967,6 +992,7 @@ impl Default for RenderStyle {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct AttachOption {
     pub generator: Generator,
+    pub inverse: bool,
     pub boundary_path: Option<BoundaryPath>,
     pub embedding: Vector<usize>,
 }

@@ -1,3 +1,4 @@
+use homotopy_core::DiagramN;
 use yew::prelude::*;
 
 use crate::model::proof::{Action, AttachOption, Signature};
@@ -70,7 +71,13 @@ impl AttachView {
                     style={format!("background: {}", info.color)}
                 />
                 <span class="attach__option-name">
-                    {&info.name}
+                    {
+                        if option.inverse {
+                            format!("{} (inverse)", info.name)
+                        } else {
+                            info.name.clone()
+                        }
+                    }
                 </span>
             </li>
         }
