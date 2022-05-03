@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1651580084147,
+  "lastUpdate": 1651588040492,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -31919,6 +31919,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 93.765,
             "range": "+/- 0.030",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "committer": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "distinct": true,
+          "id": "1e753ca81f3bf3eb4095dee9cd679b3c6a66e512",
+          "message": "Squashed commit of the following:\n\ncommit 5d0317b99d11fa2e0355e8ad825b709949dba3a1\nMerge: d2fcb31 5ba852c\nAuthor: Nick Hu <me@nickhu.co.uk>\nDate:   Tue May 3 13:02:42 2022 +0100\n\n    Merge branch 'master' into dependabot/cargo/serde-1.0.137\n\ncommit d2fcb31dbbe30fc2c607aef53fc40186793163f0\nMerge: 95d5792 e36babc\nAuthor: Nick Hu <me@nickhu.co.uk>\nDate:   Tue May 3 12:07:17 2022 +0100\n\n    Merge branch 'master' into dependabot/cargo/serde-1.0.137\n\ncommit 95d579251315fe79d0cb4f41a07ac20beaa5f254\nAuthor: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nDate:   Mon May 2 22:19:30 2022 +0000\n\n    Bump serde from 1.0.136 to 1.0.137\n\n    Bumps [serde](https://github.com/serde-rs/serde) from 1.0.136 to 1.0.137.\n    - [Release notes](https://github.com/serde-rs/serde/releases)\n    - [Commits](https://github.com/serde-rs/serde/compare/v1.0.136...v1.0.137)\n\n    ---\n    updated-dependencies:\n    - dependency-name: serde\n      dependency-type: direct:production\n      update-type: version-update:semver-patch\n    ...\n\n    Signed-off-by: dependabot[bot] <support@github.com>",
+          "timestamp": "2022-05-03T14:46:58+01:00",
+          "tree_id": "e723c85328a729bd8d42c59df360fd491783d527",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/1e753ca81f3bf3eb4095dee9cd679b3c6a66e512"
+        },
+        "date": 1651588032753,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 67.272,
+            "range": "+/- 0.025",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 69.097,
+            "range": "+/- 0.034",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 99.835,
+            "range": "+/- 0.243",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 117.56,
+            "range": "+/- 0.680",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 82.183,
+            "range": "+/- 0.038",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 97.355,
+            "range": "+/- 0.040",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 85.073,
+            "range": "+/- 0.038",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 540.93,
+            "range": "+/- 0.350",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.1797,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 6.7522,
+            "range": "+/- 0.005",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 18.001,
+            "range": "+/- 0.012",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 44.486,
+            "range": "+/- 0.028",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 112.4,
+            "range": "+/- 0.170",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 301.31,
+            "range": "+/- 0.790",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 68.698,
+            "range": "+/- 0.029",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 97.157,
+            "range": "+/- 0.034",
             "unit": "us"
           }
         ]
