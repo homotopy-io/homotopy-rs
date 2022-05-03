@@ -644,8 +644,30 @@ impl ProofState {
                                 embedding: embedding.into_iter().collect(),
                                 boundary_path,
                                 generator: info.generator,
+                                inverse: false,
                             }),
                     );
+
+                    if info.invertible {
+                        let inverse_needle = DiagramN::try_from(info.diagram.clone())
+                            .unwrap()
+                            .slice(boundary)
+                            .unwrap();
+
+                        matches.extend(
+                            haystack
+                                .embeddings(&inverse_needle)
+                                .filter(|embedding| {
+                                    contains_point(inverse_needle.clone(), &point, embedding)
+                                })
+                                .map(|embedding| AttachOption {
+                                    embedding: embedding.into_iter().collect(),
+                                    boundary_path,
+                                    generator: info.generator,
+                                    inverse: true,
+                                }),
+                        );
+                    }
                 }
             }
         }
@@ -670,13 +692,20 @@ impl ProofState {
 
     fn attach(&mut self, option: &AttachOption) -> Result<(), ModelError> {
         if let Some(workspace) = &mut self.workspace {
-            let generator: DiagramN = self
-                .signature
-                .generator_info(option.generator)
-                .ok_or(ModelError::InvalidAction)?
-                .diagram
-                .clone()
-                .try_into()?;
+            // TODO: Better error handling, although none of these errors should occur
+            let generator: DiagramN = {
+                let generating_diagram = self
+                    .signature
+                    .generator_info(option.generator)
+                    .ok_or(ModelError::InvalidAction)?
+                    .diagram
+                    .clone();
+                if option.inverse {
+                    DiagramN::try_from(generating_diagram)?.inverse()?
+                } else {
+                    DiagramN::try_from(generating_diagram)?
+                }
+            };
             let embedding: Vec<_> = option.embedding.iter().copied().collect();
 
             let result = match &option.boundary_path {
@@ -995,6 +1024,7 @@ impl Default for RenderStyle {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct AttachOption {
     pub generator: Generator,
+    pub inverse: bool,
     pub boundary_path: Option<BoundaryPath>,
     pub embedding: Vector<usize>,
 }
