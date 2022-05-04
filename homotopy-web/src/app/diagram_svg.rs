@@ -103,7 +103,8 @@ impl<const N: usize> PreparedDiagram<N> {
     fn new(diagram: &Diagram, style: RenderStyle) -> Self {
         assert!(diagram.dimension() >= N);
 
-        let time_start = web_sys::window().unwrap().performance().unwrap().now();
+        let performance = web_sys::window().unwrap().performance().unwrap();
+        performance.mark("startPrepareDiagram").unwrap();
 
         let layout = Layout::new(diagram).unwrap();
         let complex = make_complex(diagram);
@@ -131,10 +132,25 @@ impl<const N: usize> PreparedDiagram<N> {
             })
             .collect();
 
-        let time_stop = web_sys::window().unwrap().performance().unwrap().now();
+        performance.mark("stopPrepareDiagram").unwrap();
+        performance
+            .measure_with_start_mark_and_end_mark(
+                "prepareDiagram",
+                "startPrepareDiagram",
+                "stopPrepareDiagram",
+            )
+            .unwrap();
         log::info!(
             "preparing diagram for rendering took {}ms",
-            time_stop - time_start
+            js_sys::Reflect::get(
+                &performance
+                    .get_entries_by_name_with_entry_type("prepareDiagram", "measure")
+                    .get(0),
+                &wasm_bindgen::JsValue::from_str("duration")
+            )
+            .unwrap()
+            .as_f64()
+            .unwrap()
         );
 
         Self {

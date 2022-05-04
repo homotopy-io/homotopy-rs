@@ -91,10 +91,29 @@ impl Component for App {
                     }
                 }
 
-                let time_start = web_sys::window().unwrap().performance().unwrap().now();
+                let performance = web_sys::window().unwrap().performance().unwrap();
+                performance.mark("startStateUpdate").unwrap();
                 let result = self.state.update(action);
-                let time_stop = web_sys::window().unwrap().performance().unwrap().now();
-                log::info!("State update took {}ms.", time_stop - time_start);
+                performance.mark("stopStateUpdate").unwrap();
+                performance
+                    .measure_with_start_mark_and_end_mark(
+                        "stateUpdate",
+                        "startStateUpdate",
+                        "stopStateUpdate",
+                    )
+                    .unwrap();
+                log::info!(
+                    "State update took {}ms.",
+                    js_sys::Reflect::get(
+                        &performance
+                            .get_entries_by_name_with_entry_type("stateUpdate", "measure")
+                            .get(0),
+                        &wasm_bindgen::JsValue::from_str("duration")
+                    )
+                    .unwrap()
+                    .as_f64()
+                    .unwrap()
+                );
 
                 homotopy_core::collect_garbage();
 
