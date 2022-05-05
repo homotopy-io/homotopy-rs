@@ -106,27 +106,32 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
 }
 
 fn render_point(point: Point2D<f32>) -> String {
-    format!("({}, {})", point.x, point.y)
+    let x = (point.x * 100.0).round() / 100.0;
+    let y = (point.y * 100.0).round() / 100.0;
+    format!("({}, {})", x, y)
 }
 
 fn render_path(path: &Path) -> String {
     let mut result = String::new();
     for event in path {
         match event {
-            Event::Begin { at } => write!(result, "({}, {})", at.x, at.y).unwrap(),
-            Event::Line { to, .. } => write!(result, " -- ({}, {})", to.x, to.y).unwrap(),
+            Event::Begin { at } => result.push_str(&render_point(at)),
+            Event::Line { to, .. } => write!(result, " -- {}", render_point(to)).unwrap(),
             Event::Quadratic { ctrl, to, .. } => write!(
                 result,
-                " .. controls ({}, {}) .. ({}, {})",
-                ctrl.x, ctrl.y, to.x, to.y
+                " .. controls {} .. {}",
+                render_point(ctrl),
+                render_point(to)
             )
             .unwrap(),
             Event::Cubic {
                 ctrl1, ctrl2, to, ..
             } => write!(
                 result,
-                " .. controls ({}, {}) and ({}, {}) .. ({}, {})",
-                ctrl1.x, ctrl1.y, ctrl2.x, ctrl2.y, to.x, to.y
+                " .. controls {} and {} .. {}",
+                render_point(ctrl1),
+                render_point(ctrl2),
+                render_point(to),
             )
             .unwrap(),
             Event::End { close, .. } => {
