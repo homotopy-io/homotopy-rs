@@ -153,6 +153,9 @@ impl<const N: usize> PreparedDiagram<N> {
             .unwrap()
         );
 
+        performance.clear_marks();
+        performance.clear_measures();
+
         Self {
             graphic,
             actions,

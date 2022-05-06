@@ -115,6 +115,9 @@ impl Component for App {
                     .unwrap()
                 );
 
+                performance.clear_marks();
+                performance.clear_measures();
+
                 homotopy_core::collect_garbage();
 
                 if let Err(error) = result {
