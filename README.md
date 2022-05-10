@@ -1,6 +1,6 @@
 # About the project
 
-The homotopy.io proof assistant allows the construction of composite morphisms in a finitely-generated semistrict n-category, via a point-and-click user interface. Composites are rendered as 2d and 3d geometries, and can be visualised in 4d as movies of 3d geometries. The proof assistant is implemented in the Rust programming languages, and compiled to WebAssembly to run in the web browser. 
+The homotopy.io proof assistant allows the construction of composite morphisms in a finitely-generated semistrict n-category, via a point-and-click user interface. Composites are rendered as 2d and 3d geometries, and can be visualised in 4d as movies of 3d geometries. The proof assistant is implemented in the Rust programming language, and compiled to WebAssembly to run in the web browser. 
 
 The master branch is hosted live here: https://beta.homotopy.io/
 
