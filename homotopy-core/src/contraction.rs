@@ -359,16 +359,20 @@ fn collapse_base<'a, Ix: IndexType>(
     // construct colimit legs
     let legs = {
         let mut legs = IdxVec::with_capacity(graph.node_count());
-        graph.node_indices().for_each(|n| {
+        for n in graph.node_indices() {
             legs.push({
                 let (p, q) = (union_find.find_mut(n), union_find.find_mut(max_dim_index));
                 if p == q {
                     Rewrite::identity(0)
                 } else {
-                    quotient[(p, q)].clone()
+                    quotient
+                        .edge_weight(p, q)
+                        .copied()
+                        .cloned()
+                        .ok_or(ContractionError::Invalid)?
                 }
             });
-        });
+        }
         legs
     };
 
