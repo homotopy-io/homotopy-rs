@@ -1,6 +1,12 @@
-use crate::signature::{Signature, SignatureBuilder};
 #[allow(clippy::wildcard_imports)]
 use crate::*;
+use crate::{
+    rewrite::Cone,
+    signature::{Signature, SignatureBuilder},
+    Boundary::{Source, Target},
+    Height::{Regular, Singular},
+    SliceIndex::{Boundary, Interior},
+};
 
 //    |       |
 //    m       m
@@ -13,10 +19,10 @@ pub fn associator() -> (SignatureBuilder, DiagramN) {
 
     let x = sig.add_zero();
     let f = sig.add(x.clone(), x).unwrap();
-    let ff = f.attach(&f, Boundary::Target, &[]).unwrap();
+    let ff = f.attach(&f, Target, &[]).unwrap();
     let m = sig.add(ff, f).unwrap();
-    let left = m.attach(&m, Boundary::Source, &[0]).unwrap();
-    let right = m.attach(&m, Boundary::Source, &[1]).unwrap();
+    let left = m.attach(&m, Source, &[0]).unwrap();
+    let right = m.attach(&m, Source, &[1]).unwrap();
     let associator = sig.add(left, right).unwrap();
     (sig, associator)
 }
@@ -48,7 +54,7 @@ pub fn two_monoid() -> (impl Signature, DiagramN) {
 
     let space = sig.add_zero();
     let wire = sig.add(space.clone(), space).unwrap();
-    let wirewire = wire.attach(&wire, Boundary::Target, &[]).unwrap();
+    let wirewire = wire.attach(&wire, Target, &[]).unwrap();
     let m = sig.add(wirewire, wire).unwrap();
     (sig, m)
 }
@@ -71,7 +77,163 @@ pub fn two_scalars() -> (impl Signature, DiagramN) {
     let x = sig.add_zero();
     let s = sig.add(x.identity(), x.identity()).unwrap();
     let t = sig.add(x.identity(), x.identity()).unwrap();
-    (sig, s.attach(&t, Boundary::Target, &[]).unwrap())
+    (sig, s.attach(&t, Target, &[]).unwrap())
+}
+
+//  |   |
+//   \ /
+//    >
+//   / \
+//  |   |
+pub fn touching() -> (impl Signature, DiagramN) {
+    let mut sig = SignatureBuilder::new();
+
+    let x = sig.add_zero();
+    let x_generator = Generator::new(0, 0);
+    let s = sig.add(x.identity(), x.identity()).unwrap();
+    let s_generator = Generator::new(1, 2);
+    let s_s = s.attach(&s, Target, &[]).unwrap();
+    let rewrite =
+        |coord| Rewrite0::new(x_generator, s_generator, (s_generator, coord).into()).into();
+    let fwd = rewrite(vec![Interior(Singular(0)), Boundary(Source)]);
+    let bwd = rewrite(vec![Interior(Singular(0)), Boundary(Target)]);
+    let up = rewrite(vec![Boundary(Source), Interior(Regular(0))]);
+    let down = rewrite(vec![Boundary(Target), Interior(Regular(0))]);
+    let s_internal = Cospan {
+        forward: fwd,
+        backward: bwd,
+    };
+    let up_cone = Cone::new(0, vec![], s_internal.clone(), vec![up.clone()], vec![]);
+    let down_cone = Cone::new(0, vec![], s_internal.clone(), vec![down], vec![]);
+    let s_tensor_s_cospan = Cospan {
+        forward: RewriteN::new(1, vec![up_cone.clone(), up_cone.clone()]).into(),
+        backward: RewriteN::new(1, vec![down_cone.clone(), down_cone.clone()]).into(),
+    };
+    let twist: Rewrite = RewriteN::new(
+        2,
+        vec![Cone::new(
+            0,
+            s_s.cospans().to_vec(),
+            s_tensor_s_cospan.clone(),
+            vec![
+                s_tensor_s_cospan.forward,
+                RewriteN::new(1, vec![down_cone.clone(), up_cone]).into(),
+                s_tensor_s_cospan.backward,
+            ],
+            vec![
+                RewriteN::new(1, vec![Cone::new(1, vec![], s_internal, vec![up], vec![])]).into(),
+                RewriteN::new(1, vec![down_cone]).into(),
+            ],
+        )],
+    )
+    .into();
+    (
+        sig,
+        DiagramN::new(
+            s_s.into(),
+            vec![
+                Cospan {
+                    forward: twist.clone(),
+                    backward: Rewrite::identity(2),
+                },
+                Cospan {
+                    forward: Rewrite::identity(2),
+                    backward: twist,
+                },
+            ],
+        ),
+    )
+}
+
+//  |   |
+//   \ /
+//    \
+//   / \
+//  |   |
+pub fn crossing() -> (impl Signature, DiagramN) {
+    let mut sig = SignatureBuilder::new();
+
+    let x = sig.add_zero();
+    let x_generator = Generator::new(0, 0);
+    let s = sig.add(x.identity(), x.identity()).unwrap();
+    let s_generator = Generator::new(1, 2);
+    let s_s = s.attach(&s, Target, &[]).unwrap();
+    let rewrite =
+        |coord| Rewrite0::new(x_generator, s_generator, (s_generator, coord).into()).into();
+    let fwd = rewrite(vec![Interior(Singular(0)), Boundary(Source)]);
+    let bwd = rewrite(vec![Interior(Singular(0)), Boundary(Target)]);
+    let up = rewrite(vec![Boundary(Source), Interior(Regular(0))]);
+    let down = rewrite(vec![Boundary(Target), Interior(Regular(0))]);
+    let s_internal = Cospan {
+        forward: fwd,
+        backward: bwd,
+    };
+    let up_cone = Cone::new(0, vec![], s_internal.clone(), vec![up.clone()], vec![]);
+    let down_cone = Cone::new(0, vec![], s_internal.clone(), vec![down.clone()], vec![]);
+    let s_tensor_s_cospan = Cospan {
+        forward: RewriteN::new(1, vec![up_cone.clone(), up_cone.clone()]).into(),
+        backward: RewriteN::new(1, vec![down_cone.clone(), down_cone.clone()]).into(),
+    };
+    let twist: Rewrite = RewriteN::new(
+        2,
+        vec![Cone::new(
+            0,
+            s_s.cospans().to_vec(),
+            s_tensor_s_cospan.clone(),
+            vec![
+                s_tensor_s_cospan.forward.clone(),
+                RewriteN::new(1, vec![down_cone.clone(), up_cone.clone()]).into(),
+                s_tensor_s_cospan.backward.clone(),
+            ],
+            vec![
+                RewriteN::new(
+                    1,
+                    vec![Cone::new(1, vec![], s_internal.clone(), vec![up], vec![])],
+                )
+                .into(),
+                RewriteN::new(1, vec![down_cone.clone()]).into(),
+            ],
+        )],
+    )
+    .into();
+    let untwist: Rewrite = RewriteN::new(
+        2,
+        vec![Cone::new(
+            0,
+            s_s.cospans().to_vec(),
+            s_tensor_s_cospan.clone(),
+            vec![
+                s_tensor_s_cospan.forward,
+                RewriteN::new(1, vec![up_cone.clone(), down_cone]).into(),
+                s_tensor_s_cospan.backward,
+            ],
+            vec![
+                RewriteN::new(1, vec![up_cone]).into(),
+                RewriteN::new(
+                    1,
+                    vec![Cone::new(1, vec![], s_internal, vec![down], vec![])],
+                )
+                .into(),
+            ],
+        )],
+    )
+    .into();
+    (
+        sig,
+        DiagramN::new(
+            s_s.into(),
+            vec![
+                Cospan {
+                    forward: untwist,
+                    backward: Rewrite::identity(2),
+                },
+                Cospan {
+                    forward: Rewrite::identity(2),
+                    backward: twist,
+                },
+            ],
+        ),
+    )
 }
 
 // | |
@@ -87,9 +249,9 @@ pub fn two_beads() -> (impl Signature, DiagramN) {
     let b = sig.add(f.clone(), f.clone()).unwrap();
     (
         sig,
-        a.attach(&f, Boundary::Target, &[])
+        a.attach(&f, Target, &[])
             .unwrap()
-            .attach(&b, Boundary::Target, &[1])
+            .attach(&b, Target, &[1])
             .unwrap(),
     )
 }
@@ -111,11 +273,11 @@ pub fn three_beads() -> (impl Signature, DiagramN) {
 
     (
         sig,
-        a.attach(&f, Boundary::Target, &[])
+        a.attach(&f, Target, &[])
             .unwrap()
-            .attach(&b, Boundary::Target, &[1])
+            .attach(&b, Target, &[1])
             .unwrap()
-            .attach(&c, Boundary::Target, &[0])
+            .attach(&c, Target, &[0])
             .unwrap(),
     )
 }
@@ -132,9 +294,9 @@ pub fn stacks() -> (impl Signature, DiagramN) {
 
     (
         sig,
-        m.attach(&f, Boundary::Target, &[])
+        m.attach(&f, Target, &[])
             .unwrap()
-            .attach(&m, Boundary::Target, &[])
+            .attach(&m, Target, &[])
             .unwrap(),
     )
 }
@@ -151,7 +313,7 @@ pub fn matchsticks() -> (impl Signature, DiagramN) {
     let f = sig.add(x.clone(), x.clone()).unwrap();
     let up = sig.add(f.clone(), x.identity()).unwrap();
     let down = sig.add(x.identity(), f).unwrap();
-    (sig, up.attach(&down, Boundary::Target, &[]).unwrap())
+    (sig, up.attach(&down, Target, &[]).unwrap())
 }
 
 // | |    ...    |
@@ -173,9 +335,9 @@ pub fn bead_series(n: usize) -> (impl Signature, DiagramN) {
     let mut res = e.clone();
     for i in 1..n {
         res = res
-            .attach(&f, Boundary::Target, &[])
+            .attach(&f, Target, &[])
             .unwrap()
-            .attach(&e, Boundary::Target, &[i])
+            .attach(&e, Target, &[i])
             .unwrap();
     }
 
@@ -198,7 +360,7 @@ pub fn monoid_unit() -> (impl Signature, DiagramN) {
 
     // 1-cells
     let f = sig.add(x.clone(), x.clone()).unwrap();
-    let ff = f.attach(&f, Boundary::Target, &[]).unwrap();
+    let ff = f.attach(&f, Target, &[]).unwrap();
 
     // 2-cells
     let m = sig.add(ff, f.clone()).unwrap();
@@ -206,9 +368,9 @@ pub fn monoid_unit() -> (impl Signature, DiagramN) {
 
     (
         sig,
-        m.attach(&u, Boundary::Source, &[1])
+        m.attach(&u, Source, &[1])
             .unwrap()
-            .attach(&m, Boundary::Source, &[])
+            .attach(&m, Source, &[])
             .unwrap(),
     )
 }
@@ -235,13 +397,13 @@ pub fn scalar_and_beads() -> (impl Signature, DiagramN) {
 
     (
         sig,
-        s.attach(&f, Boundary::Source, &[])
+        s.attach(&f, Source, &[])
             .unwrap()
-            .attach(&f, Boundary::Target, &[])
+            .attach(&f, Target, &[])
             .unwrap()
-            .attach(&a, Boundary::Source, &[0])
+            .attach(&a, Source, &[0])
             .unwrap()
-            .attach(&b, Boundary::Target, &[1])
+            .attach(&b, Target, &[1])
             .unwrap(),
     )
 }
@@ -254,15 +416,15 @@ pub fn snake() -> (impl Signature, DiagramN) {
 
     // 1-cells
     let f = sig.add(x.clone(), x.clone()).unwrap();
-    let ff = f.attach(&f, Boundary::Target, &[]).unwrap();
+    let ff = f.attach(&f, Target, &[]).unwrap();
 
     // 2-cells
     let cap = sig.add(ff.clone(), x.identity()).unwrap();
     let cup = sig.add(x.identity(), ff).unwrap();
     let snake = cap
-        .attach(&f, Boundary::Target, &[])
+        .attach(&f, Target, &[])
         .unwrap()
-        .attach(&cup, Boundary::Source, &[1])
+        .attach(&cup, Source, &[1])
         .unwrap();
 
     // 3-cells
@@ -279,15 +441,15 @@ pub fn lips() -> (impl Signature, DiagramN) {
 
     // 1-cells
     let f = sig.add(x.clone(), x.clone()).unwrap();
-    let ff = f.attach(&f, Boundary::Target, &[]).unwrap();
+    let ff = f.attach(&f, Target, &[]).unwrap();
 
     // 2-cells
     let cap = sig.add(ff.clone(), x.identity()).unwrap();
     let cup = sig.add(x.identity(), ff).unwrap();
     let snake = cap
-        .attach(&f, Boundary::Target, &[])
+        .attach(&f, Target, &[])
         .unwrap()
-        .attach(&cup, Boundary::Source, &[1])
+        .attach(&cup, Source, &[1])
         .unwrap();
 
     // 3-cells
@@ -298,9 +460,7 @@ pub fn lips() -> (impl Signature, DiagramN) {
     let lips = sig
         .add(
             f.identity().identity(),
-            snake_birth
-                .attach(&snake_death, Boundary::Target, &[])
-                .unwrap(),
+            snake_birth.attach(&snake_death, Target, &[]).unwrap(),
         )
         .unwrap();
 
@@ -315,7 +475,7 @@ pub fn pants_unit() -> (impl Signature, DiagramN) {
 
     // 1-cells
     let f = sig.add(x.clone(), x.clone()).unwrap();
-    let ff = f.attach(&f, Boundary::Target, &[]).unwrap();
+    let ff = f.attach(&f, Target, &[]).unwrap();
 
     // 2-cells
     let cap = sig.add(ff.clone(), x.identity()).unwrap();
@@ -323,21 +483,18 @@ pub fn pants_unit() -> (impl Signature, DiagramN) {
 
     // 3-cells
     let saddle = sig
-        .add(
-            cap.attach(&cup, Boundary::Target, &[]).unwrap(),
-            ff.identity(),
-        )
+        .add(cap.attach(&cup, Target, &[]).unwrap(), ff.identity())
         .unwrap();
     let sphere_birth = sig
         .add(
             x.identity().identity(),
-            cup.attach(&cap, Boundary::Target, &[]).unwrap(),
+            cup.attach(&cap, Target, &[]).unwrap(),
         )
         .unwrap();
     let three_snake = saddle
-        .attach(&cap, Boundary::Target, &[])
+        .attach(&cap, Target, &[])
         .unwrap()
-        .attach(&sphere_birth, Boundary::Source, &[1])
+        .attach(&sphere_birth, Source, &[1])
         .unwrap();
 
     // 4-cells
