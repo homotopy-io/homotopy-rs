@@ -13,7 +13,7 @@ build = true
 homotopy-common = { path = "../homotopy-common" }
 bimap = "0.6.2"
 getrandom = { version = "0.2.6", features = ["js"] }
-hashconsing = "1.5.0"
+hashconsing = "1.5.1"
 highway = "0.8.0"
 log = "0.4.16"
 minilp = "0.2.2"
