@@ -661,13 +661,15 @@ fn drag_to_homotopy<const N: usize>(
                     direction,
                 }))
             } else {
-                let bias = if horizontal || abs_radians >= PI / 2.0 {
-                    Bias::Lower
+                let bias = if horizontal || abs_radians >= 2.0 * PI / 3.0 {
+                    Some(Bias::Lower)
+                } else if abs_radians <= PI / 3.0 {
+                    Some(Bias::Higher)
                 } else {
-                    Bias::Higher
+                    None
                 };
 
-                let bias = Some(bias);
+                let bias = bias;
 
                 let height = match y {
                     Regular(_) => unreachable!(),
