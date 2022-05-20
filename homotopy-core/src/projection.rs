@@ -29,6 +29,7 @@ type Coordinate<const N: usize> = [SliceIndex; N];
 #[derive(Copy, Clone, Debug)]
 pub enum Homotopy {
     Complex,
+    Duality,
     Identity,
     HalfBraid,
     FullBraid,
@@ -127,7 +128,7 @@ impl<const N: usize> Projection<N> {
                 }
 
                 if inputs == 0 || outputs == 0 {
-                    Some(Homotopy::Complex)
+                    Some(Homotopy::Duality)
                 } else if inputs == 1 && outputs == 1 {
                     if input_rewrites[0].is_identity() && output_rewrites[0].is_identity() {
                         Some(Homotopy::Identity)
