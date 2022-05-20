@@ -19,19 +19,19 @@ type Orientation = (usize, Direction);
 #[derive(Copy, Clone, Debug)]
 enum ElementData {
     Element0(NodeIndex),
-    ElementN(CubeInternal),
+    ElementN(ElementInternal),
 }
 
 use ElementData::{Element0, ElementN};
 
 #[derive(Copy, Clone, Debug)]
-struct CubeInternal {
+struct ElementInternal {
     faces: [Element; 2],
     parent: Option<Element>,
     orientation: Orientation,
 }
 
-impl Index<usize> for CubeInternal {
+impl Index<usize> for ElementInternal {
     type Output = Element;
 
     fn index(&self, index: usize) -> &Self::Output {
@@ -114,9 +114,9 @@ impl<const N: usize> Mesh<N> {
         // Maps every element in the original mesh to its corresponding elements in the exploded mesh.
         let mut element_to_elements: IdxVec<Element, Vec<Element>> = IdxVec::default();
 
-        for &element in self.elements.values() {
+        for &ed in self.elements.values() {
             let mut elements = vec![];
-            match element {
+            match ed {
                 Element0(n) => {
                     let nodes = &explosion.node_to_nodes[n];
                     let size = nodes.len();
@@ -131,28 +131,28 @@ impl<const N: usize> Mesh<N> {
                             faces.swap(0, 1);
                             Direction::Backward
                         };
-                        elements.push(mesh.elements.push(ElementN(CubeInternal {
+                        elements.push(mesh.elements.push(ElementN(ElementInternal {
                             faces,
                             parent: None,
                             orientation: (index, direction),
                         })));
                     }
                 }
-                ElementN(cube) => {
-                    if cube.parent.is_some() {
+                ElementN(elem) => {
+                    if elem.parent.is_some() {
                         continue;
                     }
 
-                    let s = self.parent(cube[0]).unwrap_or(cube[0]);
-                    let t = self.parent(cube[1]).unwrap_or(cube[1]);
+                    let s = self.parent(elem[0]).unwrap_or(elem[0]);
+                    let t = self.parent(elem[1]).unwrap_or(elem[1]);
                     for &e_0 in &element_to_elements[s] {
                         for &e_1 in &element_to_elements[t] {
                             if let Some(faces) = mesh.mk_element(e_0, e_1, &mut memory) {
                                 elements.push(*memory.entry(faces).or_insert_with(|| {
-                                    mesh.elements.push(ElementN(CubeInternal {
+                                    mesh.elements.push(ElementN(ElementInternal {
                                         faces,
                                         parent: None,
-                                        orientation: cube.orientation,
+                                        orientation: elem.orientation,
                                     }))
                                 }));
                             }
@@ -175,18 +175,15 @@ impl<const N: usize> Mesh<N> {
     ) -> Option<[Element; 2]> {
         assert_ne!(e_0, e_1);
 
-        let elem_0 = self.elements[e_0];
-        let elem_1 = self.elements[e_1];
-
-        let [e_00, e_01, e_10, e_11] = match (elem_0, elem_1) {
+        let [e_00, e_01, e_10, e_11] = match (self.elements[e_0], self.elements[e_1]) {
             (Element0(a), Element0(b)) => return self.graph.find_edge(a, b).and(Some([e_0, e_1])),
-            (Element0(_), ElementN(cube_1)) => [e_0, e_0, cube_1[0], cube_1[1]],
-            (ElementN(cube_0), Element0(_)) => [cube_0[0], cube_0[1], e_1, e_1],
-            (ElementN(cube_0), ElementN(cube_1)) => {
-                match cube_0.orientation.cmp(&cube_1.orientation) {
-                    Ordering::Less => [cube_0[0], cube_0[1], e_1, e_1],
-                    Ordering::Equal => [cube_0[0], cube_0[1], cube_1[0], cube_1[1]],
-                    Ordering::Greater => [e_0, e_0, cube_1[0], cube_1[1]],
+            (Element0(_), ElementN(elem_1)) => [e_0, e_0, elem_1[0], elem_1[1]],
+            (ElementN(elem_0), Element0(_)) => [elem_0[0], elem_0[1], e_1, e_1],
+            (ElementN(elem_0), ElementN(elem_1)) => {
+                match elem_0.orientation.cmp(&elem_1.orientation) {
+                    Ordering::Less => [elem_0[0], elem_0[1], e_1, e_1],
+                    Ordering::Equal => [elem_0[0], elem_0[1], elem_1[0], elem_1[1]],
+                    Ordering::Greater => [e_0, e_0, elem_1[0], elem_1[1]],
                 }
             }
         };
@@ -199,7 +196,7 @@ impl<const N: usize> Mesh<N> {
         }
 
         if e_10 != e_11 {
-            if let ElementN(cube) = elem_1 {
+            if let ElementN(elem_1) = self.elements[e_1] {
                 if let Some([e_100, _]) = self.faces(e_10) {
                     if let Some([_, e_111]) = self.faces(e_11) {
                         let partial_l = memory.contains_key(&[e_00, e_100]);
@@ -207,10 +204,10 @@ impl<const N: usize> Mesh<N> {
 
                         if l && partial_r {
                             let t = memory.entry([e_10, e_111]).or_insert_with(|| {
-                                self.elements.push(ElementN(CubeInternal {
+                                self.elements.push(ElementN(ElementInternal {
                                     faces: [e_10, e_111],
                                     parent: Some(e_1),
-                                    orientation: cube.orientation,
+                                    orientation: elem_1.orientation,
                                 }))
                             });
                             return Some([e_0, *t]);
@@ -218,10 +215,10 @@ impl<const N: usize> Mesh<N> {
 
                         if partial_l && r {
                             let t = memory.entry([e_100, e_11]).or_insert_with(|| {
-                                self.elements.push(ElementN(CubeInternal {
+                                self.elements.push(ElementN(ElementInternal {
                                     faces: [e_100, e_11],
                                     parent: Some(e_1),
-                                    orientation: cube.orientation,
+                                    orientation: elem_1.orientation,
                                 }))
                             });
                             return Some([e_0, *t]);
@@ -229,10 +226,10 @@ impl<const N: usize> Mesh<N> {
 
                         if partial_l && partial_r {
                             let t = memory.entry([e_100, e_111]).or_insert_with(|| {
-                                self.elements.push(ElementN(CubeInternal {
+                                self.elements.push(ElementN(ElementInternal {
                                     faces: [e_100, e_111],
                                     parent: Some(e_1),
-                                    orientation: cube.orientation,
+                                    orientation: elem_1.orientation,
                                 }))
                             });
                             return Some([e_0, *t]);
@@ -245,26 +242,26 @@ impl<const N: usize> Mesh<N> {
         None
     }
 
-    fn faces(&self, elem: Element) -> Option<[Element; 2]> {
-        match self.elements[elem] {
+    fn faces(&self, e: Element) -> Option<[Element; 2]> {
+        match self.elements[e] {
             Element0(_) => None,
-            ElementN(cube) => Some(cube.faces),
+            ElementN(elem) => Some(elem.faces),
         }
     }
 
-    fn parent(&self, elem: Element) -> Option<Element> {
-        match self.elements[elem] {
+    fn parent(&self, e: Element) -> Option<Element> {
+        match self.elements[e] {
             Element0(_) => None,
-            ElementN(cube) => cube.parent,
+            ElementN(elem) => elem.parent,
         }
     }
 
-    fn orientation_of(&self, elem: Element) -> Vec<Orientation> {
-        match self.elements[elem] {
+    fn orientation_of(&self, e: Element) -> Vec<Orientation> {
+        match self.elements[e] {
             Element0(_) => vec![],
-            ElementN(cube) => std::iter::once(cube.orientation)
-                .chain(self.orientation_of(cube[0]))
-                .chain(self.orientation_of(cube[1]))
+            ElementN(elem) => std::iter::once(elem.orientation)
+                .chain(self.orientation_of(elem[0]))
+                .chain(self.orientation_of(elem[1]))
                 .sorted()
                 .dedup()
                 .collect_vec(),
@@ -282,18 +279,18 @@ impl<const N: usize> Mesh<N> {
             Element0(n) => {
                 vec![self.graph[n].0; 2_usize.pow(dim as u32)]
             }
-            ElementN(cube) => {
+            ElementN(elem) => {
                 let mut orientation = orientation.to_owned();
                 let index = orientation
                     .iter()
-                    .position(|i| *i == cube.orientation)
+                    .position(|i| *i == elem.orientation)
                     .unwrap();
                 orientation.remove(index);
 
-                let mut cube_0 = self.flatten(cube[0], directed, &orientation);
-                let mut cube_1 = self.flatten(cube[1], directed, &orientation);
+                let mut cube_0 = self.flatten(elem[0], directed, &orientation);
+                let mut cube_1 = self.flatten(elem[1], directed, &orientation);
 
-                if !directed && cube.orientation.1 == Direction::Backward {
+                if !directed && elem.orientation.1 == Direction::Backward {
                     std::mem::swap(&mut cube_0, &mut cube_1);
                 }
 
