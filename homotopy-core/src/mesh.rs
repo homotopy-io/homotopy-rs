@@ -27,7 +27,7 @@ use ElementData::{Element0, ElementN};
 #[derive(Copy, Clone, Debug)]
 struct CubeInternal {
     faces: [Element; 2],
-    partial: bool,
+    parent: Option<Element>,
     direction: Direction,
     orientation: Orientation,
 }
@@ -42,7 +42,7 @@ impl Index<usize> for CubeInternal {
 
 #[derive(Clone, Debug)]
 pub struct Mesh<const N: usize> {
-    graph: SliceGraph<[SliceIndex; N], bool>,
+    graph: SliceGraph<[SliceIndex; N]>,
     elements: IdxVec<Element, ElementData>,
 }
 
@@ -75,7 +75,7 @@ impl<const N: usize> Mesh<N> {
     /// Iterator of all non-partial visible elements in the mesh.
     pub fn elements(&self, directed: bool) -> impl Iterator<Item = Vec<[SliceIndex; N]>> + '_ {
         self.elements.keys().filter_map(move |elem| {
-            if self.is_partial(elem).unwrap_or_default() {
+            if self.parent(elem).is_some() {
                 return None;
             }
 
@@ -100,8 +100,8 @@ impl<const N: usize> Mesh<N> {
                 coord[index] = si;
                 Some(coord)
             },
-            |_, _, _| Some(false),
-            |_, partial, r| Some(*partial || r == ExternalRewrite::Flange),
+            |_, _, _| Some(()),
+            |_, _, r| (r != ExternalRewrite::Flange).then(|| ()),
         )?;
 
         let mut mesh = Self {
@@ -109,8 +109,8 @@ impl<const N: usize> Mesh<N> {
             elements: IdxVec::default(),
         };
 
-        // Records if there is an element with given faces and whether it is partial or not.
-        let mut memory: FastHashMap<[Element; 2], bool> = FastHashMap::default();
+        // Records if there is an element with given faces.
+        let mut memory: FastHashMap<[Element; 2], Element> = FastHashMap::default();
 
         // Maps every element in the original mesh to its corresponding elements in the exploded mesh.
         let mut element_to_elements: IdxVec<Element, Vec<Element>> = IdxVec::default();
@@ -135,22 +135,29 @@ impl<const N: usize> Mesh<N> {
                         elements.push(mesh.elements.push(ElementN(CubeInternal {
                             faces,
                             direction,
-                            partial: false,
+                            parent: None,
                             orientation: index as u8,
                         })));
                     }
                 }
                 ElementN(cube) => {
-                    for &e_0 in &element_to_elements[cube[0]] {
-                        for &e_1 in &element_to_elements[cube[1]] {
-                            if let Some(partial) = mesh.mk_element(e_0, e_1, &memory) {
-                                memory.insert([e_0, e_1], partial);
-                                elements.push(mesh.elements.push(ElementN(CubeInternal {
-                                    partial,
-                                    faces: [e_0, e_1],
-                                    direction: cube.direction,
-                                    orientation: cube.orientation,
-                                })));
+                    if cube.parent.is_some() {
+                        continue;
+                    }
+
+                    let s = self.parent(cube[0]).unwrap_or(cube[0]);
+                    let t = self.parent(cube[1]).unwrap_or(cube[1]);
+                    for &e_0 in &element_to_elements[s] {
+                        for &e_1 in &element_to_elements[t] {
+                            if let Some(faces) = mesh.mk_element(e_0, e_1, &mut memory) {
+                                elements.push(*memory.entry(faces).or_insert_with(|| {
+                                    mesh.elements.push(ElementN(CubeInternal {
+                                        faces,
+                                        parent: None,
+                                        direction: cube.direction,
+                                        orientation: cube.orientation,
+                                    }))
+                                }));
                             }
                         }
                     }
@@ -164,21 +171,18 @@ impl<const N: usize> Mesh<N> {
     }
 
     fn mk_element(
-        &self,
+        &mut self,
         e_0: Element,
         e_1: Element,
-        memory: &FastHashMap<[Element; 2], bool>,
-    ) -> Option<bool> {
+        memory: &mut FastHashMap<[Element; 2], Element>,
+    ) -> Option<[Element; 2]> {
         assert_ne!(e_0, e_1);
 
         let elem_0 = self.elements[e_0];
         let elem_1 = self.elements[e_1];
 
         let [e_00, e_01, e_10, e_11] = match (elem_0, elem_1) {
-            (Element0(a), Element0(b)) => {
-                let e = self.graph.find_edge(a, b)?;
-                return Some(self.graph[e].0);
-            }
+            (Element0(a), Element0(b)) => return self.graph.find_edge(a, b).and(Some([e_0, e_1])),
             (Element0(_), ElementN(cube_1)) => [e_0, e_0, cube_1[0], cube_1[1]],
             (ElementN(cube_0), Element0(_)) => [cube_0[0], cube_0[1], e_1, e_1],
             (ElementN(cube_0), ElementN(cube_1)) => {
@@ -190,17 +194,74 @@ impl<const N: usize> Mesh<N> {
             }
         };
 
-        Some(
-            memory.get(&[e_00, e_10]).copied()?
-                || memory.get(&[e_01, e_11]).copied()?
-                || self.is_partial(e_0).unwrap_or(true) && self.is_partial(e_1).unwrap_or(true),
-        )
+        let l = memory.contains_key(&[e_00, e_10]);
+        let r = memory.contains_key(&[e_01, e_11]);
+
+        if l && r {
+            return Some([e_0, e_1]);
+        }
+
+        if e_10 != e_11 {
+            if let ElementN(cube) = elem_1 {
+                if let Some([e_100, _]) = self.faces(e_10) {
+                    if let Some([_, e_111]) = self.faces(e_11) {
+                        let partial_l = memory.contains_key(&[e_00, e_100]);
+                        let partial_r = memory.contains_key(&[e_01, e_111]);
+
+                        if l && partial_r {
+                            let t = memory.entry([e_10, e_111]).or_insert_with(|| {
+                                self.elements.push(ElementN(CubeInternal {
+                                    faces: [e_10, e_111],
+                                    parent: Some(e_1),
+                                    direction: cube.direction,
+                                    orientation: cube.orientation,
+                                }))
+                            });
+                            return Some([e_0, *t]);
+                        }
+
+                        if partial_l && r {
+                            let t = memory.entry([e_100, e_11]).or_insert_with(|| {
+                                self.elements.push(ElementN(CubeInternal {
+                                    faces: [e_100, e_11],
+                                    parent: Some(e_1),
+                                    direction: cube.direction,
+                                    orientation: cube.orientation,
+                                }))
+                            });
+                            return Some([e_0, *t]);
+                        }
+
+                        if partial_l && partial_r {
+                            let t = memory.entry([e_100, e_111]).or_insert_with(|| {
+                                self.elements.push(ElementN(CubeInternal {
+                                    faces: [e_100, e_111],
+                                    parent: Some(e_1),
+                                    direction: cube.direction,
+                                    orientation: cube.orientation,
+                                }))
+                            });
+                            return Some([e_0, *t]);
+                        }
+                    }
+                }
+            }
+        }
+
+        None
     }
 
-    fn is_partial(&self, elem: Element) -> Option<bool> {
+    fn faces(&self, elem: Element) -> Option<[Element; 2]> {
         match self.elements[elem] {
             Element0(_) => None,
-            ElementN(cube) => Some(cube.partial),
+            ElementN(cube) => Some(cube.faces),
+        }
+    }
+
+    fn parent(&self, elem: Element) -> Option<Element> {
+        match self.elements[elem] {
+            Element0(_) => None,
+            ElementN(cube) => cube.parent,
         }
     }
 
