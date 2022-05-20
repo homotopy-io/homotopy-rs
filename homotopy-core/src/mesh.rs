@@ -14,7 +14,7 @@ declare_idx! {
     pub struct Element = usize;
 }
 
-type Orientation = u8;
+type Orientation = (usize, Direction);
 
 #[derive(Copy, Clone, Debug)]
 enum ElementData {
@@ -28,7 +28,6 @@ use ElementData::{Element0, ElementN};
 struct CubeInternal {
     faces: [Element; 2],
     parent: Option<Element>,
-    direction: Direction,
     orientation: Orientation,
 }
 
@@ -134,9 +133,8 @@ impl<const N: usize> Mesh<N> {
                         };
                         elements.push(mesh.elements.push(ElementN(CubeInternal {
                             faces,
-                            direction,
                             parent: None,
-                            orientation: index as u8,
+                            orientation: (index, direction),
                         })));
                     }
                 }
@@ -154,7 +152,6 @@ impl<const N: usize> Mesh<N> {
                                     mesh.elements.push(ElementN(CubeInternal {
                                         faces,
                                         parent: None,
-                                        direction: cube.direction,
                                         orientation: cube.orientation,
                                     }))
                                 }));
@@ -213,7 +210,6 @@ impl<const N: usize> Mesh<N> {
                                 self.elements.push(ElementN(CubeInternal {
                                     faces: [e_10, e_111],
                                     parent: Some(e_1),
-                                    direction: cube.direction,
                                     orientation: cube.orientation,
                                 }))
                             });
@@ -225,7 +221,6 @@ impl<const N: usize> Mesh<N> {
                                 self.elements.push(ElementN(CubeInternal {
                                     faces: [e_100, e_11],
                                     parent: Some(e_1),
-                                    direction: cube.direction,
                                     orientation: cube.orientation,
                                 }))
                             });
@@ -237,7 +232,6 @@ impl<const N: usize> Mesh<N> {
                                 self.elements.push(ElementN(CubeInternal {
                                     faces: [e_100, e_111],
                                     parent: Some(e_1),
-                                    direction: cube.direction,
                                     orientation: cube.orientation,
                                 }))
                             });
@@ -299,7 +293,7 @@ impl<const N: usize> Mesh<N> {
                 let mut cube_0 = self.flatten(cube[0], directed, &orientation);
                 let mut cube_1 = self.flatten(cube[1], directed, &orientation);
 
-                if !directed && cube.direction == Direction::Backward {
+                if !directed && cube.orientation.1 == Direction::Backward {
                     std::mem::swap(&mut cube_0, &mut cube_1);
                 }
 
