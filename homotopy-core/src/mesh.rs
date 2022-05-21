@@ -10,14 +10,14 @@ use crate::{
     Boundary, Diagram, Direction, Height, SliceIndex,
 };
 
+type Orientation = (usize, Direction);
+
 declare_idx! {
     pub struct Element = usize;
 }
 
-type Orientation = (usize, Direction);
-
 #[derive(Copy, Clone, Debug)]
-enum ElementData {
+pub enum ElementData {
     Element0(NodeIndex),
     ElementN(ElementInternal),
 }
@@ -25,7 +25,7 @@ enum ElementData {
 use ElementData::{Element0, ElementN};
 
 #[derive(Copy, Clone, Debug)]
-struct ElementInternal {
+pub struct ElementInternal {
     faces: [Element; 2],
     parent: Option<Element>,
     orientation: Orientation,
@@ -39,7 +39,7 @@ impl Index<usize> for ElementInternal {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Mesh<const N: usize> {
     graph: SliceGraph<[SliceIndex; N]>,
     elements: IdxVec<Element, ElementData>,
@@ -52,10 +52,11 @@ impl<const N: usize> Mesh<N> {
             return Err(DimensionError);
         }
 
-        let mut mesh = Self {
-            graph: SliceGraph::singleton([Boundary::Source.into(); N], diagram.clone()),
-            elements: IdxVec::splat(Element0(NodeIndex::new(0)), 1),
-        };
+        let mut mesh = Self::default();
+        mesh.elements.push(Element0(
+            mesh.graph
+                .add_node(([Boundary::Source.into(); N], diagram.clone())),
+        ));
 
         for i in 0..N {
             mesh = mesh.explode(i)?;
@@ -78,13 +79,13 @@ impl<const N: usize> Mesh<N> {
                 return None;
             }
 
-            let orientation = self.orientation_of(elem);
-            let n = orientation.len();
+            let orientation = self.orientation(elem);
+            let dim = orientation.len();
 
             Some(self.flatten(elem, directed, &orientation)).filter(|points| {
                 // Check that the element is visible by looking at the coordinates.
                 points.iter().all(|coord| {
-                    coord[n..]
+                    coord[dim..]
                         .iter()
                         .all(|si| matches!(si, SliceIndex::Interior(Height::Singular(_))))
                 })
@@ -256,35 +257,33 @@ impl<const N: usize> Mesh<N> {
         }
     }
 
-    fn orientation_of(&self, e: Element) -> Vec<Orientation> {
+    fn orientation(&self, e: Element) -> Vec<Orientation> {
         match self.elements[e] {
             Element0(_) => vec![],
             ElementN(elem) => std::iter::once(elem.orientation)
-                .chain(self.orientation_of(elem[0]))
-                .chain(self.orientation_of(elem[1]))
+                .chain(self.orientation(elem[0]))
+                .chain(self.orientation(elem[1]))
                 .sorted()
                 .dedup()
-                .collect_vec(),
+                .collect(),
         }
     }
 
     fn flatten(
         &self,
-        elem: Element,
+        e: Element,
         directed: bool,
         orientation: &[Orientation],
     ) -> Vec<[SliceIndex; N]> {
-        let dim = orientation.len();
-        match self.elements[elem] {
+        let dim = orientation.len() as u32;
+        match self.elements[e] {
             Element0(n) => {
-                vec![self.graph[n].0; 2_usize.pow(dim as u32)]
+                vec![self.graph[n].0; 2_usize.pow(dim)]
             }
             ElementN(elem) => {
+                let index = orientation.binary_search(&elem.orientation).unwrap();
+
                 let mut orientation = orientation.to_owned();
-                let index = orientation
-                    .iter()
-                    .position(|i| *i == elem.orientation)
-                    .unwrap();
                 orientation.remove(index);
 
                 let mut cube_0 = self.flatten(elem[0], directed, &orientation);
@@ -294,12 +293,12 @@ impl<const N: usize> Mesh<N> {
                     std::mem::swap(&mut cube_0, &mut cube_1);
                 }
 
-                let chunk_size = 2_usize.pow((dim - index - 1) as u32);
+                let chunk_size = 2_usize.pow(dim - index as u32 - 1);
 
                 interleave(cube_0.chunks(chunk_size), cube_1.chunks(chunk_size))
                     .flatten()
                     .copied()
-                    .collect_vec()
+                    .collect()
             }
         }
     }
