@@ -176,18 +176,24 @@ impl<const N: usize> Mesh<N> {
     ) -> Option<[Element; 2]> {
         assert_ne!(e_0, e_1);
 
-        let [e_00, e_01, e_10, e_11] = match (self.elements[e_0], self.elements[e_1]) {
+        let (elem_0, elem_1) = match (self.elements[e_0], self.elements[e_1]) {
             (Element0(a), Element0(b)) => return self.graph.find_edge(a, b).and(Some([e_0, e_1])),
-            (Element0(_), ElementN(elem_1)) => [e_0, e_0, elem_1[0], elem_1[1]],
-            (ElementN(elem_0), Element0(_)) => [elem_0[0], elem_0[1], e_1, e_1],
+            (Element0(_), ElementN(elem_1)) => (None, Some(elem_1)),
+            (ElementN(elem_0), Element0(_)) => (Some(elem_0), None),
             (ElementN(elem_0), ElementN(elem_1)) => {
-                match elem_0.orientation.cmp(&elem_1.orientation) {
-                    Ordering::Less => [elem_0[0], elem_0[1], e_1, e_1],
-                    Ordering::Equal => [elem_0[0], elem_0[1], elem_1[0], elem_1[1]],
-                    Ordering::Greater => [e_0, e_0, elem_1[0], elem_1[1]],
+                let (i, dir_0) = elem_0.orientation;
+                let (j, dir_1) = elem_1.orientation;
+                match i.cmp(&j) {
+                    Ordering::Less => (Some(elem_0), None),
+                    Ordering::Equal if dir_0 == dir_1 => (Some(elem_0), Some(elem_1)),
+                    Ordering::Equal => return None,
+                    Ordering::Greater => (None, Some(elem_1)),
                 }
             }
         };
+
+        let [e_00, e_01] = elem_0.map_or([e_0, e_0], |elem_0| elem_0.faces);
+        let [e_10, e_11] = elem_1.map_or([e_1, e_1], |elem_1| elem_1.faces);
 
         let l = memory.contains_key(&[e_00, e_10]);
         let r = memory.contains_key(&[e_01, e_11]);
@@ -196,45 +202,43 @@ impl<const N: usize> Mesh<N> {
             return Some([e_0, e_1]);
         }
 
-        if e_10 != e_11 {
-            if let ElementN(elem_1) = self.elements[e_1] {
-                if let Some([e_100, _]) = self.faces(e_10) {
-                    if let Some([_, e_111]) = self.faces(e_11) {
-                        let partial_l = memory.contains_key(&[e_00, e_100]);
-                        let partial_r = memory.contains_key(&[e_01, e_111]);
+        if let Some(elem_1) = elem_1 {
+            if let Some([e_100, _]) = self.faces(e_10) {
+                if let Some([_, e_111]) = self.faces(e_11) {
+                    let partial_l = memory.contains_key(&[e_00, e_100]);
+                    let partial_r = memory.contains_key(&[e_01, e_111]);
 
-                        if l && partial_r {
-                            let t = memory.entry([e_10, e_111]).or_insert_with(|| {
-                                self.elements.push(ElementN(ElementInternal {
-                                    faces: [e_10, e_111],
-                                    parent: Some(e_1),
-                                    orientation: elem_1.orientation,
-                                }))
-                            });
-                            return Some([e_0, *t]);
-                        }
+                    if l && partial_r {
+                        let t = memory.entry([e_10, e_111]).or_insert_with(|| {
+                            self.elements.push(ElementN(ElementInternal {
+                                faces: [e_10, e_111],
+                                parent: Some(e_1),
+                                orientation: elem_1.orientation,
+                            }))
+                        });
+                        return Some([e_0, *t]);
+                    }
 
-                        if partial_l && r {
-                            let t = memory.entry([e_100, e_11]).or_insert_with(|| {
-                                self.elements.push(ElementN(ElementInternal {
-                                    faces: [e_100, e_11],
-                                    parent: Some(e_1),
-                                    orientation: elem_1.orientation,
-                                }))
-                            });
-                            return Some([e_0, *t]);
-                        }
+                    if partial_l && r {
+                        let t = memory.entry([e_100, e_11]).or_insert_with(|| {
+                            self.elements.push(ElementN(ElementInternal {
+                                faces: [e_100, e_11],
+                                parent: Some(e_1),
+                                orientation: elem_1.orientation,
+                            }))
+                        });
+                        return Some([e_0, *t]);
+                    }
 
-                        if partial_l && partial_r {
-                            let t = memory.entry([e_100, e_111]).or_insert_with(|| {
-                                self.elements.push(ElementN(ElementInternal {
-                                    faces: [e_100, e_111],
-                                    parent: Some(e_1),
-                                    orientation: elem_1.orientation,
-                                }))
-                            });
-                            return Some([e_0, *t]);
-                        }
+                    if partial_l && partial_r {
+                        let t = memory.entry([e_100, e_111]).or_insert_with(|| {
+                            self.elements.push(ElementN(ElementInternal {
+                                faces: [e_100, e_111],
+                                parent: Some(e_1),
+                                orientation: elem_1.orientation,
+                            }))
+                        });
+                        return Some([e_0, *t]);
                     }
                 }
             }
