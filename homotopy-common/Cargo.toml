@@ -11,7 +11,7 @@ build = true
 
 [dependencies]
 rustc-hash = "1.1.0"
-petgraph = "0.6.0"
+petgraph = "0.6.1"
 serde = { features = ["derive"], version = "1.0.137" }
 
 [dev-dependencies]
