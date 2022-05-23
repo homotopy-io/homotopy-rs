@@ -277,7 +277,12 @@ fn solve(
     for e in colimit.edge_references() {
         let x = variables[e.source()];
         let y = variables[e.target()];
-        problem.add_constraint(&[(x, -1.0), (y, 1.0)], minilp::ComparisonOp::Ge, 1.0);
+        let d = problem.add_var(1.0, (1.0, f64::INFINITY));
+        problem.add_constraint(
+            &[(d, 1.0), (x, 1.0), (y, -1.0)],
+            minilp::ComparisonOp::Eq,
+            0.0,
+        );
     }
 
     // Fair averaging constraints (inc. straight wires).
