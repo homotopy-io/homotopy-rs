@@ -32,11 +32,10 @@ use crate::{
     Direction, Generator, SliceIndex,
 };
 
-type BiasValue = usize;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum Bias {
     Higher,
+    Same,
     Lower,
 }
 
@@ -45,6 +44,7 @@ impl Bias {
     pub fn flip(self) -> Self {
         match self {
             Self::Higher => Self::Lower,
+            Self::Same => Self::Same,
             Self::Lower => Self::Higher,
         }
     }
@@ -79,7 +79,7 @@ impl DiagramN {
         attach(self, boundary_path, |slice| {
             let slice = slice.try_into().map_err(|_d| ContractionError::Invalid)?;
             let contract = contract_in_path(&slice, interior_path, height, bias)?;
-            let singular = slice.clone().rewrite_forward(&contract).unwrap();
+            let singular = slice.rewrite_forward(&contract).unwrap();
             // TODO: normalization
             // let normalize = normalization::normalize_singular(&singular.into());
             let normalize = RewriteN::new(
@@ -149,9 +149,8 @@ fn contract_base(
         .ok_or(ContractionError::Invalid)?;
 
     let (bias0, bias1) = match bias {
-        None => (0, 0),
-        Some(Bias::Higher) => (1, 0),
-        Some(Bias::Lower) => (0, 1),
+        None => (None, None),
+        Some(b) => (Some(b.flip()), Some(b)),
     };
 
     let mut graph = DiGraph::new();
@@ -255,7 +254,7 @@ where
 }
 
 fn collapse<Ix: IndexType>(
-    graph: &DiGraph<(Diagram, BiasValue), Rewrite, Ix>,
+    graph: &DiGraph<(Diagram, Option<Bias>), Rewrite, Ix>,
 ) -> Result<Cocone<Ix>, ContractionError> {
     let dimension = graph
         .node_weights()
@@ -280,7 +279,7 @@ fn collapse<Ix: IndexType>(
 }
 
 fn collapse_base<'a, Ix: IndexType>(
-    graph: &'a DiGraph<(Diagram, BiasValue), Rewrite, Ix>,
+    graph: &'a DiGraph<(Diagram, Option<Bias>), Rewrite, Ix>,
 ) -> Result<Cocone<Ix>, ContractionError> {
     let mut union_find = UnionFind::new(graph.node_count());
 
@@ -381,7 +380,7 @@ fn collapse_base<'a, Ix: IndexType>(
 }
 
 fn collapse_recursive<Ix: IndexType>(
-    graph: &DiGraph<(Diagram, BiasValue), Rewrite, Ix>,
+    graph: &DiGraph<(Diagram, Option<Bias>), Rewrite, Ix>,
 ) -> Result<Cocone<Ix>, ContractionError> {
     // Input: graph of n-diagrams and n-rewrites
 
@@ -483,28 +482,45 @@ fn collapse_recursive<Ix: IndexType>(
     //  * each node in the quotient graph is a singular height in the colimit
     //  * the monotone function on singular heights is determined by the inclusion of Δ into the
     //    quotient graph
-    let scc_to_priority: IdxVec<NodeIndex<QuotientIx>, (usize, BiasValue)> = {
-        let mut scc_to_priority: IdxVec<NodeIndex<QuotientIx>, (usize, BiasValue)> =
+    let scc_to_priority: IdxVec<NodeIndex<QuotientIx>, (usize, Option<Bias>)> = {
+        let mut scc_to_priority: IdxVec<NodeIndex<QuotientIx>, (usize, Option<Bias>)> =
             IdxVec::splat(Default::default(), quotient.node_count());
         for (i, scc) in quotient.node_references().rev() {
             let priority = quotient
                 .neighbors_directed(i, Incoming)
                 .map(|prev| scc_to_priority[prev].0 + 1) // defined because SCCs are already topologically sorted
-                .fold(usize::MIN, std::cmp::max);
+                .max()
+                .unwrap_or_default();
             let bias = scc
                 .iter()
                 .map(|&n| graph[exploded[n].0 .0].1)
-                .fold(BiasValue::MAX, std::cmp::min);
+                .min()
+                .flatten();
             scc_to_priority[i] = (priority, bias);
         }
         scc_to_priority
     };
     // linear_components is the inverse image of the singular monotone
     let linear_components: Vec<_> = {
-        let mut components: Vec<_> = quotient.node_references().collect();
-        components.sort_by_key(|(i, _)| scc_to_priority[*i]);
-        is_strictly_increasing(&components, |(i, _)| scc_to_priority[*i])
-            .then(|| components.into_iter().map(|(_, scc)| scc).collect())
+        scc_to_priority
+            .values()
+            .sorted_unstable()
+            .tuple_windows()
+            .all(|((p, x), (q, y))| !(p == q && (x.is_none() || y.is_none())))
+            .then(|| {
+                let mut components: Vec<_> = quotient.node_references().collect();
+                components.sort_by_key(|(i, _)| scc_to_priority[*i]);
+                components
+                    .into_iter()
+                    .group_by(|(i, _)| scc_to_priority[*i])
+                    .into_iter()
+                    .map(|(_, sccs)| {
+                        sccs.map(|(_, scc)| scc.clone())
+                            .collect::<Vec<_>>()
+                            .concat()
+                    })
+                    .collect()
+            })
             .ok_or(ContractionError::Ambiguous)
     }?;
 
@@ -524,7 +540,7 @@ fn collapse_recursive<Ix: IndexType>(
                 })
                 .collect(),
         );
-        for &scc in &linear_components {
+        for scc in &linear_components {
             // get the right-most boundary of this scc
             regular_monotone.push(
                 scc.iter()
@@ -562,21 +578,23 @@ fn collapse_recursive<Ix: IndexType>(
             // the subproblem for each SCC is the subgraph of the exploded graph containing the SCC
             // and its adjacent regulars closed under reverse-reachability
             let mut restriction_to_exploded = IdxVec::new();
-            let restriction: DiGraph<(Diagram, BiasValue), _, RestrictionIx> = exploded.filter_map(
-                |i, (_, diagram)| {
-                    scc.iter()
-                        .chain(adjacent_regulars[0].values())
-                        .chain(adjacent_regulars[1].values())
-                        .any(|&c| {
-                            i == c || closure.contains_edge(revmap[i.index()], revmap[c.index()])
-                        })
-                        .then(|| {
-                            restriction_to_exploded.push(i);
-                            (diagram.clone(), graph[exploded[i].0 .0].1)
-                        })
-                },
-                |_, (ds, rewrite)| Some((ds, rewrite.clone())),
-            );
+            let restriction: DiGraph<(Diagram, Option<Bias>), _, RestrictionIx> = exploded
+                .filter_map(
+                    |i, (_, diagram)| {
+                        scc.iter()
+                            .chain(adjacent_regulars[0].values())
+                            .chain(adjacent_regulars[1].values())
+                            .any(|&c| {
+                                i == c
+                                    || closure.contains_edge(revmap[i.index()], revmap[c.index()])
+                            })
+                            .then(|| {
+                                restriction_to_exploded.push(i);
+                                (diagram.clone(), graph[exploded[i].0 .0].1)
+                            })
+                    },
+                    |_, (ds, rewrite)| Some((ds, rewrite.clone())),
+                );
             // note: every SCC spans every input diagram, and all sources (resp. targets) of
             // subdiagrams within an SCC are equal by globularity
 
@@ -604,8 +622,16 @@ fn collapse_recursive<Ix: IndexType>(
                 })
                 .ok_or(ContractionError::Invalid)?;
             // throw away extra information used to compute source and target
-            let restriction =
-                restriction.filter_map(|_, d| d.clone().into(), |_, (_, r)| r.clone().into());
+            let restriction = restriction.filter_map(
+                |_, (d, _)| {
+                    (
+                        d.clone(),
+                        None, // throw away biasing information for subproblems
+                    )
+                        .into()
+                },
+                |_, (_, r)| r.clone().into(),
+            );
             let cocone: Cocone<RestrictionIx> = collapse(&restriction)?;
             Ok((source, cocone, target, restriction_to_exploded))
         })
@@ -681,19 +707,6 @@ fn collapse_recursive<Ix: IndexType>(
         colimit: colimit.into(),
         legs,
     })
-}
-
-fn is_strictly_increasing<T, K, F>(slice: &[T], key: F) -> bool
-where
-    K: Ord,
-    F: Fn(&T) -> K,
-{
-    for i in 1..slice.len() {
-        if key(&slice[i - 1]) >= key(&slice[i]) {
-            return false;
-        }
-    }
-    true
 }
 
 #[cfg(test)]
@@ -803,7 +816,7 @@ mod test {
         {
             // left side
             let subproblem = graph.filter_map(
-                |i, ((), diagram)| (i.index() % 5 <= 2).then(|| (diagram.clone(), 0)),
+                |i, ((), diagram)| (i.index() % 5 <= 2).then(|| (diagram.clone(), None)),
                 |_, ((), edge)| Some(edge.clone()),
             );
             let actual: Cocone<DefaultIx> = collapse_base(&subproblem).unwrap();
@@ -857,7 +870,7 @@ mod test {
         {
             // right side
             let subproblem = graph.filter_map(
-                |i, ((), diagram)| (i.index() % 5 >= 2).then(|| (diagram.clone(), 0)),
+                |i, ((), diagram)| (i.index() % 5 >= 2).then(|| (diagram.clone(), None)),
                 |_, ((), edge)| Some(edge.clone()),
             );
             let actual: Cocone<DefaultIx> = collapse_base(&subproblem).unwrap();
@@ -926,7 +939,7 @@ mod test {
                 )
                 .unwrap();
         let problem = graph.map(
-            |_, ((), diagram)| (diagram.clone(), 0),
+            |_, ((), diagram)| (diagram.clone(), None),
             |_, ((), edge)| edge.clone(),
         );
         let actual: Cocone<DefaultIx> = collapse_recursive(&problem).unwrap();
@@ -1014,7 +1027,7 @@ mod test {
                 )
                 .unwrap();
         let problem = graph.map(
-            |_, ((), diagram)| (diagram.clone(), 0),
+            |_, ((), diagram)| (diagram.clone(), None),
             |_, ((), edge)| edge.clone(),
         );
         let actual: Cocone<DefaultIx> = collapse_recursive(&problem).unwrap();
