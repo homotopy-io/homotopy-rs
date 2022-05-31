@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "homotopy-io"
+  },
+  "targets": {
+    "homotopy-io": {
+      "hosting": {
+        "homotopy-rs": [
+          "homotopy-rs"
+        ]
+      }
+    }
+  }
+}

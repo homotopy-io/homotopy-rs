@@ -1,0 +1,17 @@
+{
+  "hosting": {
+    "target": "homotopy-rs",
+    "public": "result",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

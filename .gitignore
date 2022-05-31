@@ -1,6 +1,12 @@
 tags
+# Cargo build directory
 target
+# Nix develop environment
 .direnv/
+# Nix build directory
+result
+# Firebase cache
+.firebase/
 
 *.swp
 .DS_STORE
