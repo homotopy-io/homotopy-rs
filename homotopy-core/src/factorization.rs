@@ -28,11 +28,9 @@ pub fn factorize(f: Rewrite, g: Rewrite, source: Diagram, target: Diagram) -> Fa
             assert!(f.source() == None || f.source() == Some(s));
             assert!(g.source() == None || g.source() == Some(t));
 
-            if s.dimension > t.dimension {
-                Factorization::Unique(None)
-            } else {
-                Factorization::Unique(Rewrite::from(Rewrite0::new(s, t)).into())
-            }
+            Factorization::Unique(
+                (s == t || s.dimension < t.dimension).then(|| Rewrite0::new(s, t).into()),
+            )
         }
         (
             Rewrite::RewriteN(f),
