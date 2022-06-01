@@ -52,6 +52,7 @@ pub use contraction::Bias;
 pub use diagram::{Diagram, DiagramN};
 pub use rewrite::{Cospan, Rewrite, Rewrite0, RewriteN};
 
+pub mod antipushout;
 pub mod attach;
 pub mod check;
 pub mod common;

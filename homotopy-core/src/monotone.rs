@@ -46,6 +46,20 @@ pub fn dual_inv(f: &[usize], target_size: usize) -> Monotone {
     dual[1..target_size].iter().map(|&i| i - 1).collect()
 }
 
+pub fn preimage(f: &[usize], target_index: usize) -> Range<usize> {
+    let source_size = f.len();
+    for start in 0..source_size {
+        if f[start] >= target_index {
+            let mut end = start;
+            while end < source_size && f[end] == target_index {
+                end += 1;
+            }
+            return start..end;
+        }
+    }
+    source_size..source_size
+}
+
 impl RewriteN {
     pub fn singular_monotone(&self, source_size: usize) -> Monotone {
         (0..source_size).map(|i| self.singular_image(i)).collect()

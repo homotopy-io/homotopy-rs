@@ -6,6 +6,7 @@ use std::{
 use thiserror::Error;
 
 use crate::{
+    antipushout::{antipushout, factorize_inc},
     attach::{attach, BoundaryPath},
     common::{Boundary, Direction, Height, RegularHeight, SingularHeight},
     diagram::{Diagram, DiagramN},
@@ -352,72 +353,139 @@ fn expand_recursive(
     let recursive = expand_in_path(&slice, rest, direction)?;
     let target_cospan = &diagram.cospans()[height];
 
-    // Try to perform factorisation
-    let factorized = || -> Option<Rewrite> {
-        let forward = factorize(
-            target_cospan.forward.clone(),
-            recursive.clone(),
-            diagram.slice(Height::Regular(height)).unwrap(),
-            slice.clone().rewrite_backward(&recursive).unwrap(),
-        )
-        .next()?;
+    let forward = factorize(
+        target_cospan.forward.clone(),
+        recursive.clone(),
+        diagram.slice(Height::Regular(height)).unwrap(),
+        slice.clone().rewrite_backward(&recursive).unwrap(),
+    )
+    .next();
 
-        let backward = factorize(
-            target_cospan.backward.clone(),
-            recursive.clone(),
-            diagram.slice(Height::Regular(height + 1)).unwrap(),
-            slice.clone().rewrite_backward(&recursive).unwrap(),
-        )
-        .next()?;
+    let backward = factorize(
+        target_cospan.backward.clone(),
+        recursive.clone(),
+        diagram.slice(Height::Regular(height + 1)).unwrap(),
+        slice.clone().rewrite_backward(&recursive).unwrap(),
+    )
+    .next();
 
-        let expansion_rewrite = RewriteN::new(
+    let expansion_rewrite = match (forward, backward) {
+        (Some(forward), Some(backward)) => RewriteN::new(
             diagram.dimension(),
             vec![Cone::new(
                 height,
                 vec![Cospan { forward, backward }],
                 target_cospan.clone(),
-                vec![recursive.clone()],
+                vec![recursive],
             )],
-        );
+        ),
+        (Some(forward), None) => {
+            let (backward, inclusion) = factorize_inc(
+                &slice
+                    .clone()
+                    .rewrite_backward(&target_cospan.backward)
+                    .unwrap(),
+                &slice,
+                &target_cospan.backward,
+            );
+            let (_, inner_backward, inner_forward) = antipushout(
+                &slice.clone().rewrite_backward(&recursive).unwrap(),
+                &slice.clone().rewrite_backward(&inclusion).unwrap(),
+                &slice,
+                &recursive,
+                &inclusion,
+            )[0]
+            .clone();
 
-        let expansion_preimage = diagram
-            .clone()
-            .rewrite_backward(&expansion_rewrite)
-            .unwrap();
-        let normalization_rewrite = normalize_singular(&expansion_preimage.into());
+            RewriteN::new(
+                diagram.dimension(),
+                vec![Cone::new(
+                    height,
+                    vec![
+                        Cospan {
+                            forward,
+                            backward: inner_backward,
+                        },
+                        Cospan {
+                            forward: inner_forward,
+                            backward,
+                        },
+                    ],
+                    target_cospan.clone(),
+                    vec![recursive, inclusion],
+                )],
+            )
+        }
+        (None, Some(backward)) => {
+            let (forward, inclusion) = factorize_inc(
+                &slice
+                    .clone()
+                    .rewrite_backward(&target_cospan.forward)
+                    .unwrap(),
+                &slice,
+                &target_cospan.forward,
+            );
+            let (_, inner_backward, inner_forward) = antipushout(
+                &slice.clone().rewrite_backward(&inclusion).unwrap(),
+                &slice.clone().rewrite_backward(&recursive).unwrap(),
+                &slice,
+                &inclusion,
+                &recursive,
+            )[0]
+            .clone();
 
-        Some(
-            normalization_rewrite
-                .compose(&expansion_rewrite.into())
-                .unwrap(),
-        )
-    }();
+            RewriteN::new(
+                diagram.dimension(),
+                vec![Cone::new(
+                    height,
+                    vec![
+                        Cospan {
+                            forward,
+                            backward: inner_backward,
+                        },
+                        Cospan {
+                            forward: inner_forward,
+                            backward,
+                        },
+                    ],
+                    target_cospan.clone(),
+                    vec![inclusion, recursive],
+                )],
+            )
+        }
+        (None, None) => {
+            // Insert a bubble
+            RewriteN::new(
+                diagram.dimension(),
+                vec![Cone::new(
+                    height,
+                    vec![
+                        Cospan {
+                            forward: target_cospan.forward.clone(),
+                            backward: recursive.clone(),
+                        },
+                        Cospan {
+                            forward: recursive,
+                            backward: target_cospan.backward.clone(),
+                        },
+                    ],
+                    target_cospan.clone(),
+                    vec![
+                        Rewrite::identity(diagram.dimension() - 1),
+                        Rewrite::identity(diagram.dimension() - 1),
+                    ],
+                )],
+            )
+        }
+    };
 
-    if let Some(factorized) = factorized {
-        return Ok(factorized);
-    }
+    let expansion_preimage = diagram
+        .clone()
+        .rewrite_backward(&expansion_rewrite)
+        .unwrap();
+    let normalization_rewrite = normalize_singular(&expansion_preimage.into());
 
-    // Insert a bubble
-    Ok(RewriteN::new(
-        diagram.dimension(),
-        vec![Cone::new(
-            height,
-            vec![
-                Cospan {
-                    forward: target_cospan.forward.clone(),
-                    backward: recursive.clone(),
-                },
-                Cospan {
-                    forward: recursive,
-                    backward: target_cospan.backward.clone(),
-                },
-            ],
-            target_cospan.clone(),
-            vec![
-                Rewrite::identity(diagram.dimension() - 1),
-                Rewrite::identity(diagram.dimension() - 1),
-            ],
-        )],
-    )
-    .into())
+    Ok(normalization_rewrite
+        .compose(&expansion_rewrite.into())
+        .unwrap())
 }
