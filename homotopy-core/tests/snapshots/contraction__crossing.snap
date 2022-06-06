@@ -1,0 +1,1130 @@
+---
+source: homotopy-core/tests/contraction.rs
+expression: "crossing.identity().contract(Boundary::Target.into(), &[], 0, None,\n                             &sig).unwrap().target()"
+---
+DiagramN {
+    source: DiagramN {
+        source: DiagramN {
+            source: Diagram0(
+                0:0,
+            ),
+            cospans: [],
+        },
+        cospans: [
+            Cospan {
+                forward: RewriteN {
+                    dimension: 1,
+                    cones: [
+                        Cone {
+                            index: 0,
+                            internal: Cone0 {
+                                target: Cospan {
+                                    forward: Rewrite0(
+                                        0:0,
+                                        1:2,
+                                        Label(
+                                            [
+                                                (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                            ],
+                                        ),
+                                    ),
+                                    backward: Rewrite0(
+                                        0:0,
+                                        1:2,
+                                        Label(
+                                            [
+                                                (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                            ],
+                                        ),
+                                    ),
+                                },
+                                regular_slice: Rewrite0(
+                                    0:0,
+                                    1:2,
+                                    Label(
+                                        [
+                                            (1:2, [Boundary(Source), Interior(Regular(0))]),
+                                        ],
+                                    ),
+                                ),
+                            },
+                        },
+                    ],
+                },
+                backward: RewriteN {
+                    dimension: 1,
+                    cones: [
+                        Cone {
+                            index: 0,
+                            internal: Cone0 {
+                                target: Cospan {
+                                    forward: Rewrite0(
+                                        0:0,
+                                        1:2,
+                                        Label(
+                                            [
+                                                (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                            ],
+                                        ),
+                                    ),
+                                    backward: Rewrite0(
+                                        0:0,
+                                        1:2,
+                                        Label(
+                                            [
+                                                (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                            ],
+                                        ),
+                                    ),
+                                },
+                                regular_slice: Rewrite0(
+                                    0:0,
+                                    1:2,
+                                    Label(
+                                        [
+                                            (1:2, [Boundary(Target), Interior(Regular(0))]),
+                                        ],
+                                    ),
+                                ),
+                            },
+                        },
+                    ],
+                },
+            },
+            Cospan {
+                forward: RewriteN {
+                    dimension: 1,
+                    cones: [
+                        Cone {
+                            index: 0,
+                            internal: Cone0 {
+                                target: Cospan {
+                                    forward: Rewrite0(
+                                        0:0,
+                                        1:2,
+                                        Label(
+                                            [
+                                                (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                            ],
+                                        ),
+                                    ),
+                                    backward: Rewrite0(
+                                        0:0,
+                                        1:2,
+                                        Label(
+                                            [
+                                                (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                            ],
+                                        ),
+                                    ),
+                                },
+                                regular_slice: Rewrite0(
+                                    0:0,
+                                    1:2,
+                                    Label(
+                                        [
+                                            (1:2, [Boundary(Source), Interior(Regular(0))]),
+                                        ],
+                                    ),
+                                ),
+                            },
+                        },
+                    ],
+                },
+                backward: RewriteN {
+                    dimension: 1,
+                    cones: [
+                        Cone {
+                            index: 0,
+                            internal: Cone0 {
+                                target: Cospan {
+                                    forward: Rewrite0(
+                                        0:0,
+                                        1:2,
+                                        Label(
+                                            [
+                                                (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                            ],
+                                        ),
+                                    ),
+                                    backward: Rewrite0(
+                                        0:0,
+                                        1:2,
+                                        Label(
+                                            [
+                                                (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                            ],
+                                        ),
+                                    ),
+                                },
+                                regular_slice: Rewrite0(
+                                    0:0,
+                                    1:2,
+                                    Label(
+                                        [
+                                            (1:2, [Boundary(Target), Interior(Regular(0))]),
+                                        ],
+                                    ),
+                                ),
+                            },
+                        },
+                    ],
+                },
+            },
+        ],
+    },
+    cospans: [
+        Cospan {
+            forward: RewriteN {
+                dimension: 2,
+                cones: [
+                    Cone {
+                        index: 0,
+                        internal: ConeN {
+                            source: [
+                                Cospan {
+                                    forward: RewriteN {
+                                        dimension: 1,
+                                        cones: [
+                                            Cone {
+                                                index: 0,
+                                                internal: Cone0 {
+                                                    target: Cospan {
+                                                        forward: Rewrite0(
+                                                            0:0,
+                                                            1:2,
+                                                            Label(
+                                                                [
+                                                                    (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                                ],
+                                                            ),
+                                                        ),
+                                                        backward: Rewrite0(
+                                                            0:0,
+                                                            1:2,
+                                                            Label(
+                                                                [
+                                                                    (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                                ],
+                                                            ),
+                                                        ),
+                                                    },
+                                                    regular_slice: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Boundary(Source), Interior(Regular(0))]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                            },
+                                        ],
+                                    },
+                                    backward: RewriteN {
+                                        dimension: 1,
+                                        cones: [
+                                            Cone {
+                                                index: 0,
+                                                internal: Cone0 {
+                                                    target: Cospan {
+                                                        forward: Rewrite0(
+                                                            0:0,
+                                                            1:2,
+                                                            Label(
+                                                                [
+                                                                    (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                                ],
+                                                            ),
+                                                        ),
+                                                        backward: Rewrite0(
+                                                            0:0,
+                                                            1:2,
+                                                            Label(
+                                                                [
+                                                                    (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                                ],
+                                                            ),
+                                                        ),
+                                                    },
+                                                    regular_slice: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Boundary(Target), Interior(Regular(0))]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                                Cospan {
+                                    forward: RewriteN {
+                                        dimension: 1,
+                                        cones: [
+                                            Cone {
+                                                index: 0,
+                                                internal: Cone0 {
+                                                    target: Cospan {
+                                                        forward: Rewrite0(
+                                                            0:0,
+                                                            1:2,
+                                                            Label(
+                                                                [
+                                                                    (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                                ],
+                                                            ),
+                                                        ),
+                                                        backward: Rewrite0(
+                                                            0:0,
+                                                            1:2,
+                                                            Label(
+                                                                [
+                                                                    (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                                ],
+                                                            ),
+                                                        ),
+                                                    },
+                                                    regular_slice: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Boundary(Source), Interior(Regular(0))]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                            },
+                                        ],
+                                    },
+                                    backward: RewriteN {
+                                        dimension: 1,
+                                        cones: [
+                                            Cone {
+                                                index: 0,
+                                                internal: Cone0 {
+                                                    target: Cospan {
+                                                        forward: Rewrite0(
+                                                            0:0,
+                                                            1:2,
+                                                            Label(
+                                                                [
+                                                                    (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                                ],
+                                                            ),
+                                                        ),
+                                                        backward: Rewrite0(
+                                                            0:0,
+                                                            1:2,
+                                                            Label(
+                                                                [
+                                                                    (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                                ],
+                                                            ),
+                                                        ),
+                                                    },
+                                                    regular_slice: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Boundary(Target), Interior(Regular(0))]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                            target: Cospan {
+                                forward: RewriteN {
+                                    dimension: 1,
+                                    cones: [
+                                        Cone {
+                                            index: 0,
+                                            internal: Cone0 {
+                                                target: Cospan {
+                                                    forward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                    backward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                                regular_slice: Rewrite0(
+                                                    0:0,
+                                                    1:2,
+                                                    Label(
+                                                        [
+                                                            (1:2, [Boundary(Source), Interior(Regular(0))]),
+                                                        ],
+                                                    ),
+                                                ),
+                                            },
+                                        },
+                                        Cone {
+                                            index: 0,
+                                            internal: Cone0 {
+                                                target: Cospan {
+                                                    forward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                    backward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                                regular_slice: Rewrite0(
+                                                    0:0,
+                                                    1:2,
+                                                    Label(
+                                                        [
+                                                            (1:2, [Boundary(Source), Interior(Regular(0))]),
+                                                        ],
+                                                    ),
+                                                ),
+                                            },
+                                        },
+                                    ],
+                                },
+                                backward: RewriteN {
+                                    dimension: 1,
+                                    cones: [
+                                        Cone {
+                                            index: 0,
+                                            internal: Cone0 {
+                                                target: Cospan {
+                                                    forward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                    backward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                                regular_slice: Rewrite0(
+                                                    0:0,
+                                                    1:2,
+                                                    Label(
+                                                        [
+                                                            (1:2, [Boundary(Target), Interior(Regular(0))]),
+                                                        ],
+                                                    ),
+                                                ),
+                                            },
+                                        },
+                                        Cone {
+                                            index: 0,
+                                            internal: Cone0 {
+                                                target: Cospan {
+                                                    forward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                    backward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                                regular_slice: Rewrite0(
+                                                    0:0,
+                                                    1:2,
+                                                    Label(
+                                                        [
+                                                            (1:2, [Boundary(Target), Interior(Regular(0))]),
+                                                        ],
+                                                    ),
+                                                ),
+                                            },
+                                        },
+                                    ],
+                                },
+                            },
+                            regular_slices: [
+                                RewriteN {
+                                    dimension: 1,
+                                    cones: [
+                                        Cone {
+                                            index: 0,
+                                            internal: Cone0 {
+                                                target: Cospan {
+                                                    forward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                    backward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                                regular_slice: Rewrite0(
+                                                    0:0,
+                                                    1:2,
+                                                    Label(
+                                                        [
+                                                            (1:2, [Boundary(Source), Interior(Regular(0))]),
+                                                        ],
+                                                    ),
+                                                ),
+                                            },
+                                        },
+                                        Cone {
+                                            index: 0,
+                                            internal: Cone0 {
+                                                target: Cospan {
+                                                    forward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                    backward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                                regular_slice: Rewrite0(
+                                                    0:0,
+                                                    1:2,
+                                                    Label(
+                                                        [
+                                                            (1:2, [Boundary(Target), Interior(Regular(0))]),
+                                                        ],
+                                                    ),
+                                                ),
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                            singular_slices: [
+                                RewriteN {
+                                    dimension: 1,
+                                    cones: [
+                                        Cone {
+                                            index: 0,
+                                            internal: Cone0 {
+                                                target: Cospan {
+                                                    forward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                    backward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                                regular_slice: Rewrite0(
+                                                    0:0,
+                                                    1:2,
+                                                    Label(
+                                                        [
+                                                            (1:2, [Boundary(Source), Interior(Regular(0))]),
+                                                        ],
+                                                    ),
+                                                ),
+                                            },
+                                        },
+                                    ],
+                                },
+                                RewriteN {
+                                    dimension: 1,
+                                    cones: [
+                                        Cone {
+                                            index: 1,
+                                            internal: Cone0 {
+                                                target: Cospan {
+                                                    forward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                    backward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                                regular_slice: Rewrite0(
+                                                    0:0,
+                                                    1:2,
+                                                    Label(
+                                                        [
+                                                            (1:2, [Boundary(Target), Interior(Regular(0))]),
+                                                        ],
+                                                    ),
+                                                ),
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+            backward: RewriteN {
+                dimension: 2,
+                cones: [
+                    Cone {
+                        index: 0,
+                        internal: ConeN {
+                            source: [
+                                Cospan {
+                                    forward: RewriteN {
+                                        dimension: 1,
+                                        cones: [
+                                            Cone {
+                                                index: 0,
+                                                internal: Cone0 {
+                                                    target: Cospan {
+                                                        forward: Rewrite0(
+                                                            0:0,
+                                                            1:2,
+                                                            Label(
+                                                                [
+                                                                    (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                                ],
+                                                            ),
+                                                        ),
+                                                        backward: Rewrite0(
+                                                            0:0,
+                                                            1:2,
+                                                            Label(
+                                                                [
+                                                                    (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                                ],
+                                                            ),
+                                                        ),
+                                                    },
+                                                    regular_slice: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Boundary(Source), Interior(Regular(0))]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                            },
+                                        ],
+                                    },
+                                    backward: RewriteN {
+                                        dimension: 1,
+                                        cones: [
+                                            Cone {
+                                                index: 0,
+                                                internal: Cone0 {
+                                                    target: Cospan {
+                                                        forward: Rewrite0(
+                                                            0:0,
+                                                            1:2,
+                                                            Label(
+                                                                [
+                                                                    (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                                ],
+                                                            ),
+                                                        ),
+                                                        backward: Rewrite0(
+                                                            0:0,
+                                                            1:2,
+                                                            Label(
+                                                                [
+                                                                    (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                                ],
+                                                            ),
+                                                        ),
+                                                    },
+                                                    regular_slice: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Boundary(Target), Interior(Regular(0))]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                                Cospan {
+                                    forward: RewriteN {
+                                        dimension: 1,
+                                        cones: [
+                                            Cone {
+                                                index: 0,
+                                                internal: Cone0 {
+                                                    target: Cospan {
+                                                        forward: Rewrite0(
+                                                            0:0,
+                                                            1:2,
+                                                            Label(
+                                                                [
+                                                                    (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                                ],
+                                                            ),
+                                                        ),
+                                                        backward: Rewrite0(
+                                                            0:0,
+                                                            1:2,
+                                                            Label(
+                                                                [
+                                                                    (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                                ],
+                                                            ),
+                                                        ),
+                                                    },
+                                                    regular_slice: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Boundary(Source), Interior(Regular(0))]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                            },
+                                        ],
+                                    },
+                                    backward: RewriteN {
+                                        dimension: 1,
+                                        cones: [
+                                            Cone {
+                                                index: 0,
+                                                internal: Cone0 {
+                                                    target: Cospan {
+                                                        forward: Rewrite0(
+                                                            0:0,
+                                                            1:2,
+                                                            Label(
+                                                                [
+                                                                    (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                                ],
+                                                            ),
+                                                        ),
+                                                        backward: Rewrite0(
+                                                            0:0,
+                                                            1:2,
+                                                            Label(
+                                                                [
+                                                                    (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                                ],
+                                                            ),
+                                                        ),
+                                                    },
+                                                    regular_slice: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Boundary(Target), Interior(Regular(0))]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                            target: Cospan {
+                                forward: RewriteN {
+                                    dimension: 1,
+                                    cones: [
+                                        Cone {
+                                            index: 0,
+                                            internal: Cone0 {
+                                                target: Cospan {
+                                                    forward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                    backward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                                regular_slice: Rewrite0(
+                                                    0:0,
+                                                    1:2,
+                                                    Label(
+                                                        [
+                                                            (1:2, [Boundary(Source), Interior(Regular(0))]),
+                                                        ],
+                                                    ),
+                                                ),
+                                            },
+                                        },
+                                        Cone {
+                                            index: 0,
+                                            internal: Cone0 {
+                                                target: Cospan {
+                                                    forward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                    backward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                                regular_slice: Rewrite0(
+                                                    0:0,
+                                                    1:2,
+                                                    Label(
+                                                        [
+                                                            (1:2, [Boundary(Source), Interior(Regular(0))]),
+                                                        ],
+                                                    ),
+                                                ),
+                                            },
+                                        },
+                                    ],
+                                },
+                                backward: RewriteN {
+                                    dimension: 1,
+                                    cones: [
+                                        Cone {
+                                            index: 0,
+                                            internal: Cone0 {
+                                                target: Cospan {
+                                                    forward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                    backward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                                regular_slice: Rewrite0(
+                                                    0:0,
+                                                    1:2,
+                                                    Label(
+                                                        [
+                                                            (1:2, [Boundary(Target), Interior(Regular(0))]),
+                                                        ],
+                                                    ),
+                                                ),
+                                            },
+                                        },
+                                        Cone {
+                                            index: 0,
+                                            internal: Cone0 {
+                                                target: Cospan {
+                                                    forward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                    backward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                                regular_slice: Rewrite0(
+                                                    0:0,
+                                                    1:2,
+                                                    Label(
+                                                        [
+                                                            (1:2, [Boundary(Target), Interior(Regular(0))]),
+                                                        ],
+                                                    ),
+                                                ),
+                                            },
+                                        },
+                                    ],
+                                },
+                            },
+                            regular_slices: [
+                                RewriteN {
+                                    dimension: 1,
+                                    cones: [
+                                        Cone {
+                                            index: 0,
+                                            internal: Cone0 {
+                                                target: Cospan {
+                                                    forward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                    backward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                                regular_slice: Rewrite0(
+                                                    0:0,
+                                                    1:2,
+                                                    Label(
+                                                        [
+                                                            (1:2, [Boundary(Target), Interior(Regular(0))]),
+                                                        ],
+                                                    ),
+                                                ),
+                                            },
+                                        },
+                                        Cone {
+                                            index: 0,
+                                            internal: Cone0 {
+                                                target: Cospan {
+                                                    forward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                    backward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                                regular_slice: Rewrite0(
+                                                    0:0,
+                                                    1:2,
+                                                    Label(
+                                                        [
+                                                            (1:2, [Boundary(Source), Interior(Regular(0))]),
+                                                        ],
+                                                    ),
+                                                ),
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                            singular_slices: [
+                                RewriteN {
+                                    dimension: 1,
+                                    cones: [
+                                        Cone {
+                                            index: 1,
+                                            internal: Cone0 {
+                                                target: Cospan {
+                                                    forward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                    backward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                                regular_slice: Rewrite0(
+                                                    0:0,
+                                                    1:2,
+                                                    Label(
+                                                        [
+                                                            (1:2, [Boundary(Source), Interior(Regular(0))]),
+                                                        ],
+                                                    ),
+                                                ),
+                                            },
+                                        },
+                                    ],
+                                },
+                                RewriteN {
+                                    dimension: 1,
+                                    cones: [
+                                        Cone {
+                                            index: 0,
+                                            internal: Cone0 {
+                                                target: Cospan {
+                                                    forward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Source)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                    backward: Rewrite0(
+                                                        0:0,
+                                                        1:2,
+                                                        Label(
+                                                            [
+                                                                (1:2, [Interior(Singular(0)), Boundary(Target)]),
+                                                            ],
+                                                        ),
+                                                    ),
+                                                },
+                                                regular_slice: Rewrite0(
+                                                    0:0,
+                                                    1:2,
+                                                    Label(
+                                                        [
+                                                            (1:2, [Boundary(Target), Interior(Regular(0))]),
+                                                        ],
+                                                    ),
+                                                ),
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+    ],
+}

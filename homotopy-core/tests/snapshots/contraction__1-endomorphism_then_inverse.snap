@@ -1,0 +1,10 @@
+---
+source: homotopy-core/tests/contraction.rs
+expression: "f_then_inverse.identity().contract(Boundary::Target.into(), &[], 0, None,\n                                   &sig).unwrap().target()"
+---
+DiagramN {
+    source: Diagram0(
+        0:0,
+    ),
+    cospans: [],
+}
