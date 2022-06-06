@@ -539,7 +539,9 @@ impl Rewrite0 {
 impl fmt::Debug for RewriteN {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
+        self.0
+            .get() // important for hashcons formatting
+            .fmt(f)
     }
 }
 
