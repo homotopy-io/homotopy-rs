@@ -124,7 +124,7 @@ fn expand_base_regular(
                 i,
                 Default::default(),
                 cs.clone(),
-                todo!(),
+                vec![cs.forward.clone()],
                 Default::default(),
             )],
         )
