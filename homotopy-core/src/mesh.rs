@@ -39,6 +39,20 @@ impl Index<usize> for ElementInternal {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct Cube<const N: usize> {
+    pub points: Vec<[SliceIndex; N]>,
+    pub orientation: Vec<Orientation>,
+}
+
+impl<const N: usize> Index<usize> for Cube<N> {
+    type Output = [SliceIndex; N];
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.points[index]
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct Mesh<const N: usize> {
     graph: SliceGraph<[SliceIndex; N]>,
@@ -72,8 +86,8 @@ impl<const N: usize> Mesh<N> {
             .map(|(coord, diagram)| (*coord, diagram))
     }
 
-    /// Iterator of all non-partial visible elements in the mesh.
-    pub fn elements(&self, directed: bool) -> impl Iterator<Item = Vec<[SliceIndex; N]>> + '_ {
+    /// Iterator of all visible cubes in the mesh.
+    pub fn cubes(&self, directed: bool) -> impl Iterator<Item = Cube<N>> + '_ {
         self.elements.keys().filter_map(move |elem| {
             if self.parent(elem).is_some() {
                 return None;
@@ -82,13 +96,21 @@ impl<const N: usize> Mesh<N> {
             let orientation = self.orientation(elem);
             let dim = orientation.len();
 
-            Some(self.flatten(elem, directed, &orientation)).filter(|points| {
-                // Check that the element is visible by looking at the coordinates.
-                points.iter().all(|coord| {
-                    coord[dim..]
-                        .iter()
-                        .all(|si| matches!(si, SliceIndex::Interior(Height::Singular(_))))
-                })
+            let points = self.flatten(elem, directed, &orientation);
+
+            // Check that the element is visible by looking at the coordinates.
+            let visible = points.iter().all(|coord| {
+                coord[dim..]
+                    .iter()
+                    .all(|si| matches!(si, SliceIndex::Interior(Height::Singular(_))))
+            });
+            if !visible {
+                return None;
+            }
+
+            Some(Cube {
+                points,
+                orientation,
             })
         })
     }

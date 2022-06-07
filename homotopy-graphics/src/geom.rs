@@ -1,15 +1,16 @@
 use std::{
-    cmp::{self, Ordering},
+    cmp::Ordering,
     f32::consts::{PI, TAU},
     mem,
 };
 
 use homotopy_common::{declare_idx, hash::FastHashMap, idx::IdxVec};
 use homotopy_core::{
-    common::DimensionError, layout::Layout, mesh::Mesh, Diagram, Direction, Generator, Height,
-    SliceIndex,
+    common::DimensionError, layout::Layout, mesh::Mesh, Diagram, Generator, SliceIndex,
 };
 use ultraviolet::{Mat3, Vec3, Vec4};
+
+use crate::parity::Parity;
 
 // Geometry
 
@@ -34,9 +35,9 @@ pub struct Geometry<E: ElementData> {
     pub verts: IdxVec<Vert, VertData>,
     pub curves: IdxVec<Curve, CurveData>,
     pub points: IdxVec<Point, E::Point>,
-    pub lines: IdxVec<Line, E::Line>,
-    pub areas: IdxVec<Area, E::Area>,
-    pub volumes: IdxVec<Volume, E::Volume>,
+    pub lines: IdxVec<Line, (E::Line, Parity)>,
+    pub areas: IdxVec<Area, (E::Area, Parity)>,
+    pub volumes: IdxVec<Volume, (E::Volume, Parity)>,
 }
 
 impl<E> Geometry<E>
@@ -59,16 +60,16 @@ where
         self.points.push(point)
     }
 
-    pub fn mk_line(&mut self, line: E::Line) -> Line {
-        self.lines.push(line)
+    pub fn mk_line(&mut self, line: E::Line, parity: Parity) -> Line {
+        self.lines.push((line, parity))
     }
 
-    pub fn mk_area(&mut self, area: E::Area) -> Area {
-        self.areas.push(area)
+    pub fn mk_area(&mut self, area: E::Area, parity: Parity) -> Area {
+        self.areas.push((area, parity))
     }
 
-    pub fn mk_volume(&mut self, volume: E::Volume) -> Volume {
-        self.volumes.push(volume)
+    pub fn mk_volume(&mut self, volume: E::Volume, parity: Parity) -> Volume {
+        self.volumes.push((volume, parity))
     }
 
     pub fn bounds(&self) -> (Vec4, Vec4) {
@@ -92,31 +93,8 @@ where
 #[derive(Clone, Debug)]
 pub struct VertData {
     pub position: Vec4,
-    pub flow: f32,
     pub boundary: [bool; 4],
     pub generator: Generator,
-}
-
-impl VertData {
-    pub fn min_generator<'a>(&'a self, other: &'a Self) -> &'a Self {
-        if self.flow < other.flow {
-            self
-        } else if other.flow < self.flow {
-            other
-        } else {
-            cmp::min_by_key(self, other, |v| v.generator.dimension)
-        }
-    }
-}
-
-pub fn calculate_flow(path: &[SliceIndex]) -> f32 {
-    path.iter()
-        .map(|&index| match index {
-            SliceIndex::Boundary(_) => -1.0,
-            SliceIndex::Interior(Height::Regular(_)) => 0.0,
-            SliceIndex::Interior(Height::Singular(_)) => 1.0,
-        })
-        .sum()
 }
 
 pub fn calculate_boundary(path: &[SliceIndex]) -> Vec<bool> {
@@ -181,15 +159,14 @@ impl CubicalGeometry {
 
             let vert = geom.mk_vert(VertData {
                 position,
-                flow: calculate_flow(&path),
                 boundary,
                 generator: diagram.max_generator(),
             });
             coord_to_vert.insert(path, vert);
         }
 
-        for element in mesh.elements(false) {
-            let n = match element.len() {
+        for cube in mesh.cubes(true) {
+            let n = match cube.points.len() {
                 1 => 0,
                 2 => 1,
                 4 => 2,
@@ -197,18 +174,13 @@ impl CubicalGeometry {
                 _ => continue,
             };
 
-            let verts = element
+            let verts = cube
+                .points
                 .into_iter()
                 .map(|coord| coord_to_vert[&coord])
                 .collect::<Vec<_>>();
-            let generator = verts
-                .iter()
-                .map(|v| &geom.verts[*v])
-                .fold(None, |acc, v| {
-                    acc.map(|acc| v.min_generator(acc)).or(Some(v))
-                })
-                .unwrap()
-                .generator;
+            let parity = Parity::from_orientation(&cube.orientation);
+            let generator = geom.verts[verts[0]].generator;
 
             if n + 1 < N && diagram.dimension().saturating_sub(generator.dimension) != n {
                 continue;
@@ -220,29 +192,29 @@ impl CubicalGeometry {
                 }
                 2 => {
                     let verts: [Vert; 2] = verts.try_into().map_err(|_err| DimensionError)?;
-                    geom.mk_line(verts);
+                    geom.mk_line(verts, parity);
 
-                    // Curve extraction.
-                    let curve = geom.curves.values_mut().find(|curve| {
-                        let &curve_target = curve.verts.last().unwrap();
-                        curve_target == verts[0] && curve.generator == generator
-                    });
-                    if let Some(curve) = curve {
-                        curve.verts.push(verts[1]);
-                    } else {
-                        geom.curves.push(CurveData {
-                            generator,
-                            verts: verts.to_vec(),
-                        });
-                    }
+                    // // Curve extraction.
+                    // let curve = geom.curves.values_mut().find(|curve| {
+                    //     let &curve_target = curve.verts.last().unwrap();
+                    //     curve_target == verts[0] && curve.generator == generator
+                    // });
+                    // if let Some(curve) = curve {
+                    //     curve.verts.push(verts[1]);
+                    // } else {
+                    //     geom.curves.push(CurveData {
+                    //         generator,
+                    //         verts: verts.to_vec(),
+                    //     });
+                    // }
                 }
                 4 => {
                     let verts: [Vert; 4] = verts.try_into().map_err(|_err| DimensionError)?;
-                    geom.mk_area(verts);
+                    geom.mk_area(verts, parity);
                 }
                 8 => {
                     let verts: [Vert; 8] = verts.try_into().map_err(|_err| DimensionError)?;
-                    geom.mk_volume(verts);
+                    geom.mk_volume(verts, parity);
                 }
                 _ => (),
             }
@@ -265,70 +237,35 @@ impl CubicalGeometry {
 // Triangulation
 
 impl CubicalGeometry {
-    fn triangulate_square(&self, square: Area) -> impl Iterator<Item = [Vert; 3]> + '_ {
-        const TRI_ASSEMBLY_ORDER: [[usize; 3]; 2] = [[0, 1, 3], [0, 3, 2]];
+    fn triangulate_square(&self, square: Area) -> impl Iterator<Item = ([Vert; 3], Parity)> + '_ {
+        const TRI_ASSEMBLY_ORDER: [([usize; 3], Parity); 2] =
+            [([0, 1, 3], Parity::Even), ([0, 2, 3], Parity::Odd)];
 
-        let verts = self.areas[square];
-        // Rotate the square
-        let rotation = match self.orientation_of_square(verts) {
-            [Direction::Forward, Direction::Forward] => [0, 1, 2, 3],
-            [Direction::Forward, Direction::Backward] => [1, 3, 0, 2],
-            [Direction::Backward, Direction::Forward] => [2, 0, 3, 1],
-            [Direction::Backward, Direction::Backward] => [3, 2, 1, 0],
-        };
-        let verts = rotation.map(|i| verts[i]);
-
-        TRI_ASSEMBLY_ORDER.into_iter().filter_map(move |[i, j, k]| {
-            let tri @ [a, b, c] = [verts[i], verts[j], verts[k]];
-            (a != b && a != c && b != c).then(|| tri)
-        })
+        let (verts, parity) = self.areas[square];
+        TRI_ASSEMBLY_ORDER
+            .into_iter()
+            .filter_map(move |([i, j, k], tri_parity)| {
+                let tri @ [a, b, c] = [verts[i], verts[j], verts[k]];
+                (a != b && b != c).then(|| (tri, parity * tri_parity))
+            })
     }
 
-    fn triangulate_cube(&self, cube: Volume) -> impl Iterator<Item = [Vert; 4]> + '_ {
-        const TETRA_ASSEMBLY_ORDER: [[usize; 4]; 6] = [
-            [0, 3, 1, 7],
-            [0, 1, 5, 7],
-            [0, 2, 3, 7],
-            [0, 2, 7, 6],
-            [0, 5, 4, 7],
-            [0, 4, 6, 7],
+    fn triangulate_cube(&self, cube: Volume) -> impl Iterator<Item = ([Vert; 4], Parity)> + '_ {
+        const TETRA_ASSEMBLY_ORDER: [([usize; 4], Parity); 6] = [
+            ([0, 1, 3, 7], Parity::Even),
+            ([0, 1, 5, 7], Parity::Odd),
+            ([0, 2, 3, 7], Parity::Odd),
+            ([0, 2, 6, 7], Parity::Even),
+            ([0, 4, 5, 7], Parity::Even),
+            ([0, 4, 6, 7], Parity::Odd),
         ];
 
-        let verts = self.volumes[cube];
-        // Rotate the cube
-        let rotation = match self.orientation_of_cube(verts) {
-            [Direction::Forward, Direction::Forward, Direction::Forward] => {
-                [0, 1, 2, 3, 4, 5, 6, 7]
-            }
-            [Direction::Forward, Direction::Forward, Direction::Backward] => {
-                [1, 0, 5, 4, 3, 2, 7, 6]
-            }
-            [Direction::Forward, Direction::Backward, Direction::Forward] => {
-                [2, 0, 3, 1, 6, 4, 7, 5]
-            }
-            [Direction::Forward, Direction::Backward, Direction::Backward] => {
-                [3, 1, 7, 5, 2, 0, 6, 4]
-            }
-            [Direction::Backward, Direction::Forward, Direction::Forward] => {
-                [4, 0, 6, 2, 5, 1, 7, 3]
-            }
-            [Direction::Backward, Direction::Forward, Direction::Backward] => {
-                [5, 1, 4, 0, 7, 3, 6, 2]
-            }
-            [Direction::Backward, Direction::Backward, Direction::Forward] => {
-                [6, 2, 7, 3, 4, 0, 5, 1]
-            }
-            [Direction::Backward, Direction::Backward, Direction::Backward] => {
-                [7, 3, 5, 1, 6, 2, 4, 0]
-            }
-        };
-        let verts = rotation.map(|i| verts[i]);
-
+        let (verts, parity) = self.volumes[cube];
         TETRA_ASSEMBLY_ORDER
             .into_iter()
-            .filter_map(move |[i, j, k, l]| {
+            .filter_map(move |([i, j, k, l], tetra_parity)| {
                 let tetra @ [a, b, c, d] = [verts[i], verts[j], verts[k], verts[l]];
-                (a != b && a != c && b != c && b != d && c != d).then(|| tetra)
+                (a != b && b != c && c != d).then(|| (tetra, parity * tetra_parity))
             })
     }
 }
@@ -354,54 +291,6 @@ impl From<CubicalGeometry> for SimplicialGeometry {
             areas,
             volumes,
         }
-    }
-}
-
-// Orientation
-
-impl CubicalGeometry {
-    fn orientation_of_square(&self, verts: [Vert; 4]) -> [Direction; 2] {
-        const SQUARE_EDGE_ORDER: [[[usize; 2]; 2]; 2] = [[[0, 2], [1, 3]], [[0, 1], [2, 3]]];
-
-        SQUARE_EDGE_ORDER.map(|edges| {
-            edges
-                .into_iter()
-                .find_map(|[i, j]| {
-                    let [v_i, v_j] = [verts[i], verts[j]];
-                    if self.verts[v_i].flow < self.verts[v_j].flow {
-                        Some(Direction::Forward)
-                    } else if self.verts[v_j].flow < self.verts[v_i].flow {
-                        Some(Direction::Backward)
-                    } else {
-                        None
-                    }
-                })
-                .unwrap()
-        })
-    }
-
-    fn orientation_of_cube(&self, verts: [Vert; 8]) -> [Direction; 3] {
-        const CUBE_EDGE_ORDER: [[[usize; 2]; 4]; 3] = [
-            [[0, 4], [1, 5], [2, 6], [3, 7]],
-            [[0, 2], [1, 3], [4, 6], [5, 7]],
-            [[0, 1], [2, 3], [4, 5], [6, 7]],
-        ];
-
-        CUBE_EDGE_ORDER.map(|edges| {
-            edges
-                .into_iter()
-                .find_map(|[i, j]| {
-                    let [v_i, v_j] = [verts[i], verts[j]];
-                    if self.verts[v_i].flow < self.verts[v_j].flow {
-                        Some(Direction::Forward)
-                    } else if self.verts[v_j].flow < self.verts[v_i].flow {
-                        Some(Direction::Backward)
-                    } else {
-                        None
-                    }
-                })
-                .unwrap()
-        })
     }
 }
 
@@ -442,7 +331,7 @@ impl SimplicialGeometry {
                 for j in 0..sectors {
                     let v_0 = Vert::new(len + j);
                     let v_1 = Vert::new(len + (j + 1) % sectors);
-                    self.mk_area([north_pole, v_1, v_0]);
+                    self.mk_area([north_pole, v_1, v_0], Parity::Even);
                 }
             } else {
                 for j in 0..sectors {
@@ -451,8 +340,8 @@ impl SimplicialGeometry {
                     let v_2 = Vert::new(v_0.index() - sectors);
                     let v_3 = Vert::new(v_1.index() - sectors);
 
-                    self.mk_area([v_0, v_2, v_1]);
-                    self.mk_area([v_1, v_2, v_3]);
+                    self.mk_area([v_0, v_2, v_1], Parity::Even);
+                    self.mk_area([v_1, v_2, v_3], Parity::Even);
                 }
             }
 
@@ -460,7 +349,7 @@ impl SimplicialGeometry {
                 for j in 0..sectors {
                     let v_0 = Vert::new(len + j);
                     let v_1 = Vert::new(len + (j + 1) % sectors);
-                    self.mk_area([south_pole, v_0, v_1]);
+                    self.mk_area([south_pole, v_0, v_1], Parity::Even);
                 }
             }
         }
@@ -497,8 +386,8 @@ impl SimplicialGeometry {
                 let v_2 = Vert::new(v_0.index() - sectors);
                 let v_3 = Vert::new(v_1.index() - sectors);
 
-                self.mk_area([v_0, v_2, v_1]);
-                self.mk_area([v_1, v_2, v_3]);
+                self.mk_area([v_0, v_2, v_1], Parity::Even);
+                self.mk_area([v_1, v_2, v_3], Parity::Even);
             }
         }
     }
@@ -561,12 +450,14 @@ impl SimplicialGeometry {
     pub fn compute_normals_3d(&self) -> IdxVec<Vert, Vec3> {
         let mut normals = IdxVec::splat(Vec3::zero(), self.verts.len());
 
-        for [i, j, k] in self.areas.values().copied() {
+        for ([i, j, k], parity) in self.areas.values().copied() {
             if i != j && j != k && k != i {
                 let v_1 = self.verts[i].position.xyz();
                 let v_2 = self.verts[j].position.xyz();
                 let v_3 = self.verts[k].position.xyz();
-                let n = (v_2 - v_1).cross(v_3 - v_1);
+
+                let sign = if parity.is_even() { 1. } else { -1. };
+                let n = sign * (v_2 - v_1).cross(v_3 - v_2);
 
                 normals[i] += n;
                 normals[j] += n;
@@ -584,7 +475,7 @@ impl SimplicialGeometry {
     pub fn compute_normals_4d(&self) -> IdxVec<Vert, Vec4> {
         let mut normals = IdxVec::splat(Vec4::zero(), self.verts.len());
 
-        for [i, j, k, l] in self.volumes.values().copied() {
+        for ([i, j, k, l], parity) in self.volumes.values().copied() {
             let origin = self.verts[i].position;
             let v_0 = self.verts[j].position - origin;
             let v_1 = self.verts[k].position - origin;
@@ -600,12 +491,14 @@ impl SimplicialGeometry {
             let m_2 = Mat3::new(xs, ys, ws);
             let m_3 = Mat3::new(xs, ys, zs);
 
-            let n = Vec4::new(
-                -m_0.determinant(),
-                m_1.determinant(),
-                -m_2.determinant(),
-                m_3.determinant(),
-            );
+            let sign = if parity.is_even() { 1. } else { -1. };
+            let n = sign
+                * Vec4::new(
+                    -m_0.determinant(),
+                    m_1.determinant(),
+                    -m_2.determinant(),
+                    m_3.determinant(),
+                );
 
             normals[i] += n;
             normals[j] += n;

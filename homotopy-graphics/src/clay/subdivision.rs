@@ -1,10 +1,12 @@
-use std::{cmp::Ordering, mem};
+use std::mem;
 
 use homotopy_common::{hash::FastHashMap, idx::IdxVec};
-use homotopy_core::Direction;
 use ultraviolet::{Mat4, Vec4};
 
-use crate::geom::{Area, CubicalGeometry, CurveData, Line, Vert, VertData, Volume};
+use crate::{
+    geom::{Area, CubicalGeometry, CurveData, Line, Vert, VertData, Volume},
+    parity::Parity,
+};
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum Pass {
@@ -26,18 +28,15 @@ struct Subdivider<'a> {
 
 impl<'a> Subdivider<'a> {
     /// Defines how new cubes should be from linearly divided points.
-    ///
-    /// Important property that is preserved - first point is a vertex point,
-    /// edge and face points are also in precise positions.
     const CUBE_ASSEMBLY_ORDER: [[usize; 8]; 8] = [
         [0, 8, 9, 20, 10, 21, 22, 26],
-        [1, 11, 8, 20, 12, 23, 21, 26],
-        [2, 9, 13, 20, 14, 22, 24, 26],
-        [3, 13, 11, 20, 15, 24, 23, 26],
-        [4, 16, 10, 21, 17, 25, 22, 26],
-        [5, 18, 12, 23, 16, 25, 21, 26],
-        [6, 17, 14, 22, 19, 25, 24, 26],
-        [7, 19, 15, 24, 18, 25, 23, 26],
+        [8, 1, 20, 11, 21, 12, 26, 23],
+        [9, 20, 2, 13, 22, 26, 14, 24],
+        [20, 11, 13, 3, 26, 23, 24, 15],
+        [10, 21, 22, 26, 4, 16, 17, 25],
+        [21, 12, 26, 23, 16, 5, 25, 18],
+        [22, 26, 14, 24, 17, 25, 6, 19],
+        [26, 23, 24, 15, 25, 18, 19, 7],
     ];
     /// Defines all 12 edges of a cube based on vertex indices.
     const CUBE_EDGE_ORDER: [[usize; 2]; 12] = [
@@ -64,11 +63,8 @@ impl<'a> Subdivider<'a> {
         [4, 5, 6, 7],
     ];
     /// Defines how new squares should be from linearly divided points.
-    ///
-    /// Important property that is preserved - first point is a vertex point, and similar
-    /// for edge points.
     const SQUARE_ASSEMBLY_ORDER: [[usize; 4]; 4] =
-        [[0, 4, 5, 8], [1, 6, 4, 8], [2, 5, 7, 8], [3, 7, 6, 8]];
+        [[0, 4, 5, 8], [4, 1, 8, 6], [5, 8, 2, 7], [8, 6, 7, 3]];
 
     #[inline]
     pub(super) fn new(geom: &'a mut CubicalGeometry, smooth_time: bool) -> Self {
@@ -99,69 +95,64 @@ impl<'a> Subdivider<'a> {
     }
 
     #[inline]
-    fn interpolate_edge_uncached(&mut self, [a, b]: [Vert; 2], mk: bool) -> Vert {
+    fn interpolate_edge_uncached(&mut self, [a, b]: [Vert; 2], mk: Option<Parity>) -> Vert {
         // Interpolate
         let v = {
             let v_0 = &self.geom.verts[a];
             let v_1 = &self.geom.verts[b];
             let v = 0.5 * (v_0.position + v_1.position);
-            let flow = 0.5 * (v_0.flow + v_1.flow);
             let boundary = [0, 1, 2, 3].map(|i| v_0.boundary[i] && v_1.boundary[i]);
-            let generator = v_0.min_generator(v_1).generator;
+            let generator = v_0.generator;
 
             self.geom.mk_vert(VertData {
                 position: v,
-                flow,
                 boundary,
                 generator,
             })
         };
 
-        if mk {
-            self.geom.mk_line([a, v]);
-            self.geom.mk_line([b, v]);
+        if let Some(parity) = mk {
+            self.geom.mk_line([a, v], parity);
+            self.geom.mk_line([v, b], parity);
         }
 
         v
     }
 
-    fn interpolate_edge(&mut self, line @ [a, b]: [Vert; 2], mk: bool) -> Vert {
-        let key = match self.direction_of_line(line) {
-            None => return a,
-            Some(Direction::Forward) => [a, b],
-            Some(Direction::Backward) => [b, a],
-        };
+    fn interpolate_edge(&mut self, line @ [a, b]: [Vert; 2], mk: Option<Parity>) -> Vert {
+        if a == b {
+            return a;
+        }
 
         self.edge_division_memory
-            .get(&key)
+            .get(&line)
             .copied()
             .unwrap_or_else(|| {
                 let v = self.interpolate_edge_uncached(line, mk);
-                self.edge_division_memory.insert(key, v);
+                self.edge_division_memory.insert(line, v);
                 v
             })
     }
 
-    fn interpolate_face(&mut self, square @ [a, b, c, d]: [Vert; 4], mk: bool) -> Vert {
-        // Find the leading diagonal.
-        let key = match self.direction_of_face(square) {
-            [None, None] => return a,
-            [None, Some(_)] => return self.interpolate_edge([a, b], false),
-            [Some(_), None] => return self.interpolate_edge([a, c], false),
-            [Some(Direction::Forward), Some(Direction::Forward)] => [a, d],
-            [Some(Direction::Forward), Some(Direction::Backward)] => [b, c],
-            [Some(Direction::Backward), Some(Direction::Forward)] => [c, b],
-            [Some(Direction::Backward), Some(Direction::Backward)] => [d, a],
-        };
+    fn interpolate_face(&mut self, [a, b, c, d]: [Vert; 4], mk: Option<Parity>) -> Vert {
+        if a == d {
+            return a;
+        }
+        if a == c && b == d {
+            return self.interpolate_edge([a, b], None);
+        }
+        if a == b && c == d {
+            return self.interpolate_edge([a, c], None);
+        }
 
         // Interpolate
-        let center = self.interpolate_edge(key, false);
+        let center = self.interpolate_edge([a, d], None);
 
-        if mk {
-            let v_1 = self.interpolate_edge([a, b], false);
-            let v_2 = self.interpolate_edge([a, c], false);
-            let v_3 = self.interpolate_edge([b, d], false);
-            let v_4 = self.interpolate_edge([c, d], false);
+        if let Some(parity) = mk {
+            let v_1 = self.interpolate_edge([a, b], None);
+            let v_2 = self.interpolate_edge([a, c], None);
+            let v_3 = self.interpolate_edge([b, d], None);
+            let v_4 = self.interpolate_edge([c, d], None);
 
             let points = [a, b, c, d, v_1, v_2, v_3, v_4, center];
 
@@ -169,8 +160,8 @@ impl<'a> Subdivider<'a> {
                 let square = square.map(|i| points[i]);
 
                 // Ignore the square if it doesn't have any area.
-                if matches!(self.direction_of_face(square), [Some(_), Some(_)]) {
-                    self.geom.mk_area(square);
+                if Self::check_area(square) {
+                    self.geom.mk_area(square, parity);
                 }
             }
         }
@@ -178,36 +169,7 @@ impl<'a> Subdivider<'a> {
         center
     }
 
-    fn interpolate_cube(&mut self, cube: [Vert; 8]) {
-        // Find the leading diagonal.
-        let diagonal = match self.direction_of_cube(cube) {
-            [Some(Direction::Forward), Some(Direction::Forward), Some(Direction::Forward)] => {
-                [cube[0], cube[7]]
-            }
-            [Some(Direction::Forward), Some(Direction::Forward), Some(Direction::Backward)] => {
-                [cube[1], cube[6]]
-            }
-            [Some(Direction::Forward), Some(Direction::Backward), Some(Direction::Forward)] => {
-                [cube[2], cube[5]]
-            }
-            [Some(Direction::Forward), Some(Direction::Backward), Some(Direction::Backward)] => {
-                [cube[3], cube[4]]
-            }
-            [Some(Direction::Backward), Some(Direction::Forward), Some(Direction::Forward)] => {
-                [cube[4], cube[3]]
-            }
-            [Some(Direction::Backward), Some(Direction::Forward), Some(Direction::Backward)] => {
-                [cube[5], cube[2]]
-            }
-            [Some(Direction::Backward), Some(Direction::Backward), Some(Direction::Forward)] => {
-                [cube[6], cube[1]]
-            }
-            [Some(Direction::Backward), Some(Direction::Backward), Some(Direction::Backward)] => {
-                [cube[7], cube[0]]
-            }
-            _ => panic!(),
-        };
-
+    fn interpolate_cube(&mut self, cube: [Vert; 8], parity: Parity) {
         let mut points = {
             use homotopy_common::idx::Idx;
             [Vert::new(0); 27]
@@ -216,68 +178,51 @@ impl<'a> Subdivider<'a> {
         points[0..8].copy_from_slice(&cube);
 
         for (i, edge) in Self::CUBE_EDGE_ORDER.iter().enumerate() {
-            points[i + 8] = self.interpolate_edge([points[edge[0]], points[edge[1]]], false);
+            points[i + 8] = self.interpolate_edge([points[edge[0]], points[edge[1]]], None);
         }
 
         for (i, [a, b, c, d]) in Self::CUBE_FACE_ORDER.into_iter().enumerate() {
             points[i + 20] =
-                self.interpolate_face([points[a], points[b], points[c], points[d]], false);
+                self.interpolate_face([points[a], points[b], points[c], points[d]], None);
         }
 
-        points[26] = self.interpolate_edge(diagonal, false);
+        points[26] = self.interpolate_edge([cube[0], cube[7]], None);
 
         for cube in Self::CUBE_ASSEMBLY_ORDER {
             let cube = cube.map(|i| points[i]);
 
             // Ignore the cube if it doesn't have any volume.
-            if matches!(self.direction_of_cube(cube), [Some(_), Some(_), Some(_)]) {
-                self.geom.mk_volume(cube);
+            if Self::check_volume(cube) {
+                self.geom.mk_volume(cube, parity);
             }
         }
     }
 
     #[inline]
-    fn direction_of_line(&self, [a, b]: [Vert; 2]) -> Option<Direction> {
-        match self.geom.verts[a]
-            .flow
-            .partial_cmp(&self.geom.verts[b].flow)
-            .unwrap()
-        {
-            Ordering::Less => Some(Direction::Forward),
-            Ordering::Equal => None,
-            Ordering::Greater => Some(Direction::Backward),
-        }
-    }
-
-    #[inline]
-    fn direction_of_face(&self, verts: [Vert; 4]) -> [Option<Direction>; 2] {
+    fn check_area(verts: [Vert; 4]) -> bool {
         const SQUARE_EDGE_ORDER: [[[usize; 2]; 2]; 2] = [[[0, 2], [1, 3]], [[0, 1], [2, 3]]];
 
-        SQUARE_EDGE_ORDER.map(|edges| {
-            edges
-                .into_iter()
-                .find_map(|[i, j]| self.direction_of_line([verts[i], verts[j]]))
-        })
+        SQUARE_EDGE_ORDER
+            .into_iter()
+            .all(|edges| edges.into_iter().any(|[i, j]| verts[i] != verts[j]))
     }
 
     #[inline]
-    fn direction_of_cube(&self, verts: [Vert; 8]) -> [Option<Direction>; 3] {
+    fn check_volume(verts: [Vert; 8]) -> bool {
         const CUBE_EDGE_ORDER: [[[usize; 2]; 4]; 3] = [
             [[0, 4], [1, 5], [2, 6], [3, 7]],
             [[0, 2], [1, 3], [4, 6], [5, 7]],
             [[0, 1], [2, 3], [4, 5], [6, 7]],
         ];
 
-        CUBE_EDGE_ORDER.map(|edges| {
-            edges
-                .into_iter()
-                .find_map(|[i, j]| self.direction_of_line([verts[i], verts[j]]))
-        })
+        CUBE_EDGE_ORDER
+            .into_iter()
+            .all(|edges| edges.into_iter().any(|[i, j]| verts[i] != verts[j]))
     }
 
     #[inline]
     fn smooth_cube(&mut self, cube: Volume) {
-        let cube @ [a, b, c, d, e, f, g, h] = self.geom.volumes[cube];
+        let (cube @ [a, b, c, d, e, f, g, h], _) = self.geom.volumes[cube];
         // Calculate a corresponding weight matrix
         let weights = Self::cube_weight_matrix();
         // Shape vertices as matrix
@@ -305,7 +250,7 @@ impl<'a> Subdivider<'a> {
 
     #[inline]
     fn smooth_square(&mut self, square: Area) {
-        let square @ [a, b, c, d] = self.geom.areas[square];
+        let (square @ [a, b, c, d], _) = self.geom.areas[square];
         // Calculate a corresponding weight matrix
         let weights = Self::square_weight_matrix();
         // Shape vertices as a matrix
@@ -325,7 +270,7 @@ impl<'a> Subdivider<'a> {
 
     #[inline]
     fn smooth_line(&mut self, line: Line) {
-        let line @ [a, b] = self.geom.lines[line];
+        let (line @ [a, b], _) = self.geom.lines[line];
         let weights = Self::line_weight_matrix();
         let line_matrix = Mat4::new(
             self.geom.verts[a].position,
@@ -364,16 +309,16 @@ impl<'a> Subdivider<'a> {
         // generate new geometrical elements when they're semantically important. Thus,
         // if we subdivide an edge of a square, it should only result in new lines if
         // that edge was already a line. Subdividing lines first gives us this property.
-        for line in lines.into_values() {
-            self.interpolate_edge(line, true);
+        for (line, parity) in lines.into_values() {
+            self.interpolate_edge(line, Some(parity));
         }
 
-        for square in squares.into_values() {
-            self.interpolate_face(square, true);
+        for (square, parity) in squares.into_values() {
+            self.interpolate_face(square, Some(parity));
         }
 
-        for cube in cubes.into_values() {
-            self.interpolate_cube(cube);
+        for (cube, parity) in cubes.into_values() {
+            self.interpolate_cube(cube, parity);
         }
 
         for curve in curves.into_values() {
@@ -381,7 +326,7 @@ impl<'a> Subdivider<'a> {
             for i in 0..curve.verts.len() - 1 {
                 interpolated.push(curve.verts[i]);
                 interpolated
-                    .push(self.interpolate_edge([curve.verts[i], curve.verts[i + 1]], false));
+                    .push(self.interpolate_edge([curve.verts[i], curve.verts[i + 1]], None));
             }
 
             if let Some(point) = curve.verts.last() {

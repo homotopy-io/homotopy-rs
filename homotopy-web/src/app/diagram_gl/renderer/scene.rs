@@ -97,7 +97,6 @@ impl Scene {
         let mut sphere_mesh: SimplicialGeometry = Default::default();
         let p = sphere_mesh.mk_vert(VertData {
             position: Vec4::zero(),
-            flow: 0.,
             boundary: [false; 4],
             generator: Generator::new(0, 0),
         });

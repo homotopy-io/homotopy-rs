@@ -169,16 +169,9 @@ impl Bufferer for TriBufferer {
     }
 
     fn buffer(ctx: &mut BufferingCtx<Self>) -> Result<()> {
-        for tri in ctx.geom.areas.values().copied() {
-            let generator = tri
-                .into_iter()
-                .map(|v| &ctx.geom.verts[v])
-                .fold(None, |acc, v| {
-                    acc.map(|acc| v.min_generator(acc)).or(Some(v))
-                })
-                .unwrap()
-                .generator;
+        for (tri, parity) in ctx.geom.areas.values().copied() {
             let geom = ctx.geom;
+            let generator = geom.verts[tri[0]].generator;
 
             ctx.with_state(generator, 3, |global, local| {
                 let v_0 = local.push_vert(
@@ -194,7 +187,11 @@ impl Bufferer for TriBufferer {
                     (geom.verts[tri[2]].position.xyz(), global.normals[tri[2]]),
                 );
 
-                local.inner.push_element(v_0, v_1, v_2);
+                if parity.is_even() {
+                    local.inner.push_element(v_0, v_1, v_2);
+                } else {
+                    local.inner.push_element(v_2, v_1, v_0);
+                }
             })?;
         }
 
@@ -308,19 +305,13 @@ impl Bufferer for TetraBufferer {
     }
 
     fn buffer(ctx: &mut BufferingCtx<Self>) -> Result<()> {
-        for mut tetra in ctx.geom.volumes.values().copied() {
-            let generator = tetra
-                .into_iter()
-                .map(|v| &ctx.geom.verts[v])
-                .fold(None, |acc, v| {
-                    acc.map(|acc| v.min_generator(acc)).or(Some(v))
-                })
-                .unwrap()
-                .generator;
+        for (mut tetra, parity) in ctx.geom.volumes.values().copied() {
             let geom = ctx.geom;
+            let generator = geom.verts[tetra[0]].generator;
 
             ctx.with_state(generator, 6, |global, local| {
-                let parity = parity::sort_4(&mut tetra, |i, j| geom.time_order(i, j));
+                let parity =
+                    parity * parity::sort_4(&mut tetra, |i, j| geom.time_order(i, j)).into();
                 let [i, j, k, l] = tetra;
 
                 let mut push_vert = |i: Vert, j: Vert| {
@@ -342,7 +333,7 @@ impl Bufferer for TetraBufferer {
                 let jl = push_vert(j, l);
                 let kl = push_vert(k, l);
 
-                if parity {
+                if parity.is_even() {
                     local.inner.push_tri(ij, il, ik);
                     local.inner.push_tri(jl, ik, jk);
                     local.inner.push_tri(jl, il, ik);
@@ -428,7 +419,7 @@ impl Bufferer for ProjectedWireBufferer {
     }
 
     fn buffer(ctx: &mut BufferingCtx<Self>) -> Result<()> {
-        for tri in ctx.geom.areas.values().copied() {
+        for (tri, _) in ctx.geom.areas.values().copied() {
             let geom = ctx.geom;
 
             ctx.with_state((), 3, |_, local| {
@@ -440,7 +431,7 @@ impl Bufferer for ProjectedWireBufferer {
             })?;
         }
 
-        for tetra in ctx.geom.volumes.values().copied() {
+        for (tetra, _) in ctx.geom.volumes.values().copied() {
             let geom = ctx.geom;
 
             ctx.with_state((), 4, |_, local| {
@@ -541,16 +532,9 @@ impl Bufferer for CylinderWireBufferer {
     }
 
     fn buffer(ctx: &mut BufferingCtx<Self>) -> Result<()> {
-        for mut tri in ctx.geom.areas.values().copied() {
-            let generator = tri
-                .into_iter()
-                .map(|v| &ctx.geom.verts[v])
-                .fold(None, |acc, v| {
-                    acc.map(|acc| v.min_generator(acc)).or(Some(v))
-                })
-                .unwrap()
-                .generator;
+        for (mut tri, _) in ctx.geom.areas.values().copied() {
             let geom = ctx.geom;
+            let generator = geom.verts[tri[0]].generator;
 
             ctx.with_state(generator, 3, |_, local| {
                 parity::sort_3(&mut tri, |i, j| geom.time_order(i, j));
