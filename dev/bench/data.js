@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1654528349422,
+  "lastUpdate": 1654611777821,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -34799,6 +34799,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 90.492,
             "range": "+/- 0.026",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "ec4df12098a67065cb07a28be1aa98dba0f10d97",
+          "message": "Revert \"Make it easier to switch between SVG and GL renderers\"\n\nThis reverts commit 5dde1fae85f8881b09b424052d3a00de334db319.",
+          "timestamp": "2022-06-07T15:04:32+01:00",
+          "tree_id": "7df6cdf71d3395f4339180674e8db93b8919b3ac",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/ec4df12098a67065cb07a28be1aa98dba0f10d97"
+        },
+        "date": 1654611766638,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 79.917,
+            "range": "+/- 1.149",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 82.632,
+            "range": "+/- 1.061",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 126.62,
+            "range": "+/- 1.970",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 140.54,
+            "range": "+/- 1.700",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 99.976,
+            "range": "+/- 2.180",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 112.35,
+            "range": "+/- 0.770",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 106.48,
+            "range": "+/- 2.360",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 716.66,
+            "range": "+/- 7.580",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.7632,
+            "range": "+/- 0.030",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 8.4982,
+            "range": "+/- 0.117",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 22.563,
+            "range": "+/- 0.181",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 56.941,
+            "range": "+/- 0.754",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 143.85,
+            "range": "+/- 0.960",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 394.14,
+            "range": "+/- 2.530",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 80.431,
+            "range": "+/- 1.093",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 114.63,
+            "range": "+/- 1.180",
             "unit": "us"
           }
         ]
