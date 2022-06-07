@@ -227,16 +227,20 @@ fn contract_in_path(
                 Height::Singular(i) => {
                     let source_cospan = &diagram.cospans()[*i];
                     let rewrite = rewrite.into();
+                    let (forward, backward) = (
+                        source_cospan.forward.compose(&rewrite).unwrap(),
+                        source_cospan.backward.compose(&rewrite).unwrap(),
+                    );
                     Ok(RewriteN::new(
                         diagram.dimension(),
                         vec![Cone::new(
                             *i,
                             vec![source_cospan.clone()],
                             Cospan {
-                                forward: source_cospan.forward.compose(&rewrite).unwrap(),
-                                backward: source_cospan.backward.compose(&rewrite).unwrap(),
+                                forward: forward.clone(),
+                                backward: backward.clone(),
                             },
-                            todo!(),
+                            vec![forward, backward],
                             vec![rewrite],
                         )],
                     ))
