@@ -215,9 +215,9 @@ fn contract_in_path(
                         vec![],
                         Cospan {
                             forward: rewrite.clone().into(),
-                            backward: rewrite.into(),
+                            backward: rewrite.clone().into(),
                         },
-                        todo!(),
+                        vec![rewrite.into()],
                         vec![],
                     )],
                 )),
