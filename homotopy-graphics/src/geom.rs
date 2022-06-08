@@ -109,6 +109,7 @@ pub fn calculate_boundary(path: &[SliceIndex]) -> Vec<bool> {
 #[derive(Clone, Debug)]
 pub struct CurveData {
     pub verts: Vec<Vert>,
+    pub parities: Vec<Parity>,
     pub generator: Generator,
 }
 
@@ -191,22 +192,27 @@ impl CubicalGeometry {
                     geom.mk_point(verts[0]);
                 }
                 2 => {
-                    let verts: [Vert; 2] = verts.try_into().map_err(|_err| DimensionError)?;
+                    let mut verts: [Vert; 2] = verts.try_into().map_err(|_err| DimensionError)?;
                     geom.mk_line(verts, parity);
 
-                    // // Curve extraction.
-                    // let curve = geom.curves.values_mut().find(|curve| {
-                    //     let &curve_target = curve.verts.last().unwrap();
-                    //     curve_target == verts[0] && curve.generator == generator
-                    // });
-                    // if let Some(curve) = curve {
-                    //     curve.verts.push(verts[1]);
-                    // } else {
-                    //     geom.curves.push(CurveData {
-                    //         generator,
-                    //         verts: verts.to_vec(),
-                    //     });
-                    // }
+                    // Curve extraction.
+                    if !parity.is_even() {
+                        verts.swap(0, 1);
+                    }
+                    let curve = geom.curves.values_mut().find(|curve| {
+                        let &curve_target = curve.verts.last().unwrap();
+                        curve_target == verts[0] && curve.generator == generator
+                    });
+                    if let Some(curve) = curve {
+                        curve.verts.push(verts[1]);
+                        curve.parities.push(parity);
+                    } else {
+                        geom.curves.push(CurveData {
+                            generator,
+                            verts: verts.to_vec(),
+                            parities: vec![parity],
+                        });
+                    }
                 }
                 4 => {
                     let verts: [Vert; 4] = verts.try_into().map_err(|_err| DimensionError)?;
@@ -360,7 +366,7 @@ impl SimplicialGeometry {
         vert: Vert,
         normal: Vec3,
         binormal: Vec3,
-        connect: bool,
+        connect: Option<Parity>,
         sectors: u8,
     ) {
         use homotopy_common::idx::Idx;
@@ -377,7 +383,7 @@ impl SimplicialGeometry {
             );
         }
 
-        if connect {
+        if let Some(parity) = connect {
             let sectors = sectors as usize;
 
             for j in 0..sectors {
@@ -386,17 +392,24 @@ impl SimplicialGeometry {
                 let v_2 = Vert::new(v_0.index() - sectors);
                 let v_3 = Vert::new(v_1.index() - sectors);
 
-                self.mk_area([v_0, v_2, v_1], Parity::Even);
-                self.mk_area([v_1, v_2, v_3], Parity::Even);
+                if parity.is_even() {
+                    self.mk_area([v_2, v_3, v_1], Parity::Even);
+                    self.mk_area([v_2, v_0, v_1], Parity::Odd);
+                } else {
+                    self.mk_area([v_0, v_1, v_3], Parity::Odd);
+                    self.mk_area([v_0, v_2, v_3], Parity::Even);
+                }
             }
         }
     }
 
     fn inflate_curve_3d(&mut self, curve: Curve, samples: u8) {
         let mut verts = vec![];
+        let mut parities = vec![];
         let sectors = samples;
 
         mem::swap(&mut self.curves[curve].verts, &mut verts);
+        mem::swap(&mut self.curves[curve].parities, &mut parities);
 
         // The direction of the curve in the previous segment
         let mut d_0 = (self.verts[verts[1]].position - self.verts[verts[0]].position)
@@ -411,7 +424,7 @@ impl SimplicialGeometry {
         })
         .normalized();
 
-        self.inflate_tube_segment(verts[0], n, d_0.cross(n), false, sectors);
+        self.inflate_tube_segment(verts[0], n, d_0.cross(n), None, sectors);
 
         for i in 2..verts.len() {
             let v_0 = verts[i - 1];
@@ -425,10 +438,10 @@ impl SimplicialGeometry {
             n = t.cross(n).cross(t).normalized();
             let bn = t.cross(n).normalized();
 
-            self.inflate_tube_segment(v_0, n, bn, true, sectors);
+            self.inflate_tube_segment(v_0, n, bn, Some(parities[i - 2]), sectors);
 
             if i == verts.len() - 1 {
-                self.inflate_tube_segment(v_1, n, bn, true, sectors);
+                self.inflate_tube_segment(v_1, n, bn, Some(parities[i - 1]), sectors);
             }
         }
     }

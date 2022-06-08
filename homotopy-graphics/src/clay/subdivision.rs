@@ -322,19 +322,28 @@ impl<'a> Subdivider<'a> {
         }
 
         for curve in curves.into_values() {
-            let mut interpolated = Vec::with_capacity(curve.verts.len() * 2);
-            for i in 0..curve.verts.len() - 1 {
-                interpolated.push(curve.verts[i]);
-                interpolated
-                    .push(self.interpolate_edge([curve.verts[i], curve.verts[i + 1]], None));
-            }
+            let mut verts = Vec::with_capacity(curve.verts.len() * 2);
+            let mut parities = Vec::with_capacity(curve.parities.len() * 2);
 
-            if let Some(point) = curve.verts.last() {
-                interpolated.push(*point);
+            verts.push(curve.verts[0]);
+
+            for i in 0..curve.verts.len() - 1 {
+                let v0 = curve.verts[i];
+                let v1 = curve.verts[i + 1];
+                let parity = curve.parities[i];
+
+                let line = if parity.is_even() { [v0, v1] } else { [v1, v0] };
+                let interpolated = self.interpolate_edge(line, None);
+
+                verts.push(interpolated);
+                verts.push(v1);
+                parities.push(parity);
+                parities.push(parity);
             }
 
             self.geom.curves.push(CurveData {
-                verts: interpolated,
+                verts,
+                parities,
                 generator: curve.generator,
             });
         }
