@@ -91,7 +91,6 @@ impl Renderer {
     }
 
     pub fn render(&mut self, camera: &OrbitCamera, settings: &Store<AppSettings>, t: f32) {
-        let duration = self.scene.diagram.size().unwrap() as f32;
         let geometry_scale = *settings.get_geometry_scale() as f32 / 10.;
 
         let v = camera.view_transform(&self.ctx);
@@ -152,6 +151,8 @@ impl Renderer {
                 }
 
                 if self.scene.view.dimension() == 4 {
+                    let duration = self.scene.diagram.size().unwrap() as f32;
+
                     for animation_curve in &self.scene.animation_curves {
                         if let (Some(position), Some(sphere)) =
                             (animation_curve.at(t), self.scene.sphere.as_ref())
