@@ -42,9 +42,10 @@
     clippy::too_many_lines,
 )]
 
-pub mod clay;
+pub mod buffers;
 pub mod geom;
 pub mod gl;
 pub mod parity;
+pub mod subdivision;
 pub mod svg;
 pub mod tikz;

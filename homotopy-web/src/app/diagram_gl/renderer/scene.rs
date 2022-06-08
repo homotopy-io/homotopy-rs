@@ -3,8 +3,7 @@ use std::mem;
 use homotopy_common::idx::IdxVec;
 use homotopy_core::{Diagram, Generator};
 use homotopy_graphics::{
-    clay::clay,
-    geom::{SimplicialGeometry, VertData},
+    geom::{CubicalGeometry, SimplicialGeometry, VertData},
     gl::{array::VertexArray, GlCtx, Result},
     vertex_array,
 };
@@ -110,17 +109,22 @@ impl Scene {
             )?);
         }
 
-        let mut mesh = clay(
-            &self.diagram,
-            self.view.dimension(),
-            smooth_time,
-            subdivision_depth,
-        )
-        .unwrap();
+        let mut cubical = match self.view.dimension() {
+            0 => CubicalGeometry::new::<0>(&self.diagram).unwrap(),
+            1 => CubicalGeometry::new::<1>(&self.diagram).unwrap(),
+            2 => CubicalGeometry::new::<2>(&self.diagram).unwrap(),
+            3 => CubicalGeometry::new::<3>(&self.diagram).unwrap(),
+            4 => CubicalGeometry::new::<4>(&self.diagram).unwrap(),
+            _ => unreachable!(),
+        };
+
+        cubical.subdivide(smooth_time, subdivision_depth);
+
+        let mut simplicial = SimplicialGeometry::from(cubical);
 
         if self.view.dimension() <= 3 {
-            mesh.inflate_3d(geometry_samples);
-            for tri_buffers in mesh.buffer_tris(ctx)? {
+            simplicial.inflate_3d(geometry_samples);
+            for tri_buffers in simplicial.buffer_tris(ctx)? {
                 self.components.push((
                     tri_buffers.generator,
                     vertex_array!(
@@ -137,7 +141,7 @@ impl Scene {
                 )?);
             }
         } else {
-            for tetra_buffers in mesh.buffer_tetras(ctx)? {
+            for tetra_buffers in simplicial.buffer_tetras(ctx)? {
                 self.components.push((
                     tetra_buffers.generator,
                     vertex_array!(
@@ -153,7 +157,7 @@ impl Scene {
                 ));
             }
 
-            for projected_buffers in mesh.buffer_projected_wireframe(ctx)? {
+            for projected_buffers in simplicial.buffer_projected_wireframe(ctx)? {
                 self.wireframe_components.push(vertex_array!(
                     ctx,
                     &projected_buffers.element_buffer,
@@ -161,7 +165,7 @@ impl Scene {
                 )?);
             }
 
-            for cylinder_buffers in mesh.buffer_cylinder_wireframe(ctx)? {
+            for cylinder_buffers in simplicial.buffer_cylinder_wireframe(ctx)? {
                 self.cylinder_components.push((
                     cylinder_buffers.generator,
                     vertex_array!(
@@ -176,7 +180,7 @@ impl Scene {
             }
 
             let mut curves = IdxVec::new();
-            mem::swap(&mut mesh.curves, &mut curves);
+            mem::swap(&mut simplicial.curves, &mut curves);
 
             for mut curve in curves.into_values() {
                 if curve.verts.len() < 2 {
@@ -185,26 +189,28 @@ impl Scene {
 
                 let generator = curve.generator;
 
-                curve.verts.sort_by(|i, j| mesh.time_order(*i, *j));
+                curve.verts.sort_by(|i, j| simplicial.time_order(*i, *j));
 
                 self.animation_curves.push(AnimationCurve {
                     generator,
-                    begin: mesh.verts[curve.verts[0]].position.w,
-                    end: mesh.verts[curve.verts[curve.verts.len() - 1]].position.w,
+                    begin: simplicial.verts[curve.verts[0]].position.w,
+                    end: simplicial.verts[curve.verts[curve.verts.len() - 1]]
+                        .position
+                        .w,
                     key_frames: curve
                         .verts
                         .into_iter()
-                        .map(|v| mesh.verts[v].position)
+                        .map(|v| simplicial.verts[v].position)
                         .collect(),
                 });
             }
 
-            for point in mesh.points.into_values() {
+            for point in simplicial.points.into_values() {
                 let VertData {
                     generator,
                     position,
                     ..
-                } = mesh.verts[point];
+                } = simplicial.verts[point];
                 self.animation_singularities.push((generator, position));
             }
         }
