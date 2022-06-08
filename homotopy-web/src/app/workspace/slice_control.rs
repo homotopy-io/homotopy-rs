@@ -57,7 +57,9 @@ impl Component for SliceControl {
     }
 
     fn rendered(&mut self, ctx: &Context<Self>, _first_render: bool) {
-        let height = bounding_rect(&ctx.props().diagram_ref).unwrap().height();
+        let height = bounding_rect(&ctx.props().diagram_ref)
+            .map(|rect| rect.height())
+            .unwrap_or_default();
 
         let style = format!(
             r#"
