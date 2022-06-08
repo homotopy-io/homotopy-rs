@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1654680871776,
+  "lastUpdate": 1654683027459,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -35159,6 +35159,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 90.167,
             "range": "+/- 0.021",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "085e6de5b27e091e8149a7a5621612fc15ca71cf",
+          "message": "Make slice controls work with GL renderer",
+          "timestamp": "2022-06-08T10:52:36+01:00",
+          "tree_id": "d9cb1dde1492d477c56d1ba644305abd45ff9eb1",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/085e6de5b27e091e8149a7a5621612fc15ca71cf"
+        },
+        "date": 1654683018492,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 74.985,
+            "range": "+/- 0.017",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 76.378,
+            "range": "+/- 0.020",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 114.31,
+            "range": "+/- 0.130",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 133.55,
+            "range": "+/- 0.070",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 91.542,
+            "range": "+/- 0.046",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 107.23,
+            "range": "+/- 0.060",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 96.91,
+            "range": "+/- 0.048",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 652.2,
+            "range": "+/- 0.410",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.5546,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 7.7445,
+            "range": "+/- 0.003",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 20.544,
+            "range": "+/- 0.009",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 50.44,
+            "range": "+/- 0.048",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 128.56,
+            "range": "+/- 0.350",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 347.34,
+            "range": "+/- 0.940",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 75.41,
+            "range": "+/- 0.029",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 107.55,
+            "range": "+/- 0.050",
             "unit": "us"
           }
         ]
