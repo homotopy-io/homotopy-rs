@@ -32,15 +32,15 @@ pub fn make_complex<const N: usize>(diagram: &Diagram) -> Vec<Simplex<N>> {
     let mesh = Mesh::new(diagram).unwrap();
 
     let mut complex = vec![];
-    for cube in mesh.cubes(true) {
-        match cube.points.len() {
-            1 => {
+    for cube in mesh.cubes() {
+        match cube.dimension() {
+            0 => {
                 complex.push(Simplex::Point([cube[0]]));
             }
-            2 => {
+            1 => {
                 complex.push(Simplex::Wire([cube[0], cube[1]]));
             }
-            4 => {
+            2 => {
                 complex.extend(TRI_ASSEMBLY_ORDER.into_iter().filter_map(|[i, j, k]| {
                     let tri @ [a, b, c] = [cube[i], cube[j], cube[k]];
                     (a != b && a != c && b != c).then(|| Simplex::Surface(tri))

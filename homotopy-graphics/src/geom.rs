@@ -117,6 +117,7 @@ pub struct CurveData {
 
 #[derive(Default)]
 pub struct CubeData;
+
 #[derive(Default)]
 pub struct SimplexData;
 
@@ -166,14 +167,13 @@ impl CubicalGeometry {
             coord_to_vert.insert(path, vert);
         }
 
-        for cube in mesh.cubes(true) {
-            let n = match cube.points.len() {
-                1 => 0,
-                2 => 1,
-                4 => 2,
-                8 if N > 3 => 3,
-                _ => continue,
-            };
+        for cube in mesh.cubes() {
+            let dim = cube.dimension();
+
+            // We ignore top-dimensional cubes in 3D and 4D.
+            if N >= 3 && dim == N {
+                continue;
+            }
 
             let verts = cube
                 .points
@@ -183,16 +183,18 @@ impl CubicalGeometry {
             let parity = Parity::from_orientation(&cube.orientation);
             let generator = geom.verts[verts[0]].generator;
 
-            if n + 1 < N && diagram.dimension().saturating_sub(generator.dimension) != n {
+            // We ignore cubes which are homotopies and are of dimension less than N - 1.
+            // For example, this will affect points in 2D, points and lines in 3D, and so on.
+            if dim + 1 < N && diagram.dimension().saturating_sub(generator.dimension) != dim {
                 continue;
             }
 
-            match verts.len() {
-                1 => {
+            match dim {
+                0 => {
                     geom.mk_point(verts[0]);
                 }
-                2 => {
-                    let mut verts: [Vert; 2] = verts.try_into().map_err(|_err| DimensionError)?;
+                1 => {
+                    let mut verts: [Vert; 2] = verts.try_into().unwrap();
                     geom.mk_line(verts, parity);
 
                     // Curve extraction.
@@ -214,12 +216,12 @@ impl CubicalGeometry {
                         });
                     }
                 }
-                4 => {
-                    let verts: [Vert; 4] = verts.try_into().map_err(|_err| DimensionError)?;
+                2 => {
+                    let verts: [Vert; 4] = verts.try_into().unwrap();
                     geom.mk_area(verts, parity);
                 }
-                8 => {
-                    let verts: [Vert; 8] = verts.try_into().map_err(|_err| DimensionError)?;
+                3 => {
+                    let verts: [Vert; 8] = verts.try_into().unwrap();
                     geom.mk_volume(verts, parity);
                 }
                 _ => (),

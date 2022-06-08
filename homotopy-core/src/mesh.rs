@@ -45,6 +45,12 @@ pub struct Cube<const N: usize> {
     pub orientation: Vec<Orientation>,
 }
 
+impl<const N: usize> Cube<N> {
+    pub fn dimension(&self) -> usize {
+        self.orientation.len()
+    }
+}
+
 impl<const N: usize> Index<usize> for Cube<N> {
     type Output = [SliceIndex; N];
 
@@ -87,7 +93,7 @@ impl<const N: usize> Mesh<N> {
     }
 
     /// Iterator of all visible cubes in the mesh.
-    pub fn cubes(&self, directed: bool) -> impl Iterator<Item = Cube<N>> + '_ {
+    pub fn cubes(&self) -> impl Iterator<Item = Cube<N>> + '_ {
         self.elements.keys().filter_map(move |elem| {
             if self.parent(elem).is_some() {
                 return None;
@@ -96,7 +102,7 @@ impl<const N: usize> Mesh<N> {
             let orientation = self.orientation(elem);
             let dim = orientation.len();
 
-            let points = self.flatten(elem, directed, &orientation);
+            let points = self.flatten(elem, &orientation);
 
             // Check that the element is visible by looking at the coordinates.
             let visible = points.iter().all(|coord| {
@@ -295,12 +301,7 @@ impl<const N: usize> Mesh<N> {
         }
     }
 
-    fn flatten(
-        &self,
-        e: Element,
-        directed: bool,
-        orientation: &[Orientation],
-    ) -> Vec<[SliceIndex; N]> {
+    fn flatten(&self, e: Element, orientation: &[Orientation]) -> Vec<[SliceIndex; N]> {
         let dim = orientation.len() as u32;
         match self.elements[e] {
             Element0(n) => {
@@ -312,12 +313,8 @@ impl<const N: usize> Mesh<N> {
                 let mut orientation = orientation.to_owned();
                 orientation.remove(index);
 
-                let mut cube_0 = self.flatten(elem[0], directed, &orientation);
-                let mut cube_1 = self.flatten(elem[1], directed, &orientation);
-
-                if !directed && elem.orientation.1 == Direction::Backward {
-                    std::mem::swap(&mut cube_0, &mut cube_1);
-                }
+                let cube_0 = self.flatten(elem[0], &orientation);
+                let cube_1 = self.flatten(elem[1], &orientation);
 
                 let chunk_size = 2_usize.pow(dim - index as u32 - 1);
 
