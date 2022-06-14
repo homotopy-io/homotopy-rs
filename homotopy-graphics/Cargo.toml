@@ -15,7 +15,7 @@ homotopy-core = { path = "../homotopy-core" }
 # TODO(@doctorn) remove if/when we switch to GL-backed 2D rendering
 euclid = "0.22.7"
 itertools = "0.10.3"
-js-sys = "0.3.57"
+js-sys = "0.3.58"
 log = "0.4.16"
 lyon_algorithms = "0.17.6"
 lyon_geom = "0.17.7"
