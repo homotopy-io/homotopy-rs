@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1654793200981,
+  "lastUpdate": 1655407377887,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -35399,6 +35399,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 89.505,
             "range": "+/- 0.033",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "committer": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "distinct": true,
+          "id": "510145d233d196aaddd5a9165fcb8a510bbed3b8",
+          "message": "Cleanup build procedure and document\n* remove dependency on wasm-pack\n* move Makefile.toml to workspace root\n* detailed instructions in README.md",
+          "timestamp": "2022-06-16T20:06:32+01:00",
+          "tree_id": "f630b8d8a9637f5a7673894c3bbf74b9e42cdc50",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/510145d233d196aaddd5a9165fcb8a510bbed3b8"
+        },
+        "date": 1655407366694,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 77.629,
+            "range": "+/- 0.870",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 79.453,
+            "range": "+/- 0.859",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 121.26,
+            "range": "+/- 3.050",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 134.98,
+            "range": "+/- 1.860",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 97.24,
+            "range": "+/- 1.518",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 108.21,
+            "range": "+/- 1.060",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 101.75,
+            "range": "+/- 0.460",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 684.95,
+            "range": "+/- 6.840",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.6633,
+            "range": "+/- 0.020",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 8.0699,
+            "range": "+/- 0.094",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 21.375,
+            "range": "+/- 0.241",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 52.67,
+            "range": "+/- 0.844",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 131.72,
+            "range": "+/- 1.210",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 358.7,
+            "range": "+/- 2.670",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 78.468,
+            "range": "+/- 1.461",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 111.45,
+            "range": "+/- 1.160",
             "unit": "us"
           }
         ]
