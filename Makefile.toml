@@ -1,30 +1,32 @@
+[config]
+default_to_workspace = false
+
 [env]
 GIT_DESCRIBE = { script = ["git describe --dirty --always --tags"] }
 
 [env.development]
-WASM_PACK_FLAGS = "--dev"
+TARGET_SUBDIRECTORY = "debug"
 
-[env.production]
-WASM_PACK_FLAGS = "--release"
+[env.release]
+TARGET_SUBDIRECTORY = "release"
 
 [tasks.build-wasm]
 script = '''
 mkdir -p dist
-wasm-pack build --target web --no-typescript ${WASM_PACK_FLAGS}
-mv pkg/homotopy_web.js pkg/homotopy_web_bg.wasm dist
-rm -rf pkg
+cargo build --target wasm32-unknown-unknown --profile ${CARGO_MAKE_CARGO_PROFILE}
+wasm-bindgen --out-dir dist --no-typescript --target web target/wasm32-unknown-unknown/${TARGET_SUBDIRECTORY}/homotopy_web.wasm
 '''
 
 [tasks.build-wasm-watch]
 run_task = { name = ["build-wasm"] }
-watch = { watch = ["src", "../homotopy-core/src", "../homotopy-common/src", "../homotopy-graphics/src"] }
+watch = { watch = ["homotopy-common/src", "homotopy-core/src", "homotopy-graphics/src", "homotopy-web/src"] }
 
 [tasks.dist-static]
 script = '''
 mkdir -p dist
 echo "Cleaning old files"
 find dist ! -name homotopy_web.js ! -name homotopy_web_bg.wasm -type f -exec rm -f {} +
-cp -r static/* dist/
+cp -r homotopy-web/static/* dist/
 ls dist
 '''
 
@@ -42,6 +44,11 @@ rm -rf dist
 cargo clean
 '''
 
+[tasks.mkdir-dist]
+script = '''
+mkdir -p dist
+'''
+
 [tasks.devserver]
 command = "devserver"
 args = [
@@ -53,5 +60,17 @@ args = [
 , "Cross-Origin-Embedder-Policy=require-corp"
 ]
 
+# for testing Firebase components locally
+[tasks.firebase-emulator]
+command = "firebase"
+args = [
+  "emulators:start"
+]
+
+[tasks.run-server]
+run_task = [
+  { name = ["mkdir-dist", "devserver"] },
+]
+
 [tasks.serve]
-run_task = { name = ["devserver", "build-wasm-watch", "dist-static-watch"], parallel = true }
+run_task = { name = ["run-server", "build-wasm-watch", "dist-static-watch"], parallel = true }

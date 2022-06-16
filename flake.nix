@@ -72,7 +72,6 @@
               {package = gdb;}
               {package = rust-analyzer;}
               {package = wasm-bindgen-cli;}
-              {package = wasm-pack;}
               {package = nodePackages.firebase-tools;}
             ]);
         };

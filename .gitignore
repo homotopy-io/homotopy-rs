@@ -7,6 +7,8 @@ target
 result
 # Firebase cache
 .firebase/
+# Compiled site
+dist
 
 *.swp
 .DS_STORE
