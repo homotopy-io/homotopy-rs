@@ -32,7 +32,7 @@ rmp-serde = "0.15.5"
 # The `wasm-bindgen` crate provides the bare minimum functionality needed
 # to interact with JavaScript.
 wasm-bindgen = { version = "0.2.80", features = ["serde-serialize"] }
-gloo = "0.7.0"
+gloo = "0.8.0"
 gloo-timers = "0.2.4"
 
 wasm-logger = "0.2.0"
