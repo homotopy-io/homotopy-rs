@@ -1,8 +1,9 @@
+use wasm_bindgen::{closure::Closure, JsCast};
 use yew::prelude::*;
 use yew_macro::function_component;
 
 use crate::{
-    app::attach::AttachView,
+    app::{attach::AttachView, keybindings::Keybindings},
     components::{
         icon::{Icon, IconSize},
         Visibility,
@@ -97,14 +98,18 @@ pub enum SidebarMsg {
 #[derive(Default)]
 pub struct Sidebar {
     open: Option<drawers::NavDrawer>,
+    // Hold onto bindings so that they are dropped when the app is destroyed
+    keybindings: Option<Closure<dyn FnMut(KeyboardEvent)>>,
 }
 
 impl Component for Sidebar {
     type Message = SidebarMsg;
     type Properties = SidebarProps;
 
-    fn create(_ctx: &Context<Self>) -> Self {
-        Self::default()
+    fn create(ctx: &Context<Self>) -> Self {
+        let mut sidebar = Self::default();
+        sidebar.install_keyboard_shortcuts(ctx);
+        sidebar
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
@@ -175,5 +180,22 @@ impl Sidebar {
         self.open
             .map(|drawer| drawer.view(dispatch, &ctx.props().proof))
             .unwrap_or_default()
+    }
+
+    fn install_keyboard_shortcuts(&mut self, ctx: &Context<Self>) {
+        let dispatch = ctx.link().callback(SidebarMsg::Dispatch);
+        let keybindings = Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
+            let key = event.key().to_ascii_lowercase();
+            if let Some(action) = Keybindings::get_action(&key) {
+                dispatch.emit(action);
+            }
+        }) as Box<dyn FnMut(_)>);
+
+        web_sys::window()
+            .unwrap()
+            .add_event_listener_with_callback("keyup", keybindings.as_ref().unchecked_ref())
+            .unwrap();
+
+        self.keybindings = Some(keybindings);
     }
 }
