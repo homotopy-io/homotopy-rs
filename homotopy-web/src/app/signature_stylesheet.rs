@@ -21,9 +21,11 @@ pub struct SignatureStylesheet {
 
 impl SignatureStylesheet {
     pub fn new(prefix: impl Into<String>) -> Self {
+        let element = document().create_element("style").unwrap();
+        element.set_id("signature__stylesheet");
         Self {
             signature: Default::default(),
-            element: document().create_element("style").unwrap(),
+            element,
             prefix: prefix.into(),
         }
     }
