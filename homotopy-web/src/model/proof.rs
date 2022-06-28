@@ -704,12 +704,7 @@ impl ProofState {
             .try_into()
             .map_err(|_dimerr| ModelError::InvalidAction)?;
 
-        // new generator of singular height 1 from source to target of current diagram
-        let singleton = self
-            .signature
-            .create_generator(diagram.source(), diagram.target())?;
-        // rewrite from singleton to original diagram
-        self.signature.create_generator(singleton, diagram.into())?;
+        self.signature.create_theorem(diagram.source(), diagram.target(), diagram.into())?;
 
         self.clear_workspace();
 
