@@ -177,6 +177,7 @@ impl Component for PanZoomComponent {
                 ref={self.node_ref.clone()}
             >
                 <div
+                    id="panzoom__inner__0"
                     class="panzoom__inner"
                     style={style}
                 >

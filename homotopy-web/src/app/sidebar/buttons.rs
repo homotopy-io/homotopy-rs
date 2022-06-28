@@ -115,4 +115,10 @@ declare_sidebar_tools! {
         "download",
         model::Action::ExportTikz,
     }
+
+    BUTTON_SVG {
+        "Export to SVG",
+        "download",
+        model::Action::ExportSvg,
+    }
 }
