@@ -63,6 +63,7 @@
             ++ (with self.pkgs; [
               (lib.hiPrio rust-bin.nightly.latest.rustfmt)
               (rust-bin.fromRustupToolchainFile ./rust-toolchain.toml)
+              coreutils
             ]);
           commands =
             super.commands

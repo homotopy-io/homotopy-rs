@@ -19,6 +19,7 @@ pub enum Action {
     ImportProof(SerializedData),
     ExportProof,
     ExportTikz,
+    ExportSvg,
 }
 
 impl Action {
@@ -28,7 +29,7 @@ impl Action {
 
         match self {
             Action::Proof(action) => proof.is_valid(action),
-            Action::ExportTikz => proof
+            Action::ExportTikz | Action::ExportSvg => proof
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.view.dimension() == 2),
@@ -128,6 +129,52 @@ impl State {
 
                 let data = tikz::render(&diagram, &stylesheet).unwrap();
                 serialize::generate_download("filename_todo", "tikz", data.as_bytes())
+                    .map_err(ModelError::Export)?;
+            }
+
+            Action::ExportSvg => {
+                // First we locate the element containing the SVG rendered the SVG rendering
+                // pipeline. We *could* do this by using a lookup by class name, which would not
+                // require any chances to components/panzoom.rs, but get_elements_by_class_name
+                // has a return type that requires a feature of web-sys that is not
+                // currently activated. Thus this solution avoids increases in build times.
+                let svg_element = web_sys::window()
+                    .expect("no window")
+                    .document()
+                    .expect("no document")
+                    .get_element_by_id("panzoom__inner__0")
+                    .expect("no SVG in document");
+                let svg = svg_element.inner_html();
+
+                // We must now pull all the relevant stylesheets that are needed in the SVG.
+                // Failure to do so gives a fully-black SVG. Since getting direct access to the SVG
+                // stylesheet render seems too complicated in the current state, as SignatureStylesheet
+                // is in a private module, we use again the trick of pulling everything from the DOM.
+                // Note that this solution would be much simpler if we opted for saving the
+                // rendered SVG *somewhere*, then just get it from there.
+                let style_element = web_sys::window()
+                    .expect("no window")
+                    .document()
+                    .expect("no document")
+                    .get_element_by_id("signature__stylesheet")
+                    .expect("no stylesheet in document");
+                let stylesheet = style_element.outer_html();
+
+                // So we now have the SVG and its stylesheet in separate strings.
+                // It is not enough to just concatenate them, the stylesheets need to be inside the
+                // root element. Since we know that this will have form
+                // <svg.*><.*
+                // We just look for the first >< and use some very light indexing maths to insert
+                // the stylesheet in the appropriate place.
+                // Again, the function would be half as long and twice as clean if the SVG and the SVG's
+                // stylesheet were in the same place in the DOM.
+                let content_start = svg.find("><").unwrap() + 1;
+                let mut data = String::new();
+                data.push_str(&svg[..content_start]);
+                data.push_str(&stylesheet);
+                data.push_str(&svg[content_start..]);
+
+                serialize::generate_download("filename_todo", "svg", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
 
