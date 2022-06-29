@@ -31,7 +31,7 @@ insta = "1.15.0"
 proptest = "1.0.0"
 quickcheck = "1.0.3"
 quickcheck_macros = "1.0.0"
-serde_json = "1.0.81"
+serde_json = "1.0.82"
 base64 = "0.13.0"
 
 [features]
