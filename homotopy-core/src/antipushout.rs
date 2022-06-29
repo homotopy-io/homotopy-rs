@@ -3,24 +3,22 @@ use std::ops::Range;
 use itertools::Itertools;
 
 use crate::{
-    factorization::factorize,
-    monotone::{preimage, Monotone},
-    rewrite::Cone,
-    Cospan, Diagram, DiagramN, Height, Rewrite, Rewrite0, RewriteN,
+    factorization::factorize, monotone::Monotone, rewrite::Cone, Cospan, Diagram, DiagramN, Height,
+    Rewrite, Rewrite0, RewriteN,
 };
 
 mod monotone {
     use itertools::Itertools;
 
-    use crate::monotone::{preimage, Monotone};
+    use crate::monotone::Monotone;
 
     // Given a cospan a -> 1 <- b in ∆, return an antipushout span a <-h- s -k-> b.
     pub fn antipushout_base(a: usize, b: usize) -> Vec<(Monotone, Monotone)> {
         match (a, b) {
-            (0, 1) | (1, 0) => vec![(vec![], vec![])],
+            (0, 1) | (1, 0) => vec![(vec![].into(), vec![].into())],
             (0, _) | (_, 0) => vec![],
-            (1, b) => vec![(vec![0; b], (0..b).collect())],
-            (a, 1) => vec![((0..a).collect(), vec![0; a])],
+            (1, b) => vec![(vec![0; b].into(), (0..b).collect())],
+            (a, 1) => vec![((0..a).collect(), vec![0; a].into())],
             (a, b) => {
                 let mut antipushouts = vec![];
                 for (mut h, mut k) in antipushout_base(a - 1, b) {
@@ -44,8 +42,8 @@ mod monotone {
         g: &Monotone,
         target_size: usize,
     ) -> Vec<(Monotone, Monotone)> {
-        let f_preimages = (0..target_size).map(|j| preimage(f, j)).collect_vec();
-        let g_preimages = (0..target_size).map(|j| preimage(g, j)).collect_vec();
+        let f_preimages = (0..target_size).map(|j| f.preimage(j)).collect_vec();
+        let g_preimages = (0..target_size).map(|j| g.preimage(j)).collect_vec();
 
         (0..target_size)
             .map(|j| {
@@ -60,10 +58,10 @@ mod monotone {
                 for (j, (h_j, k_j)) in components.into_iter().enumerate() {
                     let f_preimage = &f_preimages[j];
                     let g_preimage = &g_preimages[j];
-                    h.extend(h_j.into_iter().map(|i| i + f_preimage.start));
-                    k.extend(k_j.into_iter().map(|i| i + g_preimage.start));
+                    h.extend(h_j.slices().map(|i| i + f_preimage.start));
+                    k.extend(k_j.slices().map(|i| i + g_preimage.start));
                 }
-                (h, k)
+                (h.into(), k.into())
             })
             .collect()
     }
@@ -138,8 +136,8 @@ pub fn antipushout(
 
                         vec![(s.into(), h.into(), k.into())]
                     } else {
-                        std::iter::zip(h_mono, k_mono)
-                            .map(|(&ai, &bi)| {
+                        std::iter::zip(h_mono.slices(), k_mono.slices())
+                            .map(|(ai, bi)| {
                                 assert_eq!(f_mono[ai], g_mono[bi]);
                                 antipushout(
                                     &a.slice(Height::Singular(ai)).unwrap(),
@@ -165,7 +163,6 @@ pub fn antipushout(
                                     s.cospans(),
                                     a.cospans(),
                                     h_mono,
-                                    todo!(),
                                     &h_slices,
                                 );
 
@@ -174,7 +171,6 @@ pub fn antipushout(
                                     s.cospans(),
                                     b.cospans(),
                                     k_mono,
-                                    todo!(),
                                     &k_slices,
                                 );
 
@@ -198,7 +194,7 @@ fn construct_source(
     let mut cospans = vec![];
     let target_slices = target.slices().collect_vec();
     for (ti, cospan) in target.cospans().iter().enumerate() {
-        let preimage = preimage(mono, ti);
+        let preimage = mono.preimage(ti);
         if !preimage.is_empty() {
             let start = preimage.start;
             let end = preimage.end;
