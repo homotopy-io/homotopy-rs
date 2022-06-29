@@ -5,7 +5,7 @@ use itertools::{Itertools, MultiProduct};
 use crate::{
     common::Mode,
     monotone::{Monotone, MonotoneIterator},
-    Diagram, DiagramN, Height, Rewrite, Rewrite0, RewriteN,
+    Cospan, Diagram, DiagramN, Height, Rewrite, RewriteN,
 };
 
 /// Given `Rewrite`s A -f> C <g- B, find some `Rewrite` A -h> B which factorises f = g ∘ h.
@@ -28,9 +28,7 @@ pub fn factorize(f: Rewrite, g: Rewrite, source: Diagram, target: Diagram) -> Fa
             assert!(f.source().is_none() || f.source() == Some(s));
             assert!(g.source().is_none() || g.source() == Some(t));
 
-            Factorization::Unique(
-                (s == t || s.dimension < t.dimension).then(|| Rewrite0::new(s, t, todo!()).into()),
-            )
+            Factorization::Unique((s == t).then(|| Rewrite::identity(0)))
         }
         (
             Rewrite::RewriteN(f),
@@ -43,12 +41,21 @@ pub fn factorize(f: Rewrite, g: Rewrite, source: Diagram, target: Diagram) -> Fa
             assert_eq!(g.dimension(), target.dimension());
 
             if source.size() == 0 {
-                // Try to construct the trivial rewrite.
+                // Try to construct the rewrite of only unit cones.
+                assert_eq!(source.source(), target.source());
+                assert!(target.slices().all_equal());
                 let h = RewriteN::from_slices_unsafe(
                     f.dimension(),
                     source.cospans(),
                     target.cospans(),
-                    todo!(),
+                    target
+                        .cospans()
+                        .iter()
+                        .map(|Cospan { forward, backward }| {
+                            assert_eq!(forward, backward);
+                            vec![forward.clone()]
+                        })
+                        .collect(),
                     vec![vec![]; target.size()],
                 );
                 Factorization::Unique(h.check(Mode::Shallow).is_ok().then(|| Rewrite::from(h)))
@@ -88,6 +95,8 @@ impl Iterator for Factorization {
     }
 }
 
+impl std::iter::FusedIterator for Factorization {}
+
 #[derive(Clone)]
 pub struct FactorizationInternal {
     f: RewriteN,
@@ -107,9 +116,9 @@ impl Iterator for FactorizationInternal {
                 None => {
                     let h_mono = self.monotone.next()?;
                     let product = h_mono
-                        .iter()
+                        .slices()
                         .enumerate()
-                        .map(|(si, &ti)| {
+                        .map(|(si, ti)| {
                             factorize(
                                 self.f.slice(si),
                                 self.g.slice(ti),
@@ -130,7 +139,6 @@ impl Iterator for FactorizationInternal {
                             self.source.cospans(),
                             self.target.cospans(),
                             h_mono,
-                            todo!(),
                             &slices,
                         );
                         if h.check(Mode::Shallow).is_ok() {
@@ -142,3 +150,5 @@ impl Iterator for FactorizationInternal {
         }
     }
 }
+
+impl std::iter::FusedIterator for FactorizationInternal {}

@@ -669,8 +669,7 @@ impl RewriteN {
         dimension: usize,
         source_cospans: &[Cospan],
         target_cospans: &[Cospan],
-        mono: &[usize],
-        regular_slices: &[Rewrite],
+        mono: &Monotone,
         singular_slices: &[Rewrite],
     ) -> Self {
         let rewrite = Self::from_monotone_unsafe(
@@ -678,7 +677,6 @@ impl RewriteN {
             source_cospans,
             target_cospans,
             mono,
-            regular_slices,
             singular_slices,
         );
         if cfg!(feature = "safety-checks") {
@@ -693,15 +691,23 @@ impl RewriteN {
         dimension: usize,
         source_cospans: &[Cospan],
         target_cospans: &[Cospan],
-        mono: &[usize],
-        regular_slices: &[Rewrite],
+        mono: &Monotone,
         singular_slices: &[Rewrite],
     ) -> Self {
-        let mut cones_regular_slices: Vec<Vec<Rewrite>> = vec![vec![]; target_cospans.len() + 1];
+        // try to determine regular slices by pulling back from target cospans
+        let mut cones_regular_slices: Vec<Vec<Rewrite>> = vec![vec![]; target_cospans.len()];
         let mut cones_singular_slices: Vec<Vec<Rewrite>> = vec![vec![]; target_cospans.len()];
-        for (i, &j) in mono.iter().enumerate() {
-            cones_regular_slices[j].push(regular_slices[i].clone());
-            cones_singular_slices[j].push(singular_slices[i].clone());
+        for (i, Split { source, target }) in mono.cones().enumerate() {
+            for j in source.clone() {
+                cones_singular_slices[i].push(singular_slices[j].clone());
+            }
+            for j in source.start..=source.end {
+                cones_regular_slices[i].push(if j % 2 == source.start % 2 {
+                    target_cospans[target].forward.clone()
+                } else {
+                    target_cospans[target].backward.clone()
+                });
+            }
         }
 
         Self::from_slices_unsafe(
