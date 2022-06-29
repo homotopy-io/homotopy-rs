@@ -1,63 +1,138 @@
-use std::{cmp, ops::Range};
+use std::{
+    cmp,
+    ops::{Index, IndexMut, Range},
+    slice::SliceIndex,
+};
 
 use crate::rewrite::RewriteN;
 
-pub type Monotone = Vec<usize>;
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct Monotone(Vec<usize>);
 
-/// Compose two monotones maps.
-pub fn compose(f: &[usize], g: &[usize]) -> Option<Monotone> {
-    let mut seq = Vec::with_capacity(f.len());
-    for &i in f {
-        if i >= g.len() {
-            return None;
-        } else {
-            seq.push(g[i]);
-        }
+impl From<Vec<usize>> for Monotone {
+    fn from(v: Vec<usize>) -> Self {
+        Self(v)
     }
-    Some(seq)
 }
 
-/// Given a monotone map f : [n] -> [m] in Δ, compute its dual f' : [m + 1] -> [n + 1] in Δ=.
-pub fn dual(f: &[usize], target_size: usize) -> Monotone {
-    let mut seq = Vec::with_capacity(target_size + 1);
-    for i in 0..target_size + 1 {
-        // Convert i ∈ [m + 1] into a monotone g : [m] -> [2].
-        let g = [[0].repeat(i), [1].repeat(target_size - i)].concat();
+impl<I: SliceIndex<[usize]>> Index<I> for Monotone {
+    type Output = <I as SliceIndex<[usize]>>::Output;
 
-        // Compute the composite g∘f : [n] -> [2].
-        let comp = compose(f, &g).unwrap();
-
-        // Convert g∘f : [n] -> [2] back into an element f'(i) ∈ [n + 1].
-        seq.push(comp.into_iter().position(|j| j == 1).unwrap_or(f.len()));
+    fn index(&self, index: I) -> &Self::Output {
+        self.0.index(index)
     }
-    seq
 }
 
-/// Given a monotone map f : [m + 1] -> [n + 1] in Δ=, compute its inverse dual f* : [n] -> [m] in Δ.
-pub fn dual_inv(f: &[usize], target_size: usize) -> Monotone {
-    // Check that f preserves top and bottom elements.
-    assert_eq!(f[0], 0);
-    assert_eq!(f[f.len() - 1], target_size - 1);
-
-    // Forget f is in Δ= and compute the dual f' : [n + 2] -> [m + 2].
-    let dual = dual(f, target_size);
-
-    // Strip away the first and last elements to get the inverse dual f* : [n] -> [m].
-    dual[1..target_size].iter().map(|&i| i - 1).collect()
+impl<I: SliceIndex<[usize]>> IndexMut<I> for Monotone {
+    fn index_mut(&mut self, index: I) -> &mut Self::Output {
+        self.0.index_mut(index)
+    }
 }
 
-pub fn preimage(f: &[usize], target_index: usize) -> Range<usize> {
-    let source_size = f.len();
-    for start in 0..source_size {
-        if f[start] >= target_index {
-            let mut end = start;
-            while end < source_size && f[end] == target_index {
-                end += 1;
+impl FromIterator<usize> for Monotone {
+    fn from_iter<T: IntoIterator<Item = usize>>(iter: T) -> Self {
+        Self(iter.into_iter().collect())
+    }
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct Split {
+    pub source: Range<usize>,
+    pub target: usize,
+}
+
+impl Monotone {
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn push(&mut self, value: usize) {
+        self.0.push(value);
+    }
+
+    pub fn slices(&self) -> impl Iterator<Item = usize> + '_ {
+        self.0.iter().copied()
+    }
+
+    pub fn cones(&self) -> impl Iterator<Item = Split> + '_ {
+        let mut prev = 0;
+        (0..=self.end().unwrap_or_default()).map(move |target| {
+            let source = self.preimage_from(prev, target);
+            prev = source.end;
+            Split { source, target }
+        })
+    }
+
+    pub fn end(&self) -> Option<usize> {
+        self.0.last().copied()
+    }
+
+    /// Compose two monotones maps.
+    pub fn compose(&self, g: &Self) -> Option<Self> {
+        let mut seq = Vec::with_capacity(self.len());
+        for i in self.slices() {
+            if i >= g.len() {
+                return None;
+            } else {
+                seq.push(g[i]);
             }
-            return start..end;
         }
+        Some(seq.into())
     }
-    source_size..source_size
+
+    /// Given a monotone map f : [n] -> [m] in Δ, compute its dual f' : [m + 1] -> [n + 1] in Δ=.
+    #[must_use]
+    pub fn dual(&self, target_size: usize) -> Self {
+        let mut seq = Vec::with_capacity(target_size + 1);
+        for i in 0..target_size + 1 {
+            // Convert i ∈ [m + 1] into a monotone g : [m] -> [2].
+            let g = [[0].repeat(i), [1].repeat(target_size - i)].concat().into();
+
+            // Compute the composite g∘f : [n] -> [2].
+            let comp = self.compose(&g).unwrap();
+
+            // Convert g∘f : [n] -> [2] back into an element f'(i) ∈ [n + 1].
+            seq.push(comp.slices().position(|j| j == 1).unwrap_or(self.len()));
+        }
+        seq.into()
+    }
+
+    /// Given a monotone map f : [m + 1] -> [n + 1] in Δ=, compute its inverse dual f* : [n] -> [m] in Δ.
+    #[must_use]
+    pub fn dual_inv(&self, target_size: usize) -> Self {
+        // Check that f preserves top and bottom elements.
+        assert_eq!(self[0], 0);
+        assert_eq!(self[self.len() - 1], target_size - 1);
+
+        // Forget f is in Δ= and compute the dual f' : [n + 2] -> [m + 2].
+        let dual = self.dual(target_size);
+
+        // Strip away the first and last elements to get the inverse dual f* : [n] -> [m].
+        dual[1..target_size].iter().map(|&i| i - 1).collect()
+    }
+
+    pub fn preimage(&self, target_index: usize) -> Range<usize> {
+        self.preimage_from(0, target_index)
+    }
+
+    #[inline]
+    fn preimage_from(&self, begin: usize, target_index: usize) -> Range<usize> {
+        let source_size = self.len();
+        for start in begin..source_size {
+            if self[start] >= target_index {
+                let mut end = start;
+                while end < source_size && self[end] == target_index {
+                    end += 1;
+                }
+                return start..end;
+            }
+        }
+        source_size..source_size
+    }
 }
 
 impl RewriteN {
@@ -151,7 +226,7 @@ impl Iterator for MonotoneIterator {
                         seq.push(self.constraints[i].start);
                     }
                 }
-                self.cur = Some(seq);
+                self.cur = Some(seq.into());
             }
             Some(seq) => {
                 // Find the last non-maximal element.
@@ -201,7 +276,7 @@ impl DoubleEndedIterator for MonotoneIterator {
                         seq.push(self.constraints[i].end - 1);
                     }
                 }
-                self.cur = Some(seq);
+                self.cur = Some(seq.into());
             }
             Some(seq) => {
                 // Find the first non-minimal element.
@@ -237,75 +312,3 @@ impl DoubleEndedIterator for MonotoneIterator {
 }
 
 impl std::iter::FusedIterator for MonotoneIterator {}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn monotone_sequences() {
-        let iterator0_1_2 = MonotoneIterator::new(false, &[0..2, 0..2]);
-        assert_eq!(iterator0_1_2.collect::<Vec<_>>(), [[0, 0], [0, 1], [1, 1]]);
-
-        let strict_iterator0_1_2 = MonotoneIterator::new(true, &[0..2, 0..2]);
-        assert_eq!(strict_iterator0_1_2.collect::<Vec<_>>(), [[0, 1]]);
-
-        let iterator0_3_3 = MonotoneIterator::new(false, &[0..4, 0..4, 0..4]);
-        assert_eq!(
-            iterator0_3_3.collect::<Vec<_>>(),
-            [
-                [0, 0, 0],
-                [0, 0, 1],
-                [0, 0, 2],
-                [0, 0, 3],
-                [0, 1, 1],
-                [0, 1, 2],
-                [0, 1, 3],
-                [0, 2, 2],
-                [0, 2, 3],
-                [0, 3, 3],
-                [1, 1, 1],
-                [1, 1, 2],
-                [1, 1, 3],
-                [1, 2, 2],
-                [1, 2, 3],
-                [1, 3, 3],
-                [2, 2, 2],
-                [2, 2, 3],
-                [2, 3, 3],
-                [3, 3, 3],
-            ]
-        );
-        let strict_iterator0_3_3 = MonotoneIterator::new(true, &[0..4, 0..4, 0..4]);
-        assert_eq!(
-            strict_iterator0_3_3.collect::<Vec<_>>(),
-            [[0, 1, 2], [0, 1, 3], [0, 2, 3], [1, 2, 3]]
-        );
-
-        let iterator1_3_3 = MonotoneIterator::new(false, &[1..4, 0..4, 1..4]);
-        assert_eq!(
-            iterator1_3_3.collect::<Vec<_>>(),
-            [
-                [1, 1, 1],
-                [1, 1, 2],
-                [1, 1, 3],
-                [1, 2, 2],
-                [1, 2, 3],
-                [1, 3, 3],
-                [2, 2, 2],
-                [2, 2, 3],
-                [2, 3, 3],
-                [3, 3, 3],
-            ]
-        );
-        let strict_iterator1_3_3 = MonotoneIterator::new(true, &[1..4, 0..4, 1..4]);
-        assert_eq!(strict_iterator1_3_3.collect::<Vec<_>>(), [[1, 2, 3]]);
-
-        // unsatisfiable constraints
-        let invalid_ms = MonotoneIterator::new(false, &[1..2, 0..1]);
-        #[allow(clippy::needless_collect)]
-        {
-            assert!(invalid_ms.collect::<Vec<_>>().is_empty());
-        }
-    }
-}
