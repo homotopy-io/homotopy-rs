@@ -144,6 +144,7 @@ button, .button {
   min-width: var(--boundary-min-size);
   max-width: var(--boundary-max-size);
   max-height: var(--boundary-max-size);
+  overflow: hidden;
 }
 
 /* Workspace */
