@@ -3,6 +3,7 @@ use sidebar::Sidebar;
 use signature_stylesheet::SignatureStylesheet;
 use wasm_bindgen::{closure::Closure, JsCast};
 use workspace::WorkspaceView;
+use boundary::BoundaryPreview;
 use yew::prelude::*;
 
 use self::diagram_gl::GlViewControl;
@@ -28,6 +29,7 @@ mod sidebar;
 mod signature;
 mod signature_stylesheet;
 mod workspace;
+mod boundary;
 
 #[derive(Default, Clone, Debug, PartialEq, Properties)]
 pub struct Props {}
@@ -175,6 +177,16 @@ impl App {
             }
         };
 
+        let boundary_preview = match proof.boundary() {
+            Some(b) => 
+                html!{
+                    <BoundaryPreview
+                        boundary={b.clone()}
+                    />
+                },
+            None => Default::default(),
+        };
+
         html! {
             <main class="app">
                 <Sidebar
@@ -182,7 +194,10 @@ impl App {
                     proof={proof}
                 />
                 <ToasterComponent timeout={3000} />
-                {workspace}
+                <div class="boundary__preview__and__workspace">
+                    {boundary_preview}
+                    {workspace}
+                </div>
                 <div id="about" class="modal">
                     <div class="modal-dialog">
                         <div class="modal-content">
