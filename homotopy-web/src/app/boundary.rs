@@ -10,7 +10,6 @@ use crate::{
     // },
     app::diagram_svg::DiagramSvg,
     model::proof::{SelectedBoundary},
-    
 };
 
 pub struct BoundaryPreview {}
@@ -37,8 +36,8 @@ impl Component for BoundaryPreview {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let s = match ctx.props().boundary.boundary {
-            Boundary::Source => "Source:",
-            Boundary::Target => "Target:",
+            Boundary::Source => "Source: ",
+            Boundary::Target => "Target: ",
         };
 
         let preview = match ctx.props().boundary.diagram.dimension() {
@@ -48,9 +47,7 @@ impl Component for BoundaryPreview {
         };
 
         html!{ 
-            <div class="boundary__preview"
-                 //onclick={ctx.props().dispatch.reform(|_| Action::Proof(SelectBoundary(ctx.props().boundary)))}
-            >
+            <div class="boundary__preview">
                 <span>{s}</span>
                 {preview}
             </div>
@@ -65,10 +62,6 @@ impl BoundaryPreview {
             <DiagramSvg<N>
                     diagram={ctx.props().boundary.diagram.clone()}
                     id="boundary__preview"
-                    // on_select={self.on_select.clone()}
-                    // on_homotopy={self.on_homotopy.clone()}
-                    // highlight={highlight}
-                    // ref={self.diagram_ref.clone()}
             />
         }
     }

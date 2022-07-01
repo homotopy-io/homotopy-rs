@@ -30,9 +30,6 @@
   --generator-color-border: #8A919966;
 
   --signature-height: 32px;
-
-  --boundary-min-size: 160px;
-  --boundary-max-size: 320px;
 }
 
 body, html {
@@ -140,11 +137,11 @@ button, .button {
   z-index: 4; /* just below the slice buttons */
   background-color: white;
   border: 2px solid black;
-  min-height: var(--boundary-min-size);
-  min-width: var(--boundary-min-size);
-  max-width: var(--boundary-max-size);
-  max-height: var(--boundary-max-size);
-  overflow: hidden;
+  min-height: 70px;
+  min-width: 60px;
+  max-width:  320px;
+  max-height: 320px;
+  overflow: auto;
 }
 
 /* Workspace */
