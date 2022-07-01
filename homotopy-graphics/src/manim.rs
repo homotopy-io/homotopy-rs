@@ -32,13 +32,22 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
     let mut surfaces = Vec::default();
     let mut wires: FastHashMap<usize, Vec<(Generator, Path)>> = FastHashMap::default();
     let mut points = Vec::default();
+
+    let mut max_point = Point2D::<f32>::zero();
     for element in graphic {
         match element {
-            GraphicElement::Surface(g, path) => surfaces.push((g, path)),
+            GraphicElement::Surface(g, path) => {
+                max_point = max_point.max(max_point_path(&path));
+                surfaces.push((g, path));
+            }
             GraphicElement::Wire(g, path, mask) => {
+                max_point = max_point.max(max_point_path(&path));
                 wires.entry(mask.len()).or_default().push((g, path));
             }
-            GraphicElement::Point(g, point) => points.push((g, point)),
+            GraphicElement::Point(g, point) => {
+                max_point = max_point.max(point);
+                points.push((g, point));
+            }
         }
     }
 
@@ -54,11 +63,16 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
     .unwrap();
 
     // Surfaces
-    writeln!(manim, "{ind}{ind}# Surfaces", ind = INDENT).unwrap();
+    writeln!(
+        manim,
+        "{ind}{ind}# Surfaces\n{ind}{ind}surfaces = VGroup()",
+        ind = INDENT
+    )
+    .unwrap();
     for (g, path) in surfaces {
         writeln!(
             manim,
-            "{ind}{ind}path_{id}_{dim} = VMobject(stroke_width=2).set_fill({color}, 1.0){path}\n{ind}{ind}self.play(Create(path_{id}_{dim}))\n{ind}{ind}self.wait(1)",
+            "{ind}{ind}surfaces.add(VMobject(stroke_width=2).set_fill({color}, 1.0){path}) # path_{id}_{dim}",
             ind=INDENT,
             color=color(g),
             id=g.id,
@@ -69,6 +83,12 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
     }
 
     // Wires
+    writeln!(
+        manim,
+        "{ind}{ind}# Wires\n{ind}{ind}wires = VGroup()",
+        ind = INDENT
+    )
+    .unwrap();
     for (i, (_, layer)) in wires
         .into_iter()
         .sorted_by_cached_key(|(k, _)| *k)
@@ -77,27 +97,45 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
     {
         // Background
         if i > 0 {
-            writeln!(manim, "# Being scope?").unwrap();
-            for (_, path) in &layer {
+            writeln!(manim, "{ind}{ind}# Begin scope", ind = INDENT).unwrap();
+            for (g, path) in &layer {
                 let left = offset(-OCCLUSION_DELTA, path).reversed();
                 let right = offset(OCCLUSION_DELTA, path);
-                manim.push_str(&render_path(&right));
-                manim.push_str(" -- ");
-                manim.push_str(&render_path(&left));
-                manim.push_str(" -- cycle");
+                writeln!(manim, "{ind}{ind}wires.add(Intersection(surfaces,VMobject().set_fill(BLACK, 1.0){path_right}{path_left},color=average_color(generator_{id}_{dim},BLACK),fill_opacity=1)) # path_{id}_{dim}", ind = INDENT, id=g.id, dim=g.dimension,path_left=&render_path(&left),path_right=&render_path(&right)).unwrap();
             }
+            writeln!(manim, "{ind}{ind}# End scope", ind = INDENT).unwrap();
         }
 
         for (g, path) in &layer {
-            writeln!(manim, "{ind}{ind}path_{id}_{dim} = VMobject(stroke_color={color},stroke_width=8).set_fill({color}, 1.0){path}\n{ind}{ind}self.play(Create(path_{id}_{dim}))\n",
+            writeln!(manim, "{ind}{ind}wires.add(VMobject(stroke_color={color},stroke_width=6){path}) # path_{id}_{dim}",
             ind=INDENT,color=color(*g),id=g.id,dim=g.dimension,path=&render_path(path)).unwrap();
         }
     }
 
     // Points
+    writeln!(
+        manim,
+        "{ind}{ind}# Points\n{ind}{ind}points = VGroup()",
+        ind = INDENT
+    )
+    .unwrap();
     for (g, point) in points {
-        writeln!(manim, "{ind}{ind}circle_{id}_{dim} = Circle(radius=0.125,color={color},fill_opacity=1).move_to({pt})\n{ind}{ind}self.play(Create(circle_{id}_{dim}))\n{ind}{ind}self.wait(1)", ind=INDENT,id=g.id,dim=g.dimension,color=color(g),pt=&render_point(point)).unwrap();
+        writeln!(manim, "{ind}{ind}points.add(Circle(radius=0.125,color={color},fill_opacity=1).move_to({pt})) # circle_{id}_{dim}", ind=INDENT,id=g.id,dim=g.dimension,color=color(g),pt=&render_point(point)).unwrap();
     }
+    writeln!(
+        manim,
+        "{ind}{ind}# Root\n{ind}{ind}root = VGroup(surfaces,wires,points)",
+        ind = INDENT
+    )
+    .unwrap();
+    writeln!(
+        manim,
+        "{ind}{ind}self.add(root.shift({x}*LEFT+{y}*DOWN).scale(0.125))\n",
+        ind = INDENT,
+        x = max_point.x * 0.5,
+        y = max_point.y * 0.5,
+    )
+    .unwrap();
 
     Ok(manim)
 }
@@ -106,6 +144,19 @@ fn render_point(point: Point2D<f32>) -> String {
     let x = ((point.x) * 100.0).round() / 100.0;
     let y = ((point.y) * 100.0).round() / 100.0;
     format!("[{},{},0]", x, y)
+}
+
+fn max_point_path(path: &Path) -> Point2D<f32> {
+    let mut max_point = Point2D::zero();
+    for event in path {
+        match event {
+            Event::Line { to, .. } | Event::Quadratic { to, .. } | Event::Cubic { to, .. } => {
+                max_point = max_point.max(to);
+            }
+            _ => {}
+        }
+    }
+    max_point
 }
 
 fn render_path(path: &Path) -> String {
@@ -126,7 +177,7 @@ fn render_path(path: &Path) -> String {
             .unwrap(),
             Event::Quadratic { ctrl, to, .. } => write!(
                 result,
-                " .. controls {} .. {}",
+                ".add_quadratic_bezier_curve_to(np.array({}),np.array({}))",
                 render_point(ctrl),
                 render_point(to)
             )
@@ -141,11 +192,7 @@ fn render_path(path: &Path) -> String {
                 render_point(to),
             )
             .unwrap(),
-            Event::End { close, .. } => {
-                if close {
-                    //write!(result, " -- cycle").unwrap();
-                }
-            }
+            Event::End { .. } => {}
         }
     }
     result
