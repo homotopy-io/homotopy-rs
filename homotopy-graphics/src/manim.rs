@@ -56,9 +56,9 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
     // Surfaces
     writeln!(manim, "{ind}{ind}# Surfaces", ind = INDENT).unwrap();
     for (g, path) in surfaces {
-        write!(
+        writeln!(
             manim,
-            "{ind}{ind}path_{id}_{dim} = VMobject().set_fill({color}, 1.0){path}\n{ind}{ind}self.play(Create(path_{id}_{dim}))\n{ind}{ind}self.wait(1)\n",
+            "{ind}{ind}path_{id}_{dim} = VMobject(stroke_width=2).set_fill({color}, 1.0){path}\n{ind}{ind}self.play(Create(path_{id}_{dim}))\n{ind}{ind}self.wait(1)",
             ind=INDENT,
             color=color(g),
             id=g.id,
@@ -77,8 +77,7 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
     {
         // Background
         if i > 0 {
-            writeln!(manim, "\\begin{{scope}}").unwrap();
-            write!(manim, "\\clip ").unwrap();
+            writeln!(manim, "# Being scope?").unwrap();
             for (_, path) in &layer {
                 let left = offset(-OCCLUSION_DELTA, path).reversed();
                 let right = offset(OCCLUSION_DELTA, path);
@@ -87,33 +86,25 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
                 manim.push_str(&render_path(&left));
                 manim.push_str(" -- cycle");
             }
-            writeln!(manim, ";").unwrap();
-            writeln!(manim, "\\Background").unwrap();
-            writeln!(manim, "\\end{{scope}}").unwrap();
         }
 
         for (g, path) in &layer {
-            write!(manim, "\\draw[{}!80, line width=5pt] ", color(*g)).unwrap();
-            manim.push_str(&render_path(path));
-            writeln!(manim, ";").unwrap();
+            writeln!(manim, "{ind}{ind}path_{id}_{dim} = VMobject(stroke_color={color},stroke_width=8).set_fill({color}, 1.0){path}\n{ind}{ind}self.play(Create(path_{id}_{dim}))\n",
+            ind=INDENT,color=color(*g),id=g.id,dim=g.dimension,path=&render_path(path)).unwrap();
         }
     }
 
     // Points
     for (g, point) in points {
-        write!(manim, "\\fill[{}] ", color(g)).unwrap();
-        manim.push_str(&render_point(point));
-        writeln!(manim, " circle (4pt);").unwrap();
+        writeln!(manim, "{ind}{ind}circle_{id}_{dim} = Circle(radius=0.125,color={color},fill_opacity=1).move_to({pt})\n{ind}{ind}self.play(Create(circle_{id}_{dim}))\n{ind}{ind}self.wait(1)", ind=INDENT,id=g.id,dim=g.dimension,color=color(g),pt=&render_point(point)).unwrap();
     }
-
-    writeln!(manim, "\\end{{tikzpicture}}").unwrap();
 
     Ok(manim)
 }
 
 fn render_point(point: Point2D<f32>) -> String {
-    let x = (point.x * 100.0).round() / 100.0;
-    let y = (point.y * 100.0).round() / 100.0;
+    let x = ((point.x) * 100.0).round() / 100.0;
+    let y = ((point.y) * 100.0).round() / 100.0;
     format!("[{},{},0]", x, y)
 }
 
