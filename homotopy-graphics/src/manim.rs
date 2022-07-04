@@ -33,6 +33,7 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
     let mut wires: FastHashMap<usize, Vec<(Generator, Path)>> = FastHashMap::default();
     let mut points = Vec::default();
 
+    // Needed for working out translations/scalings
     let mut max_point = Point2D::<f32>::zero();
     for element in graphic {
         match element {
@@ -52,12 +53,17 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
     }
 
     let mut manim = String::new();
-    writeln!(manim, "# Uncomment line below\n#from manim import *\n").unwrap();
+    manim.push_str("# Uncomment line below if needed\n");
+    manim.push_str("#from manim import *\n");
+    manim.push_str("#import numpy as np\n");
     manim.push_str(stylesheet);
 
     writeln!(
         manim,
-        "\n# Our main class\nclass HomotopyIoManim(Scene):\n{ind}def construct(self):",
+        concat!(
+            "\nclass HomotopyIoManim(Scene):\n",
+            "{ind}def construct(self):"
+        ),
         ind = INDENT
     )
     .unwrap();
@@ -65,14 +71,14 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
     // Surfaces
     writeln!(
         manim,
-        "{ind}{ind}# Surfaces\n{ind}{ind}surfaces = VGroup()",
+        concat!("{ind}{ind}# Surfaces\n", "{ind}{ind}surfaces = VGroup()"),
         ind = INDENT
     )
     .unwrap();
     for (g, path) in surfaces {
         writeln!(
             manim,
-            "{ind}{ind}surfaces.add(VMobject(stroke_width=2).set_fill({color}, 1.0){path}) # path_{id}_{dim}",
+            "{ind}{ind}surfaces.add(VMobject(stroke_width=1).set_fill({color},0.75){path}) # path_{id}_{dim}",
             ind=INDENT,
             color=color(g),
             id=g.id,
@@ -85,7 +91,7 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
     // Wires
     writeln!(
         manim,
-        "{ind}{ind}# Wires\n{ind}{ind}wires = VGroup()",
+        concat!("{ind}{ind}# Wires\n", "{ind}{ind}wires = VGroup()"),
         ind = INDENT
     )
     .unwrap();
@@ -101,39 +107,70 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
             for (g, path) in &layer {
                 let left = offset(-OCCLUSION_DELTA, path).reversed();
                 let right = offset(OCCLUSION_DELTA, path);
-                writeln!(manim, "{ind}{ind}wires.add(Intersection(surfaces,VMobject().set_fill(BLACK, 1.0){path_right}{path_left},color=average_color(generator_{id}_{dim},BLACK),fill_opacity=1)) # path_{id}_{dim}", ind = INDENT, id=g.id, dim=g.dimension,path_left=&render_path(&left),path_right=&render_path(&right)).unwrap();
+                writeln!(manim, concat!("{ind}{ind}wires.add(Intersection(surfaces,",
+                         "VMobject().set_fill(BLACK, 1.0){path_right}{path_left},color=generator_{id}_{dim},fill_opacity=0.8)) # path_{id}_{dim}"),
+                         ind=INDENT,
+                         id=g.id,
+                         dim=g.dimension,path_left=&render_path(&left),
+                         path_right=&render_path(&right)
+                ).unwrap();
             }
             writeln!(manim, "{ind}{ind}# End scope", ind = INDENT).unwrap();
         }
 
         for (g, path) in &layer {
-            writeln!(manim, "{ind}{ind}wires.add(VMobject(stroke_color={color},stroke_width=6){path}) # path_{id}_{dim}",
-            ind=INDENT,color=color(*g),id=g.id,dim=g.dimension,path=&render_path(path)).unwrap();
+            writeln!(manim, "{ind}{ind}wires.add(VMobject(stroke_color={color},stroke_width=5){path}) # path_{id}_{dim}",
+                ind=INDENT,
+                color=color(*g),
+                id=g.id,
+                dim=g.dimension,
+                path=&render_path(path)
+            ).unwrap();
         }
     }
 
     // Points
     writeln!(
         manim,
-        "{ind}{ind}# Points\n{ind}{ind}points = VGroup()",
+        concat!("{ind}{ind}# Points\n", "{ind}{ind}points = VGroup()"),
         ind = INDENT
     )
     .unwrap();
+    //TODO work out right radius for circles to match SVG/tikz export.
     for (g, point) in points {
-        writeln!(manim, "{ind}{ind}points.add(Circle(radius=0.125,color={color},fill_opacity=1).move_to({pt})) # circle_{id}_{dim}", ind=INDENT,id=g.id,dim=g.dimension,color=color(g),pt=&render_point(point)).unwrap();
+        writeln!(manim, "{ind}{ind}points.add(Circle(radius=0.125,color={color},fill_opacity=1).move_to({pt})) # circle_{id}_{dim}",
+            ind=INDENT,
+            id=g.id,
+            dim=g.dimension,
+            color=color(g),
+            pt=&render_point(point)
+        ).unwrap();
     }
+    //TODO work out good scaling automatically
     writeln!(
         manim,
-        "{ind}{ind}# Root\n{ind}{ind}root = VGroup(surfaces,wires,points)",
-        ind = INDENT
-    )
-    .unwrap();
-    writeln!(
-        manim,
-        "{ind}{ind}self.add(root.shift({x}*LEFT+{y}*DOWN).scale(0.125))\n",
+        concat!(
+            "{ind}{ind}# Root\n",
+            "{ind}{ind}root = VGroup(surfaces,wires,points).shift({x}*LEFT+{y}*DOWN).scale(0.125)"
+        ),
         ind = INDENT,
         x = max_point.x * 0.5,
         y = max_point.y * 0.5,
+    )
+    .unwrap();
+    writeln!(
+        manim,
+        concat!(
+            "{ind}{ind}# Static output (low rendering times)\n",
+            "{ind}{ind}#self.add(root)\n",
+            "{ind}{ind}# Animated output\n",
+            "{ind}{ind}self.play(DrawBorderThenFill(surfaces))\n",
+            "{ind}{ind}self.play(Create(root))\n",
+            "{ind}{ind}text = MarkupText(\"Homotopy.io\", color=BLUE).next_to(root, 2*DOWN)\n",
+            "{ind}{ind}self.play(Write(text))\n",
+            "{ind}{ind}self.wait(5)\n"
+        ),
+        ind = INDENT,
     )
     .unwrap();
 
@@ -165,7 +202,7 @@ fn render_path(path: &Path) -> String {
         match event {
             Event::Begin { at } => write!(
                 result,
-                ".set_points_as_corners([np.array({pt}),np.array({pt})])",
+                ".set_points_as_corners([np.array({pt})]*2)",
                 pt = render_point(at)
             )
             .unwrap(),
