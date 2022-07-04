@@ -43,6 +43,7 @@
 )]
 
 pub mod buffers;
+pub mod generators;
 pub mod geom;
 pub mod gl;
 pub mod parity;

@@ -4,7 +4,7 @@ pub use history::Proof;
 use history::{History, UndoState};
 use homotopy_core::common::Mode;
 use homotopy_graphics::tikz;
-use proof::{Color, GeneratorInfo, Signature, Workspace};
+use proof::{Signature, Workspace};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 

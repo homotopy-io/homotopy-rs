@@ -1,12 +1,10 @@
-use std::{collections::VecDeque, fmt, ops::Deref, str::FromStr};
+use std::{collections::VecDeque, str::FromStr};
 
 use homotopy_common::tree::{Node, Tree};
 use homotopy_core::{common::Generator, diagram::NewDiagramError, Diagram, DiagramN};
+use homotopy_graphics::generators::{Color, GeneratorInfo, VertexShape};
 use palette::Srgb;
 use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Color(pub(crate) Srgb<u8>);
 
 pub const COLORS: &[&str] = &[
     "#2980b9", // belize blue
@@ -18,29 +16,6 @@ pub const COLORS: &[&str] = &[
     "#ffffff", // white
     "#000000", // black
 ];
-
-impl Deref for Color {
-    type Target = Srgb<u8>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl fmt::Display for Color {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let (r, g, b) = self.into_components();
-        write!(f, "#{:02x}{:02x}{:02x}", r, g, b)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub struct GeneratorInfo {
-    pub generator: Generator,
-    pub name: String,
-    pub color: Color,
-    pub diagram: Diagram,
-}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub enum SignatureItem {
@@ -58,6 +33,7 @@ impl Default for SignatureItem {
 pub enum SignatureItemEdit {
     Rename(String),
     Recolor(Color),
+    Reshape(VertexShape),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -100,6 +76,7 @@ impl Signature {
             generator,
             name: format!("Cell {}", id),
             color: Color(Srgb::<u8>::from_str(COLORS[id % COLORS.len()]).unwrap()),
+            shape: VertexShape::default(),
             diagram: diagram.into(),
         };
 
@@ -114,10 +91,11 @@ impl Signature {
     }
 
     fn edit(&mut self, node: Node, edit: SignatureItemEdit) {
-        use SignatureItemEdit::{Recolor, Rename};
+        use SignatureItemEdit::{Recolor, Rename, Reshape};
         self.0.with_mut(node, move |n| match (n.inner_mut(), edit) {
             (SignatureItem::Item(info), Rename(name)) => info.name = name,
             (SignatureItem::Item(info), Recolor(color)) => info.color = color,
+            (SignatureItem::Item(info), Reshape(shape)) => info.shape = shape,
             (SignatureItem::Folder(ref mut old, _), Rename(name)) => *old = name,
             (_, _) => {}
         });

@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use homotopy_common::tree::Node;
+use homotopy_graphics::generators::{Color, VertexShape};
 use palette::Srgb;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -8,7 +9,7 @@ use yew_macro::function_component;
 
 use crate::{
     components::icon::{Icon, IconSize},
-    model::proof::{Action, Color, SignatureEdit, SignatureItem, SignatureItemEdit, COLORS},
+    model::proof::{Action, SignatureEdit, SignatureItem, SignatureItemEdit, COLORS},
 };
 
 // FIXME(@doctorn)
@@ -109,7 +110,7 @@ pub struct ItemViewProps {
 pub enum ItemViewMode {
     Viewing,
     Editing,
-    Coloring,
+    Styling,
 }
 
 impl Default for ItemViewMode {
@@ -129,6 +130,7 @@ pub enum ItemViewMessage {
 pub struct EditState {
     name: Option<String>,
     color: Option<Color>,
+    shape: Option<VertexShape>,
 }
 
 impl EditState {
@@ -136,6 +138,7 @@ impl EditState {
         match edit {
             SignatureItemEdit::Rename(name) => self.name = Some(name),
             SignatureItemEdit::Recolor(color) => self.color = Some(color),
+            SignatureItemEdit::Reshape(shape) => self.shape = Some(shape),
         }
 
         true
@@ -188,7 +191,7 @@ impl Component for ItemView {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let class = format!(
             "signature__item {}",
-            if self.mode == ItemViewMode::Coloring {
+            if self.mode == ItemViewMode::Styling {
                 "signature__item-coloring"
             } else {
                 ""
@@ -297,7 +300,7 @@ impl ItemView {
             ItemViewMode::Editing => {
                 let recolor = ctx
                     .link()
-                    .callback(|_| ItemViewMessage::SwitchTo(ItemViewMode::Coloring));
+                    .callback(|_| ItemViewMessage::SwitchTo(ItemViewMode::Styling));
 
                 html! {
                     <ItemViewButton
@@ -308,7 +311,7 @@ impl ItemView {
                     />
                 }
             }
-            ItemViewMode::Coloring => {
+            ItemViewMode::Styling => {
                 let apply = ctx
                     .link()
                     .callback(|_| ItemViewMessage::SwitchTo(ItemViewMode::Editing));
@@ -326,7 +329,7 @@ impl ItemView {
     }
 
     fn view_picker(&self, ctx: &Context<Self>, color: &Color) -> Html {
-        if self.mode != ItemViewMode::Coloring {
+        if self.mode != ItemViewMode::Styling {
             return html! {};
         }
 

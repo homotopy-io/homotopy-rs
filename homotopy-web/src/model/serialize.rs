@@ -7,13 +7,14 @@ use homotopy_core::{
     serialize::{Key, Store},
     Diagram,
 };
+use homotopy_graphics::generators::{Color, GeneratorInfo, VertexShape};
 use im::Vector;
 use obake::AnyVersion;
 use wasm_bindgen::JsCast;
 
 use super::{
     proof::{SignatureItem, View},
-    Color, GeneratorInfo, Signature, Workspace,
+    Signature, Workspace,
 };
 
 pub fn generate_download(name: &str, ext: &str, data: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
@@ -189,6 +190,7 @@ pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
                     generator: gd.generator,
                     name: gd.name,
                     color: gd.color,
+                    shape: VertexShape::default(),
                     diagram: store.unpack_diagram(gd.diagram)?,
                 }),
             })

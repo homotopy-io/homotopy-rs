@@ -751,6 +751,7 @@ dependencies = [
  "lyon_algorithms",
  "lyon_geom",
  "lyon_path",
+ "palette",
  "paste",
  "petgraph",
  "serde",

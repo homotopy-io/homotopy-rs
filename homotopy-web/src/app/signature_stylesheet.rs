@@ -1,14 +1,12 @@
 use std::fmt::Write;
 
 use homotopy_core::Generator;
+use homotopy_graphics::generators::Color;
 use palette::Lighten;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, Node};
 
-use crate::{
-    components::document,
-    model::proof::{Color, Signature},
-};
+use crate::{components::document, model::proof::Signature};
 
 // TODO: Check if there is a performance problem with this. If so, then use the
 // stylesheet API to change the colors more granularly.
