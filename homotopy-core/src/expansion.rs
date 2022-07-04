@@ -400,7 +400,10 @@ fn expand_recursive(
                 height,
                 vec![Cospan { forward, backward }],
                 target_cospan.clone(),
-                todo!(),
+                vec![
+                    target_cospan.forward.clone(),
+                    target_cospan.backward.clone(),
+                ],
                 vec![recursive],
             )],
         ),
@@ -437,7 +440,7 @@ fn expand_recursive(
                         },
                     ],
                     target_cospan.clone(),
-                    todo!(),
+                    todo!("need antipushout"),
                     vec![recursive, inclusion],
                 )],
             )
@@ -475,7 +478,7 @@ fn expand_recursive(
                         },
                     ],
                     target_cospan.clone(),
-                    todo!(),
+                    todo!("need antipushout"),
                     vec![inclusion, recursive],
                 )],
             )
@@ -492,12 +495,16 @@ fn expand_recursive(
                             backward: recursive.clone(),
                         },
                         Cospan {
-                            forward: recursive,
+                            forward: recursive.clone(),
                             backward: target_cospan.backward.clone(),
                         },
                     ],
                     target_cospan.clone(),
-                    todo!(),
+                    vec![
+                        target_cospan.forward.clone(),
+                        recursive,
+                        target_cospan.backward.clone(),
+                    ],
                     vec![
                         Rewrite::identity(diagram.dimension() - 1),
                         Rewrite::identity(diagram.dimension() - 1),
@@ -507,13 +514,15 @@ fn expand_recursive(
         }
     };
 
-    let expansion_preimage = diagram
-        .clone()
-        .rewrite_backward(&expansion_rewrite)
-        .unwrap();
-    let normalization_rewrite = normalize_singular(&expansion_preimage.into());
-
-    Ok(normalization_rewrite
-        .compose(&expansion_rewrite.into())
-        .unwrap())
+    Ok(expansion_rewrite.into())
+    // TODO: normalization
+    // let expansion_preimage = diagram
+    //     .clone()
+    //     .rewrite_backward(&expansion_rewrite)
+    //     .unwrap();
+    // let normalization_rewrite = normalize_singular(&expansion_preimage.into());
+    //
+    // Ok(normalization_rewrite
+    //     .compose(&expansion_rewrite.into())
+    //     .unwrap())
 }
