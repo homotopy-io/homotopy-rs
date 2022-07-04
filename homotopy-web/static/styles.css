@@ -128,20 +128,33 @@ button, .button {
   transform-origin: 50% 50%;
 }
 
-/* Boundary Preview */
+/* Boundary (source/target) Preview */
 
-.boundary__preview {
+.boundary{
   position: fixed;
   bottom: 10px;
   margin-left: 10px;
   z-index: 4; /* just below the slice buttons */
-  background-color: white;
-  border: 2px solid black;
-  min-height: 70px;
-  min-width: 60px;
+}
+
+.boundary__name{
+  background-color: var(--toolbar-background);
+  border: 1px solid var(--toolbar-border);
+  border-radius: var(--space-0);
+  padding: 5px;
+  color: var(--toolbar-foreground);
+  text-align: center;
+}
+
+.boundary__preview{
+  background-color: var(--toolbar-background);
+  border: 1px solid var(--toolbar-border);
+  border-radius: var(--space-0);
+  overflow: auto;
+  min-height: 50px;
+  min-width: 50px;
   max-width:  320px;
   max-height: 320px;
-  overflow: auto;
 }
 
 /* Workspace */

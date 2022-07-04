@@ -194,7 +194,7 @@ impl App {
                     proof={proof}
                 />
                 <ToasterComponent timeout={3000} />
-                <div class="boundary__preview__and__workspace">
+                <div class="boundary__and__workspace">
                     {boundary_preview}
                     {workspace}
                 </div>

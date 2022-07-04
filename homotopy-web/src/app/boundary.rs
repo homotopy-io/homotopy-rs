@@ -1,13 +1,12 @@
+/*
+    Display the selected source/target (boundary) at the left-bottom corner of the workspace.
+*/
+
 use yew::prelude::*;
 
 use homotopy_core::common::Boundary;
 
 use crate::{
-    // app::{attach::AttachView, keybindings::Keybindings},
-    // components::{
-    //     icon::{Icon, IconSize},
-    //     Visibility,
-    // },
     app::diagram_svg::DiagramSvg,
     model::proof::{SelectedBoundary},
 };
@@ -35,20 +34,38 @@ impl Component for BoundaryPreview {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let s = match ctx.props().boundary.boundary {
-            Boundary::Source => "Source: ",
-            Boundary::Target => "Target: ",
+        let bound = match ctx.props().boundary.boundary {
+            Boundary::Source => "Source",
+            Boundary::Target => "Target",
         };
 
-        let preview = match ctx.props().boundary.diagram.dimension() {
+        let dim = ctx.props().boundary.diagram.dimension();
+
+        let preview = match dim {
             0 => Self::view_diagram_svg::<0>(ctx),
             1 => Self::view_diagram_svg::<1>(ctx),
             _ => Self::view_diagram_svg::<2>(ctx),
         };
 
+        let preview = match dim{
+            // Display flex to center 0 & 1-dimensional diagrams.
+            0 | 1 => html!{
+                <div class="boundary__preview" style="display:flex; align-item:center; justify-content:center">
+                    {preview}
+                </div>
+            },
+            _ => html!{
+                <div class="boundary__preview">
+                    {preview}
+                </div>
+            },
+        };
+
         html!{ 
-            <div class="boundary__preview">
-                <span>{s}</span>
+            <div class="boundary">
+                <div class="boundary__name">
+                    <span>{bound}</span>
+                </div>
                 {preview}
             </div>
         }
