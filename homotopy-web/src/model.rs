@@ -187,7 +187,7 @@ impl State {
                 for info in signature.iter() {
                     writeln!(
                         stylesheet,
-                        "{generator} = \"#{r:02x}{g:02x}{b:02x}\"",
+                        "            \"{generator}\": \"#{r:02x}{g:02x}{b:02x}\",",
                         generator = manim::color(info.generator),
                         r = info.color.red,
                         g = info.color.green,

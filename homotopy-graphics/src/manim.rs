@@ -56,29 +56,38 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
     manim.push_str("# Uncomment line below if needed\n");
     manim.push_str("#from manim import *\n");
     manim.push_str("#import numpy as np\n");
-    manim.push_str(stylesheet);
 
     writeln!(
         manim,
         concat!(
             "\nclass HomotopyIoManim(Scene):\n",
-            "{ind}def construct(self):"
+            "{ind}def get_colors(self):\n",
+            "{ind}{ind}colors = {{\n",
+            "{stylesheet}",
+            "{ind}{ind}}}\n",
+            "{ind}{ind}return colors\n",
         ),
-        ind = INDENT
+        ind = INDENT,
+        stylesheet = stylesheet
     )
     .unwrap();
 
     // Surfaces
     writeln!(
         manim,
-        concat!("{ind}{ind}# Surfaces\n", "{ind}{ind}surfaces = VGroup()"),
+        concat!(
+            "{ind}# Surfaces\n",
+            "{ind}def get_surfaces(self):\n",
+            "{ind}{ind}C = self.get_colors()\n",
+            "{ind}{ind}surfaces = VGroup()"
+        ),
         ind = INDENT
     )
     .unwrap();
     for (g, path) in surfaces {
         writeln!(
             manim,
-            "{ind}{ind}surfaces.add(VMobject(stroke_width=1).set_fill({color},0.75){path}) # path_{id}_{dim}",
+            "{ind}{ind}surfaces.add(VMobject(stroke_width=1).set_fill(C[\"{color}\"],0.75){path}) # path_{id}_{dim}",
             ind=INDENT,
             color=color(g),
             id=g.id,
@@ -91,7 +100,13 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
     // Wires
     writeln!(
         manim,
-        concat!("{ind}{ind}# Wires\n", "{ind}{ind}wires = VGroup()"),
+        concat!(
+            "{ind}{ind}return surfaces\n\n",
+            "{ind}# Wires\n",
+            "{ind}def get_wires(self, surfaces):\n",
+            "{ind}{ind}C = self.get_colors()\n",
+            "{ind}{ind}wires = VGroup()"
+        ),
         ind = INDENT
     )
     .unwrap();
@@ -108,7 +123,7 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
                 let left = offset(-OCCLUSION_DELTA, path).reversed();
                 let right = offset(OCCLUSION_DELTA, path);
                 writeln!(manim, concat!("{ind}{ind}wires.add(Intersection(surfaces,",
-                         "VMobject().set_fill(BLACK, 1.0){path_right}{path_left},color=generator_{id}_{dim},fill_opacity=0.8)) # path_{id}_{dim}"),
+                         "VMobject().set_fill(BLACK, 1.0){path_right}{path_left},color=C[\"generator_{id}_{dim}\"],fill_opacity=0.8)) # path_{id}_{dim}"),
                          ind=INDENT,
                          id=g.id,
                          dim=g.dimension,path_left=&render_path(&left),
@@ -119,7 +134,7 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
         }
 
         for (g, path) in &layer {
-            writeln!(manim, "{ind}{ind}wires.add(VMobject(stroke_color={color},stroke_width=5){path}) # path_{id}_{dim}",
+            writeln!(manim, "{ind}{ind}wires.add(VMobject(stroke_color=C[\"{color}\"],stroke_width=5){path}) # path_{id}_{dim}",
                 ind=INDENT,
                 color=color(*g),
                 id=g.id,
@@ -132,13 +147,19 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
     // Points
     writeln!(
         manim,
-        concat!("{ind}{ind}# Points\n", "{ind}{ind}points = VGroup()"),
+        concat!(
+            "{ind}{ind}return wires\n\n",
+            "{ind}# Points\n",
+            "{ind}def get_points(self):\n",
+            "{ind}{ind}C = self.get_colors()\n",
+            "{ind}{ind}points = VGroup()"
+        ),
         ind = INDENT
     )
     .unwrap();
     //TODO work out right radius for circles to match SVG/tikz export.
     for (g, point) in points {
-        writeln!(manim, "{ind}{ind}points.add(Circle(radius=0.125,color={color},fill_opacity=1).move_to({pt})) # circle_{id}_{dim}",
+        writeln!(manim, "{ind}{ind}points.add(Circle(radius=0.125,color=C[\"{color}\"],fill_opacity=1).move_to({pt})) # circle_{id}_{dim}",
             ind=INDENT,
             id=g.id,
             dim=g.dimension,
@@ -149,18 +170,15 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
     //TODO work out good scaling automatically
     writeln!(
         manim,
-        concat!(
+        concat!("{ind}{ind}return points\n\n",
+            "{ind}# We now put everything together\n",
+            "{ind}def construct(self):\n",
+            "{ind}{ind}#C = self.get_colors()\n",
+            "{ind}{ind}surfaces = self.get_surfaces()\n",
+            "{ind}{ind}wires = self.get_wires(surfaces)\n",
+            "{ind}{ind}points = self.get_points()\n",
             "{ind}{ind}# Root\n",
-            "{ind}{ind}root = VGroup(surfaces,wires,points).shift({x}*LEFT+{y}*DOWN).scale(0.125)"
-        ),
-        ind = INDENT,
-        x = max_point.x * 0.5,
-        y = max_point.y * 0.5,
-    )
-    .unwrap();
-    writeln!(
-        manim,
-        concat!(
+            "{ind}{ind}root = VGroup(surfaces,wires,points).shift({x}*LEFT+{y}*DOWN).scale(0.125)\n",
             "{ind}{ind}# Static output (low rendering times)\n",
             "{ind}{ind}#self.add(root)\n",
             "{ind}{ind}# Animated output\n",
@@ -168,9 +186,11 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
             "{ind}{ind}self.play(Create(root))\n",
             "{ind}{ind}text = MarkupText(\"Homotopy.io\", color=BLUE).next_to(root, 2*DOWN)\n",
             "{ind}{ind}self.play(Write(text))\n",
-            "{ind}{ind}self.wait(5)\n"
+            "{ind}{ind}self.wait(5)\n",
         ),
         ind = INDENT,
+        x = max_point.x * 0.5,
+        y = max_point.y * 0.5,
     )
     .unwrap();
 
