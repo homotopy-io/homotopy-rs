@@ -8,7 +8,15 @@ The master branch is hosted live here: https://beta.homotopy.io/
 
 # Developing
 
-The easiest way to set up a development environment is with [Nix](https://nixos.org/). This will install Rust, and all the necessary tooling required to build the project. Additionally, this is the exact same environment that the CI uses, so providing that it is passing, this cannot fail:
+The easiest way to set up a development environment is with [Nix](https://nixos.org/).
+
+Running
+
+```
+nix develop github:homotopy-io/homotopy-rs
+```
+
+will spawn a development shell with Rust, and all the necessary tooling required to build the project. Additionally, this is the exact same environment that the CI uses, so providing that it is passing, this cannot fail:
 
 ![Build status](https://github.com/homotopy-io/homotopy-rs/actions/workflows/ci.yml/badge.svg)
 
