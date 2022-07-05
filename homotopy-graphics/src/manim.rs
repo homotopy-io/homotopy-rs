@@ -87,7 +87,7 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
     for (g, path) in surfaces {
         writeln!(
             manim,
-            "{ind}{ind}surfaces.add(VMobject(stroke_width=1).set_fill(C[\"{color}\"],0.75){path}) # path_{id}_{dim}",
+            "{ind}{ind}surfaces.add(VMobject(){path}.set_stroke(width=1).set_fill(C[\"{color}\"],0.75)) # path_{id}_{dim}",
             ind=INDENT,
             color=color(g),
             id=g.id,
@@ -123,7 +123,7 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
                 let left = offset(-OCCLUSION_DELTA, path).reversed();
                 let right = offset(OCCLUSION_DELTA, path);
                 writeln!(manim, concat!("{ind}{ind}wires.add(Intersection(surfaces,",
-                         "VMobject().set_fill(BLACK, 1.0){path_right}{path_left},color=C[\"generator_{id}_{dim}\"],fill_opacity=0.8)) # path_{id}_{dim}"),
+                         "VMobject(){path_right}{path_left},color=C[\"generator_{id}_{dim}\"],fill_opacity=0.8)) # path_{id}_{dim}"),
                          ind=INDENT,
                          id=g.id,
                          dim=g.dimension,path_left=&render_path(&left),
@@ -134,7 +134,7 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
         }
 
         for (g, path) in &layer {
-            writeln!(manim, "{ind}{ind}wires.add(VMobject(stroke_color=C[\"{color}\"],stroke_width=5){path}) # path_{id}_{dim}",
+            writeln!(manim, "{ind}{ind}wires.add(VMobject(){path}.set_stroke(color=C[\"{color}\"],width=5)) # path_{id}_{dim}",
                 ind=INDENT,
                 color=color(*g),
                 id=g.id,
@@ -167,7 +167,7 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
             pt=&render_point(point)
         ).unwrap();
     }
-    //TODO work out good scaling automatically
+
     writeln!(
         manim,
         concat!("{ind}{ind}return points\n\n",
@@ -177,12 +177,15 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
             "{ind}{ind}surfaces = self.get_surfaces()\n",
             "{ind}{ind}wires = self.get_wires(surfaces)\n",
             "{ind}{ind}points = self.get_points()\n",
+            "{ind}{ind}# Background (for rendering consistency, set color=BLACK if unwanted)\n",
+            "{ind}{ind}bg = Rectangle(width={x}*2,height={y}*2,color=WHITE,fill_opacity=1).move_to(surfaces)\n",
             "{ind}{ind}# Root\n",
-            "{ind}{ind}root = VGroup(surfaces,wires,points).shift({x}*LEFT+{y}*DOWN).scale(0.125)\n",
+            "{ind}{ind}scale_factor = max(config.frame_size[0]/{x},config.frame_size[1]/{x})*0.002 # Magic number\n",
+            "{ind}{ind}root = VGroup(bg,surfaces,wires,points).shift({x}*LEFT+{y}*DOWN).scale(scale_factor)\n",
             "{ind}{ind}# Static output (low rendering times)\n",
             "{ind}{ind}#self.add(root)\n",
             "{ind}{ind}# Animated output\n",
-            "{ind}{ind}self.play(DrawBorderThenFill(surfaces))\n",
+            "{ind}{ind}self.play(DrawBorderThenFill(VGroup(bg,surfaces)))\n",
             "{ind}{ind}self.play(Create(root))\n",
             "{ind}{ind}text = MarkupText(\"Homotopy.io\", color=BLUE).next_to(root, 2*DOWN)\n",
             "{ind}{ind}self.play(Write(text))\n",
@@ -200,7 +203,7 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
 fn render_point(point: Point2D<f32>) -> String {
     let x = ((point.x) * 100.0).round() / 100.0;
     let y = ((point.y) * 100.0).round() / 100.0;
-    format!("[{},{},0]", x, y)
+    format!("np.array([{},{},0])", x, y)
 }
 
 fn max_point_path(path: &Path) -> Point2D<f32> {
@@ -220,21 +223,15 @@ fn render_path(path: &Path) -> String {
     let mut result = String::new();
     for event in path {
         match event {
-            Event::Begin { at } => write!(
-                result,
-                ".set_points_as_corners([np.array({pt})]*2)",
-                pt = render_point(at)
-            )
-            .unwrap(),
-            Event::Line { to, .. } => write!(
-                result,
-                ".add_line_to(np.array({pt}))",
-                pt = render_point(to)
-            )
-            .unwrap(),
+            Event::Begin { at } => {
+                write!(result, ".start_new_path({})", render_point(at)).unwrap();
+            }
+            Event::Line { to, .. } => {
+                write!(result, ".add_line_to({})", render_point(to)).unwrap();
+            }
             Event::Quadratic { ctrl, to, .. } => write!(
                 result,
-                ".add_quadratic_bezier_curve_to(np.array({}),np.array({}))",
+                ".add_quadratic_bezier_curve_to({},{})",
                 render_point(ctrl),
                 render_point(to)
             )
@@ -243,7 +240,7 @@ fn render_path(path: &Path) -> String {
                 ctrl1, ctrl2, to, ..
             } => write!(
                 result,
-                ".add_cubic_bezier_curve_to(np.array({}),np.array({}),np.array({}))",
+                ".add_cubic_bezier_curve_to({},{},{})",
                 render_point(ctrl1),
                 render_point(ctrl2),
                 render_point(to),
