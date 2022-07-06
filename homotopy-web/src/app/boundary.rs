@@ -50,7 +50,7 @@ impl Component for BoundaryPreview {
         let preview = match dim{
             // Display flex to center 0 & 1-dimensional diagrams.
             0 | 1 => html!{
-                <div class="boundary__preview" style="display:flex; align-item:center; justify-content:center">
+                <div class="boundary__preview" style="display:flex; align-items:center; justify-content:center">
                     {preview}
                 </div>
             },

@@ -130,14 +130,14 @@ button, .button {
 
 /* Boundary (source/target) Preview */
 
-.boundary{
+.boundary {
   position: fixed;
   bottom: 10px;
   margin-left: 10px;
   z-index: 4; /* just below the slice buttons */
 }
 
-.boundary__name{
+.boundary__name {
   background-color: var(--toolbar-background);
   border: 1px solid var(--toolbar-border);
   border-radius: var(--space-0);
@@ -146,7 +146,7 @@ button, .button {
   text-align: center;
 }
 
-.boundary__preview{
+.boundary__preview {
   background-color: var(--toolbar-background);
   border: 1px solid var(--toolbar-border);
   border-radius: var(--space-0);
