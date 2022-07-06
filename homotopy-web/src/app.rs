@@ -200,12 +200,13 @@ impl App {
                 </div>
                 <div id="about" class="modal">
                     <div class="modal-dialog">
+                        <a href="#">
+                            // Empty div to create an invisible button
+                            <div class="modal-close"></div>
+                        </a>
                         <div class="modal-content">
                             <header>
                                 <h2>{"About"}</h2>
-                                <a href="#" class="modal-close">
-                                    <Icon name="close" size={IconSize::Icon18} />
-                                </a>
                             </header>
                             <p>
                                 <a href="https://ncatlab.org/nlab/show/homotopy.io">{"homotopy.io"}</a>
