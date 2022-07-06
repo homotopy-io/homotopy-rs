@@ -174,14 +174,16 @@ impl<const N: usize> GraphicElement<N> {
                         Some(depth) => depths
                             .edges_above(depth, ps[1])
                             .into_iter()
-                            .map(|s| build_path(&[s, ps[1]], false, layout, projection))
+                            .map(|s| {
+                                simplify_path(&build_path(&[s, ps[1]], false, layout, projection))
+                            })
                             .collect(),
                         None => vec![],
                     };
 
                     wire_elements.push(Self::Wire(
                         generator,
-                        build_path(ps, false, layout, projection),
+                        simplify_path(&build_path(ps, false, layout, projection)),
                         mask,
                     ));
                 }
@@ -202,7 +204,7 @@ impl<const N: usize> GraphicElement<N> {
                 make_path(&points, true, layout, projection, &mut path_builder);
             }
 
-            let path = path_builder.build();
+            let path = simplify_path(&path_builder.build());
 
             surface_elements.push(Self::Surface(generator, path));
         }
@@ -322,6 +324,79 @@ where
     }
 
     paths
+}
+
+// Test collinearity with dot product formula up to precision
+fn points_collinear(p0: Point, p1: Point, p2: Point) -> bool {
+    ((p1.x - p0.x) * (p2.y - p0.y) - (p1.y - p0.y) * (p2.x - p0.x)).abs() <= 0.00005
+}
+
+fn simplify_path(path: &Path) -> Path {
+    //TODO either make a hot-path for Being - UselessBezierCubic -- End, or do not call on unmerged wires.
+    let mut builder = Path::builder();
+    let mut it = path.iter();
+    let mut under_cons: Option<lyon_path::PathEvent> = it.next();
+    let mut peek_head: Option<lyon_path::PathEvent> = it.next();
+    loop {
+        //  Do not assume under_cons == peek_head of previous iteration.
+        //  We want to rewrite it.
+        match (under_cons, peek_head) {
+            // Get rid of peek_head == None cases first
+            (None, None) => {
+                break;
+            }
+            (Some(ev), None) => {
+                builder.path_event(ev);
+                break;
+            }
+            // Now can assume there is a next element!
+            (None, Some(_)) => {
+                log::error!("Populating under_cons for first time. Should not happen.");
+                under_cons = peek_head;
+                peek_head = it.next();
+            }
+            // Collinear lines can be merged
+            (
+                Some(lyon_path::Event::Line {
+                    from: from1,
+                    to: to1,
+                }),
+                Some(lyon_path::Event::Line {
+                    from: from2,
+                    to: to2,
+                }),
+            ) if (to1 == from2) && (points_collinear(from1, to1, to2)) => {
+                under_cons = Some(lyon_path::Event::Line {
+                    from: from1,
+                    to: to2,
+                });
+                peek_head = it.next();
+            }
+            // Collinear Beziers can be transformed to lines
+            (_, Some(lyon_path::Event::Quadratic { from, ctrl, to }))
+                if points_collinear(from, ctrl, to) =>
+            {
+                peek_head = Some(lyon_path::Event::Line { from, to });
+            }
+            (
+                _,
+                Some(lyon_path::Event::Cubic {
+                    from,
+                    ctrl1,
+                    ctrl2,
+                    to,
+                }),
+            ) if points_collinear(ctrl1, ctrl2, to) => {
+                peek_head = Some(lyon_path::Event::Line { from, to });
+            }
+            (Some(ev), _) => {
+                builder.path_event(ev);
+                under_cons = peek_head;
+                peek_head = it.next();
+            }
+        };
+    }
+    builder.build()
 }
 
 fn build_path<const N: usize>(
