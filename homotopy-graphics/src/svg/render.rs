@@ -157,6 +157,15 @@ impl<const N: usize> GraphicElement<N> {
         let mut point_elements = Vec::new();
 
         let mut grouped_surfaces = FastHashMap::<Generator, Vec<[Coordinate<N>; 3]>>::default();
+        // (depth, generator) -> (mask, last_point, paths)
+        let mut grouped_wires = FastHashMap::<
+            (usize, Generator),
+            (
+                Vec<Path>,
+                Coordinate<N>,
+                lyon_path::builder::WithSvg<lyon_path::path::Builder>,
+            ),
+        >::default();
 
         for simplex in complex {
             match simplex {
@@ -168,24 +177,29 @@ impl<const N: usize> GraphicElement<N> {
                         .push(orient_surface(ps));
                 }
                 Simplex::Wire(ps) => {
+                    debug_assert!(!ps.is_empty());
                     let generator = projection.generator(ps[0]);
 
                     let mask = match depths.edge_depth(ps[0], ps[1]) {
                         Some(depth) => depths
                             .edges_above(depth, ps[1])
                             .into_iter()
-                            .map(|s| {
-                                simplify_path(&build_path(&[s, ps[1]], false, layout, projection))
-                            })
+                            .map(|s| build_path(&[s, ps[1]], false, layout, projection))
                             .collect(),
                         None => vec![],
                     };
-
-                    wire_elements.push(Self::Wire(
-                        generator,
-                        simplify_path(&build_path(ps, false, layout, projection)),
-                        mask,
-                    ));
+                    // ps[0] is first-iteration quirk
+                    let entry = grouped_wires
+                        .entry((mask.len(), generator))
+                        .or_insert_with(|| (mask, ps[0], Path::svg_builder()));
+                    if entry.1 == ps[ps.len() - 1] {
+                        // Reverse the wire
+                        let rev_ps: Vec<_> = ps.iter().copied().rev().collect();
+                        make_path(&rev_ps, false, layout, projection, &mut entry.2);
+                    } else {
+                        make_path(ps, false, layout, projection, &mut entry.2);
+                    }
+                    entry.1 = ps[ps.len() - 1];
                 }
                 Simplex::Point([p]) => {
                     let generator = projection.generator(*p);
@@ -209,7 +223,9 @@ impl<const N: usize> GraphicElement<N> {
             surface_elements.push(Self::Surface(generator, path));
         }
 
-        // TODO: Group and merge wires as well.
+        for ((_, generator), (mask, _, builder)) in grouped_wires {
+            wire_elements.push(Self::Wire(generator, simplify_path(&builder.build()), mask));
+        }
 
         let mut elements = surface_elements;
         elements.extend(wire_elements);
@@ -331,8 +347,8 @@ fn points_collinear(p0: Point, p1: Point, p2: Point) -> bool {
     ((p1.x - p0.x) * (p2.y - p0.y) - (p1.y - p0.y) * (p2.x - p0.x)).abs() <= 0.00005
 }
 
-fn simplify_path(path: &Path) -> Path {
-    //TODO either make a hot-path for Being - UselessBezierCubic -- End, or do not call on unmerged wires.
+pub fn simplify_path(path: &Path) -> Path {
+    //TODO either make a hot-path for Begin - UselessBezierCubic -- End, or do not call on unmerged wires.
     let mut builder = Path::builder();
     let mut it = path.iter();
     let mut under_cons: Option<lyon_path::PathEvent> = it.next();
@@ -388,6 +404,16 @@ fn simplify_path(path: &Path) -> Path {
                 }),
             ) if points_collinear(ctrl1, ctrl2, to) => {
                 peek_head = Some(lyon_path::Event::Line { from, to });
+            }
+            // Needless End -- Begin can be removed
+            (
+                Some(lyon_path::Event::End {
+                    last, close: false, ..
+                }),
+                Some(lyon_path::Event::Begin { at }),
+            ) if last == at => {
+                under_cons = it.next();
+                peek_head = it.next();
             }
             (Some(ev), _) => {
                 builder.path_event(ev);
