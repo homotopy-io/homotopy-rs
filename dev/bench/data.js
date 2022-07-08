@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1657276908256,
+  "lastUpdate": 1657279194661,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -35999,6 +35999,126 @@ window.BENCHMARK_DATA = {
             "name": "expand matchsticks/typecheck",
             "value": 94.593,
             "range": "+/- 0.036",
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e5b1c628c8a172485eba880d8e83cff308e9e814",
+          "message": "Manim export for 2d diagrams (#566)\n\n* Manim integration, initial commit, added hooks and some stub code to generate the Python code.\r\n\r\n* Manim integration, basic cases working.\r\n\r\n* Manim integration, fixed quadratic bezier, added view size calculation, grouped objects for faster rendering (on manim side) and added primitive support for background wires.\r\n\r\n* Manim integration, fixed opacity problem, cleaned up Rust code and Python output.\r\n\r\n* Manim integration, Python output cleanup, using proper encapsulation (mobius_contract still bugged).\r\n\r\n* Manim integration, fixed major rendering bug and added autoscaling.\r\n\r\n* Enable smoothing in 1D (fix #563)\r\n\r\nCo-authored-by: regular-citizen <chara@sarti.me>\r\nCo-authored-by: Calin Tataru <calintat@gmail.com>",
+          "timestamp": "2022-07-08T12:09:34+01:00",
+          "tree_id": "f49a5443b044e094f0d69ae650abc3b5d4ea459a",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/e5b1c628c8a172485eba880d8e83cff308e9e814"
+        },
+        "date": 1657279186118,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract scalar/left",
+            "value": 65.287,
+            "range": "+/- 0.033",
+            "unit": "us"
+          },
+          {
+            "name": "contract scalar/right",
+            "value": 66.659,
+            "range": "+/- 0.042",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 97.85,
+            "range": "+/- 0.058",
+            "unit": "us"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 114.51,
+            "range": "+/- 0.040",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/contract",
+            "value": 78.587,
+            "range": "+/- 0.025",
+            "unit": "us"
+          },
+          {
+            "name": "contract stacks/typecheck",
+            "value": 92.748,
+            "range": "+/- 0.036",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 83.693,
+            "range": "+/- 0.027",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 527.63,
+            "range": "+/- 0.430",
+            "unit": "us"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.1369,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 6.5958,
+            "range": "+/- 0.003",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 17.523,
+            "range": "+/- 0.006",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 43.26,
+            "range": "+/- 0.029",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 109.2,
+            "range": "+/- 0.210",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 291.07,
+            "range": "+/- 0.770",
+            "unit": "ms"
+          },
+          {
+            "name": "expand matchsticks/expand",
+            "value": 66.152,
+            "range": "+/- 0.048",
+            "unit": "us"
+          },
+          {
+            "name": "expand matchsticks/typecheck",
+            "value": 94.159,
+            "range": "+/- 0.020",
             "unit": "us"
           }
         ]
