@@ -521,28 +521,29 @@ fn drag_to_homotopy<const N: usize>(
 
     match N {
         1 => {
-            // Always contraction
-
-            let y = match point[0] {
-                Interior(y) => y,
+            let height = match point[0] {
                 Boundary(_) => return None,
+                Interior(height) => height,
             };
 
-            let height = match y {
-                Regular(_) => unreachable!(),
-                Singular(height) => height,
+            let direction = if angle.radians <= 0.0 {
+                Direction::Forward
+            } else {
+                Direction::Backward
             };
 
-            Some(Homotopy::Contract(Contract {
-                bias: None,
-                location: Default::default(),
-                height,
-                direction: if angle.radians <= 0.0 {
-                    Direction::Forward
-                } else {
-                    Direction::Backward
-                },
-            }))
+            Some(match height {
+                Regular(_) => Homotopy::Expand(Expand {
+                    location: point.to_vec(),
+                    direction,
+                }),
+                Singular(i) => Homotopy::Contract(Contract {
+                    bias: None,
+                    location: d,
+                    height: i,
+                    direction,
+                }),
+            })
         }
         2 => {
             let diagram: DiagramN = diagram.try_into().ok()?;
