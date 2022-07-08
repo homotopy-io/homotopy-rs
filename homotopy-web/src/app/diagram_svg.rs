@@ -539,7 +539,7 @@ fn drag_to_homotopy<const N: usize>(
                 }),
                 Singular(i) => Homotopy::Contract(Contract {
                     bias: None,
-                    location: d,
+                    location: Default::default(),
                     height: i,
                     direction,
                 }),
