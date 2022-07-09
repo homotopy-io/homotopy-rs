@@ -90,7 +90,18 @@ pub fn expand_in_path(
         Some((Regular(h0), &([] | [_]))) => expand_base_regular(diagram, *h0, direction),
         Some((Singular(h0), &[Singular(h1)])) => expand_base_singular(diagram, *h0, h1, direction),
         Some((Regular(_), _)) => Err(ExpansionError::RegularSlice),
-        Some((Singular(height), rest)) => expand_recursive(diagram, *height, rest, direction),
+        Some((Singular(height), rest)) => {
+            let diagram = match diagram {
+                Diagram::Diagram0(_) => Err(ExpansionError::OutOfBounds),
+                Diagram::DiagramN(diagram) => Ok(diagram),
+            }?;
+            let slice = diagram
+                .slice(Height::Singular(*height))
+                .ok_or(ExpansionError::OutOfBounds)?;
+
+            let recursive = expand_in_path(&slice, rest, direction)?;
+            Ok(expand_propagate(diagram, *height, recursive)?.into())
+        }
     }
 }
 
@@ -135,6 +146,21 @@ fn expand_base_regular(
     } else {
         Err(ExpansionError::Unsmoothable)
     }
+}
+
+/// Similar to `expand_base_regular`, except it will attempt to smooth all heights (self-similar
+/// cospans are removed)
+pub(crate) fn expand_smooth(diagram: &DiagramN) -> RewriteN {
+    RewriteN::new(
+        diagram.dimension(),
+        diagram
+            .cospans()
+            .iter()
+            .enumerate()
+            .filter(|(_, cs)| cs.forward == cs.backward)
+            .map(|(i, cs)| Cone::new(i, vec![], cs.clone(), vec![cs.forward.clone()], vec![]))
+            .collect(),
+    )
 }
 
 fn expand_base_singular(
@@ -359,37 +385,31 @@ fn expand_cospan(
     })
 }
 
-fn expand_recursive(
-    diagram: &Diagram,
+/// Propagate a expansion on a singular level to the whole diagram
+pub(crate) fn expand_propagate(
+    diagram: &DiagramN,
     height: SingularHeight,
-    rest: &[Height],
-    direction: Direction,
-) -> Result<Rewrite, ExpansionError> {
-    let diagram = match diagram {
-        Diagram::Diagram0(_) => Err(ExpansionError::OutOfBounds),
-        Diagram::DiagramN(diagram) => Ok(diagram),
-    }?;
-
+    expansion: Rewrite,
+) -> Result<RewriteN, ExpansionError> {
     let slice = diagram
         .slice(Height::Singular(height))
         .ok_or(ExpansionError::OutOfBounds)?;
 
-    let recursive = expand_in_path(&slice, rest, direction)?;
     let target_cospan = &diagram.cospans()[height];
 
     let forward = factorize(
         target_cospan.forward.clone(),
-        recursive.clone(),
+        expansion.clone(),
         diagram.slice(Height::Regular(height)).unwrap(),
-        slice.clone().rewrite_backward(&recursive).unwrap(),
+        slice.clone().rewrite_backward(&expansion).unwrap(),
     )
     .next();
 
     let backward = factorize(
         target_cospan.backward.clone(),
-        recursive.clone(),
+        expansion.clone(),
         diagram.slice(Height::Regular(height + 1)).unwrap(),
-        slice.clone().rewrite_backward(&recursive).unwrap(),
+        slice.clone().rewrite_backward(&expansion).unwrap(),
     )
     .next();
 
@@ -404,7 +424,7 @@ fn expand_recursive(
                     target_cospan.forward.clone(),
                     target_cospan.backward.clone(),
                 ],
-                vec![recursive],
+                vec![expansion],
             )],
         ),
         (Some(forward), None) => {
@@ -417,10 +437,10 @@ fn expand_recursive(
                 &target_cospan.backward,
             );
             let (_, inner_backward, inner_forward) = antipushout(
-                &slice.clone().rewrite_backward(&recursive).unwrap(),
+                &slice.clone().rewrite_backward(&expansion).unwrap(),
                 &slice.clone().rewrite_backward(&inclusion).unwrap(),
                 &slice,
-                &recursive,
+                &expansion,
                 &inclusion,
             )[0]
             .clone();
@@ -441,7 +461,7 @@ fn expand_recursive(
                     ],
                     target_cospan.clone(),
                     todo!("need antipushout"),
-                    vec![recursive, inclusion],
+                    vec![expansion, inclusion],
                 )],
             )
         }
@@ -456,10 +476,10 @@ fn expand_recursive(
             );
             let (_, inner_backward, inner_forward) = antipushout(
                 &slice.clone().rewrite_backward(&inclusion).unwrap(),
-                &slice.clone().rewrite_backward(&recursive).unwrap(),
+                &slice.clone().rewrite_backward(&expansion).unwrap(),
                 &slice,
                 &inclusion,
-                &recursive,
+                &expansion,
             )[0]
             .clone();
 
@@ -479,7 +499,7 @@ fn expand_recursive(
                     ],
                     target_cospan.clone(),
                     todo!("need antipushout"),
-                    vec![inclusion, recursive],
+                    vec![inclusion, expansion],
                 )],
             )
         }
@@ -492,17 +512,17 @@ fn expand_recursive(
                     vec![
                         Cospan {
                             forward: target_cospan.forward.clone(),
-                            backward: recursive.clone(),
+                            backward: expansion.clone(),
                         },
                         Cospan {
-                            forward: recursive.clone(),
+                            forward: expansion.clone(),
                             backward: target_cospan.backward.clone(),
                         },
                     ],
                     target_cospan.clone(),
                     vec![
                         target_cospan.forward.clone(),
-                        recursive,
+                        expansion,
                         target_cospan.backward.clone(),
                     ],
                     vec![
@@ -514,7 +534,7 @@ fn expand_recursive(
         }
     };
 
-    Ok(expansion_rewrite.into())
+    Ok(expansion_rewrite)
     // TODO: normalization
     // let expansion_preimage = diagram
     //     .clone()
