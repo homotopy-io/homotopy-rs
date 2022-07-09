@@ -24,6 +24,7 @@ use crate::{
     attach::{attach, BoundaryPath},
     common::{Boundary, DimensionError, Height, SingularHeight},
     diagram::{Diagram, DiagramN},
+    expansion::{expand_propagate, expand_smooth},
     graph::{Explodable, ExplosionOutput, ExternalRewrite, InternalRewrite},
     normalization,
     rewrite::{Cone, Cospan, Label, Rewrite, Rewrite0, RewriteN},
@@ -63,6 +64,11 @@ pub enum ContractionError {
     Dimension(#[from] DimensionError),
 }
 
+struct ContractExpand {
+    contract: RewriteN,
+    expand: RewriteN,
+}
+
 impl DiagramN {
     pub fn contract<S>(
         &self,
@@ -81,32 +87,17 @@ impl DiagramN {
 
         attach(self, boundary_path, |slice| {
             let slice = slice.try_into().or(Err(ContractionError::Invalid))?;
-            let contract = contract_in_path(&slice, interior_path, height, bias)?;
+            let ContractExpand { contract, expand } = contract_in_path(&slice, interior_path, height, bias)?;
             let singular = slice.rewrite_forward(&contract).unwrap();
-            // TODO: normalization
-            // let normalize = normalization::normalize_singular(&singular.into());
-            let normalize = RewriteN::new(
-                contract.dimension(),
-                singular
-                    .cospans()
-                    .iter()
-                    .enumerate()
-                    .filter(|(_, cs)| cs.forward == cs.backward)
-                    .map(|(i, cs)| {
-                        Cone::new(i, vec![], cs.clone(), vec![cs.forward.clone()], vec![])
-                    })
-                    .collect(),
-            )
-            .into();
 
             let cospan = match boundary_path.boundary() {
                 Boundary::Source => Cospan {
-                    forward: normalize,
+                    forward: expand.into(),
                     backward: contract.into(),
                 },
                 Boundary::Target => Cospan {
                     forward: contract.into(),
-                    backward: normalize,
+                    backward: expand.into(),
                 },
             };
 
@@ -127,7 +118,7 @@ fn contract_base(
     diagram: &DiagramN,
     height: SingularHeight,
     bias: Option<Bias>,
-) -> Result<RewriteN, ContractionError> {
+) -> Result<ContractExpand, ContractionError> {
     use Height::{Regular, Singular};
     let slices: Vec<_> = diagram.slices().collect();
     let cospans = diagram.cospans();
@@ -177,7 +168,7 @@ fn contract_base(
         }
     }
 
-    let rewrite = RewriteN::new(
+    let contract = RewriteN::new(
         diagram.dimension(),
         vec![Cone::new(
             height,
@@ -191,7 +182,13 @@ fn contract_base(
         )],
     );
 
-    Ok(rewrite)
+    let expand = expand_smooth(
+        &diagram
+            .clone()
+            .rewrite_forward(&contract)
+            .map_err(|_err| ContractionError::Invalid)?,
+    );
+    Ok(ContractExpand { contract, expand })
 }
 
 fn contract_in_path(
@@ -199,7 +196,7 @@ fn contract_in_path(
     path: &[Height],
     height: SingularHeight,
     bias: Option<Bias>,
-) -> Result<RewriteN, ContractionError> {
+) -> Result<ContractExpand, ContractionError> {
     match path.split_first() {
         None => contract_base(diagram, height, bias),
         Some((step, rest)) => {
@@ -209,29 +206,44 @@ fn contract_in_path(
                 .try_into()
                 .ok()
                 .ok_or(ContractionError::Invalid)?;
-            let rewrite = contract_in_path(&slice, rest, height, bias)?;
+            let ContractExpand {
+                contract: contract_base,
+                expand: expand_base,
+            } = contract_in_path(&slice, rest, height, bias)?;
             match step {
-                Height::Regular(i) => Ok(RewriteN::new(
-                    diagram.dimension(),
-                    vec![Cone::new(
-                        *i,
-                        vec![],
-                        Cospan {
-                            forward: rewrite.clone().into(),
-                            backward: rewrite.clone().into(),
-                        },
-                        vec![rewrite.into()],
-                        vec![],
-                    )],
-                )),
+                Height::Regular(i) => {
+                    let contract = RewriteN::new(
+                        diagram.dimension(),
+                        vec![Cone::new(
+                            *i,
+                            vec![],
+                            Cospan {
+                                forward: contract_base.clone().into(),
+                                backward: contract_base.clone().into(),
+                            },
+                            vec![contract_base.into()],
+                            vec![],
+                        )],
+                    );
+                    let expand = expand_propagate(
+                        &diagram
+                            .clone()
+                            .rewrite_forward(&contract)
+                            .map_err(|_err| ContractionError::Invalid)?,
+                        height,
+                        expand_base.into(),
+                    )
+                    .map_err(|_err| ContractionError::Invalid)?;
+                    Ok(ContractExpand { contract, expand })
+                }
                 Height::Singular(i) => {
                     let source_cospan = &diagram.cospans()[*i];
-                    let rewrite = rewrite.into();
+                    let contract_base = contract_base.into();
                     let (forward, backward) = (
-                        source_cospan.forward.compose(&rewrite).unwrap(),
-                        source_cospan.backward.compose(&rewrite).unwrap(),
+                        source_cospan.forward.compose(&contract_base).unwrap(),
+                        source_cospan.backward.compose(&contract_base).unwrap(),
                     );
-                    Ok(RewriteN::new(
+                    let contract = RewriteN::new(
                         diagram.dimension(),
                         vec![Cone::new(
                             *i,
@@ -241,9 +253,19 @@ fn contract_in_path(
                                 backward: backward.clone(),
                             },
                             vec![forward, backward],
-                            vec![rewrite],
+                            vec![contract_base],
                         )],
-                    ))
+                    );
+                    let expand = expand_propagate(
+                        &diagram
+                            .clone()
+                            .rewrite_forward(&contract)
+                            .map_err(|_err| ContractionError::Invalid)?,
+                        height,
+                        expand_base.into(),
+                    )
+                    .map_err(|_err| ContractionError::Invalid)?;
+                    Ok(ContractExpand { contract, expand })
                 }
             }
         }
