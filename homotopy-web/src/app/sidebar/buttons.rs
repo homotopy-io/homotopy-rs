@@ -127,4 +127,10 @@ declare_sidebar_tools! {
         "download",
         model::Action::ExportManim,
     }
+
+    BUTTON_STL {
+        "Export to STL",
+        "download",
+        model::Action::ExportStl,
+    }
 }
