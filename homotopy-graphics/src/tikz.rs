@@ -74,12 +74,7 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
             writeln!(tikz, "\\begin{{scope}}").unwrap();
             write!(tikz, "\\clip ").unwrap();
             for (_, path) in &layer {
-                let left = offset(-OCCLUSION_DELTA, path).reversed();
-                let right = offset(OCCLUSION_DELTA, path);
-                tikz.push_str(&render_path(&right));
-                tikz.push_str(" -- ");
-                tikz.push_str(&render_path(&left));
-                tikz.push_str(" -- cycle");
+                tikz.push_str(&offset_multiple(OCCLUSION_DELTA, path));
             }
             writeln!(tikz, ";").unwrap();
             writeln!(tikz, "\\Background").unwrap();
@@ -144,9 +139,34 @@ fn render_path(path: &Path) -> String {
     result
 }
 
+fn offset_multiple(delta: f32, path: &Path) -> String {
+    let mut tikz = String::new();
+    let mut builder = Path::builder();
+    for event in path {
+        match event {
+            Event::End { .. } => {
+                builder.path_event(event);
+                let segment = builder.build();
+                let left = offset(-delta, &segment).reversed();
+                let right = offset(delta, &segment);
+                tikz.push_str(&render_path(&right));
+                tikz.push_str(" -- ");
+                tikz.push_str(&render_path(&left));
+                tikz.push_str(" -- cycle");
+                builder = Path::builder();
+            }
+            _ => {
+                builder.path_event(event);
+            }
+        }
+    }
+    tikz
+}
+
 // Offsetting a curve.
 // TOOD(@calintat): Move somewhere else.
 fn offset(delta: f32, path: &Path) -> Path {
+    let mut flag = false;
     let mut builder = Path::builder();
 
     for event in path {
@@ -166,23 +186,26 @@ fn offset(delta: f32, path: &Path) -> Path {
                         to,
                     },
                 );
-                builder.begin(segment.from);
+                if !flag {
+                    builder.begin(segment.from);
+                    flag = true;
+                }
                 builder.cubic_bezier_to(segment.ctrl1, segment.ctrl2, segment.to);
-                builder.end(false);
-                return builder.build();
             }
-            Event::Line { from, to } => {
+            // TODO handle Quadratic properly
+            Event::Line { from, to } | Event::Quadratic { from, to, .. } => {
                 let segment = offset_linear(delta, LineSegment { from, to });
-                builder.begin(segment.from);
+                if !flag {
+                    builder.begin(segment.from);
+                    flag = true;
+                }
                 builder.line_to(segment.to);
-                builder.end(false);
-                return builder.build();
             }
             _ => (),
         }
     }
-
-    panic!("Cannot offset a path made of multiple segments")
+    builder.end(false);
+    builder.build()
 }
 
 fn perp<U>(v: Vector2D<f32, U>) -> Vector2D<f32, U> {

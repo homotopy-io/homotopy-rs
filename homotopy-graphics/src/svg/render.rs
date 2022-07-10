@@ -157,13 +157,16 @@ impl<const N: usize> GraphicElement<N> {
         let mut point_elements = Vec::new();
 
         let mut grouped_surfaces = FastHashMap::<Generator, Vec<[Coordinate<N>; 3]>>::default();
-        // (depth, generator) -> (mask, last_point, paths)
+        // depth -> (mask, last_point, Vec<(path, gen)>)
         let mut grouped_wires = FastHashMap::<
-            (usize, Generator),
+            usize,
             (
                 Vec<Path>,
                 Coordinate<N>,
-                lyon_path::builder::WithSvg<lyon_path::path::Builder>,
+                Vec<(
+                    lyon_path::builder::WithSvg<lyon_path::path::Builder>,
+                    Generator,
+                )>,
             ),
         >::default();
 
@@ -177,7 +180,6 @@ impl<const N: usize> GraphicElement<N> {
                         .push(orient_surface(ps));
                 }
                 Simplex::Wire(ps) => {
-                    debug_assert!(!ps.is_empty());
                     let generator = projection.generator(ps[0]);
 
                     let mask = match depths.edge_depth(ps[0], ps[1]) {
@@ -190,16 +192,41 @@ impl<const N: usize> GraphicElement<N> {
                     };
                     // ps[0] is first-iteration quirk
                     let entry = grouped_wires
-                        .entry((mask.len(), generator))
-                        .or_insert_with(|| (mask, ps[0], Path::svg_builder()));
-                    if entry.1 == ps[ps.len() - 1] {
-                        // Reverse the wire
-                        let rev_ps: Vec<_> = ps.iter().copied().rev().collect();
-                        make_path(&rev_ps, false, layout, projection, &mut entry.2);
-                    } else {
-                        make_path(ps, false, layout, projection, &mut entry.2);
+                        //.entry(mask.len())
+                        .entry(
+                            depths
+                                .edge_depth(ps[0], ps[1])
+                                .map(|d| d + 1)
+                                .unwrap_or_default(),
+                        )
+                        .or_insert_with(|| (mask, ps[0], vec![]));
+                    // Recycle the builder if possible!
+                    match (
+                        entry.2.last_mut(),
+                        entry.1 == ps[0],
+                        entry.1 == ps[ps.len() - 1],
+                    ) {
+                        (Some(last), false, true) if last.1 == generator => {
+                            // Reverse the wire if needed
+                            let rev_ps: Vec<_> = ps.iter().copied().rev().collect();
+                            make_path(&rev_ps, false, layout, projection, &mut last.0);
+                            // Masking problems
+                            // Mask at next iteration
+                            entry.0.push(build_path(&rev_ps, false, layout, projection));
+                            entry.1 = ps[0];
+                        }
+                        (Some(last), true, false) if last.1 == generator => {
+                            make_path(ps, false, layout, projection, &mut last.0);
+                            //TODO Should also have a mask here
+                            entry.1 = ps[ps.len() - 1];
+                        }
+                        (_, _, _) => {
+                            let mut builder = Path::svg_builder();
+                            make_path(ps, false, layout, projection, &mut builder);
+                            entry.2.push((builder, generator));
+                            entry.1 = ps[ps.len() - 1];
+                        }
                     }
-                    entry.1 = ps[ps.len() - 1];
                 }
                 Simplex::Point([p]) => {
                     let generator = projection.generator(*p);
@@ -223,8 +250,19 @@ impl<const N: usize> GraphicElement<N> {
             surface_elements.push(Self::Surface(generator, path));
         }
 
-        for ((_, generator), (mask, _, builder)) in grouped_wires {
-            wire_elements.push(Self::Wire(generator, simplify_path(&builder.build()), mask));
+        for (depth, (_mask, _, wires)) in grouped_wires {
+            for (path, generator) in wires {
+                let mut padded_mask = Vec::new();
+                for _i in 0..depth {
+                    let builder = Path::svg_builder();
+                    padded_mask.push(builder.build());
+                }
+                wire_elements.push(Self::Wire(
+                    generator,
+                    simplify_path(&path.build()),
+                    padded_mask,
+                ));
+            }
         }
 
         let mut elements = surface_elements;
