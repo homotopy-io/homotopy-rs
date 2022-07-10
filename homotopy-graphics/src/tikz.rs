@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use euclid::{default::Point2D, Vector2D};
+use euclid::default::Point2D;
 use homotopy_common::hash::FastHashMap;
 use homotopy_core::{
     common::DimensionError,
@@ -10,10 +10,9 @@ use homotopy_core::{
     Diagram, Generator,
 };
 use itertools::Itertools;
-use lyon_geom::{CubicBezierSegment, Line, LineSegment};
 use lyon_path::{Event, Path};
 
-use crate::svg::render::GraphicElement;
+use crate::{path_util::offset, svg::render::GraphicElement};
 
 const OCCLUSION_DELTA: f32 = 0.2;
 
@@ -139,6 +138,7 @@ fn render_path(path: &Path) -> String {
     result
 }
 
+//TODO move to path_util once the dependency on render_path is removed.
 fn offset_multiple(delta: f32, path: &Path) -> String {
     let mut tikz = String::new();
     let mut builder = Path::builder();
@@ -161,131 +161,4 @@ fn offset_multiple(delta: f32, path: &Path) -> String {
         }
     }
     tikz
-}
-
-// Offsetting a curve.
-// TOOD(@calintat): Move somewhere else.
-fn offset(delta: f32, path: &Path) -> Path {
-    let mut flag = false;
-    let mut builder = Path::builder();
-
-    for event in path {
-        match event {
-            Event::Cubic {
-                from,
-                ctrl1,
-                ctrl2,
-                to,
-            } => {
-                let segment = offset_cubical(
-                    delta,
-                    CubicBezierSegment {
-                        from,
-                        ctrl1,
-                        ctrl2,
-                        to,
-                    },
-                );
-                if !flag {
-                    builder.begin(segment.from);
-                    flag = true;
-                }
-                builder.cubic_bezier_to(segment.ctrl1, segment.ctrl2, segment.to);
-            }
-            // TODO handle Quadratic properly
-            Event::Line { from, to } | Event::Quadratic { from, to, .. } => {
-                let segment = offset_linear(delta, LineSegment { from, to });
-                if !flag {
-                    builder.begin(segment.from);
-                    flag = true;
-                }
-                builder.line_to(segment.to);
-            }
-            _ => (),
-        }
-    }
-    builder.end(false);
-    builder.build()
-}
-
-fn perp<U>(v: Vector2D<f32, U>) -> Vector2D<f32, U> {
-    Vector2D::new(v.y, -v.x).normalize()
-}
-
-fn offset_linear(delta: f32, segment: LineSegment<f32>) -> LineSegment<f32> {
-    let v = perp(segment.to - segment.from);
-    LineSegment {
-        from: segment.from + v * delta,
-        to: segment.to + v * delta,
-    }
-}
-
-fn offset_cubical(delta: f32, segment: CubicBezierSegment<f32>) -> CubicBezierSegment<f32> {
-    if segment.from == segment.ctrl1
-        || segment.ctrl1 == segment.ctrl2
-        || segment.ctrl2 == segment.to
-    {
-        let leg = offset_linear(
-            delta,
-            LineSegment {
-                from: segment.from,
-                to: segment.to,
-            },
-        );
-        CubicBezierSegment {
-            from: leg.from,
-            ctrl1: leg.from,
-            ctrl2: leg.to,
-            to: leg.to,
-        }
-    } else {
-        let leg1 = offset_linear(
-            delta,
-            LineSegment {
-                from: segment.from,
-                to: segment.ctrl1,
-            },
-        );
-        let leg2 = offset_linear(
-            delta,
-            LineSegment {
-                from: segment.ctrl1,
-                to: segment.ctrl2,
-            },
-        );
-        let leg3 = offset_linear(
-            delta,
-            LineSegment {
-                from: segment.ctrl2,
-                to: segment.to,
-            },
-        );
-
-        let from = leg1.from;
-
-        let line1 = Line {
-            point: leg1.from,
-            vector: leg1.to - leg1.from,
-        };
-        let line2 = Line {
-            point: leg2.from,
-            vector: leg2.to - leg2.from,
-        };
-        let line3 = Line {
-            point: leg3.from,
-            vector: leg3.to - leg3.from,
-        };
-
-        let ctrl1 = line1.intersection(&line2).unwrap_or(leg1.to);
-        let ctrl2 = line2.intersection(&line3).unwrap_or(leg2.to);
-
-        let to = leg3.to;
-
-        CubicBezierSegment {
-            from,
-            ctrl1,
-            ctrl2,
-            to,
-        }
-    }
 }

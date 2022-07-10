@@ -11,7 +11,10 @@ use homotopy_core::{
 use lyon_path::Path;
 
 use super::geom::project_2d;
-use crate::svg::geom::{Circle, Fill, Point, Shape, Stroke};
+use crate::{
+    path_util::simplify_path,
+    svg::geom::{Circle, Fill, Point, Shape, Stroke},
+};
 
 type Coordinate<const N: usize> = [SliceIndex; N];
 
@@ -378,89 +381,6 @@ where
     }
 
     paths
-}
-
-// Test collinearity with dot product formula up to precision
-fn points_collinear(p0: Point, p1: Point, p2: Point) -> bool {
-    ((p1.x - p0.x) * (p2.y - p0.y) - (p1.y - p0.y) * (p2.x - p0.x)).abs() <= 0.00005
-}
-
-pub fn simplify_path(path: &Path) -> Path {
-    //TODO either make a hot-path for Begin - UselessBezierCubic -- End, or do not call on unmerged wires.
-    let mut builder = Path::builder();
-    let mut it = path.iter();
-    let mut under_cons: Option<lyon_path::PathEvent> = it.next();
-    let mut peek_head: Option<lyon_path::PathEvent> = it.next();
-    loop {
-        //  Do not assume under_cons == peek_head of previous iteration.
-        //  We want to rewrite it.
-        match (under_cons, peek_head) {
-            // Get rid of peek_head == None cases first
-            (None, None) => {
-                break;
-            }
-            (Some(ev), None) => {
-                builder.path_event(ev);
-                break;
-            }
-            // Now can assume there is a next element!
-            (None, Some(_)) => {
-                log::error!("Populating under_cons for first time. Should not happen.");
-                under_cons = peek_head;
-                peek_head = it.next();
-            }
-            // Collinear lines can be merged
-            (
-                Some(lyon_path::Event::Line {
-                    from: from1,
-                    to: to1,
-                }),
-                Some(lyon_path::Event::Line {
-                    from: from2,
-                    to: to2,
-                }),
-            ) if (to1 == from2) && (points_collinear(from1, to1, to2)) => {
-                under_cons = Some(lyon_path::Event::Line {
-                    from: from1,
-                    to: to2,
-                });
-                peek_head = it.next();
-            }
-            // Collinear Beziers can be transformed to lines
-            (_, Some(lyon_path::Event::Quadratic { from, ctrl, to }))
-                if points_collinear(from, ctrl, to) =>
-            {
-                peek_head = Some(lyon_path::Event::Line { from, to });
-            }
-            (
-                _,
-                Some(lyon_path::Event::Cubic {
-                    from,
-                    ctrl1,
-                    ctrl2,
-                    to,
-                }),
-            ) if points_collinear(ctrl1, ctrl2, to) => {
-                peek_head = Some(lyon_path::Event::Line { from, to });
-            }
-            // Needless End -- Begin can be removed
-            (
-                Some(lyon_path::Event::End {
-                    last, close: false, ..
-                }),
-                Some(lyon_path::Event::Begin { at }),
-            ) if last == at => {
-                under_cons = it.next();
-                peek_head = it.next();
-            }
-            (Some(ev), _) => {
-                builder.path_event(ev);
-                under_cons = peek_head;
-                peek_head = it.next();
-            }
-        };
-    }
-    builder.build()
 }
 
 fn build_path<const N: usize>(
