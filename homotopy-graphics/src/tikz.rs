@@ -12,7 +12,10 @@ use homotopy_core::{
 use itertools::Itertools;
 use lyon_path::{Event, Path};
 
-use crate::{path_util::offset, svg::render::GraphicElement};
+use crate::{
+    path_util::{offset, simplify_graphic},
+    svg::render::GraphicElement,
+};
 
 const OCCLUSION_DELTA: f32 = 0.2;
 
@@ -25,7 +28,12 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
     let complex = make_complex(diagram);
     let depths = Depths::<2>::new(diagram)?;
     let projection = Projection::<2>::new(diagram, &layout, &depths)?;
-    let graphic = GraphicElement::build(&complex, &layout, &projection, &depths);
+    let graphic = simplify_graphic(&GraphicElement::build(
+        &complex,
+        &layout,
+        &projection,
+        &depths,
+    ));
 
     let mut surfaces = Vec::default();
     let mut wires: FastHashMap<usize, Vec<(Generator, Path)>> = FastHashMap::default();

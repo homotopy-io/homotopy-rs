@@ -1,8 +1,62 @@
 use euclid::Vector2D;
+use homotopy_common::hash::FastHashMap;
+use homotopy_core::common::Generator;
 use lyon_geom::{CubicBezierSegment, Line, LineSegment};
-use lyon_path::{Event, Path};
+use lyon_path::{builder::PathBuilder, Event, Path};
 
-use crate::svg::geom::Point;
+use crate::svg::{geom::Point, render::GraphicElement};
+
+pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<GraphicElement<N>> {
+    let mut new_graphic = Vec::with_capacity(graphic.len());
+    let mut point_elements = Vec::new();
+
+    // depth -> (mask, last_point, Vec<(path, gen)>)
+    let mut grouped_wires =
+        FastHashMap::<usize, (Vec<Path>, Vec<(lyon_path::path::Builder, Generator)>)>::default();
+
+    for element in graphic {
+        match element {
+            GraphicElement::Surface(g, path) => {
+                new_graphic.push(GraphicElement::Surface(*g, simplify_path(path)));
+            }
+            GraphicElement::Wire(g, depth, path, mask) => {
+                let entry = grouped_wires
+                    .entry(*depth)
+                    .or_insert_with(|| (mask.clone(), vec![]));
+                // Recycle the builder if possible!
+                //TODO handle reversal case
+                // Use builder.current_position
+                match entry.1.last_mut() {
+                    Some(last) if last.1 == *g => {
+                        last.0.extend(path.iter());
+                    }
+                    _ => {
+                        let mut builder = Path::builder();
+                        builder.extend(path.iter());
+                        entry.1.push((builder, *g));
+                    }
+                }
+            }
+            GraphicElement::Point { .. } => {
+                point_elements.push(element.clone());
+            }
+        }
+    }
+
+    for (depth, (mask, wires)) in grouped_wires {
+        for (path, generator) in wires {
+            // Mask is useless
+            new_graphic.push(GraphicElement::Wire(
+                generator,
+                depth,
+                simplify_path(&path.build()),
+                mask.clone(),
+            ));
+        }
+    }
+    new_graphic.extend(point_elements);
+    new_graphic
+}
 
 // Test collinearity with dot product formula up to precision
 fn points_collinear(p0: Point, p1: Point, p2: Point) -> bool {
