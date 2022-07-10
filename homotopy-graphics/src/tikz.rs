@@ -33,8 +33,8 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
     for element in graphic {
         match element {
             GraphicElement::Surface(g, path) => surfaces.push((g, path)),
-            GraphicElement::Wire(g, path, mask) => {
-                wires.entry(mask.len()).or_default().push((g, path));
+            GraphicElement::Wire(g, depth, path, _) => {
+                wires.entry(depth).or_default().push((g, path));
             }
             GraphicElement::Point(g, point) => points.push((g, point)),
         }

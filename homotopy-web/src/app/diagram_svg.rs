@@ -338,7 +338,7 @@ impl<const N: usize> DiagramSvg<N> {
                     <path d={path} class={class} stroke-width={1} />
                 }
             }
-            GraphicElement::Wire(_, path, mask) => {
+            GraphicElement::Wire(_, _, path, mask) => {
                 let class = SignatureStylesheet::name("generator", generator, "wire");
                 let path = path_to_svg(&path.clone().transformed(&self.prepared.transform));
 

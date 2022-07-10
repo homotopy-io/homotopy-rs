@@ -110,8 +110,8 @@ impl<const N: usize> From<&ActionRegion<N>> for Simplex<N> {
 pub enum GraphicElement<const N: usize> {
     /// A surface given by a closed path to be filled.
     Surface(Generator, Path),
-    /// A wire given by a path to be stroked.
-    Wire(Generator, Path, Vec<Path>),
+    /// A wire given by a depth and a path to be stroked.
+    Wire(Generator, usize, Path, Vec<Path>),
     /// A point that is drawn as a circle.
     Point(Generator, Point),
 }
@@ -123,13 +123,13 @@ impl<const N: usize> GraphicElement<N> {
         use GraphicElement::{Point, Surface, Wire};
         match self {
             Surface(g, path) => Surface(*g, path.clone().transformed(transform)),
-            Wire(g, path, mask) => {
+            Wire(g, depth, path, mask) => {
                 let path = path.clone().transformed(transform);
                 let mask = mask
                     .iter()
                     .map(|mask| mask.clone().transformed(transform))
                     .collect();
-                Wire(*g, path, mask)
+                Wire(*g, *depth, path, mask)
             }
             Point(g, point) => Point(*g, transform.transform_point(*point)),
         }
@@ -138,7 +138,7 @@ impl<const N: usize> GraphicElement<N> {
     pub fn generator(&self) -> Generator {
         use GraphicElement::{Point, Surface, Wire};
         match self {
-            Surface(generator, _) | Wire(generator, _, _) | Point(generator, _) => *generator,
+            Surface(generator, _) | Wire(generator, _, _, _) | Point(generator, _) => *generator,
         }
     }
 
@@ -253,17 +253,13 @@ impl<const N: usize> GraphicElement<N> {
             surface_elements.push(Self::Surface(generator, path));
         }
 
-        for (depth, (_mask, _, wires)) in grouped_wires {
+        for (depth, (mask, _, wires)) in grouped_wires {
             for (path, generator) in wires {
-                let mut padded_mask = Vec::new();
-                for _i in 0..depth {
-                    let builder = Path::svg_builder();
-                    padded_mask.push(builder.build());
-                }
                 wire_elements.push(Self::Wire(
                     generator,
+                    depth,
                     simplify_path(&path.build()),
-                    padded_mask,
+                    mask.clone(),
                 ));
             }
         }
