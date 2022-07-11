@@ -10,30 +10,28 @@ pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<Gr
     let mut new_graphic = Vec::with_capacity(graphic.len());
     let mut point_elements = Vec::new();
 
-    // depth -> (mask, last_point, Vec<(path, gen)>)
+    // (depth, gen) -> Vec<path>
     let mut grouped_wires =
-        FastHashMap::<usize, (Vec<Path>, Vec<(lyon_path::path::Builder, Generator)>)>::default();
+        FastHashMap::<(usize, Generator), Vec<lyon_path::path::Builder>>::default();
 
     for element in graphic {
         match element {
             GraphicElement::Surface(g, path) => {
                 new_graphic.push(GraphicElement::Surface(*g, simplify_path(path)));
             }
-            GraphicElement::Wire(g, depth, path, mask) => {
-                let entry = grouped_wires
-                    .entry(*depth)
-                    .or_insert_with(|| (mask.clone(), vec![]));
+            GraphicElement::Wire(g, depth, path, _) => {
+                let entry = grouped_wires.entry((*depth, *g)).or_default();
                 // Recycle the builder if possible!
                 //TODO handle reversal case
                 // Use builder.current_position
-                match entry.1.last_mut() {
-                    Some(last) if last.1 == *g => {
-                        last.0.extend(path.iter());
+                match entry.last_mut() {
+                    Some(last) => {
+                        last.extend(path.iter());
                     }
                     _ => {
                         let mut builder = Path::builder();
                         builder.extend(path.iter());
-                        entry.1.push((builder, *g));
+                        entry.push(builder);
                     }
                 }
             }
@@ -43,14 +41,13 @@ pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<Gr
         }
     }
 
-    for (depth, (mask, wires)) in grouped_wires {
-        for (path, generator) in wires {
-            // Mask is useless
+    for ((depth, g), wires) in grouped_wires {
+        for path in wires {
             new_graphic.push(GraphicElement::Wire(
-                generator,
+                g,
                 depth,
                 simplify_path(&path.build()),
-                mask.clone(),
+                Vec::new(),
             ));
         }
     }
