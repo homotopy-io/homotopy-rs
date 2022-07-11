@@ -749,7 +749,7 @@ dependencies = [
  "js-sys",
  "log",
  "lyon_algorithms",
- "lyon_geom",
+ "lyon_geom 1.0.0",
  "lyon_path",
  "paste",
  "petgraph",
@@ -931,12 +931,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "lyon_geom"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d20b24849a0954b450b87e2a5b4e1ffd34c2ac5e20cb91763a820be351c15506"
+dependencies = [
+ "arrayvec 0.7.2",
+ "euclid",
+ "num-traits 0.2.15",
+]
+
+[[package]]
 name = "lyon_path"
 version = "0.17.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b0a59fdf767ca0d887aa61d1b48d4bbf6a124c1a45503593f7d38ab945bfbc0"
 dependencies = [
- "lyon_geom",
+ "lyon_geom 0.17.7",
 ]
 
 [[package]]
