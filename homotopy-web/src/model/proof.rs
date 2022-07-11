@@ -23,6 +23,7 @@ use self::homotopy::{Contract, Expand};
 
 mod signature;
 
+pub mod generators;
 pub mod homotopy;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -167,7 +168,9 @@ impl Action {
     pub fn relevant(&self) -> bool {
         !matches!(
             self,
-            Action::HighlightSlice(_) | Action::HighlightAttachment(_)
+            Action::HighlightSlice(_)
+                | Action::HighlightAttachment(_)
+                | Action::EditSignature(SignatureEdit::Edit(_, _))
         )
     }
 }

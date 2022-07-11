@@ -2,9 +2,10 @@ use std::{collections::VecDeque, str::FromStr};
 
 use homotopy_common::tree::{Node, Tree};
 use homotopy_core::{common::Generator, diagram::NewDiagramError, Diagram, DiagramN};
-use homotopy_graphics::generators::{Color, GeneratorInfo, VertexShape};
 use palette::Srgb;
 use serde::{Deserialize, Serialize};
+
+use crate::model::proof::generators::{Color, GeneratorInfo, VertexShape};
 
 pub const COLORS: &[&str] = &[
     "#2980b9", // belize blue
@@ -16,6 +17,8 @@ pub const COLORS: &[&str] = &[
     "#ffffff", // white
     "#000000", // black
 ];
+
+pub const VERTEX_SHAPES: &[VertexShape] = &[VertexShape::Circle, VertexShape::Square];
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub enum SignatureItem {

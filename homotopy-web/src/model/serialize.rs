@@ -7,13 +7,15 @@ use homotopy_core::{
     serialize::{Key, Store},
     Diagram,
 };
-use homotopy_graphics::generators::{Color, GeneratorInfo, VertexShape};
 use im::Vector;
 use obake::AnyVersion;
 use wasm_bindgen::JsCast;
 
 use super::{
-    proof::{SignatureItem, View},
+    proof::{
+        generators::{Color, GeneratorInfo, VertexShape},
+        SignatureItem, View,
+    },
     Signature, Workspace,
 };
 

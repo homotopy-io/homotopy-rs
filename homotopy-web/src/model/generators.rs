@@ -1,8 +1,18 @@
 use std::{fmt, ops::Deref};
 
 use homotopy_core::{common::Generator, Diagram};
+use homotopy_common::hash::FastHashMap;
 use palette::Srgb;
 use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct GeneratorInfo {
+    pub generator: Generator,
+    pub name: String,
+    pub color: Color,
+    pub shape: VertexShape,
+    pub diagram: Diagram,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Color(pub Srgb<u8>);
@@ -21,6 +31,13 @@ impl Deref for Color {
     }
 }
 
+// TODO(thud): This can go soon
+impl Default for Color {
+    fn default() -> Self {
+        Self(Srgb::new(0, 0, 0))
+    }
+}
+
 impl fmt::Display for Color {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (r, g, b) = self.into_components();
@@ -34,11 +51,9 @@ impl Default for VertexShape {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub struct GeneratorInfo {
-    pub generator: Generator,
-    pub name: String,
-    pub color: Color,
-    pub shape: VertexShape,
-    pub diagram: Diagram,
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Action {
+    Rename(Generator, String),
+    Recolor(Generator, Color),
+    Reshape(Generator, VertexShape),
 }

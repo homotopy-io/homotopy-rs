@@ -110,6 +110,44 @@ impl State {
                 };
             }
 
+            // Action::EditGeneratorInfo(action) => {
+            //     log::debug!("EditGeneratorInfo({:?})", action);
+            //     let mut generators = Rc::make_mut(&mut self.generators);
+            //     use generators::Action::{Rename, Recolor, Reshape};
+            //     match action {
+            //         Rename(generator, name) => {
+            //             if let Some(mut info) = generators.get_mut(generator) {
+            //                 info.name = name;
+            //             } else {
+            //                 generators.insert(generator, GeneratorInfo {
+            //                     generator,
+            //                     name,
+            //                     color: Default::default(),
+            //                     shape: Default::default(),
+            //                     diagram: Diagram::Diagram0(generator),
+            //                 });
+            //             }
+            //         }
+            //         Recolor(generator, color) => {
+            //             if let Some(mut info) = generators.get_mut(generator) {
+            //                 info.color = color;
+            //             }
+            //         }
+            //         Reshape(generator, shape) => {
+            //             if let Some(mut info) = generators.get_mut(generator) {
+            //                 info.shape = shape;
+            //             } else {
+            //                 generators.insert(generator, GeneratorInfo {
+            //                     generator,
+            //                     name: "test name".to_owned(),
+            //                     color: Default::default(),
+            //                     shape,
+            //                     diagram: Diagram::Diagram0(generator),
+            //                 });
+            //             }
+            //         }
+            //     }
+            // }
             Action::ExportTikz => {
                 let signature = self.with_proof(|p| p.signature.clone());
                 let diagram = self.with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram());

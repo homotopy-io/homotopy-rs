@@ -1,7 +1,6 @@
 use std::str::FromStr;
 
 use homotopy_common::tree::Node;
-use homotopy_graphics::generators::{Color, VertexShape};
 use palette::Srgb;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -9,7 +8,10 @@ use yew_macro::function_component;
 
 use crate::{
     components::icon::{Icon, IconSize},
-    model::proof::{Action, SignatureEdit, SignatureItem, SignatureItemEdit, COLORS},
+    model::proof::{
+        generators::{Color, VertexShape},
+        Action, SignatureEdit, SignatureItem, SignatureItemEdit, COLORS, VERTEX_SHAPES,
+    },
 };
 
 // FIXME(@doctorn)
@@ -134,6 +136,7 @@ pub struct EditState {
 }
 
 impl EditState {
+    // This will probably go
     fn apply(&mut self, edit: SignatureItemEdit) -> bool {
         match edit {
             SignatureItemEdit::Rename(name) => self.name = Some(name),
@@ -156,6 +159,13 @@ impl EditState {
             dispatch.emit(Action::EditSignature(SignatureEdit::Edit(
                 node,
                 SignatureItemEdit::Recolor(color),
+            )));
+        }
+
+        if let Some(shape) = self.shape.take() {
+            dispatch.emit(Action::EditSignature(SignatureEdit::Edit(
+                node,
+                SignatureItemEdit::Reshape(shape),
             )));
         }
     }
@@ -181,7 +191,17 @@ impl Component for ItemView {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             ItemViewMessage::SwitchTo(mode) => return self.switch_to(ctx, mode),
-            ItemViewMessage::Edit(edit) => return self.edit.apply(edit),
+            ItemViewMessage::Edit(edit) => {
+                // ctx.props().dispatch.emit(
+                //     Action::EditSignature(
+                //         SignatureEdit::Edit(
+                //             ctx.props().node,
+                //             edit,
+                //         )
+                //     )
+                // );
+                return self.edit.apply(edit);
+            }
             ItemViewMessage::Noop => {}
         }
 
@@ -192,14 +212,14 @@ impl Component for ItemView {
         let class = format!(
             "signature__item {}",
             if self.mode == ItemViewMode::Styling {
-                "signature__item-coloring"
+                "signature__item-styling"
             } else {
                 ""
             },
         );
 
         let picker = if let SignatureItem::Item(info) = &ctx.props().item {
-            self.view_picker(ctx, &info.color)
+            self.view_picker(ctx, &info.color, &info.shape)
         } else {
             html! {}
         };
@@ -328,12 +348,13 @@ impl ItemView {
         }
     }
 
-    fn view_picker(&self, ctx: &Context<Self>, color: &Color) -> Html {
+    fn view_picker(&self, ctx: &Context<Self>, color: &Color, shape: &VertexShape) -> Html {
         if self.mode != ItemViewMode::Styling {
             return html! {};
         }
 
-        let buttons = COLORS.iter().map(|color| {
+        let selected_color = self.edit.color.clone().unwrap_or_else(|| color.clone());
+        let color_preset_buttons = COLORS.iter().map(|color| {
             let recolor = ctx.link().callback(move |_| {
                 ItemViewMessage::Edit(SignatureItemEdit::Recolor(Color(
                     Srgb::<u8>::from_str(color).unwrap(),
@@ -348,7 +369,6 @@ impl ItemView {
                 />
             }
         });
-        let color = self.edit.color.clone().unwrap_or_else(|| color.clone());
         let custom_recolor = ctx.link().callback(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
             ItemViewMessage::Edit(SignatureItemEdit::Recolor(Color(
@@ -356,16 +376,43 @@ impl ItemView {
             )))
         });
 
+        let selected_shape = self.edit.shape.clone().unwrap_or_else(|| shape.clone());
+        let shape_preset_buttons = VERTEX_SHAPES.iter().map(|shape| {
+            let reshape = ctx.link().callback(move |_| {
+                log::info!("reshape requested in item.rs {:?}", shape);
+                ItemViewMessage::Edit(SignatureItemEdit::Reshape(shape.clone()))
+            });
+            let icon_name = match shape {
+                VertexShape::Circle => "circle",
+                VertexShape::Square => "square",
+            };
+            let mut class = "signature__generator-picker-preset".to_owned();
+            if *shape == selected_shape {
+                class += " signature__generator-picker-preset-shape-selected";
+            }
+
+            html! {
+                <div {class} onclick={reshape}>
+                    <Icon name={icon_name} size={IconSize::Icon18} />
+                </div>
+            }
+        });
+
         html! {
-            <div class="signature__generator-picker">
-                {for buttons}
-                <input
-                    class="signature__generator-picker-custom"
-                    value={color.to_string()}
-                    type="color"
-                    oninput={custom_recolor}
-                />
-            </div>
+            <>
+                <div class="signature__generator-picker signature__generator-picker-shape">
+                    {for shape_preset_buttons}
+                </div>
+                <div class="signature__generator-picker signature__generator-picker-color">
+                    {for color_preset_buttons}
+                    <input
+                        class="signature__generator-picker-custom"
+                        value={selected_color.to_string()}
+                        type="color"
+                        oninput={custom_recolor}
+                    />
+                </div>
+            </>
         }
     }
 

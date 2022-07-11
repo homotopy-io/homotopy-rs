@@ -10,7 +10,11 @@ use ultraviolet::{Mat4, Vec3, Vec4};
 
 use self::{axes::Axes, gbuffer::GBuffer, quad::Quad, scene::Scene, shaders::Shaders};
 use super::{orbit_camera::OrbitCamera, DiagramGlProps};
-use crate::{app::AppSettings, components::settings::Store, model::proof::Signature};
+use crate::{
+    app::AppSettings,
+    components::settings::Store,
+    model::proof::{generators::VertexShape, Signature},
+};
 
 mod axes;
 mod gbuffer;
@@ -116,6 +120,12 @@ impl Renderer {
             Vec3::new(color.red, color.green, color.blue)
         };
 
+        let shape_of = |generator: &Generator| {
+            signature
+                .generator_info(*generator)
+                .map_or(Default::default(), |info| info.shape.clone())
+        };
+
         // Render animated wireframes to cylinder buffer
         if self.scene.view.dimension() == 4 {
             let mut frame = Frame::new(&mut self.ctx)
@@ -157,12 +167,22 @@ impl Renderer {
                         if let (Some(position), Some(sphere)) =
                             (animation_curve.at(t), self.scene.sphere.as_ref())
                         {
-                            frame.draw(draw!(&self.shaders.geometry_3d, sphere, &[], {
-                                mv: v * Mat4::from_translation(position.xyz()) * Mat4::from_scale(geometry_scale),
-                                p: p,
-                                albedo: color_of(&animation_curve.generator),
-                                t: t,
-                            }));
+                            match shape_of(&animation_curve.generator) {
+                                VertexShape::Circle =>
+                                    frame.draw(draw!(&self.shaders.geometry_3d, sphere, &[], {
+                                        mv: v * Mat4::from_translation(position.xyz()) * Mat4::from_scale(geometry_scale),
+                                        p: p,
+                                        albedo: color_of(&animation_curve.generator),
+                                        t: t,
+                                    })),
+                                VertexShape::Square =>
+                                    frame.draw(draw!(&self.shaders.geometry_3d, sphere, &[], {
+                                        mv: v * Mat4::from_translation(position.xyz()) * Mat4::from_scale(geometry_scale),
+                                        p: p,
+                                        albedo: color_of(&animation_curve.generator),
+                                        t: t,
+                                    })),
+                            }
                         }
                     }
 
