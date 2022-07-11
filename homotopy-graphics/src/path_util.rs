@@ -12,7 +12,7 @@ pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<Gr
 
     // (depth, gen) -> Vec<path>
     let mut grouped_wires =
-        FastHashMap::<(usize, Generator), Vec<lyon_path::path::Builder>>::default();
+        FastHashMap::<(usize, Generator), Vec<(lyon_path::path::Builder, Point, Point)>>::default();
 
     for element in graphic {
         match element {
@@ -21,15 +21,41 @@ pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<Gr
             }
             GraphicElement::Wire(g, depth, path, _) => {
                 let entry = grouped_wires.entry((*depth, *g)).or_default();
-                // Recycle the builder if possible!
-                //TODO handle reversal case
-                // Use builder.current_position
-                if let Some(last) = entry.last_mut() {
-                    last.extend(path.iter());
-                } else {
-                    let mut builder = Path::builder();
-                    builder.extend(path.iter());
-                    entry.push(builder);
+
+                let extremes = path_extremes(path).unwrap();
+                let should_reverse = extremes.0.y > extremes.1.y;
+
+                let mut insert_idx: Option<_> = None;
+                for (i, (_, from, to)) in entry.iter().enumerate().rev() {
+                    match (should_reverse, extremes.0 == *from, extremes.1 == *to) {
+                        (false, true, _) | (true, _, true) => {
+                            insert_idx = Some(i);
+                            break;
+                        }
+                        (_, _, _) => {}
+                    }
+                }
+
+                match (insert_idx, should_reverse) {
+                    // Recycle the builder if possible!
+                    (Some(i), false) => {
+                        entry[i].0.extend(path.iter());
+                        entry[i].1 = extremes.1;
+                    }
+                    (Some(i), true) => {
+                        entry[i].0.extend(path.reversed().iter());
+                        entry[i].1 = extremes.0;
+                    }
+                    (None, false) => {
+                        let mut builder = Path::builder();
+                        builder.extend(path.iter());
+                        entry.push((builder, extremes.0, extremes.1));
+                    }
+                    (None, true) => {
+                        let mut builder = Path::builder();
+                        builder.extend(path.reversed().iter());
+                        entry.push((builder, extremes.1, extremes.0));
+                    }
                 }
             }
             GraphicElement::Point { .. } => {
@@ -39,17 +65,30 @@ pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<Gr
     }
 
     for ((depth, g), wires) in grouped_wires {
-        for path in wires {
-            new_graphic.push(GraphicElement::Wire(
-                g,
-                depth,
-                simplify_path(&path.build()),
-                Vec::new(),
-            ));
+        let mut merged_path = Path::builder();
+        for (builder, _, _) in wires {
+            merged_path.extend(&builder.build());
         }
+        new_graphic.push(GraphicElement::Wire(
+            g,
+            depth,
+            simplify_path(&merged_path.build()),
+            Vec::new(),
+        ));
     }
     new_graphic.extend(point_elements);
     new_graphic
+}
+
+fn path_extremes(path: &Path) -> Option<(Point, Point)> {
+    match (path.iter().next(), path.iter().last()) {
+        // Cannot assume that End refers to same Begin
+        // as path could be made of multiple segments.
+        (Some(lyon_path::Event::Begin { at }), Some(lyon_path::Event::End { last, .. })) => {
+            Some((at, last))
+        }
+        (_, _) => None,
+    }
 }
 
 // Test collinearity with dot product formula up to precision
