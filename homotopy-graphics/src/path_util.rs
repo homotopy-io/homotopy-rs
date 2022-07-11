@@ -24,15 +24,12 @@ pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<Gr
                 // Recycle the builder if possible!
                 //TODO handle reversal case
                 // Use builder.current_position
-                match entry.last_mut() {
-                    Some(last) => {
-                        last.extend(path.iter());
-                    }
-                    _ => {
-                        let mut builder = Path::builder();
-                        builder.extend(path.iter());
-                        entry.push(builder);
-                    }
+                if let Some(last) = entry.last_mut() {
+                    last.extend(path.iter());
+                } else {
+                    let mut builder = Path::builder();
+                    builder.extend(path.iter());
+                    entry.push(builder);
                 }
             }
             GraphicElement::Point { .. } => {
