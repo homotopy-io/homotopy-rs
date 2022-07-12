@@ -2,14 +2,10 @@
     Display the selected source/target (boundary) at the left-bottom corner of the workspace.
 */
 
+use homotopy_core::common::Boundary;
 use yew::prelude::*;
 
-use homotopy_core::common::Boundary;
-
-use crate::{
-    app::diagram_svg::DiagramSvg,
-    model::proof::{SelectedBoundary},
-};
+use crate::{app::diagram_svg::DiagramSvg, model::proof::SelectedBoundary};
 
 pub struct BoundaryPreview {}
 
@@ -23,10 +19,9 @@ pub struct BoundaryPreviewProps {
 impl Component for BoundaryPreview {
     type Message = BoundaryPreviewMessage;
     type Properties = BoundaryPreviewProps;
-    
+
     fn create(_ctx: &Context<Self>) -> Self {
-        Self {
-        }
+        Self {}
     }
 
     fn update(&mut self, _ctx: &Context<Self>, _msg: Self::Message) -> bool {
@@ -47,21 +42,21 @@ impl Component for BoundaryPreview {
             _ => Self::view_diagram_svg::<2>(ctx),
         };
 
-        let preview = match dim{
+        let preview = match dim {
             // Display flex to center 0 & 1-dimensional diagrams.
-            0 | 1 => html!{
+            0 | 1 => html! {
                 <div class="boundary__preview" style="display:flex; align-items:center; justify-content:center">
                     {preview}
                 </div>
             },
-            _ => html!{
+            _ => html! {
                 <div class="boundary__preview">
                     {preview}
                 </div>
             },
         };
 
-        html!{ 
+        html! {
             <div class="boundary">
                 <div class="boundary__name">
                     <span>{bound}</span>
@@ -70,12 +65,11 @@ impl Component for BoundaryPreview {
             </div>
         }
     }
-
 }
 
 impl BoundaryPreview {
     fn view_diagram_svg<const N: usize>(ctx: &Context<Self>) -> Html {
-        html!{
+        html! {
             <DiagramSvg<N>
                     diagram={ctx.props().boundary.diagram.clone()}
                     id="boundary__preview"
@@ -83,4 +77,3 @@ impl BoundaryPreview {
         }
     }
 }
-

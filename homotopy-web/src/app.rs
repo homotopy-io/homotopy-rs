@@ -1,9 +1,9 @@
+use boundary::BoundaryPreview;
 use settings::AppSettings;
 use sidebar::Sidebar;
 use signature_stylesheet::SignatureStylesheet;
 use wasm_bindgen::{closure::Closure, JsCast};
 use workspace::WorkspaceView;
-use boundary::BoundaryPreview;
 use yew::prelude::*;
 
 use self::diagram_gl::GlViewControl;
@@ -18,6 +18,7 @@ use crate::{
 };
 
 mod attach;
+mod boundary;
 #[cfg(debug_assertions)]
 mod debug;
 mod diagram_gl;
@@ -29,7 +30,6 @@ mod sidebar;
 mod signature;
 mod signature_stylesheet;
 mod workspace;
-mod boundary;
 
 #[derive(Default, Clone, Debug, PartialEq, Properties)]
 pub struct Props {}
@@ -178,12 +178,11 @@ impl App {
         };
 
         let boundary_preview = match proof.boundary() {
-            Some(b) => 
-                html!{
-                    <BoundaryPreview
-                        boundary={b.clone()}
-                    />
-                },
+            Some(b) => html! {
+                <BoundaryPreview
+                    boundary={b.clone()}
+                />
+            },
             None => Default::default(),
         };
 

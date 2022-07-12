@@ -704,7 +704,8 @@ impl ProofState {
             .try_into()
             .map_err(|_dimerr| ModelError::InvalidAction)?;
 
-        self.signature.create_theorem(diagram.source(), diagram.target(), diagram.into())?;
+        self.signature
+            .create_theorem(diagram.source(), diagram.target(), diagram.into())?;
 
         self.clear_workspace();
 
