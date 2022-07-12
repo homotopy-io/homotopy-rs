@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1657363604974,
+  "lastUpdate": 1657639742815,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -36480,6 +36480,66 @@ window.BENCHMARK_DATA = {
             "value": 93.664,
             "range": "+/- 0.026",
             "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "50454943+H-Yulong@users.noreply.github.com",
+            "name": "Yulong Huang",
+            "username": "H-Yulong"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0b3a8bc7843dbcf09ac6708e841fc1a04c6925e2",
+          "message": "Source/target preview + Default names for proof cells (#558)\n\n* add default names to proof/theorem cells\r\n\r\n* add source/target preview\r\n\r\n* add preview overflow\r\n\r\n* set overflow auto\r\n\r\n* refine preview style and appearance\r\n\r\n* fix typos\r\n\r\n* fixed 'about' page display and interaction\r\n\r\n* fix linter with rustfmt\r\n\r\nCo-authored-by: Yulong Huang <yh419@cam.ac.uk>",
+          "timestamp": "2022-07-12T23:15:53+08:00",
+          "tree_id": "304813b3fbf725aca407d78e586b9cacba92f540",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/0b3a8bc7843dbcf09ac6708e841fc1a04c6925e2"
+        },
+        "date": 1657639734992,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 1.869,
+            "range": "+/- 0.003",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 5.6901,
+            "range": "+/- 0.009",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 17.129,
+            "range": "+/- 0.006",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 42.391,
+            "range": "+/- 0.028",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 108.47,
+            "range": "+/- 0.180",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 303.19,
+            "range": "+/- 0.880",
+            "unit": "ms"
           }
         ]
       }
