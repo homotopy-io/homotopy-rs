@@ -1,9 +1,12 @@
 use std::{fmt, ops::Deref};
 
-use homotopy_common::hash::FastHashMap;
+use euclid::default::Point2D;
 use homotopy_core::{common::Generator, Diagram};
+use homotopy_graphics::tikz::{TikzGeneratorStyle, TikzGeneratorStyleAvailable};
 use palette::Srgb;
 use serde::{Deserialize, Serialize};
+
+use super::signature::Signature;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct GeneratorInfo {
@@ -12,6 +15,56 @@ pub struct GeneratorInfo {
     pub color: Color,
     pub shape: VertexShape,
     pub diagram: Diagram,
+}
+
+impl TikzGeneratorStyleAvailable<GeneratorInfo> for Signature {
+    fn generator_style(&self, g: Generator) -> Option<&GeneratorInfo> {
+        self.generator_info(g)
+    }
+}
+
+impl TikzGeneratorStyle for GeneratorInfo {
+    fn name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn color(&self) -> String {
+        format!(
+            "{{RGB}}{{{r}, {g}, {b}}}",
+            r = self.color.red,
+            g = self.color.green,
+            b = self.color.blue,
+        )
+    }
+
+    fn shape(&self) -> &'static str {
+        use VertexShape::{Circle, Square};
+        match self.shape {
+            Circle => "circle",
+            Square => "rectangle",
+        }
+    }
+
+    fn render(&self, point: Point2D<f32>) -> String {
+        use VertexShape::{Circle, Square};
+        let (xo, yo) = match self.shape {
+            Circle => (0.0, 0.0),
+            Square => (-14.0, -14.0),
+        };
+        let x1 = (point.x * 100.0 + xo).round() / 100.0;
+        let y1 = (point.y * 100.0 + yo).round() / 100.0;
+        // TODO(thud): the below should not need allocate Vecs [though export speed is unlikely to
+        // be important to the user]
+        let sz = match self.shape {
+            Circle => vec![0.14],                 // r = 4pt
+            Square => vec![0.28 + x1, 0.28 + y1], // 8pt x 8pt
+        }
+        .iter()
+        .map(|&s| s.to_string())
+        .collect::<Vec<String>>()
+        .join(", ");
+        format!("({},{}) {} ({});", x1, y1, self.shape(), sz)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -48,23 +101,6 @@ impl fmt::Display for Color {
 impl Default for VertexShape {
     fn default() -> Self {
         Self::Circle // TODO(thud): have this be decided by the user in settings?
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize)]
-pub struct GeneratorState(FastHashMap<Generator, GeneratorInfo>);
-
-impl GeneratorState {
-    pub fn get(&self, g: Generator) -> Option<&GeneratorInfo> {
-        self.0.get(&g)
-    }
-
-    pub fn get_mut(&mut self, g: Generator) -> Option<&mut GeneratorInfo> {
-        self.0.get_mut(&g)
-    }
-
-    pub fn insert(&mut self, g: Generator, i: GeneratorInfo) -> Option<GeneratorInfo> {
-        self.0.insert(g, i)
     }
 }
 

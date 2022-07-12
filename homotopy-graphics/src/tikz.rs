@@ -17,11 +17,30 @@ use crate::svg::render::GraphicElement;
 
 const OCCLUSION_DELTA: f32 = 0.2;
 
+pub trait TikzGeneratorStyle {
+    fn name(&self) -> String;
+    fn color(&self) -> String;
+    fn shape(&self) -> &'static str;
+    fn render(&self, point: Point2D<f32>) -> String;
+}
+
+pub trait TikzGeneratorStyleAvailable<T: TikzGeneratorStyle> {
+    fn generator_style(&self, g: Generator) -> Option<&T>;
+}
+
 pub fn color(generator: Generator) -> String {
     format!("generator-{}-{}", generator.id, generator.dimension)
 }
 
-pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionError> {
+pub fn render<T, S>(
+    diagram: &Diagram,
+    stylesheet: &str,
+    generator_styles: Option<&T>,
+) -> Result<String, DimensionError>
+where
+    T: TikzGeneratorStyleAvailable<S>,
+    S: TikzGeneratorStyle,
+{
     let layout = Layout::<2>::new(diagram)?;
     let complex = make_complex(diagram);
     let depths = Depths::<2>::new(diagram)?;
@@ -94,10 +113,18 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
     }
 
     // Points
+    // TODO(thud): this `default_shape` should not be hardcoded here
+    let default_shape = |point| format!("{} circle (4pt)", render_point(point));
     for (g, point) in points {
         write!(tikz, "\\fill[{}] ", color(g)).unwrap();
-        tikz.push_str(&render_point(point));
-        writeln!(tikz, " circle (4pt);").unwrap();
+        let vertex = generator_styles
+            .map(|styles| styles.generator_style(g))
+            .map_or_else(
+                || Some(default_shape(point)),
+                |style| style.map(|s| s.render(point)),
+            )
+            .unwrap();
+        writeln!(tikz, " {}", vertex).unwrap();
     }
 
     writeln!(tikz, "\\end{{tikzpicture}}").unwrap();
