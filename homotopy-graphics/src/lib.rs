@@ -45,7 +45,9 @@
 pub mod buffers;
 pub mod geom;
 pub mod gl;
+pub mod manim;
 pub mod parity;
+pub mod stl;
 pub mod subdivision;
 pub mod svg;
 pub mod tikz;
