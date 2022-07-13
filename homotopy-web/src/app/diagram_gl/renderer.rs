@@ -22,6 +22,17 @@ mod quad;
 mod scene;
 mod shaders;
 
+// This utility function avoids the need to directly pass model::proof::Signature into the
+// homotopy-graphics codebase. Instead, we pass a closure (with context based on the current
+// signature).
+fn shape_of_generator_vertex(signature: &Signature) -> impl '_ + Fn(&Generator) -> u8 {
+    |generator: &Generator| {
+        signature
+            .generator_info(*generator)
+            .map_or(Default::default(), |info| info.shape.clone()) as u8
+    }
+}
+
 pub struct Renderer {
     // outside world
     ctx: GlCtx,
@@ -45,6 +56,7 @@ impl Renderer {
         let smooth_time = *settings.get_smooth_time();
         let subdivision_depth = *settings.get_subdivision_depth() as u8;
         let samples = *settings.get_geometry_samples() as u8;
+        let signature = props.signature.clone();
 
         Ok(Self {
             scene: Scene::new(
@@ -54,6 +66,7 @@ impl Renderer {
                 smooth_time,
                 subdivision_depth,
                 samples,
+                shape_of_generator_vertex(&signature),
             )?,
             shaders: Shaders::new(&ctx)?,
             axes: Axes::new(&ctx)?,
@@ -61,7 +74,7 @@ impl Renderer {
             gbuffer: GBuffer::new(&ctx)?,
             cylinder_buffer: GBuffer::new(&ctx)?,
             ctx,
-            signature: props.signature.clone(),
+            signature,
             smooth_time,
             subdivision_depth,
             geometry_samples: samples,
@@ -87,8 +100,13 @@ impl Renderer {
             self.smooth_time = smooth_time;
             self.subdivision_depth = subdivision_depth;
             self.geometry_samples = samples;
-            self.scene
-                .reload_meshes(&self.ctx, smooth_time, subdivision_depth, samples)?;
+            self.scene.reload_meshes(
+                &self.ctx,
+                smooth_time,
+                subdivision_depth,
+                samples,
+                shape_of_generator_vertex(&self.signature),
+            )?;
         }
 
         Ok(())
@@ -164,25 +182,21 @@ impl Renderer {
                     let duration = self.scene.diagram.size().unwrap() as f32;
 
                     for animation_curve in &self.scene.animation_curves {
-                        if let (Some(position), Some(sphere)) =
-                            (animation_curve.at(t), self.scene.sphere.as_ref())
-                        {
-                            match shape_of(&animation_curve.generator) {
-                                VertexShape::Circle =>
-                                    frame.draw(draw!(&self.shaders.geometry_3d, sphere, &[], {
-                                        mv: v * Mat4::from_translation(position.xyz()) * Mat4::from_scale(geometry_scale),
-                                        p: p,
-                                        albedo: color_of(&animation_curve.generator),
-                                        t: t,
-                                    })),
-                                VertexShape::Square =>
-                                    frame.draw(draw!(&self.shaders.geometry_3d, sphere, &[], {
-                                        mv: v * Mat4::from_translation(position.xyz()) * Mat4::from_scale(geometry_scale),
-                                        p: p,
-                                        albedo: color_of(&animation_curve.generator),
-                                        t: t,
-                                    })),
-                            }
+                        if let (Some(position), Some(sphere), Some(cube)) = (
+                            animation_curve.at(t),
+                            self.scene.sphere.as_ref(),
+                            self.scene.cube.as_ref(),
+                        ) {
+                            let vertex_mesh = match shape_of(&animation_curve.generator) {
+                                VertexShape::Circle => sphere,
+                                VertexShape::Square => cube,
+                            };
+                            frame.draw(draw!(&self.shaders.geometry_3d, vertex_mesh, &[], {
+                                mv: v * Mat4::from_translation(position.xyz()) * Mat4::from_scale(geometry_scale),
+                                p: p,
+                                albedo: color_of(&animation_curve.generator),
+                                t: t,
+                            }));
                         }
                     }
 
@@ -195,9 +209,14 @@ impl Renderer {
                                 continue;
                             }
 
-                            if let Some(sphere) = self.scene.sphere.as_ref() {
+                            let vertex_mesh = match shape_of(generator) {
+                                VertexShape::Circle => self.scene.sphere.as_ref(),
+                                VertexShape::Square => self.scene.cube.as_ref(),
+                            };
+
+                            if let Some(vertex_mesh) = vertex_mesh {
                                 let scale = geometry_scale * 1.4 * f32::sqrt(1. - dt / radius);
-                                frame.draw(draw!(&self.shaders.geometry_3d, sphere, &[], {
+                                frame.draw(draw!(&self.shaders.geometry_3d, vertex_mesh, &[], {
                                 mv: v * Mat4::from_translation(point.xyz()) * Mat4::from_scale(scale),
                                 p: p,
                                 albedo: color_of(generator),

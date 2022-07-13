@@ -70,10 +70,12 @@ impl TikzGeneratorStyle for GeneratorInfo {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Color(pub Srgb<u8>);
 
+// We derive repr(u8) here to allow the passing of vertex shapes into homotopy-graphics (as u8)
+#[repr(u8)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum VertexShape {
-    Circle, // circle / sphere
-    Square, // square / cube
+    Circle = 0, // circle / sphere
+    Square = 1, // square / cube
 }
 
 impl Deref for Color {
