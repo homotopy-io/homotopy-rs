@@ -123,9 +123,38 @@ button, .button {
 .panzoom__inner {
   position: absolute;
   z-index: 0;
-  left: 50%;
+  left: 60%;
   top: 50%;
   transform-origin: 50% 50%;
+}
+
+/* Boundary (source/target) Preview */
+
+.boundary {
+  position: fixed;
+  bottom: 10px;
+  margin-left: 10px;
+  z-index: 4; /* just below the slice buttons */
+}
+
+.boundary__name {
+  background-color: var(--toolbar-background);
+  border: 1px solid var(--toolbar-border);
+  border-radius: var(--space-0);
+  padding: 5px;
+  color: var(--toolbar-foreground);
+  text-align: center;
+}
+
+.boundary__preview {
+  background-color: var(--toolbar-background);
+  border: 1px solid var(--toolbar-border);
+  border-radius: var(--space-0);
+  overflow: auto;
+  min-height: 50px;
+  min-width: 50px;
+  max-width:  320px;
+  max-height: 320px;
 }
 
 /* Workspace */
@@ -134,7 +163,7 @@ button, .button {
   flex: 1;
   display: flex;
   align-items: stretch;
-  position: relative;
+  /*position: fixed;*/
   overflow: hidden;
 }
 
@@ -143,6 +172,7 @@ button, .button {
   display: flex;
   z-index: 10;
   right: 0;
+  top: 10px;
   margin: var(--space-0);
 }
 
@@ -588,7 +618,7 @@ svg {
   position: relative;
   width: 300px;
   min-height: 30px;
-  z-index: 1002;
+  z-index: 1005;
   margin: var(--space-1);
 }
 
@@ -695,6 +725,7 @@ svg {
   height: 100%;
   overflow: auto;
   background-color: rgba(0, 0, 0, 0.4);
+  z-index: 1003; /* it should be the top layer (except toaster) */
 }
 
 /* Display the modal when targeted */
@@ -714,8 +745,11 @@ svg {
   margin: auto;
   background-color: #f3f3f3;
   border: 1px #777 solid;
-  width: 80%;
+  width: 680px;
+  height: 760px;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  z-index: 1003;
+  position: relative;
 }
 
 .modal-content > header {
@@ -727,13 +761,11 @@ svg {
 }
 
 .modal-close {
-  text-decoration: none;
-  color: var(--sidebar-foreground);
-}
-
-.modal-close:hover,.modal-close:focus {
-  background: var(--sidebar-hover);
-  cursor: pointer;
+  z-index: 1002;
+  display: block;
+  position: fixed;
+  width: 100%;
+  height: 100%;
 }
 
 /* https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#using_a_label_element_to_trigger_a_hidden_file_input_element */
@@ -757,15 +789,15 @@ input.visually-hidden:focus-within + label {
 input[type="text"] { width:100%; }
 
 input[type="color"] {
-	-webkit-appearance: none;
-	border: none;
+  -webkit-appearance: none;
+  border: none;
   padding: 0;
 }
 
 input[type="color"]::-webkit-color-swatch-wrapper {
-	padding: 0;
+  padding: 0;
 }
 
 input[type="color"]::-webkit-color-swatch {
-	border: none;
+  border: none;
 }

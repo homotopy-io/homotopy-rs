@@ -1,3 +1,4 @@
+use boundary::BoundaryPreview;
 use settings::AppSettings;
 use sidebar::Sidebar;
 use signature_stylesheet::SignatureStylesheet;
@@ -18,6 +19,7 @@ use crate::{
 };
 
 mod attach;
+mod boundary;
 #[cfg(debug_assertions)]
 mod debug;
 mod diagram_gl;
@@ -191,6 +193,16 @@ impl App {
             }
         };
 
+        let boundary_preview = match proof.boundary() {
+            Some(b) => html! {
+                <BoundaryPreview
+                    boundary={b.clone()}
+                    signature={signature.clone()}
+                />
+            },
+            None => Default::default(),
+        };
+
         html! {
             <main class="app">
                 <Sidebar
@@ -198,15 +210,19 @@ impl App {
                     proof={proof}
                 />
                 <ToasterComponent timeout={3000} />
-                {workspace}
+                <div class="boundary__and__workspace">
+                    {boundary_preview}
+                    {workspace}
+                </div>
                 <div id="about" class="modal">
                     <div class="modal-dialog">
+                        <a href="#">
+                            // Empty div to create an invisible button
+                            <div class="modal-close"></div>
+                        </a>
                         <div class="modal-content">
                             <header>
                                 <h2>{"About"}</h2>
-                                <a href="#" class="modal-close">
-                                    <Icon name="close" size={IconSize::Icon18} />
-                                </a>
                             </header>
                             <p>
                                 <a href="https://ncatlab.org/nlab/show/homotopy.io">{"homotopy.io"}</a>
