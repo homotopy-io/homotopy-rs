@@ -201,7 +201,7 @@ impl State {
                     .unwrap();
                 }
 
-                let data = manim::render(&diagram, &stylesheet).unwrap();
+                let data = manim::render(&diagram, Some(&signature), &stylesheet).unwrap();
                 serialize::generate_download("filename_todo", "py", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }

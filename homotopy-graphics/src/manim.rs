@@ -13,16 +13,52 @@ use itertools::Itertools;
 use lyon_geom::{CubicBezierSegment, Line, LineSegment};
 use lyon_path::{Event, Path};
 
-use crate::svg::render::GraphicElement;
+use crate::{
+    style::{GeneratorStyle, GeneratorStyles, VertexShape},
+    svg::render::GraphicElement,
+};
 
 const OCCLUSION_DELTA: f32 = 0.2;
 const INDENT: &str = "    ";
+
+trait ManimRenderVertex {
+    fn render(&self, color: &str) -> String;
+}
+
+impl<T: GeneratorStyle> ManimRenderVertex for T {
+    fn render(&self, color: &str) -> String {
+        use VertexShape::{Circle, Square};
+        const CIRCLE_RADIUS: f32 = 0.125;
+        const SQUARE_SIDELENGTH: f32 = 0.125 / 2.;
+
+        match self.shape().unwrap_or_default() {
+            Circle => format!(
+                "Circle(radius={radius},color=C[\"{color}\"],fill_opacity=1)",
+                radius = CIRCLE_RADIUS,
+                color = color,
+            ),
+            Square => format!(
+                "Square(side_length={side_length},color=C[\"{color}\"],fill_opacity=1)",
+                side_length = SQUARE_SIDELENGTH,
+                color = color,
+            ),
+        }
+    }
+}
 
 pub fn color(generator: Generator) -> String {
     format!("generator_{}_{}", generator.id, generator.dimension)
 }
 
-pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionError> {
+pub fn render<S, T>(
+    diagram: &Diagram,
+    generator_styles: Option<&S>,
+    stylesheet: &str,
+) -> Result<String, DimensionError>
+where
+    S: GeneratorStyles<T>,
+    T: GeneratorStyle,
+{
     let layout = Layout::<2>::new(diagram)?;
     let complex = make_complex(diagram);
     let depths = Depths::<2>::new(diagram)?;
@@ -157,15 +193,31 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
         ind = INDENT
     )
     .unwrap();
+    let default_vertex = |color| {
+        format!(
+            "Circle(radius=0.125,color=C[\"{color}\"],fill_opacity=1)",
+            color = color
+        )
+    };
     //TODO work out right radius for circles to match SVG/tikz export.
     for (g, point) in points {
-        writeln!(manim, "{ind}{ind}points.add(Circle(radius=0.125,color=C[\"{color}\"],fill_opacity=1).move_to({pt})) # circle_{id}_{dim}",
-            ind=INDENT,
-            id=g.id,
-            dim=g.dimension,
-            color=color(g),
-            pt=&render_point(point)
-        ).unwrap();
+        let vertex = generator_styles
+            .map(|styles| styles.generator_style(g))
+            .map_or_else(
+                || Some(default_vertex(color(g))),
+                |style| style.map(|s| s.render(&color(g))),
+            )
+            .unwrap();
+        writeln!(
+            manim,
+            "{ind}{ind}points.add({vertex}.move_to({pt})) # circle_{id}_{dim}",
+            ind = INDENT,
+            id = g.id,
+            dim = g.dimension,
+            vertex = vertex,
+            pt = &render_point(point)
+        )
+        .unwrap();
     }
 
     writeln!(
