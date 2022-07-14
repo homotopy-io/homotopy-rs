@@ -1,7 +1,7 @@
 use std::fmt::Write;
 
-use euclid::default::{Box2D, Point2D};
-use lyon_algorithms::{aabb::fast_bounding_box, hit_test::hit_test_path};
+use euclid::default::{Point2D, Rect};
+use lyon_algorithms::{aabb::fast_bounding_rect, hit_test::hit_test_path};
 use lyon_geom::{CubicBezierSegment, QuadraticBezierSegment};
 use lyon_path::Path;
 
@@ -10,12 +10,12 @@ pub type Point = Point2D<f32>;
 #[derive(Debug, Clone)]
 pub struct Fill {
     pub path: Path,
-    bounds: Box2D<f32>,
+    bounds: Rect<f32>,
 }
 
 impl Fill {
     pub fn new(path: Path) -> Self {
-        let bounds = fast_bounding_box(path.into_iter());
+        let bounds = fast_bounding_rect(path.into_iter());
         Self { path, bounds }
     }
 
