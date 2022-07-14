@@ -22,17 +22,6 @@ mod quad;
 mod scene;
 mod shaders;
 
-// This utility function avoids the need to directly pass model::proof::Signature into the
-// homotopy-graphics codebase. Instead, we pass a closure (with context based on the current
-// signature).
-fn shape_of_generator_vertex(signature: &Signature) -> impl '_ + Fn(&Generator) -> u8 {
-    |generator: &Generator| {
-        signature
-            .generator_info(*generator)
-            .map_or(Default::default(), |info| info.shape.clone()) as u8
-    }
-}
-
 pub struct Renderer {
     // outside world
     ctx: GlCtx,
@@ -66,7 +55,7 @@ impl Renderer {
                 smooth_time,
                 subdivision_depth,
                 samples,
-                shape_of_generator_vertex(&signature),
+                &signature,
             )?,
             shaders: Shaders::new(&ctx)?,
             axes: Axes::new(&ctx)?,
@@ -105,7 +94,7 @@ impl Renderer {
                 smooth_time,
                 subdivision_depth,
                 samples,
-                shape_of_generator_vertex(&self.signature),
+                &self.signature,
             )?;
         }
 

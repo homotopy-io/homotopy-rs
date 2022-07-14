@@ -5,6 +5,7 @@ use homotopy_core::{Diagram, Generator};
 use homotopy_graphics::{
     geom::{CubicalGeometry, SimplicialGeometry, VertData},
     gl::{array::VertexArray, GlCtx, Result},
+    style::{GeneratorStyle, GeneratorStyles},
     vertex_array,
 };
 use ultraviolet::Vec4;
@@ -54,15 +55,19 @@ impl AnimationCurve {
 }
 
 impl Scene {
-    pub fn new(
+    pub fn new<S, T>(
         ctx: &GlCtx,
         diagram: &Diagram,
         view: View,
         smooth_time: bool,
         subdivision_depth: u8,
         geometry_samples: u8,
-        shape_of_generator_vertex: impl Fn(&Generator) -> u8,
-    ) -> Result<Self> {
+        generator_styles: &S,
+    ) -> Result<Self>
+    where
+        S: GeneratorStyles<T>,
+        T: GeneratorStyle,
+    {
         let diagram = diagram.clone();
 
         let mut scene = Self {
@@ -83,19 +88,23 @@ impl Scene {
             smooth_time,
             subdivision_depth,
             geometry_samples,
-            shape_of_generator_vertex,
+            generator_styles,
         )?;
         Ok(scene)
     }
 
-    pub fn reload_meshes(
+    pub fn reload_meshes<S, T>(
         &mut self,
         ctx: &GlCtx,
         smooth_time: bool,
         subdivision_depth: u8,
         geometry_samples: u8,
-        shape_of_generator_vertex: impl Fn(&Generator) -> u8,
-    ) -> Result<()> {
+        generator_styles: &S,
+    ) -> Result<()>
+    where
+        S: GeneratorStyles<T>,
+        T: GeneratorStyle,
+    {
         self.components.clear();
         self.wireframe_components.clear();
         self.cylinder_components.clear();
@@ -111,7 +120,7 @@ impl Scene {
             generator: Generator::new(0, 0),
         });
         sphere_mesh.mk_point(p);
-        sphere_mesh.inflate_3d(geometry_samples, &|_| VertexShape::Circle as u8);
+        sphere_mesh.inflate_point_3d(p, geometry_samples, &VertexShape::Circle.into());
         if let Some(sphere_buffers) = sphere_mesh.buffer_tris(ctx)?.into_iter().next() {
             self.sphere = Some(vertex_array!(
                 ctx,
@@ -127,7 +136,7 @@ impl Scene {
             generator: Generator::new(0, 0),
         });
         cube_mesh.mk_point(p);
-        cube_mesh.inflate_3d(geometry_samples, &|_| VertexShape::Square as u8);
+        cube_mesh.inflate_point_3d(p, geometry_samples, &VertexShape::Square.into());
         if let Some(cube_buffers) = cube_mesh.buffer_tris(ctx)?.into_iter().next() {
             self.cube = Some(vertex_array!(
                 ctx,
@@ -150,7 +159,7 @@ impl Scene {
         let mut simplicial = SimplicialGeometry::from(cubical);
 
         if self.view.dimension() <= 3 {
-            simplicial.inflate_3d(geometry_samples, &shape_of_generator_vertex);
+            simplicial.inflate_3d(geometry_samples, Some(generator_styles));
             for tri_buffers in simplicial.buffer_tris(ctx)? {
                 self.components.push((
                     tri_buffers.generator,

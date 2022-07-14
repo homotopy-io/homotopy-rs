@@ -13,19 +13,44 @@ use itertools::Itertools;
 use lyon_geom::{CubicBezierSegment, Line, LineSegment};
 use lyon_path::{Event, Path};
 
-use crate::svg::render::GraphicElement;
+use crate::{
+    style::{GeneratorStyle, GeneratorStyles, VertexShape},
+    svg::render::GraphicElement,
+};
 
 const OCCLUSION_DELTA: f32 = 0.2;
 
-pub trait TikzGeneratorStyle {
-    fn name(&self) -> String;
-    fn color(&self) -> String;
-    fn shape(&self) -> &'static str;
+trait TikzRenderVertex {
     fn render(&self, point: Point2D<f32>) -> String;
 }
 
-pub trait TikzGeneratorStyleAvailable<T: TikzGeneratorStyle> {
-    fn generator_style(&self, g: Generator) -> Option<&T>;
+impl<T: GeneratorStyle> TikzRenderVertex for T {
+    fn render(&self, point: Point2D<f32>) -> String {
+        const CIRCLE_RADIUS: f32 = 0.14; // r = 4pt
+        const SQUARE_SIDELENGTH: f32 = 0.28; // 8pt x 8pt
+
+        use VertexShape::{Circle, Square};
+        let shape = self.shape().unwrap_or_default();
+        let shape_str = match shape {
+            Circle => "circle",
+            Square => "square",
+        };
+        let (xo, yo) = match shape {
+            Circle => (0.0, 0.0),
+            Square => (-SQUARE_SIDELENGTH / 2., -SQUARE_SIDELENGTH / 2.),
+        };
+        let x1 = (point.x * 100.0 + xo).round() / 100.0;
+        let y1 = (point.y * 100.0 + yo).round() / 100.0;
+        let sz = match shape {
+            Circle => vec![CIRCLE_RADIUS],
+            Square => vec![SQUARE_SIDELENGTH + x1, SQUARE_SIDELENGTH + y1],
+        }
+        .iter()
+        .map(|&s| s.to_string())
+        .collect::<Vec<String>>()
+        .join(", ");
+        format!("({},{}) {} ({});", x1, y1, shape_str, sz)
+    }
 }
 
 pub fn color(generator: Generator) -> String {
@@ -38,8 +63,8 @@ pub fn render<T, S>(
     generator_styles: Option<&T>,
 ) -> Result<String, DimensionError>
 where
-    T: TikzGeneratorStyleAvailable<S>,
-    S: TikzGeneratorStyle,
+    T: GeneratorStyles<S>,
+    S: GeneratorStyle,
 {
     let layout = Layout::<2>::new(diagram)?;
     let complex = make_complex(diagram);

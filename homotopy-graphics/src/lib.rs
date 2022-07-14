@@ -48,6 +48,7 @@ pub mod gl;
 pub mod manim;
 pub mod parity;
 pub mod stl;
+pub mod style;
 pub mod subdivision;
 pub mod svg;
 pub mod tikz;

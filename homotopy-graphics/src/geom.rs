@@ -10,7 +10,10 @@ use homotopy_core::{
 };
 use ultraviolet::{Mat3, Vec3, Vec4};
 
-use crate::parity::Parity;
+use crate::{
+    parity::Parity,
+    style::{GeneratorStyle, GeneratorStyles, VertexShape},
+};
 
 // Geometry
 
@@ -308,16 +311,11 @@ impl From<CubicalGeometry> for SimplicialGeometry {
 // and be replaced by real-time geometry synthesis.
 
 impl SimplicialGeometry {
-    fn inflate_point_3d(
-        &mut self,
-        point: Vert,
-        samples: u8,
-        shape_of_generator_vertex: &impl Fn(&Generator) -> u8,
-    ) {
-        let generator = self.verts[point].generator;
-        match shape_of_generator_vertex(&generator) {
-            1 => self.inflate_point_3d_cube(point), // VertexShape::Square = 1
-            _ => self.inflate_point_3d_sphere(point, samples), // VertexShape::Circle = 0
+    pub fn inflate_point_3d(&mut self, point: Vert, samples: u8, generator_shape: &VertexShape) {
+        use VertexShape::{Circle, Square};
+        match generator_shape {
+            Circle => self.inflate_point_3d_sphere(point, samples),
+            Square => self.inflate_point_3d_cube(point),
         }
     }
 
@@ -502,9 +500,21 @@ impl SimplicialGeometry {
         }
     }
 
-    pub fn inflate_3d(&mut self, samples: u8, generator_vertex_shape: &impl Fn(&Generator) -> u8) {
+    pub fn inflate_3d<S, T>(&mut self, samples: u8, generator_styles: Option<&S>)
+    where
+        S: GeneratorStyles<T>,
+        T: GeneratorStyle,
+    {
         for point in self.points.keys() {
-            self.inflate_point_3d(self.points[point], samples, generator_vertex_shape);
+            let generator = self.verts[self.points[point]].generator;
+            let shape = if let Some(styles) = generator_styles {
+                styles
+                    .generator_style(generator)
+                    .map_or_else(Default::default, |style| style.shape().unwrap_or_default())
+            } else {
+                Default::default()
+            };
+            self.inflate_point_3d(self.points[point], samples, &shape);
         }
 
         for curve in self.curves.keys() {

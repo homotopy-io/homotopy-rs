@@ -2,16 +2,26 @@ use std::fmt::Write;
 
 use homotopy_core::{common::DimensionError, Diagram};
 
-use crate::geom::{CubicalGeometry, SimplicialGeometry};
+use crate::{
+    geom::{CubicalGeometry, SimplicialGeometry},
+    style::{GeneratorStyle, GeneratorStyles},
+};
 
-pub fn render(diagram: &Diagram) -> Result<String, DimensionError> {
+pub fn render<S, T>(
+    diagram: &Diagram,
+    generator_styles: Option<&S>,
+) -> Result<String, DimensionError>
+where
+    S: GeneratorStyles<T>,
+    T: GeneratorStyle,
+{
     let mut output = String::new();
 
     let mut cubical = CubicalGeometry::new::<3>(diagram)?;
     cubical.subdivide(false, 3);
 
     let mut simplicial = SimplicialGeometry::from(cubical);
-    simplicial.inflate_3d(3, &|_| 0);
+    simplicial.inflate_3d(3, generator_styles);
 
     writeln!(output, "solid assoc").unwrap();
 

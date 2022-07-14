@@ -207,8 +207,9 @@ impl State {
             }
 
             Action::ExportStl => {
+                let signature = self.with_proof(|p| p.signature.clone());
                 let diagram = self.with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram());
-                let data = stl::render(&diagram).unwrap();
+                let data = stl::render(&diagram, Some(&signature)).unwrap();
                 serialize::generate_download("filename_todo", "stl", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }

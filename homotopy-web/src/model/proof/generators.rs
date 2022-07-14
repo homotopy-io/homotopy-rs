@@ -1,8 +1,10 @@
 use std::{fmt, ops::Deref};
 
-use euclid::default::Point2D;
 use homotopy_core::{common::Generator, Diagram};
-use homotopy_graphics::tikz::{TikzGeneratorStyle, TikzGeneratorStyleAvailable};
+use homotopy_graphics::{
+    style,
+    style::{GeneratorStyle, GeneratorStyles},
+};
 use palette::Srgb;
 use serde::{Deserialize, Serialize};
 
@@ -17,65 +19,41 @@ pub struct GeneratorInfo {
     pub diagram: Diagram,
 }
 
-impl TikzGeneratorStyleAvailable<GeneratorInfo> for Signature {
+impl GeneratorStyles<GeneratorInfo> for Signature {
     fn generator_style(&self, g: Generator) -> Option<&GeneratorInfo> {
         self.generator_info(g)
     }
 }
 
-impl TikzGeneratorStyle for GeneratorInfo {
-    fn name(&self) -> String {
-        self.name.clone()
+impl GeneratorStyle for GeneratorInfo {
+    fn label(&self) -> Option<String> {
+        // TODO(thud): Decide whether to show a label
+        // Some(self.name.clone())
+        None
     }
 
-    fn color(&self) -> String {
-        format!(
-            "{{RGB}}{{{r}, {g}, {b}}}",
-            r = self.color.red,
-            g = self.color.green,
-            b = self.color.blue,
-        )
-    }
-
-    fn shape(&self) -> &'static str {
-        use VertexShape::{Circle, Square};
-        match self.shape {
-            Circle => "circle",
-            Square => "rectangle",
-        }
-    }
-
-    fn render(&self, point: Point2D<f32>) -> String {
-        use VertexShape::{Circle, Square};
-        let (xo, yo) = match self.shape {
-            Circle => (0.0, 0.0),
-            Square => (-14.0, -14.0),
-        };
-        let x1 = (point.x * 100.0 + xo).round() / 100.0;
-        let y1 = (point.y * 100.0 + yo).round() / 100.0;
-        // TODO(thud): the below should not need allocate Vecs [though export speed is unlikely to
-        // be important to the user]
-        let sz = match self.shape {
-            Circle => vec![0.14],                 // r = 4pt
-            Square => vec![0.28 + x1, 0.28 + y1], // 8pt x 8pt
-        }
-        .iter()
-        .map(|&s| s.to_string())
-        .collect::<Vec<String>>()
-        .join(", ");
-        format!("({},{}) {} ({});", x1, y1, self.shape(), sz)
+    fn shape(&self) -> Option<style::VertexShape> {
+        Some(self.shape.clone().into())
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Color(pub Srgb<u8>);
 
-// We derive repr(u8) here to allow the passing of vertex shapes into homotopy-graphics (as u8)
-#[repr(u8)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum VertexShape {
-    Circle = 0, // circle / sphere
-    Square = 1, // square / cube
+    Circle, // circle / sphere
+    Square, // square / cube
+}
+
+impl From<VertexShape> for style::VertexShape {
+    fn from(shape: VertexShape) -> Self {
+        use VertexShape::{Circle, Square};
+        match shape {
+            Circle => Self::Circle,
+            Square => Self::Square,
+        }
+    }
 }
 
 impl Deref for Color {
