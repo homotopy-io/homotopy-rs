@@ -120,7 +120,10 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
         if i > 0 {
             writeln!(manim, "{ind}{ind}# Begin scope", ind = INDENT).unwrap();
             for (g, path) in &layer {
-                let left = offset(-OCCLUSION_DELTA, path).reversed();
+                let left = offset(-OCCLUSION_DELTA, path)
+                    .reversed()
+                    .with_attributes()
+                    .into_path();
                 let right = offset(OCCLUSION_DELTA, path);
                 writeln!(manim, concat!("{ind}{ind}wires.add(Intersection(surfaces,",
                          "VMobject(){path_right}{path_left},color=C[\"generator_{id}_{dim}\"],fill_opacity=0.8)) # path_{id}_{dim}"),

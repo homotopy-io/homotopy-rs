@@ -28,12 +28,6 @@ dependencies = [
 
 [[package]]
 name = "arrayvec"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23b62fc65de8e4e7f52534fb52b0f3ed04746ae267519eef2a83941e8085068b"
-
-[[package]]
-name = "arrayvec"
 version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8da52d66c7071e2e3fa2a1e5c6d088fec47b593032b254f5e980de8ea54454d6"
@@ -755,8 +749,8 @@ dependencies = [
  "js-sys",
  "log",
  "lyon_algorithms",
- "lyon_geom 1.0.0",
- "lyon_path 1.0.0",
+ "lyon_geom",
+ "lyon_path",
  "paste",
  "petgraph",
  "serde",
@@ -772,7 +766,7 @@ dependencies = [
 name = "homotopy-web"
 version = "0.1.2"
 dependencies = [
- "arrayvec 0.7.2",
+ "arrayvec",
  "cargo-husky",
  "closure",
  "console_error_panic_hook",
@@ -787,7 +781,7 @@ dependencies = [
  "instant",
  "js-sys",
  "log",
- "lyon_path 1.0.0",
+ "lyon_path",
  "obake",
  "palette",
  "paste",
@@ -921,18 +915,7 @@ version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e11bf139ada9104d99cbbf1834ffbcda97d0e146b1779a08c31a289c6dc2cce9"
 dependencies = [
- "lyon_path 1.0.0",
-]
-
-[[package]]
-name = "lyon_geom"
-version = "0.17.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71d89ccbdafd83d259403e22061be27bccc3254bba65cdc5303250c4227c8c8e"
-dependencies = [
- "arrayvec 0.5.2",
- "euclid",
- "num-traits 0.2.15",
+ "lyon_path",
 ]
 
 [[package]]
@@ -941,18 +924,9 @@ version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d20b24849a0954b450b87e2a5b4e1ffd34c2ac5e20cb91763a820be351c15506"
 dependencies = [
- "arrayvec 0.7.2",
+ "arrayvec",
  "euclid",
  "num-traits 0.2.15",
-]
-
-[[package]]
-name = "lyon_path"
-version = "0.17.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b0a59fdf767ca0d887aa61d1b48d4bbf6a124c1a45503593f7d38ab945bfbc0"
-dependencies = [
- "lyon_geom 0.17.7",
 ]
 
 [[package]]
@@ -961,7 +935,7 @@ version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aa420866147eed0e63fc1e3be5ea45e88d1cc779b2f5a79d6cfd39720f95ac44"
 dependencies = [
- "lyon_geom 1.0.0",
+ "lyon_geom",
 ]
 
 [[package]]
