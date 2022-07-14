@@ -74,7 +74,10 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
             writeln!(tikz, "\\begin{{scope}}").unwrap();
             write!(tikz, "\\clip ").unwrap();
             for (_, path) in &layer {
-                let left = offset(-OCCLUSION_DELTA, path).reversed();
+                let left = offset(-OCCLUSION_DELTA, path)
+                    .reversed()
+                    .with_attributes()
+                    .into_path();
                 let right = offset(OCCLUSION_DELTA, path);
                 tikz.push_str(&render_path(&right));
                 tikz.push_str(" -- ");
