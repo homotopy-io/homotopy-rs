@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1657804667641,
+  "lastUpdate": 1657805708336,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -36599,6 +36599,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 321.34,
             "range": "+/- 1.820",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "50454943+H-Yulong@users.noreply.github.com",
+            "name": "Yulong Huang",
+            "username": "H-Yulong"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7bb71ec1b3e677a82edf4777aad2155dd9946461",
+          "message": "fix panzoom bug, make source/target preview smaller (#584)\n\n* fix panzoom bug, make source/target preview smaller\r\n\r\n* fix signature drawer width\r\n\r\nCo-authored-by: Yulong Huang <yh419@cam.ac.uk>",
+          "timestamp": "2022-07-14T21:24:39+08:00",
+          "tree_id": "6d8c62b4cc41f61d0652a9424a3a51ac4b922405",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/7bb71ec1b3e677a82edf4777aad2155dd9946461"
+        },
+        "date": 1657805698821,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.1296,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 6.4619,
+            "range": "+/- 0.018",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 17.092,
+            "range": "+/- 0.012",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 42.088,
+            "range": "+/- 0.042",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 108.94,
+            "range": "+/- 0.300",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 304.65,
+            "range": "+/- 1.020",
             "unit": "ms"
           }
         ]
