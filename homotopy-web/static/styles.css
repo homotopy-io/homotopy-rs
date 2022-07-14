@@ -327,7 +327,8 @@ button, .button {
 /* Drawer */
 
 .drawer {
-  width: var(--drawer-width);
+  min-width: var(--drawer-width);
+  max-width: var(--drawer-width);
   border-right: 1px solid var(--drawer-border);
   background: var(--drawer-background);
   color: var(--drawer-foreground);
