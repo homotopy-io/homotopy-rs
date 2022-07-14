@@ -123,12 +123,18 @@ button, .button {
 .panzoom__inner {
   position: absolute;
   z-index: 0;
-  left: 60%;
+  left: 50%;
   top: 50%;
   transform-origin: 50% 50%;
 }
 
 /* Boundary (source/target) Preview */
+
+.boundary__and__workspace {
+  position: inherit;
+  width: 100%;
+  height: 100%;
+}
 
 .boundary {
   position: fixed;
@@ -153,8 +159,8 @@ button, .button {
   overflow: auto;
   min-height: 50px;
   min-width: 50px;
-  max-width:  320px;
-  max-height: 320px;
+  max-width:  160px;
+  max-height: 160px;
 }
 
 /* Workspace */
@@ -163,6 +169,8 @@ button, .button {
   flex: 1;
   display: flex;
   align-items: stretch;
+  width: 100%;
+  height: 100%;
   /*position: fixed;*/
   overflow: hidden;
 }
