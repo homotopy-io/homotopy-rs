@@ -82,7 +82,7 @@ pub enum Rewrite {
 }
 
 type Coordinate<T> = Vec<T>;
-pub(crate) type LabelNode = (Generator, Coordinate<SliceIndex>);
+pub(crate) type LabelNode = (usize, Coordinate<SliceIndex>);
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, PartialOrd, Ord)]
 pub struct Label(pub(crate) Vec<HConsed<LabelNode>>);
@@ -256,7 +256,7 @@ impl Rewrite {
 
         match base {
             Diagram::Diagram0(base) => {
-                Rewrite0::new(base, generator, Label::new(vec![(generator, prefix)])).into()
+                Rewrite0::new(base, generator, Label::new(vec![(generator.id, prefix)])).into()
             }
             Diagram::DiagramN(base) => {
                 let mut regular_slices: Vec<_> = Default::default();
@@ -317,6 +317,14 @@ impl Rewrite {
         match dimension {
             0 => Rewrite0::identity().into(),
             _ => RewriteN::identity(dimension).into(),
+        }
+    }
+
+    pub fn invert_targets(&self) -> Self {
+        use Rewrite::{Rewrite0, RewriteN};
+        match self {
+            Rewrite0(r) => Rewrite0(r.invert_targets()),
+            RewriteN(r) => RewriteN(r.invert_targets()),
         }
     }
 
@@ -410,7 +418,7 @@ impl Serialize for Rewrite0 {
 
                 #[derive(Serialize)]
                 struct Label<'a> {
-                    generator: &'a Generator,
+                    generator: usize,
                     coordinate: Coord<'a>,
                 }
 
@@ -425,7 +433,7 @@ impl Serialize for Rewrite0 {
                         .map(|ln| {
                             let (generator, coordinate) = ln.get();
                             Label {
-                                generator,
+                                generator: *generator,
                                 coordinate: Coord(coordinate),
                             }
                         })
@@ -454,6 +462,13 @@ impl Rewrite0 {
 
     pub fn is_identity(&self) -> bool {
         self.0.is_none()
+    }
+
+    pub fn invert_targets(&self) -> Self {
+        match &self.0 {
+            None => Self(None),
+            Some((source, target, label)) => Self::new(*source, target.inverse(), label.clone()),
+        }
     }
 
     pub fn compose(&self, g: &Self) -> Result<Self, CompositionError> {
@@ -694,6 +709,33 @@ impl RewriteN {
     #[inline]
     pub fn is_identity(&self) -> bool {
         self.0.cones.is_empty()
+    }
+
+    pub fn invert_targets(&self) -> Self {
+        let cones = self
+            .cones()
+            .iter()
+            .map(|cone| {
+                Cone::new_untrimmed(
+                    cone.index,
+                    cone.source().to_vec(),
+                    Cospan {
+                        forward: cone.target().forward.invert_targets(),
+                        backward: cone.target().backward.invert_targets(),
+                    },
+                    cone.regular_slices()
+                        .iter()
+                        .map(Rewrite::invert_targets)
+                        .collect(),
+                    cone.singular_slices()
+                        .iter()
+                        .map(Rewrite::invert_targets)
+                        .collect(),
+                )
+            })
+            .collect();
+
+        Self::new(self.dimension(), cones)
     }
 
     pub fn dimension(&self) -> usize {
@@ -1098,8 +1140,8 @@ mod test {
         let f = Generator::new(1, 1);
         let internal = |gen: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, gen, (gen, vec![Boundary(Source)]).into()).into(),
-                backward: Rewrite0::new(x, gen, (gen, vec![Boundary(Target)]).into()).into(),
+                forward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Source)]).into()).into(),
+                backward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Target)]).into()).into(),
             }
         };
         let up = |gen: Generator, r: usize| -> Rewrite {
@@ -1107,7 +1149,7 @@ mod test {
                 x,
                 gen,
                 (
-                    Generator::new(gen.id + 1, 2),
+                    Generator::new(gen.id + 1, 2).id,
                     vec![Boundary(Source), Interior(Regular(r))],
                 )
                     .into(),
@@ -1181,16 +1223,16 @@ mod test {
         let f = Generator::new(3, 1);
         let g = Generator::new(4, 1);
 
-        let first = Rewrite0::new(x, y, (f, vec![Boundary(Source)]).into());
-        let second = Rewrite0::new(y, z, (g, vec![Boundary(Source)]).into());
+        let first = Rewrite0::new(x, y, (f.id, vec![Boundary(Source)]).into());
+        let second = Rewrite0::new(y, z, (g.id, vec![Boundary(Source)]).into());
 
         let actual = first.compose(&second).unwrap();
         let expected = Rewrite0::new(
             x,
             z,
             Label::new(vec![
-                (f, vec![Boundary(Source)]),
-                (g, vec![Boundary(Source)]),
+                (f.id, vec![Boundary(Source)]),
+                (g.id, vec![Boundary(Source)]),
             ]),
         );
         assert_eq!(actual, expected);
@@ -1207,19 +1249,15 @@ mod test {
 
         let internal = |gen: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, gen, (gen, vec![Boundary(Source)]).into()).into(),
-                backward: Rewrite0::new(x, gen, (gen, vec![Boundary(Target)]).into()).into(),
+                forward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Source)]).into()).into(),
+                backward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Target)]).into()).into(),
             }
         };
         let up = |gen: Generator, r: usize| -> Rewrite {
             Rewrite0::new(
                 x,
                 gen,
-                (
-                    Generator::new(gen.id + 3, 2),
-                    vec![Boundary(Source), Interior(Regular(r))],
-                )
-                    .into(),
+                (gen.id + 3, vec![Boundary(Source), Interior(Regular(r))]).into(),
             )
             .into()
         };
@@ -1242,7 +1280,7 @@ mod test {
                 vec![Rewrite0::new(
                     g,
                     h,
-                    (g_to_h, vec![Boundary(Source), Interior(Singular(0))]).into(),
+                    (g_to_h.id, vec![Boundary(Source), Interior(Singular(0))]).into(),
                 )
                 .into()],
             ],
@@ -1258,8 +1296,8 @@ mod test {
                     x,
                     h,
                     Label::new(vec![
-                        (x_to_g, vec![Boundary(Source), Interior(Regular(0))]),
-                        (g_to_h, vec![Boundary(Source), Interior(Singular(0))]),
+                        (x_to_g.id, vec![Boundary(Source), Interior(Regular(0))]),
+                        (g_to_h.id, vec![Boundary(Source), Interior(Singular(0))]),
                     ]),
                 )
                 .into()],
@@ -1283,19 +1321,15 @@ mod test {
 
         let internal = |gen: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, gen, (gen, vec![Boundary(Source)]).into()).into(),
-                backward: Rewrite0::new(x, gen, (gen, vec![Boundary(Target)]).into()).into(),
+                forward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Source)]).into()).into(),
+                backward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Target)]).into()).into(),
             }
         };
         let up = |gen: Generator, r: usize| -> Rewrite {
             Rewrite0::new(
                 x,
                 gen,
-                (
-                    Generator::new(gen.id + 3, 2),
-                    vec![Boundary(Source), Interior(Regular(r))],
-                )
-                    .into(),
+                (gen.id + 3, vec![Boundary(Source), Interior(Regular(r))]).into(),
             )
             .into()
         };
@@ -1312,7 +1346,7 @@ mod test {
                 vec![Rewrite0::new(
                     f,
                     g,
-                    (f_to_g, vec![Boundary(Source), Interior(Singular(0))]).into(),
+                    (f_to_g.id, vec![Boundary(Source), Interior(Singular(0))]).into(),
                 )
                 .into()],
                 vec![],
@@ -1328,8 +1362,8 @@ mod test {
                     x,
                     g,
                     Label::new(vec![
-                        (x_to_f, vec![Boundary(Source), Interior(Regular(0))]),
-                        (f_to_g, vec![Boundary(Source), Interior(Singular(0))]),
+                        (x_to_f.id, vec![Boundary(Source), Interior(Regular(0))]),
+                        (f_to_g.id, vec![Boundary(Source), Interior(Singular(0))]),
                     ]),
                 )
                 .into()],
@@ -1350,8 +1384,8 @@ mod test {
         let g = Generator::new(2, 1);
         let internal = |gen: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, gen, (gen, vec![Boundary(Source)]).into()).into(),
-                backward: Rewrite0::new(x, gen, (gen, vec![Boundary(Target)]).into()).into(),
+                forward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Source)]).into()).into(),
+                backward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Target)]).into()).into(),
             }
         };
         let up = |gen: Generator, r: usize| -> Rewrite {
@@ -1359,7 +1393,7 @@ mod test {
                 x,
                 gen,
                 (
-                    Generator::new(gen.id + 2, 2),
+                    Generator::new(gen.id + 2, 2).id,
                     vec![Boundary(Source), Interior(Regular(r))],
                 )
                     .into(),
@@ -1369,21 +1403,13 @@ mod test {
         let f_to_g: Rewrite = Rewrite0::new(
             f,
             g,
-            (
-                Generator::new(7, 2),
-                vec![Boundary(Source), Interior(Singular(0))],
-            )
-                .into(),
+            (7, vec![Boundary(Source), Interior(Singular(0))]).into(),
         )
         .into();
         let g_to_f: Rewrite = Rewrite0::new(
             g,
             f,
-            (
-                Generator::new(4, 2),
-                vec![Boundary(Source), Interior(Singular(0))],
-            )
-                .into(),
+            (4, vec![Boundary(Source), Interior(Singular(0))]).into(),
         )
         .into();
 

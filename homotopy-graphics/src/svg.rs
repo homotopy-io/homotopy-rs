@@ -10,6 +10,10 @@ pub mod shape;
 pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
     let mut stylesheet = String::new();
 
+    writeln!(stylesheet, ".inverse--wire {{ stroke-dasharray: 2; }}").unwrap();
+
+    writeln!(stylesheet, ".inverse--point {{ stroke: #ffffff; }}").unwrap();
+
     for (generator, style) in styles.as_pairs() {
         writeln!(
             stylesheet,
@@ -38,8 +42,15 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
 }
 
 pub fn generator_class(generator: Generator, suffix: &str) -> String {
-    format!(
-        "generator__{}-{}--{}",
-        generator.id, generator.dimension, suffix
-    )
+    if generator.orientation > 0 {
+        format!(
+            "generator__{}-{}--{}",
+            generator.id, generator.dimension, suffix
+        )
+    } else {
+        format!(
+            "generator__{}-{}--{} inverse--{}",
+            generator.id, generator.dimension, suffix, suffix
+        )
+    }
 }
