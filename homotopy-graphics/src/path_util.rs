@@ -200,13 +200,29 @@ pub fn simplify_path(path: &Path) -> Path {
             }
             // Needless End -- Begin can be removed
             (
+                Some(_),
                 Some(lyon_path::Event::End {
                     last, close: false, ..
                 }),
-                Some(lyon_path::Event::Begin { at }),
-            ) if last.approx_eq(&at) => {
-                under_cons = it.next();
-                peek_head = it.next();
+            ) => {
+                // We can handle this a bit differently
+                // since End is a bit "special" as a drawing command,
+                // in the sense that not much is going on after it.
+                //
+                // If it has a useless Begin after, we skip both.
+                // Otherwise, just pass to next iteration.
+                let next = it.next();
+                match next {
+                    Some(lyon_path::Event::Begin { at }) if last.approx_eq(&at) => {
+                        peek_head = it.next();
+                    }
+                    _ => {
+                        builder.path_event(under_cons.unwrap());
+                        builder.path_event(peek_head.unwrap());
+                        under_cons = next;
+                        peek_head = it.next();
+                    }
+                }
             }
             (None, Some(_)) => {
                 // I don't think this should ever happen
