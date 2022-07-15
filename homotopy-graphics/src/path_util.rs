@@ -1,4 +1,4 @@
-use euclid::Vector2D;
+use euclid::{approxeq::ApproxEq, Vector2D};
 use homotopy_common::hash::FastHashMap;
 use homotopy_core::common::Generator;
 use lyon_geom::{CubicBezierSegment, Line, LineSegment};
@@ -10,7 +10,7 @@ pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<Gr
     let mut new_graphic = Vec::with_capacity(graphic.len());
     let mut point_elements = Vec::new();
 
-    // (depth, gen) -> Vec<path>
+    // (depth, gen) -> Vec<(path, start, end)>
     let mut grouped_wires =
         FastHashMap::<(usize, Generator), Vec<(lyon_path::path::Builder, Point, Point)>>::default();
 
@@ -23,39 +23,49 @@ pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<Gr
                 let entry = grouped_wires.entry((*depth, *g)).or_default();
 
                 let extremes = path_extremes(path).unwrap();
-                let should_reverse = extremes.0.y > extremes.1.y;
 
-                let mut insert_idx: Option<_> = None;
-                for (i, (_, from, to)) in entry.iter().enumerate().rev() {
-                    match (should_reverse, extremes.0 == *from, extremes.1 == *to) {
-                        (false, true, _) | (true, _, true) => {
-                            insert_idx = Some(i);
-                            break;
+                let mut it = entry.iter_mut().rev();
+                loop {
+                    if let Some((builder, from, to)) = it.next() {
+                        // Recycle the builder if possible!
+                        match (
+                            extremes.0.approx_eq(to),
+                            extremes.1.approx_eq(to),
+                            extremes.1.approx_eq(from),
+                            extremes.0.approx_eq(from),
+                        ) {
+                            (true, _, _, _) => {
+                                builder.extend(path.iter());
+                                *to = extremes.1;
+                            }
+                            (_, true, _, _) => {
+                                builder.extend(path.reversed().iter());
+                                *to = extremes.0;
+                            }
+                            (_, _, true, _) => {
+                                let mut new_builder = Path::builder();
+                                new_builder.extend(path.iter());
+                                new_builder.extend(builder.clone().build().iter());
+                                *builder = new_builder;
+                                *from = extremes.0;
+                            }
+                            (_, _, _, true) => {
+                                let mut new_builder = Path::builder();
+                                new_builder.extend(path.reversed().iter());
+                                new_builder.extend(builder.clone().build().iter());
+                                *builder = new_builder;
+                                *from = extremes.1;
+                            }
+                            (_, _, _, _) => {
+                                continue;
+                            }
                         }
-                        (_, _, _) => {}
-                    }
-                }
-
-                match (insert_idx, should_reverse) {
-                    // Recycle the builder if possible!
-                    (Some(i), false) => {
-                        entry[i].0.extend(path.iter());
-                        entry[i].1 = extremes.1;
-                    }
-                    (Some(i), true) => {
-                        entry[i].0.extend(path.reversed().iter());
-                        entry[i].1 = extremes.0;
-                    }
-                    (None, false) => {
+                    } else {
                         let mut builder = Path::builder();
                         builder.extend(path.iter());
                         entry.push((builder, extremes.0, extremes.1));
                     }
-                    (None, true) => {
-                        let mut builder = Path::builder();
-                        builder.extend(path.reversed().iter());
-                        entry.push((builder, extremes.1, extremes.0));
-                    }
+                    break;
                 }
             }
             GraphicElement::Point { .. } => {
@@ -91,13 +101,12 @@ fn path_extremes(path: &Path) -> Option<(Point, Point)> {
     }
 }
 
-// Test collinearity with dot product formula up to precision
+// Points are collinear if area of triangle is zero
 fn points_collinear(p0: Point, p1: Point, p2: Point) -> bool {
-    ((p1.x - p0.x) * (p2.y - p0.y) - (p1.y - p0.y) * (p2.x - p0.x)).abs() <= 0.00005
+    (p0.x * (p1.y - p2.y) + p1.x * (p2.y - p0.y) + p2.x * (p0.y - p1.y)).approx_eq(&0.0)
 }
 
 pub fn simplify_path(path: &Path) -> Path {
-    //TODO either make a hot-path for Begin - UselessBezierCubic -- End, or do not call on unmerged wires.
     let mut builder = Path::builder();
     let mut it = path.iter();
     let mut under_cons: Option<lyon_path::PathEvent> = it.next();
@@ -114,13 +123,38 @@ pub fn simplify_path(path: &Path) -> Path {
                 builder.path_event(ev);
                 break;
             }
-            // Now can assume there is a next element!
-            (None, Some(_)) => {
-                // I don't think this should ever happen
-                // But we won't issue a warning to avoid I/O
-                // in potential rendering loop.
-                under_cons = peek_head;
-                peek_head = it.next();
+            // Collinear Beziers can be transformed to lines
+            (Some(lyon_path::Event::Quadratic { from, ctrl, to }), _)
+                if points_collinear(from, ctrl, to) =>
+            {
+                under_cons = Some(lyon_path::Event::Line { from, to });
+            }
+            (_, Some(lyon_path::Event::Quadratic { from, ctrl, to }))
+                if points_collinear(from, ctrl, to) =>
+            {
+                peek_head = Some(lyon_path::Event::Line { from, to });
+            }
+            (
+                Some(lyon_path::Event::Cubic {
+                    from,
+                    ctrl1,
+                    ctrl2,
+                    to,
+                }),
+                _,
+            ) if points_collinear(from, ctrl1, ctrl2) && points_collinear(ctrl1, ctrl2, to) => {
+                under_cons = Some(lyon_path::Event::Line { from, to });
+            }
+            (
+                _,
+                Some(lyon_path::Event::Cubic {
+                    from,
+                    ctrl1,
+                    ctrl2,
+                    to,
+                }),
+            ) if points_collinear(from, ctrl1, ctrl2) && points_collinear(ctrl1, ctrl2, to) => {
+                peek_head = Some(lyon_path::Event::Line { from, to });
             }
             // Collinear lines can be merged
             (
@@ -132,29 +166,12 @@ pub fn simplify_path(path: &Path) -> Path {
                     from: from2,
                     to: to2,
                 }),
-            ) if to1 == from2 && points_collinear(from1, to1, to2) => {
+            ) if to1.approx_eq(&from2) && points_collinear(from1, to1, to2) => {
                 under_cons = Some(lyon_path::Event::Line {
                     from: from1,
                     to: to2,
                 });
                 peek_head = it.next();
-            }
-            // Collinear Beziers can be transformed to lines
-            (_, Some(lyon_path::Event::Quadratic { from, ctrl, to }))
-                if points_collinear(from, ctrl, to) =>
-            {
-                peek_head = Some(lyon_path::Event::Line { from, to });
-            }
-            (
-                _,
-                Some(lyon_path::Event::Cubic {
-                    from,
-                    ctrl1,
-                    ctrl2,
-                    to,
-                }),
-            ) if points_collinear(ctrl1, ctrl2, to) => {
-                peek_head = Some(lyon_path::Event::Line { from, to });
             }
             // Needless End -- Begin can be removed
             (
@@ -162,8 +179,15 @@ pub fn simplify_path(path: &Path) -> Path {
                     last, close: false, ..
                 }),
                 Some(lyon_path::Event::Begin { at }),
-            ) if last == at => {
+            ) if last.approx_eq(&at) => {
                 under_cons = it.next();
+                peek_head = it.next();
+            }
+            (None, Some(_)) => {
+                // I don't think this should ever happen
+                // But we won't issue a warning to avoid I/O
+                // in potential rendering loop.
+                under_cons = peek_head;
                 peek_head = it.next();
             }
             (Some(ev), _) => {
