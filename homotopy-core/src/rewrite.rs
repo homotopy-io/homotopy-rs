@@ -247,7 +247,7 @@ impl Rewrite {
     pub fn cone_over_generator(
         generator: Generator,
         base: Diagram,
-        prefix: Coordinate<SliceIndex>,
+        prefix: Option<Coordinate<SliceIndex>>,
     ) -> Self {
         use Height::{Regular, Singular};
         use SliceIndex::{Boundary, Interior};
@@ -256,7 +256,11 @@ impl Rewrite {
 
         match base {
             Diagram::Diagram0(base) => {
-                Rewrite0::new(base, generator, Label::new(vec![(generator.id, prefix)])).into()
+                let label = prefix
+                    .map(|prefix| (generator.id, prefix))
+                    .into_iter()
+                    .collect();
+                Rewrite0::new(base, generator, Label::new(label)).into()
             }
             Diagram::DiagramN(base) => {
                 let mut regular_slices: Vec<_> = Default::default();
@@ -268,12 +272,16 @@ impl Rewrite {
                         Singular(i) => singular_slices.push(Self::cone_over_generator(
                             generator,
                             slice,
-                            [prefix.as_slice(), &[Interior(Singular(i))]].concat(),
+                            prefix.as_ref().map(|prefix| {
+                                [prefix.as_slice(), &[Interior(Singular(i))]].concat()
+                            }),
                         )),
                         Regular(i) => regular_slices.push(Self::cone_over_generator(
                             generator,
                             slice,
-                            [prefix.as_slice(), &[Interior(Regular(i))]].concat(),
+                            prefix.as_ref().map(|prefix| {
+                                [prefix.as_slice(), &[Interior(Regular(i))]].concat()
+                            }),
                         )),
                     });
                 RewriteN::new(
@@ -285,22 +293,26 @@ impl Rewrite {
                             forward: Self::cone_over_generator(
                                 generator,
                                 base.source(),
-                                [
-                                    &[Interior(Singular(0))],
-                                    &prefix.as_slice()[..prefix.len() - 1],
-                                    &[Boundary(Source)],
-                                ]
-                                .concat(),
+                                prefix.as_ref().map(|prefix| {
+                                    [
+                                        &[Interior(Singular(0))],
+                                        &prefix.as_slice()[..prefix.len() - 1],
+                                        &[Boundary(Source)],
+                                    ]
+                                    .concat()
+                                }),
                             ),
                             backward: Self::cone_over_generator(
                                 generator,
                                 base.target(),
-                                [
-                                    &[Interior(Singular(0))],
-                                    &prefix.as_slice()[..prefix.len() - 1],
-                                    &[Boundary(Target)],
-                                ]
-                                .concat(),
+                                prefix.as_ref().map(|prefix| {
+                                    [
+                                        &[Interior(Singular(0))],
+                                        &prefix.as_slice()[..prefix.len() - 1],
+                                        &[Boundary(Target)],
+                                    ]
+                                    .concat()
+                                }),
                             ),
                         },
                         regular_slices,

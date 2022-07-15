@@ -215,12 +215,8 @@ impl DiagramN {
         }
 
         let cospan = Cospan {
-            forward: Rewrite::cone_over_generator(
-                generator,
-                source.clone(),
-                vec![Boundary(Source)],
-            ),
-            backward: Rewrite::cone_over_generator(generator, target, vec![Boundary(Target)]),
+            forward: Rewrite::cone_over_generator(generator, source.clone(), None),
+            backward: Rewrite::cone_over_generator(generator, target, None),
         };
 
         Ok(Self::new_unsafe(source, vec![cospan]))
