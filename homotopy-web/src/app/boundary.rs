@@ -5,7 +5,7 @@
 use homotopy_core::common::Boundary;
 use yew::prelude::*;
 
-use crate::{app::diagram_svg::DiagramSvg, model::proof::SelectedBoundary};
+use crate::{app::diagram_svg::DiagramSvg, model::proof::SelectedBoundary, components::icon::{Icon, IconSize},};
 
 pub struct BoundaryPreview {}
 
@@ -45,12 +45,15 @@ impl Component for BoundaryPreview {
         let preview = match dim {
             // Display flex to center 0 & 1-dimensional diagrams.
             0 | 1 => html! {
-                <div class="boundary__preview" style="display:flex; align-items:center; justify-content:center">
+                <div 
+                    class="boundary__element boundary__preview" 
+                    style="display:flex; align-items:center; justify-content:center"
+                >
                     {preview}
                 </div>
             },
             _ => html! {
-                <div class="boundary__preview">
+                <div class="boundary__element boundary__preview">
                     {preview}
                 </div>
             },
@@ -58,8 +61,11 @@ impl Component for BoundaryPreview {
 
         html! {
             <div class="boundary">
-                <div class="boundary__name">
+                <div class="boundary__element boundary__name">
                     <span>{bound}</span>
+                </div>
+                <div class="boundary__element boundary__button">
+                    <Icon name="close" size={IconSize::Icon18} />
                 </div>
                 {preview}
             </div>

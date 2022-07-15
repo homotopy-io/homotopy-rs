@@ -138,24 +138,32 @@ button, .button {
 
 .boundary {
   position: fixed;
+  display: grid;
+  grid-template-columns: 1fr 0.5fr;
   bottom: 10px;
   margin-left: 10px;
   z-index: 4; /* just below the slice buttons */
 }
 
-.boundary__name {
+.boundary__element {
   background-color: var(--toolbar-background);
   border: 1px solid var(--toolbar-border);
-  border-radius: var(--space-0);
+  border-radius: var(--space-0);  
+}
+
+.boundary__name {
   padding: 5px;
   color: var(--toolbar-foreground);
   text-align: center;
 }
 
+.boundary__button {
+  color: var(--toolbar-foreground);
+  text-align: center;
+  padding-top: 2px;
+}
+
 .boundary__preview {
-  background-color: var(--toolbar-background);
-  border: 1px solid var(--toolbar-border);
-  border-radius: var(--space-0);
   overflow: auto;
   min-height: 50px;
   min-width: 50px;
