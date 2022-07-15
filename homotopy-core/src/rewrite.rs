@@ -1016,7 +1016,7 @@ impl Cone {
     }
 
     #[inline]
-    fn new_untrimmed(
+    pub fn new_untrimmed(
         index: usize,
         source: Vec<Cospan>,
         target: Cospan,
