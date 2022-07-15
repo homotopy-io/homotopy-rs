@@ -47,10 +47,17 @@ impl SignatureStylesheet {
     }
 
     pub fn name(prefix: &str, generator: Generator, style: &str) -> String {
-        format!(
-            "{}__{}-{}--{}",
-            prefix, generator.id, generator.dimension, style
-        )
+        if generator.orientation > 0 {
+            format!(
+                "{}__{}-{}--{}",
+                prefix, generator.id, generator.dimension, style
+            )
+        } else {
+            format!(
+                "{}__{}-{}--{} inverse--{}",
+                prefix, generator.id, generator.dimension, style, style
+            )
+        }
     }
 
     fn node(&self) -> Node {
@@ -59,6 +66,18 @@ impl SignatureStylesheet {
 
     fn style(&self) -> String {
         let mut style = String::new();
+        
+        writeln!(
+            style,
+            ".inverse--wire {{ stroke-dasharray: 2; }}"
+        )
+        .unwrap();
+        
+        writeln!(
+            style,
+            ".inverse--point {{ stroke: #ffffff; }}"
+        )
+        .unwrap();
 
         for info in self.signature.iter() {
             writeln!(

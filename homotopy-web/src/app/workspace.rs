@@ -161,7 +161,6 @@ fn highlight_attachment<const N: usize>(
         )
         .ok()?
         .inverse()
-        .ok()?
     } else {
         DiagramN::try_from(
             signature

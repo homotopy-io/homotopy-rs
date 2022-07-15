@@ -12,7 +12,7 @@ use thiserror::Error;
 pub struct Generator {
     pub dimension: usize,
     pub id: usize,
-    pub invertible: bool,
+    pub orientation: isize,
 }
 
 impl Generator {
@@ -20,7 +20,14 @@ impl Generator {
         Self {
             dimension,
             id,
-            invertible: true, // TODO: default to off, make toggle-able
+            orientation: 1,
+        }
+    }
+
+    pub fn inverse(self) -> Self {
+        Self {
+            orientation: -self.orientation,
+            ..self
         }
     }
 }

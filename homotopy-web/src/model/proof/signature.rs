@@ -40,6 +40,7 @@ pub struct GeneratorInfo {
     pub name: String,
     pub color: Color,
     pub diagram: Diagram,
+    pub invertible: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -101,6 +102,7 @@ impl Signature {
             name: format!("Cell {}", id),
             color: Color(Srgb::<u8>::from_str(COLORS[id % COLORS.len()]).unwrap()),
             diagram: diagram.into(),
+            invertible: true, // TODO: default to off, make toggleable
         };
 
         self.0.push_onto(self.0.root(), SignatureItem::Item(info));

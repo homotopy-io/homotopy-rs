@@ -544,7 +544,7 @@ impl ProofState {
                             }),
                     );
 
-                    if info.generator.invertible {
+                    if info.invertible {
                         let inverse_needle = DiagramN::try_from(info.diagram.clone())
                             .unwrap()
                             .slice(boundary)
@@ -595,7 +595,7 @@ impl ProofState {
                     .diagram
                     .clone();
                 if option.inverse {
-                    DiagramN::try_from(generating_diagram)?.inverse()?
+                    DiagramN::try_from(generating_diagram)?.inverse()
                 } else {
                     DiagramN::try_from(generating_diagram)?
                 }
