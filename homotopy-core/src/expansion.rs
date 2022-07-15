@@ -82,8 +82,8 @@ pub fn expand_in_path(
 
     match location.split_first() {
         _ if diagram.dimension() < location.len() => Err(ExpansionError::OutOfBounds),
-        None | Some((_, &[])) => Err(ExpansionError::LocationTooShort),
-        Some((Regular(h0), &[h1])) => expand_base_regular(diagram, *h0, h1, direction),
+        None | Some((Singular(_), &[])) => Err(ExpansionError::LocationTooShort),
+        Some((Regular(h0), &([] | [_]))) => expand_base_regular(diagram, *h0, direction),
         Some((Singular(h0), &[Singular(h1)])) => expand_base_singular(diagram, *h0, h1, direction),
         Some((Regular(_), _)) => Err(ExpansionError::RegularSlice),
         Some((Singular(height), rest)) => expand_recursive(diagram, *height, rest, direction),
@@ -95,7 +95,6 @@ pub fn expand_in_path(
 fn expand_base_regular(
     diagram: &Diagram,
     h0: RegularHeight,
-    _h1: Height,
     direction: Direction,
 ) -> Result<Rewrite, ExpansionError> {
     let diagram = match diagram {

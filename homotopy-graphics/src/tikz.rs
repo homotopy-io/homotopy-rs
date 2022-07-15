@@ -155,7 +155,10 @@ fn offset_multiple(delta: f32, path: &Path) -> String {
             Event::End { .. } => {
                 builder.path_event(event);
                 let segment = builder.build();
-                let left = offset(-delta, &segment).reversed();
+                let left = offset(-delta, &segment)
+                    .reversed()
+                    .with_attributes()
+                    .into_path();
                 let right = offset(delta, &segment);
                 tikz.push_str(&render_path(&right));
                 tikz.push_str(" -- ");

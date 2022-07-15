@@ -121,4 +121,16 @@ declare_sidebar_tools! {
         "download",
         model::Action::ExportSvg,
     }
+
+    BUTTON_MANIM {
+        "Export to Manim Python",
+        "download",
+        model::Action::ExportManim,
+    }
+
+    BUTTON_STL {
+        "Export to STL",
+        "download",
+        model::Action::ExportStl,
+    }
 }

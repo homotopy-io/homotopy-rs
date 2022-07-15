@@ -24,7 +24,7 @@ homotopy-graphics = { path = "../homotopy-graphics" }
 closure = "0.3.0"
 js-sys = "0.3.58"
 quote = "1.0.20"
-serde = { version = "1.0.138", features = ["derive"] }
+serde = { version = "1.0.139", features = ["derive"] }
 syn = "1.0.98"
 paste = "1.0.7"
 rmp-serde = "0.15.5"
@@ -39,7 +39,7 @@ wasm-logger = "0.2.0"
 log = "0.4.16"
 euclid = "0.22.7"
 ultraviolet = "0.9.0"
-lyon_path = "0.17.7"
+lyon_path = "1.0.0"
 thiserror = "1.0.30"
 obake = { version = "1.0.4", features = ["serde"] }
 

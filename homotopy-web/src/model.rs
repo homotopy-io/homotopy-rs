@@ -3,7 +3,7 @@ use std::fmt::Write;
 pub use history::Proof;
 use history::{History, UndoState};
 use homotopy_core::common::Mode;
-use homotopy_graphics::tikz;
+use homotopy_graphics::{manim, stl, tikz};
 use proof::{Color, GeneratorInfo, Signature, Workspace};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -20,6 +20,8 @@ pub enum Action {
     ExportProof,
     ExportTikz,
     ExportSvg,
+    ExportManim,
+    ExportStl,
 }
 
 impl Action {
@@ -29,10 +31,14 @@ impl Action {
 
         match self {
             Action::Proof(action) => proof.is_valid(action),
-            Action::ExportTikz | Action::ExportSvg => proof
+            Action::ExportTikz | Action::ExportSvg | Action::ExportManim => proof
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.view.dimension() == 2),
+            Action::ExportStl => proof
+                .workspace
+                .as_ref()
+                .map_or(false, |ws| ws.view.dimension() == 3),
             Action::History(history::Action::Move(dir)) => match dir {
                 history::Direction::Linear(Forward) => proof.can_redo(),
                 history::Direction::Linear(Backward) => proof.can_undo(),
@@ -175,6 +181,35 @@ impl State {
                 data.push_str(&svg[content_start..]);
 
                 serialize::generate_download("filename_todo", "svg", data.as_bytes())
+                    .map_err(ModelError::Export)?;
+            }
+
+            Action::ExportManim => {
+                let signature = self.with_proof(|p| p.signature.clone());
+                let diagram = self.with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram());
+
+                let mut stylesheet = String::new();
+                for info in signature.iter() {
+                    writeln!(
+                        stylesheet,
+                        "            \"{generator}\": \"#{r:02x}{g:02x}{b:02x}\",",
+                        generator = manim::color(info.generator),
+                        r = info.color.red,
+                        g = info.color.green,
+                        b = info.color.blue,
+                    )
+                    .unwrap();
+                }
+
+                let data = manim::render(&diagram, &stylesheet).unwrap();
+                serialize::generate_download("filename_todo", "py", data.as_bytes())
+                    .map_err(ModelError::Export)?;
+            }
+
+            Action::ExportStl => {
+                let diagram = self.with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram());
+                let data = stl::render(&diagram).unwrap();
+                serialize::generate_download("filename_todo", "stl", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
 

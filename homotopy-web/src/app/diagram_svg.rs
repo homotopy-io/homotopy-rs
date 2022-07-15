@@ -17,9 +17,8 @@ use homotopy_core::{
     Boundary, Diagram, DiagramN, Height, SliceIndex,
 };
 use homotopy_graphics::svg::{
-    geom,
-    geom::{path_to_svg, project_2d, Point},
     render::{ActionRegion, GraphicElement},
+    shape::{path_to_svg, project_2d, Point, Shape},
 };
 use web_sys::Element;
 use yew::prelude::*;
@@ -83,7 +82,7 @@ pub enum DiagramSvgMessage {
 /// cached if the diagram does not change.
 struct PreparedDiagram<const N: usize> {
     graphic: Vec<GraphicElement<N>>,
-    actions: Vec<(Simplex<N>, geom::Shape)>,
+    actions: Vec<(Simplex<N>, Shape)>,
     depths: Depths<N>,
     layout: Layout<N>,
 
@@ -521,28 +520,29 @@ fn drag_to_homotopy<const N: usize>(
 
     match N {
         1 => {
-            // Always contraction
-
-            let y = match point[0] {
-                Interior(y) => y,
+            let height = match point[0] {
                 Boundary(_) => return None,
+                Interior(height) => height,
             };
 
-            let height = match y {
-                Regular(_) => unreachable!(),
-                Singular(height) => height,
+            let direction = if angle.radians <= 0.0 {
+                Direction::Forward
+            } else {
+                Direction::Backward
             };
 
-            Some(Homotopy::Contract(Contract {
-                bias: None,
-                location: Default::default(),
-                height,
-                direction: if angle.radians <= 0.0 {
-                    Direction::Forward
-                } else {
-                    Direction::Backward
-                },
-            }))
+            Some(match height {
+                Regular(_) => Homotopy::Expand(Expand {
+                    location: point.to_vec(),
+                    direction,
+                }),
+                Singular(i) => Homotopy::Contract(Contract {
+                    bias: None,
+                    location: Default::default(),
+                    height: i,
+                    direction,
+                }),
+            })
         }
         2 => {
             let diagram: DiagramN = diagram.try_into().ok()?;
