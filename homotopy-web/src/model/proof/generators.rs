@@ -64,7 +64,6 @@ impl Deref for Color {
     }
 }
 
-// TODO(thud): This can go soon
 impl Default for Color {
     fn default() -> Self {
         Self(Srgb::new(0, 0, 0))
@@ -80,7 +79,7 @@ impl fmt::Display for Color {
 
 impl Default for VertexShape {
     fn default() -> Self {
-        Self::Circle // TODO(thud): have this be decided by the user in settings?
+        Self::Circle // TODO(thud): have this be decided by the user in settings UI
     }
 }
 

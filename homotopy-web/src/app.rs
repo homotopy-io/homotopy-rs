@@ -15,7 +15,6 @@ use crate::{
         toast::{Toast, Toaster, ToasterComponent},
     },
     model,
-    // model::proof::{generators, SignatureItemEdit} // TODO(thud): this shouldn't be needed
 };
 
 mod attach;
