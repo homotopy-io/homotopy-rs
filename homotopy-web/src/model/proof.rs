@@ -681,7 +681,7 @@ impl ProofState {
                     .diagram
                     .clone();
                 if option.inverse {
-                    DiagramN::try_from(generating_diagram)?.inverse()?
+                    DiagramN::try_from(generating_diagram)?.inverse()
                 } else {
                     DiagramN::try_from(generating_diagram)?
                 }

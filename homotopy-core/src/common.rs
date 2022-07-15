@@ -12,11 +12,23 @@ use thiserror::Error;
 pub struct Generator {
     pub dimension: usize,
     pub id: usize,
+    pub orientation: isize,
 }
 
 impl Generator {
     pub fn new(id: usize, dimension: usize) -> Self {
-        Self { dimension, id }
+        Self {
+            dimension,
+            id,
+            orientation: 1,
+        }
+    }
+
+    pub fn inverse(self) -> Self {
+        Self {
+            orientation: -self.orientation,
+            ..self
+        }
     }
 }
 

@@ -34,7 +34,7 @@ pub enum ExpansionError {
     #[error("no component to expand")]
     NoComponent,
 
-    #[error("singular height must be surrounded by identical rewrites for smoothing")]
+    #[error("singular height is not smoothable")]
     Unsmoothable,
 
     #[error("expansion is ill-typed: {0}")]
@@ -128,7 +128,12 @@ fn expand_base_regular(
         }; // cospans[i] needs to be deleted by the smoothing rewrite
 
     let cs = &diagram.cospans()[i];
-    if cs.forward == cs.backward {
+    if cs.forward == cs.backward
+        && cs
+            .forward
+            .max_generator(Boundary::Target)
+            .map_or(false, |g| g.dimension < diagram.dimension())
+    {
         Ok(RewriteN::new(
             diagram.dimension(),
             vec![Cone::new(
@@ -143,21 +148,6 @@ fn expand_base_regular(
     } else {
         Err(ExpansionError::Unsmoothable)
     }
-}
-
-/// Similar to `expand_base_regular`, except it will attempt to smooth all heights (self-similar
-/// cospans are removed)
-pub(crate) fn expand_smooth(diagram: &DiagramN) -> RewriteN {
-    RewriteN::new(
-        diagram.dimension(),
-        diagram
-            .cospans()
-            .iter()
-            .enumerate()
-            .filter(|(_, cs)| cs.forward == cs.backward)
-            .map(|(i, cs)| Cone::new(i, vec![], cs.clone(), vec![cs.forward.clone()], vec![]))
-            .collect(),
-    )
 }
 
 fn expand_base_singular(

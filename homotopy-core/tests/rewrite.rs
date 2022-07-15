@@ -64,8 +64,8 @@ prop_compose! {
         let x = Generator::new(0, 0);
         let internal = |g: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, g, (g, vec![Boundary(Source)]).into()).into(),
-                backward: Rewrite0::new(x, g, (g, vec![Boundary(Target)]).into()).into(),
+                forward: Rewrite0::new(x, g, (g.id, vec![Boundary(Source)]).into()).into(),
+                backward: Rewrite0::new(x, g, (g.id, vec![Boundary(Target)]).into()).into(),
             }
         };
 
@@ -89,7 +89,7 @@ prop_compose! {
                             source,
                             target,
                             (
-                                filler_generator,
+                                filler_generator.id,
                                 vec![Boundary(Source), Interior(Singular(i))],
                             )
                                 .into(),
@@ -106,7 +106,7 @@ prop_compose! {
                             x,
                             target,
                             (
-                                filler_generator,
+                                filler_generator.id,
                                 vec![Boundary(Source), Interior(Regular(r))],
                             )
                                 .into(),
@@ -149,8 +149,8 @@ prop_compose! {
         let x = Generator::new(0, 0);
         let internal = |g: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, g, (g, vec![Boundary(Source)]).into()).into(),
-                backward: Rewrite0::new(x, g, (g, vec![Boundary(Target)]).into()).into(),
+                forward: Rewrite0::new(x, g, (g.id, vec![Boundary(Source)]).into()).into(),
+                backward: Rewrite0::new(x, g, (g.id, vec![Boundary(Target)]).into()).into(),
             }
         };
         (

@@ -8,7 +8,7 @@ use insta::*;
 #[test]
 fn scalar() {
     let (sig, scalar) = examples::scalar();
-    let scalar_inverse = scalar.inverse().unwrap();
+    let scalar_inverse = scalar.inverse();
     let scalar_then_scalar = DiagramN::new(
         scalar.source(),
         [scalar.cospans(), scalar.cospans()].concat(),
@@ -119,7 +119,7 @@ fn inverses_1d() {
     let mut sig = SignatureBuilder::new();
     let x = sig.add_zero();
     let f = sig.add(x.clone(), x).unwrap();
-    let f_inverse = f.inverse().unwrap();
+    let f_inverse = f.inverse();
     let f_then_inverse = DiagramN::new(f.source(), vec![f.cospans(), f_inverse.cospans()].concat());
     assert_debug_snapshot!(
         "1-endomorphism_then_inverse",
@@ -147,7 +147,7 @@ fn inverses_1d() {
 #[test]
 fn inverses_2d() {
     let (sig, e) = examples::two_endomorphism();
-    let e_inverse = e.inverse().unwrap();
+    let e_inverse = e.inverse();
 
     let e_then_e = DiagramN::new(e.source(), [e.cospans(), e.cospans()].concat());
     assert!(e_then_e
