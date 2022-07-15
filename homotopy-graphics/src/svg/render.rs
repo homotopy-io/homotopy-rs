@@ -11,9 +11,12 @@ use homotopy_core::{
 use lyon_path::Path;
 
 use super::geom::project_2d;
-use crate::svg::geom::{Circle, Fill, Point, Shape, Stroke};
+use crate::{
+    path_util::simplify_path,
+    svg::geom::{Circle, Fill, Point, Shape, Stroke},
+};
 
-pub type Coordinate<const N: usize> = [SliceIndex; N];
+type Coordinate<const N: usize> = [SliceIndex; N];
 
 /// An action region in the diagram.
 ///
@@ -205,7 +208,8 @@ impl<const N: usize> GraphicElement<N> {
                 make_path(&points, true, layout, projection, &mut path_builder);
             }
 
-            let path = path_builder.build();
+            // Quick enough to do it every time
+            let path = simplify_path(&path_builder.build());
 
             surface_elements.push(Self::Surface(generator, path));
         }

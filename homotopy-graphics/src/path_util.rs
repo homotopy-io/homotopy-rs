@@ -24,10 +24,23 @@ pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<Gr
 
                 let extremes = path_extremes(path).unwrap();
 
-                let mut it = entry.iter_mut().rev();
+                // The following loop is the core algo wire merging.
+                // The idea is: if we see a segment that shares an endpoint
+                // with a previously seen segment, concatenate them,
+                // and otherwise, just push it as is.
+                //
+                // Then everything is concatenated end-to-end and passed to
+                // the simplifier. The more continuous segments we can catch,
+                // the more the simplifier can cut out!
+                //
+                // We do this by checking whether the extremes of a wire
+                // under consideration match those of any earlier wire.
+                // This gives 4 cases, and we need to be careful with what needs
+                // reversing each time (I think I got this right).
+                // If no matches work, we move to the next seen wire.
+                let mut it = entry.iter_mut();
                 loop {
                     if let Some((builder, from, to)) = it.next() {
-                        // Recycle the builder if possible!
                         match (
                             extremes.0.approx_eq(to),
                             extremes.1.approx_eq(to),
@@ -90,6 +103,7 @@ pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<Gr
     new_graphic
 }
 
+// This function computes the effective Being and End of Path.
 fn path_extremes(path: &Path) -> Option<(Point, Point)> {
     match (path.iter().next(), path.iter().last()) {
         // Cannot assume that End refers to same Begin
@@ -106,6 +120,9 @@ fn points_collinear(p0: Point, p1: Point, p2: Point) -> bool {
     (p0.x * (p1.y - p2.y) + p1.x * (p2.y - p0.y) + p2.x * (p0.y - p1.y)).approx_eq(&0.0)
 }
 
+// Simple peep-hole simplifier for paths.
+// Churns through the wire step by step and checks if local
+// simplifications can be performed.
 pub fn simplify_path(path: &Path) -> Path {
     let mut builder = Path::builder();
     let mut it = path.iter();
