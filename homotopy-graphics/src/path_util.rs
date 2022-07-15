@@ -2,9 +2,9 @@ use euclid::{approxeq::ApproxEq, Vector2D};
 use homotopy_common::hash::FastHashMap;
 use homotopy_core::common::Generator;
 use lyon_geom::{CubicBezierSegment, Line, LineSegment};
-use lyon_path::{builder::PathBuilder, Event, Path};
+use lyon_path::{path::Builder, Event, Path};
 
-use crate::svg::{geom::Point, render::GraphicElement};
+use crate::svg::{render::GraphicElement, shape::Point};
 
 pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<GraphicElement<N>> {
     let mut new_graphic = Vec::with_capacity(graphic.len());
@@ -12,7 +12,7 @@ pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<Gr
 
     // (depth, gen) -> Vec<(path, start, end)>
     let mut grouped_wires =
-        FastHashMap::<(usize, Generator), Vec<(lyon_path::path::Builder, Point, Point)>>::default();
+        FastHashMap::<(usize, Generator), Vec<(Builder, Point, Point)>>::default();
 
     for element in graphic {
         match element {
@@ -48,24 +48,32 @@ pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<Gr
                             extremes.0.approx_eq(from),
                         ) {
                             (true, _, _, _) => {
-                                builder.extend(path.iter());
+                                builder.extend_from_paths(&[path.as_slice()]);
                                 *to = extremes.1;
                             }
                             (_, true, _, _) => {
-                                builder.extend(path.reversed().iter());
+                                builder.extend_from_paths(&[path
+                                    .reversed()
+                                    .with_attributes()
+                                    .into_path()
+                                    .as_slice()]);
                                 *to = extremes.0;
                             }
                             (_, _, true, _) => {
                                 let mut new_builder = Path::builder();
-                                new_builder.extend(path.iter());
-                                new_builder.extend(builder.clone().build().iter());
+                                new_builder.extend_from_paths(&[
+                                    path.as_slice(),
+                                    builder.clone().build().as_slice(),
+                                ]);
                                 *builder = new_builder;
                                 *from = extremes.0;
                             }
                             (_, _, _, true) => {
                                 let mut new_builder = Path::builder();
-                                new_builder.extend(path.reversed().iter());
-                                new_builder.extend(builder.clone().build().iter());
+                                new_builder.extend_from_paths(&[
+                                    path.reversed().with_attributes().into_path().as_slice(),
+                                    builder.clone().build().as_slice(),
+                                ]);
                                 *builder = new_builder;
                                 *from = extremes.1;
                             }
@@ -75,7 +83,7 @@ pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<Gr
                         }
                     } else {
                         let mut builder = Path::builder();
-                        builder.extend(path.iter());
+                        builder.extend_from_paths(&[path.as_slice()]);
                         entry.push((builder, extremes.0, extremes.1));
                     }
                     break;
@@ -90,7 +98,7 @@ pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<Gr
     for ((depth, g), wires) in grouped_wires {
         let mut merged_path = Path::builder();
         for (builder, _, _) in wires {
-            merged_path.extend(&builder.build());
+            merged_path.extend_from_paths(&[builder.build().as_slice()]);
         }
         new_graphic.push(GraphicElement::Wire(
             g,

@@ -1,6 +1,6 @@
-use homotopy_core::{common::DimensionError, Diagram};
-
 use std::fmt::Write;
+
+use homotopy_core::{common::DimensionError, Diagram};
 
 use crate::geom::{CubicalGeometry, SimplicialGeometry};
 

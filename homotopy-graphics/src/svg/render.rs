@@ -10,10 +10,10 @@ use homotopy_core::{
 };
 use lyon_path::{builder::NoAttributes, Path};
 
-use super::geom::project_2d;
+use super::shape::project_2d;
 use crate::{
     path_util::simplify_path,
-    svg::shape::{Circle, Fill, Point, Shape, Stroke
+    svg::shape::{Circle, Fill, Point, Shape, Stroke},
 };
 
 type Coordinate<const N: usize> = [SliceIndex; N];
