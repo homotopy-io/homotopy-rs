@@ -353,15 +353,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "find-crate"
-version = "0.6.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59a98bbaacea1c0eb6a0876280051b892eb73594fd90cf3b20e9c817029c57d2"
-dependencies = [
- "toml",
-]
-
-[[package]]
 name = "fixedbitset"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1075,7 +1066,7 @@ checksum = "0ab1bc2a289d34bd04a330323ac98a1b4bc82c9d9fcb1e66b63caa84da26b575"
 [[package]]
 name = "palette"
 version = "0.6.0"
-source = "git+https://github.com/Ogeon/palette#d4cae1e2510205f7626e880389e5e18b45913bd4"
+source = "git+https://github.com/Ogeon/palette#88f40283898b3992e9dc5604afdc16edd6a6d88f"
 dependencies = [
  "approx",
  "fast-srgb8",
@@ -1087,9 +1078,8 @@ dependencies = [
 [[package]]
 name = "palette_derive"
 version = "0.6.0"
-source = "git+https://github.com/Ogeon/palette#d4cae1e2510205f7626e880389e5e18b45913bd4"
+source = "git+https://github.com/Ogeon/palette#88f40283898b3992e9dc5604afdc16edd6a6d88f"
 dependencies = [
- "find-crate",
  "proc-macro2",
  "quote",
  "syn",
@@ -1744,15 +1734,6 @@ checksum = "be4d6b5f19ff7664e8c98d03e2139cb510db9b0a60b55f8e8709b689d939b6bc"
 dependencies = [
  "serde",
  "serde_json",
-]
-
-[[package]]
-name = "toml"
-version = "0.5.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d82e1a7758622a465f8cee077614c73484dac5b836c02ff6a40d5d1010324d7"
-dependencies = [
- "serde",
 ]
 
 [[package]]
