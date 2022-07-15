@@ -17,9 +17,8 @@ use homotopy_core::{
     Boundary, Diagram, DiagramN, Height, SliceIndex,
 };
 use homotopy_graphics::svg::{
-    geom,
-    geom::{path_to_svg, project_2d, Point},
     render::{ActionRegion, GraphicElement},
+    shape::{path_to_svg, project_2d, Point, Shape},
 };
 use web_sys::Element;
 use yew::prelude::*;
@@ -85,7 +84,7 @@ pub enum DiagramSvgMessage {
 /// cached if the diagram does not change.
 struct PreparedDiagram<const N: usize> {
     graphic: Vec<GraphicElement<N>>,
-    actions: Vec<(Simplex<N>, geom::Shape)>,
+    actions: Vec<(Simplex<N>, Shape)>,
     depths: Depths<N>,
     layout: Layout<N>,
 

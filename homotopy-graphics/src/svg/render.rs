@@ -8,10 +8,10 @@ use homotopy_core::{
     layout::Layout,
     projection::{Depths, Homotopy, Projection},
 };
-use lyon_path::Path;
+use lyon_path::{builder::NoAttributes, Path};
 
-use super::geom::project_2d;
-use crate::svg::geom::{Circle, Fill, Point, Shape, Stroke};
+use super::shape::project_2d;
+use crate::svg::shape::{Circle, Fill, Point, Shape, Stroke};
 
 type Coordinate<const N: usize> = [SliceIndex; N];
 
@@ -196,7 +196,7 @@ impl<const N: usize> GraphicElement<N> {
         }
 
         for (generator, surfaces) in grouped_surfaces {
-            let mut path_builder = Path::svg_builder();
+            let mut path_builder = NoAttributes::new().with_svg();
 
             for points in merge_simplices(surfaces) {
                 make_path(&points, true, layout, projection, &mut path_builder);
@@ -330,7 +330,7 @@ fn build_path<const N: usize>(
     layout: &Layout<N>,
     projection: &Projection<N>,
 ) -> Path {
-    let mut builder = Path::svg_builder();
+    let mut builder = NoAttributes::new().with_svg();
     make_path(points, closed, layout, projection, &mut builder);
     builder.build()
 }
