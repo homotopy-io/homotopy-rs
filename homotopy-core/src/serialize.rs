@@ -236,7 +236,7 @@ impl Store {
                 ConeInternal::Cone0 {
                     target,
                     regular_slice,
-                } => Cone::new(
+                } => Cone::new_untrimmed(
                     cone.index as usize,
                     vec![],
                     target,
@@ -248,7 +248,7 @@ impl Store {
                     target,
                     regular_slices,
                     singular_slices,
-                } => Cone::new(
+                } => Cone::new_untrimmed(
                     cone.index as usize,
                     source,
                     target,
@@ -274,7 +274,7 @@ impl Store {
                     .into_iter()
                     .map(|slice| self.unpack_rewrite(slice))
                     .collect::<Option<_>>()?;
-                let cone = Some(Cone::new(
+                let cone = Some(Cone::new_untrimmed(
                     cone.index as usize,
                     source,
                     target,
