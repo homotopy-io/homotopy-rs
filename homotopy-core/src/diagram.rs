@@ -485,18 +485,18 @@ impl DiagramN {
         })
     }
 
-    pub fn inverse(&self) -> Result<Self, NewDiagramError> {
-        if let [cs] = self.cospans() {
-            Ok(Self::new_unsafe(
-                self.slices().last().unwrap(),
-                vec![Cospan {
-                    forward: cs.backward.clone(),
-                    backward: cs.forward.clone(),
-                }],
-            ))
-        } else {
-            Err(NewDiagramError::NonInvertible)
-        }
+    pub fn inverse(&self) -> Self {
+        let cospans = self
+            .cospans()
+            .iter()
+            .map(|cs| Cospan {
+                forward: cs.backward.invert_targets(),
+                backward: cs.forward.invert_targets(),
+            })
+            .rev()
+            .collect();
+
+        Self::new_unsafe(self.target(), cospans)
     }
 
     #[must_use]
@@ -694,9 +694,6 @@ pub enum NewDiagramError {
 
     #[error("can't create diagram with non-globular boundaries")]
     NonGlobular,
-
-    #[error("can't create inverse diagram")]
-    NonInvertible,
 }
 
 #[derive(Debug, Error)]

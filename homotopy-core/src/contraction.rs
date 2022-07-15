@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     convert::{Into, TryInto},
     hash::Hash,
 };
@@ -24,10 +25,10 @@ use crate::{
     attach::{attach, BoundaryPath},
     common::{Boundary, DimensionError, Height, SingularHeight},
     diagram::{Diagram, DiagramN},
-    expansion::{expand_propagate, expand_smooth},
+    expansion::expand_propagate,
     graph::{Explodable, ExplosionOutput, ExternalRewrite, InternalRewrite},
     normalization,
-    rewrite::{Cone, Cospan, Label, Rewrite, Rewrite0, RewriteN},
+    rewrite::{Cone, ConeInternal, Cospan, Label, Rewrite, Rewrite0, RewriteN},
     signature::Signature,
     typecheck::{typecheck_cospan, TypeError},
     Direction, Generator, SliceIndex,
@@ -148,11 +149,11 @@ fn contract_base(
     };
 
     let mut graph = DiGraph::new();
-    let r0 = graph.add_node((regular0.clone(), Default::default()));
-    let s0 = graph.add_node((singular0.clone(), bias0));
-    let r1 = graph.add_node((regular1.clone(), Default::default()));
-    let s1 = graph.add_node((singular1.clone(), bias1));
-    let r2 = graph.add_node((regular2.clone(), Default::default()));
+    let r0 = graph.add_node((regular0.clone(), None, vec![Height::Regular(0)]));
+    let s0 = graph.add_node((singular0.clone(), bias0, vec![Height::Singular(0)]));
+    let r1 = graph.add_node((regular1.clone(), None, vec![Height::Regular(1)]));
+    let s1 = graph.add_node((singular1.clone(), bias1, vec![Height::Singular(1)]));
+    let r2 = graph.add_node((regular2.clone(), None, vec![Height::Regular(2)]));
     graph.add_edge(r0, s0, cospan0.forward.clone());
     graph.add_edge(r1, s0, cospan0.backward.clone());
     graph.add_edge(r1, s1, cospan1.forward.clone());
@@ -168,26 +169,36 @@ fn contract_base(
         }
     }
 
+    let cospan = Cospan {
+        forward: regular_slices[0].clone(),
+        backward: regular_slices[2].clone(),
+    };
+
     let contract = RewriteN::new(
         diagram.dimension(),
         vec![Cone::new(
             height,
             vec![cospan0.clone(), cospan1.clone()],
-            Cospan {
-                forward: regular_slices[0].clone(),
-                backward: regular_slices[2].clone(),
-            },
+            cospan.clone(),
             regular_slices,
             singular_slices,
         )],
     );
 
-    let expand = expand_smooth(
-        &diagram
-            .clone()
-            .rewrite_forward(&contract)
-            .map_err(|_err| ContractionError::Invalid)?,
-    );
+    let expand = {
+        let smoothable = cospan.forward == cospan.backward && cospan.forward.is_redundant();
+        let cone = smoothable.then(||
+            Cone::new(
+                height, 
+                vec![], 
+                cospan.clone(), 
+                vec![cospan.forward], 
+                vec![]
+            )
+        );
+        RewriteN::new(diagram.dimension(), cone.into_iter().collect())
+    };
+
     Ok(ContractExpand { contract, expand })
 }
 
@@ -283,7 +294,7 @@ where
 }
 
 fn collapse<Ix: IndexType>(
-    graph: &DiGraph<(Diagram, Option<Bias>), Rewrite, Ix>,
+    graph: &DiGraph<(Diagram, Option<Bias>, Vec<Height>), Rewrite, Ix>,
 ) -> Result<Cocone<Ix>, ContractionError> {
     let dimension = graph
         .node_weights()
@@ -292,7 +303,7 @@ fn collapse<Ix: IndexType>(
         .0
         .dimension();
 
-    for (diagram, _bias) in graph.node_weights() {
+    for (diagram, _bias, _coord) in graph.node_weights() {
         assert_eq!(diagram.dimension(), dimension);
     }
 
@@ -308,7 +319,7 @@ fn collapse<Ix: IndexType>(
 }
 
 fn collapse_base<'a, Ix: IndexType>(
-    graph: &'a DiGraph<(Diagram, Option<Bias>), Rewrite, Ix>,
+    graph: &'a DiGraph<(Diagram, Option<Bias>, Vec<Height>), Rewrite, Ix>,
 ) -> Result<Cocone<Ix>, ContractionError> {
     let mut union_find = UnionFind::new(graph.node_count());
 
@@ -320,7 +331,7 @@ fn collapse_base<'a, Ix: IndexType>(
     // find collapsible edges
     for (s, t) in graph.edge_references().filter_map(|e| {
         let r: &Rewrite0 = e.weight().try_into().unwrap();
-        r.is_identity().then(|| (e.source(), e.target()))
+        r.0.as_ref().map_or(true, |(s, t, _)| s.id == t.id).then(|| (e.source(), e.target()))
     }) {
         if (graph.edges_directed(s, Incoming).all(|p| {
             if let Some(c) = graph.find_edge(p.source(), t) {
@@ -341,29 +352,34 @@ fn collapse_base<'a, Ix: IndexType>(
     }
 
     // unify all equivalence classes of maximal dimension
-    let (max_dim_index, (max_dim_diagram, _)) = graph
+    let (max_dim_index, max_dim_generator) = graph
         .node_references()
-        .max_by_key(|&(_i, (d, _bias))| {
+        .map(|(i, (d, _bias, _coord))| {
             let g: Generator = d.try_into().unwrap();
-            g.dimension
+            (i, g)
         })
+        .max_by_key(|(_, g)| g.dimension)
         .ok_or(ContractionError::Invalid)?;
-    let max_dim_generator: Generator = max_dim_diagram
-        .try_into()
-        .map_err(|_err| ContractionError::Invalid)?;
-    for (x, y) in graph
-        .node_references()
-        .filter_map(|(i, (d, _bias))| {
-            let g: Generator = d.try_into().unwrap();
-            (g.dimension == max_dim_generator.dimension).then(|| i)
-        })
-        .tuple_windows()
-    {
-        if graph[x].0 != graph[y].0 {
-            // found distinct elements of maximal dimension
-            return Err(ContractionError::Invalid);
+
+    let codimension = graph[max_dim_index]
+        .2
+        .len()
+        .saturating_sub(max_dim_generator.dimension);
+
+    let mut orientations = HashMap::<Vec<Height>, isize>::default();
+
+    for (i, (d, _bias, coord)) in graph.node_references() {
+        let g: Generator = d.try_into().unwrap();
+        if g.dimension == max_dim_generator.dimension {
+            if g.id != max_dim_generator.id {
+                // found distinct elements of maximal dimension
+                return Err(ContractionError::Invalid);
+            }
+            union_find.union(i, max_dim_index);
+
+            let key = coord[..codimension].to_vec();
+            *orientations.entry(key).or_default() += g.orientation;
         }
-        union_find.union(x, y);
     }
 
     // compute quotient graph
@@ -372,8 +388,9 @@ fn collapse_base<'a, Ix: IndexType>(
         let s = union_find.find_mut(e.source());
         let t = union_find.find_mut(e.target());
         if s != t {
-            if let Some(old) = quotient.add_edge(s, t, e.weight()) {
-                if old != e.weight() {
+            let label = label(e.weight());
+            if let Some(old) = quotient.add_edge(s, t, label) {
+                if old != label {
                     // quotient graph not well-defined
                     return Err(ContractionError::Invalid);
                 }
@@ -381,35 +398,54 @@ fn collapse_base<'a, Ix: IndexType>(
         }
     }
 
+    // check orientations
+    let (_, &first_orientation) = orientations.iter().next().unwrap();
+    if !(first_orientation <= 1 && first_orientation >= -1) {
+        return Err(ContractionError::Invalid);
+    }
+    for (_, orientation) in orientations {
+        if orientation != first_orientation {
+            return Err(ContractionError::Invalid);
+        }
+    }
+
+    let colimit = Generator {
+        orientation: first_orientation,
+        ..max_dim_generator
+    };
+
     // construct colimit legs
     let legs = {
         let mut legs = IdxVec::with_capacity(graph.node_count());
-        for n in graph.node_indices() {
-            legs.push({
+        for (n, (d, _bias, _coord)) in graph.node_references() {
+            let g: Generator = d.try_into().unwrap();
+            let r = {
                 let (p, q) = (union_find.find_mut(n), union_find.find_mut(max_dim_index));
                 if p == q {
-                    Rewrite::identity(0)
+                    Rewrite0::new(g, colimit, Label::new(vec![]))
                 } else {
-                    quotient
+                    let label = quotient
                         .edge_weight(p, q)
                         .copied()
-                        .cloned()
                         .ok_or(ContractionError::Invalid)?
+                        .unwrap();
+                    Rewrite0::new(g, colimit, label.clone())
                 }
-            });
+            };
+            legs.push(r.into());
         }
         legs
     };
 
     let cocone = Cocone {
-        colimit: max_dim_diagram.clone(),
+        colimit: colimit.into(),
         legs,
     };
     Ok(cocone)
 }
 
 fn collapse_recursive<Ix: IndexType>(
-    graph: &DiGraph<(Diagram, Option<Bias>), Rewrite, Ix>,
+    graph: &DiGraph<(Diagram, Option<Bias>, Vec<Height>), Rewrite, Ix>,
 ) -> Result<Cocone<Ix>, ContractionError> {
     // Input: graph of n-diagrams and n-rewrites
 
@@ -428,11 +464,18 @@ fn collapse_recursive<Ix: IndexType>(
         node_to_nodes: node_to_slices,
         ..
     }: ExplosionOutput<_, _, _, ExplodedIx> = graph
-        .map(|_, (d, bias)| (bias, d.clone()), |_, e| ((), e.clone()))
+        .map(
+            |_, (d, bias, coord)| ((*bias, coord.clone()), d.clone()),
+            |_, e| ((), e.clone()),
+        )
         .explode(
-            |parent_node, _bias, si| match si {
+            |parent_node, (_bias, coord), si| match si {
                 SliceIndex::Boundary(_) => None,
-                SliceIndex::Interior(h) => Some((parent_node, h)),
+                SliceIndex::Interior(h) => {
+                    let mut coord = coord.to_owned();
+                    coord.push(h);
+                    Some((parent_node, h, coord))
+                }
             },
             |_parent_node, _bias, internal| match internal {
                 InternalRewrite::Boundary(_) => None,
@@ -475,7 +518,7 @@ fn collapse_recursive<Ix: IndexType>(
             // R -> S <- ... -> S <- R
             for (&s, &snext) in node_to_slices[singular]
                 .iter()
-                .filter(|&i| matches!(exploded[*i], ((_, Height::Singular(_)), _)))
+                .filter(|&i| matches!(exploded[*i], ((_, Height::Singular(_), _), _)))
                 .tuple_windows::<(_, _)>()
             {
                 // uni-directional edges between singular heights originating from the same diagram
@@ -562,7 +605,7 @@ fn collapse_recursive<Ix: IndexType>(
             // all targeting Regular(0)
             exploded
                 .node_references()
-                .filter_map(|(i, ((p, h), _))| {
+                .filter_map(|(i, ((p, h, _coord), _))| {
                     (graph.externals(Outgoing).contains(p) // comes from singular height (i.e. in Δ)
                         && *h == Height::Regular(0))
                     .then(|| i)
@@ -607,9 +650,9 @@ fn collapse_recursive<Ix: IndexType>(
             // the subproblem for each SCC is the subgraph of the exploded graph containing the SCC
             // and its adjacent regulars closed under reverse-reachability
             let mut restriction_to_exploded = IdxVec::new();
-            let restriction: DiGraph<(Diagram, Option<Bias>), _, RestrictionIx> = exploded
+            let restriction: DiGraph<(Diagram, Option<Bias>, Vec<Height>), _, RestrictionIx> = exploded
                 .filter_map(
-                    |i, (_, diagram)| {
+                    |i, ((_, _, coord), diagram)| {
                         scc.iter()
                             .chain(adjacent_regulars[0].values())
                             .chain(adjacent_regulars[1].values())
@@ -619,7 +662,7 @@ fn collapse_recursive<Ix: IndexType>(
                             })
                             .then(|| {
                                 restriction_to_exploded.push(i);
-                                (diagram.clone(), graph[exploded[i].0 .0].1)
+                                (diagram.clone(), graph[exploded[i].0 .0].1, coord.clone())
                             })
                     },
                     |_, (ds, rewrite)| Some((ds, rewrite.clone())),
@@ -652,10 +695,11 @@ fn collapse_recursive<Ix: IndexType>(
                 .ok_or(ContractionError::Invalid)?;
             // throw away extra information used to compute source and target
             let restriction = restriction.filter_map(
-                |_, (d, _)| {
+                |_, (d, _, coord)| {
                     (
                         d.clone(),
                         None, // throw away biasing information for subproblems
+                        coord.clone(),
                     )
                         .into()
                 },
@@ -736,4 +780,18 @@ fn collapse_recursive<Ix: IndexType>(
         colimit: colimit.into(),
         legs,
     })
+}
+
+impl Rewrite {
+    fn is_redundant(&self) -> bool {
+        match self {
+            Rewrite::Rewrite0(r) => r.target().map_or(false, |t| t.orientation == 0),
+            Rewrite::RewriteN(r) => r.cones().iter().all(|cone| match cone.internal.get() {
+                ConeInternal::Cone0 { regular_slice, .. } => regular_slice.is_redundant(),
+                ConeInternal::ConeN {
+                    singular_slices, ..
+                } => singular_slices.iter().all(|slice| slice.is_redundant()),
+            }),
+        }
+    }
 }
