@@ -6,8 +6,10 @@ pub trait GeneratorStyle {
     // TODO(thud): migrate color-related code to here for consistency
 }
 
-pub trait GeneratorStyles<T: GeneratorStyle> {
-    fn generator_style(&self, g: Generator) -> Option<&T>;
+pub trait SignatureStyleData {
+    type T: GeneratorStyle;
+
+    fn generator_style(&self, g: Generator) -> Option<&Self::T>;
 }
 
 pub enum VertexShape {

@@ -379,7 +379,6 @@ impl ItemView {
         let selected_shape = self.edit.shape.clone().unwrap_or_else(|| shape.clone());
         let shape_preset_buttons = VERTEX_SHAPES.iter().map(|shape| {
             let reshape = ctx.link().callback(move |_| {
-                log::info!("reshape requested in item.rs {:?}", shape);
                 ItemViewMessage::Edit(SignatureItemEdit::Reshape(shape.clone()))
             });
             let icon_name = match shape {

@@ -89,19 +89,6 @@ impl Component for App {
                     }
                 }
 
-                // use model::proof::{Action::EditSignature, SignatureEdit::Edit};
-                // if let model::Action::Proof(EditSignature(Edit(ref n, ref edit))) = action {
-                //     let proof = self.state.with_proof(Clone::clone);
-                //     let generator = proof.signature().generator_from_node(*n).unwrap();
-                //     log::debug!("found generator {:?}", generator);
-                //     let action = match edit {
-                //         SignatureItemEdit::Rename(name) => generators::Action::Rename(generator, name.clone()),
-                //         SignatureItemEdit::Recolor(color) => generators::Action::Recolor(generator, color.clone()),
-                //         SignatureItemEdit::Reshape(shape) => generators::Action::Reshape(generator, shape.clone()),
-                //     };
-                //     return self.update(_ctx, Message::Dispatch(model::Action::EditGeneratorInfo(action)));
-                // }
-
                 let performance = web_sys::window().unwrap().performance().unwrap();
                 performance.mark("startStateUpdate").unwrap();
                 let result = self.state.update(action);
@@ -138,8 +125,6 @@ impl Component for App {
 
                 self.signature_stylesheet
                     .update(self.state.with_proof(|p| p.signature().clone()));
-
-                log::debug!("new state {:?}", self.state);
 
                 true
             }

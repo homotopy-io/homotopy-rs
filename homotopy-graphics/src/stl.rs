@@ -4,24 +4,20 @@ use homotopy_core::{common::DimensionError, Diagram};
 
 use crate::{
     geom::{CubicalGeometry, SimplicialGeometry},
-    style::{GeneratorStyle, GeneratorStyles},
+    style::SignatureStyleData,
 };
 
-pub fn render<S, T>(
+pub fn render(
     diagram: &Diagram,
-    generator_styles: Option<&S>,
-) -> Result<String, DimensionError>
-where
-    S: GeneratorStyles<T>,
-    T: GeneratorStyle,
-{
+    signature_styles: &impl SignatureStyleData,
+) -> Result<String, DimensionError> {
     let mut output = String::new();
 
     let mut cubical = CubicalGeometry::new::<3>(diagram)?;
     cubical.subdivide(false, 3);
 
     let mut simplicial = SimplicialGeometry::from(cubical);
-    simplicial.inflate_3d(3, generator_styles);
+    simplicial.inflate_3d(3, signature_styles);
 
     writeln!(output, "solid assoc").unwrap();
 

@@ -12,7 +12,7 @@ use ultraviolet::{Mat3, Vec3, Vec4};
 
 use crate::{
     parity::Parity,
-    style::{GeneratorStyle, GeneratorStyles, VertexShape},
+    style::{GeneratorStyle, SignatureStyleData, VertexShape},
 };
 
 // Geometry
@@ -500,20 +500,12 @@ impl SimplicialGeometry {
         }
     }
 
-    pub fn inflate_3d<S, T>(&mut self, samples: u8, generator_styles: Option<&S>)
-    where
-        S: GeneratorStyles<T>,
-        T: GeneratorStyle,
-    {
+    pub fn inflate_3d(&mut self, samples: u8, signature_styles: &impl SignatureStyleData) {
         for point in self.points.keys() {
             let generator = self.verts[self.points[point]].generator;
-            let shape = if let Some(styles) = generator_styles {
-                styles
-                    .generator_style(generator)
-                    .map_or_else(Default::default, |style| style.shape().unwrap_or_default())
-            } else {
-                Default::default()
-            };
+            let shape = signature_styles
+                .generator_style(generator)
+                .map_or_else(Default::default, |style| style.shape().unwrap_or_default());
             self.inflate_point_3d(self.points[point], samples, &shape);
         }
 

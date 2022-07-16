@@ -133,7 +133,7 @@ impl State {
                     .unwrap();
                 }
 
-                let data = tikz::render(&diagram, &stylesheet, Some(&signature)).unwrap();
+                let data = tikz::render(&diagram, &stylesheet, &signature).unwrap();
                 serialize::generate_download("filename_todo", "tikz", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
@@ -201,7 +201,7 @@ impl State {
                     .unwrap();
                 }
 
-                let data = manim::render(&diagram, Some(&signature), &stylesheet).unwrap();
+                let data = manim::render(&diagram, &signature, &stylesheet).unwrap();
                 serialize::generate_download("filename_todo", "py", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
@@ -209,7 +209,7 @@ impl State {
             Action::ExportStl => {
                 let signature = self.with_proof(|p| p.signature.clone());
                 let diagram = self.with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram());
-                let data = stl::render(&diagram, Some(&signature)).unwrap();
+                let data = stl::render(&diagram, &signature).unwrap();
                 serialize::generate_download("filename_todo", "stl", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }

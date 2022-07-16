@@ -3,7 +3,7 @@ use std::{fmt, ops::Deref};
 use homotopy_core::{common::Generator, Diagram};
 use homotopy_graphics::{
     style,
-    style::{GeneratorStyle, GeneratorStyles},
+    style::{GeneratorStyle, SignatureStyleData},
 };
 use palette::Srgb;
 use serde::{Deserialize, Serialize};
@@ -19,8 +19,10 @@ pub struct GeneratorInfo {
     pub diagram: Diagram,
 }
 
-impl GeneratorStyles<GeneratorInfo> for Signature {
-    fn generator_style(&self, g: Generator) -> Option<&GeneratorInfo> {
+impl SignatureStyleData for Signature {
+    type T = GeneratorInfo;
+
+    fn generator_style(&self, g: Generator) -> Option<&Self::T> {
         self.generator_info(g)
     }
 }

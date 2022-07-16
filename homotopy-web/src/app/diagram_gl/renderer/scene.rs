@@ -5,7 +5,7 @@ use homotopy_core::{Diagram, Generator};
 use homotopy_graphics::{
     geom::{CubicalGeometry, SimplicialGeometry, VertData},
     gl::{array::VertexArray, GlCtx, Result},
-    style::{GeneratorStyle, GeneratorStyles},
+    style::SignatureStyleData,
     vertex_array,
 };
 use ultraviolet::Vec4;
@@ -55,19 +55,15 @@ impl AnimationCurve {
 }
 
 impl Scene {
-    pub fn new<S, T>(
+    pub fn new(
         ctx: &GlCtx,
         diagram: &Diagram,
         view: View,
         smooth_time: bool,
         subdivision_depth: u8,
         geometry_samples: u8,
-        generator_styles: &S,
-    ) -> Result<Self>
-    where
-        S: GeneratorStyles<T>,
-        T: GeneratorStyle,
-    {
+        signature_styles: &impl SignatureStyleData,
+    ) -> Result<Self> {
         let diagram = diagram.clone();
 
         let mut scene = Self {
@@ -88,23 +84,19 @@ impl Scene {
             smooth_time,
             subdivision_depth,
             geometry_samples,
-            generator_styles,
+            signature_styles,
         )?;
         Ok(scene)
     }
 
-    pub fn reload_meshes<S, T>(
+    pub fn reload_meshes(
         &mut self,
         ctx: &GlCtx,
         smooth_time: bool,
         subdivision_depth: u8,
         geometry_samples: u8,
-        generator_styles: &S,
-    ) -> Result<()>
-    where
-        S: GeneratorStyles<T>,
-        T: GeneratorStyle,
-    {
+        signature_styles: &impl SignatureStyleData,
+    ) -> Result<()> {
         self.components.clear();
         self.wireframe_components.clear();
         self.cylinder_components.clear();
@@ -159,7 +151,7 @@ impl Scene {
         let mut simplicial = SimplicialGeometry::from(cubical);
 
         if self.view.dimension() <= 3 {
-            simplicial.inflate_3d(geometry_samples, Some(generator_styles));
+            simplicial.inflate_3d(geometry_samples, signature_styles);
             for tri_buffers in simplicial.buffer_tris(ctx)? {
                 self.components.push((
                     tri_buffers.generator,

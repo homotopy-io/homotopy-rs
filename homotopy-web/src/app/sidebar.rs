@@ -129,7 +129,6 @@ impl Component for Sidebar {
                             .send_message(SidebarMsg::Toggle(drawers::NavDrawer::DRAWER_SIGNATURE));
                     }
                 }
-                log::info!("sidebar.rs {:?}", action);
                 ctx.props().dispatch.emit(action);
                 false
             }
