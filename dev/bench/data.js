@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1657807215518,
+  "lastUpdate": 1657986155506,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -36719,6 +36719,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 293.22,
             "range": "+/- 0.750",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jasper.parish@gmail.com",
+            "name": "Jasper Parish",
+            "username": "thud"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "afebc3c7172357f07090feba7409742e9b388207",
+          "message": "Vertex styles for generators (#588)\n\n* Move `GeneratorInfo` and related structs into new `generators.rs`\r\n* Add generator shape picker functionality\r\n* Add 2D SVG rendering of vertex shapes\r\n* Add tikz rendering of vertex shapes\r\n* Add manim rendering of vertex shapes\r\n* Add 3D STL rendering of vertex shapes\r\n* Add 3D GL rendering of generator vertex shapes\r\n\r\n* This adds `style.rs` to `homotopy-graphics` which contains the traits\r\n  necessary to provide styles for generators. As of now, it provides the\r\n  shape of a generator's vertex. In future, it will provide labeling\r\n  functionality and possibly colors.",
+          "timestamp": "2022-07-16T16:32:06+01:00",
+          "tree_id": "c22931077beda6aa6119cd5e83e06038bc7ffa0b",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/afebc3c7172357f07090feba7409742e9b388207"
+        },
+        "date": 1657986146828,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.509,
+            "range": "+/- 0.013",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 7.5761,
+            "range": "+/- 0.060",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 19.961,
+            "range": "+/- 0.127",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 49.55,
+            "range": "+/- 0.337",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 124.02,
+            "range": "+/- 1.280",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 340.93,
+            "range": "+/- 2.830",
             "unit": "ms"
           }
         ]
