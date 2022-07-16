@@ -384,8 +384,8 @@ button, .button {
   transition: height 100ms;
 }
 
-.signature__item.signature__item-coloring {
-  height: 120px;
+.signature__item.signature__item-styling {
+  height: 160px;
 }
 
 .signature__item-info {
@@ -476,16 +476,31 @@ button, .button {
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
   margin-top: var(--space-1);
   gap: var(--space-0);
   box-sizing: border-box;
+}
+
+.signature__generator-picker-color {
+    justify-content: space-between;
+}
+
+.signature__generator-picker-shape {
+    justify-content: flex-start;
 }
 
 .signature__generator-picker-preset {
   flex: 1 1 21%;
   height: 24px;
   border-radius: var(--space-0);
+}
+
+.signature__generator-picker-shape > .signature__generator-picker-preset {
+    flex: 0;
+}
+
+.signature__generator-picker-preset-shape-selected {
+    color: black;
 }
 
 .signature__generator-picker-custom {
