@@ -21,25 +21,6 @@ use crate::{
 const OCCLUSION_DELTA: f32 = 0.2;
 const INDENT: &str = "    ";
 
-fn render_vertex(generator_style: &impl GeneratorStyle, color: &str) -> String {
-    use VertexShape::{Circle, Square};
-    const CIRCLE_RADIUS: f32 = 0.125;
-    const SQUARE_SIDELENGTH: f32 = 0.125 / 2.;
-
-    match generator_style.shape().unwrap_or_default() {
-        Circle => format!(
-            "Circle(radius={radius},color=C[\"{color}\"],fill_opacity=1)",
-            radius = CIRCLE_RADIUS,
-            color = color,
-        ),
-        Square => format!(
-            "Square(side_length={side_length},color=C[\"{color}\"],fill_opacity=1)",
-            side_length = SQUARE_SIDELENGTH,
-            color = color,
-        ),
-    }
-}
-
 pub fn color(generator: Generator) -> String {
     format!("generator_{}_{}", generator.id, generator.dimension)
 }
@@ -186,19 +167,10 @@ pub fn render(
         ind = INDENT
     )
     .unwrap();
-    let default_vertex = |color| {
-        format!(
-            "Circle(radius=0.125,color=C[\"{color}\"],fill_opacity=1)",
-            color = color
-        )
-    };
+
     //TODO work out right radius for circles to match SVG/tikz export.
     for (g, point) in points {
-        let vertex = signature_styles
-            .generator_style(g)
-            .map_or(default_vertex(color(g)), |style| {
-                render_vertex(style, &color(g))
-            });
+        let vertex = render_vertex(signature_styles.generator_style(g).unwrap(), &color(g));
         writeln!(
             manim,
             "{ind}{ind}points.add({vertex}.move_to({pt})) # circle_{id}_{dim}",
@@ -260,6 +232,25 @@ fn max_point_path(path: &Path) -> Point2D<f32> {
         }
     }
     max_point
+}
+
+fn render_vertex(generator_style: &impl GeneratorStyle, color: &str) -> String {
+    use VertexShape::{Circle, Square};
+    const CIRCLE_RADIUS: f32 = 0.125;
+    const SQUARE_SIDELENGTH: f32 = 0.125 / 2.;
+
+    match generator_style.shape().unwrap_or_default() {
+        Circle => format!(
+            "Circle(radius={radius},color=C[\"{color}\"],fill_opacity=1)",
+            radius = CIRCLE_RADIUS,
+            color = color,
+        ),
+        Square => format!(
+            "Square(side_length={side_length},color=C[\"{color}\"],fill_opacity=1)",
+            side_length = SQUARE_SIDELENGTH,
+            color = color,
+        ),
+    }
 }
 
 fn render_path(path: &Path) -> String {

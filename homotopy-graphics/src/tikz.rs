@@ -20,33 +20,6 @@ use crate::{
 
 const OCCLUSION_DELTA: f32 = 0.2;
 
-fn render_vertex(generator_style: &impl GeneratorStyle, point: Point2D<f32>) -> String {
-    const CIRCLE_RADIUS: f32 = 0.14; // r = 4pt
-    const SQUARE_SIDELENGTH: f32 = 0.28; // 8pt x 8pt
-
-    use VertexShape::{Circle, Square};
-    let shape = generator_style.shape().unwrap_or_default();
-    let shape_str = match shape {
-        Circle => "circle",
-        Square => "square",
-    };
-    let (xo, yo) = match shape {
-        Circle => (0.0, 0.0),
-        Square => (-SQUARE_SIDELENGTH / 2., -SQUARE_SIDELENGTH / 2.),
-    };
-    let x1 = (point.x * 100.0 + xo).round() / 100.0;
-    let y1 = (point.y * 100.0 + yo).round() / 100.0;
-    let sz = match shape {
-        Circle => vec![CIRCLE_RADIUS],
-        Square => vec![SQUARE_SIDELENGTH + x1, SQUARE_SIDELENGTH + y1],
-    }
-    .iter()
-    .map(|&s| s.to_string())
-    .collect::<Vec<String>>()
-    .join(", ");
-    format!("({},{}) {} ({});", x1, y1, shape_str, sz)
-}
-
 pub fn color(generator: Generator) -> String {
     format!("generator-{}-{}", generator.id, generator.dimension)
 }
@@ -131,14 +104,9 @@ pub fn render(
     }
 
     // Points
-    // TODO(thud): this `default_shape` should not be hardcoded here
-    let default_shape = |point| format!("{} circle (4pt)", render_point(point));
     for (g, point) in points {
-        write!(tikz, "\\fill[{}] ", color(g)).unwrap();
-        let vertex = signature_styles
-            .generator_style(g)
-            .map_or(default_shape(point), |style| render_vertex(style, point));
-        writeln!(tikz, " {}", vertex).unwrap();
+        let vertex = render_vertex(signature_styles.generator_style(g).unwrap(), point);
+        writeln!(tikz, "\\fill[{}] {}", color(g), vertex).unwrap();
     }
 
     writeln!(tikz, "\\end{{tikzpicture}}").unwrap();
@@ -150,6 +118,34 @@ fn render_point(point: Point2D<f32>) -> String {
     let x = (point.x * 100.0).round() / 100.0;
     let y = (point.y * 100.0).round() / 100.0;
     format!("({}, {})", x, y)
+}
+
+fn render_vertex(generator_style: &impl GeneratorStyle, point: Point2D<f32>) -> String {
+    use VertexShape::{Circle, Square};
+
+    const CIRCLE_RADIUS: f32 = 0.14; // r = 4pt
+    const SQUARE_SIDELENGTH: f32 = 0.28; // 8pt x 8pt
+
+    let shape = generator_style.shape().unwrap_or_default();
+    let shape_str = match shape {
+        Circle => "circle",
+        Square => "rectangle",
+    };
+    let (xo, yo) = match shape {
+        Circle => (0.0, 0.0),
+        Square => (-SQUARE_SIDELENGTH / 2., -SQUARE_SIDELENGTH / 2.),
+    };
+    let x1 = ((xo + point.x) * 100.0).round() / 100.0;
+    let y1 = ((yo + point.y) * 100.0).round() / 100.0;
+    let sz = match shape {
+        Circle => vec![CIRCLE_RADIUS],
+        Square => vec![SQUARE_SIDELENGTH + x1, SQUARE_SIDELENGTH + y1],
+    }
+    .iter()
+    .map(|&s| s.to_string())
+    .collect::<Vec<String>>()
+    .join(", ");
+    format!("({},{}) {} ({});", x1, y1, shape_str, sz)
 }
 
 fn render_path(path: &Path) -> String {
