@@ -5,7 +5,10 @@
 use homotopy_core::common::Boundary;
 use yew::prelude::*;
 
-use crate::{app::diagram_svg::DiagramSvg, model::proof::SelectedBoundary};
+use crate::{
+    app::diagram_svg::DiagramSvg,
+    model::proof::{SelectedBoundary, Signature},
+};
 
 pub struct BoundaryPreview {}
 
@@ -14,6 +17,7 @@ pub enum BoundaryPreviewMessage {}
 #[derive(Clone, PartialEq, Properties)]
 pub struct BoundaryPreviewProps {
     pub boundary: SelectedBoundary,
+    pub signature: Signature,
 }
 
 impl Component for BoundaryPreview {
@@ -73,6 +77,7 @@ impl BoundaryPreview {
             <DiagramSvg<N>
                     diagram={ctx.props().boundary.diagram.clone()}
                     id="boundary__preview"
+                    signature={ctx.props().signature.clone()}
             />
         }
     }

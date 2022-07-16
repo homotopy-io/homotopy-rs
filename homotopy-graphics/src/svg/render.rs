@@ -109,7 +109,7 @@ pub enum GraphicElement<const N: usize> {
     Surface(Generator, Path),
     /// A wire given by a path to be stroked.
     Wire(Generator, Path, Vec<Path>),
-    /// A point that is drawn as a circle.
+    /// A point that is drawn as determined by its vertex_shape
     Point(Generator, Point),
 }
 

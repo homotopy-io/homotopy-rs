@@ -181,6 +181,7 @@ impl App {
             Some(b) => html! {
                 <BoundaryPreview
                     boundary={b.clone()}
+                    signature={signature.clone()}
                 />
             },
             None => Default::default(),

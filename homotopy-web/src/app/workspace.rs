@@ -123,6 +123,7 @@ impl WorkspaceView {
                 <DiagramSvg<N>
                     diagram={Self::visible_diagram(ctx)}
                     id="workspace__diagram"
+                    signature={ctx.props().signature.clone()}
                     on_select={self.on_select.clone()}
                     on_homotopy={self.on_homotopy.clone()}
                     highlight={highlight}
