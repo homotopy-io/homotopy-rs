@@ -14,6 +14,7 @@ use lyon_path::{Event, Path};
 
 use crate::{
     path_util::{offset, simplify_graphic},
+    style::{GeneratorStyle, SignatureStyleData, VertexShape},
     svg::render::GraphicElement,
 };
 
@@ -23,7 +24,11 @@ pub fn color(generator: Generator) -> String {
     format!("generator-{}-{}", generator.id, generator.dimension)
 }
 
-pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionError> {
+pub fn render(
+    diagram: &Diagram,
+    stylesheet: &str,
+    signature_styles: &impl SignatureStyleData,
+) -> Result<String, DimensionError> {
     let layout = Layout::<2>::new(diagram)?;
     let complex = make_complex(diagram);
     let depths = Depths::<2>::new(diagram)?;
@@ -97,9 +102,8 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
 
     // Points
     for (g, point) in points {
-        write!(tikz, "\\fill[{}] ", color(g)).unwrap();
-        tikz.push_str(&render_point(point));
-        writeln!(tikz, " circle (4pt);").unwrap();
+        let vertex = render_vertex(signature_styles.generator_style(g).unwrap(), point);
+        writeln!(tikz, "\\fill[{}] {}", color(g), vertex).unwrap();
     }
 
     writeln!(tikz, "\\end{{tikzpicture}}").unwrap();
@@ -111,6 +115,34 @@ fn render_point(point: Point2D<f32>) -> String {
     let x = (point.x * 100.0).round() / 100.0;
     let y = (point.y * 100.0).round() / 100.0;
     format!("({}, {})", x, y)
+}
+
+fn render_vertex(generator_style: &impl GeneratorStyle, point: Point2D<f32>) -> String {
+    use VertexShape::{Circle, Square};
+
+    const CIRCLE_RADIUS: f32 = 0.14; // r = 4pt
+    const SQUARE_SIDELENGTH: f32 = 0.28; // 8pt x 8pt
+
+    let shape = generator_style.shape().unwrap_or_default();
+    let shape_str = match shape {
+        Circle => "circle",
+        Square => "rectangle",
+    };
+    let (xo, yo) = match shape {
+        Circle => (0.0, 0.0),
+        Square => (-SQUARE_SIDELENGTH / 2., -SQUARE_SIDELENGTH / 2.),
+    };
+    let x1 = ((xo + point.x) * 100.0).round() / 100.0;
+    let y1 = ((yo + point.y) * 100.0).round() / 100.0;
+    let sz = match shape {
+        Circle => vec![CIRCLE_RADIUS],
+        Square => vec![SQUARE_SIDELENGTH + x1, SQUARE_SIDELENGTH + y1],
+    }
+    .iter()
+    .map(|&s| s.to_string())
+    .collect::<Vec<String>>()
+    .join(", ");
+    format!("({},{}) {} ({});", x1, y1, shape_str, sz)
 }
 
 fn render_path(path: &Path) -> String {

@@ -4,7 +4,7 @@ pub use history::Proof;
 use history::{History, UndoState};
 use homotopy_core::common::Mode;
 use homotopy_graphics::{manim, stl, tikz};
-use proof::{Color, GeneratorInfo, Signature, Workspace};
+use proof::{Signature, Workspace};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -133,7 +133,7 @@ impl State {
                     .unwrap();
                 }
 
-                let data = tikz::render(&diagram, &stylesheet).unwrap();
+                let data = tikz::render(&diagram, &stylesheet, &signature).unwrap();
                 serialize::generate_download("filename_todo", "tikz", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
@@ -201,14 +201,15 @@ impl State {
                     .unwrap();
                 }
 
-                let data = manim::render(&diagram, &stylesheet).unwrap();
+                let data = manim::render(&diagram, &signature, &stylesheet).unwrap();
                 serialize::generate_download("filename_todo", "py", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
 
             Action::ExportStl => {
+                let signature = self.with_proof(|p| p.signature.clone());
                 let diagram = self.with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram());
-                let data = stl::render(&diagram).unwrap();
+                let data = stl::render(&diagram, &signature).unwrap();
                 serialize::generate_download("filename_todo", "stl", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }

@@ -49,6 +49,7 @@ pub mod manim;
 pub mod parity;
 pub mod path_util;
 pub mod stl;
+pub mod style;
 pub mod subdivision;
 pub mod svg;
 pub mod tikz;
