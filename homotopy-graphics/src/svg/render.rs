@@ -11,7 +11,10 @@ use homotopy_core::{
 use lyon_path::{builder::NoAttributes, Path};
 
 use super::shape::project_2d;
-use crate::svg::shape::{Circle, Fill, Point, Shape, Stroke};
+use crate::{
+    path_util::simplify_path,
+    svg::shape::{Circle, Fill, Point, Shape, Stroke},
+};
 
 type Coordinate<const N: usize> = [SliceIndex; N];
 
@@ -107,8 +110,8 @@ impl<const N: usize> From<&ActionRegion<N>> for Simplex<N> {
 pub enum GraphicElement<const N: usize> {
     /// A surface given by a closed path to be filled.
     Surface(Generator, Path),
-    /// A wire given by a path to be stroked.
-    Wire(Generator, Path, Vec<Path>),
+    /// A wire given by a depth and a path to be stroked.
+    Wire(Generator, usize, Path, Vec<Path>),
     /// A point that is drawn as determined by its vertex_shape
     Point(Generator, Point),
 }
@@ -120,13 +123,13 @@ impl<const N: usize> GraphicElement<N> {
         use GraphicElement::{Point, Surface, Wire};
         match self {
             Surface(g, path) => Surface(*g, path.clone().transformed(transform)),
-            Wire(g, path, mask) => {
+            Wire(g, depth, path, mask) => {
                 let path = path.clone().transformed(transform);
                 let mask = mask
                     .iter()
                     .map(|mask| mask.clone().transformed(transform))
                     .collect();
-                Wire(*g, path, mask)
+                Wire(*g, *depth, path, mask)
             }
             Point(g, point) => Point(*g, transform.transform_point(*point)),
         }
@@ -135,7 +138,7 @@ impl<const N: usize> GraphicElement<N> {
     pub fn generator(&self) -> Generator {
         use GraphicElement::{Point, Surface, Wire};
         match self {
-            Surface(generator, _) | Wire(generator, _, _) | Point(generator, _) => *generator,
+            Surface(generator, _) | Wire(generator, _, _, _) | Point(generator, _) => *generator,
         }
     }
 
@@ -170,17 +173,20 @@ impl<const N: usize> GraphicElement<N> {
                 Simplex::Wire(ps) => {
                     let generator = projection.generator(ps[0]);
 
-                    let mask = match depths.edge_depth(ps[0], ps[1]) {
-                        Some(depth) => depths
-                            .edges_above(depth, ps[1])
-                            .into_iter()
-                            .map(|s| build_path(&[s, ps[1]], false, layout, projection))
-                            .collect(),
-                        None => vec![],
+                    let (depth, mask) = match depths.edge_depth(ps[0], ps[1]) {
+                        Some(depth) => (
+                            depth + 1,
+                            depths
+                                .edges_above(depth, ps[1])
+                                .into_iter()
+                                .map(|s| build_path(&[s, ps[1]], false, layout, projection))
+                                .collect(),
+                        ),
+                        None => (0, vec![]),
                     };
-
                     wire_elements.push(Self::Wire(
                         generator,
+                        depth,
                         build_path(ps, false, layout, projection),
                         mask,
                     ));
@@ -202,12 +208,11 @@ impl<const N: usize> GraphicElement<N> {
                 make_path(&points, true, layout, projection, &mut path_builder);
             }
 
-            let path = path_builder.build();
+            // Quick enough to do it every time
+            let path = simplify_path(&path_builder.build());
 
             surface_elements.push(Self::Surface(generator, path));
         }
-
-        // TODO: Group and merge wires as well.
 
         let mut elements = surface_elements;
         elements.extend(wire_elements);
