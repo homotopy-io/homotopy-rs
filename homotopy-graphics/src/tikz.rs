@@ -11,6 +11,7 @@ use homotopy_core::{
 };
 use itertools::Itertools;
 use lyon_path::{Event, Path};
+use numerals::roman::Roman;
 
 use crate::{
     path_util::{offset, simplify_graphic},
@@ -18,10 +19,31 @@ use crate::{
     svg::render::GraphicElement,
 };
 
+#[allow(dead_code)]
 const OCCLUSION_DELTA: f32 = 0.2;
 
 pub fn color(generator: Generator) -> String {
     format!("generator-{}-{}", generator.id, generator.dimension)
+}
+
+// Idea: we want to define custom commands to access our bulky geometrical data for each
+// generator.
+//
+// Problem: TeX doesn't allow either numbers or underscores/dashes in command names
+// without recourse to some exceptionally ugly hacks.
+//
+// Solution: we use Roman numerals, which are just letters!
+//
+// Remark: technically, TeX does have a way to produce its own Roman numerals
+// but to make it happen in the places we need, i.e. \newcommand,
+// we risk accidentally invoking Cthulhu.
+pub fn name(generator: Generator, depth: usize) -> String {
+    format!(
+        "\\gen{:x}O{:x}O{:x}",
+        Roman::from((generator.id + 1) as i16),
+        Roman::from((generator.dimension + 1) as i16),
+        Roman::from((depth + 1) as i16)
+    )
 }
 
 pub fn render(
@@ -59,11 +81,9 @@ pub fn render(
 
     // We only worry with masking if it's actually needed.
     if wires.len() > 1 {
-        writeln!(tikz, "% Rendering with masked").unwrap(); //TODO remove
-        tikz.push_str(&render_masked(surfaces, wires));
+        tikz.push_str(&render_masked(&surfaces, wires));
     } else {
-        writeln!(tikz, "% Rendering with unmasked").unwrap(); //TODO remove
-        tikz.push_str(&render_unmasked(surfaces, wires));
+        tikz.push_str(&render_unmasked(&surfaces, wires));
     }
 
     // Points are unchanged
@@ -79,84 +99,181 @@ pub fn render(
 
 // Simpler renderer in case masking is not needed.
 fn render_unmasked(
-    surfaces: Vec<(Generator, Path)>,
+    surfaces: &[(Generator, Path)],
     wires: FastHashMap<usize, Vec<(Generator, Path)>>,
 ) -> String {
     let mut tikz = String::new();
 
     // Surfaces
-    for (g, path) in surfaces {
-        write!(
-            tikz,
-            "\\fill[{}!75, name={}-{}] ",
-            color(g),
-            g.id,
-            g.dimension
-        )
-        .unwrap();
-        tikz.push_str(&render_path(&path));
-        writeln!(tikz, ";").unwrap();
+    for (g, path) in surfaces.iter() {
+        writeln!(tikz, "\\fill[{}!75]{};", color(*g), render_path(path)).unwrap();
     }
 
     for (_, layer) in wires.into_iter().sorted_by_cached_key(|(k, _)| *k).rev() {
         for (g, path) in &layer {
-            write!(tikz, "\\draw[{}!80, line width=5pt] ", color(*g)).unwrap();
-            tikz.push_str(&render_path(path));
-            writeln!(tikz, ";").unwrap();
+            writeln!(
+                tikz,
+                "\\draw[{}!80, line width=5pt]{};",
+                color(*g),
+                render_path(path)
+            )
+            .unwrap();
         }
     }
 
     tikz
 }
 
+// This contains all the "magic" commands we need to inject.
+// No formatting needed, it's the same all the time.
+const MAGIC_MACRO: &str = "\n\\newcommand{\\layered}[4]{
+  \\ifnum#3>0 \\draw[color=#4!75, line width=10pt]\\else\\draw[color=#2!80, line width=5pt]\\fi #1;
+}%
+\\newcommand{\\clipped}[3]{%
+  \\begin{scope}
+    \\clip#1;
+    #3{1}{#2}
+  \\end{scope}
+}%\n\n";
+
 fn render_masked(
-    surfaces: Vec<(Generator, Path)>,
+    surfaces: &[(Generator, Path)],
     wires: FastHashMap<usize, Vec<(Generator, Path)>>,
 ) -> String {
     let mut tikz = String::new();
 
-    // Surfaces
-    writeln!(tikz, "\\newcommand*\\Background{{").unwrap();
-    for (g, path) in surfaces {
-        write!(
+    let mut gen_counts: FastHashMap<Generator, usize> = FastHashMap::default();
+    let wire_layers = wires.len();
+
+    tikz.push_str(MAGIC_MACRO);
+    // The transparency group is useful in case users lower
+    // opacity. It changes the opacity rules to hide our
+    // masking strategy.
+    // If you want to see it in action, add [opacity=.5] at
+    // at \begin{tikzpicture}.
+    tikz.push_str("\\begin{scope}[transparency group]\n");
+
+    tikz.push_str("% Surfaces\n");
+    for (g, path) in surfaces.iter() {
+        let counts = gen_counts.entry(*g).or_default();
+        writeln!(
             tikz,
-            "\\fill[{}!75, name={}-{}] ",
-            color(g),
-            g.id,
-            g.dimension
+            "\\newcommand{{{name}}}{{{path}}}",
+            name = name(*g, *counts),
+            path = &render_path(path)
         )
         .unwrap();
-        tikz.push_str(&render_path(&path));
-        writeln!(tikz, ";").unwrap();
+        *counts += 1;
     }
-    writeln!(tikz, "}}").unwrap();
-    writeln!(tikz, "\\Background").unwrap();
 
-    // Wires
+    // The masking logic mostly concerns the wires.
+    // Unlike the background, wires do not all share the same depth.
+    // Here we create a series of "layer" commands, which
+    // either render their own paths or recourse to the successive layer.
+    tikz.push_str("% Wires\n");
+    let mut layer_defs = String::new();
     for (i, (_, layer)) in wires
         .into_iter()
         .sorted_by_cached_key(|(k, _)| *k)
         .rev()
         .enumerate()
     {
-        // Background
-        if i > 0 {
-            writeln!(tikz, "\\begin{{scope}}").unwrap();
-            write!(tikz, "\\clip ").unwrap();
-            for (_, path) in &layer {
-                tikz.push_str(&offset_multiple(OCCLUSION_DELTA, path));
-            }
-            writeln!(tikz, ";").unwrap();
-            writeln!(tikz, "\\Background").unwrap();
-            writeln!(tikz, "\\end{{scope}}").unwrap();
-        }
-
+        let mut layer_def = String::new();
         for (g, path) in &layer {
-            write!(tikz, "\\draw[{}!80, line width=5pt] ", color(*g)).unwrap();
-            tikz.push_str(&render_path(path));
-            writeln!(tikz, ";").unwrap();
+            let counts = gen_counts.entry(*g).or_default();
+            // Here we save the actual path geometry into a \newcommand.
+            writeln!(
+                tikz,
+                "\\newcommand{{{name}}}{{{path}}}",
+                name = name(*g, *counts),
+                path = &render_path(path)
+            )
+            .unwrap();
+            // And then instruct the current layer as to how to get that geometry.
+            writeln!(
+                layer_def,
+                "\\layered{{{name}}}{{{color}}}{{#1}}{{#2}};",
+                name = name(*g, *counts),
+                color = color(*g),
+            )
+            .unwrap();
+            // Finally we make a note of how may times we saw the path.
+            *counts += 1;
+        }
+        // Interpolate the layer definition into a global layer section.
+        // This looks better than alternating "this is a path" and "here is its layer".
+        writeln!(
+            layer_defs,
+            "\\newcommand{{\\layer{i:x}}}[2]{{\n\
+                {layer}\
+                \\layer{j:x}{{#1}}{{#2}}\n\
+                }}",
+            i = Roman::from((i + 1) as i16),
+            j = Roman::from((i + 2) as i16),
+            layer = layer_def
+        )
+        .unwrap();
+    }
+    // We could be smarter about terminating recursion, but not today.
+    writeln!(
+        layer_defs,
+        "\\newcommand{{\\layer{i:x}}}[2]{{}} % Empty layer",
+        i = Roman::from((wire_layers + 1) as i16),
+    )
+    .unwrap();
+
+    tikz.push_str("% Layer defs\n");
+    tikz.push_str(&layer_defs);
+
+    // Since we always clip with respect to the same background paths,
+    // might as well make a macro for it and have TeX do the CTRL+V for us.
+    writeln!(tikz, "\\newcommand{{\\clippedlayer}}[1]{{",).unwrap();
+    for (g, _) in surfaces.iter() {
+        writeln!(
+            tikz,
+            "  \\clipped{{{name}}}{{{color}}}{{#1}}",
+            name = name(*g, 0),
+            color = color(*g),
+        )
+        .unwrap();
+    }
+    tikz.push_str("  #1{0}{}\n}\n\n");
+    // The layer command takes an extra two arguments
+    // which allow to override the color into something else.
+    // We use this to switch between drawing the wire in "mask mode"
+    // and "normal mode".
+    // The if/else statement is run on TeX side, and the logic is in MAGIC!
+
+    tikz.push_str("% Background\n");
+    for (g, _) in surfaces.iter() {
+        writeln!(
+            tikz,
+            "\\fill[{color}!75]{name};",
+            color = color(*g),
+            name = name(*g, 0),
+        )
+        .unwrap();
+    }
+
+    for i in 0..wire_layers {
+        if i > 0 {
+            writeln!(
+                tikz,
+                "\\clippedlayer{{\\layer{i:x}}}",
+                i = Roman::from((i + 1) as i16)
+            )
+            .unwrap();
+        } else {
+            writeln!(
+                tikz,
+                "\\layer{i:x}{{0}}{{-}}",
+                i = Roman::from((i + 1) as i16)
+            )
+            .unwrap();
         }
     }
+
+    tikz.push_str("\\end{scope}\n");
 
     tikz
 }
@@ -164,7 +281,7 @@ fn render_masked(
 fn render_point(point: Point2D<f32>) -> String {
     let x = (point.x * 100.0).round() / 100.0;
     let y = (point.y * 100.0).round() / 100.0;
-    format!("({}, {})", x, y)
+    format!("({},{})", x, y)
 }
 
 fn render_vertex(generator_style: &impl GeneratorStyle, point: Point2D<f32>) -> String {
@@ -229,6 +346,7 @@ fn render_path(path: &Path) -> String {
 }
 
 //TODO move to path_util once the dependency on render_path is removed.
+#[allow(dead_code)]
 fn offset_multiple(delta: f32, path: &Path) -> String {
     let mut tikz = String::new();
     let mut builder = Path::builder();

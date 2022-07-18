@@ -751,6 +751,7 @@ dependencies = [
  "lyon_algorithms",
  "lyon_geom",
  "lyon_path",
+ "numerals",
  "paste",
  "petgraph",
  "serde",
@@ -1038,6 +1039,12 @@ dependencies = [
  "hermit-abi",
  "libc",
 ]
+
+[[package]]
+name = "numerals"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e25be21376a772d15f97ae789845340a9651d3c4246ff5ebb6a2b35f9c37bd31"
 
 [[package]]
 name = "obake"
