@@ -187,7 +187,7 @@ impl<const N: usize> GraphicElement<N> {
                     wire_elements.push(Self::Wire(
                         generator,
                         depth,
-                        build_path(ps, false, layout, projection),
+                        build_path(&orient_wire(ps), false, layout, projection),
                         mask,
                     ));
                 }
@@ -218,6 +218,16 @@ impl<const N: usize> GraphicElement<N> {
         elements.extend(wire_elements);
         elements.extend(point_elements);
         elements
+    }
+}
+
+// TODO(@calintat): These functions can be removed if we record the parity of each simplex.
+fn orient_wire<const N: usize>(wire: &[Coordinate<N>; 2]) -> [Coordinate<N>; 2] {
+    let (a, b) = (wire[0], wire[1]);
+    if a[0] < b[0] {
+        [a, b]
+    } else {
+        [b, a]
     }
 }
 
