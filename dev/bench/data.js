@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1657986155506,
+  "lastUpdate": 1658143323918,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -36779,6 +36779,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 340.93,
             "range": "+/- 2.830",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c8c544d328dc7044af2b71b5b0caea937917036d",
+          "message": "Path simplification and wire merging (#591)\n\n* Path simplification (issue #553), removal of collinear lines and Beziers, OK-ish simplification but created massive regression in rendering times (to be addressed in future commit).\r\n\r\n* Path simplification, preliminary path merging done, causes some artifacts to be addressed.\r\n\r\n* Wire merging, fixed mask/offset bugs, tikz exporting now working but SVG masking is broken.\r\n\r\n* Path simplification/wire merging, created path_util.rs, moved simplifier and offsetting code there.\r\n\r\n* Wire merging, GraphicElement::Wire is now tagged with its depth, used by tikz export instead of mask.len().\r\n\r\n* Path simplification/wire merging, reverted changes to GraphicElement::build, moved merging logic to simplify_graphic, SVG/Tikz work but path reversal has been reverted.\r\n\r\n* Wire merging, removed supplied mask completely, hashmap now has key (depth, gen).\r\n\r\n* Wire merging, fix-up.\r\n\r\n* Wire merging, reintroduced path reversal, true wire merging now working.\r\n\r\n* Path simplification/wire merging, fixed bug with simplify_path, better wire merging algorithm.\r\n\r\n* Wire merging, documented algorithm, reverted minor change in visibility.\r\n\r\n* Wire merging, fixed merge conflict.\r\n\r\n* Path simplification, fixed bug in simplifier.\r\n\r\n* Wire merging, removed wire reversal.\r\n\r\nCo-authored-by: regular-citizen <chara@sarti.me>",
+          "timestamp": "2022-07-18T11:12:31Z",
+          "tree_id": "43b041f737eaa60706de5620317b10efa107db19",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/c8c544d328dc7044af2b71b5b0caea937917036d"
+        },
+        "date": 1658143317025,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 1.8796,
+            "range": "+/- 0.002",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 5.7136,
+            "range": "+/- 0.007",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 15.121,
+            "range": "+/- 0.012",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 37.154,
+            "range": "+/- 0.048",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 94.67,
+            "range": "+/- 0.295",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 262.53,
+            "range": "+/- 0.630",
             "unit": "ms"
           }
         ]
