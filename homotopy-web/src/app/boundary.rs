@@ -5,7 +5,7 @@
 use homotopy_core::common::Boundary;
 use yew::prelude::*;
 
-use crate::{app::diagram_svg::DiagramSvg, model::proof::SelectedBoundary, components::icon::{Icon, IconSize},};
+use crate::{app::diagram_svg::DiagramSvg, model::proof::{Action, SelectedBoundary}, components::icon::{Icon, IconSize},};
 
 pub struct BoundaryPreview {}
 
@@ -14,6 +14,7 @@ pub enum BoundaryPreviewMessage {}
 #[derive(Clone, PartialEq, Properties)]
 pub struct BoundaryPreviewProps {
     pub boundary: SelectedBoundary,
+    pub dispatch: Callback<Action>,
 }
 
 impl Component for BoundaryPreview {
@@ -64,7 +65,10 @@ impl Component for BoundaryPreview {
                 <div class="boundary__element boundary__name">
                     <span>{bound}</span>
                 </div>
-                <div class="boundary__element boundary__button">
+                <div 
+                    class="boundary__element boundary__button"
+                    onclick={ctx.props().dispatch.reform(move |_| Action::ClearBoundary)}
+                >    
                     <Icon name="close" size={IconSize::Icon18} />
                 </div>
                 {preview}

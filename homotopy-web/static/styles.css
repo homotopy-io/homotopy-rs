@@ -151,6 +151,13 @@ button, .button {
   border-radius: var(--space-0);  
 }
 
+@media (pointer: fine) {
+  .boundary__element:hover {
+    background: var(--toolbar-hover);
+    cursor: pointer;
+  }
+}
+
 .boundary__name {
   padding: 5px;
   color: var(--toolbar-foreground);
