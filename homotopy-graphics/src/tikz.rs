@@ -14,13 +14,10 @@ use lyon_path::{Event, Path};
 use numerals::roman::Roman;
 
 use crate::{
-    path_util::{offset, simplify_graphic},
+    path_util::simplify_graphic,
     style::{GeneratorStyle, SignatureStyleData, VertexShape},
     svg::render::GraphicElement,
 };
-
-#[allow(dead_code)]
-const OCCLUSION_DELTA: f32 = 0.2;
 
 pub fn color(generator: Generator) -> String {
     format!("generator-{}-{}", generator.id, generator.dimension)
@@ -343,33 +340,4 @@ fn render_path(path: &Path) -> String {
         }
     }
     result
-}
-
-//TODO move to path_util once the dependency on render_path is removed.
-#[allow(dead_code)]
-fn offset_multiple(delta: f32, path: &Path) -> String {
-    let mut tikz = String::new();
-    let mut builder = Path::builder();
-    for event in path {
-        match event {
-            Event::End { .. } => {
-                builder.path_event(event);
-                let segment = builder.build();
-                let left = offset(-delta, &segment)
-                    .reversed()
-                    .with_attributes()
-                    .into_path();
-                let right = offset(delta, &segment);
-                tikz.push_str(&render_path(&right));
-                tikz.push_str(" -- ");
-                tikz.push_str(&render_path(&left));
-                tikz.push_str(" -- cycle");
-                builder = Path::builder();
-            }
-            _ => {
-                builder.path_event(event);
-            }
-        }
-    }
-    tikz
 }
