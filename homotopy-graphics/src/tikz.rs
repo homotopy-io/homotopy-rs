@@ -57,6 +57,64 @@ pub fn render(
     writeln!(tikz, "\\begin{{tikzpicture}}").unwrap();
     tikz.push_str(stylesheet);
 
+    // We only worry with masking if it's actually needed.
+    if wires.len() > 1 {
+        writeln!(tikz, "% Rendering with masked").unwrap(); //TODO remove
+        tikz.push_str(&render_masked(surfaces, wires));
+    } else {
+        writeln!(tikz, "% Rendering with unmasked").unwrap(); //TODO remove
+        tikz.push_str(&render_unmasked(surfaces, wires));
+    }
+
+    // Points are unchanged
+    for (g, point) in points {
+        let vertex = render_vertex(signature_styles.generator_style(g).unwrap(), point);
+        writeln!(tikz, "\\fill[{}] {}", color(g), vertex).unwrap();
+    }
+
+    writeln!(tikz, "\\end{{tikzpicture}}").unwrap();
+
+    Ok(tikz)
+}
+
+// Simpler renderer in case masking is not needed.
+fn render_unmasked(
+    surfaces: Vec<(Generator, Path)>,
+    wires: FastHashMap<usize, Vec<(Generator, Path)>>,
+) -> String {
+    let mut tikz = String::new();
+
+    // Surfaces
+    for (g, path) in surfaces {
+        write!(
+            tikz,
+            "\\fill[{}!75, name={}-{}] ",
+            color(g),
+            g.id,
+            g.dimension
+        )
+        .unwrap();
+        tikz.push_str(&render_path(&path));
+        writeln!(tikz, ";").unwrap();
+    }
+
+    for (_, layer) in wires.into_iter().sorted_by_cached_key(|(k, _)| *k).rev() {
+        for (g, path) in &layer {
+            write!(tikz, "\\draw[{}!80, line width=5pt] ", color(*g)).unwrap();
+            tikz.push_str(&render_path(path));
+            writeln!(tikz, ";").unwrap();
+        }
+    }
+
+    tikz
+}
+
+fn render_masked(
+    surfaces: Vec<(Generator, Path)>,
+    wires: FastHashMap<usize, Vec<(Generator, Path)>>,
+) -> String {
+    let mut tikz = String::new();
+
     // Surfaces
     writeln!(tikz, "\\newcommand*\\Background{{").unwrap();
     for (g, path) in surfaces {
@@ -100,15 +158,7 @@ pub fn render(
         }
     }
 
-    // Points
-    for (g, point) in points {
-        let vertex = render_vertex(signature_styles.generator_style(g).unwrap(), point);
-        writeln!(tikz, "\\fill[{}] {}", color(g), vertex).unwrap();
-    }
-
-    writeln!(tikz, "\\end{{tikzpicture}}").unwrap();
-
-    Ok(tikz)
+    tikz
 }
 
 fn render_point(point: Point2D<f32>) -> String {
