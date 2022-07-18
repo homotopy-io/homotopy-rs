@@ -159,6 +159,8 @@ pub enum Action {
 
     EditSignature(SignatureEdit),
 
+    FlipBoundary,
+
     Nothing,
 }
 
@@ -223,6 +225,7 @@ impl ProofState {
             Action::Restrict => self.restrict()?,
             Action::Theorem => self.theorem()?,
             Action::EditSignature(edit) => self.edit_signature(edit),
+            Action::FlipBoundary => self.flip_boundary(),
             Action::Imported | Action::Nothing => {}
         }
 
@@ -354,6 +357,19 @@ impl ProofState {
         };
 
         Ok(())
+    }
+
+    /// Handler for [Action::FlipBoundary].
+    fn flip_boundary(&mut self) {
+        match &self.boundary {
+            Some(selected) => {
+                self.boundary = Some(SelectedBoundary {
+                    boundary: selected.boundary.flip(),
+                    diagram: selected.diagram.clone(),
+                });
+            }
+            _ => {}
+        };
     }
 
     /// Handler for [Action::TakeIdentityDiagram].

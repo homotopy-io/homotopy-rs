@@ -148,7 +148,8 @@ button, .button {
 .boundary__element {
   background-color: var(--toolbar-background);
   border: 1px solid var(--toolbar-border);
-  border-radius: var(--space-0);  
+  border-radius: var(--space-0);
+  user-select: none;
 }
 
 @media (pointer: fine) {

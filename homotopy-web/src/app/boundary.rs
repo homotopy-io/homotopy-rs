@@ -5,7 +5,11 @@
 use homotopy_core::common::Boundary;
 use yew::prelude::*;
 
-use crate::{app::diagram_svg::DiagramSvg, model::proof::{Action, SelectedBoundary}, components::icon::{Icon, IconSize},};
+use crate::{
+    app::diagram_svg::DiagramSvg,
+    components::icon::{Icon, IconSize},
+    model::proof::{Action, SelectedBoundary},
+};
 
 pub struct BoundaryPreview {}
 
@@ -46,8 +50,8 @@ impl Component for BoundaryPreview {
         let preview = match dim {
             // Display flex to center 0 & 1-dimensional diagrams.
             0 | 1 => html! {
-                <div 
-                    class="boundary__element boundary__preview" 
+                <div
+                    class="boundary__element boundary__preview"
                     style="display:flex; align-items:center; justify-content:center"
                 >
                     {preview}
@@ -62,13 +66,16 @@ impl Component for BoundaryPreview {
 
         html! {
             <div class="boundary">
-                <div class="boundary__element boundary__name">
+                <div
+                    class="boundary__element boundary__name"
+                    onclick={ctx.props().dispatch.reform(move |_| Action::FlipBoundary)}
+                >
                     <span>{bound}</span>
                 </div>
-                <div 
+                <div
                     class="boundary__element boundary__button"
                     onclick={ctx.props().dispatch.reform(move |_| Action::ClearBoundary)}
-                >    
+                >
                     <Icon name="close" size={IconSize::Icon18} />
                 </div>
                 {preview}
