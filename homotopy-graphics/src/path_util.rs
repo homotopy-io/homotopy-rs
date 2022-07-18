@@ -35,31 +35,22 @@ pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<Gr
                 //
                 // We do this by checking whether the extremes of a wire
                 // under consideration match those of any earlier wire.
-                // This gives 4 cases, and we need to be careful with what needs
-                // reversing each time (I think I got this right).
+                // This gives four cases, in theory, but two of them would
+                // require reversing wires, which is logically undesirable and
+                // geometrically unnecessary given that geometry extraction
+                // ensures for us that "wires only go up".
+                // So, in practice, we are reduced to checking two possible cases.
+                //
                 // If no matches work, we move to the next seen wire.
                 let mut it = entry.iter_mut();
                 loop {
                     if let Some((builder, from, to)) = it.next() {
-                        match (
-                            extremes.0.approx_eq(to),
-                            extremes.1.approx_eq(to),
-                            extremes.1.approx_eq(from),
-                            extremes.0.approx_eq(from),
-                        ) {
-                            (true, _, _, _) => {
+                        match (extremes.0.approx_eq(to), extremes.1.approx_eq(from)) {
+                            (true, _) => {
                                 builder.extend_from_paths(&[path.as_slice()]);
                                 *to = extremes.1;
                             }
-                            (_, true, _, _) => {
-                                builder.extend_from_paths(&[path
-                                    .reversed()
-                                    .with_attributes()
-                                    .into_path()
-                                    .as_slice()]);
-                                *to = extremes.0;
-                            }
-                            (_, _, true, _) => {
+                            (_, true) => {
                                 let mut new_builder = Path::builder();
                                 new_builder.extend_from_paths(&[
                                     path.as_slice(),
@@ -68,16 +59,7 @@ pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<Gr
                                 *builder = new_builder;
                                 *from = extremes.0;
                             }
-                            (_, _, _, true) => {
-                                let mut new_builder = Path::builder();
-                                new_builder.extend_from_paths(&[
-                                    path.reversed().with_attributes().into_path().as_slice(),
-                                    builder.clone().build().as_slice(),
-                                ]);
-                                *builder = new_builder;
-                                *from = extremes.1;
-                            }
-                            (_, _, _, _) => {
+                            (_, _) => {
                                 continue;
                             }
                         }
