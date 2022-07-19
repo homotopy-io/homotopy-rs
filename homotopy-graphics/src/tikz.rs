@@ -55,12 +55,7 @@ pub fn render(
     writeln!(tikz, "\\begin{{tikzpicture}}").unwrap();
     tikz.push_str(stylesheet);
 
-    // We only worry with masking if it's actually needed.
-    if wires.len() > 1 {
-        tikz.push_str(&render_masked(&surfaces, wires));
-    } else {
-        tikz.push_str(&render_unmasked(&surfaces, wires));
-    }
+    tikz.push_str(&render_inner(&surfaces, wires));
 
     // Points are unchanged
     for (g, point) in points {
@@ -71,33 +66,6 @@ pub fn render(
     writeln!(tikz, "\\end{{tikzpicture}}").unwrap();
 
     Ok(tikz)
-}
-
-// Simpler renderer in case masking is not needed.
-fn render_unmasked(
-    surfaces: &[(Generator, Path)],
-    wires: FastHashMap<usize, Vec<(Generator, Path)>>,
-) -> String {
-    let mut tikz = String::new();
-
-    // Surfaces
-    for (g, path) in surfaces.iter() {
-        writeln!(tikz, "\\fill[{}!75]{};", color(*g), render_path(path)).unwrap();
-    }
-
-    for (_, layer) in wires.into_iter().sorted_by_cached_key(|(k, _)| *k).rev() {
-        for (g, path) in &layer {
-            writeln!(
-                tikz,
-                "\\draw[{}!80, line width=5pt]{};",
-                color(*g),
-                render_path(path)
-            )
-            .unwrap();
-        }
-    }
-
-    tikz
 }
 
 // This contains all the "magic" commands we need to inject.
@@ -114,13 +82,13 @@ const MAGIC_MACRO: &str = "\n\\newcommand{\\layered}[2]{
 \\end{scope}
 }\n\n";
 
-fn render_masked(
+fn render_inner(
     surfaces: &[(Generator, Path)],
     wires: FastHashMap<usize, Vec<(Generator, Path)>>,
 ) -> String {
     let mut tikz = String::new();
 
-    let mut gen_counts: FastHashMap<Generator, usize> = FastHashMap::default();
+    let needs_masking = wires.len() > 1;
 
     tikz.push_str(MAGIC_MACRO);
     // The transparency group does nothing in terms of our masking strategy,
@@ -132,7 +100,6 @@ fn render_masked(
 
     tikz.push_str("% Background surfaces\n");
     for (g, path) in surfaces.iter() {
-        let counts = gen_counts.entry(*g).or_default();
         writeln!(
             tikz,
             "\\fill[{color}!75] {path};",
@@ -140,12 +107,11 @@ fn render_masked(
             path = &render_path(path)
         )
         .unwrap();
-        *counts += 1;
     }
 
     // Since we always clip with respect to the same background paths,
     // might as well make a macro for it and have TeX do the CTRL+V for us.
-    if wires.len() > 1 {
+    if needs_masking {
         writeln!(tikz, "\\newcommand{{\\clippedlayer}}[1]{{",).unwrap();
         for (g, path) in surfaces.iter() {
             writeln!(
@@ -180,7 +146,6 @@ fn render_masked(
             tikz.push_str("\\clippedlayer{\n");
         }
         for (g, path) in &layer {
-            let counts = gen_counts.entry(*g).or_default();
             // We pass the geometry of the wire directly to the current layer.
             // This is to avoid naming annoyances.
             writeln!(
@@ -190,8 +155,6 @@ fn render_masked(
                 path = &render_path(path)
             )
             .unwrap();
-            // Keep a note of how may times we saw the path!
-            *counts += 1;
         }
         if i > 0 {
             tikz.push_str("}\n");
