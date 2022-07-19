@@ -125,7 +125,7 @@ fn render_unmasked(
 // No formatting needed, it's the same all the time.
 
 const MAGIC_MACRO: &str = "\n\\newcommand{\\layered}[2]{
-  \\ifdefined\\recolor\\draw[color=\\recolor!75, line width=10pt]\\else\\draw[color=#2!80, line width=5pt]\\fi #1;
+  \\ifdefined\\recolor\\draw[color=\\recolor!75, line width=10pt]\\else\\draw[color=#1!80, line width=5pt]\\fi #2;
 }
 \\newcommand{\\clipped}[3]{
 \\begin{scope}
@@ -200,7 +200,6 @@ fn render_masked(
     // and "normal mode". The if/else statement is run on TeX side,
     // and the logic is in MAGIC_MACRO!
     tikz.push_str("% Wire layers\n");
-    let mut layer_defs = String::new();
     for (i, (_, layer)) in wires
         .into_iter()
         .sorted_by_cached_key(|(k, _)| *k)
@@ -208,34 +207,26 @@ fn render_masked(
         .enumerate()
     {
         if i > 0 {
-            layer_defs.push_str("\\clippedlayer{\n");
+            tikz.push_str("\\clippedlayer{\n");
         }
         for (g, path) in &layer {
             let counts = gen_counts.entry(*g).or_default();
-            // Here we save the actual path geometry into a \newcommand.
+            // We pass the geometry of the wire directly to the current layer.
+            // This is to avoid naming annoyances.
             writeln!(
                 tikz,
-                "\\newcommand{{{name}}}{{{path}}}",
-                name = name(*g, *counts),
+                "\\layered{{{color}}}{{{path}}};",
+                color = color(*g),
                 path = &render_path(path)
             )
             .unwrap();
-            // And then instruct the current layer as to how to get that geometry.
-            writeln!(
-                layer_defs,
-                "\\layered{{{name}}}{{{color}}};",
-                name = name(*g, *counts),
-                color = color(*g),
-            )
-            .unwrap();
-            // Finally we make a note of how may times we saw the path.
+            // Keep a note of how may times we saw the path!
             *counts += 1;
         }
         if i > 0 {
-            layer_defs.push_str("}\n");
+            tikz.push_str("}\n");
         }
     }
-    tikz.push_str(&layer_defs);
 
     tikz.push_str("\\end{scope}\n");
 
