@@ -374,7 +374,6 @@ impl SimplicialGeometry {
         }
     }
 
-    // TODO(thud): fix normals here (by not reusing verts)
     fn inflate_point_3d_cube(&mut self, point: Vert) {
         use homotopy_common::idx::Idx;
 
@@ -383,36 +382,46 @@ impl SimplicialGeometry {
 
         let len = self.verts.len();
 
-        self.mk_displaced_copy(point, Vec4::new(-R, -R, -R, 0.));
-        self.mk_displaced_copy(point, Vec4::new(R, -R, -R, 0.));
-        self.mk_displaced_copy(point, Vec4::new(R, R, -R, 0.));
-        self.mk_displaced_copy(point, Vec4::new(-R, R, -R, 0.));
-        self.mk_displaced_copy(point, Vec4::new(-R, -R, R, 0.));
-        self.mk_displaced_copy(point, Vec4::new(R, -R, R, 0.));
-        self.mk_displaced_copy(point, Vec4::new(R, R, R, 0.));
-        self.mk_displaced_copy(point, Vec4::new(-R, R, R, 0.));
+        // To fix normals, we duplicate each vertex (four times) and only use each vertex once
+        // NOTE: this creates 4 redundant vertices but is neater to implement than manual vertex
+        // definitions
+        for _ in 0..5 {
+            self.mk_displaced_copy(point, Vec4::new(-R, -R, -R, 0.));
+            self.mk_displaced_copy(point, Vec4::new(R, -R, -R, 0.));
+            self.mk_displaced_copy(point, Vec4::new(R, R, -R, 0.));
+            self.mk_displaced_copy(point, Vec4::new(-R, R, -R, 0.));
+            self.mk_displaced_copy(point, Vec4::new(-R, -R, R, 0.));
+            self.mk_displaced_copy(point, Vec4::new(R, -R, R, 0.));
+            self.mk_displaced_copy(point, Vec4::new(R, R, R, 0.));
+            self.mk_displaced_copy(point, Vec4::new(-R, R, R, 0.));
+        }
 
-        let v_0 = Vert::new(len);
-        let v_1 = Vert::new(len + 1);
-        let v_2 = Vert::new(len + 2);
-        let v_3 = Vert::new(len + 3);
-        let v_4 = Vert::new(len + 4);
-        let v_5 = Vert::new(len + 5);
-        let v_6 = Vert::new(len + 6);
-        let v_7 = Vert::new(len + 7);
+        let mk_area = |s: &mut Self, verts: [usize; 3], used: &mut [usize; 8]| {
+            let new_verts = [
+                Vert::new(len + verts[0] + used[verts[0]]),
+                Vert::new(len + verts[1] + used[verts[1]]),
+                Vert::new(len + verts[2] + used[verts[2]]),
+            ];
+            used[verts[0]] += 8;
+            used[verts[1]] += 8;
+            used[verts[2]] += 8;
+            s.mk_area(new_verts, Parity::Even);
+        };
 
-        self.mk_area([v_0, v_1, v_3], Parity::Even);
-        self.mk_area([v_3, v_1, v_2], Parity::Even);
-        self.mk_area([v_1, v_5, v_2], Parity::Even);
-        self.mk_area([v_2, v_5, v_6], Parity::Even);
-        self.mk_area([v_5, v_4, v_6], Parity::Even);
-        self.mk_area([v_6, v_4, v_7], Parity::Even);
-        self.mk_area([v_4, v_0, v_7], Parity::Even);
-        self.mk_area([v_7, v_0, v_3], Parity::Even);
-        self.mk_area([v_3, v_2, v_7], Parity::Even);
-        self.mk_area([v_7, v_2, v_6], Parity::Even);
-        self.mk_area([v_4, v_5, v_0], Parity::Even);
-        self.mk_area([v_0, v_5, v_1], Parity::Even);
+        let mut used = [0; 8];
+
+        mk_area(self, [0, 1, 3], &mut used);
+        mk_area(self, [3, 1, 2], &mut used);
+        mk_area(self, [1, 5, 2], &mut used);
+        mk_area(self, [2, 5, 6], &mut used);
+        mk_area(self, [5, 4, 6], &mut used);
+        mk_area(self, [6, 4, 7], &mut used);
+        mk_area(self, [4, 0, 7], &mut used);
+        mk_area(self, [7, 0, 3], &mut used);
+        mk_area(self, [3, 2, 7], &mut used);
+        mk_area(self, [7, 2, 6], &mut used);
+        mk_area(self, [4, 5, 0], &mut used);
+        mk_area(self, [0, 5, 1], &mut used);
     }
 
     fn inflate_tube_segment(
