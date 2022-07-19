@@ -71,7 +71,7 @@ pub fn render(
 // This contains all the "magic" commands we need to inject.
 // No formatting needed, it's the same all the time.
 
-const MAGIC_MACRO: &str = "\n\\newcommand{\\layered}[2]{
+const MAGIC_MACRO: &str = "\n\\newcommand{\\wire}[2]{
   \\ifdefined\\recolor\\draw[color=\\recolor!75, line width=10pt]\\else\\draw[color=#1!80, line width=5pt]\\fi #2;
 }
 \\newcommand{\\clipped}[3]{
@@ -112,7 +112,7 @@ fn render_inner(
     // Since we always clip with respect to the same background paths,
     // might as well make a macro for it and have TeX do the CTRL+V for us.
     if needs_masking {
-        writeln!(tikz, "\\newcommand{{\\clippedlayer}}[1]{{",).unwrap();
+        writeln!(tikz, "\\newcommand{{\\layer}}[1]{{",).unwrap();
         for (g, path) in surfaces.iter() {
             writeln!(
                 tikz,
@@ -130,7 +130,7 @@ fn render_inner(
     // Here we create a series of "layer" commands, which
     // either render their own paths or recourse to the successive layer.
     //
-    // The layered command checks if \recolor is defined,
+    // The \wire command checks if \recolor is defined,
     // which allows to override the colour into something else.
     // We use this to switch between drawing the wire in "mask mode"
     // and "normal mode". The if/else statement is run on TeX side,
@@ -143,14 +143,14 @@ fn render_inner(
         .enumerate()
     {
         if i > 0 {
-            tikz.push_str("\\clippedlayer{\n");
+            tikz.push_str("\\layer{\n");
         }
         for (g, path) in &layer {
             // We pass the geometry of the wire directly to the current layer.
             // This is to avoid naming annoyances.
             writeln!(
                 tikz,
-                "\\layered{{{color}}}{{{path}}};",
+                "\\wire{{{color}}}{{{path}}};",
                 color = color(*g),
                 path = &render_path(path)
             )
