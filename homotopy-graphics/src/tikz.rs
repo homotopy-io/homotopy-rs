@@ -11,7 +11,6 @@ use homotopy_core::{
 };
 use itertools::Itertools;
 use lyon_path::{Event, Path};
-use numerals::roman::Roman;
 
 use crate::{
     path_util::simplify_graphic,
@@ -21,26 +20,6 @@ use crate::{
 
 pub fn color(generator: Generator) -> String {
     format!("generator-{}-{}", generator.id, generator.dimension)
-}
-
-// Idea: we want to define custom commands to access our bulky geometrical data for each
-// generator.
-//
-// Problem: TeX doesn't allow either numbers or underscores/dashes in command names
-// without recourse to some exceptionally ugly hacks.
-//
-// Solution: we use Roman numerals, which are just letters!
-//
-// Remark: technically, TeX does have a way to produce its own Roman numerals
-// but to make it happen in the places we need, i.e. \newcommand,
-// we risk accidentally invoking Cthulhu.
-pub fn name(generator: Generator, depth: usize) -> String {
-    format!(
-        "\\gen{:x}O{:x}O{:x}",
-        Roman::from((generator.id + 1) as i16),
-        Roman::from((generator.dimension + 1) as i16),
-        Roman::from((depth + 1) as i16)
-    )
 }
 
 pub fn render(
@@ -129,9 +108,9 @@ const MAGIC_MACRO: &str = "\n\\newcommand{\\layered}[2]{
 }
 \\newcommand{\\clipped}[3]{
 \\begin{scope}
-  \\newcommand{\\recolor}{#2}
-  \\clip#1;
-  #3
+  \\newcommand{\\recolor}{#1}
+  \\clip#3;
+  #2
 \\end{scope}
 }\n\n";
 
@@ -151,13 +130,13 @@ fn render_masked(
     // at \begin{tikzpicture} and remove [transparency group].
     tikz.push_str("\\begin{scope}[transparency group]\n");
 
-    tikz.push_str("% Surfaces\n");
+    tikz.push_str("% Background surfaces\n");
     for (g, path) in surfaces.iter() {
         let counts = gen_counts.entry(*g).or_default();
         writeln!(
             tikz,
-            "\\newcommand{{{name}}}{{{path}}}",
-            name = name(*g, *counts),
+            "\\fill[{color}!75] {path};",
+            color = color(*g),
             path = &render_path(path)
         )
         .unwrap();
@@ -166,27 +145,18 @@ fn render_masked(
 
     // Since we always clip with respect to the same background paths,
     // might as well make a macro for it and have TeX do the CTRL+V for us.
-    writeln!(tikz, "\\newcommand{{\\clippedlayer}}[1]{{",).unwrap();
-    for (g, _) in surfaces.iter() {
-        writeln!(
-            tikz,
-            "  \\clipped{{{name}}}{{{color}}}{{#1}}",
-            name = name(*g, 0),
-            color = color(*g),
-        )
-        .unwrap();
-    }
-    tikz.push_str("  #1\n}\n\n");
-
-    tikz.push_str("% Background\n");
-    for (g, _) in surfaces.iter() {
-        writeln!(
-            tikz,
-            "\\fill[{color}!75]{name};",
-            color = color(*g),
-            name = name(*g, 0),
-        )
-        .unwrap();
+    if wires.len() > 1 {
+        writeln!(tikz, "\\newcommand{{\\clippedlayer}}[1]{{",).unwrap();
+        for (g, path) in surfaces.iter() {
+            writeln!(
+                tikz,
+                "  \\clipped{{{color}}}{{#1}}{{{path}}}",
+                color = color(*g),
+                path = &render_path(path)
+            )
+            .unwrap();
+        }
+        tikz.push_str("  #1\n}\n\n");
     }
 
     // The masking logic mostly concerns the wires.
