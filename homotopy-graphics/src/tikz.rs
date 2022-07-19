@@ -189,7 +189,7 @@ fn render_masked(
             // And then instruct the current layer as to how to get that geometry.
             writeln!(
                 layer_def,
-                "\\layered{{{name}}}{{{color}}}{{#1}}{{#2}};",
+                "  \\layered{{{name}}}{{{color}}}{{#1}}{{#2}};",
                 name = name(*g, *counts),
                 color = color(*g),
             )
@@ -203,21 +203,12 @@ fn render_masked(
             layer_defs,
             "\\newcommand{{\\layer{i:x}}}[2]{{\n\
                 {layer}\
-                \\layer{j:x}{{#1}}{{#2}}\n\
                 }}",
             i = Roman::from((i + 1) as i16),
-            j = Roman::from((i + 2) as i16),
             layer = layer_def
         )
         .unwrap();
     }
-    // We could be smarter about terminating recursion, but not today.
-    writeln!(
-        layer_defs,
-        "\\newcommand{{\\layer{i:x}}}[2]{{}} % Empty layer",
-        i = Roman::from((wire_layers + 1) as i16),
-    )
-    .unwrap();
 
     tikz.push_str("% Layer defs\n");
     tikz.push_str(&layer_defs);
