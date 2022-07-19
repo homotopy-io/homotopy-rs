@@ -123,15 +123,17 @@ fn render_unmasked(
 
 // This contains all the "magic" commands we need to inject.
 // No formatting needed, it's the same all the time.
-const MAGIC_MACRO: &str = "\n\\newcommand{\\layered}[4]{
-  \\ifnum#3>0 \\draw[color=#4!75, line width=10pt]\\else\\draw[color=#2!80, line width=5pt]\\fi #1;
-}%
-\\newcommand{\\clipped}[3]{%
-  \\begin{scope}
-    \\clip#1;
-    #3{1}{#2}
-  \\end{scope}
-}%\n\n";
+
+const MAGIC_MACRO: &str = "\n\\newcommand{\\layered}[2]{
+  \\ifdefined\\recolor\\draw[color=\\recolor!75, line width=10pt]\\else\\draw[color=#2!80, line width=5pt]\\fi #1;
+}
+\\newcommand{\\clipped}[3]{
+\\begin{scope}
+  \\newcommand{\\recolor}{#2}
+  \\clip#1;
+  #3
+\\end{scope}
+}\n\n";
 
 fn render_masked(
     surfaces: &[(Generator, Path)],
@@ -140,14 +142,13 @@ fn render_masked(
     let mut tikz = String::new();
 
     let mut gen_counts: FastHashMap<Generator, usize> = FastHashMap::default();
-    let wire_layers = wires.len();
 
     tikz.push_str(MAGIC_MACRO);
-    // The transparency group is useful in case users lower
-    // opacity. It changes the opacity rules to hide our
-    // masking strategy.
+    // The transparency group does nothing in terms of our masking strategy,
+    // but it is useful in case users lower the opacity. It changes the
+    // opacity rules to hide our masking shenanigans.
     // If you want to see it in action, add [opacity=.5] at
-    // at \begin{tikzpicture}.
+    // at \begin{tikzpicture} and remove [transparency group].
     tikz.push_str("\\begin{scope}[transparency group]\n");
 
     tikz.push_str("% Surfaces\n");
@@ -163,56 +164,6 @@ fn render_masked(
         *counts += 1;
     }
 
-    // The masking logic mostly concerns the wires.
-    // Unlike the background, wires do not all share the same depth.
-    // Here we create a series of "layer" commands, which
-    // either render their own paths or recourse to the successive layer.
-    tikz.push_str("% Wires\n");
-    let mut layer_defs = String::new();
-    for (i, (_, layer)) in wires
-        .into_iter()
-        .sorted_by_cached_key(|(k, _)| *k)
-        .rev()
-        .enumerate()
-    {
-        let mut layer_def = String::new();
-        for (g, path) in &layer {
-            let counts = gen_counts.entry(*g).or_default();
-            // Here we save the actual path geometry into a \newcommand.
-            writeln!(
-                tikz,
-                "\\newcommand{{{name}}}{{{path}}}",
-                name = name(*g, *counts),
-                path = &render_path(path)
-            )
-            .unwrap();
-            // And then instruct the current layer as to how to get that geometry.
-            writeln!(
-                layer_def,
-                "  \\layered{{{name}}}{{{color}}}{{#1}}{{#2}};",
-                name = name(*g, *counts),
-                color = color(*g),
-            )
-            .unwrap();
-            // Finally we make a note of how may times we saw the path.
-            *counts += 1;
-        }
-        // Interpolate the layer definition into a global layer section.
-        // This looks better than alternating "this is a path" and "here is its layer".
-        writeln!(
-            layer_defs,
-            "\\newcommand{{\\layer{i:x}}}[2]{{\n\
-                {layer}\
-                }}",
-            i = Roman::from((i + 1) as i16),
-            layer = layer_def
-        )
-        .unwrap();
-    }
-
-    tikz.push_str("% Layer defs\n");
-    tikz.push_str(&layer_defs);
-
     // Since we always clip with respect to the same background paths,
     // might as well make a macro for it and have TeX do the CTRL+V for us.
     writeln!(tikz, "\\newcommand{{\\clippedlayer}}[1]{{",).unwrap();
@@ -225,12 +176,7 @@ fn render_masked(
         )
         .unwrap();
     }
-    tikz.push_str("  #1{0}{}\n}\n\n");
-    // The layer command takes an extra two arguments
-    // which allow to override the color into something else.
-    // We use this to switch between drawing the wire in "mask mode"
-    // and "normal mode".
-    // The if/else statement is run on TeX side, and the logic is in MAGIC!
+    tikz.push_str("  #1\n}\n\n");
 
     tikz.push_str("% Background\n");
     for (g, _) in surfaces.iter() {
@@ -243,23 +189,53 @@ fn render_masked(
         .unwrap();
     }
 
-    for i in 0..wire_layers {
+    // The masking logic mostly concerns the wires.
+    // Unlike the background, wires do not all share the same depth.
+    // Here we create a series of "layer" commands, which
+    // either render their own paths or recourse to the successive layer.
+    //
+    // The layered command checks if \recolor is defined,
+    // which allows to override the colour into something else.
+    // We use this to switch between drawing the wire in "mask mode"
+    // and "normal mode". The if/else statement is run on TeX side,
+    // and the logic is in MAGIC_MACRO!
+    tikz.push_str("% Wire layers\n");
+    let mut layer_defs = String::new();
+    for (i, (_, layer)) in wires
+        .into_iter()
+        .sorted_by_cached_key(|(k, _)| *k)
+        .rev()
+        .enumerate()
+    {
         if i > 0 {
+            layer_defs.push_str("\\clippedlayer{\n");
+        }
+        for (g, path) in &layer {
+            let counts = gen_counts.entry(*g).or_default();
+            // Here we save the actual path geometry into a \newcommand.
             writeln!(
                 tikz,
-                "\\clippedlayer{{\\layer{i:x}}}",
-                i = Roman::from((i + 1) as i16)
+                "\\newcommand{{{name}}}{{{path}}}",
+                name = name(*g, *counts),
+                path = &render_path(path)
             )
             .unwrap();
-        } else {
+            // And then instruct the current layer as to how to get that geometry.
             writeln!(
-                tikz,
-                "\\layer{i:x}{{0}}{{-}}",
-                i = Roman::from((i + 1) as i16)
+                layer_defs,
+                "\\layered{{{name}}}{{{color}}};",
+                name = name(*g, *counts),
+                color = color(*g),
             )
             .unwrap();
+            // Finally we make a note of how may times we saw the path.
+            *counts += 1;
+        }
+        if i > 0 {
+            layer_defs.push_str("}\n");
         }
     }
+    tikz.push_str(&layer_defs);
 
     tikz.push_str("\\end{scope}\n");
 
