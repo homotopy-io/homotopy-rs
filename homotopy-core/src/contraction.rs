@@ -241,7 +241,7 @@ fn contract_in_path(
                             .clone()
                             .rewrite_forward(&contract)
                             .map_err(|_err| ContractionError::Invalid)?,
-                        height,
+                        *i,
                         expand_base.into(),
                     )
                     .map_err(|_err| ContractionError::Invalid)?;
@@ -272,7 +272,7 @@ fn contract_in_path(
                             .clone()
                             .rewrite_forward(&contract)
                             .map_err(|_err| ContractionError::Invalid)?,
-                        height,
+                        *i,
                         expand_base.into(),
                     )
                     .map_err(|_err| ContractionError::Invalid)?;
