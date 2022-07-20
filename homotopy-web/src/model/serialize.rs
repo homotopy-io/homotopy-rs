@@ -13,7 +13,7 @@ use wasm_bindgen::JsCast;
 
 use super::{
     proof::{
-        generators::{Color, GeneratorInfo},
+        generators::{Color, GeneratorInfo, VertexShape},
         SignatureItem, View,
     },
     Signature, Workspace,
