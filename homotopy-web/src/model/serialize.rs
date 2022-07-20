@@ -133,6 +133,7 @@ struct GeneratorData {
     name: String,
     color: Color,
     diagram: Key<Diagram>,
+    invertible: bool,
 }
 
 pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> {
@@ -153,6 +154,7 @@ pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> 
             diagram: data.store.pack_diagram(&info.diagram),
             name: info.name,
             color: info.color,
+            invertible: info.invertible,
         }),
     });
 
@@ -191,10 +193,10 @@ pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
                 SignatureData::Item(gd) => SignatureItem::Item(GeneratorInfo {
                     generator: gd.generator,
                     name: gd.name,
-                    invertible: Default::default(),
                     color: gd.color,
                     shape: Default::default(),
                     diagram: store.unpack_diagram(gd.diagram)?,
+                    invertible: gd.invertible,
                 }),
             })
         })
