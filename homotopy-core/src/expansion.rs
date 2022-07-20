@@ -430,83 +430,83 @@ pub(crate) fn expand_propagate(
                 vec![expansion],
             )],
         ),
-        (Some(forward), None) => {
-            let (backward, inclusion) = factorize_inc(
-                &slice
-                    .clone()
-                    .rewrite_backward(&target_cospan.backward)
-                    .unwrap(),
-                &slice,
-                &target_cospan.backward,
-            );
-            let (_, inner_backward, inner_forward) = antipushout(
-                &slice.clone().rewrite_backward(&expansion).unwrap(),
-                &slice.clone().rewrite_backward(&inclusion).unwrap(),
-                &slice,
-                &expansion,
-                &inclusion,
-            )[0]
-            .clone();
+        // (Some(forward), None) => {
+        //     let (backward, inclusion) = factorize_inc(
+        //         &slice
+        //             .clone()
+        //             .rewrite_backward(&target_cospan.backward)
+        //             .unwrap(),
+        //         &slice,
+        //         &target_cospan.backward,
+        //     );
+        //     let (_, inner_backward, inner_forward) = antipushout(
+        //         &slice.clone().rewrite_backward(&expansion).unwrap(),
+        //         &slice.clone().rewrite_backward(&inclusion).unwrap(),
+        //         &slice,
+        //         &expansion,
+        //         &inclusion,
+        //     )[0]
+        //     .clone();
 
-            RewriteN::new(
-                diagram.dimension(),
-                vec![Cone::new(
-                    height,
-                    vec![
-                        Cospan {
-                            forward,
-                            backward: inner_backward,
-                        },
-                        Cospan {
-                            forward: inner_forward,
-                            backward,
-                        },
-                    ],
-                    target_cospan.clone(),
-                    todo!("need antipushout"),
-                    vec![expansion, inclusion],
-                )],
-            )
-        }
-        (None, Some(backward)) => {
-            let (forward, inclusion) = factorize_inc(
-                &slice
-                    .clone()
-                    .rewrite_backward(&target_cospan.forward)
-                    .unwrap(),
-                &slice,
-                &target_cospan.forward,
-            );
-            let (_, inner_backward, inner_forward) = antipushout(
-                &slice.clone().rewrite_backward(&inclusion).unwrap(),
-                &slice.clone().rewrite_backward(&expansion).unwrap(),
-                &slice,
-                &inclusion,
-                &expansion,
-            )[0]
-            .clone();
+        //     RewriteN::new(
+        //         diagram.dimension(),
+        //         vec![Cone::new(
+        //             height,
+        //             vec![
+        //                 Cospan {
+        //                     forward,
+        //                     backward: inner_backward,
+        //                 },
+        //                 Cospan {
+        //                     forward: inner_forward,
+        //                     backward,
+        //                 },
+        //             ],
+        //             target_cospan.clone(),
+        //             todo!("need antipushout"),
+        //             vec![expansion, inclusion],
+        //         )],
+        //     )
+        // }
+        // (None, Some(backward)) => {
+        //     let (forward, inclusion) = factorize_inc(
+        //         &slice
+        //             .clone()
+        //             .rewrite_backward(&target_cospan.forward)
+        //             .unwrap(),
+        //         &slice,
+        //         &target_cospan.forward,
+        //     );
+        //     let (_, inner_backward, inner_forward) = antipushout(
+        //         &slice.clone().rewrite_backward(&inclusion).unwrap(),
+        //         &slice.clone().rewrite_backward(&expansion).unwrap(),
+        //         &slice,
+        //         &inclusion,
+        //         &expansion,
+        //     )[0]
+        //     .clone();
 
-            RewriteN::new(
-                diagram.dimension(),
-                vec![Cone::new(
-                    height,
-                    vec![
-                        Cospan {
-                            forward,
-                            backward: inner_backward,
-                        },
-                        Cospan {
-                            forward: inner_forward,
-                            backward,
-                        },
-                    ],
-                    target_cospan.clone(),
-                    todo!("need antipushout"),
-                    vec![inclusion, expansion],
-                )],
-            )
-        }
-        (None, None) => {
+        //     RewriteN::new(
+        //         diagram.dimension(),
+        //         vec![Cone::new(
+        //             height,
+        //             vec![
+        //                 Cospan {
+        //                     forward,
+        //                     backward: inner_backward,
+        //                 },
+        //                 Cospan {
+        //                     forward: inner_forward,
+        //                     backward,
+        //                 },
+        //             ],
+        //             target_cospan.clone(),
+        //             todo!("need antipushout"),
+        //             vec![inclusion, expansion],
+        //         )],
+        //     )
+        // }
+        _ => {
             // Insert a bubble
             RewriteN::new(
                 diagram.dimension(),
