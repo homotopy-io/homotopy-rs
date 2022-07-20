@@ -135,18 +135,13 @@ pub struct EditState {
 }
 
 impl EditState {
-    // This will probably go
-    fn apply(&mut self, edit: SignatureItemEdit) -> bool {
+    fn apply(&mut self, dispatch: &Callback<Action>, node: Node, edit: SignatureItemEdit) -> bool {
         match edit {
             SignatureItemEdit::Rename(name) => self.name = Some(name),
             SignatureItemEdit::Recolor(color) => self.color = Some(color),
             SignatureItemEdit::Reshape(shape) => self.shape = Some(shape),
         }
 
-        true
-    }
-
-    fn dispatch(&mut self, dispatch: &Callback<Action>, node: Node) {
         if let Some(name) = self.name.take() {
             dispatch.emit(Action::EditSignature(SignatureEdit::Edit(
                 node,
@@ -167,6 +162,8 @@ impl EditState {
                 SignatureItemEdit::Reshape(shape),
             )));
         }
+
+        true
     }
 }
 
@@ -227,17 +224,11 @@ impl Component for ItemView {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            ItemViewMessage::SwitchTo(mode) => return self.switch_to(ctx, mode),
+            ItemViewMessage::SwitchTo(mode) => return self.switch_to(mode),
             ItemViewMessage::Edit(edit) => {
-                // ctx.props().dispatch.emit(
-                //     Action::EditSignature(
-                //         SignatureEdit::Edit(
-                //             ctx.props().node,
-                //             edit,
-                //         )
-                //     )
-                // );
-                return self.edit.apply(edit);
+                return self
+                    .edit
+                    .apply(&ctx.props().dispatch, ctx.props().node, edit)
             }
             ItemViewMessage::Noop => {}
         }
@@ -281,13 +272,9 @@ impl Component for ItemView {
 }
 
 impl ItemView {
-    fn switch_to(&mut self, ctx: &Context<Self>, mode: ItemViewMode) -> bool {
+    fn switch_to(&mut self, mode: ItemViewMode) -> bool {
         if mode == self.mode {
             return false;
-        }
-
-        if ItemViewMode::Viewing == mode {
-            self.edit.dispatch(&ctx.props().dispatch, ctx.props().node);
         }
 
         self.mode = mode;
