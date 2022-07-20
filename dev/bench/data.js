@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1658149964016,
+  "lastUpdate": 1658318088798,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -36899,6 +36899,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 289.43,
             "range": "+/- 0.650",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thud@thud.dev",
+            "name": "Jasper Parish",
+            "username": "thud"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "27c0f7e486fff9323b4aa1d693293b0420fd1364",
+          "message": "Make generator style changes immediate (#595)\n\n* Make generator style changes immediate\r\n\r\n* Add zlib to lint\r\n\r\nCo-authored-by: Nick Hu <me@nickhu.co.uk>",
+          "timestamp": "2022-07-20T12:44:36+01:00",
+          "tree_id": "177a9d506ebb13e57e53c9c319b53f0a92ad9eb7",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/27c0f7e486fff9323b4aa1d693293b0420fd1364"
+        },
+        "date": 1658318081163,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.117,
+            "range": "+/- 0.004",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 6.4511,
+            "range": "+/- 0.017",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 17.065,
+            "range": "+/- 0.010",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 42.29,
+            "range": "+/- 0.133",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 107.91,
+            "range": "+/- 0.430",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 303.56,
+            "range": "+/- 1.210",
             "unit": "ms"
           }
         ]
