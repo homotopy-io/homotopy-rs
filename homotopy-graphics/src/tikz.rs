@@ -13,12 +13,10 @@ use itertools::Itertools;
 use lyon_path::{Event, Path};
 
 use crate::{
-    path_util::{offset, simplify_graphic},
+    path_util::simplify_graphic,
     style::{GeneratorStyle, SignatureStyleData, VertexShape},
     svg::render::GraphicElement,
 };
-
-const OCCLUSION_DELTA: f32 = 0.2;
 
 pub fn color(generator: Generator) -> String {
     format!("generator-{}-{}", generator.id, generator.dimension)
@@ -57,50 +55,9 @@ pub fn render(
     writeln!(tikz, "\\begin{{tikzpicture}}").unwrap();
     tikz.push_str(stylesheet);
 
-    // Surfaces
-    writeln!(tikz, "\\newcommand*\\Background{{").unwrap();
-    for (g, path) in surfaces {
-        write!(
-            tikz,
-            "\\fill[{}!75, name={}-{}] ",
-            color(g),
-            g.id,
-            g.dimension
-        )
-        .unwrap();
-        tikz.push_str(&render_path(&path));
-        writeln!(tikz, ";").unwrap();
-    }
-    writeln!(tikz, "}}").unwrap();
-    writeln!(tikz, "\\Background").unwrap();
+    tikz.push_str(&render_inner(&surfaces, wires));
 
-    // Wires
-    for (i, (_, layer)) in wires
-        .into_iter()
-        .sorted_by_cached_key(|(k, _)| *k)
-        .rev()
-        .enumerate()
-    {
-        // Background
-        if i > 0 {
-            writeln!(tikz, "\\begin{{scope}}").unwrap();
-            write!(tikz, "\\clip ").unwrap();
-            for (_, path) in &layer {
-                tikz.push_str(&offset_multiple(OCCLUSION_DELTA, path));
-            }
-            writeln!(tikz, ";").unwrap();
-            writeln!(tikz, "\\Background").unwrap();
-            writeln!(tikz, "\\end{{scope}}").unwrap();
-        }
-
-        for (g, path) in &layer {
-            write!(tikz, "\\draw[{}!80, line width=5pt] ", color(*g)).unwrap();
-            tikz.push_str(&render_path(path));
-            writeln!(tikz, ";").unwrap();
-        }
-    }
-
-    // Points
+    // Points are unchanged
     for (g, point) in points {
         let vertex = render_vertex(signature_styles.generator_style(g).unwrap(), point);
         writeln!(tikz, "\\fill[{}] {}", color(g), vertex).unwrap();
@@ -111,10 +68,108 @@ pub fn render(
     Ok(tikz)
 }
 
+// This contains all the "magic" commands we need to inject.
+// No formatting needed, it's the same all the time.
+
+const MAGIC_MACRO: &str = "\n\\newcommand{\\wire}[2]{
+  \\ifdefined\\recolor\\draw[color=\\recolor!75, line width=10pt]\\else\\draw[color=#1!80, line width=5pt]\\fi #2;
+}
+\\newcommand{\\clipped}[3]{
+\\begin{scope}
+  \\newcommand{\\recolor}{#1}
+  \\clip#3;
+  #2
+\\end{scope}
+}\n\n";
+
+fn render_inner(
+    surfaces: &[(Generator, Path)],
+    wires: FastHashMap<usize, Vec<(Generator, Path)>>,
+) -> String {
+    let mut tikz = String::new();
+
+    let needs_masking = wires.len() > 1;
+
+    tikz.push_str(MAGIC_MACRO);
+    // The transparency group does nothing in terms of our masking strategy,
+    // but it is useful in case users lower the opacity. It changes the
+    // opacity rules to hide our masking shenanigans.
+    // If you want to see it in action, add [opacity=.5] at
+    // at \begin{tikzpicture} and remove [transparency group].
+    tikz.push_str("\\begin{scope}[transparency group]\n");
+
+    tikz.push_str("% Background surfaces\n");
+    for (g, path) in surfaces.iter() {
+        writeln!(
+            tikz,
+            "\\fill[{color}!75] {path};",
+            color = color(*g),
+            path = &render_path(path)
+        )
+        .unwrap();
+    }
+
+    // Since we always clip with respect to the same background paths,
+    // might as well make a macro for it and have TeX do the CTRL+V for us.
+    if needs_masking {
+        writeln!(tikz, "\\newcommand{{\\layer}}[1]{{",).unwrap();
+        for (g, path) in surfaces.iter() {
+            writeln!(
+                tikz,
+                "  \\clipped{{{color}}}{{#1}}{{{path}}}",
+                color = color(*g),
+                path = &render_path(path)
+            )
+            .unwrap();
+        }
+        tikz.push_str("  #1\n}\n\n");
+    }
+
+    // The masking logic mostly concerns the wires.
+    // Unlike the background, wires do not all share the same depth.
+    // Here we create a series of "layer" commands, which
+    // either render their own paths or recourse to the successive layer.
+    //
+    // The \wire command checks if \recolor is defined,
+    // which allows to override the colour into something else.
+    // We use this to switch between drawing the wire in "mask mode"
+    // and "normal mode". The if/else statement is run on TeX side,
+    // and the logic is in MAGIC_MACRO!
+    tikz.push_str("% Wire layers\n");
+    for (i, (_, layer)) in wires
+        .into_iter()
+        .sorted_by_cached_key(|(k, _)| *k)
+        .rev()
+        .enumerate()
+    {
+        if i > 0 {
+            tikz.push_str("\\layer{\n");
+        }
+        for (g, path) in &layer {
+            // We pass the geometry of the wire directly to the current layer.
+            // This is to avoid naming annoyances.
+            writeln!(
+                tikz,
+                "\\wire{{{color}}}{{{path}}};",
+                color = color(*g),
+                path = &render_path(path)
+            )
+            .unwrap();
+        }
+        if i > 0 {
+            tikz.push_str("}\n");
+        }
+    }
+
+    tikz.push_str("\\end{scope}\n");
+
+    tikz
+}
+
 fn render_point(point: Point2D<f32>) -> String {
     let x = (point.x * 100.0).round() / 100.0;
     let y = (point.y * 100.0).round() / 100.0;
-    format!("({}, {})", x, y)
+    format!("({},{})", x, y)
 }
 
 fn render_vertex(generator_style: &impl GeneratorStyle, point: Point2D<f32>) -> String {
@@ -176,32 +231,4 @@ fn render_path(path: &Path) -> String {
         }
     }
     result
-}
-
-//TODO move to path_util once the dependency on render_path is removed.
-fn offset_multiple(delta: f32, path: &Path) -> String {
-    let mut tikz = String::new();
-    let mut builder = Path::builder();
-    for event in path {
-        match event {
-            Event::End { .. } => {
-                builder.path_event(event);
-                let segment = builder.build();
-                let left = offset(-delta, &segment)
-                    .reversed()
-                    .with_attributes()
-                    .into_path();
-                let right = offset(delta, &segment);
-                tikz.push_str(&render_path(&right));
-                tikz.push_str(" -- ");
-                tikz.push_str(&render_path(&left));
-                tikz.push_str(" -- cycle");
-                builder = Path::builder();
-            }
-            _ => {
-                builder.path_event(event);
-            }
-        }
-    }
-    tikz
 }
