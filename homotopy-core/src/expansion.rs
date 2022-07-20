@@ -95,6 +95,12 @@ pub fn expand_in_path(
                 Diagram::Diagram0(_) => Err(ExpansionError::OutOfBounds),
                 Diagram::DiagramN(diagram) => Ok(diagram),
             }?;
+
+            // First attempt to remove the singular slice if it is smoothable.
+            if let Some(r) = diagram.smooth(*height) {
+                return Ok(r);
+            }
+
             let slice = diagram
                 .slice(Height::Singular(*height))
                 .ok_or(ExpansionError::OutOfBounds)?;
@@ -130,26 +136,33 @@ fn expand_base_regular(
             Direction::Backward => 1,
         }; // cospans[i] needs to be deleted by the smoothing rewrite
 
-    let cs = &diagram.cospans()[i];
-    if cs.forward == cs.backward
-        && cs
-            .forward
-            .max_generator(Boundary::Target)
-            .map_or(false, |g| g.dimension < diagram.dimension())
-    {
-        Ok(RewriteN::new(
-            diagram.dimension(),
-            vec![Cone::new(
-                i,
-                Default::default(),
-                cs.clone(),
-                vec![cs.forward.clone()],
-                Default::default(),
-            )],
-        )
-        .into())
-    } else {
-        Err(ExpansionError::Unsmoothable)
+    diagram.smooth(i).ok_or(ExpansionError::Unsmoothable)
+}
+
+impl DiagramN {
+    // Attempt to remove the cospan at the given index.
+    fn smooth(&self, i: usize) -> Option<Rewrite> {
+        let cs = &self.cospans()[i];
+        if cs.forward == cs.backward
+            && cs
+                .forward
+                .max_generator(Boundary::Target)
+                .map_or(false, |g| g.dimension < self.dimension())
+        {
+            Some(RewriteN::new(
+                self.dimension(),
+                vec![Cone::new(
+                    i,
+                    Default::default(),
+                    cs.clone(),
+                    vec![cs.forward.clone()],
+                    Default::default(),
+                )],
+            )
+            .into())
+        } else {
+            None
+        }
     }
 }
 
@@ -525,14 +538,4 @@ pub(crate) fn expand_propagate(
     };
 
     Ok(expansion_rewrite)
-    // TODO: normalization
-    // let expansion_preimage = diagram
-    //     .clone()
-    //     .rewrite_backward(&expansion_rewrite)
-    //     .unwrap();
-    // let normalization_rewrite = normalize_singular(&expansion_preimage.into());
-    //
-    // Ok(normalization_rewrite
-    //     .compose(&expansion_rewrite.into())
-    //     .unwrap())
 }
