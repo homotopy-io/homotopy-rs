@@ -13,7 +13,7 @@ use wasm_bindgen::JsCast;
 
 use super::{
     proof::{
-        generators::{Color, GeneratorInfo, VertexShape},
+        generators::{Color, GeneratorInfo},
         SignatureItem, View,
     },
     Signature, Workspace,
@@ -191,8 +191,9 @@ pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
                 SignatureData::Item(gd) => SignatureItem::Item(GeneratorInfo {
                     generator: gd.generator,
                     name: gd.name,
+                    invertible: Default::default(),
                     color: gd.color,
-                    shape: VertexShape::default(),
+                    shape: Default::default(),
                     diagram: store.unpack_diagram(gd.diagram)?,
                 }),
             })

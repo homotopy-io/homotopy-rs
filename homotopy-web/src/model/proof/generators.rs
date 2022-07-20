@@ -14,6 +14,7 @@ use super::signature::Signature;
 pub struct GeneratorInfo {
     pub generator: Generator,
     pub name: String,
+    pub invertible: bool,
     pub color: Color,
     pub shape: VertexShape,
     pub diagram: Diagram,
@@ -83,11 +84,4 @@ impl Default for VertexShape {
     fn default() -> Self {
         Self::Circle // TODO(thud): have this be decided by the user in settings UI
     }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum Action {
-    Rename(Generator, String),
-    Recolor(Generator, Color),
-    Reshape(Generator, VertexShape),
 }

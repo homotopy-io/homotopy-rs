@@ -37,6 +37,7 @@ pub enum SignatureItemEdit {
     Rename(String),
     Recolor(Color),
     Reshape(VertexShape),
+    Invertibility(bool),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -78,6 +79,7 @@ impl Signature {
         let info = GeneratorInfo {
             generator,
             name: format!("{} {}", name, id),
+            invertible: Default::default(),
             color: Color(Srgb::<u8>::from_str(COLORS[id % COLORS.len()]).unwrap()),
             shape: VertexShape::default(),
             diagram: diagram.into(),
@@ -94,11 +96,12 @@ impl Signature {
     }
 
     fn edit(&mut self, node: Node, edit: SignatureItemEdit) {
-        use SignatureItemEdit::{Recolor, Rename, Reshape};
+        use SignatureItemEdit::{Invertibility, Recolor, Rename, Reshape};
         self.0.with_mut(node, move |n| match (n.inner_mut(), edit) {
             (SignatureItem::Item(info), Rename(name)) => info.name = name,
             (SignatureItem::Item(info), Recolor(color)) => info.color = color,
             (SignatureItem::Item(info), Reshape(shape)) => info.shape = shape,
+            (SignatureItem::Item(info), Invertibility(i)) => info.invertible = i,
             (SignatureItem::Folder(ref mut old, _), Rename(name)) => *old = name,
             (_, _) => {}
         });

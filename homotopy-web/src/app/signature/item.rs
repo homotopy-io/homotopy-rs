@@ -9,16 +9,18 @@ use yew_macro::function_component;
 use crate::{
     components::icon::{Icon, IconSize},
     model::proof::{
-        generators::{Color, VertexShape},
+        generators::{Color, GeneratorInfo, VertexShape},
         Action, SignatureEdit, SignatureItem, SignatureItemEdit, COLORS, VERTEX_SHAPES,
     },
 };
 
+mod preference;
+use preference::GeneratorPreferenceCheckbox;
+
 // FIXME(@doctorn)
 //
 // When deleting signature items, at the moment, `ItemView` components
-// retain their state. This means that the edit state intended for a particular
-// signature item ends up being applied to an entirely different signature item.
+// retain their state.
 //
 // In order to fix this, I think it is necessary to maintain a map from nodes
 // in the signature to their current `ItemView` state, but this is a big change
@@ -111,7 +113,7 @@ pub struct ItemViewProps {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ItemViewMode {
     Viewing,
-    Styling,
+    Editing,
 }
 
 impl Default for ItemViewMode {
@@ -127,44 +129,9 @@ pub enum ItemViewMessage {
     Noop,
 }
 
-#[derive(Debug, Default)]
-pub struct EditState {
-    name: Option<String>,
-    color: Option<Color>,
-    shape: Option<VertexShape>,
-}
-
-impl EditState {
-    fn apply(&mut self, dispatch: &Callback<Action>, node: Node, edit: SignatureItemEdit) -> bool {
-        match edit {
-            SignatureItemEdit::Rename(name) => self.name = Some(name),
-            SignatureItemEdit::Recolor(color) => self.color = Some(color),
-            SignatureItemEdit::Reshape(shape) => self.shape = Some(shape),
-        }
-
-        if let Some(name) = self.name.take() {
-            dispatch.emit(Action::EditSignature(SignatureEdit::Edit(
-                node,
-                SignatureItemEdit::Rename(name),
-            )));
-        }
-
-        if let Some(color) = self.color.take() {
-            dispatch.emit(Action::EditSignature(SignatureEdit::Edit(
-                node,
-                SignatureItemEdit::Recolor(color),
-            )));
-        }
-
-        if let Some(shape) = self.shape.take() {
-            dispatch.emit(Action::EditSignature(SignatureEdit::Edit(
-                node,
-                SignatureItemEdit::Reshape(shape),
-            )));
-        }
-
-        true
-    }
+fn apply_edit(dispatch: &Callback<Action>, node: Node, edit: SignatureItemEdit) -> bool {
+    dispatch.emit(Action::EditSignature(SignatureEdit::Edit(node, edit)));
+    true
 }
 
 #[derive(Properties, Debug, Clone, PartialEq)]
@@ -208,7 +175,6 @@ fn custom_recolor_button(props: &CustomRecolorButtonProps) -> Html {
 #[derive(Debug)]
 pub struct ItemView {
     mode: ItemViewMode,
-    edit: EditState,
 }
 
 impl Component for ItemView {
@@ -218,7 +184,6 @@ impl Component for ItemView {
     fn create(_ctx: &Context<Self>) -> Self {
         Self {
             mode: Default::default(),
-            edit: Default::default(),
         }
     }
 
@@ -226,9 +191,7 @@ impl Component for ItemView {
         match msg {
             ItemViewMessage::SwitchTo(mode) => return self.switch_to(mode),
             ItemViewMessage::Edit(edit) => {
-                return self
-                    .edit
-                    .apply(&ctx.props().dispatch, ctx.props().node, edit)
+                return apply_edit(&ctx.props().dispatch, ctx.props().node, edit)
             }
             ItemViewMessage::Noop => {}
         }
@@ -239,15 +202,20 @@ impl Component for ItemView {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let class = format!(
             "signature__item {}",
-            if self.mode == ItemViewMode::Styling {
-                "signature__item-styling"
+            if self.mode == ItemViewMode::Editing {
+                "signature__item-editing"
             } else {
                 ""
             },
         );
 
-        let picker = if let SignatureItem::Item(info) = &ctx.props().item {
-            self.view_picker(ctx, &info.color, &info.shape)
+        let picker_and_prefs = if let SignatureItem::Item(info) = &ctx.props().item {
+            html! {
+                <>
+                    {self.view_picker(ctx, info)}
+                    {self.view_preferences(ctx, info)}
+                </>
+            }
         } else {
             html! {}
         };
@@ -265,7 +233,7 @@ impl Component for ItemView {
                     {self.view_info(ctx)}
                     {self.view_buttons(ctx)}
                 </div>
-                {picker}
+                {picker_and_prefs}
             </div>
         }
     }
@@ -310,7 +278,7 @@ impl ItemView {
                 <input
                     type="text"
                     class="signature__item-name-input"
-                    value={self.edit.name.clone().unwrap_or_else(|| name.clone())}
+                    value={name.clone()}
                     oninput={ctx.link().callback(move |e: InputEvent| {
                         let input: HtmlInputElement = e.target_unchecked_into();
                         ItemViewMessage::Edit(SignatureItemEdit::Rename(input.value()))
@@ -328,11 +296,8 @@ impl ItemView {
         }
     }
 
-    fn view_color(&self, color: &Color) -> Html {
-        let style = format!(
-            "background: {}",
-            self.edit.color.clone().unwrap_or_else(|| color.clone())
-        );
+    fn view_color(color: &Color) -> Html {
+        let style = format!("background: {}", color.clone());
 
         html! {
             <span
@@ -342,12 +307,12 @@ impl ItemView {
         }
     }
 
-    fn view_picker(&self, ctx: &Context<Self>, color: &Color, shape: &VertexShape) -> Html {
-        if self.mode != ItemViewMode::Styling {
+    fn view_picker(&self, ctx: &Context<Self>, info: &GeneratorInfo) -> Html {
+        if self.mode != ItemViewMode::Editing {
             return html! {};
         }
 
-        let selected_color = self.edit.color.clone().unwrap_or_else(|| color.clone());
+        let selected_color = info.color.clone();
         let color_preset_buttons = COLORS.iter().map(|color| {
             let recolor = ctx.link().callback(move |_| {
                 ItemViewMessage::Edit(SignatureItemEdit::Recolor(Color(
@@ -377,7 +342,7 @@ impl ItemView {
             }
         });
 
-        let selected_shape = self.edit.shape.clone().unwrap_or_else(|| shape.clone());
+        let selected_shape = info.shape.clone();
         let shape_preset_buttons = VERTEX_SHAPES.iter().map(|shape| {
             let reshape = ctx.link().callback(move |_| {
                 ItemViewMessage::Edit(SignatureItemEdit::Reshape(shape.clone()))
@@ -423,7 +388,7 @@ impl ItemView {
             SignatureItem::Item(info) => {
                 html! {
                     <>
-                        {self.view_color(&info.color)}
+                        {Self::view_color(&info.color)}
                         {self.view_name(ctx)}
                         <span class="signature__item-child">
                             {info.diagram.dimension()}
@@ -468,7 +433,7 @@ impl ItemView {
                     {new_folder}
                     <ItemViewButton icon={"settings"} on_click={
                         ctx.link().callback(move |_| {
-                            ItemViewMessage::SwitchTo(ItemViewMode::Styling)
+                            ItemViewMessage::SwitchTo(ItemViewMode::Editing)
                         })
                     } />
                 </>
@@ -490,6 +455,27 @@ impl ItemView {
                     } />
                 </>
             }
+        }
+    }
+
+    fn view_preferences(&self, ctx: &Context<Self>, info: &GeneratorInfo) -> Html {
+        if self.mode != ItemViewMode::Editing {
+            return html! {};
+        }
+
+        let try_toggle = ctx.link().callback(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            ItemViewMessage::Edit(SignatureItemEdit::Invertibility(input.checked()))
+        });
+
+        html! {
+            <>
+                <GeneratorPreferenceCheckbox
+                    name={"Invertible:"}
+                    oninput={try_toggle}
+                    checked={info.invertible}
+                />
+            </>
         }
     }
 }
