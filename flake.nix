@@ -109,7 +109,7 @@
                 runtimeInputs = [pkgs.rust-bin.nightly.latest.rustfmt rust];
                 text = ''
                   #shellcheck disable=SC2155
-                  export LD_LIBRARY_PATH="${pkgs.zlib}/lib''${LD_LIBRARY_PATH:+LD_LIBRARY_PATH:}"
+                  export LD_LIBRARY_PATH="${pkgs.zlib}/lib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
                   cargo fmt --version
                   cargo fmt --all -- --check
                   cargo clippy -- -D warnings
