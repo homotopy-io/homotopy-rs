@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1658318088798,
+  "lastUpdate": 1658318528716,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -36959,6 +36959,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 303.56,
             "range": "+/- 1.210",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "152d91ab64540a1f0e03148fa37337d61d8a0d12",
+          "message": "Tikz cleanup (#533) (#593)\n\n* Added Calin's braiding examples\r\n\r\n* Tikz cleanup, split masked and unmasked cases in different routines.\r\n\r\n* Tikz cleanup, rewrote masking code to perform clipping on .tikz side, deprecated offsetting.\r\n\r\n* Tikz cleanup, removed offsetting code.\r\n\r\n* Tikz cleanup, removed recursive layering to make code more readable and remove double-drawing.\r\n\r\n* Tikz cleanup, removed named layers.\r\n\r\n* Tikz cleanup, removed named wires, named surfaces remain for the time being.\r\n\r\n* Added another example of braiding by Calin\r\n\r\n* Tikz cleanup, removed named surfaces, removed numerals dependency.\r\n\r\n* Tikz cleanup, unified masked and unmasked rendering functions.\r\n\r\n* Changed filenames for exports.\r\n\r\n* Tikz cleanup, integrated Calin's feedback on macro names.\r\n\r\n* Added mention to exporting functionalities in README.\r\n\r\nCo-authored-by: regular-citizen <chara@sarti.me>",
+          "timestamp": "2022-07-20T11:52:22Z",
+          "tree_id": "a73aa8380611f22bae311351ae21cf828ee2ba0e",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/152d91ab64540a1f0e03148fa37337d61d8a0d12"
+        },
+        "date": 1658318519986,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.1523,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 6.64,
+            "range": "+/- 0.028",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 17.601,
+            "range": "+/- 0.019",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 43.382,
+            "range": "+/- 0.086",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 109.12,
+            "range": "+/- 0.240",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 293.18,
+            "range": "+/- 0.840",
             "unit": "ms"
           }
         ]
