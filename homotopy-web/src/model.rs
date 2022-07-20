@@ -134,7 +134,7 @@ impl State {
                 }
 
                 let data = tikz::render(&diagram, &stylesheet, &signature).unwrap();
-                serialize::generate_download("filename_todo", "tikz", data.as_bytes())
+                serialize::generate_download("homotopy_io_export", "tikz", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
 
@@ -180,7 +180,7 @@ impl State {
                 data.push_str(&stylesheet);
                 data.push_str(&svg[content_start..]);
 
-                serialize::generate_download("filename_todo", "svg", data.as_bytes())
+                serialize::generate_download("homotopy_io_export", "svg", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
 
@@ -202,7 +202,7 @@ impl State {
                 }
 
                 let data = manim::render(&diagram, &signature, &stylesheet).unwrap();
-                serialize::generate_download("filename_todo", "py", data.as_bytes())
+                serialize::generate_download("homotopy_io_export", "py", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
 
@@ -210,7 +210,7 @@ impl State {
                 let signature = self.with_proof(|p| p.signature.clone());
                 let diagram = self.with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram());
                 let data = stl::render(&diagram, &signature).unwrap();
-                serialize::generate_download("filename_todo", "stl", data.as_bytes())
+                serialize::generate_download("homotopy_io_export", "stl", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
 
@@ -219,7 +219,7 @@ impl State {
                     self.with_proof(|p| p.signature.clone()),
                     self.with_proof(|p| p.workspace.clone()),
                 );
-                serialize::generate_download("filename_todo", "hom", data.as_slice())
+                serialize::generate_download("homotopy_io_export", "hom", data.as_slice())
                     .map_err(ModelError::Export)?;
             }
 
