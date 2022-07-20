@@ -46,7 +46,7 @@ body, html {
 
 input, button {
   font-family: 'IBM Plex Sans', 'sans';
-  color: var(--draw-foreground);
+  color: var(--drawer-foreground);
   font-size: 14px;
 }
 
@@ -385,7 +385,7 @@ button, .button {
 }
 
 .signature__item.signature__item-styling {
-  height: 160px;
+  height: 162px;
 }
 
 .signature__item-info {
@@ -503,14 +503,80 @@ button, .button {
     color: black;
 }
 
-.signature__generator-picker-custom {
-  flex: 1 1 100%;
+.signature__generator-picker-custom-wrapper {
   width: 100%;
-  height: 24px;
+  height: calc(24px + calc(2 * var(--space-0)));
   border-radius: var(--space-0);
+  color: var(--sidebar-foreground);
   overflow: hidden;
   cursor: pointer;
   outline: none;
+  border: solid var(--sidebar-background) 1px;
+}
+
+.signature__generator-picker-custom-flex {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.signature__generator-picker-custom {
+  height: 100%;
+  overflow: hidden;
+  flex: 1 1 auto;
+  outline: none;
+  transition: background-color 100ms;
+}
+
+.signature__generator-picker-custom-hex {
+  width: 80px;
+  height: 100%;
+  padding: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  color: var(--drawer-foreground);
+  cursor: pointer;
+  outline: none;
+  text-align: center;
+}
+
+.signature__generator-picker-custom-hex-input {
+  width: 100%;
+  height: 100%;
+  padding: calc(var(--space-0) + 2px);
+  box-sizing: border-box;
+  overflow: hidden;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  text-align: center;
+  color: var(--sidebar-background);
+  font-family: monospace;
+  transition: background-color 100ms;
+}
+
+.signature__generator-picker-custom-hex-input:hover {
+  background-color: var(--drawer-selected);
+}
+
+.signature__generator-picker-custom-inner {
+  position: relative;
+  padding: var(--space-0);
+  width: 100%;
+  height: 100%;
+  bottom: calc(24px + calc(2 * var(--space-0)));
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  pointer-events: none;
 }
 
 @media (pointer: fine) {

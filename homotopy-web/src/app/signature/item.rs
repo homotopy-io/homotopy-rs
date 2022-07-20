@@ -111,7 +111,6 @@ pub struct ItemViewProps {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ItemViewMode {
     Viewing,
-    Editing,
     Styling,
 }
 
@@ -168,6 +167,44 @@ impl EditState {
                 SignatureItemEdit::Reshape(shape),
             )));
         }
+    }
+}
+
+#[derive(Properties, Debug, Clone, PartialEq)]
+struct CustomRecolorButtonProps {
+    oninput: Callback<InputEvent>,
+    onkeyup: Callback<KeyboardEvent>,
+    value: Color,
+    #[prop_or_default]
+    class: String,
+}
+
+#[function_component(CustomRecolorButton)]
+fn custom_recolor_button(props: &CustomRecolorButtonProps) -> Html {
+    let hex = format!("#{:X}", props.value.0);
+    html! {
+        <div class={"signature__generator-picker-custom-wrapper"}>
+            <div class={"signature__generator-picker-custom-flex"}>
+                <input
+                    class={"signature__generator-picker-custom"}
+                    type={"color"}
+                    oninput={props.oninput.clone()}
+                    value={props.value.to_string()}
+                />
+                <div class={"signature__generator-picker-custom-hex"}>
+                    <input
+                        class={"signature__generator-picker-custom-hex-input"}
+                        type="text"
+                        oninput={props.oninput.clone()}
+                        onkeyup={props.onkeyup.clone()}
+                        value={hex}
+                    />
+                </div>
+            </div>
+            <div class={"signature__generator-picker-custom-inner"}>
+                <Icon name={"palette"} size={IconSize::Icon18} />
+            </div>
+        </div>
     }
 }
 
@@ -304,47 +341,17 @@ impl ItemView {
         }
     }
 
-    fn view_color(&self, ctx: &Context<Self>, color: &Color) -> Html {
+    fn view_color(&self, color: &Color) -> Html {
         let style = format!(
             "background: {}",
             self.edit.color.clone().unwrap_or_else(|| color.clone())
         );
 
-        match self.mode {
-            ItemViewMode::Viewing => html! {
-                <span
-                    class={"signature__item-child signature__generator-color"}
-                    style={style}
-                />
-            },
-            ItemViewMode::Editing => {
-                let recolor = ctx
-                    .link()
-                    .callback(|_| ItemViewMessage::SwitchTo(ItemViewMode::Styling));
-
-                html! {
-                    <ItemViewButton
-                        class={"signature__generator-color"}
-                        icon={"palette"}
-                        on_click={recolor}
-                        style={style}
-                    />
-                }
-            }
-            ItemViewMode::Styling => {
-                let apply = ctx
-                    .link()
-                    .callback(|_| ItemViewMessage::SwitchTo(ItemViewMode::Editing));
-
-                html! {
-                    <ItemViewButton
-                        class={"signature__generator-color"}
-                        icon={"done"}
-                        on_click={apply}
-                        style={style}
-                    />
-                }
-            }
+        html! {
+            <span
+                class={"signature__item-child signature__generator-color"}
+                style={style}
+            />
         }
     }
 
@@ -371,9 +378,16 @@ impl ItemView {
         });
         let custom_recolor = ctx.link().callback(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            ItemViewMessage::Edit(SignatureItemEdit::Recolor(Color(
-                Srgb::<u8>::from_str(&input.value()).unwrap(),
-            )))
+            e.stop_propagation();
+            // The below ensures that the user's typing isn't overwritten by reactive code.
+            if input.type_() == "text" && input.value().len() < 6 {
+                return ItemViewMessage::Noop;
+            }
+            if let Ok(srgb) = Srgb::<u8>::from_str(&input.value()) {
+                ItemViewMessage::Edit(SignatureItemEdit::Recolor(Color(srgb)))
+            } else {
+                ItemViewMessage::Noop
+            }
         });
 
         let selected_shape = self.edit.shape.clone().unwrap_or_else(|| shape.clone());
@@ -404,11 +418,13 @@ impl ItemView {
                 </div>
                 <div class="signature__generator-picker signature__generator-picker-color">
                     {for color_preset_buttons}
-                    <input
-                        class="signature__generator-picker-custom"
-                        value={selected_color.to_string()}
-                        type="color"
+                    <CustomRecolorButton
+                        value={selected_color}
                         oninput={custom_recolor}
+                        onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
+                            e.stop_propagation();
+                            ItemViewMessage::Noop
+                        })}
                     />
                 </div>
             </>
@@ -420,7 +436,7 @@ impl ItemView {
             SignatureItem::Item(info) => {
                 html! {
                     <>
-                        {self.view_color(ctx, &info.color)}
+                        {self.view_color(&info.color)}
                         {self.view_name(ctx)}
                         <span class="signature__item-child">
                             {info.diagram.dimension()}
@@ -463,9 +479,9 @@ impl ItemView {
             html! {
                 <>
                     {new_folder}
-                    <ItemViewButton icon={"edit"} on_click={
+                    <ItemViewButton icon={"settings"} on_click={
                         ctx.link().callback(move |_| {
-                            ItemViewMessage::SwitchTo(ItemViewMode::Editing)
+                            ItemViewMessage::SwitchTo(ItemViewMode::Styling)
                         })
                     } />
                 </>
