@@ -100,7 +100,7 @@ impl<'ctx> UntypedShader {
     }
 }
 
-impl<'ctx> Drop for UntypedShader {
+impl Drop for UntypedShader {
     #[inline]
     fn drop(&mut self) {
         self.ctx

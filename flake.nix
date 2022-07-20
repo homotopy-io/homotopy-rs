@@ -127,7 +127,7 @@
           };
         };
         defaultPackage = let
-          rust = pkgs.rust-bin.stable."1.59.0".minimal.override { # TODO: 1.60.0 crashes
+          rust = pkgs.rust-bin.stable.latest.minimal.override {
             targets = ["wasm32-unknown-unknown"];
           };
           naersk = inputs.naersk.lib."${system}".override {

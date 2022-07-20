@@ -118,7 +118,7 @@ impl VertexArray {
     }
 }
 
-impl<'ctx> Drop for VertexArray {
+impl Drop for VertexArray {
     #[inline]
     fn drop(&mut self) {
         self.ctx.with_gl(|gl| {

@@ -22,7 +22,6 @@
     clippy::unneeded_field_pattern,
     clippy::unreachable,
     clippy::use_debug,
-    clippy::use_self,
 )]
 #![allow( // pedantic is too annoying
     clippy::cast_possible_truncation,
@@ -46,6 +45,7 @@
     clippy::unreachable,
     clippy::unused_unit,
     clippy::shadow_unrelated,
+    clippy::use_self, // https://github.com/rust-lang/rust-clippy/issues/6902
 )]
 #![recursion_limit = "1024"]
 

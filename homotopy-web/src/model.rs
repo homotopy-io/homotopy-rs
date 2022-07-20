@@ -30,16 +30,16 @@ impl Action {
         use homotopy_core::Direction::{Backward, Forward};
 
         match self {
-            Action::Proof(action) => proof.is_valid(action),
-            Action::ExportTikz | Action::ExportSvg | Action::ExportManim => proof
+            Self::Proof(action) => proof.is_valid(action),
+            Self::ExportTikz | Self::ExportSvg | Self::ExportManim => proof
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.view.dimension() == 2),
-            Action::ExportStl => proof
+            Self::ExportStl => proof
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.view.dimension() == 3),
-            Action::History(history::Action::Move(dir)) => match dir {
+            Self::History(history::Action::Move(dir)) => match dir {
                 history::Direction::Linear(Forward) => proof.can_redo(),
                 history::Direction::Linear(Backward) => proof.can_undo(),
             },
