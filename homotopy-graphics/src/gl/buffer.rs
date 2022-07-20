@@ -71,7 +71,7 @@ pub struct ElementBuffer {
     pub(super) kind: ElementKind,
 }
 
-impl<'ctx> UntypedBuffer {
+impl UntypedBuffer {
     #[inline]
     pub(super) fn bind<F, U>(&self, f: F) -> U
     where
