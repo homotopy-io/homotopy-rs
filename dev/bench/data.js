@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1658318528716,
+  "lastUpdate": 1658320121704,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -37019,6 +37019,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 293.18,
             "range": "+/- 0.840",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thud@thud.dev",
+            "name": "Jasper Parish",
+            "username": "thud"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5a6360ac6f01b80be614fecd6198057ce10f7773",
+          "message": "Fix cube normals for generator vertex shapes (#596)\n\n* This stops cube generator vertex shapes from being shaded smooth",
+          "timestamp": "2022-07-20T13:18:26+01:00",
+          "tree_id": "23ad2464cf252755257131ab01d475ef14cd16c4",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/5a6360ac6f01b80be614fecd6198057ce10f7773"
+        },
+        "date": 1658320113451,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.1333,
+            "range": "+/- 0.004",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 6.6132,
+            "range": "+/- 0.010",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 17.557,
+            "range": "+/- 0.046",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 43.192,
+            "range": "+/- 0.023",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 108.17,
+            "range": "+/- 0.210",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 295.69,
+            "range": "+/- 0.810",
             "unit": "ms"
           }
         ]
