@@ -27,8 +27,9 @@ use crate::{
     app::signature_stylesheet::SignatureStylesheet,
     components::{read_touch_list_abs, Finger},
     model::proof::{
+        generators::VertexShape,
         homotopy::{Contract, Expand, Homotopy},
-        RenderStyle,
+        RenderStyle, Signature,
     },
 };
 
@@ -43,6 +44,7 @@ pub struct DiagramSvg<const N: usize> {
 pub struct DiagramSvgProps<const N: usize> {
     pub diagram: Diagram,
     pub id: String,
+    pub signature: Signature,
     #[prop_or_default]
     pub style: RenderStyle,
     #[prop_or_default]
@@ -337,7 +339,7 @@ impl<const N: usize> DiagramSvg<N> {
                     <path d={path} class={class} stroke-width={1} />
                 }
             }
-            GraphicElement::Wire(_, path, mask) => {
+            GraphicElement::Wire(_, _, path, mask) => {
                 let class = SignatureStylesheet::name("generator", generator, "wire");
                 let path = path_to_svg(&path.clone().transformed(&self.prepared.transform));
 
@@ -388,10 +390,31 @@ impl<const N: usize> DiagramSvg<N> {
                 }
             }
             GraphicElement::Point(_, point) => {
+                use VertexShape::{Circle, Square};
                 let class = SignatureStylesheet::name("generator", generator, "point");
                 let point = self.prepared.transform.transform_point(*point);
-                html! {
-                    <circle r={ctx.props().style.point_radius.to_string()} cx={point.x.to_string()} cy={point.y.to_string()} class={class} />
+                let radius = ctx.props().style.point_radius;
+                let shape = if let Some(info) = ctx.props().signature.generator_info(generator) {
+                    info.shape.clone()
+                } else {
+                    Default::default()
+                };
+                match shape {
+                    Circle => html! {
+                        <circle
+                            r={radius.to_string()}
+                            cx={point.x.to_string()}
+                            cy={point.y.to_string()}
+                            class={class} />
+                    },
+                    Square => html! {
+                        <rect
+                            x={(point.x - radius).to_string()}
+                            y={(point.y - radius).to_string()}
+                            width={(radius * 2.0).to_string()}
+                            height={(radius * 2.0).to_string()}
+                            class={class} />
+                    },
                 }
             }
         }

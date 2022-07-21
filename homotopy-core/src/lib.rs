@@ -22,7 +22,6 @@
     clippy::unneeded_field_pattern,
     clippy::unreachable,
     clippy::use_debug,
-    clippy::use_self,
 )]
 #![allow( // pedantic is too annoying
     clippy::cast_possible_truncation,
@@ -44,7 +43,8 @@
     clippy::multiple_inherent_impl,
     clippy::shadow_unrelated,
     clippy::match_on_vec_items,
-    clippy::unnecessary_wraps
+    clippy::unnecessary_wraps,
+    clippy::use_self, // https://github.com/rust-lang/rust-clippy/issues/6902
 )]
 
 pub use common::{Boundary, Direction, Generator, Height, SliceIndex};

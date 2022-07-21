@@ -108,6 +108,8 @@
                 name = "lint";
                 runtimeInputs = [pkgs.rust-bin.nightly.latest.rustfmt rust];
                 text = ''
+                  #shellcheck disable=SC2155
+                  export LD_LIBRARY_PATH="${pkgs.zlib}/lib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
                   cargo fmt --version
                   cargo fmt --all -- --check
                   cargo clippy -- -D warnings
@@ -125,7 +127,7 @@
           };
         };
         defaultPackage = let
-          rust = pkgs.rust-bin.stable."1.59.0".minimal.override { # TODO: 1.60.0 crashes
+          rust = pkgs.rust-bin.stable.latest.minimal.override {
             targets = ["wasm32-unknown-unknown"];
           };
           naersk = inputs.naersk.lib."${system}".override {

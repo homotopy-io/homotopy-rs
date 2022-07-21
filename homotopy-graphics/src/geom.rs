@@ -10,7 +10,10 @@ use homotopy_core::{
 };
 use ultraviolet::{Mat3, Vec3, Vec4};
 
-use crate::parity::Parity;
+use crate::{
+    parity::Parity,
+    style::{GeneratorStyle, SignatureStyleData, VertexShape},
+};
 
 // Geometry
 
@@ -308,7 +311,15 @@ impl From<CubicalGeometry> for SimplicialGeometry {
 // and be replaced by real-time geometry synthesis.
 
 impl SimplicialGeometry {
-    fn inflate_point_3d(&mut self, point: Vert, samples: u8) {
+    pub fn inflate_point_3d(&mut self, point: Vert, samples: u8, generator_shape: &VertexShape) {
+        use VertexShape::{Circle, Square};
+        match generator_shape {
+            Circle => self.inflate_point_3d_sphere(point, samples),
+            Square => self.inflate_point_3d_cube(point),
+        }
+    }
+
+    fn inflate_point_3d_sphere(&mut self, point: Vert, samples: u8) {
         use homotopy_common::idx::Idx;
 
         const SPHERE_RADIUS: f32 = 0.1;
@@ -361,6 +372,56 @@ impl SimplicialGeometry {
                 }
             }
         }
+    }
+
+    fn inflate_point_3d_cube(&mut self, point: Vert) {
+        use homotopy_common::idx::Idx;
+
+        const CUBE_SIDELENGTH: f32 = 0.17;
+        const R: f32 = CUBE_SIDELENGTH / 2.;
+
+        let len = self.verts.len();
+
+        // To fix normals, we duplicate each vertex (four times) and only use each vertex once
+        // NOTE: this creates 4 redundant vertices but is neater to implement than manual vertex
+        // definitions
+        for _ in 0..5 {
+            self.mk_displaced_copy(point, Vec4::new(-R, -R, -R, 0.));
+            self.mk_displaced_copy(point, Vec4::new(R, -R, -R, 0.));
+            self.mk_displaced_copy(point, Vec4::new(R, R, -R, 0.));
+            self.mk_displaced_copy(point, Vec4::new(-R, R, -R, 0.));
+            self.mk_displaced_copy(point, Vec4::new(-R, -R, R, 0.));
+            self.mk_displaced_copy(point, Vec4::new(R, -R, R, 0.));
+            self.mk_displaced_copy(point, Vec4::new(R, R, R, 0.));
+            self.mk_displaced_copy(point, Vec4::new(-R, R, R, 0.));
+        }
+
+        let mk_area = |s: &mut Self, verts: [usize; 3], used: &mut [usize; 8]| {
+            let new_verts = [
+                Vert::new(len + verts[0] + used[verts[0]]),
+                Vert::new(len + verts[1] + used[verts[1]]),
+                Vert::new(len + verts[2] + used[verts[2]]),
+            ];
+            used[verts[0]] += 8;
+            used[verts[1]] += 8;
+            used[verts[2]] += 8;
+            s.mk_area(new_verts, Parity::Even);
+        };
+
+        let mut used = [0; 8];
+
+        mk_area(self, [0, 1, 3], &mut used);
+        mk_area(self, [3, 1, 2], &mut used);
+        mk_area(self, [1, 5, 2], &mut used);
+        mk_area(self, [2, 5, 6], &mut used);
+        mk_area(self, [5, 4, 6], &mut used);
+        mk_area(self, [6, 4, 7], &mut used);
+        mk_area(self, [4, 0, 7], &mut used);
+        mk_area(self, [7, 0, 3], &mut used);
+        mk_area(self, [3, 2, 7], &mut used);
+        mk_area(self, [7, 2, 6], &mut used);
+        mk_area(self, [4, 5, 0], &mut used);
+        mk_area(self, [0, 5, 1], &mut used);
     }
 
     fn inflate_tube_segment(
@@ -448,9 +509,13 @@ impl SimplicialGeometry {
         }
     }
 
-    pub fn inflate_3d(&mut self, samples: u8) {
+    pub fn inflate_3d(&mut self, samples: u8, signature_styles: &impl SignatureStyleData) {
         for point in self.points.keys() {
-            self.inflate_point_3d(self.points[point], samples);
+            let generator = self.verts[self.points[point]].generator;
+            let shape = signature_styles
+                .generator_style(generator)
+                .map_or_else(Default::default, |style| style.shape().unwrap_or_default());
+            self.inflate_point_3d(self.points[point], samples, &shape);
         }
 
         for curve in self.curves.keys() {

@@ -19,6 +19,7 @@ pub enum BoundaryPreviewMessage {}
 pub struct BoundaryPreviewProps {
     pub boundary: SelectedBoundary,
     pub dispatch: Callback<Action>,
+    pub signature: Signature,
 }
 
 impl Component for BoundaryPreview {
@@ -98,6 +99,7 @@ impl BoundaryPreview {
             <DiagramSvg<N>
                     diagram={ctx.props().boundary.diagram.clone()}
                     id="boundary__preview"
+                    signature={ctx.props().signature.clone()}
             />
         }
     }

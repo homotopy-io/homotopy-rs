@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use euclid::{default::Point2D, Vector2D};
+use euclid::default::Point2D;
 use homotopy_common::hash::FastHashMap;
 use homotopy_core::{
     common::DimensionError,
@@ -10,23 +10,33 @@ use homotopy_core::{
     Diagram, Generator,
 };
 use itertools::Itertools;
-use lyon_geom::{CubicBezierSegment, Line, LineSegment};
 use lyon_path::{Event, Path};
 
-use crate::svg::render::GraphicElement;
-
-const OCCLUSION_DELTA: f32 = 0.2;
+use crate::{
+    path_util::simplify_graphic,
+    style::{GeneratorStyle, SignatureStyleData, VertexShape},
+    svg::render::GraphicElement,
+};
 
 pub fn color(generator: Generator) -> String {
     format!("generator-{}-{}", generator.id, generator.dimension)
 }
 
-pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionError> {
+pub fn render(
+    diagram: &Diagram,
+    stylesheet: &str,
+    signature_styles: &impl SignatureStyleData,
+) -> Result<String, DimensionError> {
     let layout = Layout::<2>::new(diagram)?;
     let complex = make_complex(diagram);
     let depths = Depths::<2>::new(diagram)?;
     let projection = Projection::<2>::new(diagram, &layout, &depths)?;
-    let graphic = GraphicElement::build(&complex, &layout, &projection, &depths);
+    let graphic = simplify_graphic(&GraphicElement::build(
+        &complex,
+        &layout,
+        &projection,
+        &depths,
+    ));
 
     let mut surfaces = Vec::default();
     let mut wires: FastHashMap<usize, Vec<(Generator, Path)>> = FastHashMap::default();
@@ -34,8 +44,8 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
     for element in graphic {
         match element {
             GraphicElement::Surface(g, path) => surfaces.push((g, path)),
-            GraphicElement::Wire(g, path, mask) => {
-                wires.entry(mask.len()).or_default().push((g, path));
+            GraphicElement::Wire(g, depth, path, _) => {
+                wires.entry(depth).or_default().push((g, path));
             }
             GraphicElement::Point(g, point) => points.push((g, point)),
         }
@@ -45,62 +55,12 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
     writeln!(tikz, "\\begin{{tikzpicture}}").unwrap();
     tikz.push_str(stylesheet);
 
-    // Surfaces
-    writeln!(tikz, "\\newcommand*\\Background{{").unwrap();
-    for (g, path) in surfaces {
-        write!(
-            tikz,
-            "\\fill[{}!75, name={}-{}] ",
-            color(g),
-            g.id,
-            g.dimension
-        )
-        .unwrap();
-        tikz.push_str(&render_path(&path));
-        writeln!(tikz, ";").unwrap();
-    }
-    writeln!(tikz, "}}").unwrap();
-    writeln!(tikz, "\\Background").unwrap();
+    tikz.push_str(&render_inner(&surfaces, wires));
 
-    // Wires
-    for (i, (_, layer)) in wires
-        .into_iter()
-        .sorted_by_cached_key(|(k, _)| *k)
-        .rev()
-        .enumerate()
-    {
-        // Background
-        if i > 0 {
-            writeln!(tikz, "\\begin{{scope}}").unwrap();
-            write!(tikz, "\\clip ").unwrap();
-            for (_, path) in &layer {
-                let left = offset(-OCCLUSION_DELTA, path)
-                    .reversed()
-                    .with_attributes()
-                    .into_path();
-                let right = offset(OCCLUSION_DELTA, path);
-                tikz.push_str(&render_path(&right));
-                tikz.push_str(" -- ");
-                tikz.push_str(&render_path(&left));
-                tikz.push_str(" -- cycle");
-            }
-            writeln!(tikz, ";").unwrap();
-            writeln!(tikz, "\\Background").unwrap();
-            writeln!(tikz, "\\end{{scope}}").unwrap();
-        }
-
-        for (g, path) in &layer {
-            write!(tikz, "\\draw[{}!80, line width=5pt] ", color(*g)).unwrap();
-            tikz.push_str(&render_path(path));
-            writeln!(tikz, ";").unwrap();
-        }
-    }
-
-    // Points
+    // Points are unchanged
     for (g, point) in points {
-        write!(tikz, "\\fill[{}] ", color(g)).unwrap();
-        tikz.push_str(&render_point(point));
-        writeln!(tikz, " circle (4pt);").unwrap();
+        let vertex = render_vertex(signature_styles.generator_style(g).unwrap(), point);
+        writeln!(tikz, "\\fill[{}] {}", color(g), vertex).unwrap();
     }
 
     writeln!(tikz, "\\end{{tikzpicture}}").unwrap();
@@ -108,10 +68,136 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
     Ok(tikz)
 }
 
+// This contains all the "magic" commands we need to inject.
+// No formatting needed, it's the same all the time.
+
+const MAGIC_MACRO: &str = "\n\\newcommand{\\wire}[2]{
+  \\ifdefined\\recolor\\draw[color=\\recolor!75, line width=10pt]\\else\\draw[color=#1!80, line width=5pt]\\fi #2;
+}
+\\newcommand{\\clipped}[3]{
+\\begin{scope}
+  \\newcommand{\\recolor}{#1}
+  \\clip#3;
+  #2
+\\end{scope}
+}\n\n";
+
+fn render_inner(
+    surfaces: &[(Generator, Path)],
+    wires: FastHashMap<usize, Vec<(Generator, Path)>>,
+) -> String {
+    let mut tikz = String::new();
+
+    let needs_masking = wires.len() > 1;
+
+    tikz.push_str(MAGIC_MACRO);
+    // The transparency group does nothing in terms of our masking strategy,
+    // but it is useful in case users lower the opacity. It changes the
+    // opacity rules to hide our masking shenanigans.
+    // If you want to see it in action, add [opacity=.5] at
+    // at \begin{tikzpicture} and remove [transparency group].
+    tikz.push_str("\\begin{scope}[transparency group]\n");
+
+    tikz.push_str("% Background surfaces\n");
+    for (g, path) in surfaces.iter() {
+        writeln!(
+            tikz,
+            "\\fill[{color}!75] {path};",
+            color = color(*g),
+            path = &render_path(path)
+        )
+        .unwrap();
+    }
+
+    // Since we always clip with respect to the same background paths,
+    // might as well make a macro for it and have TeX do the CTRL+V for us.
+    if needs_masking {
+        writeln!(tikz, "\\newcommand{{\\layer}}[1]{{",).unwrap();
+        for (g, path) in surfaces.iter() {
+            writeln!(
+                tikz,
+                "  \\clipped{{{color}}}{{#1}}{{{path}}}",
+                color = color(*g),
+                path = &render_path(path)
+            )
+            .unwrap();
+        }
+        tikz.push_str("  #1\n}\n\n");
+    }
+
+    // The masking logic mostly concerns the wires.
+    // Unlike the background, wires do not all share the same depth.
+    // Here we create a series of "layer" commands, which
+    // either render their own paths or recourse to the successive layer.
+    //
+    // The \wire command checks if \recolor is defined,
+    // which allows to override the colour into something else.
+    // We use this to switch between drawing the wire in "mask mode"
+    // and "normal mode". The if/else statement is run on TeX side,
+    // and the logic is in MAGIC_MACRO!
+    tikz.push_str("% Wire layers\n");
+    for (i, (_, layer)) in wires
+        .into_iter()
+        .sorted_by_cached_key(|(k, _)| *k)
+        .rev()
+        .enumerate()
+    {
+        if i > 0 {
+            tikz.push_str("\\layer{\n");
+        }
+        for (g, path) in &layer {
+            // We pass the geometry of the wire directly to the current layer.
+            // This is to avoid naming annoyances.
+            writeln!(
+                tikz,
+                "\\wire{{{color}}}{{{path}}};",
+                color = color(*g),
+                path = &render_path(path)
+            )
+            .unwrap();
+        }
+        if i > 0 {
+            tikz.push_str("}\n");
+        }
+    }
+
+    tikz.push_str("\\end{scope}\n");
+
+    tikz
+}
+
 fn render_point(point: Point2D<f32>) -> String {
     let x = (point.x * 100.0).round() / 100.0;
     let y = (point.y * 100.0).round() / 100.0;
-    format!("({}, {})", x, y)
+    format!("({},{})", x, y)
+}
+
+fn render_vertex(generator_style: &impl GeneratorStyle, point: Point2D<f32>) -> String {
+    use VertexShape::{Circle, Square};
+
+    const CIRCLE_RADIUS: f32 = 0.14; // r = 4pt
+    const SQUARE_SIDELENGTH: f32 = 0.28; // 8pt x 8pt
+
+    let shape = generator_style.shape().unwrap_or_default();
+    let shape_str = match shape {
+        Circle => "circle",
+        Square => "rectangle",
+    };
+    let (xo, yo) = match shape {
+        Circle => (0.0, 0.0),
+        Square => (-SQUARE_SIDELENGTH / 2., -SQUARE_SIDELENGTH / 2.),
+    };
+    let x1 = ((xo + point.x) * 100.0).round() / 100.0;
+    let y1 = ((yo + point.y) * 100.0).round() / 100.0;
+    let sz = match shape {
+        Circle => vec![CIRCLE_RADIUS],
+        Square => vec![SQUARE_SIDELENGTH + x1, SQUARE_SIDELENGTH + y1],
+    }
+    .iter()
+    .map(|&s| s.to_string())
+    .collect::<Vec<String>>()
+    .join(", ");
+    format!("({},{}) {} ({});", x1, y1, shape_str, sz)
 }
 
 fn render_path(path: &Path) -> String {
@@ -145,127 +231,4 @@ fn render_path(path: &Path) -> String {
         }
     }
     result
-}
-
-// Offsetting a curve.
-// TOOD(@calintat): Move somewhere else.
-fn offset(delta: f32, path: &Path) -> Path {
-    let mut builder = Path::builder();
-
-    for event in path {
-        match event {
-            Event::Cubic {
-                from,
-                ctrl1,
-                ctrl2,
-                to,
-            } => {
-                let segment = offset_cubical(
-                    delta,
-                    CubicBezierSegment {
-                        from,
-                        ctrl1,
-                        ctrl2,
-                        to,
-                    },
-                );
-                builder.begin(segment.from);
-                builder.cubic_bezier_to(segment.ctrl1, segment.ctrl2, segment.to);
-                builder.end(false);
-                return builder.build();
-            }
-            Event::Line { from, to } => {
-                let segment = offset_linear(delta, LineSegment { from, to });
-                builder.begin(segment.from);
-                builder.line_to(segment.to);
-                builder.end(false);
-                return builder.build();
-            }
-            _ => (),
-        }
-    }
-
-    panic!("Cannot offset a path made of multiple segments")
-}
-
-fn perp<U>(v: Vector2D<f32, U>) -> Vector2D<f32, U> {
-    Vector2D::new(v.y, -v.x).normalize()
-}
-
-fn offset_linear(delta: f32, segment: LineSegment<f32>) -> LineSegment<f32> {
-    let v = perp(segment.to - segment.from);
-    LineSegment {
-        from: segment.from + v * delta,
-        to: segment.to + v * delta,
-    }
-}
-
-fn offset_cubical(delta: f32, segment: CubicBezierSegment<f32>) -> CubicBezierSegment<f32> {
-    if segment.from == segment.ctrl1
-        || segment.ctrl1 == segment.ctrl2
-        || segment.ctrl2 == segment.to
-    {
-        let leg = offset_linear(
-            delta,
-            LineSegment {
-                from: segment.from,
-                to: segment.to,
-            },
-        );
-        CubicBezierSegment {
-            from: leg.from,
-            ctrl1: leg.from,
-            ctrl2: leg.to,
-            to: leg.to,
-        }
-    } else {
-        let leg1 = offset_linear(
-            delta,
-            LineSegment {
-                from: segment.from,
-                to: segment.ctrl1,
-            },
-        );
-        let leg2 = offset_linear(
-            delta,
-            LineSegment {
-                from: segment.ctrl1,
-                to: segment.ctrl2,
-            },
-        );
-        let leg3 = offset_linear(
-            delta,
-            LineSegment {
-                from: segment.ctrl2,
-                to: segment.to,
-            },
-        );
-
-        let from = leg1.from;
-
-        let line1 = Line {
-            point: leg1.from,
-            vector: leg1.to - leg1.from,
-        };
-        let line2 = Line {
-            point: leg2.from,
-            vector: leg2.to - leg2.from,
-        };
-        let line3 = Line {
-            point: leg3.from,
-            vector: leg3.to - leg3.from,
-        };
-
-        let ctrl1 = line1.intersection(&line2).unwrap_or(leg1.to);
-        let ctrl2 = line2.intersection(&line3).unwrap_or(leg2.to);
-
-        let to = leg3.to;
-
-        CubicBezierSegment {
-            from,
-            ctrl1,
-            ctrl2,
-            to,
-        }
-    }
 }

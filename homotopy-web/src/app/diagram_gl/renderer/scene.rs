@@ -5,11 +5,12 @@ use homotopy_core::{Diagram, Generator};
 use homotopy_graphics::{
     geom::{CubicalGeometry, SimplicialGeometry, VertData},
     gl::{array::VertexArray, GlCtx, Result},
+    style::SignatureStyleData,
     vertex_array,
 };
 use ultraviolet::Vec4;
 
-use crate::model::proof::View;
+use crate::model::proof::{generators::VertexShape, View};
 
 pub struct Scene {
     pub diagram: Diagram,
@@ -20,6 +21,7 @@ pub struct Scene {
     pub animation_curves: Vec<AnimationCurve>,
     pub animation_singularities: Vec<(Generator, Vec4)>,
     pub sphere: Option<VertexArray>,
+    pub cube: Option<VertexArray>,
     pub duration: f32,
 }
 
@@ -60,6 +62,7 @@ impl Scene {
         smooth_time: bool,
         subdivision_depth: u8,
         geometry_samples: u8,
+        signature_styles: &impl SignatureStyleData,
     ) -> Result<Self> {
         let diagram = diagram.clone();
 
@@ -72,10 +75,17 @@ impl Scene {
             animation_curves: vec![],
             animation_singularities: vec![],
             sphere: None,
+            cube: None,
             duration: 0.,
         };
 
-        scene.reload_meshes(ctx, smooth_time, subdivision_depth, geometry_samples)?;
+        scene.reload_meshes(
+            ctx,
+            smooth_time,
+            subdivision_depth,
+            geometry_samples,
+            signature_styles,
+        )?;
         Ok(scene)
     }
 
@@ -85,6 +95,7 @@ impl Scene {
         smooth_time: bool,
         subdivision_depth: u8,
         geometry_samples: u8,
+        signature_styles: &impl SignatureStyleData,
     ) -> Result<()> {
         self.components.clear();
         self.wireframe_components.clear();
@@ -92,6 +103,7 @@ impl Scene {
         self.animation_curves.clear();
         self.animation_singularities.clear();
         self.sphere = None;
+        self.cube = None;
 
         let mut sphere_mesh: SimplicialGeometry = Default::default();
         let p = sphere_mesh.mk_vert(VertData {
@@ -100,12 +112,28 @@ impl Scene {
             generator: Generator::new(0, 0),
         });
         sphere_mesh.mk_point(p);
-        sphere_mesh.inflate_3d(geometry_samples);
+        sphere_mesh.inflate_point_3d(p, geometry_samples, &VertexShape::Circle.into());
         if let Some(sphere_buffers) = sphere_mesh.buffer_tris(ctx)?.into_iter().next() {
             self.sphere = Some(vertex_array!(
                 ctx,
                 &sphere_buffers.element_buffer,
                 [&sphere_buffers.vertex_buffer, &sphere_buffers.normal_buffer]
+            )?);
+        }
+
+        let mut cube_mesh: SimplicialGeometry = Default::default();
+        let p = cube_mesh.mk_vert(VertData {
+            position: Vec4::zero(),
+            boundary: [false; 4],
+            generator: Generator::new(0, 0),
+        });
+        cube_mesh.mk_point(p);
+        cube_mesh.inflate_point_3d(p, geometry_samples, &VertexShape::Square.into());
+        if let Some(cube_buffers) = cube_mesh.buffer_tris(ctx)?.into_iter().next() {
+            self.cube = Some(vertex_array!(
+                ctx,
+                &cube_buffers.element_buffer,
+                [&cube_buffers.vertex_buffer, &cube_buffers.normal_buffer]
             )?);
         }
 
@@ -123,7 +151,7 @@ impl Scene {
         let mut simplicial = SimplicialGeometry::from(cubical);
 
         if self.view.dimension() <= 3 {
-            simplicial.inflate_3d(geometry_samples);
+            simplicial.inflate_3d(geometry_samples, signature_styles);
             for tri_buffers in simplicial.buffer_tris(ctx)? {
                 self.components.push((
                     tri_buffers.generator,

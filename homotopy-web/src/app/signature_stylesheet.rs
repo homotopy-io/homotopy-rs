@@ -7,7 +7,7 @@ use web_sys::{Element, Node};
 
 use crate::{
     components::document,
-    model::proof::{Color, Signature},
+    model::proof::{generators::Color, Signature},
 };
 
 // TODO: Check if there is a performance problem with this. If so, then use the

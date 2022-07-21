@@ -4,7 +4,7 @@ pub use history::Proof;
 use history::{History, UndoState};
 use homotopy_core::common::Mode;
 use homotopy_graphics::{manim, stl, tikz};
-use proof::{Color, GeneratorInfo, Signature, Workspace};
+use proof::{Signature, Workspace};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -30,16 +30,16 @@ impl Action {
         use homotopy_core::Direction::{Backward, Forward};
 
         match self {
-            Action::Proof(action) => proof.is_valid(action),
-            Action::ExportTikz | Action::ExportSvg | Action::ExportManim => proof
+            Self::Proof(action) => proof.is_valid(action),
+            Self::ExportTikz | Self::ExportSvg | Self::ExportManim => proof
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.view.dimension() == 2),
-            Action::ExportStl => proof
+            Self::ExportStl => proof
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.view.dimension() == 3),
-            Action::History(history::Action::Move(dir)) => match dir {
+            Self::History(history::Action::Move(dir)) => match dir {
                 history::Direction::Linear(Forward) => proof.can_redo(),
                 history::Direction::Linear(Backward) => proof.can_undo(),
             },
@@ -133,8 +133,8 @@ impl State {
                     .unwrap();
                 }
 
-                let data = tikz::render(&diagram, &stylesheet).unwrap();
-                serialize::generate_download("filename_todo", "tikz", data.as_bytes())
+                let data = tikz::render(&diagram, &stylesheet, &signature).unwrap();
+                serialize::generate_download("homotopy_io_export", "tikz", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
 
@@ -180,7 +180,7 @@ impl State {
                 data.push_str(&stylesheet);
                 data.push_str(&svg[content_start..]);
 
-                serialize::generate_download("filename_todo", "svg", data.as_bytes())
+                serialize::generate_download("homotopy_io_export", "svg", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
 
@@ -201,15 +201,16 @@ impl State {
                     .unwrap();
                 }
 
-                let data = manim::render(&diagram, &stylesheet).unwrap();
-                serialize::generate_download("filename_todo", "py", data.as_bytes())
+                let data = manim::render(&diagram, &signature, &stylesheet).unwrap();
+                serialize::generate_download("homotopy_io_export", "py", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
 
             Action::ExportStl => {
+                let signature = self.with_proof(|p| p.signature.clone());
                 let diagram = self.with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram());
-                let data = stl::render(&diagram).unwrap();
-                serialize::generate_download("filename_todo", "stl", data.as_bytes())
+                let data = stl::render(&diagram, &signature).unwrap();
+                serialize::generate_download("homotopy_io_export", "stl", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
 
@@ -218,7 +219,7 @@ impl State {
                     self.with_proof(|p| p.signature.clone()),
                     self.with_proof(|p| p.workspace.clone()),
                 );
-                serialize::generate_download("filename_todo", "hom", data.as_slice())
+                serialize::generate_download("homotopy_io_export", "hom", data.as_slice())
                     .map_err(ModelError::Export)?;
             }
 

@@ -1,6 +1,8 @@
 # About the project
 
-The homotopy.io proof assistant allows the construction of composite morphisms in a finitely-generated semistrict n-category, via a point-and-click user interface. Composites are rendered as 2d and 3d geometries, and can be visualised in 4d as movies of 3d geometries. The proof assistant is implemented in the Rust programming language, and compiled to WebAssembly to run in the web browser.
+The homotopy.io proof assistant allows the construction of composite morphisms in a finitely-generated semistrict n-category, via a point-and-click user interface. Composites are rendered as 2d and 3d geometries, and can be visualised in 4d as movies of 3d geometries. Beyond its features as a visual proof assistant, homotopy.io can also be used as an effective tool to typeset string diagrams: any 2d diagram constructed in the proof assistant can be exported with ease into LaTeX/TikZ and SVG, with experimental support for manim.
+
+The proof assistant is implemented in the Rust programming language, and compiled to WebAssembly to run in the web browser.
 
 For a description of how the tool works, please see the [nLab page](https://ncatlab.org/nlab/show/homotopy.io).
 

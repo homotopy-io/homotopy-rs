@@ -8,7 +8,10 @@ use yew_macro::function_component;
 
 use crate::{
     components::icon::{Icon, IconSize},
-    model::proof::{Action, Color, SignatureEdit, SignatureItem, SignatureItemEdit, COLORS},
+    model::proof::{
+        generators::{Color, VertexShape},
+        Action, SignatureEdit, SignatureItem, SignatureItemEdit, COLORS, VERTEX_SHAPES,
+    },
 };
 
 // FIXME(@doctorn)
@@ -109,7 +112,7 @@ pub struct ItemViewProps {
 pub enum ItemViewMode {
     Viewing,
     Editing,
-    Coloring,
+    Styling,
 }
 
 impl Default for ItemViewMode {
@@ -129,19 +132,17 @@ pub enum ItemViewMessage {
 pub struct EditState {
     name: Option<String>,
     color: Option<Color>,
+    shape: Option<VertexShape>,
 }
 
 impl EditState {
-    fn apply(&mut self, edit: SignatureItemEdit) -> bool {
+    fn apply(&mut self, dispatch: &Callback<Action>, node: Node, edit: SignatureItemEdit) -> bool {
         match edit {
             SignatureItemEdit::Rename(name) => self.name = Some(name),
             SignatureItemEdit::Recolor(color) => self.color = Some(color),
+            SignatureItemEdit::Reshape(shape) => self.shape = Some(shape),
         }
 
-        true
-    }
-
-    fn dispatch(&mut self, dispatch: &Callback<Action>, node: Node) {
         if let Some(name) = self.name.take() {
             dispatch.emit(Action::EditSignature(SignatureEdit::Edit(
                 node,
@@ -155,6 +156,15 @@ impl EditState {
                 SignatureItemEdit::Recolor(color),
             )));
         }
+
+        if let Some(shape) = self.shape.take() {
+            dispatch.emit(Action::EditSignature(SignatureEdit::Edit(
+                node,
+                SignatureItemEdit::Reshape(shape),
+            )));
+        }
+
+        true
     }
 }
 
@@ -177,8 +187,12 @@ impl Component for ItemView {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            ItemViewMessage::SwitchTo(mode) => return self.switch_to(ctx, mode),
-            ItemViewMessage::Edit(edit) => return self.edit.apply(edit),
+            ItemViewMessage::SwitchTo(mode) => return self.switch_to(mode),
+            ItemViewMessage::Edit(edit) => {
+                return self
+                    .edit
+                    .apply(&ctx.props().dispatch, ctx.props().node, edit)
+            }
             ItemViewMessage::Noop => {}
         }
 
@@ -188,15 +202,15 @@ impl Component for ItemView {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let class = format!(
             "signature__item {}",
-            if self.mode == ItemViewMode::Coloring {
-                "signature__item-coloring"
+            if self.mode == ItemViewMode::Styling {
+                "signature__item-styling"
             } else {
                 ""
             },
         );
 
         let picker = if let SignatureItem::Item(info) = &ctx.props().item {
-            self.view_picker(ctx, &info.color)
+            self.view_picker(ctx, &info.color, &info.shape)
         } else {
             html! {}
         };
@@ -221,13 +235,9 @@ impl Component for ItemView {
 }
 
 impl ItemView {
-    fn switch_to(&mut self, ctx: &Context<Self>, mode: ItemViewMode) -> bool {
+    fn switch_to(&mut self, mode: ItemViewMode) -> bool {
         if mode == self.mode {
             return false;
-        }
-
-        if ItemViewMode::Viewing == mode {
-            self.edit.dispatch(&ctx.props().dispatch, ctx.props().node);
         }
 
         self.mode = mode;
@@ -297,7 +307,7 @@ impl ItemView {
             ItemViewMode::Editing => {
                 let recolor = ctx
                     .link()
-                    .callback(|_| ItemViewMessage::SwitchTo(ItemViewMode::Coloring));
+                    .callback(|_| ItemViewMessage::SwitchTo(ItemViewMode::Styling));
 
                 html! {
                     <ItemViewButton
@@ -308,7 +318,7 @@ impl ItemView {
                     />
                 }
             }
-            ItemViewMode::Coloring => {
+            ItemViewMode::Styling => {
                 let apply = ctx
                     .link()
                     .callback(|_| ItemViewMessage::SwitchTo(ItemViewMode::Editing));
@@ -325,12 +335,13 @@ impl ItemView {
         }
     }
 
-    fn view_picker(&self, ctx: &Context<Self>, color: &Color) -> Html {
-        if self.mode != ItemViewMode::Coloring {
+    fn view_picker(&self, ctx: &Context<Self>, color: &Color, shape: &VertexShape) -> Html {
+        if self.mode != ItemViewMode::Styling {
             return html! {};
         }
 
-        let buttons = COLORS.iter().map(|color| {
+        let selected_color = self.edit.color.clone().unwrap_or_else(|| color.clone());
+        let color_preset_buttons = COLORS.iter().map(|color| {
             let recolor = ctx.link().callback(move |_| {
                 ItemViewMessage::Edit(SignatureItemEdit::Recolor(Color(
                     Srgb::<u8>::from_str(color).unwrap(),
@@ -345,7 +356,6 @@ impl ItemView {
                 />
             }
         });
-        let color = self.edit.color.clone().unwrap_or_else(|| color.clone());
         let custom_recolor = ctx.link().callback(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
             ItemViewMessage::Edit(SignatureItemEdit::Recolor(Color(
@@ -353,16 +363,42 @@ impl ItemView {
             )))
         });
 
+        let selected_shape = self.edit.shape.clone().unwrap_or_else(|| shape.clone());
+        let shape_preset_buttons = VERTEX_SHAPES.iter().map(|shape| {
+            let reshape = ctx.link().callback(move |_| {
+                ItemViewMessage::Edit(SignatureItemEdit::Reshape(shape.clone()))
+            });
+            let icon_name = match shape {
+                VertexShape::Circle => "circle",
+                VertexShape::Square => "square",
+            };
+            let mut class = "signature__generator-picker-preset".to_owned();
+            if *shape == selected_shape {
+                class += " signature__generator-picker-preset-shape-selected";
+            }
+
+            html! {
+                <div {class} onclick={reshape}>
+                    <Icon name={icon_name} size={IconSize::Icon18} />
+                </div>
+            }
+        });
+
         html! {
-            <div class="signature__generator-picker">
-                {for buttons}
-                <input
-                    class="signature__generator-picker-custom"
-                    value={color.to_string()}
-                    type="color"
-                    oninput={custom_recolor}
-                />
-            </div>
+            <>
+                <div class="signature__generator-picker signature__generator-picker-shape">
+                    {for shape_preset_buttons}
+                </div>
+                <div class="signature__generator-picker signature__generator-picker-color">
+                    {for color_preset_buttons}
+                    <input
+                        class="signature__generator-picker-custom"
+                        value={selected_color.to_string()}
+                        type="color"
+                        oninput={custom_recolor}
+                    />
+                </div>
+            </>
         }
     }
 

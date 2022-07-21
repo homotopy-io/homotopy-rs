@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use euclid::{default::Point2D, Vector2D};
+use euclid::default::Point2D;
 use homotopy_common::hash::FastHashMap;
 use homotopy_core::{
     common::DimensionError,
@@ -10,24 +10,35 @@ use homotopy_core::{
     Diagram, Generator,
 };
 use itertools::Itertools;
-use lyon_geom::{CubicBezierSegment, Line, LineSegment};
 use lyon_path::{Event, Path};
 
-use crate::svg::render::GraphicElement;
+use crate::{
+    path_util::simplify_graphic,
+    style::{GeneratorStyle, SignatureStyleData, VertexShape},
+    svg::render::GraphicElement,
+};
 
-const OCCLUSION_DELTA: f32 = 0.2;
 const INDENT: &str = "    ";
 
 pub fn color(generator: Generator) -> String {
     format!("generator_{}_{}", generator.id, generator.dimension)
 }
 
-pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionError> {
+pub fn render(
+    diagram: &Diagram,
+    signature_styles: &impl SignatureStyleData,
+    stylesheet: &str,
+) -> Result<String, DimensionError> {
     let layout = Layout::<2>::new(diagram)?;
     let complex = make_complex(diagram);
     let depths = Depths::<2>::new(diagram)?;
     let projection = Projection::<2>::new(diagram, &layout, &depths)?;
-    let graphic = GraphicElement::build(&complex, &layout, &projection, &depths);
+    let graphic = simplify_graphic(&GraphicElement::build(
+        &complex,
+        &layout,
+        &projection,
+        &depths,
+    ));
 
     let mut surfaces = Vec::default();
     let mut wires: FastHashMap<usize, Vec<(Generator, Path)>> = FastHashMap::default();
@@ -41,9 +52,9 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
                 max_point = max_point.max(max_point_path(&path));
                 surfaces.push((g, path));
             }
-            GraphicElement::Wire(g, path, mask) => {
+            GraphicElement::Wire(g, depth, path, _mask) => {
                 max_point = max_point.max(max_point_path(&path));
-                wires.entry(mask.len()).or_default().push((g, path));
+                wires.entry(depth).or_default().push((g, path));
             }
             GraphicElement::Point(g, point) => {
                 max_point = max_point.max(point);
@@ -120,17 +131,12 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
         if i > 0 {
             writeln!(manim, "{ind}{ind}# Begin scope", ind = INDENT).unwrap();
             for (g, path) in &layer {
-                let left = offset(-OCCLUSION_DELTA, path)
-                    .reversed()
-                    .with_attributes()
-                    .into_path();
-                let right = offset(OCCLUSION_DELTA, path);
                 writeln!(manim, concat!("{ind}{ind}wires.add(Intersection(surfaces,",
-                         "VMobject(){path_right}{path_left},color=C[\"generator_{id}_{dim}\"],fill_opacity=0.8)) # path_{id}_{dim}"),
+                         "VMobject(){path}.set_stroke(width=10),color=C[\"generator_{id}_{dim}\"],fill_opacity=0.8)) # path_{id}_{dim}"),
                          ind=INDENT,
                          id=g.id,
-                         dim=g.dimension,path_left=&render_path(&left),
-                         path_right=&render_path(&right)
+                         dim=g.dimension,
+                         path=&render_path(path)
                 ).unwrap();
             }
             writeln!(manim, "{ind}{ind}# End scope", ind = INDENT).unwrap();
@@ -160,15 +166,20 @@ pub fn render(diagram: &Diagram, stylesheet: &str) -> Result<String, DimensionEr
         ind = INDENT
     )
     .unwrap();
+
     //TODO work out right radius for circles to match SVG/tikz export.
     for (g, point) in points {
-        writeln!(manim, "{ind}{ind}points.add(Circle(radius=0.125,color=C[\"{color}\"],fill_opacity=1).move_to({pt})) # circle_{id}_{dim}",
-            ind=INDENT,
-            id=g.id,
-            dim=g.dimension,
-            color=color(g),
-            pt=&render_point(point)
-        ).unwrap();
+        let vertex = render_vertex(signature_styles.generator_style(g).unwrap(), &color(g));
+        writeln!(
+            manim,
+            "{ind}{ind}points.add({vertex}.move_to({pt})) # circle_{id}_{dim}",
+            ind = INDENT,
+            id = g.id,
+            dim = g.dimension,
+            vertex = vertex,
+            pt = &render_point(point)
+        )
+        .unwrap();
     }
 
     writeln!(
@@ -222,6 +233,25 @@ fn max_point_path(path: &Path) -> Point2D<f32> {
     max_point
 }
 
+fn render_vertex(generator_style: &impl GeneratorStyle, color: &str) -> String {
+    use VertexShape::{Circle, Square};
+    const CIRCLE_RADIUS: f32 = 0.125;
+    const SQUARE_SIDELENGTH: f32 = 0.125 / 2.;
+
+    match generator_style.shape().unwrap_or_default() {
+        Circle => format!(
+            "Circle(radius={radius},color=C[\"{color}\"],fill_opacity=1)",
+            radius = CIRCLE_RADIUS,
+            color = color,
+        ),
+        Square => format!(
+            "Square(side_length={side_length},color=C[\"{color}\"],fill_opacity=1)",
+            side_length = SQUARE_SIDELENGTH,
+            color = color,
+        ),
+    }
+}
+
 fn render_path(path: &Path) -> String {
     let mut result = String::new();
     for event in path {
@@ -253,127 +283,4 @@ fn render_path(path: &Path) -> String {
         }
     }
     result
-}
-
-// Offsetting a curve.
-// TOOD(@calintat): Move somewhere else.
-fn offset(delta: f32, path: &Path) -> Path {
-    let mut builder = Path::builder();
-
-    for event in path {
-        match event {
-            Event::Cubic {
-                from,
-                ctrl1,
-                ctrl2,
-                to,
-            } => {
-                let segment = offset_cubical(
-                    delta,
-                    CubicBezierSegment {
-                        from,
-                        ctrl1,
-                        ctrl2,
-                        to,
-                    },
-                );
-                builder.begin(segment.from);
-                builder.cubic_bezier_to(segment.ctrl1, segment.ctrl2, segment.to);
-                builder.end(false);
-                return builder.build();
-            }
-            Event::Line { from, to } => {
-                let segment = offset_linear(delta, LineSegment { from, to });
-                builder.begin(segment.from);
-                builder.line_to(segment.to);
-                builder.end(false);
-                return builder.build();
-            }
-            _ => (),
-        }
-    }
-
-    panic!("Cannot offset a path made of multiple segments")
-}
-
-fn perp<U>(v: Vector2D<f32, U>) -> Vector2D<f32, U> {
-    Vector2D::new(v.y, -v.x).normalize()
-}
-
-fn offset_linear(delta: f32, segment: LineSegment<f32>) -> LineSegment<f32> {
-    let v = perp(segment.to - segment.from);
-    LineSegment {
-        from: segment.from + v * delta,
-        to: segment.to + v * delta,
-    }
-}
-
-fn offset_cubical(delta: f32, segment: CubicBezierSegment<f32>) -> CubicBezierSegment<f32> {
-    if segment.from == segment.ctrl1
-        || segment.ctrl1 == segment.ctrl2
-        || segment.ctrl2 == segment.to
-    {
-        let leg = offset_linear(
-            delta,
-            LineSegment {
-                from: segment.from,
-                to: segment.to,
-            },
-        );
-        CubicBezierSegment {
-            from: leg.from,
-            ctrl1: leg.from,
-            ctrl2: leg.to,
-            to: leg.to,
-        }
-    } else {
-        let leg1 = offset_linear(
-            delta,
-            LineSegment {
-                from: segment.from,
-                to: segment.ctrl1,
-            },
-        );
-        let leg2 = offset_linear(
-            delta,
-            LineSegment {
-                from: segment.ctrl1,
-                to: segment.ctrl2,
-            },
-        );
-        let leg3 = offset_linear(
-            delta,
-            LineSegment {
-                from: segment.ctrl2,
-                to: segment.to,
-            },
-        );
-
-        let from = leg1.from;
-
-        let line1 = Line {
-            point: leg1.from,
-            vector: leg1.to - leg1.from,
-        };
-        let line2 = Line {
-            point: leg2.from,
-            vector: leg2.to - leg2.from,
-        };
-        let line3 = Line {
-            point: leg3.from,
-            vector: leg3.to - leg3.from,
-        };
-
-        let ctrl1 = line1.intersection(&line2).unwrap_or(leg1.to);
-        let ctrl2 = line2.intersection(&line3).unwrap_or(leg2.to);
-
-        let to = leg3.to;
-
-        CubicBezierSegment {
-            from,
-            ctrl1,
-            ctrl2,
-            to,
-        }
-    }
 }

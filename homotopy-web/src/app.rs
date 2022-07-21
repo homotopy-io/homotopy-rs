@@ -182,6 +182,7 @@ impl App {
                 <BoundaryPreview
                     boundary={b.clone()}
                     dispatch={dispatch.reform(model::Action::Proof)}
+                    signature={signature.clone()}
                 />
             },
             None => Default::default(),

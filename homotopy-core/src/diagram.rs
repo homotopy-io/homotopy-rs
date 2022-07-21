@@ -629,7 +629,7 @@ impl Iterator for Slices {
     }
 }
 
-impl<'a> ExactSizeIterator for Slices {
+impl ExactSizeIterator for Slices {
     fn len(&self) -> usize {
         if self.current.is_none() {
             0
@@ -642,7 +642,7 @@ impl<'a> ExactSizeIterator for Slices {
     }
 }
 
-impl<'a> std::iter::FusedIterator for Slices {}
+impl std::iter::FusedIterator for Slices {}
 
 pub struct Embeddings(Box<dyn Iterator<Item = Vec<RegularHeight>>>);
 

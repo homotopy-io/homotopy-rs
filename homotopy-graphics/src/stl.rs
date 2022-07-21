@@ -1,17 +1,23 @@
-use homotopy_core::{common::DimensionError, Diagram};
-
 use std::fmt::Write;
 
-use crate::geom::{CubicalGeometry, SimplicialGeometry};
+use homotopy_core::{common::DimensionError, Diagram};
 
-pub fn render(diagram: &Diagram) -> Result<String, DimensionError> {
+use crate::{
+    geom::{CubicalGeometry, SimplicialGeometry},
+    style::SignatureStyleData,
+};
+
+pub fn render(
+    diagram: &Diagram,
+    signature_styles: &impl SignatureStyleData,
+) -> Result<String, DimensionError> {
     let mut output = String::new();
 
     let mut cubical = CubicalGeometry::new::<3>(diagram)?;
     cubical.subdivide(false, 3);
 
     let mut simplicial = SimplicialGeometry::from(cubical);
-    simplicial.inflate_3d(3);
+    simplicial.inflate_3d(3, signature_styles);
 
     writeln!(output, "solid assoc").unwrap();
 

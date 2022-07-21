@@ -12,8 +12,11 @@ use obake::AnyVersion;
 use wasm_bindgen::JsCast;
 
 use super::{
-    proof::{SignatureItem, View},
-    Color, GeneratorInfo, Signature, Workspace,
+    proof::{
+        generators::{Color, GeneratorInfo, VertexShape},
+        SignatureItem, View,
+    },
+    Signature, Workspace,
 };
 
 pub fn generate_download(name: &str, ext: &str, data: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
@@ -129,6 +132,7 @@ struct GeneratorData {
     generator: Generator,
     name: String,
     color: Color,
+    shape: VertexShape,
     diagram: Key<Diagram>,
 }
 
@@ -150,6 +154,7 @@ pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> 
             diagram: data.store.pack_diagram(&info.diagram),
             name: info.name,
             color: info.color,
+            shape: info.shape,
         }),
     });
 
@@ -189,6 +194,7 @@ pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
                     generator: gd.generator,
                     name: gd.name,
                     color: gd.color,
+                    shape: gd.shape,
                     diagram: store.unpack_diagram(gd.diagram)?,
                 }),
             })

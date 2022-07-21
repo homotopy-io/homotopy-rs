@@ -23,6 +23,7 @@ use self::homotopy::{Contract, Expand};
 
 mod signature;
 
+pub mod generators;
 pub mod homotopy;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
