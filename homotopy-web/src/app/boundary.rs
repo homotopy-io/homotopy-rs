@@ -8,7 +8,7 @@ use yew::prelude::*;
 use crate::{
     app::diagram_svg::DiagramSvg,
     components::icon::{Icon, IconSize},
-    model::proof::{Action, SelectedBoundary},
+    model::proof::{Action, SelectedBoundary, Signature},
 };
 
 pub struct BoundaryPreview {}
