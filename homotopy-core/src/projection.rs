@@ -40,6 +40,7 @@ pub enum Homotopy {
 #[derive(Clone, Debug)]
 pub struct Projection<const N: usize> {
     generators: IdxVec<NodeIndex, Generator>,
+    front_generators: IdxVec<NodeIndex, Generator>,
     homotopies: IdxVec<NodeIndex, Option<Homotopy>>,
     coord_to_node: FastHashMap<Coordinate<N>, NodeIndex>,
 }
@@ -80,6 +81,7 @@ impl<const N: usize> Projection<N> {
 
         let mut generators = IdxVec::with_capacity(graph.node_count());
         let mut homotopies = IdxVec::with_capacity(graph.node_count());
+        let mut front_generators = IdxVec::with_capacity(graph.node_count());
         let mut coord_to_node =
             FastHashMap::with_capacity_and_hasher(graph.node_count(), FastHasher::default());
 
@@ -87,12 +89,15 @@ impl<const N: usize> Projection<N> {
             let coord = graph[n].0;
 
             let g = graph[n].1.max_generator();
+            let front_g = match &graph[n].1 {
+                Diagram::Diagram0(g) => *g,
+                Diagram::DiagramN(d) => match depths.node_depth(coord) {
+                    None => diagram.max_generator(),
+                    Some(i) => d.slice(Height::Singular(i)).unwrap().max_generator(),
+                },
+            };
 
             let h = || -> Option<Homotopy> {
-                // Check if the point is algebraic.
-                if diagram.dimension().saturating_sub(g.dimension) == 0 {
-                    return None;
-                }
                 if coord.iter().any(|x| !matches!(x, Interior(Singular(_)))) {
                     return None;
                 }
@@ -195,12 +200,14 @@ impl<const N: usize> Projection<N> {
             }();
 
             generators.push(g);
+            front_generators.push(front_g);
             homotopies.push(h);
             coord_to_node.insert(coord, n);
         }
 
         Ok(Self {
             generators,
+            front_generators,
             homotopies,
             coord_to_node,
         })
@@ -208,6 +215,10 @@ impl<const N: usize> Projection<N> {
 
     pub fn generator(&self, p: Coordinate<N>) -> Generator {
         self.generators[self.coord_to_node[&p]]
+    }
+
+    pub fn front_generator(&self, p: Coordinate<N>) -> Generator {
+        self.front_generators[self.coord_to_node[&p]]
     }
 
     pub fn homotopy(&self, p: Coordinate<N>) -> Option<Homotopy> {

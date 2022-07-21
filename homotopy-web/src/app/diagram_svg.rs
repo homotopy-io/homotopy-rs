@@ -111,7 +111,7 @@ impl<const N: usize> PreparedDiagram<N> {
         let complex = make_complex(diagram);
         let depths = Depths::new(diagram).unwrap();
         let projection = Projection::new(diagram, &layout, &depths).unwrap();
-        let graphic = GraphicElement::build(&complex, &layout, &projection, &depths);
+        let graphic = GraphicElement::build(diagram, &complex, &layout, &projection, &depths);
         let actions = ActionRegion::build(&complex, &layout, &projection);
 
         let dimensions = Point::from(project_2d(layout.get([Boundary::Target.into(); N])))
