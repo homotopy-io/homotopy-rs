@@ -210,7 +210,7 @@ impl ProofState {
             Action::ClearWorkspace => self.clear_workspace(),
             Action::ClearBoundary => self.clear_boundary(),
             Action::SelectGenerator(generator) => self.select_generator(*generator)?,
-            Action::SelectGeneratorAt(index) => self.select_generator_at(*index)?,
+            Action::SelectGeneratorAt(index) => self.select_generator_at(*index),
             Action::AscendSlice(count) => self.ascend_slice(*count),
             Action::DescendSlice(slice) => self.descend_slice(*slice)?,
             Action::SwitchSlice(direction) => self.switch_slice(*direction),
@@ -423,9 +423,9 @@ impl ProofState {
     }
 
     /// Handler for [Action::SelectGeneratorAt].
-    fn select_generator_at(&mut self, index: usize) -> Result<(), ModelError> {
+    fn select_generator_at(&mut self, index: usize) {
         if self.workspace.is_some() {
-            return Ok(());
+            return;
         }
 
         if let Some(info) = self.signature.iter().nth(index) {
@@ -440,8 +440,6 @@ impl ProofState {
                 slice_highlight: Default::default(),
             });
         }
-
-        Ok(())
     }
 
     /// Handler for [Action::AscendSlice].
