@@ -134,6 +134,7 @@ struct GeneratorData {
     color: Color,
     shape: VertexShape,
     diagram: Key<Diagram>,
+    invertible: bool,
 }
 
 pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> {
@@ -155,6 +156,7 @@ pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> 
             name: info.name,
             color: info.color,
             shape: info.shape,
+            invertible: info.invertible,
         }),
     });
 
@@ -196,6 +198,7 @@ pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
                     color: gd.color,
                     shape: gd.shape,
                     diagram: store.unpack_diagram(gd.diagram)?,
+                    invertible: gd.invertible,
                 }),
             })
         })
