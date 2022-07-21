@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1658411308556,
+  "lastUpdate": 1658413992331,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -37259,6 +37259,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 301.62,
             "range": "+/- 1.640",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "5524da2020404e48d1bb2be393c0f85ce73f97a3",
+          "message": "Undo serialization for shape and invertible (fix #605)",
+          "timestamp": "2022-07-21T15:20:24+01:00",
+          "tree_id": "8384bfb3d71ae1bd0a07b589f6c49e9f3b25e106",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/5524da2020404e48d1bb2be393c0f85ce73f97a3"
+        },
+        "date": 1658413982537,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.1071,
+            "range": "+/- 0.005",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 6.5162,
+            "range": "+/- 0.006",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 17.37,
+            "range": "+/- 0.010",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 43.021,
+            "range": "+/- 0.026",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 108.75,
+            "range": "+/- 0.210",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 298.82,
+            "range": "+/- 0.970",
             "unit": "ms"
           }
         ]
