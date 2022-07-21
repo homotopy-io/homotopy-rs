@@ -123,6 +123,9 @@ pub enum Action {
     /// load the generator's diagram into the workspace; else do nothing.
     SelectGenerator(Generator),
 
+    /// Select the generator at the given index in the signature.
+    SelectGeneratorAt(usize),
+
     /// Ascend by a number of slices in the currently selected diagram in the workspace. If there
     /// is no diagram in the workspace or it is already displayed in its original dimension,
     /// nothing happens.
@@ -207,6 +210,7 @@ impl ProofState {
             Action::ClearWorkspace => self.clear_workspace(),
             Action::ClearBoundary => self.clear_boundary(),
             Action::SelectGenerator(generator) => self.select_generator(*generator)?,
+            Action::SelectGeneratorAt(index) => self.select_generator_at(*index)?,
             Action::AscendSlice(count) => self.ascend_slice(*count),
             Action::DescendSlice(slice) => self.descend_slice(*slice)?,
             Action::SwitchSlice(direction) => self.switch_slice(*direction),
@@ -414,6 +418,28 @@ impl ProofState {
             attachment_highlight: Default::default(),
             slice_highlight: Default::default(),
         });
+
+        Ok(())
+    }
+
+    /// Handler for [Action::SelectGeneratorAt].
+    fn select_generator_at(&mut self, index: usize) -> Result<(), ModelError> {
+        if self.workspace.is_some() {
+            return Ok(());
+        }
+
+        if let Some(info) = self.signature.iter().nth(index) {
+            self.workspace = Some(Workspace {
+                diagram: info.diagram.clone(),
+                path: Default::default(),
+                view: View {
+                    dimension: info.generator.dimension.min(2) as u8,
+                },
+                attach: Default::default(),
+                attachment_highlight: Default::default(),
+                slice_highlight: Default::default(),
+            });
+        }
 
         Ok(())
     }
