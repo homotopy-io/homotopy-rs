@@ -385,7 +385,11 @@ button, .button {
 }
 
 .signature__item.signature__item-editing {
-  height: auto;
+  height: 194px;
+}
+
+.signature__item.signature__item-editing.signature__item-generator-0 {
+  height: 166px;
 }
 
 .signature__item-info {
@@ -394,6 +398,7 @@ button, .button {
   align-items: stretch;
   width: 100%;
   height: var(--signature-height);
+  margin-bottom: var(--space-0);
 }
 
 .signature__branch {
@@ -517,7 +522,6 @@ button, .button {
   cursor: pointer;
   outline: none;
   border: solid var(--drawer-foreground) 1px;
-  margin-bottom: var(--space-0);
 }
 
 .signature__generator-picker-custom-flex {
@@ -595,18 +599,24 @@ button, .button {
   align-items: center;
   justify-content: space-between;
   box-sizing: border-box;
+  border-radius: var(--space-0);
   transition: background-color 100ms;
-  cursor: default;
+  cursor: pointer;
 }
 
 .signature__generator-preference:hover {
     background-color: var(--drawer-selected);
 }
 
+.signature__generator-preference span {
+  pointer-events: none;
+}
+
 .signature__generator-preference input[type=checkbox] {
   width: 18px;
   height: 18px;
   cursor: pointer;
+  pointer-events: none;
 }
 
 .signature__generator-preference select {

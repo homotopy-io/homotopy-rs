@@ -2,7 +2,8 @@ use std::str::FromStr;
 
 use homotopy_common::tree::Node;
 use palette::Srgb;
-use web_sys::HtmlInputElement;
+use wasm_bindgen::JsCast;
+use web_sys::{HtmlElement, HtmlInputElement};
 use yew::prelude::*;
 use yew_macro::function_component;
 
@@ -200,20 +201,25 @@ impl Component for ItemView {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let item = &ctx.props().item;
+
         let class = format!(
             "signature__item {}",
-            if self.mode == ItemViewMode::Editing {
-                "signature__item-editing"
-            } else {
-                ""
-            },
+            match (self.mode, item) {
+                (ItemViewMode::Editing, SignatureItem::Item(info)) => format!(
+                    "signature__item-editing signature__item-generator-{}",
+                    info.generator.dimension
+                ),
+                (ItemViewMode::Editing, _) => "signature__item-editing".to_owned(),
+                (_, _) => "".to_owned(),
+            }
         );
 
-        let picker_and_prefs = if let SignatureItem::Item(info) = &ctx.props().item {
+        let picker_and_prefs = if let SignatureItem::Item(info) = item {
             html! {
                 <>
-                    {self.view_picker(ctx, info)}
                     {self.view_preferences(ctx, info)}
+                    {self.view_picker(ctx, info)}
                 </>
             }
         } else {
@@ -463,18 +469,31 @@ impl ItemView {
             return html! {};
         }
 
-        let try_toggle = ctx.link().callback(move |e: InputEvent| {
-            let input: HtmlInputElement = e.target_unchecked_into();
-            ItemViewMessage::Edit(SignatureItemEdit::Invertibility(input.checked()))
+        // The following is required to allow the div to respond to onclick events appropriately.
+        let toggle = ctx.link().callback(move |e: MouseEvent| {
+            let div: HtmlElement = e.target_unchecked_into();
+            let input: HtmlInputElement = div.last_element_child().unwrap().unchecked_into();
+            let invertible = !input.checked();
+            ItemViewMessage::Edit(SignatureItemEdit::Invertibility(invertible))
         });
+
+        let dimension = info.generator.dimension;
+
+        let invertible_checkbox = if dimension > 0 {
+            html! {
+                <GeneratorPreferenceCheckbox
+                    name={"Invertible:"}
+                    onclick={toggle}
+                    checked={info.invertible}
+                />
+            }
+        } else {
+            html! {}
+        };
 
         html! {
             <>
-                <GeneratorPreferenceCheckbox
-                    name={"Invertible:"}
-                    oninput={try_toggle}
-                    checked={info.invertible}
-                />
+                {invertible_checkbox}
             </>
         }
     }

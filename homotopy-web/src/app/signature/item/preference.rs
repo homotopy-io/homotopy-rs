@@ -5,7 +5,7 @@ pub struct GeneratorPreferenceCheckboxProps {
     pub name: &'static str,
     pub tooltip: Option<&'static str>,
     pub checked: bool,
-    pub oninput: Callback<InputEvent>,
+    pub onclick: Callback<MouseEvent>,
 }
 
 pub struct GeneratorPreferenceCheckbox;
@@ -20,12 +20,14 @@ impl Component for GeneratorPreferenceCheckbox {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
-            <div class={"signature__generator-preference"}>
-                <p>{ctx.props().name}</p>
+            <div
+                class={"signature__generator-preference"}
+                onclick={ctx.props().onclick.clone()}
+            >
+                <span>{ctx.props().name}</span>
                 <input
                     type={"checkbox"}
                     checked={ctx.props().checked}
-                    oninput={ctx.props().oninput.clone()}
                 />
             </div>
         }
