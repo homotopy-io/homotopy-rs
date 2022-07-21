@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1658336938956,
+  "lastUpdate": 1658411308556,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -37199,6 +37199,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 304.34,
             "range": "+/- 0.680",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thud@thud.dev",
+            "name": "Jasper Parish",
+            "username": "thud"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "394ce7c7cad98fd0644212c6a8c5f8a3e250c7b2",
+          "message": "Better style picker (#602)\n\n* Redesign generator style picker\r\n\r\n* Remove intermediate `Editing` mode in generator style picker\r\n* Add hex value and palette icons to custom color picker\r\n\r\n* Add invertibility preference\r\n\r\n* Refactor references to `styling` back to `editing`\r\n* Create component for generator preference checkboxes\r\n* TODO: add component for generator preference dropdowns\r\n\r\n* Handle serialization of invertible field (not yet stable)\r\n\r\n* Tweak layout and click handlers for style picker\r\n\r\nCo-authored-by: Calin Tataru <calintat@gmail.com>",
+          "timestamp": "2022-07-21T14:38:14+01:00",
+          "tree_id": "ad74404798d8e969cf8ba987a097f46c6a17eca2",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/394ce7c7cad98fd0644212c6a8c5f8a3e250c7b2"
+        },
+        "date": 1658411298051,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.0994,
+            "range": "+/- 0.003",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 6.541,
+            "range": "+/- 0.070",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 17.35,
+            "range": "+/- 0.019",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 42.904,
+            "range": "+/- 0.029",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 109.81,
+            "range": "+/- 0.280",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 301.62,
+            "range": "+/- 1.640",
             "unit": "ms"
           }
         ]
