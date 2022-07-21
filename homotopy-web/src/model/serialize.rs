@@ -13,7 +13,7 @@ use wasm_bindgen::JsCast;
 
 use super::{
     proof::{
-        generators::{Color, GeneratorInfo, VertexShape},
+        generators::{Color, GeneratorInfo},
         SignatureItem, View,
     },
     Signature, Workspace,
@@ -132,9 +132,7 @@ struct GeneratorData {
     generator: Generator,
     name: String,
     color: Color,
-    shape: VertexShape,
     diagram: Key<Diagram>,
-    invertible: bool,
 }
 
 pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> {
@@ -155,8 +153,6 @@ pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> 
             diagram: data.store.pack_diagram(&info.diagram),
             name: info.name,
             color: info.color,
-            shape: info.shape,
-            invertible: info.invertible,
         }),
     });
 
@@ -196,9 +192,9 @@ pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
                     generator: gd.generator,
                     name: gd.name,
                     color: gd.color,
-                    shape: gd.shape,
+                    shape: Default::default(),
                     diagram: store.unpack_diagram(gd.diagram)?,
-                    invertible: gd.invertible,
+                    invertible: Default::default(),
                 }),
             })
         })
