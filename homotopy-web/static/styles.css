@@ -406,6 +406,10 @@ button, .button {
   height: 166px;
 }
 
+.signature__item.signature__folder-editing {
+  height: 32px;
+}
+
 .signature__item-info {
   display: flex;
   flex-direction: row;
