@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1658483477642,
+  "lastUpdate": 1658507273750,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -37559,6 +37559,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 327.68,
             "range": "+/- 4.760",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "50454943+H-Yulong@users.noreply.github.com",
+            "name": "Yulong Huang",
+            "username": "H-Yulong"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "10c1068bcbb2a9dc12a739ef80647fbe8cbe0a26",
+          "message": "Improve boundary preview (#604)\n\n* draw the button for clearing boundary\r\n\r\n* implement click to clear boundary\r\n\r\n* implement source/target filp\r\n\r\n* implement click to recover boundary\r\n\r\n* fix button size\r\n\r\n* scale boundary preview\r\n\r\n* lint fix\r\n\r\n* not scaling small diagrams\r\n\r\n* split dimension to max_width and max_height\r\n\r\nCo-authored-by: Yulong Huang <yh419@cam.ac.uk>",
+          "timestamp": "2022-07-23T00:16:45+08:00",
+          "tree_id": "e500d81000bedc9243d3133580d7be68a3fb889c",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/10c1068bcbb2a9dc12a739ef80647fbe8cbe0a26"
+        },
+        "date": 1658507263255,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.5477,
+            "range": "+/- 0.007",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 7.7216,
+            "range": "+/- 0.010",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 20.389,
+            "range": "+/- 0.046",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 50.154,
+            "range": "+/- 0.167",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 127.06,
+            "range": "+/- 0.480",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 354.01,
+            "range": "+/- 2.040",
             "unit": "ms"
           }
         ]
