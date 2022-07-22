@@ -235,7 +235,7 @@ impl<const N: usize> Component for DiagramSvg<N> {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let size = self.prepared.dimensions;
         let (width, height) = match self.props.dimensions {
-            Some(dimensions) => dimensions,
+            Some(dimensions) => (dimensions.0.min(size.width), dimensions.1.min(size.height)),
             None => (size.width, size.height),
         };
 
