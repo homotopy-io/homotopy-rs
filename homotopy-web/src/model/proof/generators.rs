@@ -66,6 +66,15 @@ impl RenderableColor for Color {
     fn css(&self) -> String {
         format!("#{:X}", self.0)
     }
+
+    fn tikz(&self) -> String {
+        format!(
+            "{{RGB}}{{{r}, {g}, {b}}}",
+            r = self.red,
+            g = self.green,
+            b = self.blue
+        )
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

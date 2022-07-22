@@ -3,7 +3,11 @@ use std::fmt::Write;
 pub use history::Proof;
 use history::{History, UndoState};
 use homotopy_core::common::Mode;
-use homotopy_graphics::{manim, stl, style::CssStylesheet, tikz};
+use homotopy_graphics::{
+    manim, stl,
+    style::{CssStylesheet, TikzStylesheet},
+    tikz,
+};
 use proof::{Signature, Workspace};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -119,20 +123,7 @@ impl State {
             Action::ExportTikz => {
                 let signature = self.with_proof(|p| p.signature.clone());
                 let diagram = self.with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram());
-
-                let mut stylesheet = String::new();
-                for info in signature.iter() {
-                    writeln!(
-                        stylesheet,
-                        "\\definecolor{{{generator}}}{{RGB}}{{{r}, {g}, {b}}}",
-                        generator = tikz::color(info.generator),
-                        r = info.color.red,
-                        g = info.color.green,
-                        b = info.color.blue,
-                    )
-                    .unwrap();
-                }
-
+                let stylesheet = signature.tikz_stylesheet();
                 let data = tikz::render(&diagram, &stylesheet, &signature).unwrap();
                 serialize::generate_download("homotopy_io_export", "tikz", data.as_bytes())
                     .map_err(ModelError::Export)?;

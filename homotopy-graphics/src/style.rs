@@ -2,6 +2,8 @@ use std::fmt::Write;
 
 use homotopy_core::Generator;
 
+use crate::tikz;
+
 pub trait GeneratorStyle {
     type Color: RenderableColor;
 
@@ -34,11 +36,16 @@ impl Default for VertexShape {
 
 pub trait RenderableColor {
     fn css(&self) -> String;
+    fn tikz(&self) -> String;
 }
 
 pub trait CssStylesheet {
     fn css_stylesheet(&self, prefix: &str) -> String;
     fn css_class(prefix: &str, generator: Generator, suffix: &str) -> String;
+}
+
+pub trait TikzStylesheet {
+    fn tikz_stylesheet(&self) -> String;
 }
 
 impl<StyleData: SignatureStyleData> CssStylesheet for StyleData {
@@ -79,5 +86,25 @@ impl<StyleData: SignatureStyleData> CssStylesheet for StyleData {
             "{}__{}-{}--{}",
             prefix, generator.id, generator.dimension, suffix
         )
+    }
+}
+
+impl<StyleData: SignatureStyleData> TikzStylesheet for StyleData {
+    fn tikz_stylesheet(&self) -> String {
+        let mut stylesheet = String::new();
+
+        for generator in self.generators() {
+            let style = self.generator_style(generator).unwrap();
+
+            writeln!(
+                stylesheet,
+                "\\definecolor{{{generator}}}{color}",
+                generator = tikz::color(generator),
+                color = style.color_point().tikz(),
+            )
+            .unwrap();
+        }
+
+        stylesheet
     }
 }
