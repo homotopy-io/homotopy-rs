@@ -234,11 +234,10 @@ impl<const N: usize> Component for DiagramSvg<N> {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let size = self.prepared.dimensions;
-        let (width,height) = match self.props.dimensions {
+        let (width, height) = match self.props.dimensions {
             Some(dimensions) => dimensions,
             None => (size.width, size.height),
         };
-
 
         let on_mouse_down = {
             let link = ctx.link().clone();
