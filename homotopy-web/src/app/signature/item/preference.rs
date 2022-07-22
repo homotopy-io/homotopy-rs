@@ -6,6 +6,8 @@ pub struct GeneratorPreferenceCheckboxProps {
     pub tooltip: Option<&'static str>,
     pub checked: bool,
     pub onclick: Callback<MouseEvent>,
+    #[prop_or(false)]
+    pub disabled: bool,
 }
 
 pub struct GeneratorPreferenceCheckbox;
@@ -28,6 +30,7 @@ impl Component for GeneratorPreferenceCheckbox {
                 <input
                     type={"checkbox"}
                     checked={ctx.props().checked}
+                    disabled={ctx.props().disabled}
                 />
             </div>
         }

@@ -14,6 +14,7 @@ use super::signature::Signature;
 pub struct GeneratorInfo {
     pub generator: Generator,
     pub name: String,
+    pub framed: bool,
     pub invertible: bool,
     pub color: Color,
     pub shape: VertexShape,

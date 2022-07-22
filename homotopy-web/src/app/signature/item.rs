@@ -470,31 +470,35 @@ impl ItemView {
         }
 
         // The following is required to allow the div to respond to onclick events appropriately.
-        let toggle = ctx.link().callback(move |e: MouseEvent| {
+        let toggle_framed = ctx.link().callback(move |e: MouseEvent| {
             let div: HtmlElement = e.target_unchecked_into();
             let input: HtmlInputElement = div.last_element_child().unwrap().unchecked_into();
-            let invertible = !input.checked();
-            ItemViewMessage::Edit(SignatureItemEdit::Invertibility(invertible))
+            ItemViewMessage::Edit(SignatureItemEdit::MakeFramed(!input.checked()))
+        });
+        let toggle_invertible = ctx.link().callback(move |e: MouseEvent| {
+            let div: HtmlElement = e.target_unchecked_into();
+            let input: HtmlInputElement = div.last_element_child().unwrap().unchecked_into();
+            ItemViewMessage::Edit(SignatureItemEdit::MakeInvertible(!input.checked()))
         });
 
-        let dimension = info.generator.dimension;
-
-        let invertible_checkbox = if dimension > 0 {
-            html! {
-                <GeneratorPreferenceCheckbox
-                    name={"Invertible:"}
-                    onclick={toggle}
-                    checked={info.invertible}
-                />
-            }
-        } else {
-            html! {}
-        };
-
-        html! {
-            <>
-                {invertible_checkbox}
-            </>
+        match info.generator.dimension {
+            0 => Html::default(),
+            _ => html! {
+                <>
+                    <GeneratorPreferenceCheckbox
+                        name="Framed"
+                        onclick={toggle_framed}
+                        checked={info.framed}
+                        disabled={!info.framed}
+                    />
+                    <GeneratorPreferenceCheckbox
+                        name="Invertible"
+                        onclick={toggle_invertible}
+                        checked={info.invertible}
+                        disabled={info.invertible}
+                    />
+                </>
+            },
         }
     }
 }

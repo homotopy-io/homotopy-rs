@@ -194,7 +194,8 @@ pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
                     color: gd.color,
                     shape: Default::default(),
                     diagram: store.unpack_diagram(gd.diagram)?,
-                    invertible: Default::default(),
+                    framed: true,
+                    invertible: false,
                 }),
             })
         })
