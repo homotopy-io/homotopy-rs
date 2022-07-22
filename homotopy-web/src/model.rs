@@ -3,7 +3,7 @@ use std::fmt::Write;
 pub use history::Proof;
 use history::{History, UndoState};
 use homotopy_core::common::Mode;
-use homotopy_graphics::{manim, stl, tikz};
+use homotopy_graphics::{manim, stl, style::CssStylesheet, tikz};
 use proof::{Signature, Workspace};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -139,6 +139,8 @@ impl State {
             }
 
             Action::ExportSvg => {
+                let signature = self.with_proof(|p| p.signature.clone());
+
                 // First we locate the element containing the SVG rendered the SVG rendering
                 // pipeline. We *could* do this by using a lookup by class name, which would not
                 // require any chances to components/panzoom.rs, but get_elements_by_class_name
@@ -153,18 +155,13 @@ impl State {
                 let svg = svg_element.inner_html();
 
                 // We must now pull all the relevant stylesheets that are needed in the SVG.
-                // Failure to do so gives a fully-black SVG. Since getting direct access to the SVG
-                // stylesheet render seems too complicated in the current state, as SignatureStylesheet
-                // is in a private module, we use again the trick of pulling everything from the DOM.
-                // Note that this solution would be much simpler if we opted for saving the
-                // rendered SVG *somewhere*, then just get it from there.
-                let style_element = web_sys::window()
-                    .expect("no window")
-                    .document()
-                    .expect("no document")
-                    .get_element_by_id("signature__stylesheet")
-                    .expect("no stylesheet in document");
-                let stylesheet = style_element.outer_html();
+                // Failure to do so gives a fully-black SVG. We can generate the stylesheet in the
+                // same way the `SignatureStylesheet` struct does.
+                let stylesheet = {
+                    let mut inner_stylesheet = signature.css_stylesheet("generator");
+                    inner_stylesheet.retain(|c| !c.is_whitespace());
+                    format!("<style>{}</style>", inner_stylesheet)
+                };
 
                 // So we now have the SVG and its stylesheet in separate strings.
                 // It is not enough to just concatenate them, the stylesheets need to be inside the

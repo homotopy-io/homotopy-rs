@@ -51,7 +51,7 @@ impl GeneratorStyle for GeneratorInfo {
     }
 
     fn color_wire(&self) -> Self::Color {
-        self.color_surface()
+        Color((self.color.into_linear().lighten(0.05)).into())
     }
 
     fn color_surface(&self) -> Self::Color {
