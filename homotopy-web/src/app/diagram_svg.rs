@@ -54,7 +54,9 @@ pub struct DiagramSvgProps<const N: usize> {
     #[prop_or_default]
     pub highlight: Option<HighlightSvg<N>>,
     #[prop_or_default]
-    pub dimensions: Option<(f32, f32)>,
+    pub max_width: Option<f32>,
+    #[prop_or_default]
+    pub max_height: Option<f32>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -234,9 +236,15 @@ impl<const N: usize> Component for DiagramSvg<N> {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let size = self.prepared.dimensions;
-        let (width, height) = match self.props.dimensions {
-            Some(dimensions) => (dimensions.0.min(size.width), dimensions.1.min(size.height)),
-            None => (size.width, size.height),
+
+        let width = match self.props.max_width {
+            Some(width) => width.min(size.width),
+            None => size.width,
+        };
+
+        let height = match self.props.max_height {
+            Some(height) => height.min(size.height),
+            None => size.height,
         };
 
         let on_mouse_down = {
