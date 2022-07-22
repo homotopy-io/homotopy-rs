@@ -46,7 +46,7 @@ body, html {
 
 input, button {
   font-family: 'IBM Plex Sans', 'sans';
-  color: var(--draw-foreground);
+  color: var(--drawer-foreground);
   font-size: 14px;
 }
 
@@ -398,8 +398,12 @@ button, .button {
   transition: height 100ms;
 }
 
-.signature__item.signature__item-styling {
-  height: 160px;
+.signature__item.signature__item-editing {
+  height: 194px;
+}
+
+.signature__item.signature__item-editing.signature__item-generator-0 {
+  height: 166px;
 }
 
 .signature__item-info {
@@ -408,6 +412,7 @@ button, .button {
   align-items: stretch;
   width: 100%;
   height: var(--signature-height);
+  margin-bottom: var(--space-0);
 }
 
 .signature__branch {
@@ -456,6 +461,12 @@ button, .button {
   display: flex;
   align-items: center;
   transition: background-color 100ms;
+}
+
+@media (pointer: fine) {
+  .signature__item-child:hover {
+    background: var(--drawer-selected);
+  }
 }
 
 .signature__item-name, .signature__item-fill {
@@ -517,20 +528,113 @@ button, .button {
     color: black;
 }
 
-.signature__generator-picker-custom {
-  flex: 1 1 100%;
+.signature__generator-picker-custom-wrapper {
   width: 100%;
-  height: 24px;
+  height: calc(24px + calc(2 * var(--space-0)));
   border-radius: var(--space-0);
   overflow: hidden;
   cursor: pointer;
   outline: none;
+  border: solid var(--drawer-foreground) 1px;
 }
 
-@media (pointer: fine) {
-  .signature__item-child:hover {
-    background: var(--drawer-selected);
-  }
+.signature__generator-picker-custom-flex {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.signature__generator-picker-custom {
+  height: 100%;
+  overflow: hidden;
+  flex: 1 1 auto;
+  outline: none;
+  transition: background-color 100ms;
+}
+
+.signature__generator-picker-custom-hex {
+  width: 80px;
+  height: 100%;
+  padding: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  color: var(--drawer-foreground);
+  cursor: pointer;
+  outline: none;
+  text-align: center;
+}
+
+.signature__generator-picker-custom-hex-input {
+  width: 100%;
+  height: 100%;
+  padding: calc(var(--space-0) + 2px);
+  box-sizing: border-box;
+  overflow: hidden;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  text-align: center;
+  color: var(--drawer-foreground);
+  font-family: monospace;
+  transition: background-color 100ms;
+}
+
+.signature__generator-picker-custom-hex-input:hover {
+  background-color: var(--drawer-selected);
+}
+
+.signature__generator-picker-custom-inner {
+  position: relative;
+  padding: var(--space-0);
+  width: 100%;
+  height: 100%;
+  bottom: calc(24px + calc(2 * var(--space-0)));
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  pointer-events: none;
+  color: var(--drawer-background);
+}
+
+.signature__generator-preference {
+  width: 100%;
+  height: 28px;
+  padding: var(--space-0);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  border-radius: var(--space-0);
+  transition: background-color 100ms;
+  cursor: pointer;
+}
+
+.signature__generator-preference:hover {
+    background-color: var(--drawer-selected);
+}
+
+.signature__generator-preference span {
+  pointer-events: none;
+}
+
+.signature__generator-preference input[type=checkbox] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  pointer-events: none;
+}
+
+.signature__generator-preference select {
+  height: 18px;
 }
 
 /* Diagram SVG */

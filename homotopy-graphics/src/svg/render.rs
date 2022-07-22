@@ -7,6 +7,7 @@ use homotopy_core::{
     complex::Simplex,
     layout::Layout,
     projection::{Depths, Homotopy, Projection},
+    Diagram,
 };
 use lyon_path::{builder::NoAttributes, Path};
 
@@ -150,6 +151,7 @@ impl<const N: usize> GraphicElement<N> {
     /// This function can panic or produce undefined results if the simplicial complex, the layout
     /// and the projected generators have not come from the same diagram.
     pub fn build(
+        diagram: &Diagram,
         complex: &[Simplex<N>],
         layout: &Layout<N>,
         projection: &Projection<N>,
@@ -192,8 +194,10 @@ impl<const N: usize> GraphicElement<N> {
                     ));
                 }
                 Simplex::Point([p]) => {
-                    let generator = projection.generator(*p);
-                    if matches!(projection.homotopy(*p), None | Some(Homotopy::Complex)) {
+                    let generator = projection.front_generator(*p);
+                    // In 2D, we ignore points which are labelled by homotopies.
+                    // TODO(@calintat): This should only apply to locally identity-like homotopies.
+                    if N <= 1 || generator.dimension >= diagram.dimension() {
                         point_elements
                             .push(Self::Point(generator, project_2d(layout.get(*p)).into()));
                     }

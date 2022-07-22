@@ -123,6 +123,10 @@ pub enum Action {
     /// load the generator's diagram into the workspace; else do nothing.
     SelectGenerator(Generator),
 
+    /// Select an item at the given index. This will either be a generator in the signature
+    /// or an attachment option (if the attach state is non-empty).
+    Select(usize),
+
     /// Ascend by a number of slices in the currently selected diagram in the workspace. If there
     /// is no diagram in the workspace or it is already displayed in its original dimension,
     /// nothing happens.
@@ -185,6 +189,8 @@ pub enum ModelError {
     IncompatibleBoundaries(#[from] NewDiagramError),
     #[error("selected a generator that is not in the signature")]
     UnknownGeneratorSelected,
+    #[error("index out of bounds")]
+    IndexOutOfBounds,
     #[error("tried to descend into an invalid diagram slice")]
     InvalidSlice(#[from] DimensionError),
     #[error("invalid action")]
@@ -211,6 +217,7 @@ impl ProofState {
             Action::ClearWorkspace => self.clear_workspace(),
             Action::ClearBoundary => self.clear_boundary(),
             Action::SelectGenerator(generator) => self.select_generator(*generator)?,
+            Action::Select(index) => self.select(*index)?,
             Action::AscendSlice(count) => self.ascend_slice(*count),
             Action::DescendSlice(slice) => self.descend_slice(*slice)?,
             Action::SwitchSlice(direction) => self.switch_slice(*direction),
@@ -292,6 +299,7 @@ impl ProofState {
                         }
                     })
             }
+            Action::Select(_) => self.workspace().map_or(true, |ws| ws.attach.is_some()),
             Action::AscendSlice(_) | Action::SwitchSlice(_) => self
                 .workspace
                 .as_ref()
@@ -448,6 +456,44 @@ impl ProofState {
             attachment_highlight: Default::default(),
             slice_highlight: Default::default(),
         });
+
+        Ok(())
+    }
+
+    /// Handler for [Action::Select].
+    fn select(&mut self, index: usize) -> Result<(), ModelError> {
+        match self.workspace() {
+            None => {
+                // Select a generator
+                let info = self
+                    .signature
+                    .iter()
+                    .nth(index)
+                    .ok_or(ModelError::IndexOutOfBounds)?;
+
+                self.workspace = Some(Workspace {
+                    diagram: info.diagram.clone(),
+                    path: Default::default(),
+                    view: View {
+                        dimension: info.generator.dimension.min(2) as u8,
+                    },
+                    attach: Default::default(),
+                    attachment_highlight: Default::default(),
+                    slice_highlight: Default::default(),
+                });
+            }
+            Some(ws) => {
+                // Select an attachment option.
+                let option = ws
+                    .attach
+                    .as_ref()
+                    .ok_or(ModelError::InvalidAction)?
+                    .get(index)
+                    .ok_or(ModelError::IndexOutOfBounds)?;
+
+                self.attach(&option.clone());
+            }
+        }
 
         Ok(())
     }

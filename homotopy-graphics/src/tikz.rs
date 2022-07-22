@@ -32,6 +32,7 @@ pub fn render(
     let depths = Depths::<2>::new(diagram)?;
     let projection = Projection::<2>::new(diagram, &layout, &depths)?;
     let graphic = simplify_graphic(&GraphicElement::build(
+        diagram,
         &complex,
         &layout,
         &projection,
