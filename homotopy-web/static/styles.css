@@ -481,6 +481,10 @@ button, .button {
   box-sizing: border-box;
 }
 
+.signature__item-fill {
+    cursor: pointer;
+}
+
 .signature__item-name {
   padding-left: 0;
   padding-right: 0;
