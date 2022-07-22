@@ -100,6 +100,7 @@ impl BoundaryPreview {
                     diagram={ctx.props().boundary.diagram.clone()}
                     id="boundary__preview"
                     signature={ctx.props().signature.clone()}
+                    dimensions={Some((160.0, 160.0))}
             />
         }
     }
