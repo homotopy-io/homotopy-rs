@@ -53,6 +53,10 @@ pub struct DiagramSvgProps<const N: usize> {
     pub on_homotopy: Callback<Homotopy>,
     #[prop_or_default]
     pub highlight: Option<HighlightSvg<N>>,
+    #[prop_or_default]
+    pub max_width: Option<f32>,
+    #[prop_or_default]
+    pub max_height: Option<f32>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -233,6 +237,16 @@ impl<const N: usize> Component for DiagramSvg<N> {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let size = self.prepared.dimensions;
 
+        let width = match self.props.max_width {
+            Some(width) => width.min(size.width),
+            None => size.width,
+        };
+
+        let height = match self.props.max_height {
+            Some(height) => height.min(size.height),
+            None => size.height,
+        };
+
         let on_mouse_down = {
             let link = ctx.link().clone();
             Callback::from(move |e: MouseEvent| {
@@ -290,8 +304,9 @@ impl<const N: usize> Component for DiagramSvg<N> {
         html! {
             <svg
                 xmlns={"http://www.w3.org/2000/svg"}
-                width={size.width.to_string()}
-                height={size.height.to_string()}
+                width={width.to_string()}
+                height={height.to_string()}
+                viewbox={format!("0 0 {} {}", size.width, size.height)}
                 onmousedown={on_mouse_down}
                 onmouseup={on_mouse_up}
                 onmousemove={on_mouse_move}

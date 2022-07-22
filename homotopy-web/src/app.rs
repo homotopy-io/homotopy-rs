@@ -181,6 +181,7 @@ impl App {
             Some(b) => html! {
                 <BoundaryPreview
                     boundary={b.clone()}
+                    dispatch={dispatch.reform(model::Action::Proof)}
                     signature={signature.clone()}
                 />
             },

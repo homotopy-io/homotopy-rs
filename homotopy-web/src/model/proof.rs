@@ -164,6 +164,10 @@ pub enum Action {
 
     EditSignature(SignatureEdit),
 
+    FlipBoundary,
+
+    RecoverBoundary,
+
     Nothing,
 }
 
@@ -231,6 +235,8 @@ impl ProofState {
             Action::Restrict => self.restrict()?,
             Action::Theorem => self.theorem()?,
             Action::EditSignature(edit) => self.edit_signature(edit),
+            Action::FlipBoundary => self.flip_boundary(),
+            Action::RecoverBoundary => self.recover_boundary(),
             Action::Imported | Action::Nothing => {}
         }
 
@@ -363,6 +369,34 @@ impl ProofState {
         };
 
         Ok(())
+    }
+
+    /// Handler for [Action::FlipBoundary].
+    fn flip_boundary(&mut self) {
+        if let Some(selected) = &self.boundary {
+            self.boundary = Some(SelectedBoundary {
+                boundary: selected.boundary.flip(),
+                diagram: selected.diagram.clone(),
+            });
+        };
+    }
+
+    /// Handler for [Action::RecoverBoundary]
+    fn recover_boundary(&mut self) {
+        if self.workspace.is_none() {
+            if let Some(selected) = &self.boundary {
+                self.workspace = Some(Workspace {
+                    diagram: selected.diagram.clone(),
+                    path: Default::default(),
+                    view: View {
+                        dimension: selected.diagram.dimension().min(2) as u8,
+                    },
+                    attach: Default::default(),
+                    attachment_highlight: Default::default(),
+                    slice_highlight: Default::default(),
+                });
+            }
+        }
     }
 
     /// Handler for [Action::TakeIdentityDiagram].

@@ -138,29 +138,43 @@ button, .button {
 
 .boundary {
   position: fixed;
+  display: grid;
+  grid-template-columns: 1fr 30px;
   bottom: 10px;
   margin-left: 10px;
   z-index: 4; /* just below the slice buttons */
 }
 
-.boundary__name {
+.boundary__element {
   background-color: var(--toolbar-background);
   border: 1px solid var(--toolbar-border);
   border-radius: var(--space-0);
+  user-select: none;
+}
+
+@media (pointer: fine) {
+  .boundary__element:hover {
+    background: var(--toolbar-hover);
+    cursor: pointer;
+  }
+}
+
+.boundary__name {
   padding: 5px;
   color: var(--toolbar-foreground);
   text-align: center;
 }
 
+.boundary__button {
+  color: var(--toolbar-foreground);
+  text-align: center;
+  padding-top: 2px;
+}
+
 .boundary__preview {
-  background-color: var(--toolbar-background);
-  border: 1px solid var(--toolbar-border);
-  border-radius: var(--space-0);
   overflow: auto;
-  min-height: 50px;
-  min-width: 50px;
-  max-width:  160px;
-  max-height: 160px;
+  width: 160px;
+  height: 160px;
 }
 
 /* Workspace */
