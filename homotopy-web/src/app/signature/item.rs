@@ -210,7 +210,7 @@ impl Component for ItemView {
                     "signature__item-editing signature__item-generator-{}",
                     info.generator.dimension
                 ),
-                (ItemViewMode::Editing, _) => "signature__item-editing".to_owned(),
+                (ItemViewMode::Editing, _) => "signature__folder-editing".to_owned(),
                 (_, _) => "".to_owned(),
             }
         );

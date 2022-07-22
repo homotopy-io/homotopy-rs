@@ -1,16 +1,15 @@
-use std::fmt::Write;
-
 use homotopy_core::Generator;
-use palette::Lighten;
+use homotopy_graphics::style::CssStylesheet;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, Node};
 
-use crate::{
-    components::document,
-    model::proof::{generators::Color, Signature},
-};
+use crate::{components::document, model::proof::Signature};
 
-// TODO: Check if there is a performance problem with this. If so, then use the
+// It would be nice if we could remove the `SignatureStylesheet` entirely but we still need to
+// maintain a handle to the html node for mounting/unmounting. This also means we can avoid
+// regenerating the stylesheet unless the signature has changed [`update`].
+
+// TODO: Check if there is a performance problem with the current approach.. If so, then use the
 // stylesheet API to change the colors more granularly.
 
 pub struct SignatureStylesheet {
@@ -47,50 +46,18 @@ impl SignatureStylesheet {
     }
 
     pub fn name(prefix: &str, generator: Generator, style: &str) -> String {
-        format!(
-            "{}__{}-{}--{}",
-            prefix, generator.id, generator.dimension, style
-        )
+        Signature::css_class(prefix, generator, style)
     }
 
     fn node(&self) -> Node {
         self.element.clone().dyn_into::<Node>().unwrap()
     }
 
-    fn style(&self) -> String {
-        let mut style = String::new();
-
-        for info in self.signature.iter() {
-            writeln!(
-                style,
-                ".{name} {{ fill: {color}; stroke: {color}; }}",
-                name = Self::name(&self.prefix, info.generator, "surface"),
-                color = Color((info.color.into_linear().lighten(0.1)).into())
-            )
-            .unwrap();
-            writeln!(
-                style,
-                ".{name} {{ stroke: {color}; }}",
-                name = Self::name(&self.prefix, info.generator, "wire"),
-                color = Color((info.color.into_linear().lighten(0.05)).into())
-            )
-            .unwrap();
-            writeln!(
-                style,
-                ".{name} {{ fill: {color}; }}",
-                name = Self::name(&self.prefix, info.generator, "point"),
-                color = info.color
-            )
-            .unwrap();
-        }
-
-        style
-    }
-
     pub fn update(&mut self, signature: Signature) {
         if signature != self.signature {
             self.signature = signature;
-            self.element.set_inner_html(&self.style());
+            self.element
+                .set_inner_html(&self.signature.css_stylesheet(&self.prefix));
         }
     }
 }

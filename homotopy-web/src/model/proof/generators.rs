@@ -3,9 +3,9 @@ use std::{fmt, ops::Deref};
 use homotopy_core::{common::Generator, Diagram};
 use homotopy_graphics::{
     style,
-    style::{GeneratorStyle, SignatureStyleData},
+    style::{GeneratorStyle, RenderableColor, SignatureStyleData},
 };
-use palette::Srgb;
+use palette::{Lighten, Srgb};
 use serde::{Deserialize, Serialize};
 
 use super::signature::Signature;
@@ -22,14 +22,20 @@ pub struct GeneratorInfo {
 }
 
 impl SignatureStyleData for Signature {
-    type T = GeneratorInfo;
+    type Style = GeneratorInfo;
 
-    fn generator_style(&self, g: Generator) -> Option<&Self::T> {
+    fn generators(&self) -> Vec<Generator> {
+        self.iter().map(|info| info.generator).collect()
+    }
+
+    fn generator_style(&self, g: Generator) -> Option<&Self::Style> {
         self.generator_info(g)
     }
 }
 
 impl GeneratorStyle for GeneratorInfo {
+    type Color = Color;
+
     fn label(&self) -> Option<String> {
         // TODO(thud): Decide whether to show a label
         // Some(self.name.clone())
@@ -39,10 +45,28 @@ impl GeneratorStyle for GeneratorInfo {
     fn shape(&self) -> Option<style::VertexShape> {
         Some(self.shape.clone().into())
     }
+
+    fn color_point(&self) -> Self::Color {
+        self.color.clone()
+    }
+
+    fn color_wire(&self) -> Self::Color {
+        self.color_surface()
+    }
+
+    fn color_surface(&self) -> Self::Color {
+        Color((self.color.into_linear().lighten(0.1)).into())
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Color(pub Srgb<u8>);
+
+impl RenderableColor for Color {
+    fn css(&self) -> String {
+        format!("#{:X}", self.0)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum VertexShape {
