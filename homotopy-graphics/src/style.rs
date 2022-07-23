@@ -1,17 +1,12 @@
-use std::fmt::Write;
+use std::{fmt, str::FromStr};
 
 use homotopy_core::Generator;
-
-use crate::tikz;
+use serde::{Deserialize, Serialize};
 
 pub trait GeneratorStyle {
-    type Color: RenderableColor;
-
     fn label(&self) -> Option<String>;
     fn shape(&self) -> Option<VertexShape>;
-    fn color_point(&self) -> Self::Color;
-    fn color_wire(&self) -> Self::Color;
-    fn color_surface(&self) -> Self::Color;
+    fn color(&self) -> Color;
 }
 
 pub trait SignatureStyleData {
@@ -23,88 +18,53 @@ pub trait SignatureStyleData {
     fn generators(&self) -> Vec<Generator>;
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Color(pub(crate) palette::Srgb<u8>);
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum VertexShape {
-    Circle,
-    Square,
+    Circle, // circle / sphere
+    Square, // square / cube
+}
+
+impl Color {
+    #[must_use]
+    pub fn lighten(&self, amount: f32) -> Self {
+        Self(palette::Lighten::lighten(self.0.into_linear(), amount).into())
+    }
+
+    pub fn into_components<T>(self) -> (T, T, T)
+    where
+        T: palette::stimulus::FromStimulus<u8>,
+    {
+        self.0.into_format().into_components()
+    }
+}
+
+// Convert from hex string (#RRGGBB) to `Color`
+impl FromStr for Color {
+    type Err = palette::rgb::FromHexError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        palette::Srgb::<u8>::from_str(s).map(Self)
+    }
+}
+
+impl Default for Color {
+    fn default() -> Self {
+        Self(palette::Srgb::new(0, 0, 0))
+    }
+}
+
+impl fmt::Display for Color {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (r, g, b) = self.0.into_components();
+        write!(f, "#{:02x}{:02x}{:02x}", r, g, b)
+    }
 }
 
 impl Default for VertexShape {
     fn default() -> Self {
         Self::Circle
-    }
-}
-
-pub trait RenderableColor {
-    fn css(&self) -> String;
-    fn tikz(&self) -> String;
-}
-
-pub trait CssStylesheet {
-    fn css_stylesheet(&self, prefix: &str) -> String;
-    fn css_class(prefix: &str, generator: Generator, suffix: &str) -> String;
-}
-
-pub trait TikzStylesheet {
-    fn tikz_stylesheet(&self) -> String;
-}
-
-impl<StyleData: SignatureStyleData> CssStylesheet for StyleData {
-    fn css_stylesheet(&self, prefix: &str) -> String {
-        let mut stylesheet = String::new();
-
-        for generator in self.generators() {
-            let style = self.generator_style(generator).unwrap();
-
-            writeln!(
-                stylesheet,
-                ".{name} {{ fill: {color}; stroke: {color}; }}",
-                name = Self::css_class(prefix, generator, "surface"),
-                color = style.color_surface().css()
-            )
-            .unwrap();
-            writeln!(
-                stylesheet,
-                ".{name} {{ stroke: {color}; }}",
-                name = Self::css_class(prefix, generator, "wire"),
-                color = style.color_wire().css()
-            )
-            .unwrap();
-            writeln!(
-                stylesheet,
-                ".{name} {{ fill: {color}; }}",
-                name = Self::css_class(prefix, generator, "point"),
-                color = style.color_point().css()
-            )
-            .unwrap();
-        }
-
-        stylesheet
-    }
-
-    fn css_class(prefix: &str, generator: Generator, suffix: &str) -> String {
-        format!(
-            "{}__{}-{}--{}",
-            prefix, generator.id, generator.dimension, suffix
-        )
-    }
-}
-
-impl<StyleData: SignatureStyleData> TikzStylesheet for StyleData {
-    fn tikz_stylesheet(&self) -> String {
-        let mut stylesheet = String::new();
-
-        for generator in self.generators() {
-            let style = self.generator_style(generator).unwrap();
-
-            writeln!(
-                stylesheet,
-                "\\definecolor{{{generator}}}{color}",
-                generator = tikz::color(generator),
-                color = style.color_point().tikz(),
-            )
-            .unwrap();
-        }
-
-        stylesheet
     }
 }

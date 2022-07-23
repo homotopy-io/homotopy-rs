@@ -5,12 +5,12 @@ use homotopy_core::{Diagram, Generator};
 use homotopy_graphics::{
     geom::{CubicalGeometry, SimplicialGeometry, VertData},
     gl::{array::VertexArray, GlCtx, Result},
-    style::SignatureStyleData,
+    style::{SignatureStyleData, VertexShape},
     vertex_array,
 };
 use ultraviolet::Vec4;
 
-use crate::model::proof::{generators::VertexShape, View};
+use crate::model::proof::View;
 
 pub struct Scene {
     pub diagram: Diagram,
@@ -112,7 +112,7 @@ impl Scene {
             generator: Generator::new(0, 0),
         });
         sphere_mesh.mk_point(p);
-        sphere_mesh.inflate_point_3d(p, geometry_samples, &VertexShape::Circle.into());
+        sphere_mesh.inflate_point_3d(p, geometry_samples, &VertexShape::Circle);
         if let Some(sphere_buffers) = sphere_mesh.buffer_tris(ctx)?.into_iter().next() {
             self.sphere = Some(vertex_array!(
                 ctx,
@@ -128,7 +128,7 @@ impl Scene {
             generator: Generator::new(0, 0),
         });
         cube_mesh.mk_point(p);
-        cube_mesh.inflate_point_3d(p, geometry_samples, &VertexShape::Square.into());
+        cube_mesh.inflate_point_3d(p, geometry_samples, &VertexShape::Square);
         if let Some(cube_buffers) = cube_mesh.buffer_tris(ctx)?.into_iter().next() {
             self.cube = Some(vertex_array!(
                 ctx,

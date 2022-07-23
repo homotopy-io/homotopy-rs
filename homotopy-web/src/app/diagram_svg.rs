@@ -16,9 +16,12 @@ use homotopy_core::{
     rewrite::RewriteN,
     Boundary, Diagram, DiagramN, Height, SliceIndex,
 };
-use homotopy_graphics::svg::{
-    render::{ActionRegion, GraphicElement},
-    shape::{path_to_svg, project_2d, Point, Shape},
+use homotopy_graphics::{
+    style::VertexShape,
+    svg::{
+        render::{ActionRegion, GraphicElement},
+        shape::{path_to_svg, project_2d, Point, Shape},
+    },
 };
 use web_sys::Element;
 use yew::prelude::*;
@@ -27,7 +30,6 @@ use crate::{
     app::signature_stylesheet::SignatureStylesheet,
     components::{read_touch_list_abs, Finger},
     model::proof::{
-        generators::VertexShape,
         homotopy::{Contract, Expand, Homotopy},
         RenderStyle, Signature,
     },

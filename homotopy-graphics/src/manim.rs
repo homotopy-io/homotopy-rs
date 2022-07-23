@@ -14,14 +14,36 @@ use lyon_path::{Event, Path};
 
 use crate::{
     path_util::simplify_graphic,
-    style::{GeneratorStyle, SignatureStyleData, VertexShape},
+    style::{Color, GeneratorStyle, SignatureStyleData, VertexShape},
     svg::render::GraphicElement,
 };
 
 const INDENT: &str = "    ";
 
-pub fn color(generator: Generator) -> String {
+pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
+    let mut stylesheet = String::new();
+
+    for generator in styles.generators() {
+        let style = styles.generator_style(generator).unwrap();
+
+        writeln!(
+            stylesheet,
+            "            \"{generator}\": \"{color}\",",
+            generator = name(generator),
+            color = hex(&style.color())
+        )
+        .unwrap();
+    }
+
+    stylesheet
+}
+
+fn name(generator: Generator) -> String {
     format!("generator_{}_{}", generator.id, generator.dimension)
+}
+
+fn hex(color: &Color) -> String {
+    format!("#{:x}", color.0)
 }
 
 pub fn render(
@@ -101,7 +123,7 @@ pub fn render(
             manim,
             "{ind}{ind}surfaces.add(VMobject(){path}.set_stroke(width=1).set_fill(C[\"{color}\"],0.75)) # path_{id}_{dim}",
             ind=INDENT,
-            color=color(g),
+            color=name(g),
             id=g.id,
             dim=g.dimension,
             path=&render_path(&path)
@@ -146,7 +168,7 @@ pub fn render(
         for (g, path) in &layer {
             writeln!(manim, "{ind}{ind}wires.add(VMobject(){path}.set_stroke(color=C[\"{color}\"],width=5)) # path_{id}_{dim}",
                 ind=INDENT,
-                color=color(*g),
+                color=name(*g),
                 id=g.id,
                 dim=g.dimension,
                 path=&render_path(path)
@@ -170,7 +192,7 @@ pub fn render(
 
     //TODO work out right radius for circles to match SVG/tikz export.
     for (g, point) in points {
-        let vertex = render_vertex(signature_styles.generator_style(g).unwrap(), &color(g));
+        let vertex = render_vertex(signature_styles.generator_style(g).unwrap(), &name(g));
         writeln!(
             manim,
             "{ind}{ind}points.add({vertex}.move_to({pt})) # circle_{id}_{dim}",

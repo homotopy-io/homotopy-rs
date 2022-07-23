@@ -1,13 +1,7 @@
-use std::fmt::Write;
-
 pub use history::Proof;
 use history::{History, UndoState};
 use homotopy_core::common::Mode;
-use homotopy_graphics::{
-    manim, stl,
-    style::{CssStylesheet, TikzStylesheet},
-    tikz,
-};
+use homotopy_graphics::{manim, stl, svg, tikz};
 use proof::{Signature, Workspace};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -123,7 +117,7 @@ impl State {
             Action::ExportTikz => {
                 let signature = self.with_proof(|p| p.signature.clone());
                 let diagram = self.with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram());
-                let stylesheet = signature.tikz_stylesheet();
+                let stylesheet = tikz::stylesheet(&signature);
                 let data = tikz::render(&diagram, &stylesheet, &signature).unwrap();
                 serialize::generate_download("homotopy_io_export", "tikz", data.as_bytes())
                     .map_err(ModelError::Export)?;
@@ -148,8 +142,9 @@ impl State {
                 // We must now pull all the relevant stylesheets that are needed in the SVG.
                 // Failure to do so gives a fully-black SVG. We can generate the stylesheet in the
                 // same way the `SignatureStylesheet` struct does.
+                // We also strip the styles of whitespace since it is unneeded.
                 let stylesheet = {
-                    let mut inner_stylesheet = signature.css_stylesheet("generator");
+                    let mut inner_stylesheet = svg::stylesheet(&signature, "generator");
                     inner_stylesheet.retain(|c| !c.is_whitespace());
                     format!("<style>{}</style>", inner_stylesheet)
                 };
@@ -175,20 +170,7 @@ impl State {
             Action::ExportManim => {
                 let signature = self.with_proof(|p| p.signature.clone());
                 let diagram = self.with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram());
-
-                let mut stylesheet = String::new();
-                for info in signature.iter() {
-                    writeln!(
-                        stylesheet,
-                        "            \"{generator}\": \"#{r:02x}{g:02x}{b:02x}\",",
-                        generator = manim::color(info.generator),
-                        r = info.color.red,
-                        g = info.color.green,
-                        b = info.color.blue,
-                    )
-                    .unwrap();
-                }
-
+                let stylesheet = manim::stylesheet(&signature);
                 let data = manim::render(&diagram, &signature, &stylesheet).unwrap();
                 serialize::generate_download("homotopy_io_export", "py", data.as_bytes())
                     .map_err(ModelError::Export)?;

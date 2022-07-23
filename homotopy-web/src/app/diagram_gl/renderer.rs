@@ -5,16 +5,13 @@ use homotopy_graphics::{
         frame::{DepthTest, Frame},
         GlCtx, Result,
     },
+    style::{GeneratorStyle, SignatureStyleData, VertexShape},
 };
 use ultraviolet::{Mat4, Vec3, Vec4};
 
 use self::{axes::Axes, gbuffer::GBuffer, quad::Quad, scene::Scene, shaders::Shaders};
 use super::{orbit_camera::OrbitCamera, DiagramGlProps};
-use crate::{
-    app::AppSettings,
-    components::settings::Store,
-    model::proof::{generators::VertexShape, Signature},
-};
+use crate::{app::AppSettings, components::settings::Store, model::proof::Signature};
 
 mod axes;
 mod gbuffer;
@@ -114,23 +111,21 @@ impl Renderer {
         };
 
         let signature = &self.signature;
-        let color_of = |generator: &Generator| {
-            let color = signature.generator_info(*generator).map_or(
-                palette::rgb::Rgb {
-                    red: 0.,
-                    green: 0.,
-                    blue: 1.,
-                    ..Default::default()
-                },
-                |info| info.color.0.into_format(),
-            );
-            Vec3::new(color.red, color.green, color.blue)
+        let color_of = |generator: &Generator| -> Vec3 {
+            signature
+                .generator_style(*generator)
+                .unwrap()
+                .color()
+                .into_components::<f32>()
+                .into()
         };
 
-        let shape_of = |generator: &Generator| {
+        let shape_of = |generator: &Generator| -> VertexShape {
             signature
-                .generator_info(*generator)
-                .map_or(Default::default(), |info| info.shape.clone())
+                .generator_style(*generator)
+                .unwrap()
+                .shape()
+                .unwrap_or_default()
         };
 
         // Render animated wireframes to cylinder buffer

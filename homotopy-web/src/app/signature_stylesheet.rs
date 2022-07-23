@@ -1,5 +1,5 @@
 use homotopy_core::Generator;
-use homotopy_graphics::style::CssStylesheet;
+use homotopy_graphics::svg;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, Node};
 
@@ -46,7 +46,7 @@ impl SignatureStylesheet {
     }
 
     pub fn name(prefix: &str, generator: Generator, style: &str) -> String {
-        Signature::css_class(prefix, generator, style)
+        svg::class(prefix, generator, style)
     }
 
     fn node(&self) -> Node {
@@ -57,7 +57,7 @@ impl SignatureStylesheet {
         if signature != self.signature {
             self.signature = signature;
             self.element
-                .set_inner_html(&self.signature.css_stylesheet(&self.prefix));
+                .set_inner_html(&svg::stylesheet(&self.signature, &self.prefix));
         }
     }
 }

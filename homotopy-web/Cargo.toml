@@ -16,7 +16,6 @@ crate-type = ["cdylib", "rlib"]
 default = ["console_error_panic_hook"]
 
 [dependencies]
-palette = { git = "https://github.com/Ogeon/palette", features = ["serializing"] }
 instant = { version = "0.1.12", features = ["wasm-bindgen"] }
 homotopy-common = { path = "../homotopy-common" }
 homotopy-core = { path = "../homotopy-core" }

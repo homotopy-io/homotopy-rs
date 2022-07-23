@@ -14,12 +14,35 @@ use lyon_path::{Event, Path};
 
 use crate::{
     path_util::simplify_graphic,
-    style::{GeneratorStyle, SignatureStyleData, VertexShape},
+    style::{Color, GeneratorStyle, SignatureStyleData, VertexShape},
     svg::render::GraphicElement,
 };
 
-pub fn color(generator: Generator) -> String {
+pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
+    let mut stylesheet = String::new();
+
+    for generator in styles.generators() {
+        let style = styles.generator_style(generator).unwrap();
+
+        writeln!(
+            stylesheet,
+            "\\definecolor{{{generator}}}{color}",
+            generator = name(generator),
+            color = rgb(style.color().clone()),
+        )
+        .unwrap();
+    }
+
+    stylesheet
+}
+
+fn name(generator: Generator) -> String {
     format!("generator-{}-{}", generator.id, generator.dimension)
+}
+
+fn rgb(color: Color) -> String {
+    let (r, g, b) = color.into_components::<u8>();
+    format!("{{RGB}}{{{}, {}, {}}}", r, g, b)
 }
 
 pub fn render(
@@ -61,7 +84,7 @@ pub fn render(
     // Points are unchanged
     for (g, point) in points {
         let vertex = render_vertex(signature_styles.generator_style(g).unwrap(), point);
-        writeln!(tikz, "\\fill[{}] {}", color(g), vertex).unwrap();
+        writeln!(tikz, "\\fill[{}] {}", name(g), vertex).unwrap();
     }
 
     writeln!(tikz, "\\end{{tikzpicture}}").unwrap();
@@ -104,7 +127,7 @@ fn render_inner(
         writeln!(
             tikz,
             "\\fill[{color}!75] {path};",
-            color = color(*g),
+            color = name(*g),
             path = &render_path(path)
         )
         .unwrap();
@@ -118,7 +141,7 @@ fn render_inner(
             writeln!(
                 tikz,
                 "  \\clipped{{{color}}}{{#1}}{{{path}}}",
-                color = color(*g),
+                color = name(*g),
                 path = &render_path(path)
             )
             .unwrap();
@@ -152,7 +175,7 @@ fn render_inner(
             writeln!(
                 tikz,
                 "\\wire{{{color}}}{{{path}}};",
-                color = color(*g),
+                color = name(*g),
                 path = &render_path(path)
             )
             .unwrap();

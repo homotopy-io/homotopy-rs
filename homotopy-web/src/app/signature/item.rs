@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use homotopy_common::tree::Node;
-use palette::Srgb;
+use homotopy_graphics::style::{Color, VertexShape};
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlElement, HtmlInputElement};
 use yew::prelude::*;
@@ -10,8 +10,8 @@ use yew_macro::function_component;
 use crate::{
     components::icon::{Icon, IconSize},
     model::proof::{
-        generators::{Color, GeneratorInfo, VertexShape},
-        Action, SignatureEdit, SignatureItem, SignatureItemEdit, COLORS, VERTEX_SHAPES,
+        generators::GeneratorInfo, Action, SignatureEdit, SignatureItem, SignatureItemEdit, COLORS,
+        VERTEX_SHAPES,
     },
 };
 
@@ -146,7 +146,10 @@ struct CustomRecolorButtonProps {
 
 #[function_component(CustomRecolorButton)]
 fn custom_recolor_button(props: &CustomRecolorButtonProps) -> Html {
-    let hex = format!("#{:X}", props.value.0);
+    let hex = {
+        let (r, g, b) = props.value.clone().into_components::<u8>();
+        format!("#{:02X}{:02X}{:02X}", r, g, b)
+    };
     html! {
         <div class={"signature__generator-picker-custom-wrapper"}>
             <div class={"signature__generator-picker-custom-flex"}>
@@ -321,9 +324,7 @@ impl ItemView {
         let selected_color = info.color.clone();
         let color_preset_buttons = COLORS.iter().map(|color| {
             let recolor = ctx.link().callback(move |_| {
-                ItemViewMessage::Edit(SignatureItemEdit::Recolor(Color(
-                    Srgb::<u8>::from_str(color).unwrap(),
-                )))
+                ItemViewMessage::Edit(SignatureItemEdit::Recolor(Color::from_str(color).unwrap()))
             });
 
             html! {
@@ -341,8 +342,8 @@ impl ItemView {
             if input.type_() == "text" && input.value().len() < 6 {
                 return ItemViewMessage::Noop;
             }
-            if let Ok(srgb) = Srgb::<u8>::from_str(&input.value()) {
-                ItemViewMessage::Edit(SignatureItemEdit::Recolor(Color(srgb)))
+            if let Ok(color) = Color::from_str(&input.value()) {
+                ItemViewMessage::Edit(SignatureItemEdit::Recolor(color))
             } else {
                 ItemViewMessage::Noop
             }
