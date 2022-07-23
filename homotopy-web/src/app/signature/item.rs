@@ -773,6 +773,12 @@ impl ItemView {
     }
 
     fn view_preferences(&self, ctx: &Context<Self>, info: &GeneratorInfo) -> Html {
+        let id = if let SignatureItem::Item(info) = &ctx.props().item {
+            info.generator.id
+        } else {
+            unreachable!()
+        };
+
         if self.mode != ItemViewMode::Editing {
             return html! {};
         }
@@ -781,7 +787,7 @@ impl ItemView {
         // getting the status of the <input> within the outer <div> of a preference.
         macro_rules! toggle_or_noop {
             ($edit_type:ident) => {
-                |e: MouseEvent| {
+                move |e: MouseEvent| {
                     let input = e
                         .target_unchecked_into::<Element>()
                         .last_child()
@@ -791,7 +797,7 @@ impl ItemView {
                     if input.disabled() {
                         ItemViewMessage::Noop
                     } else {
-                        ItemViewMessage::Edit(SignatureItemEdit::$edit_type(!input.checked()))
+                        ItemViewMessage::Edit(SignatureItemEdit::$edit_type(id, !input.checked()))
                     }
                 }
             };
