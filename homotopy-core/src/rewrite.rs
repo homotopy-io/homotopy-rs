@@ -216,6 +216,16 @@ impl Cospan {
 
         generators.iter().copied().flatten().max_by_dimension()
     }
+
+    pub fn map<F>(&self, f: F) -> Self
+    where
+        F: Fn(&Rewrite) -> Rewrite,
+    {
+        Self {
+            forward: f(&self.forward),
+            backward: f(&self.backward),
+        }
+    }
 }
 
 impl fmt::Debug for Rewrite {
@@ -412,6 +422,13 @@ impl Rewrite {
             Self::RewriteN(r) => Self::RewriteN(r.pad(embedding)),
         }
     }
+
+    pub fn remove_framing(&self, id: usize) -> Self {
+        match self {
+            Self::Rewrite0(r) => Self::Rewrite0(r.remove_framing(id)),
+            Self::RewriteN(r) => Self::RewriteN(r.remove_framing(id)),
+        }
+    }
 }
 
 impl fmt::Debug for Rewrite0 {
@@ -548,6 +565,20 @@ impl Rewrite0 {
         match boundary {
             Boundary::Source => self.source(),
             Boundary::Target => self.target(),
+        }
+    }
+
+    pub fn remove_framing(&self, id: usize) -> Self {
+        match &self.0 {
+            None => Self(None),
+            Some((source, target, label)) => {
+                let new_label = if target.id == id {
+                    Label::new(vec![])
+                } else {
+                    label.clone()
+                };
+                Self::new(*source, *target, new_label)
+            }
         }
     }
 }
@@ -1011,6 +1042,34 @@ impl RewriteN {
                     .max_by_dimension()
             }),
         }
+    }
+
+    pub fn remove_framing(&self, id: usize) -> Self {
+        let cones = self
+            .cones()
+            .iter()
+            .map(|cone| {
+                let regular_slices = cone
+                    .regular_slices()
+                    .into_iter()
+                    .map(|slice| slice.remove_framing(id))
+                    .collect::<Vec<_>>();
+                let singular_slices = cone
+                    .singular_slices()
+                    .into_iter()
+                    .map(|slice| slice.remove_framing(id))
+                    .collect::<Vec<_>>();
+                let source = cone
+                    .source()
+                    .iter()
+                    .map(|cs| cs.map(|r| r.remove_framing(id)))
+                    .collect();
+                let target = cone.target().map(|r| r.remove_framing(id));
+                Cone::new_untrimmed(cone.index, source, target, regular_slices, singular_slices)
+            })
+            .collect();
+
+        Self::new_unsafe(self.dimension(), cones)
     }
 }
 
