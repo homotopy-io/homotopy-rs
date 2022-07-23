@@ -462,6 +462,12 @@ impl ItemView {
     }
 
     fn view_preferences(&self, ctx: &Context<Self>, info: &GeneratorInfo) -> Html {
+        let id = if let SignatureItem::Item(info) = &ctx.props().item {
+            info.generator.id
+        } else {
+            unreachable!()
+        };
+
         if self.mode != ItemViewMode::Editing {
             return html! {};
         }
@@ -470,7 +476,7 @@ impl ItemView {
         let toggle_framed = ctx.link().callback(move |e: MouseEvent| {
             let div: HtmlElement = e.target_unchecked_into();
             let input: HtmlInputElement = div.last_element_child().unwrap().unchecked_into();
-            ItemViewMessage::Edit(SignatureItemEdit::MakeFramed(!input.checked()))
+            ItemViewMessage::Edit(SignatureItemEdit::MakeFramed(id, !input.checked()))
         });
         let toggle_invertible = ctx.link().callback(move |e: MouseEvent| {
             let div: HtmlElement = e.target_unchecked_into();

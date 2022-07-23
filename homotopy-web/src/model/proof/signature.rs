@@ -37,7 +37,7 @@ pub enum SignatureItemEdit {
     Rename(String),
     Recolor(Color),
     Reshape(VertexShape),
-    MakeFramed(bool),
+    MakeFramed(usize, bool),
     MakeInvertible(bool),
 }
 
@@ -103,7 +103,6 @@ impl Signature {
             (SignatureItem::Item(info), Rename(name)) => info.name = name,
             (SignatureItem::Item(info), Recolor(color)) => info.color = color,
             (SignatureItem::Item(info), Reshape(shape)) => info.shape = shape,
-            (SignatureItem::Item(info), MakeFramed(false)) => info.framed = false,
             (SignatureItem::Item(info), MakeInvertible(true)) => info.invertible = true,
             (SignatureItem::Folder(ref mut old, _), Rename(name)) => *old = name,
             (_, _) => {}
@@ -149,7 +148,29 @@ impl Signature {
 
     pub fn update(&mut self, edit: &SignatureEdit) {
         match edit {
-            SignatureEdit::Edit(node, edit) => self.edit(*node, edit.clone()),
+            SignatureEdit::Edit(node, edit) => {
+                // Intercept `MakeFramed` events to handle removing the frame
+                // from every occurence of the given generator in the signature.
+                if let SignatureItemEdit::MakeFramed(id, false) = edit {
+                    self.0 = self.0.clone().map(|item| match item {
+                        SignatureItem::Item(info) => {
+                            let framed = if info.generator.id == *id {
+                                false
+                            } else {
+                                info.framed
+                            };
+                            SignatureItem::Item(GeneratorInfo {
+                                framed,
+                                diagram: info.diagram.remove_framing(*id),
+                                ..info
+                            })
+                        }
+                        _ => item,
+                    });
+                } else {
+                    self.edit(*node, edit.clone());
+                }
+            }
             SignatureEdit::NewFolder(node) => {
                 self.0
                     .push_onto(*node, SignatureItem::Folder("New folder".to_owned(), true));
