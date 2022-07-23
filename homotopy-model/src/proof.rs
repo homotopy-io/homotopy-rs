@@ -349,6 +349,18 @@ impl ProofState {
             }
         }
 
+        if let SignatureEdit::Edit(_, SignatureItemEdit::MakeOriented(id, true)) = edit {
+            // remove framing from the workspace
+            if let Some(ws) = &mut self.workspace {
+                ws.diagram = ws.diagram.remove_framing(*id);
+            }
+
+            // remove framing from the boundary
+            if let Some(b) = &mut self.boundary {
+                b.diagram = b.diagram.remove_framing(*id);
+            }
+        }
+
         self.signature.update(edit)
     }
 
