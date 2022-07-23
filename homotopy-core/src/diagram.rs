@@ -157,6 +157,20 @@ impl Diagram {
             },
         }
     }
+
+    /// Removes the framing information belonging to the generators with given id.
+    pub fn remove_framing(&self, id: usize) -> Self {
+        match self {
+            Self::Diagram0(g) => Self::Diagram0(*g),
+            Self::DiagramN(d) => Self::DiagramN(DiagramN::new_unsafe(
+                d.source().remove_framing(id),
+                d.cospans()
+                    .iter()
+                    .map(|cs| cs.map(|r| r.remove_framing(id)))
+                    .collect(),
+            )),
+        }
+    }
 }
 
 pub fn globularity(s: &Diagram, t: &Diagram) -> bool {
