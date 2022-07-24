@@ -14,7 +14,7 @@ use lyon_path::{Event, Path};
 
 use crate::{
     path_util::simplify_graphic,
-    style::{Color, GeneratorStyle, SignatureStyleData, VertexShape},
+    style::{GeneratorStyle, SignatureStyleData, VertexShape},
     svg::render::GraphicElement,
 };
 
@@ -23,14 +23,12 @@ const INDENT: &str = "    ";
 pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
     let mut stylesheet = String::new();
 
-    for generator in styles.generators() {
-        let style = styles.generator_style(generator).unwrap();
-
+    for (generator, style) in styles.as_pairs() {
         writeln!(
             stylesheet,
             "            \"{generator}\": \"{color}\",",
             generator = name(generator),
-            color = hex(&style.color())
+            color = &style.color().to_string()
         )
         .unwrap();
     }
@@ -40,10 +38,6 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
 
 fn name(generator: Generator) -> String {
     format!("generator_{}_{}", generator.id, generator.dimension)
-}
-
-fn hex(color: &Color) -> String {
-    format!("#{:x}", color.0)
 }
 
 pub fn render(

@@ -2,36 +2,34 @@ use std::fmt::Write;
 
 use homotopy_core::Generator;
 
-use crate::style::{Color, GeneratorStyle, SignatureStyleData};
+use crate::style::{GeneratorStyle, SignatureStyleData};
 
 pub mod render;
 pub mod shape;
 
-pub fn stylesheet(styles: &impl SignatureStyleData, prefix: &str) -> String {
+pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
     let mut stylesheet = String::new();
 
-    for generator in styles.generators() {
-        let style = styles.generator_style(generator).unwrap();
-
+    for (generator, style) in styles.as_pairs() {
         writeln!(
             stylesheet,
             ".{name} {{ fill: {color}; stroke: {color}; }}",
-            name = class(prefix, generator, "surface"),
-            color = hex(&style.color().lighten(0.1))
+            name = generator_class(generator, "surface"),
+            color = &style.color().lighten(0.1).to_string()
         )
         .unwrap();
         writeln!(
             stylesheet,
             ".{name} {{ stroke: {color}; }}",
-            name = class(prefix, generator, "wire"),
-            color = hex(&style.color().lighten(0.05))
+            name = generator_class(generator, "wire"),
+            color = &style.color().lighten(0.05).to_string()
         )
         .unwrap();
         writeln!(
             stylesheet,
             ".{name} {{ fill: {color}; }}",
-            name = class(prefix, generator, "point"),
-            color = hex(&style.color())
+            name = generator_class(generator, "point"),
+            color = &style.color().to_string()
         )
         .unwrap();
     }
@@ -39,13 +37,9 @@ pub fn stylesheet(styles: &impl SignatureStyleData, prefix: &str) -> String {
     stylesheet
 }
 
-pub fn class(prefix: &str, generator: Generator, suffix: &str) -> String {
+pub fn generator_class(generator: Generator, suffix: &str) -> String {
     format!(
-        "{}__{}-{}--{}",
-        prefix, generator.id, generator.dimension, suffix
+        "generator__{}-{}--{}",
+        generator.id, generator.dimension, suffix
     )
-}
-
-fn hex(color: &Color) -> String {
-    format!("#{:X}", color.0)
 }

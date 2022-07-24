@@ -144,7 +144,7 @@ impl State {
                 // same way the `SignatureStylesheet` struct does.
                 // We also strip the styles of whitespace since it is unneeded.
                 let stylesheet = {
-                    let mut inner_stylesheet = svg::stylesheet(&signature, "generator");
+                    let mut inner_stylesheet = svg::stylesheet(&signature);
                     inner_stylesheet.retain(|c| !c.is_whitespace());
                     format!("<style>{}</style>", inner_stylesheet)
                 };

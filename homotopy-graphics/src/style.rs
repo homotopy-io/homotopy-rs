@@ -4,18 +4,16 @@ use homotopy_core::Generator;
 use serde::{Deserialize, Serialize};
 
 pub trait GeneratorStyle {
+    fn color(&self) -> Color;
     fn label(&self) -> Option<String>;
     fn shape(&self) -> Option<VertexShape>;
-    fn color(&self) -> Color;
 }
 
 pub trait SignatureStyleData {
     type Style: GeneratorStyle;
 
+    fn as_pairs(&self) -> Vec<(Generator, &Self::Style)>;
     fn generator_style(&self, g: Generator) -> Option<&Self::Style>;
-
-    // It would be nice if the following could be an iterator but the generics get complex fast
-    fn generators(&self) -> Vec<Generator>;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -50,16 +48,17 @@ impl FromStr for Color {
     }
 }
 
-impl Default for Color {
-    fn default() -> Self {
-        Self(palette::Srgb::new(0, 0, 0))
+// Reverse of `FromStr`
+impl fmt::Display for Color {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (r, g, b) = self.clone().into_components::<u8>();
+        write!(f, "#{:02x}{:02x}{:02x}", r, g, b)
     }
 }
 
-impl fmt::Display for Color {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let (r, g, b) = self.0.into_components();
-        write!(f, "#{:02x}{:02x}{:02x}", r, g, b)
+impl Default for Color {
+    fn default() -> Self {
+        Self(palette::Srgb::new(0, 0, 0))
     }
 }
 

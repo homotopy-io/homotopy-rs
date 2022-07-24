@@ -18,8 +18,8 @@ pub struct GeneratorInfo {
 impl SignatureStyleData for Signature {
     type Style = GeneratorInfo;
 
-    fn generators(&self) -> Vec<Generator> {
-        self.iter().map(|info| info.generator).collect()
+    fn as_pairs(&self) -> Vec<(Generator, &Self::Style)> {
+        self.iter().map(|info| (info.generator, info)).collect()
     }
 
     fn generator_style(&self, g: Generator) -> Option<&Self::Style> {

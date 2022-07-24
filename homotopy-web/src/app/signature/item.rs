@@ -146,10 +146,6 @@ struct CustomRecolorButtonProps {
 
 #[function_component(CustomRecolorButton)]
 fn custom_recolor_button(props: &CustomRecolorButtonProps) -> Html {
-    let hex = {
-        let (r, g, b) = props.value.clone().into_components::<u8>();
-        format!("#{:02X}{:02X}{:02X}", r, g, b)
-    };
     html! {
         <div class={"signature__generator-picker-custom-wrapper"}>
             <div class={"signature__generator-picker-custom-flex"}>
@@ -165,7 +161,7 @@ fn custom_recolor_button(props: &CustomRecolorButtonProps) -> Html {
                         type="text"
                         oninput={props.oninput.clone()}
                         onkeyup={props.onkeyup.clone()}
-                        value={hex}
+                        value={props.value.to_string()}
                     />
                 </div>
             </div>

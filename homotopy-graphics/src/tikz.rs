@@ -21,9 +21,7 @@ use crate::{
 pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
     let mut stylesheet = String::new();
 
-    for generator in styles.generators() {
-        let style = styles.generator_style(generator).unwrap();
-
+    for (generator, style) in styles.as_pairs() {
         writeln!(
             stylesheet,
             "\\definecolor{{{generator}}}{color}",

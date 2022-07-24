@@ -1,4 +1,3 @@
-use homotopy_core::Generator;
 use homotopy_graphics::svg;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, Node};
@@ -15,17 +14,15 @@ use crate::{components::document, model::proof::Signature};
 pub struct SignatureStylesheet {
     signature: Signature,
     element: Element,
-    prefix: String,
 }
 
 impl SignatureStylesheet {
-    pub fn new(prefix: impl Into<String>) -> Self {
+    pub fn new() -> Self {
         let element = document().create_element("style").unwrap();
         element.set_id("signature__stylesheet");
         Self {
             signature: Default::default(),
             element,
-            prefix: prefix.into(),
         }
     }
 
@@ -45,10 +42,6 @@ impl SignatureStylesheet {
             .unwrap();
     }
 
-    pub fn name(prefix: &str, generator: Generator, style: &str) -> String {
-        svg::class(prefix, generator, style)
-    }
-
     fn node(&self) -> Node {
         self.element.clone().dyn_into::<Node>().unwrap()
     }
@@ -57,7 +50,7 @@ impl SignatureStylesheet {
         if signature != self.signature {
             self.signature = signature;
             self.element
-                .set_inner_html(&svg::stylesheet(&self.signature, &self.prefix));
+                .set_inner_html(&svg::stylesheet(&self.signature));
         }
     }
 }
