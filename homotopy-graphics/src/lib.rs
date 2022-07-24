@@ -21,7 +21,6 @@
     clippy::unneeded_field_pattern,
     clippy::unreachable,
     clippy::use_debug,
-    // clippy::use_self, // This gives false positives with serde derives
 )]
 #![allow( // pedantic is too annoying
     clippy::cast_possible_truncation,
