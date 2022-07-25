@@ -237,6 +237,12 @@ impl fmt::Debug for Rewrite {
     }
 }
 
+impl<'a> From<&'a RewriteN> for &'a Rewrite {
+    fn from(r: &'a RewriteN) -> Self {
+        r.into()
+    }
+}
+
 impl From<RewriteN> for Rewrite {
     #[inline]
     fn from(r: RewriteN) -> Self {
@@ -847,7 +853,7 @@ impl RewriteN {
         None
     }
 
-    /// Take a slice of a rewrite
+    /// Take a singular slice of a rewrite
     pub fn slice(&self, height: SingularHeight) -> Rewrite {
         self.cones()
             .iter()
@@ -1116,7 +1122,7 @@ impl Cone {
     }
 
     #[inline]
-    pub fn new_untrimmed(
+    pub(crate) fn new_untrimmed(
         index: usize,
         source: Vec<Cospan>,
         target: Cospan,
