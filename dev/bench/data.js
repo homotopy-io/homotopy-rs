@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1658755333607,
+  "lastUpdate": 1658761297700,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -37919,6 +37919,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 299.26,
             "range": "+/- 2.790",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9886bb6aac2cdd6134d53bacb13c8d09026c4f42",
+          "message": "Simplicial subdivision (#499)\n\n* Move subdivision into a submodule\r\n\r\n* Simplicial subdivision\r\n\r\n* Toggle between cubical and simplicial subdivision",
+          "timestamp": "2022-07-25T14:49:38Z",
+          "tree_id": "7c7bf9e8bb205d4e75505e8cf0da2cdae37b98e8",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/9886bb6aac2cdd6134d53bacb13c8d09026c4f42"
+        },
+        "date": 1658761284318,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.6411,
+            "range": "+/- 0.052",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 7.924,
+            "range": "+/- 0.065",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 21.083,
+            "range": "+/- 0.270",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 51.485,
+            "range": "+/- 0.421",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 131.44,
+            "range": "+/- 1.780",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 362.5,
+            "range": "+/- 3.130",
             "unit": "ms"
           }
         ]
