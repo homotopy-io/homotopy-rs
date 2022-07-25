@@ -308,7 +308,7 @@ impl<const N: usize> Component for DiagramSvg<N> {
                 xmlns={"http://www.w3.org/2000/svg"}
                 width={width.to_string()}
                 height={height.to_string()}
-                viewbox={format!("0 0 {} {}", size.width, size.height)}
+                viewBox={format!("0 0 {} {}", size.width, size.height)}
                 onmousedown={on_mouse_down}
                 onmouseup={on_mouse_up}
                 onmousemove={on_mouse_move}
