@@ -1,4 +1,3 @@
-use homotopy_core::DiagramN;
 use yew::prelude::*;
 
 use crate::{
@@ -77,11 +76,7 @@ impl AttachView {
                     class="attach__option-name"
                     error_color="#c004"
                     raw_tex={
-                        if option.inverse {
-                            format!("{} (inverse)", info.name)
-                        } else {
-                            info.name.clone()
-                        }
+                        format!("{}{}", info.name, option.tag.map_or("".to_owned(), |t| format!(" ({t})")))
                     }
                 />
             </li>
