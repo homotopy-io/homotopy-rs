@@ -24,6 +24,7 @@ pub struct Renderer {
     ctx: GlCtx,
     signature: Signature,
     // state
+    cubical_subdivision: bool,
     smooth_time: bool,
     subdivision_depth: u8,
     geometry_samples: u8,
@@ -39,6 +40,7 @@ pub struct Renderer {
 
 impl Renderer {
     pub fn new(ctx: GlCtx, settings: &Store<AppSettings>, props: &DiagramGlProps) -> Result<Self> {
+        let cubical_subdivision = *settings.get_cubical_subdivision();
         let smooth_time = *settings.get_smooth_time();
         let subdivision_depth = *settings.get_subdivision_depth() as u8;
         let samples = *settings.get_geometry_samples() as u8;
@@ -49,6 +51,7 @@ impl Renderer {
                 &ctx,
                 &props.diagram,
                 props.view,
+                cubical_subdivision,
                 smooth_time,
                 subdivision_depth,
                 samples,
@@ -61,6 +64,7 @@ impl Renderer {
             cylinder_buffer: GBuffer::new(&ctx)?,
             ctx,
             signature,
+            cubical_subdivision,
             smooth_time,
             subdivision_depth,
             geometry_samples: samples,
@@ -68,6 +72,7 @@ impl Renderer {
     }
 
     pub fn update(&mut self, settings: &Store<AppSettings>) -> Result<()> {
+        let cubical_subdivision = *settings.get_cubical_subdivision();
         let smooth_time = *settings.get_smooth_time();
         let subdivision_depth = *settings.get_subdivision_depth() as u8;
         let samples = *settings.get_geometry_samples() as u8;
@@ -79,15 +84,18 @@ impl Renderer {
 
         self.ctx.set_pixel_ratio(pixel_ratio)?;
 
-        if self.smooth_time != smooth_time
+        if self.cubical_subdivision != cubical_subdivision
+            || self.smooth_time != smooth_time
             || self.subdivision_depth != subdivision_depth
             || self.geometry_samples != samples
         {
+            self.cubical_subdivision = cubical_subdivision;
             self.smooth_time = smooth_time;
             self.subdivision_depth = subdivision_depth;
             self.geometry_samples = samples;
             self.scene.reload_meshes(
                 &self.ctx,
+                cubical_subdivision,
                 smooth_time,
                 subdivision_depth,
                 samples,

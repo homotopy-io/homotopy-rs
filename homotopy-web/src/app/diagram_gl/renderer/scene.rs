@@ -59,6 +59,7 @@ impl Scene {
         ctx: &GlCtx,
         diagram: &Diagram,
         view: View,
+        cubical_subdivision: bool,
         smooth_time: bool,
         subdivision_depth: u8,
         geometry_samples: u8,
@@ -81,6 +82,7 @@ impl Scene {
 
         scene.reload_meshes(
             ctx,
+            cubical_subdivision,
             smooth_time,
             subdivision_depth,
             geometry_samples,
@@ -92,6 +94,7 @@ impl Scene {
     pub fn reload_meshes(
         &mut self,
         ctx: &GlCtx,
+        cubical_subdivision: bool,
         smooth_time: bool,
         subdivision_depth: u8,
         geometry_samples: u8,
@@ -146,9 +149,15 @@ impl Scene {
             _ => unreachable!(),
         };
 
-        cubical.subdivide(smooth_time, subdivision_depth);
+        if cubical_subdivision {
+            cubical.subdivide(smooth_time, subdivision_depth);
+        }
 
         let mut simplicial = SimplicialGeometry::from(cubical);
+
+        if !cubical_subdivision {
+            simplicial.subdivide(smooth_time, subdivision_depth);
+        }
 
         if self.view.dimension() <= 3 {
             simplicial.inflate_3d(geometry_samples, signature_styles);
