@@ -1,12 +1,6 @@
-use std::{fmt, ops::Deref};
-
 use homotopy_core::{common::Generator, Diagram};
-use homotopy_graphics::{
-    style,
-    style::{GeneratorStyle, SignatureStyleData},
-};
-use palette::Srgb;
-use serde::{Deserialize, Serialize};
+use homotopy_graphics::style::{Color, GeneratorStyle, SignatureStyleData, VertexShape};
+use serde::Serialize;
 
 use super::signature::Signature;
 
@@ -22,9 +16,13 @@ pub struct GeneratorInfo {
 }
 
 impl SignatureStyleData for Signature {
-    type T = GeneratorInfo;
+    type Style = GeneratorInfo;
 
-    fn generator_style(&self, g: Generator) -> Option<&Self::T> {
+    fn as_pairs(&self) -> Vec<(Generator, &Self::Style)> {
+        self.iter().map(|info| (info.generator, info)).collect()
+    }
+
+    fn generator_style(&self, g: Generator) -> Option<&Self::Style> {
         self.generator_info(g)
     }
 }
@@ -36,53 +34,11 @@ impl GeneratorStyle for GeneratorInfo {
         None
     }
 
-    fn shape(&self) -> Option<style::VertexShape> {
-        Some(self.shape.clone().into())
+    fn shape(&self) -> Option<VertexShape> {
+        Some(self.shape.clone())
     }
-}
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Color(pub Srgb<u8>);
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum VertexShape {
-    Circle, // circle / sphere
-    Square, // square / cube
-}
-
-impl From<VertexShape> for style::VertexShape {
-    fn from(shape: VertexShape) -> Self {
-        use VertexShape::{Circle, Square};
-        match shape {
-            Circle => Self::Circle,
-            Square => Self::Square,
-        }
-    }
-}
-
-impl Deref for Color {
-    type Target = Srgb<u8>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl Default for Color {
-    fn default() -> Self {
-        Self(Srgb::new(0, 0, 0))
-    }
-}
-
-impl fmt::Display for Color {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let (r, g, b) = self.into_components();
-        write!(f, "#{:02x}{:02x}{:02x}", r, g, b)
-    }
-}
-
-impl Default for VertexShape {
-    fn default() -> Self {
-        Self::Circle // TODO(thud): have this be decided by the user in settings UI
+    fn color(&self) -> Color {
+        self.color.clone()
     }
 }

@@ -2,10 +2,10 @@ use std::{collections::VecDeque, str::FromStr};
 
 use homotopy_common::tree::{Node, Tree};
 use homotopy_core::{common::Generator, diagram::NewDiagramError, Diagram, DiagramN};
-use palette::Srgb;
+use homotopy_graphics::style::{Color, VertexShape};
 use serde::{Deserialize, Serialize};
 
-use crate::model::proof::generators::{Color, GeneratorInfo, VertexShape};
+use crate::model::proof::generators::GeneratorInfo;
 
 pub const COLORS: &[&str] = &[
     "#2980b9", // belize blue
@@ -82,7 +82,7 @@ impl Signature {
             name: format!("{} {}", name, id),
             framed: true,
             invertible: false,
-            color: Color(Srgb::<u8>::from_str(COLORS[id % COLORS.len()]).unwrap()),
+            color: Color::from_str(COLORS[id % COLORS.len()]).unwrap(),
             shape: VertexShape::default(),
             diagram: diagram.into(),
         };

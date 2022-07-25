@@ -56,7 +56,7 @@ impl Component for App {
     fn create(ctx: &Context<Self>) -> Self {
         let state = model::State::default();
         // Install the signature stylesheet
-        let mut signature_stylesheet = SignatureStylesheet::new("generator");
+        let mut signature_stylesheet = SignatureStylesheet::new();
         signature_stylesheet.update(state.with_proof(|p| p.signature().clone()));
         signature_stylesheet.mount();
 

@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use homotopy_common::tree::Node;
-use palette::Srgb;
+use homotopy_graphics::style::{Color, VertexShape};
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlElement, HtmlInputElement};
 use yew::prelude::*;
@@ -10,8 +10,8 @@ use yew_macro::function_component;
 use crate::{
     components::icon::{Icon, IconSize},
     model::proof::{
-        generators::{Color, GeneratorInfo, VertexShape},
-        Action, SignatureEdit, SignatureItem, SignatureItemEdit, COLORS, VERTEX_SHAPES,
+        generators::GeneratorInfo, Action, SignatureEdit, SignatureItem, SignatureItemEdit, COLORS,
+        VERTEX_SHAPES,
     },
 };
 
@@ -146,7 +146,6 @@ struct CustomRecolorButtonProps {
 
 #[function_component(CustomRecolorButton)]
 fn custom_recolor_button(props: &CustomRecolorButtonProps) -> Html {
-    let hex = format!("#{:X}", props.value.0);
     html! {
         <div class={"signature__generator-picker-custom-wrapper"}>
             <div class={"signature__generator-picker-custom-flex"}>
@@ -162,7 +161,7 @@ fn custom_recolor_button(props: &CustomRecolorButtonProps) -> Html {
                         type="text"
                         oninput={props.oninput.clone()}
                         onkeyup={props.onkeyup.clone()}
-                        value={hex}
+                        value={props.value.to_string()}
                     />
                 </div>
             </div>
@@ -210,7 +209,7 @@ impl Component for ItemView {
                     "signature__item-editing signature__item-generator-{}",
                     info.generator.dimension
                 ),
-                (ItemViewMode::Editing, _) => "signature__item-editing".to_owned(),
+                (ItemViewMode::Editing, _) => "signature__folder-editing".to_owned(),
                 (_, _) => "".to_owned(),
             }
         );
@@ -321,9 +320,7 @@ impl ItemView {
         let selected_color = info.color.clone();
         let color_preset_buttons = COLORS.iter().map(|color| {
             let recolor = ctx.link().callback(move |_| {
-                ItemViewMessage::Edit(SignatureItemEdit::Recolor(Color(
-                    Srgb::<u8>::from_str(color).unwrap(),
-                )))
+                ItemViewMessage::Edit(SignatureItemEdit::Recolor(Color::from_str(color).unwrap()))
             });
 
             html! {
@@ -341,8 +338,8 @@ impl ItemView {
             if input.type_() == "text" && input.value().len() < 6 {
                 return ItemViewMessage::Noop;
             }
-            if let Ok(srgb) = Srgb::<u8>::from_str(&input.value()) {
-                ItemViewMessage::Edit(SignatureItemEdit::Recolor(Color(srgb)))
+            if let Ok(color) = Color::from_str(&input.value()) {
+                ItemViewMessage::Edit(SignatureItemEdit::Recolor(color))
             } else {
                 ItemViewMessage::Noop
             }

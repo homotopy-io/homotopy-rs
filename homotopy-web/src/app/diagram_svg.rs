@@ -16,18 +16,20 @@ use homotopy_core::{
     rewrite::RewriteN,
     Boundary, Diagram, DiagramN, Height, SliceIndex,
 };
-use homotopy_graphics::svg::{
-    render::{ActionRegion, GraphicElement},
-    shape::{path_to_svg, project_2d, Point, Shape},
+use homotopy_graphics::{
+    style::VertexShape,
+    svg::{
+        generator_class,
+        render::{ActionRegion, GraphicElement},
+        shape::{path_to_svg, project_2d, Point, Shape},
+    },
 };
 use web_sys::Element;
 use yew::prelude::*;
 
 use crate::{
-    app::signature_stylesheet::SignatureStylesheet,
     components::{read_touch_list_abs, Finger},
     model::proof::{
-        generators::VertexShape,
         homotopy::{Contract, Expand, Homotopy},
         RenderStyle, Signature,
     },
@@ -348,14 +350,14 @@ impl<const N: usize> DiagramSvg<N> {
 
         match element {
             GraphicElement::Surface(_, path) => {
-                let class = SignatureStylesheet::name("generator", generator, "surface");
+                let class = generator_class(generator, "surface");
                 let path = path_to_svg(&path.clone().transformed(&self.prepared.transform));
                 html! {
                     <path d={path} class={class} stroke-width={1} />
                 }
             }
             GraphicElement::Wire(_, _, path, mask) => {
-                let class = SignatureStylesheet::name("generator", generator, "wire");
+                let class = generator_class(generator, "wire");
                 let path = path_to_svg(&path.clone().transformed(&self.prepared.transform));
 
                 if mask.is_empty() {
@@ -406,7 +408,7 @@ impl<const N: usize> DiagramSvg<N> {
             }
             GraphicElement::Point(_, point) => {
                 use VertexShape::{Circle, Square};
-                let class = SignatureStylesheet::name("generator", generator, "point");
+                let class = generator_class(generator, "point");
                 let point = self.prepared.transform.transform_point(*point);
                 let radius = ctx.props().style.point_radius;
                 let shape = if let Some(info) = ctx.props().signature.generator_info(generator) {
