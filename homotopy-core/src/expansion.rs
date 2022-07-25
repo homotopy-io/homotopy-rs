@@ -77,6 +77,50 @@ impl DiagramN {
     }
 }
 
+impl Cospan {
+    /// Promotes a `Cospan` to one dimension higher by bubbling.
+    #[must_use]
+    pub fn bubble(&self) -> Self {
+        let reversed = Cospan {
+            forward: self.backward.clone().orientation_transform(-1),
+            backward: self.forward.clone().orientation_transform(-1),
+        };
+        let forward = RewriteN::new(
+            self.forward.dimension() + 1,
+            vec![Cone::new(
+                0,
+                vec![self.clone(), reversed],
+                Cospan {
+                    forward: self.forward.clone().orientation_transform(0), // needs to be orientation 0
+                    backward: self.forward.clone().orientation_transform(0), // needs to be orientation 0
+                },
+                vec![
+                    self.forward.clone().orientation_transform(0), // needs to be orientation 0
+                    self.backward.clone().orientation_transform(0), // needs to be orientation 0
+                    self.forward.clone().orientation_transform(0), // needs to be orientation 0
+                ],
+                vec![Rewrite::identity(self.forward.dimension()); 2],
+            )],
+        )
+        .into();
+        let backward = RewriteN::new(
+            self.forward.dimension() + 1,
+            vec![Cone::new(
+                0,
+                Default::default(),
+                Cospan {
+                    forward: self.forward.clone().orientation_transform(0),  // needs to be orientation 0
+                    backward: self.forward.clone().orientation_transform(0), // needs to be orientation 0
+                },
+                vec![self.forward.clone().orientation_transform(0)], // needs to be orientation 0
+                Default::default(),
+            )],
+        )
+        .into();
+        Self { forward, backward }
+    }
+}
+
 pub fn expand_in_path(
     diagram: &Diagram,
     location: &[Height],
@@ -149,17 +193,19 @@ impl DiagramN {
                 .max_generator(Boundary::Target)
                 .map_or(false, |g| g.dimension < self.dimension())
         {
-            Some(RewriteN::new(
-                self.dimension(),
-                vec![Cone::new(
-                    i,
-                    Default::default(),
-                    cs.clone(),
-                    vec![cs.forward.clone()],
-                    Default::default(),
-                )],
+            Some(
+                RewriteN::new(
+                    self.dimension(),
+                    vec![Cone::new(
+                        i,
+                        Default::default(),
+                        cs.clone(),
+                        vec![cs.forward.clone()],
+                        Default::default(),
+                    )],
+                )
+                .into(),
             )
-            .into())
         } else {
             None
         }
