@@ -19,6 +19,14 @@ impl From<bool> for Parity {
 }
 
 impl Parity {
+    #[must_use]
+    pub fn flip(self) -> Self {
+        match self {
+            Self::Even => Self::Odd,
+            Self::Odd => Self::Even,
+        }
+    }
+
     pub fn is_even(self) -> bool {
         match self {
             Self::Even => true,
