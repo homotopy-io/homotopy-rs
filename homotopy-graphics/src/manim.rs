@@ -28,7 +28,7 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
             stylesheet,
             "            \"{generator}\": \"{color}\",",
             generator = name(generator),
-            color = &style.color().to_string()
+            color = &style.color().hex()
         )
         .unwrap();
     }

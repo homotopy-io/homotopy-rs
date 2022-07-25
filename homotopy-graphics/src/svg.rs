@@ -15,21 +15,21 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
             stylesheet,
             ".{name} {{ fill: {color}; stroke: {color}; }}",
             name = generator_class(generator, "surface"),
-            color = &style.color().lighten(0.1).to_string()
+            color = &style.color().lighten(0.1).hex()
         )
         .unwrap();
         writeln!(
             stylesheet,
             ".{name} {{ stroke: {color}; }}",
             name = generator_class(generator, "wire"),
-            color = &style.color().lighten(0.05).to_string()
+            color = &style.color().lighten(0.05).hex()
         )
         .unwrap();
         writeln!(
             stylesheet,
             ".{name} {{ fill: {color}; }}",
             name = generator_class(generator, "point"),
-            color = &style.color().to_string()
+            color = &style.color().hex()
         )
         .unwrap();
     }

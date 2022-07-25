@@ -26,6 +26,11 @@ pub enum VertexShape {
 }
 
 impl Color {
+    pub fn hex(&self) -> String {
+        let (r, g, b) = self.clone().into_components::<u8>();
+        format!("#{:02x}{:02x}{:02x}", r, g, b)
+    }
+
     #[must_use]
     pub fn lighten(&self, amount: f32) -> Self {
         Self(palette::Lighten::lighten(self.0.into_linear(), amount).into())
@@ -39,7 +44,7 @@ impl Color {
     }
 }
 
-// Convert from hex string (#RRGGBB) to `Color`
+// Convert from hex string (#rrggbb) to `Color`
 impl FromStr for Color {
     type Err = palette::rgb::FromHexError;
 
@@ -48,13 +53,10 @@ impl FromStr for Color {
     }
 }
 
-// Reverse of `FromStr`
-// NOTE: If we decide to change how we `fmt::Display`, it could break some styles as it is used
-// functionally by the css and manim renderers.
+// Reverse of `FromStr` (#rrggbb)
 impl fmt::Display for Color {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let (r, g, b) = self.clone().into_components::<u8>();
-        write!(f, "#{:02x}{:02x}{:02x}", r, g, b)
+        write!(f, "{}", self.hex())
     }
 }
 
