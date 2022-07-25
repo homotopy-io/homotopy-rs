@@ -208,7 +208,7 @@ impl RewriteN {
                         .compose(&singular_slices.first().unwrap())
                     {
                         Ok(f) if f.agrees_with(&target.forward) => { /* no error */ }
-                        Ok(f) => errors.push(MalformedRewrite::NotCommutative(i, 0)),
+                        Ok(_) => errors.push(MalformedRewrite::NotCommutative(i, 0)),
                         Err(ce) => errors.push(ce.into()),
                     };
 
