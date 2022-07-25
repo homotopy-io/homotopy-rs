@@ -504,6 +504,11 @@ impl ProofState {
             while count > 0 && !workspace.path.is_empty() {
                 workspace.path.pop_back();
                 count -= 1;
+
+                // Boost the view dimension if necessary.
+                if workspace.view.dimension < 2 {
+                    workspace.view = workspace.view.inc();
+                }
             }
 
             self.clear_attach();
