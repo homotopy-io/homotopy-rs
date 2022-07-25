@@ -46,6 +46,7 @@
     clippy::unused_unit,
     clippy::shadow_unrelated,
     clippy::use_self, // https://github.com/rust-lang/rust-clippy/issues/6902
+    clippy::too_many_arguments,
 )]
 #![recursion_limit = "1024"]
 

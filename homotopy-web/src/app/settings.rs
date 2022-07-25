@@ -8,6 +8,7 @@ use crate::{
 
 declare_settings! {
     pub struct AppSettings {
+        cubical_subdivision: bool = true,
         dpr_scale: bool = true,
         smooth_time: bool = true,
         subdivision_depth: u32 = 2,
@@ -61,6 +62,13 @@ impl Component for SettingsView {
                 <h3>{"3D renderer"}</h3>
                 <div class="settings__segment">
                     <h4>{"Quality"}</h4>
+                    {
+                        self.view_checkbox(
+                            "Cubical subdivision",
+                            |local| *local.get_cubical_subdivision(),
+                            AppSettingsDispatch::set_cubical_subdivision,
+                        )
+                    }
                     {
                         self.view_checkbox(
                             "Scale by device pixel ratio",
