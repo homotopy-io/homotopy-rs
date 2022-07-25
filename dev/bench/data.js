@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1658761297700,
+  "lastUpdate": 1658766879556,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -37979,6 +37979,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 362.5,
             "range": "+/- 3.130",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "f77145e3cc333ae92be40082082ef9c61004486f",
+          "message": "Theorem and proof cells must have unique ids",
+          "timestamp": "2022-07-25T17:15:22+01:00",
+          "tree_id": "4050b136dfdc037c30f774ad8d7dccf1420c1285",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/f77145e3cc333ae92be40082082ef9c61004486f"
+        },
+        "date": 1658766867165,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.5283,
+            "range": "+/- 0.004",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 7.4232,
+            "range": "+/- 0.076",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 20.228,
+            "range": "+/- 0.098",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 48.644,
+            "range": "+/- 0.503",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 125.72,
+            "range": "+/- 0.640",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 330.38,
+            "range": "+/- 4.640",
             "unit": "ms"
           }
         ]
