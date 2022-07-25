@@ -188,7 +188,7 @@ impl MonotoneIterator {
         self.constraints.len()
     }
 
-    /// Checks if the constraints can only be satified by the trivial sequence.
+    /// Checks if the constraints can only be satisfied by the trivial sequence.
     pub fn is_trivial(&self, target_size: usize) -> bool {
         self.constraints.len() == target_size
             && self
