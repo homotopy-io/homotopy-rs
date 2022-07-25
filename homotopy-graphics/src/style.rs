@@ -49,6 +49,8 @@ impl FromStr for Color {
 }
 
 // Reverse of `FromStr`
+// NOTE: If we decide to change how we `fmt::Display`, it could break some styles as it is used
+// functionally by the css and manim renderers.
 impl fmt::Display for Color {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (r, g, b) = self.clone().into_components::<u8>();
