@@ -24,9 +24,10 @@ impl Generator {
         }
     }
 
-    pub fn inverse(self) -> Self {
+    #[must_use]
+    pub fn orientation_transform(self, k: isize) -> Self {
         Self {
-            orientation: -self.orientation,
+            orientation: self.orientation * k,
             ..self
         }
     }
@@ -34,7 +35,10 @@ impl Generator {
 
 impl fmt::Debug for Generator {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_fmt(format_args!("{}:{}", self.id, self.dimension))
+        f.write_fmt(format_args!(
+            "{}:{}@{}",
+            self.id, self.dimension, self.orientation
+        ))
     }
 }
 

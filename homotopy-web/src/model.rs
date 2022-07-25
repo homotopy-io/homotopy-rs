@@ -10,7 +10,7 @@ pub mod history;
 pub mod proof;
 pub mod serialize;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub enum Action {
     Proof(proof::Action),
     History(history::Action),

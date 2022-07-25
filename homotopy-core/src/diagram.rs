@@ -159,6 +159,7 @@ impl Diagram {
     }
 
     /// Removes the framing information belonging to the generators with given id.
+    #[must_use]
     pub fn remove_framing(&self, id: usize) -> Self {
         match self {
             Self::Diagram0(g) => Self::Diagram0(*g),
@@ -490,13 +491,14 @@ impl DiagramN {
         })
     }
 
+    #[must_use]
     pub fn inverse(&self) -> Self {
         let cospans = self
             .cospans()
             .iter()
             .map(|cs| Cospan {
-                forward: cs.backward.invert_targets(),
-                backward: cs.forward.invert_targets(),
+                forward: cs.backward.clone().orientation_transform(-1),
+                backward: cs.forward.clone().orientation_transform(-1),
             })
             .rev()
             .collect();
