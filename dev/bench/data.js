@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1658517212350,
+  "lastUpdate": 1658746409027,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -37679,6 +37679,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 374.11,
             "range": "+/- 3.570",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thud@thud.dev",
+            "name": "Jasper Parish",
+            "username": "thud"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "574e581705006a588fd981b1652d78011616ce33",
+          "message": "Integrate signature styling into homotopy-graphics (#608)\n\n* Move css generation into homotopy-graphics\n\n* Fix folder editing styles\n\n* Make cursor pointer for existing new folder button\n\n* Migrate svg export\n\n* Also fix colors for surfaces / wires in `RenderableColor`\n\n* Migrate tikz export\n\n* Move stylesheet synthesis into `homotopy-graphics`\n\n* Move all stylesheet generation into `homotopy-graphics`\n* Move `palette` dependency and `Color` definition into `homotopy-graphics`\n* Remove duplicate `VertexShape` definitions\n* Clean up trait definitions in `style.rs`\n\n* Remove `use_self` from clippy warnings\n\nThis is necessary as clippy throws a warning (error in CI) from within\na serde derive (`VertexShape` enum definition).\n\n* Remove `use_self` from clippy warnings\n\n* Refactor generator styles\n\n* Refactor `SignatureStyleData` trait and impls\n* Remove `prefix` from signature stylesheet related code\n\n* Add note about `fmt::Display` for `Color`\n\n* Refactor hex color string generation",
+          "timestamp": "2022-07-25T11:41:41+01:00",
+          "tree_id": "d39307463f116d649a0d304e8901c3f9a08926f7",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/574e581705006a588fd981b1652d78011616ce33"
+        },
+        "date": 1658746398324,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.5479,
+            "range": "+/- 0.007",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 7.7335,
+            "range": "+/- 0.006",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 20.542,
+            "range": "+/- 0.019",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 50.638,
+            "range": "+/- 0.139",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 129.09,
+            "range": "+/- 0.330",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 357.02,
+            "range": "+/- 1.040",
             "unit": "ms"
           }
         ]
