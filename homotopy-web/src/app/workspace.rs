@@ -142,7 +142,7 @@ impl WorkspaceView {
 
     fn view_diagram_svg<const N: usize>(&self, ctx: &Context<Self>) -> Html {
         if let Some(ref ws) = ctx.props().workspace {
-            let highlight = highlight_attachment::<N>(ws, &ctx.props().signature)
+            let highlight = highlight_attachment::<N>(ws)
                 .or_else(|| highlight_slice::<N>(ws));
             html! {
                 <PanZoomComponent on_scroll={ctx.props().dispatch.reform(Action::SwitchSlice)}>
@@ -165,10 +165,7 @@ impl WorkspaceView {
 
 // TODO: highlighting needs better documentation and maybe a refactor
 
-fn highlight_attachment<const N: usize>(
-    workspace: &Workspace,
-    signature: &Signature,
-) -> Option<HighlightSvg<N>> {
+fn highlight_attachment<const N: usize>(workspace: &Workspace) -> Option<HighlightSvg<N>> {
     use Height::Regular;
 
     fn extend<const N: usize>(slices: [SliceIndex; 2]) -> [SliceIndex; N] {
@@ -182,24 +179,7 @@ fn highlight_attachment<const N: usize>(
     }
 
     let attach_option = workspace.attachment_highlight.as_ref()?;
-    let needle: DiagramN = if attach_option.inverse {
-        DiagramN::try_from(
-            signature
-                .generator_info(attach_option.generator)?
-                .diagram
-                .clone(),
-        )
-        .ok()?
-        .inverse()
-    } else {
-        DiagramN::try_from(
-            signature
-                .generator_info(attach_option.generator)?
-                .diagram
-                .clone(),
-        )
-        .ok()?
-    };
+    let needle = &attach_option.diagram;
 
     let boundary_path = attach_option.boundary_path;
     let embedding = &attach_option.embedding;

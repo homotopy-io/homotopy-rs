@@ -216,6 +216,7 @@ impl Cospan {
         generators.iter().copied().flatten().max_by_dimension()
     }
 
+    #[must_use]
     pub fn map<F>(&self, f: F) -> Self
     where
         F: Fn(&Rewrite) -> Rewrite,
@@ -381,11 +382,12 @@ impl Rewrite {
         }
     }
 
-    pub fn invert_targets(&self) -> Self {
+    #[must_use]
+    pub fn orientation_transform(self, k: isize) -> Self {
         use Rewrite::{Rewrite0, RewriteN};
         match self {
-            Rewrite0(r) => Rewrite0(r.invert_targets()),
-            RewriteN(r) => RewriteN(r.invert_targets()),
+            Rewrite0(r) => Rewrite0(r.orientation_transform(k)),
+            RewriteN(r) => RewriteN(r.orientation_transform(k)),
         }
     }
 
@@ -428,6 +430,7 @@ impl Rewrite {
         }
     }
 
+    #[must_use]
     pub fn remove_framing(&self, id: usize) -> Self {
         match self {
             Self::Rewrite0(r) => Self::Rewrite0(r.remove_framing(id)),
@@ -532,10 +535,13 @@ impl Rewrite0 {
         self.0.is_none()
     }
 
-    pub fn invert_targets(&self) -> Self {
-        match &self.0 {
+    #[must_use]
+    pub fn orientation_transform(self, k: isize) -> Self {
+        match self.0 {
             None => Self(None),
-            Some((source, target, label)) => Self::new(*source, target.inverse(), label.clone()),
+            Some((source, target, label)) => {
+                Self::new(source, target.orientation_transform(k), label)
+            }
         }
     }
 
@@ -793,7 +799,8 @@ impl RewriteN {
         self.0.cones.is_empty()
     }
 
-    pub fn invert_targets(&self) -> Self {
+    #[must_use]
+    pub fn orientation_transform(self, k: isize) -> Self {
         let cones = self
             .cones()
             .iter()
@@ -802,16 +809,18 @@ impl RewriteN {
                     cone.index,
                     cone.source().to_vec(),
                     Cospan {
-                        forward: cone.target().forward.invert_targets(),
-                        backward: cone.target().backward.invert_targets(),
+                        forward: cone.target().forward.clone().orientation_transform(k),
+                        backward: cone.target().backward.clone().orientation_transform(k),
                     },
                     cone.regular_slices()
                         .iter()
-                        .map(Rewrite::invert_targets)
+                        .cloned()
+                        .map(|r| r.orientation_transform(k))
                         .collect(),
                     cone.singular_slices()
                         .iter()
-                        .map(Rewrite::invert_targets)
+                        .cloned()
+                        .map(|r| r.orientation_transform(k))
                         .collect(),
                 )
             })
