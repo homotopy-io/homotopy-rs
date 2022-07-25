@@ -935,8 +935,7 @@ impl RewriteN {
                                 .map(|f_slice| f_slice.compose(g_slice))
                                 .collect::<Result<Vec<_>, _>>()?,
                         );
-                        regular_slices
-                            .extend(g_cone.singular_slices()[index + 1..].iter().cloned());
+                        regular_slices.extend(g_cone.regular_slices()[index..].iter().cloned());
 
                         delayed_offset -= 1 - f_cone.len() as isize;
 
