@@ -208,7 +208,7 @@ impl ProofState {
     pub fn update(&mut self, action: &Action) -> Result<(), ModelError> {
         match action {
             Action::CreateGeneratorZero => {
-                self.signature.create_generator_zero();
+                self.signature.create_generator_zero("Cell");
                 self.clear_attach();
             }
             Action::SetBoundary(boundary) => self.set_boundary(*boundary)?,
@@ -351,7 +351,7 @@ impl ProofState {
                     };
 
                     self.signature
-                        .create_generator(source, target)
+                        .create_generator(source, target, "Cell")
                         .map_err(ModelError::IncompatibleBoundaries)?;
 
                     self.boundary = None;
@@ -790,8 +790,14 @@ impl ProofState {
             .try_into()
             .map_err(|_dimerr| ModelError::InvalidAction)?;
 
+        // new generator of singular height 1 from source to target of current diagram
+        let singleton =
+            self.signature
+                .create_generator(diagram.source(), diagram.target(), "Theorem")?;
+
+        // rewrite from singleton to original diagram
         self.signature
-            .create_theorem(diagram.source(), diagram.target(), diagram.into())?;
+            .create_generator(singleton, diagram.into(), "Proof")?;
 
         self.clear_workspace();
 

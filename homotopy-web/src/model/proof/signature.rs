@@ -122,40 +122,22 @@ impl Signature {
         })
     }
 
-    pub fn create_generator_zero(&mut self) {
+    pub fn create_generator_zero(&mut self, name: &str) {
         let id = self.next_generator_id();
         let generator = Generator::new(id, 0);
-        self.insert(id, generator, generator, "Cell");
+        self.insert(id, generator, generator, name);
     }
 
     pub fn create_generator(
         &mut self,
         source: Diagram,
         target: Diagram,
+        name: &str,
     ) -> Result<Diagram, NewDiagramError> {
         let id = self.next_generator_id();
         let generator = Generator::new(id, source.dimension() + 1);
         let diagram = DiagramN::from_generator(generator, source, target)?;
-        self.insert(id, generator, diagram.clone(), "Cell");
-        Ok(diagram.into())
-    }
-
-    pub fn create_theorem(
-        &mut self,
-        source: Diagram,
-        target: Diagram,
-        into: Diagram,
-    ) -> Result<Diagram, NewDiagramError> {
-        let id = self.next_generator_id();
-
-        let generator = Generator::new(id, source.dimension() + 1);
-        let diagram = DiagramN::from_generator(generator, source, target)?;
-        self.insert(id, generator, diagram.clone(), "Theorem");
-
-        let generator = Generator::new(id, diagram.dimension() + 1);
-        let diagram = DiagramN::from_generator(generator, diagram, into)?;
-        self.insert(id, generator, diagram.clone(), "Proof of Theorem");
-
+        self.insert(id, generator, diagram.clone(), name);
         Ok(diagram.into())
     }
 
