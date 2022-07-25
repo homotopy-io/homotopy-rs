@@ -533,6 +533,12 @@ impl fmt::Debug for Diagram {
     }
 }
 
+impl<'a> From<&'a DiagramN> for &'a Diagram {
+    fn from(d: &'a DiagramN) -> Self {
+        d.into()
+    }
+}
+
 impl From<DiagramN> for Diagram {
     fn from(diagram: DiagramN) -> Self {
         Self::DiagramN(diagram)
