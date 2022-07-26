@@ -156,7 +156,8 @@
               emmake make -j $NIX_BUILD_CORES libhighs
               emcc -O3 \
                       -s EXPORTED_FUNCTIONS="@$src/exported_functions.json" \
-                      -s EXTRA_EXPORTED_RUNTIME_METHODS="['cwrap']" \
+                      -s EXPORTED_RUNTIME_METHODS="['cwrap']" \
+                      -s EXPORT_NAME="createHighsModule" \
                       -s MODULARIZE=1 \
                       -s ALLOW_MEMORY_GROWTH=1 \
                       -flto \

@@ -14,6 +14,11 @@
     <script type="module">
         import('./homotopy_web.js').then(wasm => wasm.default()).catch(console.log);
     </script>
+	<script src="highs.js"></script>
+	<script type="module">
+		const highs_settings = {};
+		createHighsModule(highs_settings).then(highs => {window.highs = highs;}).catch(console.err);
+	</script>
     <script type="module">
       // Import the functions you need from the SDKs you need
       import { initializeApp } from "https://www.gstatic.com/firebasejs/9.7.0/firebase-app.js";
