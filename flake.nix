@@ -126,6 +126,59 @@
             '');
           };
         };
+        packages = {
+          highs = pkgs.buildEmscriptenPackage rec {
+            name = "highs";
+            version = "0.7.2";
+            src = pkgs.fetchFromGitHub {
+              owner = "lovasoa";
+              repo = "highs-js";
+              # https://github.com/lovasoa/highs-js/pull/19
+              rev = "0de32edec1102c49db02d24ce0f29be302177b7f";
+              sha256 = "sha256-xxvq9hQlX0yIARtu6tZNwqnrGw5jwq1JR6+cj9wvN50=";
+              fetchSubmodules = true;
+            };
+            nativeBuildInputs = with pkgs; [cmake];
+            configurePhase = ''
+              runHook preConfigure
+
+              mkdir -p .emscriptencache
+              export EM_CACHE=$(pwd)/.emscriptencache
+              mkdir -p build
+              cd build
+              emcmake cmake ../HiGHS -DOPENMP=OFF -DFAST_BUILD=OFF -DSHARED=OFF
+
+              runHook postConfigure
+            '';
+            buildPhase = ''
+              runHook preBuild
+
+              emmake make -j $NIX_BUILD_CORES libhighs
+              emcc -O3 \
+                      -s EXPORTED_FUNCTIONS="@$src/exported_functions.json" \
+                      -s EXTRA_EXPORTED_RUNTIME_METHODS="['cwrap']" \
+                      -s MODULARIZE=1 \
+                      -s ALLOW_MEMORY_GROWTH=1 \
+                      -flto \
+                      --closure 1 \
+                      --pre-js "$src/src/pre.js" \
+                      --post-js "$src/src/post.js" \
+                      lib/*.a -o highs.js
+
+              runHook postBuild
+            '';
+            installPhase = ''
+              runHook preInstall
+
+              mkdir -p $out
+              install -Dm644 highs.{js,wasm} $out/
+
+              runHook postInstall
+            '';
+            checkPhase = ''
+            '';
+          };
+        };
         defaultPackage = let
           rust = pkgs.rust-bin.stable.latest.minimal.override {
             targets = ["wasm32-unknown-unknown"];
@@ -144,12 +197,14 @@
             CARGO_BUILD_TARGET = "wasm32-unknown-unknown";
             overrideMain = oldAttrs: {
               nativeBuildInputs = oldAttrs.nativeBuildInputs ++ (with pkgs; [wasm-bindgen-cli]);
+              buildInputs = oldAttrs.buildInputs ++ ([packages.highs]);
               postBuild = ''
                 ${pkgs.wasm-bindgen-cli}/bin/wasm-bindgen --out-dir $out --no-typescript --target web target/wasm32-unknown-unknown/release/homotopy_web.wasm
               '';
               installPhase = ''
                 runHook preInstall
                 cp -r homotopy-web/static/* $out/
+                cp ${packages.highs}/highs.{js,wasm} $out/
                 runHook postInstall
               '';
             };

@@ -21,6 +21,12 @@ wasm-bindgen --out-dir dist --no-typescript --target web target/wasm32-unknown-u
 run_task = { name = ["build-wasm"] }
 watch = { watch = ["homotopy-common/src", "homotopy-core/src", "homotopy-graphics/src", "homotopy-web/src"] }
 
+[tasks.build-highs]
+script = '''
+mkdir -p dist
+cp $(nix build .#highs --no-link --print-out-paths)/highs.{js,wasm} dist/
+'''
+
 [tasks.dist-static]
 script = '''
 mkdir -p dist
@@ -73,4 +79,4 @@ run_task = [
 ]
 
 [tasks.serve]
-run_task = { name = ["run-server", "build-wasm-watch", "dist-static-watch"], parallel = true }
+run_task = { name = ["run-server", "build-wasm-watch", "build-highs", "dist-static-watch"], parallel = true }
