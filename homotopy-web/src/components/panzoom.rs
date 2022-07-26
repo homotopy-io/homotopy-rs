@@ -153,7 +153,7 @@ impl Component for PanZoomComponent {
             Callback::from(move |e: WheelEvent| {
                 if e.alt_key() {
                     PanZoomState::on_wheel(&node_ref).emit(e);
-                } else if e.delta_y() > 0.0 {
+                } else if e.delta_y() < 0.0 {
                     on_scroll.emit(Direction::Forward);
                 } else {
                     on_scroll.emit(Direction::Backward);
