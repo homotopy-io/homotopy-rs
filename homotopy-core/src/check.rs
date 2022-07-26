@@ -187,11 +187,11 @@ impl RewriteN {
                     target,
                     regular_slice,
                 } => {
-                    if regular_slice.agrees_with(&target.forward) {
+                    if !regular_slice.agrees_with(&target.forward) {
                         errors.push(MalformedRewrite::NotCommutativeUnit(i));
                     }
 
-                    if regular_slice.agrees_with(&target.backward) {
+                    if !regular_slice.agrees_with(&target.backward) {
                         errors.push(MalformedRewrite::NotCommutativeUnit(i));
                     }
                 }
