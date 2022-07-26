@@ -170,6 +170,56 @@ fn contract_base(
         forward: regular_slices[0].clone(),
         backward: regular_slices[2].clone(),
     };
+    // cone-wise smoothing
+    let cospan = (result.colimit.dimension() > 0)
+        .then(|| {
+            let colimit = DiagramN::try_from(result.colimit).unwrap();
+            let forward = RewriteN::try_from(cospan.forward.clone()).unwrap();
+            let backward = RewriteN::try_from(cospan.backward.clone()).unwrap();
+
+            // a pair of cones is smoothable when they are equal (modulo different indices)
+            // and neither is redundant
+            let unsmoothable_cones: (Vec<_>, Vec<_>) = (0..colimit.size())
+                .filter_map(|sh| {
+                    match (forward.cone_over_target(sh), backward.cone_over_target(sh)) {
+                        (None, None) => None,
+                        (Some(f_cone), Some(b_cone))
+                            if f_cone.internal == b_cone.internal
+                                && f_cone.is_redundant()
+                                && b_cone.is_redundant() =>
+                        {
+                            None
+                        }
+                        (f, b) => Some((f, b)),
+                    }
+                })
+                .unzip();
+
+            let smooth_forward = RewriteN::new(
+                forward.dimension(),
+                unsmoothable_cones
+                    .0
+                    .into_iter()
+                    .flatten()
+                    .cloned()
+                    .collect(),
+            );
+            let smooth_backward = RewriteN::new(
+                backward.dimension(),
+                unsmoothable_cones
+                    .1
+                    .into_iter()
+                    .flatten()
+                    .cloned()
+                    .collect(),
+            );
+
+            Cospan {
+                forward: smooth_forward.into(),
+                backward: smooth_backward.into(),
+            }
+        })
+        .unwrap_or(cospan);
 
     let contract = RewriteN::new(
         diagram.dimension(),
@@ -183,16 +233,9 @@ fn contract_base(
     );
 
     let expand = {
-        let smoothable = cospan.forward == cospan.backward && cospan.forward.is_redundant();
-        let cone = smoothable.then(||
-            Cone::new(
-                height, 
-                vec![], 
-                cospan.clone(), 
-                vec![cospan.forward], 
-                vec![]
-            )
-        );
+        // coarse smoothing
+        let cone = (cospan.forward == cospan.backward && cospan.forward.is_redundant())
+            .then(|| Cone::new(height, vec![], cospan.clone(), vec![cospan.forward], vec![]));
         RewriteN::new(diagram.dimension(), cone.into_iter().collect())
     };
 
@@ -328,7 +371,9 @@ fn collapse_base<'a, Ix: IndexType>(
     // find collapsible edges
     for (s, t) in graph.edge_references().filter_map(|e| {
         let r: &Rewrite0 = e.weight().try_into().unwrap();
-        r.0.as_ref().map_or(true, |(s, t, _)| s.id == t.id).then(|| (e.source(), e.target()))
+        r.0.as_ref()
+            .map_or(true, |(s, t, _)| s.id == t.id)
+            .then(|| (e.source(), e.target()))
     }) {
         if (graph.edges_directed(s, Incoming).all(|p| {
             if let Some(c) = graph.find_edge(p.source(), t) {
@@ -647,8 +692,8 @@ fn collapse_recursive<Ix: IndexType>(
             // the subproblem for each SCC is the subgraph of the exploded graph containing the SCC
             // and its adjacent regulars closed under reverse-reachability
             let mut restriction_to_exploded = IdxVec::new();
-            let restriction: DiGraph<(Diagram, Option<Bias>, Vec<Height>), _, RestrictionIx> = exploded
-                .filter_map(
+            let restriction: DiGraph<(Diagram, Option<Bias>, Vec<Height>), _, RestrictionIx> =
+                exploded.filter_map(
                     |i, ((_, _, coord), diagram)| {
                         scc.iter()
                             .chain(adjacent_regulars[0].values())
@@ -783,12 +828,16 @@ impl Rewrite {
     fn is_redundant(&self) -> bool {
         match self {
             Rewrite::Rewrite0(r) => r.target().map_or(false, |t| t.orientation == 0),
-            Rewrite::RewriteN(r) => r.cones().iter().all(|cone| match cone.internal.get() {
-                ConeInternal::Cone0 { regular_slice, .. } => regular_slice.is_redundant(),
-                ConeInternal::ConeN {
-                    singular_slices, ..
-                } => singular_slices.iter().all(|slice| slice.is_redundant()),
-            }),
+            Rewrite::RewriteN(r) => r.cones().iter().all(Cone::is_redundant),
         }
+    }
+}
+
+impl Cone {
+    fn is_redundant(&self) -> bool {
+        self.singular_slices()
+            .iter()
+            .chain(self.regular_slices().iter())
+            .all(Rewrite::is_redundant)
     }
 }
