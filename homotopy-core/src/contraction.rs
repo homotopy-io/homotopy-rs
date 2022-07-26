@@ -173,56 +173,6 @@ fn contract_base(
         forward: regular_slices[0].clone(),
         backward: regular_slices[2].clone(),
     };
-    // cone-wise smoothing
-    let cospan = (result.colimit.dimension() > 0)
-        .then(|| {
-            let colimit = DiagramN::try_from(result.colimit).unwrap();
-            let forward = RewriteN::try_from(cospan.forward.clone()).unwrap();
-            let backward = RewriteN::try_from(cospan.backward.clone()).unwrap();
-
-            // a pair of cones is smoothable when they are equal (modulo different indices)
-            // and neither is redundant
-            let unsmoothable_cones: (Vec<_>, Vec<_>) = (0..colimit.size())
-                .filter_map(|sh| {
-                    match (forward.cone_over_target(sh), backward.cone_over_target(sh)) {
-                        (None, None) => None,
-                        (Some(f_cone), Some(b_cone))
-                            if f_cone.internal == b_cone.internal
-                                && f_cone.is_redundant()
-                                && b_cone.is_redundant() =>
-                        {
-                            None
-                        }
-                        (f, b) => Some((f, b)),
-                    }
-                })
-                .unzip();
-
-            let smooth_forward = RewriteN::new(
-                forward.dimension(),
-                unsmoothable_cones
-                    .0
-                    .into_iter()
-                    .flatten()
-                    .cloned()
-                    .collect(),
-            );
-            let smooth_backward = RewriteN::new(
-                backward.dimension(),
-                unsmoothable_cones
-                    .1
-                    .into_iter()
-                    .flatten()
-                    .cloned()
-                    .collect(),
-            );
-
-            Cospan {
-                forward: smooth_forward.into(),
-                backward: smooth_backward.into(),
-            }
-        })
-        .unwrap_or(cospan);
 
     let contract = RewriteN::new(
         diagram.dimension(),
@@ -235,11 +185,58 @@ fn contract_base(
         )],
     );
 
-    let expand = {
-        // coarse smoothing
-        let cone = (cospan.forward == cospan.backward && cospan.forward.is_redundant())
-            .then(|| Cone::new(height, vec![], cospan.clone(), vec![cospan.forward], vec![]));
-        RewriteN::new(diagram.dimension(), cone.into_iter().collect())
+    let expand = match result.colimit {
+        Diagram::Diagram0(_) => {
+            // Coarse smoothing
+            // A cospan is smoothable if the forward and backward rewrites are identical and redundant.
+            let cone = (cospan.forward == cospan.backward && cospan.forward.is_redundant())
+                .then(|| Cone::new(height, vec![], cospan.clone(), vec![cospan.forward], vec![]));
+            RewriteN::new(diagram.dimension(), cone.into_iter().collect())
+        }
+        Diagram::DiagramN(colimit) => {
+            // Cone-wise smoothing
+            // A pair of cones over the same target height is smoothable if they are identical (modulo different indices) and redundant.
+            let forward: &RewriteN = (&cospan.forward).try_into().unwrap();
+            let backward: &RewriteN = (&cospan.backward).try_into().unwrap();
+
+            let mut s_cones = vec![];
+            let mut f_cones = vec![];
+            let mut b_cones = vec![];
+            for height in 0..colimit.size() {
+                match (
+                    forward.cone_over_target(height),
+                    backward.cone_over_target(height),
+                ) {
+                    (None, None) => {}
+                    (None, Some(b_cone)) => b_cones.push(b_cone.clone()),
+                    (Some(f_cone), None) => f_cones.push(f_cone.clone()),
+                    (Some(f_cone), Some(b_cone)) => {
+                        if f_cone.internal == b_cone.internal && f_cone.is_redundant() {
+                            s_cones.push(f_cone.clone());
+                        } else {
+                            f_cones.push(f_cone.clone());
+                            b_cones.push(b_cone.clone());
+                        }
+                    }
+                }
+            }
+
+            let smooth = RewriteN::new(colimit.dimension(), s_cones).into();
+            let smooth_cospan = Cospan {
+                forward: RewriteN::new(colimit.dimension(), f_cones).into(),
+                backward: RewriteN::new(colimit.dimension(), b_cones).into(),
+            };
+
+            let cone = if smooth_cospan.is_identity() {
+                // Decrease diagram height by 1.
+                Cone::new_untrimmed(height, vec![], cospan, vec![smooth], vec![])
+            } else {
+                // Keep diagram height the same.
+                Cone::new_untrimmed(height, vec![smooth_cospan], cospan, vec![], vec![smooth])
+            };
+
+            RewriteN::new(diagram.dimension(), vec![cone])
+        }
     };
 
     Ok(ContractExpand { contract, expand })
