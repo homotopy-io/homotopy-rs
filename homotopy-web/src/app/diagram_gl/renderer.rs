@@ -122,8 +122,8 @@ impl Renderer {
         let color_of = |generator: &Generator| -> Vec3 {
             signature
                 .generator_style(*generator)
-                .unwrap()
-                .color()
+                .map(|style| style.color())
+                .unwrap_or_default()
                 .into_components::<f32>()
                 .into()
         };
@@ -131,8 +131,7 @@ impl Renderer {
         let shape_of = |generator: &Generator| -> VertexShape {
             signature
                 .generator_style(*generator)
-                .unwrap()
-                .shape()
+                .and_then(|style| style.shape())
                 .unwrap_or_default()
         };
 
