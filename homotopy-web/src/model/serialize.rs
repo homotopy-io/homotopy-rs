@@ -130,6 +130,8 @@ struct GeneratorData {
     generator: Generator,
     name: String,
     color: Color,
+    framed: bool,
+    invertible: bool,
     diagram: Key<Diagram>,
 }
 
@@ -151,6 +153,8 @@ pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> 
             diagram: data.store.pack_diagram(&info.diagram),
             name: info.name,
             color: info.color,
+            framed: info.framed,
+            invertible: info.invertible,
         }),
     });
 
@@ -192,8 +196,8 @@ pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
                     color: gd.color,
                     shape: Default::default(),
                     diagram: store.unpack_diagram(gd.diagram)?,
-                    framed: true,
-                    invertible: false,
+                    framed: gd.framed,
+                    invertible: gd.invertible,
                 }),
             })
         })
