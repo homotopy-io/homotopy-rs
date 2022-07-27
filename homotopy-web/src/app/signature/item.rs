@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use homotopy_common::tree::Node;
+use homotopy_core::Diagram;
 use homotopy_graphics::style::{Color, VertexShape};
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlElement, HtmlInputElement};
@@ -8,10 +9,11 @@ use yew::prelude::*;
 use yew_macro::function_component;
 
 use crate::{
+    app::diagram_svg::DiagramSvg,
     components::icon::{Icon, IconSize},
     model::proof::{
-        generators::GeneratorInfo, Action, SignatureEdit, SignatureItem, SignatureItemEdit, COLORS,
-        VERTEX_SHAPES,
+        generators::GeneratorInfo, Action, Signature, SignatureEdit, SignatureItem,
+        SignatureItemEdit, COLORS, VERTEX_SHAPES,
     },
 };
 
@@ -100,6 +102,7 @@ pub struct ItemViewProps {
     pub dispatch: Callback<Action>,
     pub node: Node,
     pub item: SignatureItem,
+    pub signature: Signature,
 
     #[prop_or_default]
     pub on_drag_over: Callback<DragEvent>,
@@ -248,8 +251,10 @@ impl Component for ItemView {
                 ondragstart={ctx.props().on_drag_start.clone()}
             >
                 <div class="signature__item-info">
+                    {self.view_left_buttons(ctx)}
                     {self.view_info(ctx)}
-                    {self.view_buttons(ctx)}
+                    {self.view_preview(ctx)}
+                    {self.view_right_buttons(ctx)}
                 </div>
                 {picker_and_prefs}
             </div>
@@ -329,13 +334,44 @@ impl ItemView {
         }
     }
 
-    fn view_color(color: &Color) -> Html {
-        let style = format!("background: {}", color.clone());
+    fn view_preview(&self, ctx: &Context<Self>) -> Html {
+        if self.mode != ItemViewMode::Viewing {
+            return html! {};
+        }
 
+        if let SignatureItem::Item(ref info) = ctx.props().item {
+            let svg_of = |diagram: Diagram| match diagram.dimension() {
+                0 => Self::view_diagram_svg::<0>(ctx, diagram),
+                1 => Self::view_diagram_svg::<1>(ctx, diagram),
+                _ => Self::view_diagram_svg::<2>(ctx, diagram),
+            };
+
+            let diagrams = match &info.diagram {
+                Diagram::Diagram0(_) => svg_of(info.diagram.clone()),
+                Diagram::DiagramN(diagram_n) => html! {
+                    <>
+                        {svg_of(diagram_n.source())}
+                        {svg_of(diagram_n.target())}
+                    </>
+                },
+            };
+
+            html! {
+                {diagrams}
+            }
+        } else {
+            html! {}
+        }
+    }
+
+    fn view_diagram_svg<const N: usize>(ctx: &Context<Self>, diagram: Diagram) -> Html {
         html! {
-            <span
-                class={"signature__item-child signature__generator-color"}
-                style={style}
+            <DiagramSvg<N>
+                    diagram={diagram}
+                    id="item__preview"
+                    signature={ctx.props().signature.clone()}
+                    max_width={Some(42.0)}
+                    max_height={Some(32.0)}
             />
         }
     }
@@ -419,7 +455,6 @@ impl ItemView {
             SignatureItem::Item(info) => {
                 html! {
                     <>
-                        {Self::view_color(&info.color)}
                         {self.view_name(ctx)}
                         <span class="signature__item-child">
                             {info.diagram.dimension()}
@@ -445,47 +480,59 @@ impl ItemView {
         }
     }
 
-    fn view_buttons(&self, ctx: &Context<Self>) -> Html {
-        if self.mode == ItemViewMode::Viewing {
-            let new_folder = if let SignatureItem::Folder(_, true) = ctx.props().item {
-                html! {
-                    <NewFolderButton
-                        dispatch={ctx.props().dispatch.clone()}
-                        node={ctx.props().node}
-                        kind={NewFolderKind::Inline}
-                    />
-                }
-            } else {
-                html! {}
-            };
+    fn view_left_buttons(&self, ctx: &Context<Self>) -> Html {
+        let style = if let SignatureItem::Item(ref info) = ctx.props().item {
+            format!("background-color: {};", info.color.hex())
+        } else {
+            "".to_owned()
+        };
 
+        if self.mode == ItemViewMode::Viewing {
             html! {
-                <>
-                    {new_folder}
-                    <ItemViewButton icon={"settings"} on_click={
+                <div style={style}>
+                    <div style="width: 80%; height: 80%; border-radius: 100%; background-color: white; position: relative; left:10%; top:10%;" />
+                    <ItemViewButton style="position: relative; top: -80%;" icon={"settings"} on_click={
                         ctx.link().callback(move |_| {
                             ItemViewMessage::SwitchTo(ItemViewMode::Editing)
                         })
                     } />
-                </>
+                </div>
             }
         } else {
             let node = ctx.props().node;
 
             html! {
                 <>
-                    <ItemViewButton icon={"delete"} on_click={
-                        ctx.props().dispatch.reform(
-                            move |_| Action::EditSignature(SignatureEdit::Remove(node))
-                        )
-                    } />
                     <ItemViewButton icon={"done"} on_click={
                         ctx.link().callback(move |_| {
                             ItemViewMessage::SwitchTo(ItemViewMode::Viewing)
                         })
                     } />
+                    <ItemViewButton icon={"delete"} on_click={
+                        ctx.props().dispatch.reform(
+                            move |_| Action::EditSignature(SignatureEdit::Remove(node))
+                        )
+                    } />
                 </>
             }
+        }
+    }
+
+    fn view_right_buttons(&self, ctx: &Context<Self>) -> Html {
+        if self.mode != ItemViewMode::Viewing {
+            return html! {};
+        }
+
+        if let SignatureItem::Folder(_, true) = ctx.props().item {
+            html! {
+                <NewFolderButton
+                    dispatch={ctx.props().dispatch.clone()}
+                node={ctx.props().node}
+                kind={NewFolderKind::Inline}
+                />
+            }
+        } else {
+            html! {}
         }
     }
 
