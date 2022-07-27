@@ -27,16 +27,13 @@
 			window.Highs_getNumCols = highs._Highs_getNumCols;
 			window.Highs_getNumRows = highs._Highs_getNumRows;
 			window.Highs_getSolution = highs._Highs_getSolution;
-			window.Highs_passLp = highs._Highs_passLp;
-			window.Highs_passMip = highs._Highs_passMip;
-			window.Highs_readModel = highs._Highs_readModel;
+			window.Highs_passLp = highs.cwrap("Highs_passLp","number",["number","number","number","number","number","number","number","array","array","array","array","array","array","array","array","array"]);
+			window.Highs_passMip = highs.cwrap("Highs_passMip","number",["number","number","number","number","number","number","number","array","array","array","array","array","array","array","array","array"]);
 			window.Highs_run = highs._Highs_run;
-			window.Highs_setBoolOptionValue = highs._Highs_setBoolOptionValue;
-			window.Highs_setDoubleOptionValue = highs._Highs_setDoubleOptionValue;
-			window.Highs_setIntOptionValue = highs._Highs_setIntOptionValue;
-			window.Highs_setStringOptionValue = highs._Highs_setStringOptionValue;
-			window.Highs_writeSolution = highs._Highs_writeSolution;
-			window.Highs_writeSolutionPretty = highs._Highs_writeSolutionPretty;
+			window.Highs_setBoolOptionValue = highs.cwrap("Highs_setBoolOptionValue","number",["number", "string", "number"]);
+			window.Highs_setDoubleOptionValue = highs.cwrap("Highs_setDoubleOptionValue","number",["number", "string", "number"]);
+			window.Highs_setIntOptionValue = highs.cwrap("Highs_setIntOptionValue","number",["number", "string", "number"]);
+			window.Highs_setStringOptionValue = highs.cwrap("Highs_setIntOptionValue","number",["number", "string", "number"]);
 		}).catch(console.err);
 	</script>
     <script type="module">
