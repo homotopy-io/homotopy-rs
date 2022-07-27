@@ -17,7 +17,27 @@
 	<script src="highs.js"></script>
 	<script type="module">
 		const highs_settings = {};
-		createHighsModule(highs_settings).then(highs => {window.highs = highs;}).catch(console.err);
+		createHighsModule(highs_settings).then(highs => {
+			window.highs = highs;
+			window.Highs_call = highs._Highs_call;
+			window.Highs_changeObjectiveSense = highs._Highs_changeObjectiveSense;
+			window.Highs_create = highs._Highs_create;
+			window.Highs_destroy = highs._Highs_destroy;
+			window.Highs_getModelStatus = highs._Highs_getModelStatus;
+			window.Highs_getNumCols = highs._Highs_getNumCols;
+			window.Highs_getNumRows = highs._Highs_getNumRows;
+			window.Highs_getSolution = highs._Highs_getSolution;
+			window.Highs_passLp = highs._Highs_passLp;
+			window.Highs_passMip = highs._Highs_passMip;
+			window.Highs_readModel = highs._Highs_readModel;
+			window.Highs_run = highs._Highs_run;
+			window.Highs_setBoolOptionValue = highs._Highs_setBoolOptionValue;
+			window.Highs_setDoubleOptionValue = highs._Highs_setDoubleOptionValue;
+			window.Highs_setIntOptionValue = highs._Highs_setIntOptionValue;
+			window.Highs_setStringOptionValue = highs._Highs_setStringOptionValue;
+			window.Highs_writeSolution = highs._Highs_writeSolution;
+			window.Highs_writeSolutionPretty = highs._Highs_writeSolutionPretty;
+		}).catch(console.err);
 	</script>
     <script type="module">
       // Import the functions you need from the SDKs you need
