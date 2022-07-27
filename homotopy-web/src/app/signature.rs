@@ -20,7 +20,7 @@ pub fn signature_view(props: &Props) -> Html {
     html! {
         <FolderView
             dispatch={props.dispatch.clone()}
-            contents={props.signature.as_tree()}
+            signature={props.signature.clone()}
         />
     }
 }

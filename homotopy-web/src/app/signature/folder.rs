@@ -1,13 +1,10 @@
-use homotopy_common::{
-    idx::Idx,
-    tree::{Node, Tree},
-};
+use homotopy_common::{idx::Idx, tree::Node};
 use yew::prelude::*;
 
 use super::item::ItemView;
 use crate::{
     components::{add_class, remove_class},
-    model::proof::{Action, SignatureEdit, SignatureItem},
+    model::proof::{Action, Signature, SignatureEdit, SignatureItem},
 };
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -19,14 +16,14 @@ enum DropPosition {
 #[derive(Clone, PartialEq, Properties)]
 pub struct Props {
     pub dispatch: Callback<Action>,
-    pub contents: Tree<SignatureItem>,
+    pub signature: Signature,
 }
 
 fn on_valid_callback<F>(props: &Props, node: Node, f: F) -> Callback<DragEvent>
 where
     F: Fn(DragEvent) + 'static,
 {
-    let ancestors: Vec<_> = props.contents.ancestors_of(node).collect();
+    let ancestors: Vec<_> = props.signature.as_tree().ancestors_of(node).collect();
     Callback::from(move |e: DragEvent| {
         e.prevent_default();
         if e.data_transfer()
@@ -106,7 +103,7 @@ impl Component for FolderView {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        render_children(ctx.props(), ctx.props().contents.root())
+        render_children(ctx.props(), ctx.props().signature.as_tree().root())
     }
 }
 
@@ -146,35 +143,42 @@ fn render_drop_zone(props: &Props, node: Node, position: DropPosition) -> Html {
 }
 
 fn render_item(props: &Props, node: Node) -> Html {
-    props.contents.with(node, |item| match item.inner() {
-        SignatureItem::Folder(_, _) => {
-            html! {
-                <ItemView
-                    dispatch={props.dispatch.clone()}
-                    node={node}
-                    item={item.inner().clone()}
-                    on_drag_over={on_drag_over(props, node)}
-                    on_drag_enter={on_drag_enter(props, node)}
-                    on_drop={on_drop(props, node, DropPosition::After)}
-                    on_drag_start={on_drag_start(node)}
-                />
+    props
+        .signature
+        .as_tree()
+        .with(node, |item| match item.inner() {
+            SignatureItem::Folder(_, _) => {
+                html! {
+                    <ItemView
+                        dispatch={props.dispatch.clone()}
+                        node={node}
+                        item={item.inner().clone()}
+                        signature={props.signature.clone()}
+                        on_drag_over={on_drag_over(props, node)}
+                        on_drag_enter={on_drag_enter(props, node)}
+                        on_drop={on_drop(props, node, DropPosition::After)}
+                        on_drag_start={on_drag_start(node)}
+                    />
+                }
             }
-        }
-        SignatureItem::Item(_) => {
-            html! {
-                <ItemView
-                    dispatch={props.dispatch.clone()}
-                    node={node}
-                    item={item.inner().clone()}
-                    on_drag_start={on_drag_start(node)}
-                />
+            SignatureItem::Item(_) => {
+                html! {
+                    <ItemView
+                        dispatch={props.dispatch.clone()}
+                        node={node}
+                        item={item.inner().clone()}
+                        signature={props.signature.clone()}
+                        on_drag_start={on_drag_start(node)}
+                    />
+                }
             }
-        }
-    })
+        })
 }
 
 fn render_children(props: &Props, node: Node) -> Html {
-    props.contents.with(node, move |n| match n.inner() {
+    let contents = props.signature.as_tree();
+    let root = contents.root();
+    contents.with(node, move |n| match n.inner() {
         SignatureItem::Folder(_, true) => {
             let children = n.children().map(|child| render_tree(props, child));
             let class = format!(
