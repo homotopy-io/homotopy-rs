@@ -117,6 +117,7 @@ pub struct ItemViewProps {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ItemViewMode {
     Viewing,
+    Hovering,
     Editing,
 }
 
@@ -241,22 +242,40 @@ impl Component for ItemView {
             html! {}
         };
 
+        let on_mouse_enter = if self.mode == ItemViewMode::Viewing {
+            ctx.link()
+                .callback(|_| ItemViewMessage::SwitchTo(ItemViewMode::Hovering))
+        } else {
+            ctx.link().callback(|_| ItemViewMessage::Noop)
+        };
+        let on_mouse_leave = if self.mode == ItemViewMode::Hovering {
+            ctx.link()
+                .callback(|_| ItemViewMessage::SwitchTo(ItemViewMode::Viewing))
+        } else {
+            ctx.link().callback(|_| ItemViewMessage::Noop)
+        };
+
         html! {
             <div
                 class={class}
-                draggable={(self.mode == ItemViewMode::Viewing).to_string()}
+                draggable={(self.mode != ItemViewMode::Editing).to_string()}
                 ondragover={ctx.props().on_drag_over.clone()}
                 ondragenter={ctx.props().on_drag_enter.clone()}
                 ondrop={ctx.props().on_drop.clone()}
                 ondragstart={ctx.props().on_drag_start.clone()}
+                onmouseenter={on_mouse_enter}
+                onmouseleave={on_mouse_leave}
             >
-                <div class="signature__item-info">
-                    {self.view_left_buttons(ctx)}
-                    {self.view_info(ctx)}
-                    {self.view_preview(ctx)}
-                    {self.view_right_buttons(ctx)}
+                {Self::view_sliver(ctx)}
+                <div class="signature__item-contents">
+                    <div class="signature__item-info">
+                        {self.view_left_buttons(ctx)}
+                        {self.view_info(ctx)}
+                        {Self::view_preview(ctx)}
+                        {self.view_right_buttons(ctx)}
+                    </div>
+                    {picker_and_prefs}
                 </div>
-                {picker_and_prefs}
             </div>
         }
     }
@@ -302,16 +321,7 @@ impl ItemView {
             SignatureItem::Folder(_, _) => Callback::noop(),
         };
 
-        if self.mode == ItemViewMode::Viewing {
-            html! {
-                <span
-                    class="signature__item-child signature__item-name"
-                    onclick={on_click}
-                >
-                    {name}
-                </span>
-            }
-        } else {
+        if self.mode == ItemViewMode::Editing {
             html! {
                 <input
                     type="text"
@@ -331,14 +341,31 @@ impl ItemView {
                     })}
                 />
             }
+        } else {
+            html! {
+                <span
+                    class="signature__item-child signature__item-name"
+                    onclick={on_click}
+                >
+                    {name}
+                </span>
+            }
         }
     }
 
-    fn view_preview(&self, ctx: &Context<Self>) -> Html {
-        if self.mode != ItemViewMode::Viewing {
-            return html! {};
-        }
+    fn view_sliver(ctx: &Context<Self>) -> Html {
+        if let SignatureItem::Item(ref info) = ctx.props().item {
+            let style = format!("background-color: {}", info.color.hex());
 
+            html! {
+                <div class="signature__generator-color-sliver" style={style}/>
+            }
+        } else {
+            html! {}
+        }
+    }
+
+    fn view_preview(ctx: &Context<Self>) -> Html {
         if let SignatureItem::Item(ref info) = ctx.props().item {
             let svg_of = |diagram: Diagram, id: String| match diagram.dimension() {
                 0 => Self::view_diagram_svg::<0>(ctx, diagram, id),
@@ -487,31 +514,26 @@ impl ItemView {
     }
 
     fn view_left_buttons(&self, ctx: &Context<Self>) -> Html {
+        use ItemViewMode::{Editing, Hovering, Viewing};
+        let class = match self.mode {
+            Viewing => "signature__generator-color",
+            Hovering => "signature__generator-color signature__generator-color-hover",
+            Editing => "signature__generator-color signature__generator-color-edit",
+        };
         let style = if let SignatureItem::Item(ref info) = ctx.props().item {
             format!("background-color: {};", info.color.hex())
         } else {
             "".to_owned()
         };
 
-        if self.mode == ItemViewMode::Viewing {
-            html! {
-                <div style={style}>
-                    <div style="width: 80%; height: 80%; border-radius: 100%; background-color: white; position: relative; left:10%; top:10%;" />
-                    <ItemViewButton style="position: relative; top: -80%;" icon={"settings"} on_click={
-                        ctx.link().callback(move |_| {
-                            ItemViewMessage::SwitchTo(ItemViewMode::Editing)
-                        })
-                    } />
-                </div>
-            }
-        } else {
+        let inner = if self.mode == Editing {
             let node = ctx.props().node;
 
             html! {
                 <>
                     <ItemViewButton icon={"done"} on_click={
                         ctx.link().callback(move |_| {
-                            ItemViewMessage::SwitchTo(ItemViewMode::Viewing)
+                            ItemViewMessage::SwitchTo(Hovering)
                         })
                     } />
                     <ItemViewButton icon={"delete"} on_click={
@@ -521,6 +543,20 @@ impl ItemView {
                     } />
                 </>
             }
+        } else {
+            html! {
+                <ItemViewButton icon={"settings"} on_click={
+                    ctx.link().callback(move |_| {
+                        ItemViewMessage::SwitchTo(Editing)
+                    })
+                } />
+            }
+        };
+
+        html! {
+            <div class={class} style={style}>
+                {inner}
+            </div>
         }
     }
 
