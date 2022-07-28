@@ -52,25 +52,13 @@ impl Component for BoundaryPreview {
             .props()
             .dispatch
             .reform(move |_| Action::RecoverBoundary);
-        let preview = match dim {
-            // Display flex to center 0 & 1-dimensional diagrams.
-            0 | 1 => html! {
-                <div
-                    class="boundary__element boundary__preview"
-                    onclick={onclick}
-                    style="display:flex; align-items:center; justify-content:center"
-                >
-                    {preview}
-                </div>
-            },
-            _ => html! {
-                <div
-                    class="boundary__element boundary__preview"
-                    onclick={onclick}
-                >
-                    {preview}
-                </div>
-            },
+        let preview = html! {
+            <div
+                class="boundary__element boundary__preview"
+                onclick={onclick}
+            >
+                {preview}
+            </div>
         };
 
         html! {
