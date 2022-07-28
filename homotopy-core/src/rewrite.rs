@@ -1137,7 +1137,9 @@ impl Cone {
         regular_slices: Vec<Rewrite>,
         singular_slices: Vec<Rewrite>,
     ) -> Self {
+        debug_assert_eq!(source.len(), singular_slices.len());
         if source.is_empty() {
+            debug_assert_eq!(regular_slices.len(), 1);
             Self {
                 index,
                 internal: CONE_FACTORY.with(|factory| {
@@ -1148,6 +1150,7 @@ impl Cone {
                 }),
             }
         } else {
+            debug_assert_eq!(regular_slices.len() + 1, singular_slices.len());
             Self {
                 index,
                 internal: CONE_FACTORY.with(|factory| {
