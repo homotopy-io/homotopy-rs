@@ -507,6 +507,18 @@ button, .button {
   color: var(--drawer-background);
 }
 
+.signature__generator-preview-spacer {
+  position: relative;
+  z-index: 1;
+  width: 5px;
+}
+
+.signature__generator-preview-source-target-symbol {
+  position: relative;
+  right: 7px;
+  font-size: 25px;
+}
+
 .signature__generator-picker {
   width: 100%;
   display: flex;
