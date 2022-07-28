@@ -340,18 +340,24 @@ impl ItemView {
         }
 
         if let SignatureItem::Item(ref info) = ctx.props().item {
-            let svg_of = |diagram: Diagram| match diagram.dimension() {
-                0 => Self::view_diagram_svg::<0>(ctx, diagram),
-                1 => Self::view_diagram_svg::<1>(ctx, diagram),
-                _ => Self::view_diagram_svg::<2>(ctx, diagram),
+            let svg_of = |diagram: Diagram, id: String| match diagram.dimension() {
+                0 => Self::view_diagram_svg::<0>(ctx, diagram, id),
+                1 => Self::view_diagram_svg::<1>(ctx, diagram, id),
+                _ => Self::view_diagram_svg::<2>(ctx, diagram, id),
             };
 
             let diagrams = match &info.diagram {
-                Diagram::Diagram0(_) => svg_of(info.diagram.clone()),
+                Diagram::Diagram0(_) => svg_of(
+                    info.diagram.clone(),
+                    "signature__generator-preview".to_owned(),
+                ),
                 Diagram::DiagramN(diagram_n) => html! {
                     <>
-                        {svg_of(diagram_n.source())}
-                        {svg_of(diagram_n.target())}
+                        {svg_of(diagram_n.source(), "signature__generator-preview-source".to_owned())}
+                        <div class="signature__generator-preview-spacer">
+                            <div class="signature__generator-preview-source-target-symbol">{"\u{21DD}"}</div>
+                        </div>
+                        {svg_of(diagram_n.target(), "signature__generator-preview-source".to_owned())}
                     </>
                 },
             };
@@ -364,11 +370,11 @@ impl ItemView {
         }
     }
 
-    fn view_diagram_svg<const N: usize>(ctx: &Context<Self>, diagram: Diagram) -> Html {
+    fn view_diagram_svg<const N: usize>(ctx: &Context<Self>, diagram: Diagram, id: String) -> Html {
         html! {
             <DiagramSvg<N>
                     diagram={diagram}
-                    id="item__preview"
+                    id={id}
                     signature={ctx.props().signature.clone()}
                     max_width={Some(42.0)}
                     max_height={Some(32.0)}
