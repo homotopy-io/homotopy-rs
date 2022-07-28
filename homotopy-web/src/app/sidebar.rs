@@ -56,7 +56,9 @@ pub struct SidebarDrawerProps {
     #[prop_or_default]
     pub children: Children,
     #[prop_or_default]
-    pub on_close: Option<model::Action>,
+    pub icon: Option<&'static str>,
+    #[prop_or_default]
+    pub on_click: Option<model::Action>,
 }
 
 #[function_component(SidebarDrawer)]
@@ -67,12 +69,12 @@ pub fn sidebar_drawer(props: &SidebarDrawerProps) -> Html {
                 <span class="drawer__title">
                     {props.title}
                 </span>
-                if let Some(action) = props.on_close.as_ref().cloned() {
+                if let (Some(icon), Some(action)) = (props.icon, props.on_click.as_ref().cloned()) {
                     <span
-                        class="drawer__close"
+                        class="drawer__icon"
                         onclick={props.dispatch.reform(move |_| action.clone())}
                     >
-                        <Icon name="close" size={IconSize::Icon18} />
+                        <Icon name={icon} size={IconSize::Icon18} />
                     </span>
                 }
             </div>
@@ -166,7 +168,8 @@ impl Sidebar {
                     class="attach"
                     title="Attach"
                     dispatch={dispatch}
-                    on_close={model::Action::from(proof::Action::ClearAttach)}
+                    icon="close"
+                    on_click={model::Action::from(proof::Action::ClearAttach)}
                 >
                     <AttachView
                         dispatch={dispatch.reform(model::Action::Proof)}

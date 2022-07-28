@@ -4,7 +4,7 @@ use homotopy_common::{
 };
 use yew::prelude::*;
 
-use super::item::{ItemView, NewFolderButton, NewFolderKind};
+use super::item::ItemView;
 use crate::{
     components::{add_class, remove_class},
     model::proof::{Action, SignatureEdit, SignatureItem},
@@ -177,17 +177,6 @@ fn render_children(props: &Props, node: Node) -> Html {
     props.contents.with(node, move |n| match n.inner() {
         SignatureItem::Folder(_, true) => {
             let children = n.children().map(|child| render_tree(props, child));
-            let footer = if node == props.contents.root() {
-                html! {
-                    <NewFolderButton
-                        dispatch={props.dispatch.clone()}
-                        node={props.contents.root()}
-                        kind={NewFolderKind::Root}
-                    />
-                }
-            } else {
-                html! {}
-            };
             let class = format!(
                 "signature__branch {}",
                 if n.is_empty() {
@@ -201,7 +190,6 @@ fn render_children(props: &Props, node: Node) -> Html {
                 <ul class={class}>
                     {for children}
                     {render_drop_zone(props, node, DropPosition::After)}
-                    {footer}
                 </ul>
             }
         }

@@ -383,8 +383,9 @@ button, .button {
   box-sizing: border-box;
 }
 
-.drawer__close {
+.drawer__icon {
   cursor: pointer;
+  padding: var(--space-1);
 }
 
 /* Signature */

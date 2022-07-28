@@ -6,7 +6,11 @@ use crate::app::debug::DebugView;
 use crate::{
     app::{project::ProjectView, settings::SettingsView, signature::SignatureView},
     components::Visible,
-    model::{self, Proof},
+    model::{
+        self,
+        proof::{Action, SignatureEdit},
+        Proof,
+    },
 };
 
 macro_rules! declare_sidebar_drawers {
@@ -17,6 +21,8 @@ macro_rules! declare_sidebar_drawers {
             $class:literal,
             $icon:literal,
             $body:expr,
+            $($top_icon:literal,
+              $action:expr,)?
         }
     )*) => {
         #[allow(unused)]
@@ -45,6 +51,11 @@ macro_rules! declare_sidebar_drawers {
                                     title={$title}
                                     class={$class}
                                     dispatch={dispatch}
+                                    $(icon={$top_icon})?
+                                    $(on_click={
+                                        let action = $action;
+                                        action(proof)
+                                    })?
                                 >
                                     {body(dispatch, proof)}
                                 </SidebarDrawer>
@@ -113,6 +124,8 @@ declare_sidebar_drawers! {
                 dispatch={dispatch.reform(model::Action::Proof)}
             />
         },
+        "create_new_folder",
+        |proof: &Proof| model::Action::Proof(Action::EditSignature(SignatureEdit::NewFolder(proof.signature().as_tree().root()))),
     }
 
     #[cfg(debug_assertions)]
