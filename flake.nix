@@ -127,6 +127,31 @@
           };
         };
         packages = {
+          highs_exported_methods = pkgs.writeTextFile {
+            name = "exported_functions.json";
+            text =
+            ''
+              [
+                '_malloc',
+                '_free',
+                '_Highs_call',
+                '_Highs_create',
+                '_Highs_run',
+                '_Highs_destroy',
+                '_Highs_getModelStatus',
+                '_Highs_getSolution',
+                '_Highs_getNumCols',
+                '_Highs_getNumRows',
+                '_Highs_changeObjectiveSense',
+                '_Highs_passMip',
+                '_Highs_passLp'
+                ,'_Highs_setStringOptionValue',
+                '_Highs_setIntOptionValue',
+                '_Highs_setDoubleOptionValue',
+                '_Highs_setBoolOptionValue'
+              ]
+            '';
+          };
           highs = pkgs.buildEmscriptenPackage rec {
             name = "highs";
             version = "0.7.2";
@@ -155,15 +180,13 @@
 
               emmake make -j $NIX_BUILD_CORES libhighs
               emcc -O3 \
-                      -s EXPORTED_FUNCTIONS="['_Highs_call','_Highs_readModel','_Highs_writeSolution','_Highs_writeSolutionPretty','_Highs_create','_Highs_run','_Highs_destroy','_Highs_getModelStatus','_Highs_getSolution','_Highs_getNumCols','_Highs_getNumRows','_Highs_changeObjectiveSense','_Highs_passMip','_Highs_passLp','_Highs_setStringOptionValue','_Highs_setIntOptionValue','_Highs_setDoubleOptionValue','_Highs_setBoolOptionValue']" \
-                      -s EXPORTED_RUNTIME_METHODS="['cwrap']" \
+                      -s EXPORTED_FUNCTIONS="@${packages.highs_exported_methods}" \
+                      -s EXPORTED_RUNTIME_METHODS="['cwrap','HEAPU8']" \
                       -s EXPORT_NAME="createHighsModule" \
                       -s MODULARIZE=1 \
                       -s ALLOW_MEMORY_GROWTH=1 \
                       -flto \
                       --closure 1 \
-                      --pre-js "$src/src/pre.js" \
-                      --post-js "$src/src/post.js" \
                       lib/*.a -o highs.js
 
               runHook postBuild
