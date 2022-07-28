@@ -175,6 +175,9 @@ button, .button {
   overflow: auto;
   width: 160px;
   height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Workspace */
@@ -380,8 +383,9 @@ button, .button {
   box-sizing: border-box;
 }
 
-.drawer__close {
+.drawer__icon {
   cursor: pointer;
+  padding: var(--space-1);
 }
 
 /* Signature */
