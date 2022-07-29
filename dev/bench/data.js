@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1659101302284,
+  "lastUpdate": 1659107512400,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -38279,6 +38279,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 32.785,
             "range": "+/- 0.232",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9ffabad86f7786e6fc6cf65e804c19332ba4a1b7",
+          "message": "Low hanging changes (#638)\n\n* Install unload hook only when meaningful action is performed (#637).\r\n\r\n* Formatted .nix files\r\n\r\n* Added comments on nix builds, citation instructions and HiGHS citation to README.md (#215).\r\n\r\nCo-authored-by: regular-citizen <chara@sarti.me>",
+          "timestamp": "2022-07-29T15:13:29+01:00",
+          "tree_id": "e61569fb0db762041fec1654e4b02f4c700b9415",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/9ffabad86f7786e6fc6cf65e804c19332ba4a1b7"
+        },
+        "date": 1659107502525,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.8369,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 10.87,
+            "range": "+/- 0.003",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 49.683,
+            "range": "+/- 0.065",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 315.18,
+            "range": "+/- 0.250",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.6317,
+            "range": "+/- 0.001",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 26.294,
+            "range": "+/- 0.097",
             "unit": "s"
           }
         ]
