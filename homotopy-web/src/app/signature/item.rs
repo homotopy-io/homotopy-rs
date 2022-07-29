@@ -343,12 +343,14 @@ impl ItemView {
             }
         } else {
             html! {
-                <span
+                <div
                     class="signature__item-child signature__item-name"
                     onclick={on_click}
                 >
-                    {name}
-                </span>
+                    <span class="signature__item-name">
+                        {name}
+                    </span>
+                </div>
             }
         }
     }
@@ -378,19 +380,30 @@ impl ItemView {
                     info.diagram.clone(),
                     "signature__generator-preview".to_owned(),
                 ),
-                Diagram::DiagramN(diagram_n) => html! {
-                    <>
-                        {svg_of(diagram_n.source(), "signature__generator-preview-source".to_owned())}
-                        <div class="signature__generator-preview-spacer">
-                            <div class="signature__generator-preview-source-target-symbol">{"\u{21DD}"}</div>
-                        </div>
-                        {svg_of(diagram_n.target(), "signature__generator-preview-source".to_owned())}
-                    </>
-                },
+                Diagram::DiagramN(diagram_n) => {
+                    if info.single_preview {
+                        svg_of(
+                            info.diagram.clone(),
+                            "signature__generator-preview".to_owned(),
+                        )
+                    } else {
+                        html! {
+                            <>
+                                {svg_of(diagram_n.source(), "signature__generator-preview-source".to_owned())}
+                                <div class="signature__generator-preview-spacer">
+                                    <div class="signature__generator-preview-source-target-symbol">{"\u{21DD}"}</div>
+                                </div>
+                                {svg_of(diagram_n.target(), "signature__generator-preview-source".to_owned())}
+                            </>
+                        }
+                    }
+                }
             };
 
             html! {
-                {diagrams}
+                <div class="signature__generator-previews-wrapper">
+                    {diagrams}
+                </div>
             }
         } else {
             html! {}
@@ -488,10 +501,10 @@ impl ItemView {
             SignatureItem::Item(info) => {
                 html! {
                     <>
-                        {self.view_name(ctx)}
                         <span class="signature__item-child">
                             {info.diagram.dimension()}
                         </span>
+                        {self.view_name(ctx)}
                     </>
                 }
             }
@@ -594,6 +607,11 @@ impl ItemView {
             let input: HtmlInputElement = div.last_element_child().unwrap().unchecked_into();
             ItemViewMessage::Edit(SignatureItemEdit::MakeInvertible(!input.checked()))
         });
+        let toggle_single_preview = ctx.link().callback(move |e: MouseEvent| {
+            let div: HtmlElement = e.target_unchecked_into();
+            let input: HtmlInputElement = div.last_element_child().unwrap().unchecked_into();
+            ItemViewMessage::Edit(SignatureItemEdit::ShowSinglePreview(!input.checked()))
+        });
 
         match info.generator.dimension {
             0 => Html::default(),
@@ -610,6 +628,11 @@ impl ItemView {
                         onclick={toggle_invertible}
                         checked={info.invertible}
                         disabled={info.invertible}
+                    />
+                    <GeneratorPreferenceCheckbox
+                        name="Single Preview"
+                        onclick={toggle_single_preview}
+                        checked={info.single_preview}
                     />
                 </>
             },

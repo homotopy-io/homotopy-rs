@@ -399,18 +399,20 @@ button, .button {
   height: var(--signature-height);
   overflow: hidden;
   flex-direction: row;
+  align-items: stretch;
   transition: height 100ms;
 }
 
 .signature__item-contents {
-  width: 100%;
+  max-width: calc(100% - 6px);
   height: 100%;
+  flex: 1 0 auto;
   display: flex;
   flex-direction: column;
 }
 
 .signature__item.signature__item-editing {
-  height: 222px;
+  height: 246px;
 }
 
 .signature__item.signature__item-editing.signature__item-generator-0 {
@@ -425,6 +427,7 @@ button, .button {
   display: flex;
   flex-direction: row;
   align-items: stretch;
+  justify-content: center;
   width: 100%;
   height: var(--signature-height);
 }
@@ -484,22 +487,28 @@ button, .button {
 }
 
 .signature__item-name, .signature__item-fill {
-  flex: 1;
+  flex: 1 1 auto;
   white-space: nowrap;
   overflow: hidden;
-  height: 100%;
   box-sizing: border-box;
 }
 
 .signature__item-fill {
-    cursor: pointer;
+  cursor: pointer;
+  height: 100%;
 }
 
-.signature__item-name {
+div.signature__item-name {
   padding-left: 0;
   padding-right: 0;
   border-left: var(--space-1) solid transparent;
   border-right: var(--space-1) solid transparent;
+  display: flex;
+  align-items: center;
+}
+
+span.signature__item-name {
+  text-overflow: ellipsis;
 }
 
 .signature__item-name-input {
@@ -516,6 +525,7 @@ button, .button {
   overflow: hidden;
   color: var(--drawer-background);
   width: 0;
+  flex: 0 0 auto;
   transition: width 50ms;
 }
 
@@ -524,23 +534,23 @@ button, .button {
 }
 
 .signature__generator-color.signature__generator-color-edit {
-  width: 128px;
+  width: 64px;
 }
 
 .signature__generator-color-sliver {
+  flex: 0 0 auto;
   height: 100%;
   width: 6px;
 }
 
-.signature__generator-preview-spacer {
-  position: relative;
-  z-index: 1;
-  width: 5px;
+.signature__generator-previews-wrapper {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: row;
+  pointer-events: none;
 }
 
 .signature__generator-preview-source-target-symbol {
-  position: relative;
-  right: 7px;
   font-size: 25px;
 }
 
@@ -656,7 +666,7 @@ button, .button {
 .signature__generator-preference {
   width: 100%;
   height: 28px;
-  padding: var(--space-0);
+  padding: var(--space-1);
   display: flex;
   flex-direction: row;
   align-items: center;

@@ -194,6 +194,8 @@ pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
                     diagram: store.unpack_diagram(gd.diagram)?,
                     framed: true,
                     invertible: false,
+                    // TODO: `single_preview` should be properly serialized
+                    single_preview: !matches!(gd.generator.dimension, 1 | 2),
                 }),
             })
         })
