@@ -97,14 +97,12 @@ pub fn touching() -> (impl Signature, DiagramN) {
         |coord| Rewrite0::new(x_generator, s_generator, (s_generator.id, coord).into()).into();
     let fwd = rewrite(vec![Interior(Singular(0)), Boundary(Source)]);
     let bwd = rewrite(vec![Interior(Singular(0)), Boundary(Target)]);
-    let up = rewrite(vec![Boundary(Source), Interior(Regular(0))]);
-    let down = rewrite(vec![Boundary(Target), Interior(Regular(0))]);
     let s_internal = Cospan {
         forward: fwd,
         backward: bwd,
     };
-    let up_cone = Cone::new(0, vec![], s_internal.clone(), vec![up.clone()], vec![]);
-    let down_cone = Cone::new(0, vec![], s_internal.clone(), vec![down], vec![]);
+    let up_cone = Cone::new(0, vec![], s_internal.clone(), vec![]);
+    let down_cone = Cone::new(0, vec![], s_internal.clone(), vec![]);
     let s_tensor_s_cospan = Cospan {
         forward: RewriteN::new(1, vec![up_cone.clone(), up_cone.clone()]).into(),
         backward: RewriteN::new(1, vec![down_cone.clone(), down_cone.clone()]).into(),
@@ -116,12 +114,7 @@ pub fn touching() -> (impl Signature, DiagramN) {
             s_s.cospans().to_vec(),
             s_tensor_s_cospan.clone(),
             vec![
-                s_tensor_s_cospan.forward,
-                RewriteN::new(1, vec![down_cone.clone(), up_cone]).into(),
-                s_tensor_s_cospan.backward,
-            ],
-            vec![
-                RewriteN::new(1, vec![Cone::new(1, vec![], s_internal, vec![up], vec![])]).into(),
+                RewriteN::new(1, vec![Cone::new(1, vec![], s_internal, vec![])]).into(),
                 RewriteN::new(1, vec![down_cone]).into(),
             ],
         )],
@@ -162,14 +155,12 @@ pub fn crossing() -> (impl Signature, DiagramN) {
         |coord| Rewrite0::new(x_generator, s_generator, (s_generator.id, coord).into()).into();
     let fwd = rewrite(vec![Interior(Singular(0)), Boundary(Source)]);
     let bwd = rewrite(vec![Interior(Singular(0)), Boundary(Target)]);
-    let up = rewrite(vec![Boundary(Source), Interior(Regular(0))]);
-    let down = rewrite(vec![Boundary(Target), Interior(Regular(0))]);
     let s_internal = Cospan {
         forward: fwd,
         backward: bwd,
     };
-    let up_cone = Cone::new(0, vec![], s_internal.clone(), vec![up.clone()], vec![]);
-    let down_cone = Cone::new(0, vec![], s_internal.clone(), vec![down.clone()], vec![]);
+    let up_cone = Cone::new(0, vec![], s_internal.clone(), vec![]);
+    let down_cone = Cone::new(0, vec![], s_internal.clone(), vec![]);
     let s_tensor_s_cospan = Cospan {
         forward: RewriteN::new(1, vec![up_cone.clone(), up_cone.clone()]).into(),
         backward: RewriteN::new(1, vec![down_cone.clone(), down_cone.clone()]).into(),
@@ -181,16 +172,7 @@ pub fn crossing() -> (impl Signature, DiagramN) {
             s_s.cospans().to_vec(),
             s_tensor_s_cospan.clone(),
             vec![
-                s_tensor_s_cospan.forward.clone(),
-                RewriteN::new(1, vec![down_cone.clone(), up_cone.clone()]).into(),
-                s_tensor_s_cospan.backward.clone(),
-            ],
-            vec![
-                RewriteN::new(
-                    1,
-                    vec![Cone::new(1, vec![], s_internal.clone(), vec![up], vec![])],
-                )
-                .into(),
+                RewriteN::new(1, vec![Cone::new(1, vec![], s_internal.clone(), vec![])]).into(),
                 RewriteN::new(1, vec![down_cone.clone()]).into(),
             ],
         )],
@@ -203,17 +185,8 @@ pub fn crossing() -> (impl Signature, DiagramN) {
             s_s.cospans().to_vec(),
             s_tensor_s_cospan.clone(),
             vec![
-                s_tensor_s_cospan.forward,
-                RewriteN::new(1, vec![up_cone.clone(), down_cone]).into(),
-                s_tensor_s_cospan.backward,
-            ],
-            vec![
                 RewriteN::new(1, vec![up_cone]).into(),
-                RewriteN::new(
-                    1,
-                    vec![Cone::new(1, vec![], s_internal, vec![down], vec![])],
-                )
-                .into(),
+                RewriteN::new(1, vec![Cone::new(1, vec![], s_internal, vec![])]).into(),
             ],
         )],
     )

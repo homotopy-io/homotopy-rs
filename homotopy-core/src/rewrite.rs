@@ -116,17 +116,10 @@ impl From<LabelNode> for Label {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize)]
-pub(crate) enum ConeInternal {
-    Cone0 {
-        target: Cospan,
-        regular_slice: Rewrite,
-    },
-    ConeN {
-        source: Vec<Cospan>,
-        target: Cospan,
-        regular_slices: Vec<Rewrite>,
-        singular_slices: Vec<Rewrite>,
-    },
+pub(crate) struct ConeInternal {
+    source: Vec<Cospan>,
+    target: Cospan,
+    singular_slices: Vec<Rewrite>,
 }
 
 #[derive(PartialEq, Eq, Clone, Hash)]
@@ -266,7 +259,7 @@ impl Rewrite {
         base: Diagram,
         prefix: Coordinate<SliceIndex>,
     ) -> Self {
-        use Height::{Regular, Singular};
+        use Height::Singular;
         use SliceIndex::{Boundary, Interior};
 
         use crate::Boundary::{Source, Target};
@@ -276,22 +269,16 @@ impl Rewrite {
                 Rewrite0::new(base, generator, Label::new(vec![(generator.id, prefix)])).into()
             }
             Diagram::DiagramN(base) => {
-                let mut regular_slices: Vec<_> = Default::default();
                 let mut singular_slices: Vec<_> = Default::default();
-                base.slices()
+                base.singular_slices()
                     .into_iter()
                     .enumerate()
-                    .for_each(|(i, slice)| match Height::from(i) {
-                        Singular(i) => singular_slices.push(Self::cone_over_generator(
+                    .for_each(|(i, slice)| {
+                        singular_slices.push(Self::cone_over_generator(
                             generator,
                             slice,
                             [prefix.as_slice(), &[Interior(Singular(i))]].concat(),
-                        )),
-                        Regular(i) => regular_slices.push(Self::cone_over_generator(
-                            generator,
-                            slice,
-                            [prefix.as_slice(), &[Interior(Regular(i))]].concat(),
-                        )),
+                        ));
                     });
                 RewriteN::new(
                     base.dimension(),
@@ -320,7 +307,6 @@ impl Rewrite {
                                 .concat(),
                             ),
                         },
-                        regular_slices,
                         singular_slices,
                     )],
                 )
@@ -390,6 +376,14 @@ impl Rewrite {
         match self {
             Self::Rewrite0(r) => Self::Rewrite0(r.remove_framing(id)),
             Self::RewriteN(r) => Self::RewriteN(r.remove_framing(id)),
+        }
+    }
+
+    #[must_use]
+    pub fn forget_labels(&self) -> Self {
+        match self {
+            Self::Rewrite0(r) => Self::Rewrite0(r.forget_labels()),
+            Self::RewriteN(r) => Self::RewriteN(r.forget_labels()),
         }
     }
 }
@@ -547,6 +541,13 @@ impl Rewrite0 {
             }
         }
     }
+
+    pub fn forget_labels(&self) -> Self {
+        match &self.0 {
+            None => Self(None),
+            Some((source, target, _)) => Self::new(*source, *target, Label::new(vec![])),
+        }
+    }
 }
 
 impl fmt::Debug for RewriteN {
@@ -620,7 +621,6 @@ impl RewriteN {
                         forward: Rewrite::identity(dimension - 1),
                         backward: Rewrite::identity(dimension - 1),
                     },
-                    vec![Rewrite::identity(dimension - 1)],
                     vec![],
                 )
             })
@@ -634,16 +634,10 @@ impl RewriteN {
         dimension: usize,
         source_cospans: &[Cospan],
         target_cospans: &[Cospan],
-        regular_slices: Vec<Vec<Rewrite>>,
         singular_slices: Vec<Vec<Rewrite>>,
     ) -> Self {
-        let rewrite = Self::from_slices_unsafe(
-            dimension,
-            source_cospans,
-            target_cospans,
-            regular_slices,
-            singular_slices,
-        );
+        let rewrite =
+            Self::from_slices_unsafe(dimension, source_cospans, target_cospans, singular_slices);
         if cfg!(feature = "safety-checks") {
             rewrite.check(Mode::Shallow).expect("Rewrite is malformed");
         }
@@ -656,19 +650,17 @@ impl RewriteN {
         dimension: usize,
         source_cospans: &[Cospan],
         target_cospans: &[Cospan],
-        regular_slices: Vec<Vec<Rewrite>>,
         singular_slices: Vec<Vec<Rewrite>>,
     ) -> Self {
         let mut cones = Vec::new();
         let mut index = 0;
 
-        for (target, (rss, sss)) in regular_slices.into_iter().zip(singular_slices).enumerate() {
+        for (target, sss) in singular_slices.into_iter().enumerate() {
             let size = sss.len();
             cones.push(Cone::new(
                 index,
                 source_cospans[index..index + size].to_vec(),
                 target_cospans[target].clone(),
-                rss,
                 sss,
             ));
             index += size;
@@ -708,18 +700,10 @@ impl RewriteN {
         singular_slices: &[Rewrite],
     ) -> Self {
         // try to determine regular slices by pulling back from target cospans
-        let mut cones_regular_slices: Vec<Vec<Rewrite>> = vec![vec![]; target_cospans.len()];
         let mut cones_singular_slices: Vec<Vec<Rewrite>> = vec![vec![]; target_cospans.len()];
         for (i, Split { source, target }) in mono.cones().enumerate() {
             for j in source.clone() {
                 cones_singular_slices[i].push(singular_slices[j].clone());
-            }
-            for j in source.start..=source.end {
-                cones_regular_slices[i].push(if j % 2 == source.start % 2 {
-                    target_cospans[target].forward.clone()
-                } else {
-                    target_cospans[target].backward.clone()
-                });
             }
         }
 
@@ -727,7 +711,6 @@ impl RewriteN {
             dimension,
             source_cospans,
             target_cospans,
-            cones_regular_slices,
             cones_singular_slices,
         )
     }
@@ -760,18 +743,13 @@ impl RewriteN {
             .cones()
             .iter()
             .map(|cone| {
-                Cone::new_untrimmed(
+                Cone::new(
                     cone.index,
                     cone.source().to_vec(),
                     Cospan {
                         forward: cone.target().forward.clone().orientation_transform(k),
                         backward: cone.target().backward.clone().orientation_transform(k),
                     },
-                    cone.regular_slices()
-                        .iter()
-                        .cloned()
-                        .map(|r| r.orientation_transform(k))
-                        .collect(),
                     cone.singular_slices()
                         .iter()
                         .cloned()
@@ -889,24 +867,12 @@ impl RewriteN {
                         singular_slices
                             .extend(g_cone.singular_slices()[index + 1..].iter().cloned());
 
-                        let mut regular_slices = vec![];
-                        regular_slices.extend(g_cone.regular_slices()[..index].iter().cloned());
-                        regular_slices.extend(
-                            f_cone
-                                .regular_slices()
-                                .iter()
-                                .map(|f_slice| f_slice.compose(g_slice))
-                                .collect::<Result<Vec<_>, _>>()?,
-                        );
-                        regular_slices.extend(g_cone.regular_slices()[index..].iter().cloned());
-
                         delayed_offset -= 1 - f_cone.len() as isize;
 
-                        g_cones.push(Cone::new_untrimmed(
+                        g_cones.push(Cone::new(
                             g_cone.index,
                             source,
                             g_cone.target().clone(),
-                            regular_slices,
                             singular_slices,
                         ));
                     }
@@ -1019,11 +985,6 @@ impl RewriteN {
             .cones()
             .iter()
             .map(|cone| {
-                let regular_slices = cone
-                    .regular_slices()
-                    .into_iter()
-                    .map(|slice| slice.remove_framing(id))
-                    .collect::<Vec<_>>();
                 let singular_slices = cone
                     .singular_slices()
                     .into_iter()
@@ -1035,7 +996,30 @@ impl RewriteN {
                     .map(|cs| cs.map(|r| r.remove_framing(id)))
                     .collect();
                 let target = cone.target().map(|r| r.remove_framing(id));
-                Cone::new_untrimmed(cone.index, source, target, regular_slices, singular_slices)
+                Cone::new(cone.index, source, target, singular_slices)
+            })
+            .collect();
+
+        Self::new_unsafe(self.dimension(), cones)
+    }
+
+    pub fn forget_labels(&self) -> Self {
+        let cones = self
+            .cones()
+            .iter()
+            .map(|cone| {
+                let singular_slices = cone
+                    .singular_slices()
+                    .into_iter()
+                    .map(|slice| slice.forget_labels())
+                    .collect::<Vec<_>>();
+                let source = cone
+                    .source()
+                    .iter()
+                    .map(|cs| cs.map(|r| r.forget_labels()))
+                    .collect();
+                let target = cone.target().map(|r| r.forget_labels());
+                Cone::new(cone.index, source, target, singular_slices)
             })
             .collect();
 
@@ -1066,88 +1050,63 @@ impl Cone {
         index: usize,
         source: Vec<Cospan>,
         target: Cospan,
-        regular_slices: Vec<Rewrite>,
         singular_slices: Vec<Rewrite>,
     ) -> Self {
         debug_assert_eq!(source.len(), singular_slices.len());
-        debug_assert_eq!(singular_slices.len() + 1, regular_slices.len());
 
-        if regular_slices.len() > 1 {
-            // remove flanges
-            Self::new_untrimmed(
-                index,
-                source,
-                target,
-                regular_slices[1..regular_slices.len() - 1].to_vec(),
-                singular_slices,
-            )
-        } else {
-            Self::new_untrimmed(index, source, target, regular_slices, singular_slices)
-        }
-    }
-
-    #[inline]
-    pub(crate) fn new_untrimmed(
-        index: usize,
-        source: Vec<Cospan>,
-        target: Cospan,
-        regular_slices: Vec<Rewrite>,
-        singular_slices: Vec<Rewrite>,
-    ) -> Self {
-        debug_assert_eq!(source.len(), singular_slices.len());
-        if source.is_empty() {
-            debug_assert_eq!(regular_slices.len(), 1);
-            Self {
-                index,
-                internal: CONE_FACTORY.with(|factory| {
-                    factory.borrow_mut().mk(ConeInternal::Cone0 {
-                        target,
-                        regular_slice: regular_slices.into_iter().next().unwrap(),
-                    })
-                }),
-            }
-        } else {
-            debug_assert_eq!(regular_slices.len() + 1, singular_slices.len());
-            Self {
-                index,
-                internal: CONE_FACTORY.with(|factory| {
-                    factory.borrow_mut().mk(ConeInternal::ConeN {
-                        source,
-                        target,
-                        regular_slices,
-                        singular_slices,
-                    })
-                }),
-            }
+        Self {
+            index,
+            internal: CONE_FACTORY.with(|factory| {
+                factory.borrow_mut().mk(ConeInternal {
+                    source,
+                    target,
+                    singular_slices,
+                })
+            }),
         }
     }
 
     pub(crate) fn source(&self) -> &[Cospan] {
-        match self.internal.get() {
-            ConeInternal::Cone0 { .. } => &[],
-            ConeInternal::ConeN { source, .. } => source,
-        }
+        &self.internal.get().source
     }
 
     pub(crate) fn target(&self) -> &Cospan {
-        match self.internal.get() {
-            ConeInternal::Cone0 { target, .. } | ConeInternal::ConeN { target, .. } => target,
-        }
-    }
-
-    pub(crate) fn regular_slices(&self) -> &[Rewrite] {
-        match self.internal.get() {
-            ConeInternal::Cone0 { regular_slice, .. } => std::slice::from_ref(regular_slice),
-            ConeInternal::ConeN { regular_slices, .. } => regular_slices,
-        }
+        &self.internal.get().target
     }
 
     pub(crate) fn singular_slices(&self) -> &[Rewrite] {
-        match self.internal.get() {
-            ConeInternal::Cone0 { .. } => &[],
-            ConeInternal::ConeN {
-                singular_slices, ..
-            } => singular_slices,
+        &self.internal.get().singular_slices
+    }
+
+    pub(crate) fn regular_slice(&self, height: RegularHeight) -> Rewrite {
+        debug_assert!(height <= self.len());
+
+        let (l, r) = if self.is_unit() {
+            (
+                self.target().forward.clone(),
+                self.target().backward.clone(),
+            )
+        } else if height == 0 {
+            return self.target().forward.clone();
+        } else if height == self.len() {
+            return self.target().backward.clone();
+        } else {
+            (
+                self.source()[height - 1]
+                    .backward
+                    .compose(&self.singular_slices()[height - 1])
+                    .unwrap(),
+                self.source()[height]
+                    .forward
+                    .compose(&self.singular_slices()[height])
+                    .unwrap(),
+            )
+        };
+
+        if l == r {
+            l
+        } else {
+            l.forget_labels()
         }
     }
 
@@ -1157,27 +1116,14 @@ impl Cone {
 
     #[allow(dead_code)]
     pub(crate) fn is_unit(&self) -> bool {
-        match self.internal.get() {
-            ConeInternal::Cone0 { .. } => true,
-            ConeInternal::ConeN { .. } => false,
-        }
+        self.source().is_empty()
     }
 
     pub(crate) fn is_identity(&self) -> bool {
-        match self.internal.get() {
-            ConeInternal::Cone0 { .. } => false,
-            ConeInternal::ConeN {
-                source,
-                target,
-                singular_slices,
-                ..
-            } => {
-                debug_assert_eq!(singular_slices.len(), source.len());
-                singular_slices.len() == 1
-                    && &source[0] == target
-                    && singular_slices[0].is_identity()
-            }
-        }
+        debug_assert_eq!(self.singular_slices().len(), self.source().len());
+        self.singular_slices().len() == 1
+            && &self.source()[0] == self.target()
+            && self.singular_slices()[0].is_identity()
     }
 
     pub(crate) fn len(&self) -> usize {
@@ -1190,9 +1136,8 @@ impl Cone {
                 let index = self.index + offset;
                 let source = self.source().iter().map(|c| c.pad(rest)).collect();
                 let target = self.target().pad(rest);
-                let regular_slices = self.regular_slices().iter().map(|r| r.pad(rest)).collect();
                 let singular_slices = self.singular_slices().iter().map(|r| r.pad(rest)).collect();
-                Self::new_untrimmed(index, source, target, regular_slices, singular_slices)
+                Self::new(index, source, target, singular_slices)
             }
             None => self.clone(),
         }
@@ -1210,86 +1155,6 @@ mod test {
         SliceIndex::*,
     };
 
-    #[test]
-    fn trim_flanges() {
-        let x = Generator::new(0, 0);
-        let f = Generator::new(1, 1);
-        let internal = |gen: Generator| -> Cospan {
-            Cospan {
-                forward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Source)]).into()).into(),
-                backward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Target)]).into()).into(),
-            }
-        };
-        let up = |gen: Generator, r: usize| -> Rewrite {
-            Rewrite0::new(
-                x,
-                gen,
-                (
-                    Generator::new(gen.id + 1, 2).id,
-                    vec![Boundary(Source), Interior(Regular(r))],
-                )
-                    .into(),
-            )
-            .into()
-        };
-
-        let unit_cone = Cone::new(0, vec![], internal(f), vec![up(f, 0)], vec![]);
-        assert_eq!(unit_cone.is_unit(), true);
-
-        let unit_cone_untrimmed =
-            Cone::new_untrimmed(0, vec![], internal(f), vec![up(f, 0)], vec![]);
-        assert_eq!(unit_cone, unit_cone_untrimmed);
-
-        let cone = Cone::new(
-            0,
-            vec![internal(f)],
-            internal(f),
-            vec![up(f, 0), up(f, 1)],
-            vec![Rewrite::identity(1)],
-        );
-        assert_eq!(cone.is_unit(), false);
-
-        let cone_untrimmed = Cone::new_untrimmed(
-            0,
-            vec![internal(f)],
-            internal(f),
-            vec![],
-            vec![Rewrite::identity(1)],
-        );
-        assert_eq!(cone, cone_untrimmed);
-    }
-
-    fn correct_number_of_slices(rewrite: &RewriteN) {
-        for cone in rewrite.cones() {
-            if cone.is_unit() {
-                assert_eq!(cone.regular_slices().len(), 1);
-                assert_eq!(cone.singular_slices().len(), 0);
-            } else {
-                assert_eq!(
-                    cone.regular_slices().len() + 1,
-                    cone.singular_slices().len()
-                );
-            }
-        }
-    }
-
-    #[test]
-    fn monoid_correct_number_of_slices() {
-        let (_sig, monoid) = two_monoid();
-        for Cospan { forward, backward } in monoid.cospans() {
-            correct_number_of_slices(forward.try_into().unwrap());
-            correct_number_of_slices(backward.try_into().unwrap());
-        }
-    }
-
-    #[test]
-    fn scalar_correct_number_of_slices() {
-        let (_sig, scalar) = scalar();
-        for Cospan { forward, backward } in scalar.cospans() {
-            correct_number_of_slices(forward.try_into().unwrap());
-            correct_number_of_slices(backward.try_into().unwrap());
-        }
-    }
     #[test]
     fn zero_rewrite_compose() {
         let x = Generator::new(0, 0);
@@ -1338,19 +1203,13 @@ mod test {
             .into()
         };
 
-        let first = RewriteN::from_slices(
-            1,
-            &[],
-            &[internal(f), internal(g)],
-            vec![vec![up(f, 0)], vec![up(g, 0)]],
-            vec![vec![], vec![]],
-        );
+        let first =
+            RewriteN::from_slices(1, &[], &[internal(f), internal(g)], vec![vec![], vec![]]);
 
         let second = RewriteN::from_slices(
             1,
             &[internal(f), internal(g)],
             &[internal(f), internal(h)],
-            vec![vec![up(f, 0), up(f, 1)], vec![up(h, 0), up(h, 1)]],
             vec![
                 vec![Rewrite0::identity().into()],
                 vec![Rewrite0::new(
@@ -1362,24 +1221,8 @@ mod test {
             ],
         );
 
-        let expected = RewriteN::from_slices(
-            1,
-            &[],
-            &[internal(f), internal(h)],
-            vec![
-                vec![up(f, 0)],
-                vec![Rewrite0::new(
-                    x,
-                    h,
-                    Label::new(vec![
-                        (x_to_g.id, vec![Boundary(Source), Interior(Regular(0))]),
-                        (g_to_h.id, vec![Boundary(Source), Interior(Singular(0))]),
-                    ]),
-                )
-                .into()],
-            ],
-            vec![vec![], vec![]],
-        );
+        let expected =
+            RewriteN::from_slices(1, &[], &[internal(f), internal(h)], vec![vec![], vec![]]);
 
         let actual = RewriteN::compose(&first, &second).unwrap();
 
@@ -1417,7 +1260,6 @@ mod test {
             1,
             &[internal(f)],
             &[internal(g), internal(h)],
-            vec![vec![up(g, 0), up(g, 1)], vec![up(h, 0)]],
             vec![
                 vec![Rewrite0::new(
                     f,
@@ -1429,24 +1271,8 @@ mod test {
             ],
         );
 
-        let expected = RewriteN::from_slices(
-            1,
-            &[],
-            &[internal(g), internal(h)],
-            vec![
-                vec![Rewrite0::new(
-                    x,
-                    g,
-                    Label::new(vec![
-                        (x_to_f.id, vec![Boundary(Source), Interior(Regular(0))]),
-                        (f_to_g.id, vec![Boundary(Source), Interior(Singular(0))]),
-                    ]),
-                )
-                .into()],
-                vec![up(h, 0)],
-            ],
-            vec![vec![], vec![]],
-        );
+        let expected =
+            RewriteN::from_slices(1, &[], &[internal(g), internal(h)], vec![vec![], vec![]]);
 
         let actual = RewriteN::compose(&first, &second).unwrap();
 
@@ -1494,11 +1320,6 @@ mod test {
             &[internal(g), internal(g), internal(f), internal(f)],
             &[internal(g), internal(g), internal(f)],
             vec![
-                vec![up(g, 0), up(g, 1), up(g, 2)],
-                vec![up(g, 0), up(g, 1)],
-                vec![up(f, 0), up(f, 1)],
-            ],
-            vec![
                 vec![Rewrite::identity(0), Rewrite::identity(0)],
                 vec![f_to_g.clone()],
                 vec![Rewrite::identity(0)],
@@ -1513,21 +1334,13 @@ mod test {
                         0,
                         vec![internal(g), internal(g)],
                         internal(g),
-                        vec![up(g, 0), up(g, 1), up(g, 2)],
                         vec![Rewrite::identity(0), Rewrite::identity(0)]
                     ),
-                    Cone::new(
-                        2,
-                        vec![internal(f)],
-                        internal(g),
-                        vec![up(g, 0), up(g, 1)],
-                        vec![f_to_g.clone()]
-                    ),
+                    Cone::new(2, vec![internal(f)], internal(g), vec![f_to_g.clone()]),
                     Cone::new(
                         3,
                         vec![internal(f)],
                         internal(f),
-                        vec![up(f, 0), up(f, 1)],
                         vec![Rewrite::identity(0)]
                     )
                 ]
@@ -1537,11 +1350,6 @@ mod test {
             1,
             &[internal(g), internal(g), internal(f)],
             &[internal(f), internal(f), internal(g)],
-            vec![
-                vec![up(f, 0), up(f, 1)],
-                vec![up(f, 0), up(f, 1)],
-                vec![up(g, 0), up(g, 1)],
-            ],
             vec![
                 vec![g_to_f.clone()],
                 vec![g_to_f.clone()],

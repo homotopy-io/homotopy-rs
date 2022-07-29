@@ -91,11 +91,6 @@ impl Cospan {
                     forward: self.forward.clone().orientation_transform(0), // needs to be orientation 0
                     backward: self.forward.clone().orientation_transform(0), // needs to be orientation 0
                 },
-                vec![
-                    self.forward.clone().orientation_transform(0), // needs to be orientation 0
-                    self.backward.clone().orientation_transform(0), // needs to be orientation 0
-                    self.forward.clone().orientation_transform(0), // needs to be orientation 0
-                ],
                 vec![Rewrite::identity(self.forward.dimension()); 2],
             )],
         )
@@ -106,10 +101,9 @@ impl Cospan {
                 0,
                 Default::default(),
                 Cospan {
-                    forward: self.forward.clone().orientation_transform(0),  // needs to be orientation 0
+                    forward: self.forward.clone().orientation_transform(0), // needs to be orientation 0
                     backward: self.forward.clone().orientation_transform(0), // needs to be orientation 0
                 },
-                vec![self.forward.clone().orientation_transform(0)], // needs to be orientation 0
                 Default::default(),
             )],
         )
@@ -197,7 +191,6 @@ impl DiagramN {
                         i,
                         Default::default(),
                         cs.clone(),
-                        vec![cs.forward.clone()],
                         Default::default(),
                     )],
                 )
@@ -246,11 +239,6 @@ fn expand_base_singular(
                 ],
                 cospan.clone(),
                 vec![
-                    forward.slice(h1),
-                    expansion.regular_slice.into(),
-                    backward.slice(h1),
-                ],
-                vec![
                     expansion.singular_slices[0].clone().into(),
                     expansion.singular_slices[1].clone().into(),
                 ],
@@ -275,11 +263,6 @@ fn expand_base_singular(
                 ],
                 cospan.clone(),
                 vec![
-                    forward.slice(h1),
-                    expansion.regular_slice.into(),
-                    backward.slice(h1),
-                ],
-                vec![
                     expansion.singular_slices[1].clone().into(),
                     expansion.singular_slices[0].clone().into(),
                 ],
@@ -297,7 +280,6 @@ fn expand_base_singular(
 /// original diagram (the other two are given by input data)
 struct ExpandedCospan {
     rewrites: [RewriteN; 4],
-    regular_slice: RewriteN,
     singular_slices: [RewriteN; 2],
 }
 
@@ -416,17 +398,8 @@ fn expand_cospan(
         ),
     };
 
-    let new_regular_slice = {
-        let mut cones = new_backward0.cones().to_vec();
-        if let Some(index) = backward_index {
-            cones.insert(index, new_forward1.cones()[0].clone());
-        }
-        RewriteN::new(forward.dimension(), cones)
-    };
-
     Ok(ExpandedCospan {
         rewrites: [new_forward0, new_backward0, new_forward1, new_backward1],
-        regular_slice: new_regular_slice,
         singular_slices: [new_singular_slice0, new_singular_slice1],
     })
 }
@@ -466,10 +439,6 @@ pub(crate) fn expand_propagate(
                 height,
                 vec![Cospan { forward, backward }],
                 target_cospan.clone(),
-                vec![
-                    target_cospan.forward.clone(),
-                    target_cospan.backward.clone(),
-                ],
                 vec![expansion],
             )],
         ),
@@ -566,11 +535,6 @@ pub(crate) fn expand_propagate(
                         },
                     ],
                     target_cospan.clone(),
-                    vec![
-                        target_cospan.forward.clone(),
-                        expansion,
-                        target_cospan.backward.clone(),
-                    ],
                     vec![
                         Rewrite::identity(diagram.dimension() - 1),
                         Rewrite::identity(diagram.dimension() - 1),

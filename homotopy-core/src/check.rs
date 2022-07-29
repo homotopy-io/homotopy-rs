@@ -4,10 +4,8 @@ use homotopy_common::hash::FastHashMap;
 use thiserror::Error;
 
 use crate::{
-    common::Mode,
-    diagram::RewritingError,
-    rewrite::{CompositionError, ConeInternal},
-    Cospan, Diagram, DiagramN, Direction, Height, Rewrite, Rewrite0, RewriteN,
+    common::Mode, diagram::RewritingError, rewrite::CompositionError, Cospan, Diagram, DiagramN,
+    Direction, Height, Rewrite, Rewrite0, RewriteN,
 };
 
 thread_local! {
@@ -164,79 +162,59 @@ impl RewriteN {
         }
 
         let mut errors: Vec<MalformedRewrite> = Vec::new();
-        for (i, cone) in self.cones().iter().enumerate() {
-            if mode == Mode::Deep {
-                // Check that the regular slices are well-formed.
-                for (j, slice) in cone.regular_slices().iter().enumerate() {
-                    if let Err(e) = slice.check_worker(mode) {
-                        errors.push(MalformedRewrite::RegularSlice(i, j, e));
-                    }
+        for cone in self.cones() {
+            if cone.len() == 0 {
+                if !cone.target().forward.agrees_with(&cone.target().backward) {
+                    errors.push(MalformedRewrite::NotSingularity(cone.index));
                 }
-
-                // Check that the singular slices are well-formed.
-                for (j, slice) in cone.singular_slices().iter().enumerate() {
-                    if let Err(e) = slice.check_worker(mode) {
-                        errors.push(MalformedRewrite::SingularSlice(i, j, e));
-                    }
-                }
-            }
-
-            // Check commutativity conditions.
-            match cone.internal.get() {
-                ConeInternal::Cone0 {
-                    target,
-                    regular_slice,
-                } => {
-                    if !regular_slice.agrees_with(&target.forward) {
-                        errors.push(MalformedRewrite::NotCommutativeUnit(i));
-                    }
-
-                    if !regular_slice.agrees_with(&target.backward) {
-                        errors.push(MalformedRewrite::NotCommutativeUnit(i));
-                    }
-                }
-                ConeInternal::ConeN {
-                    source,
-                    target,
-                    regular_slices,
-                    singular_slices,
-                } => {
-                    match source
-                        .first()
-                        .unwrap()
-                        .forward
-                        .compose(&singular_slices.first().unwrap())
-                    {
-                        Ok(f) if f.agrees_with(&target.forward) => { /* no error */ }
-                        Ok(_) => errors.push(MalformedRewrite::NotCommutative(i, 0)),
-                        Err(ce) => errors.push(ce.into()),
-                    };
-
-                    for (j, regular_slice) in regular_slices.iter().enumerate() {
-                        match source[j].backward.compose(&singular_slices[j]) {
-                            Ok(f) if f.agrees_with(&regular_slice) => { /* no error */ }
-                            Ok(_) => errors.push(MalformedRewrite::NotCommutative(i, j + 1)),
-                            Err(ce) => errors.push(ce.into()),
-                        }
-
-                        match source[j + 1].forward.compose(&singular_slices[j + 1]) {
-                            Ok(f) if f.agrees_with(&regular_slice) => { /* no error */ }
-                            Ok(_) => errors.push(MalformedRewrite::NotCommutative(i, j + 1)),
-                            Err(ce) => errors.push(ce.into()),
+            } else {
+                // Check that the subslices are well-formed.
+                if mode == Mode::Deep {
+                    for (i, slice) in cone.singular_slices().iter().enumerate() {
+                        if let Err(e) = slice.check_worker(mode) {
+                            errors.push(MalformedRewrite::Slice(i, e));
                         }
                     }
+                }
 
-                    match source
-                        .last()
-                        .unwrap()
+                // Check that the squares commute.
+                let len = cone.len();
+
+                match cone.source()[0].forward.compose(&cone.singular_slices()[0]) {
+                    Ok(f) if f.agrees_with(&cone.target().forward) => { /* no error */ }
+                    Ok(_) => errors.push(MalformedRewrite::NotCommutativeLeft(cone.index)),
+                    Err(ce) => errors.push(ce.into()),
+                };
+
+                for i in 0..len - 1 {
+                    let f = cone.source()[i]
                         .backward
-                        .compose(&singular_slices.last().unwrap())
-                    {
-                        Ok(f) if f.agrees_with(&target.backward) => { /* no error */ }
-                        Ok(_) => errors.push(MalformedRewrite::NotCommutative(i, cone.len())),
-                        Err(ce) => errors.push(ce.into()),
-                    };
+                        .compose(&cone.singular_slices()[i]);
+                    let g = cone.source()[i + 1]
+                        .forward
+                        .compose(&cone.singular_slices()[i + 1]);
+                    match (f, g) {
+                        (Ok(f), Ok(g)) if f.agrees_with(&g) => { /* no error */ }
+                        (Ok(_), Ok(_)) => errors.push(MalformedRewrite::NotCommutativeMiddle(
+                            cone.index + i,
+                            cone.index + i + 1,
+                        )),
+                        (Ok(_), Err(ce)) | (Err(ce), Ok(_)) => errors.push(ce.into()),
+                        (Err(f_ce), Err(g_ce)) => {
+                            errors.push(f_ce.into());
+                            errors.push(g_ce.into());
+                        }
+                    }
                 }
+
+                match cone.source()[len - 1]
+                    .backward
+                    .compose(&cone.singular_slices()[len - 1])
+                {
+                    Ok(f) if f.agrees_with(&cone.target().backward) => { /* no error */ }
+                    Ok(_) => errors.push(MalformedRewrite::NotCommutativeRight(len - 1)),
+                    Err(ce) => errors.push(ce.into()),
+                };
             }
         }
 
@@ -267,17 +245,20 @@ pub enum MalformedRewrite {
     #[error(transparent)]
     Composition(#[from] CompositionError),
 
-    #[error("regular slice {1} of cone {0} is malformed: {2:?}")]
-    RegularSlice(usize, usize, Vec<MalformedRewrite>),
+    #[error("slice {0:?} is malformed: {1:?}")]
+    Slice(usize, Vec<MalformedRewrite>),
 
-    #[error("singular slice {1} of cone {0} is malformed: {2:?}")]
-    SingularSlice(usize, usize, Vec<MalformedRewrite>),
+    #[error("slice {0} of target cannot be a singularity.")]
+    NotSingularity(usize),
 
-    #[error("unit cone {0} fails to be commutative.")]
-    NotCommutativeUnit(usize),
+    #[error("square to the left of slice {0} does not commute.")]
+    NotCommutativeLeft(usize),
 
-    #[error("cone {0} fails to be commutative at index {1}.")]
-    NotCommutative(usize, usize),
+    #[error("square to the right of slice {0} does not commute.")]
+    NotCommutativeRight(usize),
+
+    #[error("square between slices {0} and {1} does not commute.")]
+    NotCommutativeMiddle(usize, usize),
 }
 
 impl Rewrite {
@@ -313,8 +294,6 @@ impl RewriteN {
                 && std::iter::zip(f_cone.source(), g_cone.source())
                     .all(|(f_cs, g_cs)| f_cs.agrees_with(g_cs))
                 && f_cone.target().agrees_with(g_cone.target())
-                && std::iter::zip(f_cone.regular_slices(), g_cone.regular_slices())
-                    .all(|(f_slice, g_slice)| f_slice.agrees_with(g_slice))
                 && std::iter::zip(f_cone.singular_slices(), g_cone.singular_slices())
                     .all(|(f_slice, g_slice)| f_slice.agrees_with(g_slice))
         })

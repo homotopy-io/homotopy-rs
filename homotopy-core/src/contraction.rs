@@ -156,19 +156,10 @@ fn contract_base(
     graph.add_edge(r1, s1, cospan1.forward.clone());
     graph.add_edge(r2, s1, cospan1.backward.clone());
     let result = collapse(&graph)?;
-    let mut regular_slices = vec![];
-    let mut singular_slices = vec![];
-    for (i, r) in result.legs {
-        if i.index() % 2 == 0 {
-            regular_slices.push(r);
-        } else {
-            singular_slices.push(r);
-        }
-    }
 
     let cospan = Cospan {
-        forward: regular_slices[0].clone(),
-        backward: regular_slices[2].clone(),
+        forward: result.legs[r0].clone(),
+        backward: result.legs[r2].clone(),
     };
 
     let contract = RewriteN::new(
@@ -177,8 +168,7 @@ fn contract_base(
             height,
             vec![cospan0.clone(), cospan1.clone()],
             cospan.clone(),
-            regular_slices,
-            singular_slices,
+            vec![result.legs[s0].clone(), result.legs[s1].clone()],
         )],
     );
 
@@ -187,7 +177,7 @@ fn contract_base(
             // Coarse smoothing
             // A cospan is smoothable if the forward and backward rewrites are identical and redundant.
             let cone = (cospan.forward == cospan.backward && cospan.forward.is_redundant())
-                .then(|| Cone::new(height, vec![], cospan.clone(), vec![cospan.forward], vec![]));
+                .then(|| Cone::new(height, vec![], cospan.clone(), vec![]));
             RewriteN::new(diagram.dimension(), cone.into_iter().collect())
         }
         Diagram::DiagramN(colimit) => {
@@ -196,9 +186,9 @@ fn contract_base(
             let forward: &RewriteN = (&cospan.forward).try_into().unwrap();
             let backward: &RewriteN = (&cospan.backward).try_into().unwrap();
 
-            let mut s_cones = vec![];
             let mut f_cones = vec![];
             let mut b_cones = vec![];
+            let mut smooth_cones = vec![];
             for height in 0..colimit.size() {
                 match (
                     forward.cone_over_target(height),
@@ -209,7 +199,7 @@ fn contract_base(
                     (Some(f_cone), None) => f_cones.push(f_cone.clone()),
                     (Some(f_cone), Some(b_cone)) => {
                         if f_cone.internal == b_cone.internal && f_cone.is_redundant() {
-                            s_cones.push(f_cone.clone());
+                            smooth_cones.push(f_cone.clone());
                         } else {
                             f_cones.push(f_cone.clone());
                             b_cones.push(b_cone.clone());
@@ -218,7 +208,6 @@ fn contract_base(
                 }
             }
 
-            let smooth = RewriteN::new(colimit.dimension(), s_cones).into();
             let smooth_cospan = Cospan {
                 forward: RewriteN::new(colimit.dimension(), f_cones).into(),
                 backward: RewriteN::new(colimit.dimension(), b_cones).into(),
@@ -226,10 +215,15 @@ fn contract_base(
 
             let cone = if smooth_cospan.is_identity() {
                 // Decrease diagram height by 1.
-                Cone::new_untrimmed(height, vec![], cospan, vec![smooth], vec![])
+                Cone::new(height, vec![], cospan, vec![])
             } else {
                 // Keep diagram height the same.
-                Cone::new_untrimmed(height, vec![smooth_cospan], cospan, vec![], vec![smooth])
+                Cone::new(
+                    height,
+                    vec![smooth_cospan],
+                    cospan,
+                    vec![RewriteN::new(colimit.dimension(), smooth_cones).into()],
+                )
             };
 
             RewriteN::new(diagram.dimension(), vec![cone])
@@ -269,7 +263,6 @@ fn contract_in_path(
                                 forward: contract_base.clone().into(),
                                 backward: contract_base.clone().into(),
                             },
-                            vec![contract_base.into()],
                             vec![],
                         )],
                     );
@@ -300,7 +293,6 @@ fn contract_in_path(
                                 forward: forward.clone(),
                                 backward: backward.clone(),
                             },
-                            vec![forward, backward],
                             vec![contract_base],
                         )],
                     );
@@ -770,10 +762,8 @@ fn collapse_recursive<Ix: IndexType>(
     );
 
     let dimension = colimit.dimension();
-    let (regular_slices_by_height, singular_slices_by_height) = {
-        // build (regular_slices, singular_slices) for each node in graph
-        let mut regular_slices_by_height: IdxVec<NodeIndex<Ix>, Vec<Vec<Rewrite>>> =
-            IdxVec::splat(Vec::with_capacity(cocones.len()), graph.node_count());
+    let singular_slices_by_height = {
+        // build singular_slices for each node in graph
         let mut singular_slices_by_height: IdxVec<NodeIndex<Ix>, Vec<Vec<Rewrite>>> =
             IdxVec::splat(Vec::with_capacity(cocones.len()), graph.node_count());
         for (_, cocone, _, restriction_to_exploded) in cocones {
@@ -782,33 +772,30 @@ fn collapse_recursive<Ix: IndexType>(
                 exploded[restriction_to_exploded[*restriction_ix]].0 .0
             }) {
                 // each rewrite that will go into legs[graph_ix] from cocone
-                let mut cone_regular_slices: Vec<Rewrite> = Default::default();
                 let mut cone_singular_slices: Vec<Rewrite> = Default::default();
                 for (restriction_ix, slice) in slices {
-                    match exploded[restriction_to_exploded[restriction_ix]].0 .1 {
-                        Height::Regular(_) => cone_regular_slices.push(slice.clone()),
-                        Height::Singular(_) => cone_singular_slices.push(slice.clone()),
+                    if let Height::Singular(_) =
+                        exploded[restriction_to_exploded[restriction_ix]].0 .1
+                    {
+                        cone_singular_slices.push(slice.clone());
                     }
                 }
-                regular_slices_by_height[graph_ix].push(cone_regular_slices);
                 singular_slices_by_height[graph_ix].push(cone_singular_slices);
             }
         }
-        (regular_slices_by_height, singular_slices_by_height)
+        singular_slices_by_height
     };
-    let legs = regular_slices_by_height
+    let legs = singular_slices_by_height
         .into_raw()
         .into_iter()
-        .zip(singular_slices_by_height.into_raw())
         .enumerate()
-        .map(|(n, (regular_slices, singular_slices))| {
+        .map(|(n, singular_slices)| {
             RewriteN::from_slices(
                 dimension,
                 <&DiagramN>::try_from(&graph[NodeIndex::new(n)].0)
                     .unwrap()
                     .cospans(),
                 colimit.cospans(),
-                regular_slices,
                 singular_slices,
             )
             .into()
@@ -832,9 +819,8 @@ impl Rewrite {
 
 impl Cone {
     fn is_redundant(&self) -> bool {
-        self.singular_slices()
-            .iter()
-            .chain(self.regular_slices().iter())
-            .all(Rewrite::is_redundant)
+        self.target().forward.is_redundant()
+            && self.target().backward.is_redundant()
+            && self.singular_slices().iter().all(Rewrite::is_redundant)
     }
 }

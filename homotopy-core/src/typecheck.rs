@@ -339,7 +339,6 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
                     cone.index - rewrite.regular_image(*height),
                     restricted_source,
                     restricted_target,
-                    todo!(),
                     restricted_slices,
                 ));
             }

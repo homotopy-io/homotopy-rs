@@ -35,7 +35,7 @@ pub struct Store {
     rewrites: BTreeMap<Key<Rewrite>, RewriteSer>,
 
     #[serde(skip_serializing, skip_deserializing)]
-    cone_keys: BiHashMap<ConeInternal, Key<Cone>>,
+    cone_keys: BiHashMap<Cone, Key<Cone>>,
     cones: BTreeMap<Key<Cone>, ConeSer>,
 
     #[serde(skip_serializing, skip_deserializing)]
@@ -111,7 +111,7 @@ impl Store {
     }
 
     fn pack_cone(&mut self, cone: &Cone) -> ConeWithIndexSer {
-        if let Some(key) = self.cone_keys.get_by_left(&cone.internal) {
+        if let Some(key) = self.cone_keys.get_by_left(cone) {
             return ConeWithIndexSer {
                 index: cone.index as u32,
                 cone: *key,
@@ -125,12 +125,6 @@ impl Store {
                 .map(|cospan| self.pack_cospan(cospan))
                 .collect(),
             target: self.pack_cospan(cone.target()),
-            regular_slices: {
-                cone.regular_slices()
-                    .iter()
-                    .map(|slice| self.pack_rewrite(slice))
-                    .collect()
-            },
             singular_slices: {
                 cone.singular_slices()
                     .iter()
@@ -140,7 +134,7 @@ impl Store {
         };
 
         let key: Key<Cone> = serialized.key();
-        self.cone_keys.insert(cone.internal.get().clone(), key);
+        self.cone_keys.insert(cone.clone(), key);
         self.cones.insert(key, serialized);
         ConeWithIndexSer {
             index: cone.index as u32,
@@ -232,29 +226,13 @@ impl Store {
         self.cone_keys
             .get_by_right(&key)
             .cloned()
-            .map(|c| match c {
-                ConeInternal::Cone0 {
-                    target,
-                    regular_slice,
-                } => Cone::new_untrimmed(
+            .map(|c| {
+                Cone::new(
                     cone.index as usize,
-                    vec![],
-                    target,
-                    vec![regular_slice],
-                    vec![],
-                ),
-                ConeInternal::ConeN {
-                    source,
-                    target,
-                    regular_slices,
-                    singular_slices,
-                } => Cone::new_untrimmed(
-                    cone.index as usize,
-                    source,
-                    target,
-                    regular_slices,
-                    singular_slices,
-                ),
+                    c.source().to_vec(),
+                    c.target().clone(),
+                    c.singular_slices().to_vec(),
+                )
             })
             .or_else(|| {
                 let serialized = self.cones.get(&cone.cone)?.clone();
@@ -264,26 +242,20 @@ impl Store {
                     .map(|cospan| self.unpack_cospan(&cospan))
                     .collect::<Option<_>>()?;
                 let target = self.unpack_cospan(&serialized.target)?;
-                let regular_slices = serialized
-                    .regular_slices
-                    .into_iter()
-                    .map(|slice| self.unpack_rewrite(slice))
-                    .collect::<Option<_>>()?;
                 let singular_slices = serialized
                     .singular_slices
                     .into_iter()
                     .map(|slice| self.unpack_rewrite(slice))
                     .collect::<Option<_>>()?;
-                let cone = Some(Cone::new_untrimmed(
+                let cone = Some(Cone::new(
                     cone.index as usize,
                     source,
                     target,
-                    regular_slices,
                     singular_slices,
                 ));
                 cone.as_ref()
                     .cloned()
-                    .map(|c| self.cone_keys.insert(c.internal.get().clone(), key));
+                    .map(|c| self.cone_keys.insert(c.clone(), key));
                 cone
             })
     }
@@ -377,7 +349,6 @@ struct ConeWithIndexSer {
 struct ConeSer {
     source: Vec<CospanSer>,
     target: CospanSer,
-    regular_slices: Vec<Key<Rewrite>>,
     singular_slices: Vec<Key<Rewrite>>,
 }
 
@@ -391,10 +362,6 @@ impl Hash for ConeSer {
         }
 
         self.target.hash(state);
-
-        for slice in &self.regular_slices {
-            slice.hash(state);
-        }
 
         for slice in &self.singular_slices {
             slice.hash(state);

@@ -240,7 +240,7 @@ where
                                 SliceIndex::Interior(Height::Regular(preimage.start)),
                                 ti,
                                 ExternalRewrite::UnitSlice,
-                                cone.unwrap().regular_slices()[0].clone(),
+                                cone.unwrap().regular_slice(0).clone(),
                             );
                         } else {
                             let Range { start, end } = preimage;
@@ -268,7 +268,8 @@ where
                                         SliceIndex::Interior(Height::Regular(source_height + 1)),
                                         ti,
                                         ExternalRewrite::RegularSlice(source_height + 1),
-                                        cone.unwrap().regular_slices()[source_height - start]
+                                        cone.unwrap()
+                                            .regular_slice(source_height - start + 1)
                                             .clone(),
                                     );
                                 }

@@ -122,7 +122,6 @@ pub fn antipushout(
                             s.dimension(),
                             &[],
                             a.cospans(),
-                            todo!(),
                             vec![vec![]; a.size()],
                         );
 
@@ -130,7 +129,6 @@ pub fn antipushout(
                             s.dimension(),
                             &[],
                             b.cospans(),
-                            todo!(),
                             vec![vec![]; b.size()],
                         );
 
@@ -334,23 +332,11 @@ fn factorize_inc_helper(
                         for _ in start..end {
                             slices.push(ps.remove(0));
                         }
-                        Cone::new(
-                            start,
-                            source_cospans,
-                            middle_cospan.clone(),
-                            todo!(),
-                            slices,
-                        )
+                        Cone::new(start, source_cospans, middle_cospan.clone(), slices)
                     });
                 }
 
-                q_cones.push(Cone::new(
-                    ti,
-                    vec![middle_cospan],
-                    target_cospan,
-                    todo!(),
-                    vec![q],
-                ));
+                q_cones.push(Cone::new(ti, vec![middle_cospan], target_cospan, vec![q]));
             }
 
             (

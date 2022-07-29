@@ -91,7 +91,6 @@ impl Degeneracy {
             middle.dimension(),
             middle.cospans(),
             target.cospans(),
-            todo!(),
             rewrite_slices,
         );
 
@@ -342,7 +341,6 @@ fn normalize_relative(diagram: &Diagram, sink: &[SinkArrow], mode: Normalization
                 diagram.dimension(),
                 source.cospans(),
                 &normalized_cospans,
-                todo!(),
                 (0..diagram.size())
                     .filter(|height| !trivial.iter().any(|t| t == height))
                     .map(|target_height| {
