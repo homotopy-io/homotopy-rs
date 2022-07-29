@@ -177,7 +177,6 @@ fn render_item(props: &Props, node: Node) -> Html {
 
 fn render_children(props: &Props, node: Node) -> Html {
     let contents = props.signature.as_tree();
-    let root = contents.root();
     contents.with(node, move |n| match n.inner() {
         SignatureItem::Folder(_, true) => {
             let children = n.children().map(|child| render_tree(props, child));
