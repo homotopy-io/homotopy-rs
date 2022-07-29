@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1659021850036,
+  "lastUpdate": 1659101302284,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -38219,6 +38219,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 27.273,
             "range": "+/- 0.034",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "71709c4bfb6195de02bb89ee46e50aac3ea8ab82",
+          "message": "HiGHS integration (#509) (#635)\n\n* HiGHS integration, initial commit with patched flake by Nick.\r\n\r\n* HiGHS integration, made HiGHS closure accessible from global scope, minor changes to flake.\r\n\r\n* HiGHS integration, exposed HiGHS methods in global scope for easier Rust bindings.\r\n\r\n* HiGHS integration, switched to cwrap where needed.\r\n\r\n* HiGHS integration, major cleanup, good_lp working, bindings moved out of index.html.\r\n\r\n* HiGHS integration, bindings cleanup, moved glue code to post-js and switched to ES6 modules for uniformity with homotopy_web.wasm.\r\n\r\n* HiGHS integration, fixed minification bug.\r\n\r\nCo-authored-by: regular-citizen <chara@sarti.me>",
+          "timestamp": "2022-07-29T13:16:33+01:00",
+          "tree_id": "0e3d18077b5d9f25c5311af6d79cee6b7f1ab2a5",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/71709c4bfb6195de02bb89ee46e50aac3ea8ab82"
+        },
+        "date": 1659101291862,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.6771,
+            "range": "+/- 0.062",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 13.929,
+            "range": "+/- 0.236",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 61.489,
+            "range": "+/- 0.968",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 398.84,
+            "range": "+/- 4.400",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 3.2848,
+            "range": "+/- 0.025",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 32.785,
+            "range": "+/- 0.232",
             "unit": "s"
           }
         ]
