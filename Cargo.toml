@@ -17,3 +17,8 @@ opt-level = 3
 
 [workspace.metadata.nix]
 cachix = { name = "homotopy-io", key = "homotopy-io.cachix.org-1:W30ZjMFglzQwLtem4DQXbFqaMqhsee53pGvQPp82kCc=" }
+
+# Patches need to be in workspace root
+[patch.crates-io]
+highs = { git = "https://github.com/regular-citizen/highs" }
+

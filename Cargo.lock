@@ -655,6 +655,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "good_lp"
+version = "1.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b51d78cbb7b734379eea7f811ddb33b2b13defefa1dab50068d7bc7f781a3056"
+dependencies = [
+ "fnv",
+ "highs",
+]
+
+[[package]]
 name = "half"
 version = "1.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -682,6 +692,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62b467343b94ba476dcb2500d242dadbb39557df889310ac77c5d99100aaac33"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "highs"
+version = "1.2.1"
+source = "git+https://github.com/regular-citizen/highs#bb56bf5c7a200bf67fdfcbaad6e48fa693937481"
+dependencies = [
+ "js-sys",
+ "log",
+ "wasm-bindgen",
+ "wasm-logger",
 ]
 
 [[package]]
@@ -766,6 +787,8 @@ dependencies = [
  "futures",
  "gloo 0.8.0",
  "gloo-timers",
+ "good_lp",
+ "highs",
  "homotopy-common",
  "homotopy-core",
  "homotopy-graphics",

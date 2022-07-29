@@ -126,6 +126,117 @@
             '');
           };
         };
+        packages = {
+          highs_exported_methods = pkgs.writeTextFile {
+            name = "exported_functions.json";
+            text =
+            ''
+              [
+                '_malloc',
+                '_free',
+                '_Highs_call',
+                '_Highs_create',
+                '_Highs_run',
+                '_Highs_destroy',
+                '_Highs_getModelStatus',
+                '_Highs_getSolution',
+                '_Highs_getNumCols',
+                '_Highs_getNumRows',
+                '_Highs_changeObjectiveSense',
+                '_Highs_passMip',
+                '_Highs_passLp'
+                ,'_Highs_setStringOptionValue',
+                '_Highs_setIntOptionValue',
+                '_Highs_setDoubleOptionValue',
+                '_Highs_setBoolOptionValue'
+              ]
+            '';
+          };
+          highs_postjs = pkgs.writeTextFile {
+            name = "post.js";
+            text =
+            ''
+              window.Highs_call = Module._Highs_call;
+              window.Highs_changeObjectiveSense = Module._Highs_changeObjectiveSense;
+              window.Highs_create = Module._Highs_create;
+              window.Highs_destroy = Module._Highs_destroy;
+              window.Highs_getModelStatus = Module._Highs_getModelStatus;
+              window.Highs_getNumCols = Module._Highs_getNumCols;
+              window.Highs_getNumRows = Module._Highs_getNumRows;
+              window.Highs_getSolution = Module._Highs_getSolution;
+              window.Highs_run = Module._Highs_run;
+              window.Highs_setBoolOptionValue = Module.cwrap("Highs_setBoolOptionValue","number",["number", "string", "number"]);
+              window.Highs_setDoubleOptionValue = Module.cwrap("Highs_setDoubleOptionValue","number",["number", "string", "number"]);
+              window.Highs_setIntOptionValue = Module.cwrap("Highs_setIntOptionValue","number",["number", "string", "number"]);
+              window.Highs_setStringOptionValue = Module.cwrap("Highs_setIntOptionValue","number",["number", "string", "number"]);
+              window.Highs_passLp = Module.cwrap("Highs_passLp","number",Array(7).fill("number").concat(Array(8).fill("array")));
+              window.Highs_passMip = Module.cwrap("Highs_passMip","number",Array(7).fill("number").concat(Array(8).fill("array")));
+              window.Highs_getSolution = function(h,c,r) {
+                let ptr0=Module._malloc(c+8);let ptr1=Module._malloc(c+8);let ptr2=Module._malloc(r+8);let ptr3=Module._malloc(r+8);
+                let ret=Module._Highs_getSolution(h,ptr0+8,ptr1+8,ptr2+8,ptr3+8);
+                let cv=new Uint8Array(Module.HEAPU8.buffer,ptr0+8,c);
+                let cd=new Uint8Array(Module.HEAPU8.buffer,ptr1+8,c);
+                let rv=new Uint8Array(Module.HEAPU8.buffer,ptr2+8,r);
+                let rd=new Uint8Array(Module.HEAPU8.buffer,ptr3+8,r);
+                Module._free(ptr0);Module._free(ptr1);Module._free(ptr2);Module._free(ptr3);
+                return {"ret": ret, "cv": cv, "cd": cd, "rv": rv, "rd": rd};
+              };
+            '';
+          };
+          highs = pkgs.buildEmscriptenPackage rec {
+            name = "highs";
+            version = "0.7.2";
+            src = pkgs.fetchFromGitHub {
+              owner = "lovasoa";
+              repo = "highs-js";
+              # https://github.com/lovasoa/highs-js/pull/19
+              rev = "0de32edec1102c49db02d24ce0f29be302177b7f";
+              sha256 = "sha256-xxvq9hQlX0yIARtu6tZNwqnrGw5jwq1JR6+cj9wvN50=";
+              fetchSubmodules = true;
+            };
+            nativeBuildInputs = with pkgs; [cmake];
+            configurePhase = ''
+              runHook preConfigure
+
+              mkdir -p .emscriptencache
+              export EM_CACHE=$(pwd)/.emscriptencache
+              mkdir -p build
+              cd build
+              emcmake cmake ../HiGHS -DOPENMP=OFF -DFAST_BUILD=OFF -DSHARED=OFF
+
+              runHook postConfigure
+            '';
+            buildPhase = ''
+              runHook preBuild
+
+              emmake make -j $NIX_BUILD_CORES libhighs
+              emcc -O3 \
+                      -s EXPORTED_FUNCTIONS="@${packages.highs_exported_methods}" \
+                      -s EXPORTED_RUNTIME_METHODS="['cwrap','HEAPU8']" \
+                      -s EXPORT_NAME="createHighsModule" \
+                      -s MODULARIZE=1 \
+                      -s ALLOW_MEMORY_GROWTH=1 \
+                      -flto \
+                      --closure 1 \
+                      --post-js="${packages.highs_postjs}" \
+                      --closure-args=--externs="${packages.highs_postjs}" \
+                      lib/*.a -o highs.mjs
+
+              runHook postBuild
+            '';
+            installPhase = ''
+              runHook preInstall
+
+              mkdir -p $out
+              install -Dm644 highs.mjs $out/highs.js
+              install -Dm644 highs.wasm $out/
+
+              runHook postInstall
+            '';
+            checkPhase = ''
+            '';
+          };
+        };
         defaultPackage = let
           rust = pkgs.rust-bin.stable.latest.minimal.override {
             targets = ["wasm32-unknown-unknown"];
@@ -144,12 +255,14 @@
             CARGO_BUILD_TARGET = "wasm32-unknown-unknown";
             overrideMain = oldAttrs: {
               nativeBuildInputs = oldAttrs.nativeBuildInputs ++ (with pkgs; [wasm-bindgen-cli]);
+              buildInputs = oldAttrs.buildInputs ++ ([packages.highs]);
               postBuild = ''
                 ${pkgs.wasm-bindgen-cli}/bin/wasm-bindgen --out-dir $out --no-typescript --target web target/wasm32-unknown-unknown/release/homotopy_web.wasm
               '';
               installPhase = ''
                 runHook preInstall
                 cp -r homotopy-web/static/* $out/
+                cp ${packages.highs}/highs.{js,wasm} $out/
                 runHook postInstall
               '';
             };
