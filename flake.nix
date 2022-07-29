@@ -218,7 +218,8 @@
                       -s ALLOW_MEMORY_GROWTH=1 \
                       -flto \
                       --closure 1 \
-                      --post-js "${packages.highs_postjs}" \
+                      --post-js="${packages.highs_postjs}" \
+                      --closure-args=--externs="${packages.highs_postjs}" \
                       lib/*.a -o highs.mjs
 
               runHook postBuild
