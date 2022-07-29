@@ -60,7 +60,7 @@ impl Component for App {
         signature_stylesheet.update(state.with_proof(|p| p.signature().clone()));
         signature_stylesheet.mount();
 
-        let mut app = Self {
+        Self {
             state,
             panzoom: PanZoom::new(),
             orbit_control: GlViewControl::new(),
@@ -68,9 +68,7 @@ impl Component for App {
             toaster: Toaster::new(),
             _settings: AppSettings::connect(Callback::noop()),
             before_unload: None,
-        };
-        app.install_unload_hook();
-        app
+        }
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
@@ -117,6 +115,10 @@ impl Component for App {
                 performance.clear_measures();
 
                 homotopy_core::collect_garbage();
+
+                if self.before_unload.is_none() && result.is_ok() {
+                    self.install_unload_hook();
+                }
 
                 if let Err(error) = result {
                     self.toaster.toast(Toast::error(format!("{}", error)));
