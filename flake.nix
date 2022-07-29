@@ -152,6 +152,37 @@
               ]
             '';
           };
+          highs_postjs = pkgs.writeTextFile {
+            name = "post.js";
+            text =
+            ''
+              window.Highs_call = Module._Highs_call;
+              window.Highs_changeObjectiveSense = Module._Highs_changeObjectiveSense;
+              window.Highs_create = Module._Highs_create;
+              window.Highs_destroy = Module._Highs_destroy;
+              window.Highs_getModelStatus = Module._Highs_getModelStatus;
+              window.Highs_getNumCols = Module._Highs_getNumCols;
+              window.Highs_getNumRows = Module._Highs_getNumRows;
+              window.Highs_getSolution = Module._Highs_getSolution;
+              window.Highs_run = Module._Highs_run;
+              window.Highs_setBoolOptionValue = Module.cwrap("Highs_setBoolOptionValue","number",["number", "string", "number"]);
+              window.Highs_setDoubleOptionValue = Module.cwrap("Highs_setDoubleOptionValue","number",["number", "string", "number"]);
+              window.Highs_setIntOptionValue = Module.cwrap("Highs_setIntOptionValue","number",["number", "string", "number"]);
+              window.Highs_setStringOptionValue = Module.cwrap("Highs_setIntOptionValue","number",["number", "string", "number"]);
+              window.Highs_passLp = Module.cwrap("Highs_passLp","number",Array(7).fill("number").concat(Array(8).fill("array")));
+              window.Highs_passMip = Module.cwrap("Highs_passMip","number",Array(7).fill("number").concat(Array(8).fill("array")));
+              window.Highs_getSolution = function(h,c,r) {
+                let ptr0=Module._malloc(c+8);let ptr1=Module._malloc(c+8);let ptr2=Module._malloc(r+8);let ptr3=Module._malloc(r+8);
+                let ret=Module._Highs_getSolution(h,ptr0+8,ptr1+8,ptr2+8,ptr3+8);
+                let cv=new Uint8Array(Module.HEAPU8.buffer,ptr0+8,c);
+                let cd=new Uint8Array(Module.HEAPU8.buffer,ptr1+8,c);
+                let rv=new Uint8Array(Module.HEAPU8.buffer,ptr2+8,r);
+                let rd=new Uint8Array(Module.HEAPU8.buffer,ptr3+8,r);
+                Module._free(ptr0);Module._free(ptr1);Module._free(ptr2);Module._free(ptr3);
+                return {"ret": ret, "cv": cv, "cd": cd, "rv": rv, "rd": rd};
+              };
+            '';
+          };
           highs = pkgs.buildEmscriptenPackage rec {
             name = "highs";
             version = "0.7.2";
@@ -187,7 +218,8 @@
                       -s ALLOW_MEMORY_GROWTH=1 \
                       -flto \
                       --closure 1 \
-                      lib/*.a -o highs.js
+                      --post-js "${packages.highs_postjs}" \
+                      lib/*.a -o highs.mjs
 
               runHook postBuild
             '';
@@ -195,7 +227,8 @@
               runHook preInstall
 
               mkdir -p $out
-              install -Dm644 highs.{js,wasm} $out/
+              install -Dm644 highs.mjs $out/highs.js
+              install -Dm644 highs.wasm $out/
 
               runHook postInstall
             '';
