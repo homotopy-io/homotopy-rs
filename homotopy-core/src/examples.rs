@@ -4,8 +4,8 @@ use crate::{
     rewrite::Cone,
     signature::{Signature, SignatureBuilder},
     Boundary::{Source, Target},
-    Height::{Regular, Singular},
-    SliceIndex::{Boundary, Interior},
+    Height::Singular,
+    SliceIndex::Interior,
 };
 
 //    |       |
@@ -89,22 +89,18 @@ pub fn touching() -> (impl Signature, DiagramN) {
     let mut sig = SignatureBuilder::new();
 
     let x = sig.add_zero();
-    let x_generator = Generator::new(0, 0);
+    let _x_generator = Generator::new(0, 0);
     let s = sig.add(x.identity(), x.identity()).unwrap();
-    let s_generator = Generator::new(1, 2);
+    let _s_generator = Generator::new(1, 2);
     let s_s = s.attach(&s, Target, &[]).unwrap();
-    let rewrite =
-        |coord| Rewrite0::new(x_generator, s_generator, (s_generator.id, coord).into()).into();
-    let fwd = rewrite(vec![Interior(Singular(0)), Boundary(Source)]);
-    let bwd = rewrite(vec![Interior(Singular(0)), Boundary(Target)]);
-    let s_internal = Cospan {
-        forward: fwd,
-        backward: bwd,
-    };
+    let s_internal = DiagramN::try_from(s.slice(Interior(Singular(0))).unwrap())
+        .unwrap()
+        .cospans()[0]
+        .clone();
     let up_cone = Cone::new(0, vec![], s_internal.clone(), vec![]);
     let down_cone = Cone::new(0, vec![], s_internal.clone(), vec![]);
     let s_tensor_s_cospan = Cospan {
-        forward: RewriteN::new(1, vec![up_cone.clone(), up_cone.clone()]).into(),
+        forward: RewriteN::new(1, vec![up_cone.clone(), up_cone]).into(),
         backward: RewriteN::new(1, vec![down_cone.clone(), down_cone.clone()]).into(),
     };
     let twist: Rewrite = RewriteN::new(
@@ -112,7 +108,7 @@ pub fn touching() -> (impl Signature, DiagramN) {
         vec![Cone::new(
             0,
             s_s.cospans().to_vec(),
-            s_tensor_s_cospan.clone(),
+            s_tensor_s_cospan,
             vec![
                 RewriteN::new(1, vec![Cone::new(1, vec![], s_internal, vec![])]).into(),
                 RewriteN::new(1, vec![down_cone]).into(),
@@ -147,18 +143,14 @@ pub fn crossing() -> (impl Signature, DiagramN) {
     let mut sig = SignatureBuilder::new();
 
     let x = sig.add_zero();
-    let x_generator = Generator::new(0, 0);
+    let _x_generator = Generator::new(0, 0);
     let s = sig.add(x.identity(), x.identity()).unwrap();
-    let s_generator = Generator::new(1, 2);
+    let _s_generator = Generator::new(1, 2);
     let s_s = s.attach(&s, Target, &[]).unwrap();
-    let rewrite =
-        |coord| Rewrite0::new(x_generator, s_generator, (s_generator.id, coord).into()).into();
-    let fwd = rewrite(vec![Interior(Singular(0)), Boundary(Source)]);
-    let bwd = rewrite(vec![Interior(Singular(0)), Boundary(Target)]);
-    let s_internal = Cospan {
-        forward: fwd,
-        backward: bwd,
-    };
+    let s_internal = DiagramN::try_from(s.slice(Interior(Singular(0))).unwrap())
+        .unwrap()
+        .cospans()[0]
+        .clone();
     let up_cone = Cone::new(0, vec![], s_internal.clone(), vec![]);
     let down_cone = Cone::new(0, vec![], s_internal.clone(), vec![]);
     let s_tensor_s_cospan = Cospan {
@@ -173,7 +165,7 @@ pub fn crossing() -> (impl Signature, DiagramN) {
             s_tensor_s_cospan.clone(),
             vec![
                 RewriteN::new(1, vec![Cone::new(1, vec![], s_internal.clone(), vec![])]).into(),
-                RewriteN::new(1, vec![down_cone.clone()]).into(),
+                RewriteN::new(1, vec![down_cone]).into(),
             ],
         )],
     )
@@ -183,7 +175,7 @@ pub fn crossing() -> (impl Signature, DiagramN) {
         vec![Cone::new(
             0,
             s_s.cospans().to_vec(),
-            s_tensor_s_cospan.clone(),
+            s_tensor_s_cospan,
             vec![
                 RewriteN::new(1, vec![up_cone]).into(),
                 RewriteN::new(1, vec![Cone::new(1, vec![], s_internal, vec![])]).into(),

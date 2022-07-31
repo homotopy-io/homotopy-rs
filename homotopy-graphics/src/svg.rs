@@ -42,7 +42,9 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
 }
 
 pub fn generator_class(generator: Generator, suffix: &str) -> String {
-    if generator.orientation > 0 {
+    if true
+    /* TODO: orientation */
+    {
         format!(
             "generator__{}-{}--{}",
             generator.id, generator.dimension, suffix

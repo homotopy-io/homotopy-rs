@@ -397,7 +397,7 @@ fn collapse_base<'a, Ix: IndexType>(
         .len()
         .saturating_sub(max_dim_generator.dimension);
 
-    let mut orientations = HashMap::<Vec<Height>, isize>::default();
+    // let mut orientations = HashMap::<Vec<Height>, isize>::default();
 
     for (i, (d, _bias, coord)) in graph.node_references() {
         let g: Generator = d.try_into().unwrap();
@@ -409,7 +409,7 @@ fn collapse_base<'a, Ix: IndexType>(
             union_find.union(i, max_dim_index);
 
             let key = coord[..codimension].to_vec();
-            *orientations.entry(key).or_default() += g.orientation;
+            // *orientations.entry(key).or_default() += g.orientation;
         }
     }
 
@@ -429,19 +429,19 @@ fn collapse_base<'a, Ix: IndexType>(
         }
     }
 
-    // check orientations
-    let (_, &first_orientation) = orientations.iter().next().unwrap();
-    if !(first_orientation <= 1 && first_orientation >= -1) {
-        return Err(ContractionError::Invalid);
-    }
-    for (_, orientation) in orientations {
-        if orientation != first_orientation {
-            return Err(ContractionError::Invalid);
-        }
-    }
+    // TODO: check orientations
+    // let (_, &first_orientation) = orientations.iter().next().unwrap();
+    // if !(first_orientation <= 1 && first_orientation >= -1) {
+    //     return Err(ContractionError::Invalid);
+    // }
+    // for (_, orientation) in orientations {
+    //     if orientation != first_orientation {
+    //         return Err(ContractionError::Invalid);
+    //     }
+    // }
 
     let colimit = Generator {
-        orientation: first_orientation,
+        // orientation: first_orientation,
         ..max_dim_generator
     };
 
@@ -811,7 +811,7 @@ fn collapse_recursive<Ix: IndexType>(
 impl Rewrite {
     fn is_redundant(&self) -> bool {
         match self {
-            Rewrite::Rewrite0(r) => r.target().map_or(false, |t| t.orientation == 0),
+            Rewrite::Rewrite0(r) => r.label().map_or(false, |l| l.is_cancellation()),
             Rewrite::RewriteN(r) => r.cones().iter().all(Cone::is_redundant),
         }
     }

@@ -4,7 +4,7 @@ use std::{
     convert::{From, Into},
     fmt,
     hash::Hash,
-    ops::{Add, Range},
+    ops::{Add, Neg, Range},
 };
 
 use hashconsing::{HConsed, HConsign, HashConsign};
@@ -12,7 +12,7 @@ use once_cell::unsync::OnceCell;
 // used for debugging only
 use serde::{
     ser::{SerializeSeq, SerializeStruct},
-    Serialize,
+    Deserialize, Serialize,
 };
 use thiserror::Error;
 
@@ -81,8 +81,37 @@ pub enum Rewrite {
     RewriteN(RewriteN),
 }
 
+#[derive(Debug, PartialEq, Eq, Copy, Clone, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum Orientation {
+    Negative,
+    Zero,
+    Positive,
+}
+
+impl Neg for Orientation {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        match self {
+            Orientation::Negative => Orientation::Positive,
+            Orientation::Zero => Orientation::Zero,
+            Orientation::Positive => Orientation::Negative,
+        }
+    }
+}
+
+impl fmt::Display for Orientation {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Orientation::Negative => write!(f, "-"),
+            Orientation::Zero => write!(f, "0"),
+            Orientation::Positive => write!(f, "+"),
+        }
+    }
+}
+
 type Coordinate<T> = Vec<T>;
-pub(crate) type LabelNode = (usize, Coordinate<SliceIndex>);
+pub(crate) type LabelNode = (usize, Coordinate<(SliceIndex, Orientation)>);
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, PartialOrd, Ord)]
 pub struct Label(pub(crate) Vec<HConsed<LabelNode>>);
@@ -106,6 +135,28 @@ impl Label {
                 .map(|node| LABEL_FACTORY.with(|factory| factory.borrow_mut().mk(node)))
                 .collect(),
         )
+    }
+
+    pub fn flip_last(&self) -> Self {
+        assert_eq!(self.0.len(), 1);
+        let mut label = self.0[0].get().clone();
+        label.1.last_mut().unwrap().1 = -label.1.last().unwrap().1;
+        Self(vec![
+            LABEL_FACTORY.with(|factory| factory.borrow_mut().mk(label))
+        ])
+    }
+
+    pub fn zero_last(&self) -> Self {
+        assert_eq!(self.0.len(), 1);
+        let mut label = self.0[0].get().clone();
+        label.1.last_mut().unwrap().1 = Orientation::Zero;
+        Self(vec![
+            LABEL_FACTORY.with(|factory| factory.borrow_mut().mk(label))
+        ])
+    }
+
+    pub fn is_cancellation(&self) -> bool {
+        self.0.len() == 1 && self.0[0].get().1.last().unwrap().1 == Orientation::Zero
     }
 }
 
@@ -265,9 +316,18 @@ impl Rewrite {
         use crate::Boundary::{Source, Target};
 
         match base {
-            Diagram::Diagram0(base) => {
-                Rewrite0::new(base, generator, Label::new(vec![(generator.id, prefix)])).into()
-            }
+            Diagram::Diagram0(base) => Rewrite0::new(
+                base,
+                generator,
+                Label::new(vec![(
+                    generator.id,
+                    prefix
+                        .into_iter()
+                        .zip(std::iter::repeat(Orientation::Positive))
+                        .collect(),
+                )]),
+            )
+            .into(),
             Diagram::DiagramN(base) => {
                 let mut singular_slices: Vec<_> = Default::default();
                 base.singular_slices()
@@ -409,7 +469,7 @@ impl Serialize for Rewrite0 {
     {
         match &self.0 {
             Some((source, target, label)) => {
-                struct Coord<'a>(&'a Coordinate<SliceIndex>);
+                struct Coord<'a>(&'a Coordinate<(SliceIndex, Orientation)>);
                 impl Serialize for Coord<'_> {
                     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
                     where
@@ -418,17 +478,17 @@ impl Serialize for Rewrite0 {
                         let mut seq = serializer.serialize_seq(Some(self.0.len()))?;
                         for i in self.0 {
                             match i {
-                                SliceIndex::Boundary(Boundary::Source) => {
-                                    seq.serialize_element("source")?;
+                                (SliceIndex::Boundary(Boundary::Source), o) => {
+                                    seq.serialize_element(&format!("source{}", o))?;
                                 }
-                                SliceIndex::Boundary(Boundary::Target) => {
-                                    seq.serialize_element("target")?;
+                                (SliceIndex::Boundary(Boundary::Target), o) => {
+                                    seq.serialize_element(&format!("target{}", o))?;
                                 }
-                                SliceIndex::Interior(Height::Regular(i)) => {
-                                    seq.serialize_element(&format!("R{}", i))?;
+                                (SliceIndex::Interior(Height::Regular(i)), o) => {
+                                    seq.serialize_element(&format!("R{}{}", i, o))?;
                                 }
-                                SliceIndex::Interior(Height::Singular(i)) => {
-                                    seq.serialize_element(&format!("S{}", i))?;
+                                (SliceIndex::Interior(Height::Singular(i)), o) => {
+                                    seq.serialize_element(&format!("S{}{}", i, o))?;
                                 }
                             }
                         }
@@ -488,9 +548,7 @@ impl Rewrite0 {
     pub fn orientation_transform(self, k: isize) -> Self {
         match self.0 {
             None => Self(None),
-            Some((source, target, label)) => {
-                Self::new(source, target.orientation_transform(k), label)
-            }
+            Some((source, target, label)) => Self::new(source, target, label),
         }
     }
 
