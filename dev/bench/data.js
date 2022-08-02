@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1659107512400,
+  "lastUpdate": 1659442631702,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -38339,6 +38339,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 26.294,
             "range": "+/- 0.097",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thud@thud.dev",
+            "name": "Jasper Parish",
+            "username": "thud"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c99330dd7c913f413f83692b0ec26d1f0df7eb6b",
+          "message": "Tweak rename history (#648)\n\n* Filter rename actions being dispatched up tree\r\n\r\nThis fixes an issue (#645) where multiple history events are created\r\nfor a single generator rename.",
+          "timestamp": "2022-08-02T12:12:38+01:00",
+          "tree_id": "94e2ba42ca21b80d6cf379bbaf1108ab07db0102",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/c99330dd7c913f413f83692b0ec26d1f0df7eb6b"
+        },
+        "date": 1659442620110,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.214,
+            "range": "+/- 0.065",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 12.145,
+            "range": "+/- 0.207",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 55.745,
+            "range": "+/- 1.114",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 346.12,
+            "range": "+/- 3.770",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.8948,
+            "range": "+/- 0.013",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 29.079,
+            "range": "+/- 0.126",
             "unit": "s"
           }
         ]
