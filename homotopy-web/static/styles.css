@@ -543,6 +543,32 @@ span.signature__item-name {
   width: 6px;
 }
 
+.signature__generator-indicators-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: right;
+  padding: var(--space-0) 0;
+}
+
+.signature__generator-indicator {
+  border-radius: var(--space-0);
+  width: 18px;
+  color: var(--drawer-background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 2px;
+  font-weight: bold;
+}
+
+.signature__generator-indicator-invertible {
+  background-color: #2980b9;
+}
+
+.signature__generator-indicator-oriented {
+  background-color: #27ae60;
+}
+
 .signature__generator-previews-wrapper {
   flex: 0 0 auto;
   display: flex;
@@ -571,11 +597,11 @@ span.signature__item-name {
 }
 
 .signature__generator-picker-color {
-    justify-content: space-between;
+  justify-content: space-between;
 }
 
 .signature__generator-picker-shape {
-    justify-content: flex-start;
+  justify-content: flex-start;
 }
 
 .signature__generator-picker-preset {
@@ -585,8 +611,8 @@ span.signature__item-name {
 }
 
 .signature__generator-picker-shape > .signature__generator-picker-preset {
-    flex: 0;
-    transition: color 100ms;
+  flex: 0;
+  transition: color 100ms;
 }
 
 .signature__generator-picker-custom-wrapper {
@@ -680,7 +706,7 @@ span.signature__item-name {
 }
 
 .signature__generator-preference:hover {
-    background-color: var(--drawer-selected);
+  background-color: var(--drawer-selected);
 }
 
 .signature__generator-preference span {
