@@ -175,23 +175,36 @@ fn custom_recolor_button(props: &CustomRecolorButtonProps) -> Html {
 #[derive(Debug)]
 pub struct ItemView {
     mode: ItemViewMode,
+    name: String,
 }
 
 impl Component for ItemView {
     type Message = ItemViewMessage;
     type Properties = ItemViewProps;
 
-    fn create(_ctx: &Context<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
+        let name = match &ctx.props().item {
+            SignatureItem::Item(info) => info.name.clone(),
+            SignatureItem::Folder(name, _) => name.clone(),
+        };
         Self {
             mode: Default::default(),
+            name,
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            ItemViewMessage::SwitchTo(mode) => return self.switch_to(mode),
+            ItemViewMessage::SwitchTo(mode) => return self.switch_to(ctx, mode),
             ItemViewMessage::Edit(edit) => {
-                return apply_edit(&ctx.props().dispatch, ctx.props().node, edit)
+                // In order to avoid generating multiple history events for a single rename, we
+                // don't dispatch renames until the user is done editing.
+                if let SignatureItemEdit::Rename(name) = edit {
+                    self.name = name;
+                    return true;
+                };
+
+                return apply_edit(&ctx.props().dispatch, ctx.props().node, edit);
             }
             ItemViewMessage::Noop => {}
         }
@@ -245,9 +258,24 @@ impl Component for ItemView {
 }
 
 impl ItemView {
-    fn switch_to(&mut self, mode: ItemViewMode) -> bool {
+    fn switch_to(&mut self, ctx: &Context<Self>, mode: ItemViewMode) -> bool {
         if mode == self.mode {
             return false;
+        }
+
+        // Apply rename if name has changed.
+        if mode == ItemViewMode::Viewing {
+            let prev_name = match &ctx.props().item {
+                SignatureItem::Item(info) => &info.name,
+                SignatureItem::Folder(name, _) => name,
+            };
+            if &self.name != prev_name {
+                apply_edit(
+                    &ctx.props().dispatch,
+                    ctx.props().node,
+                    SignatureItemEdit::Rename(self.name.clone()),
+                );
+            }
         }
 
         self.mode = mode;
@@ -283,8 +311,8 @@ impl ItemView {
                 <input
                     type="text"
                     class="signature__item-name-input"
-                    value={name.clone()}
-                    oninput={ctx.link().callback(move |e: InputEvent| {
+                    value={self.name.clone()}
+                    oninput={ctx.link().callback(|e: InputEvent| {
                         let input: HtmlInputElement = e.target_unchecked_into();
                         ItemViewMessage::Edit(SignatureItemEdit::Rename(input.value()))
                     })}
