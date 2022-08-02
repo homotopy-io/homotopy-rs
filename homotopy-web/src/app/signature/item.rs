@@ -271,6 +271,7 @@ impl Component for ItemView {
                     <div class="signature__item-info">
                         {self.view_left_buttons(ctx)}
                         {self.view_info(ctx)}
+                        {self.view_property_indicators(ctx)}
                         {Self::view_preview(ctx)}
                         {self.view_right_buttons(ctx)}
                     </div>
@@ -589,6 +590,45 @@ impl ItemView {
                 node={ctx.props().node}
                 kind={NewFolderKind::Inline}
                 />
+            }
+        } else {
+            html! {}
+        }
+    }
+
+    fn view_property_indicators(&self, ctx: &Context<Self>) -> Html {
+        if self.mode == ItemViewMode::Editing {
+            return html! {};
+        }
+
+        if let SignatureItem::Item(ref info) = ctx.props().item {
+            // To avoid unnecessary String operations, we define all classes beforehand
+            let invertible_class =
+                "signature__generator-indicator signature__generator-indicator-invertible";
+            let oriented_class =
+                "signature__generator-indicator signature__generator-indicator-oriented";
+
+            let invertible = if info.invertible {
+                html! {
+                    <span class={invertible_class}>{"I"}</span>
+                }
+            } else {
+                html! {}
+            };
+
+            let oriented = if info.framed {
+                html! {}
+            } else {
+                html! {
+                    <span class={oriented_class}>{"O"}</span>
+                }
+            };
+
+            html! {
+                <div class="signature__generator-indicators-wrapper">
+                    {invertible}
+                    {oriented}
+                </div>
             }
         } else {
             html! {}
