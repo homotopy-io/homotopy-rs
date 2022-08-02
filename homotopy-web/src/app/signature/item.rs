@@ -269,7 +269,7 @@ impl ItemView {
                 SignatureItem::Item(info) => &info.name,
                 SignatureItem::Folder(name, _) => name,
             };
-            if self.name != prev_name.clone() {
+            if &self.name != prev_name {
                 apply_edit(
                     &ctx.props().dispatch,
                     ctx.props().node,
