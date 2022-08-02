@@ -464,13 +464,17 @@ impl ItemView {
                 VertexShape::Circle => "circle",
                 VertexShape::Square => "square",
             };
-            let mut class = "signature__generator-picker-preset".to_owned();
-            if *shape == selected_shape {
-                class += " signature__generator-picker-preset-shape-selected";
-            }
+            let style = format!(
+                "color: {}",
+                if *shape == selected_shape {
+                    selected_color.hex()
+                } else {
+                    "var(--drawer-foreground)".to_owned()
+                },
+            );
 
             html! {
-                <div {class} onclick={reshape}>
+                <div class="signature__generator-picker-preset" style={style} onclick={reshape}>
                     <Icon name={icon_name} size={IconSize::Icon18} />
                 </div>
             }

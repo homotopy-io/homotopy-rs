@@ -586,10 +586,7 @@ span.signature__item-name {
 
 .signature__generator-picker-shape > .signature__generator-picker-preset {
     flex: 0;
-}
-
-.signature__generator-picker-preset-shape-selected {
-    color: black;
+    transition: color 100ms;
 }
 
 .signature__generator-picker-custom-wrapper {
