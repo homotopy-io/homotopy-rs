@@ -547,11 +547,16 @@ span.signature__item-name {
   flex: 0 0 auto;
   display: flex;
   flex-direction: row;
+  align-items: center;
+  justify-content: center;
   pointer-events: none;
 }
 
-.signature__generator-preview-source-target-symbol {
-  font-size: 25px;
+.signature__generator-preview-spacer {
+  box-sizing: border-box;
+  height: 18px;
+  font-size: 12px;
+  text-align: center;
 }
 
 .signature__generator-picker {
