@@ -597,20 +597,20 @@ impl ItemView {
         }
 
         // The following is required to allow the div to respond to onclick events appropriately.
-        let toggle_framed = ctx.link().callback(move |e: MouseEvent| {
+        let toggle_single_preview = ctx.link().callback(move |e: MouseEvent| {
             let div: HtmlElement = e.target_unchecked_into();
             let input: HtmlInputElement = div.last_element_child().unwrap().unchecked_into();
-            ItemViewMessage::Edit(SignatureItemEdit::MakeFramed(!input.checked()))
+            ItemViewMessage::Edit(SignatureItemEdit::ShowSinglePreview(!input.checked()))
         });
         let toggle_invertible = ctx.link().callback(move |e: MouseEvent| {
             let div: HtmlElement = e.target_unchecked_into();
             let input: HtmlInputElement = div.last_element_child().unwrap().unchecked_into();
             ItemViewMessage::Edit(SignatureItemEdit::MakeInvertible(!input.checked()))
         });
-        let toggle_single_preview = ctx.link().callback(move |e: MouseEvent| {
+        let toggle_framed = ctx.link().callback(move |e: MouseEvent| {
             let div: HtmlElement = e.target_unchecked_into();
             let input: HtmlInputElement = div.last_element_child().unwrap().unchecked_into();
-            ItemViewMessage::Edit(SignatureItemEdit::ShowSinglePreview(!input.checked()))
+            ItemViewMessage::Edit(SignatureItemEdit::MakeFramed(!input.checked()))
         });
 
         match info.generator.dimension {
@@ -618,10 +618,9 @@ impl ItemView {
             _ => html! {
                 <>
                     <GeneratorPreferenceCheckbox
-                        name="Framed"
-                        onclick={toggle_framed}
-                        checked={info.framed}
-                        disabled={!info.framed}
+                        name="Single Preview"
+                        onclick={toggle_single_preview}
+                        checked={info.single_preview}
                     />
                     <GeneratorPreferenceCheckbox
                         name="Invertible"
@@ -630,9 +629,10 @@ impl ItemView {
                         disabled={info.invertible}
                     />
                     <GeneratorPreferenceCheckbox
-                        name="Single Preview"
-                        onclick={toggle_single_preview}
-                        checked={info.single_preview}
+                        name="Framed"
+                        onclick={toggle_framed}
+                        checked={info.framed}
+                        disabled={!info.framed}
                     />
                 </>
             },
