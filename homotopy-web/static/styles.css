@@ -13,7 +13,7 @@
   --drawer-background-dimmed: #f1f1f1;
   --drawer-foreground: #575f66;
   --drawer-border: #e1e1e1;
-  --drawer-selected: #d1e4f4;
+  --drawer-selected: #66aeeb55;
 
   --button-border: #e1e1e1;
   --button-background: #f0f0f0;
@@ -412,7 +412,7 @@ button, .button {
 }
 
 .signature__item.signature__item-editing {
-  height: 246px;
+  height: 262px;
 }
 
 .signature__item.signature__item-editing.signature__item-generator-0 {
@@ -691,37 +691,60 @@ span.signature__item-name {
   color: var(--drawer-background);
 }
 
-.signature__generator-preference {
+.signature__generator-preferences-wrapper {
   width: 100%;
-  height: 28px;
-  padding: var(--space-1);
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
+  padding: var(--space-0) var(--space-1) 0 var(--space-1);
   box-sizing: border-box;
+}
+
+.signature__generator-preference {
+  position: relative;
+  width: auto;
+  height: 26px;
+  padding: var(--space-0);
+  margin-top: var(--space-0);
   border-radius: var(--space-0);
   transition: background-color 100ms;
   cursor: pointer;
+  box-sizing: border-box;
 }
 
 .signature__generator-preference:hover {
   background-color: var(--drawer-selected);
 }
 
-.signature__generator-preference span {
+.signature__generator-preference-options-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
   pointer-events: none;
+}
+
+.signature__generator-preference-option {
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.signature__generator-preference-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 50%;
+  height: 100%;
+  transition: transform 100ms;
+  pointer-events: none;
+  z-index: -1;
 }
 
 .signature__generator-preference input[type=checkbox] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  pointer-events: none;
-}
-
-.signature__generator-preference select {
-  height: 18px;
+  opacity: 0;
+  width: 0;
+  height: 0;
 }
 
 /* Diagram SVG */
