@@ -25,7 +25,7 @@ paste = "1.0.7"
 petgraph = "0.6.2"
 serde = { features = ["derive"], version = "1.0.141" }
 serde_json = "1.0.83"
-thiserror = "1.0.30"
+thiserror = "1.0.32"
 ultraviolet = "0.9.0"
 wasm-bindgen = "0.2.80"
 yew = "0.19.3"
