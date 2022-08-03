@@ -4,7 +4,7 @@ use homotopy_common::tree::Node;
 use homotopy_core::Diagram;
 use homotopy_graphics::style::{Color, VertexShape};
 use wasm_bindgen::JsCast;
-use web_sys::{HtmlElement, HtmlInputElement};
+use web_sys::{Element, HtmlInputElement};
 use yew::prelude::*;
 use yew_macro::function_component;
 
@@ -641,44 +641,51 @@ impl ItemView {
         }
 
         // The following is required to allow the div to respond to onclick events appropriately.
+        let get_input = move |e: MouseEvent| {
+            e.target_unchecked_into::<Element>()
+                .last_child()
+                .unwrap()
+                .unchecked_into::<HtmlInputElement>()
+        };
+
         let toggle_single_preview = ctx.link().callback(move |e: MouseEvent| {
-            let div: HtmlElement = e.target_unchecked_into();
-            let input: HtmlInputElement = div.last_element_child().unwrap().unchecked_into();
-            ItemViewMessage::Edit(SignatureItemEdit::ShowSinglePreview(!input.checked()))
+            ItemViewMessage::Edit(SignatureItemEdit::ShowSinglePreview(get_input(e).checked()))
         });
         let toggle_invertible = ctx.link().callback(move |e: MouseEvent| {
-            let div: HtmlElement = e.target_unchecked_into();
-            let input: HtmlInputElement = div.last_element_child().unwrap().unchecked_into();
-            ItemViewMessage::Edit(SignatureItemEdit::MakeInvertible(!input.checked()))
+            ItemViewMessage::Edit(SignatureItemEdit::MakeInvertible(!get_input(e).checked()))
         });
         let toggle_framed = ctx.link().callback(move |e: MouseEvent| {
-            let div: HtmlElement = e.target_unchecked_into();
-            let input: HtmlInputElement = div.last_element_child().unwrap().unchecked_into();
-            ItemViewMessage::Edit(SignatureItemEdit::MakeFramed(!input.checked()))
+            ItemViewMessage::Edit(SignatureItemEdit::MakeFramed(get_input(e).checked()))
         });
 
         match info.generator.dimension {
             0 => Html::default(),
             _ => html! {
-                <>
+                <div class="signature__generator-preferences-wrapper">
                     <GeneratorPreferenceCheckbox
-                        name="Single Preview"
+                        left="Single Preview"
+                        right="Source-Target"
+                        color={info.color.clone()}
                         onclick={toggle_single_preview}
-                        checked={info.single_preview}
+                        checked={!info.single_preview}
                     />
                     <GeneratorPreferenceCheckbox
-                        name="Invertible"
+                        left="Directed"
+                        right="Invertible"
+                        color={info.color.clone()}
                         onclick={toggle_invertible}
                         checked={info.invertible}
                         disabled={info.invertible}
                     />
                     <GeneratorPreferenceCheckbox
-                        name="Framed"
+                        left="Framed"
+                        right="Oriented"
+                        color={info.color.clone()}
                         onclick={toggle_framed}
-                        checked={info.framed}
-                        disabled={!info.framed}
+                        checked={!info.framed}
+                        disabled={info.framed}
                     />
-                </>
+                </div>
             },
         }
     }
