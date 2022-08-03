@@ -25,7 +25,7 @@ js-sys = "0.3.58"
 quote = "1.0.21"
 serde = { version = "1.0.142", features = ["derive"] }
 syn = "1.0.99"
-paste = "1.0.7"
+paste = "1.0.8"
 rmp-serde = "0.15.5"
 
 # The `wasm-bindgen` crate provides the bare minimum functionality needed
