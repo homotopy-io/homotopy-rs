@@ -541,70 +541,88 @@ impl ItemView {
 
     fn view_left_buttons(&self, ctx: &Context<Self>) -> Html {
         use ItemViewMode::{Editing, Hovering, Viewing};
-        let icon_light = match ctx.props().item {
-            SignatureItem::Item(ref info) => !info.color.is_light(),
-            SignatureItem::Folder(_, _) => false,
-        };
-        let class = format!(
-            "signature__item-color {}",
-            match self.mode {
-                Viewing => "",
-                Hovering => "signature__item-color-hover",
-                Editing => "signature__item-color-edit",
-            }
-        );
-        let style = if let SignatureItem::Item(ref info) = ctx.props().item {
-            format!("background-color: {};", info.color.hex())
-        } else {
-            "".to_owned()
-        };
+        if let SignatureItem::Item(ref info) = ctx.props().item {
+            let icon_light = !info.color.is_light();
+            let style = format!("background-color: {};", info.color.hex());
+            let class = format!(
+                "signature__generator-color {}",
+                match self.mode {
+                    Viewing => "",
+                    Hovering => "signature__generator-color-hover",
+                    Editing => "signature__generator-color-edit",
+                }
+            );
 
-        let inner = if self.mode == Editing {
-            let node = ctx.props().node;
+            let inner = if self.mode == Editing {
+                let node = ctx.props().node;
 
-            html! {
-                <>
-                    <ItemViewButton icon={"done"} light={icon_light} on_click={
-                        ctx.link().callback(move |_| {
-                            ItemViewMessage::SwitchTo(Hovering)
-                        })
-                    } />
+                html! {
+                    <>
+                        <ItemViewButton icon={"done"} light={icon_light} on_click={
+                            ctx.link().callback(move |_| {
+                                ItemViewMessage::SwitchTo(Hovering)
+                            })
+                        } />
                     <ItemViewButton icon={"delete"} light={icon_light} on_click={
                         ctx.props().dispatch.reform(
                             move |_| Action::EditSignature(SignatureEdit::Remove(node))
-                        )
+                            )
                     } />
-                </>
+                    </>
+                }
+            } else {
+                html! {
+                    <ItemViewButton icon={"settings"} light={icon_light} on_click={
+                        ctx.link().callback(move |_| {
+                            ItemViewMessage::SwitchTo(Editing)
+                        })
+                    } />
+                }
+            };
+
+            html! {
+                <div class={class} style={style}>
+                {inner}
+                </div>
             }
         } else {
-            html! {
-                <ItemViewButton icon={"settings"} light={icon_light} on_click={
-                    ctx.link().callback(move |_| {
-                        ItemViewMessage::SwitchTo(Editing)
-                    })
-                } />
-            }
-        };
-
-        html! {
-            <div class={class} style={style}>
-                {inner}
-            </div>
+            html! {}
         }
     }
 
     fn view_right_buttons(&self, ctx: &Context<Self>) -> Html {
-        if self.mode != ItemViewMode::Viewing {
-            return html! {};
-        }
+        if let SignatureItem::Folder(_, open) = ctx.props().item {
+            let class = if self.mode == ItemViewMode::Hovering {
+                "signature__folder-right signature__folder-right-hover"
+            } else {
+                "signature__folder-right"
+            };
 
-        if let SignatureItem::Folder(_, true) = ctx.props().item {
+            let new_folder = if open {
+                html! {
+                    <NewFolderButton
+                        dispatch={ctx.props().dispatch.clone()}
+                        node={ctx.props().node}
+                        kind={NewFolderKind::Inline}
+                    />
+                }
+            } else {
+                html! {}
+            };
+
+            let settings = html! {
+                <ItemViewButton icon={"settings"} on_click={
+                    ctx.link().callback(move |_| {
+                        ItemViewMessage::SwitchTo(ItemViewMode::Editing)
+                    })
+                } />
+            };
+
             html! {
-                <NewFolderButton
-                    dispatch={ctx.props().dispatch.clone()}
-                node={ctx.props().node}
-                kind={NewFolderKind::Inline}
-                />
+                <div class={class}>
+                    {new_folder}
+                    {settings}
+                </div>
             }
         } else {
             html! {}

@@ -527,7 +527,19 @@ span.signature__item-name {
   user-select: text;
 }
 
-.signature__item-color {
+.signature__folder-right {
+  display: flex;
+  flex-direction: row;
+  wrap: nowrap;
+  opacity: 0%;
+  transition: opacity 50ms;
+}
+
+.signature__folder-right.signature__folder-right-hover {
+  opacity: 100%;
+}
+
+.signature__generator-color {
   display: flex;
   flex-direction: row;
   wrap: nowrap;
@@ -538,11 +550,11 @@ span.signature__item-name {
   transition: width 50ms;
 }
 
-.signature__item-color.signature__item-color-hover {
+.signature__generator-color.signature__generator-color-hover {
   width: 32px;
 }
 
-.signature__item-color.signature__item-color-edit {
+.signature__generator-color.signature__generator-color-edit {
   width: 64px;
 }
 
