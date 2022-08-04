@@ -43,6 +43,8 @@ struct ItemViewButtonProps {
     class: String,
     #[prop_or_default]
     style: String,
+    #[prop_or(false)]
+    light: bool,
 }
 
 #[function_component(ItemViewButton)]
@@ -63,7 +65,7 @@ fn item_view_button(props: &ItemViewButtonProps) -> Html {
             style={props.style.clone()}
             onclick={props.on_click.clone()}
         >
-            <Icon name={props.icon.clone()} size={IconSize::Icon18} />
+            <Icon name={props.icon.clone()} size={IconSize::Icon18} light={props.light} />
         </span>
     }
 }
@@ -144,8 +146,6 @@ struct CustomRecolorButtonProps {
     oninput: Callback<InputEvent>,
     onkeyup: Callback<KeyboardEvent>,
     value: Color,
-    #[prop_or_default]
-    class: String,
 }
 
 #[function_component(CustomRecolorButton)]
@@ -169,8 +169,8 @@ fn custom_recolor_button(props: &CustomRecolorButtonProps) -> Html {
                     />
                 </div>
             </div>
-            <div class={"signature__generator-picker-custom-inner"}>
-                <Icon name={"palette"} size={IconSize::Icon18} />
+            <div class="signature__generator-picker-custom-inner">
+                <Icon name={"palette"} size={IconSize::Icon18} light={!props.value.is_light()} />
             </div>
         </div>
     }
@@ -359,9 +359,17 @@ impl ItemView {
     fn view_sliver(ctx: &Context<Self>) -> Html {
         if let SignatureItem::Item(ref info) = ctx.props().item {
             let style = format!("background-color: {}", info.color.hex());
+            let class = format!(
+                "signature__generator-color-sliver {}",
+                if info.color.is_light() {
+                    "signature__generator-color-sliver-light"
+                } else {
+                    ""
+                }
+            );
 
             html! {
-                <div class="signature__generator-color-sliver" style={style}/>
+                <div class={class} style={style}/>
             }
         } else {
             html! {}
@@ -466,7 +474,7 @@ impl ItemView {
                 VertexShape::Square => "square",
             };
             let style = format!(
-                "color: {}",
+                "color: {};",
                 if *shape == selected_shape {
                     selected_color.hex()
                 } else {
@@ -533,11 +541,18 @@ impl ItemView {
 
     fn view_left_buttons(&self, ctx: &Context<Self>) -> Html {
         use ItemViewMode::{Editing, Hovering, Viewing};
-        let class = match self.mode {
-            Viewing => "signature__generator-color",
-            Hovering => "signature__generator-color signature__generator-color-hover",
-            Editing => "signature__generator-color signature__generator-color-edit",
+        let icon_light = match ctx.props().item {
+            SignatureItem::Item(ref info) => !info.color.is_light(),
+            SignatureItem::Folder(_, _) => false,
         };
+        let class = format!(
+            "signature__item-color {}",
+            match self.mode {
+                Viewing => "",
+                Hovering => "signature__item-color-hover",
+                Editing => "signature__item-color-edit",
+            }
+        );
         let style = if let SignatureItem::Item(ref info) = ctx.props().item {
             format!("background-color: {};", info.color.hex())
         } else {
@@ -549,12 +564,12 @@ impl ItemView {
 
             html! {
                 <>
-                    <ItemViewButton icon={"done"} on_click={
+                    <ItemViewButton icon={"done"} light={icon_light} on_click={
                         ctx.link().callback(move |_| {
                             ItemViewMessage::SwitchTo(Hovering)
                         })
                     } />
-                    <ItemViewButton icon={"delete"} on_click={
+                    <ItemViewButton icon={"delete"} light={icon_light} on_click={
                         ctx.props().dispatch.reform(
                             move |_| Action::EditSignature(SignatureEdit::Remove(node))
                         )
@@ -563,7 +578,7 @@ impl ItemView {
             }
         } else {
             html! {
-                <ItemViewButton icon={"settings"} on_click={
+                <ItemViewButton icon={"settings"} light={icon_light} on_click={
                     ctx.link().callback(move |_| {
                         ItemViewMessage::SwitchTo(Editing)
                     })
@@ -658,6 +673,12 @@ impl ItemView {
             ItemViewMessage::Edit(SignatureItemEdit::MakeFramed(get_input(e).checked()))
         });
 
+        let color = if info.color.is_light() {
+            "var(--drawer-foreground)".to_owned()
+        } else {
+            info.color.hex()
+        };
+
         match info.generator.dimension {
             0 => Html::default(),
             _ => html! {
@@ -665,14 +686,14 @@ impl ItemView {
                     <GeneratorPreferenceCheckbox
                         left="Single Preview"
                         right="Source-Target"
-                        color={info.color.clone()}
+                        color={color.clone()}
                         onclick={toggle_single_preview}
                         checked={!info.single_preview}
                     />
                     <GeneratorPreferenceCheckbox
                         left="Directed"
                         right="Invertible"
-                        color={info.color.clone()}
+                        color={color.clone()}
                         onclick={toggle_invertible}
                         checked={info.invertible}
                         disabled={info.invertible}
@@ -680,7 +701,7 @@ impl ItemView {
                     <GeneratorPreferenceCheckbox
                         left="Framed"
                         right="Oriented"
-                        color={info.color.clone()}
+                        color={color.clone()}
                         onclick={toggle_framed}
                         checked={!info.framed}
                         disabled={info.framed}
