@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1659442631702,
+  "lastUpdate": 1659626930727,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -38399,6 +38399,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 29.079,
             "range": "+/- 0.126",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4d8b9ad9f9221af0c10b6cf99c3f0ae890cb1c44",
+          "message": "Makefile fixup, added experimental feature flags to nix build invocation. (#656)\n\nCo-authored-by: regular-citizen <chara@sarti.me>",
+          "timestamp": "2022-08-04T14:20:20Z",
+          "tree_id": "8f9c1acdd68eb846da0a8ddd024df02685e9acba",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/4d8b9ad9f9221af0c10b6cf99c3f0ae890cb1c44"
+        },
+        "date": 1659626919402,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.0289,
+            "range": "+/- 0.050",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 11.422,
+            "range": "+/- 0.228",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 52.663,
+            "range": "+/- 1.336",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 329.74,
+            "range": "+/- 5.730",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.75,
+            "range": "+/- 0.037",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 31.665,
+            "range": "+/- 0.939",
             "unit": "s"
           }
         ]
