@@ -539,6 +539,10 @@ span.signature__item-name {
   opacity: 100%;
 }
 
+.signature__folder-right.signature__folder-right-editing {
+  opacity: 100%;
+}
+
 .signature__generator-color {
   display: flex;
   flex-direction: row;
