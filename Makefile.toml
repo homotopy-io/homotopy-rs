@@ -24,7 +24,7 @@ watch = { watch = ["homotopy-common/src", "homotopy-core/src", "homotopy-graphic
 [tasks.build-highs]
 script = '''
 mkdir -p dist
-cp $(nix build .#highs --no-link --print-out-paths)/highs.{js,wasm} dist/
+cp $(nix build .#highs --no-link --print-out-paths --extra-experimental-features flakes --extra-experimental-features nix-command)/highs.{js,wasm} dist/
 '''
 
 [tasks.dist-static]
