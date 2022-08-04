@@ -383,6 +383,15 @@ button, .button {
   box-sizing: border-box;
 }
 
+.drawer__content .material-icons.md-light {
+  color: var(--drawer-background);
+}
+
+.drawer__content .material-icons.md-dark {
+  color: var(--drawer-foreground);
+}
+
+
 .drawer__icon {
   cursor: pointer;
   padding: var(--space-1);
@@ -518,7 +527,7 @@ span.signature__item-name {
   user-select: text;
 }
 
-.signature__generator-color {
+.signature__item-color {
   display: flex;
   flex-direction: row;
   wrap: nowrap;
@@ -529,11 +538,11 @@ span.signature__item-name {
   transition: width 50ms;
 }
 
-.signature__generator-color.signature__generator-color-hover {
+.signature__item-color.signature__item-color-hover {
   width: 32px;
 }
 
-.signature__generator-color.signature__generator-color-edit {
+.signature__item-color.signature__item-color-edit {
   width: 64px;
 }
 
@@ -541,6 +550,11 @@ span.signature__item-name {
   flex: 0 0 auto;
   height: 100%;
   width: 6px;
+  box-sizing: border-box;
+}
+
+.signature__generator-color-sliver-light {
+  box-shadow: inset 2px 0 0 #575f6655;
 }
 
 .signature__generator-indicators-wrapper {
@@ -688,7 +702,6 @@ span.signature__item-name {
   justify-content: space-between;
   box-sizing: border-box;
   pointer-events: none;
-  color: var(--drawer-background);
 }
 
 .signature__generator-preferences-wrapper {
@@ -726,6 +739,7 @@ span.signature__item-name {
 .signature__generator-preference-option {
   white-space: nowrap;
   pointer-events: none;
+  transition: color 250ms;
 }
 
 .signature__generator-preference-slider {
