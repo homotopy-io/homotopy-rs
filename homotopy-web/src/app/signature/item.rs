@@ -473,18 +473,15 @@ impl ItemView {
                 VertexShape::Circle => "circle",
                 VertexShape::Square => "square",
             };
-            let style = format!(
-                "color: {};",
-                if *shape == selected_shape {
-                    selected_color.hex()
-                } else {
-                    "var(--drawer-foreground)".to_owned()
-                },
-            );
+            let icon_class = if *shape == selected_shape {
+                ""
+            } else {
+                "md-inactive"
+            };
 
             html! {
-                <div class="signature__generator-picker-preset" style={style} onclick={reshape}>
-                    <Icon name={icon_name} size={IconSize::Icon18} />
+                <div class="signature__generator-picker-preset" onclick={reshape}>
+                    <Icon name={icon_name} size={IconSize::Icon18} class={icon_class} />
                 </div>
             }
         });
