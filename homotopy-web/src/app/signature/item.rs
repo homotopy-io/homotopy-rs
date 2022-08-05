@@ -543,7 +543,7 @@ impl ItemView {
             SignatureItem::Item(info) => {
                 html! {
                     <>
-                        <span class="signature__item-child">
+                        <span class="signature__item-child signature__generator-dimension">
                             {info.diagram.dimension()}
                         </span>
                         {self.view_name(ctx)}

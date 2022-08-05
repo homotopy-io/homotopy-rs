@@ -13,6 +13,7 @@
   --drawer-background-dimmed: #f1f1f1;
   --drawer-foreground: #575f66;
   --drawer-foreground-dimmed: #575f6655;
+  --drawer-foreground-dimmed-text: #575f66cc;
   --drawer-border: #e1e1e1;
   --drawer-selected: #66aeeb55;
 
@@ -575,6 +576,10 @@ span.signature__item-name {
 
 .signature__generator-color-sliver-light {
   box-shadow: inset 2px 0 0 #575f6655;
+}
+
+.signature__generator-dimension {
+  color: var(--drawer-foreground-dimmed-text);
 }
 
 .signature__generator-indicators-wrapper {
