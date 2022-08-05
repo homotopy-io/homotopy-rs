@@ -12,6 +12,7 @@
   --drawer-background: #f9f9f9;
   --drawer-background-dimmed: #f1f1f1;
   --drawer-foreground: #575f66;
+  --drawer-foreground-dimmed: #575f6655;
   --drawer-border: #e1e1e1;
   --drawer-selected: #66aeeb55;
 
@@ -391,6 +392,9 @@ button, .button {
   color: var(--drawer-foreground);
 }
 
+.drawer__content .material-icons.md-dark.md-inactive {
+  color: var(--drawer-foreground-dimmed);
+}
 
 .drawer__icon {
   cursor: pointer;
