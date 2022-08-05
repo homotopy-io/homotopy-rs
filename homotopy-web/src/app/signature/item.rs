@@ -130,10 +130,16 @@ impl Default for ItemViewMode {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct Preview {
+    pub signature: Signature,
+    pub html: Html,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum ItemViewMessage {
     SwitchTo(ItemViewMode),
     Edit(SignatureItemEdit),
-    CachePreview(Diagram, Html),
+    CachePreview(Preview),
     Noop,
 }
 
@@ -181,8 +187,7 @@ fn custom_recolor_button(props: &CustomRecolorButtonProps) -> Html {
 pub struct ItemView {
     mode: ItemViewMode,
     name: String,
-    preview: Html,
-    preview_diagram: Option<Diagram>,
+    preview_cache: Option<Preview>,
 }
 
 impl Component for ItemView {
@@ -213,9 +218,8 @@ impl Component for ItemView {
 
                 return apply_edit(&ctx.props().dispatch, ctx.props().node, edit);
             }
-            ItemViewMessage::CachePreview(diagram, preview) => {
-                self.preview_diagram = Some(diagram);
-                self.preview = preview;
+            ItemViewMessage::CachePreview(preview) => {
+                self.preview_cache = Some(preview);
             }
             ItemViewMessage::Noop => {}
         }
@@ -383,9 +387,14 @@ impl ItemView {
 
     fn view_preview(&self, ctx: &Context<Self>) -> Html {
         if let SignatureItem::Item(ref info) = ctx.props().item {
-            if let Some(old_diagram) = &self.preview_diagram {
-                if &info.diagram == old_diagram {
-                    return self.preview.clone();
+            if let Some(cache) = &self.preview_cache {
+                // Note that the following is executed on every change in `ItemViewMode`, ie. if
+                // the user hovers over a signature item, then this requires an entire diff on
+                // signatures. I can't see an easy and always-correct way of getting around this.
+                // It may well also be the case that preview caching is slower than no caching for
+                // small diagrams.
+                if ctx.props().signature == cache.signature {
+                    return cache.html.clone();
                 }
             }
 
@@ -420,18 +429,19 @@ impl ItemView {
                 }
             };
 
-            let preview = html! {
+            let preview_html = html! {
                 <div class="signature__generator-previews-wrapper">
                     {diagrams}
                 </div>
             };
 
-            ctx.link().send_message(ItemViewMessage::CachePreview(
-                info.diagram.clone(),
-                preview.clone(),
-            ));
+            ctx.link()
+                .send_message(ItemViewMessage::CachePreview(Preview {
+                    signature: ctx.props().signature.clone(),
+                    html: preview_html.clone(),
+                }));
 
-            preview
+            preview_html
         } else {
             html! {}
         }
