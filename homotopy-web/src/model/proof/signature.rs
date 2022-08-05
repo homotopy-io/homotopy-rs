@@ -85,7 +85,7 @@ impl Signature {
             invertible: false,
             single_preview: !matches!(generator.dimension, 1 | 2),
             color: Color::from_str(COLORS[id % COLORS.len()]).unwrap(),
-            shape: VertexShape::default(),
+            shape: VERTEX_SHAPES[(id / COLORS.len()) % VERTEX_SHAPES.len()].clone(),
             diagram: diagram.into(),
         };
 
