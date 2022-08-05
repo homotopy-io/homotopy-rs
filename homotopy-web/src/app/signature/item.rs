@@ -498,7 +498,11 @@ impl ItemView {
                         oninput={custom_recolor}
                         onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
                             e.stop_propagation();
-                            ItemViewMessage::Noop
+                            if e.key().to_ascii_lowercase() == "enter" {
+                                ItemViewMessage::SwitchTo(ItemViewMode::Viewing)
+                            } else {
+                                ItemViewMessage::Noop
+                            }
                         })}
                     />
                 </div>
