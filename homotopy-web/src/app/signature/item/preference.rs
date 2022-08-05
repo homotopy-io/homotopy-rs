@@ -24,28 +24,36 @@ impl Component for GeneratorPreferenceCheckbox {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let color_main = &ctx.props().color;
+        let color_disabled = "var(--drawer-foreground-dimmed)";
         let color_text_on = "var(--drawer-background)";
         let color_text_off = "var(--drawer-foreground)";
+        let color_text_disabled = "var(--drawer-foreground-dimmed-text)";
 
-        let border_style = format!("border: 1px solid {};", color_main);
+        let color = if ctx.props().disabled {
+            color_disabled
+        } else {
+            color_main
+        };
+
+        let border_style = format!("border: 1px solid {};", color);
 
         let slider_style = format!(
             "transform: translateX({}); background-color: {};",
             if ctx.props().checked { "100%" } else { "0" },
-            color_main,
+            color,
         );
 
-        let (left_style, right_style) = if ctx.props().checked {
-            (
-                format!("color: {};", color_text_off),
-                format!("color: {};", color_text_on),
-            )
+        let (left_color, right_color) = if ctx.props().disabled {
+            (color_text_disabled, color_text_disabled)
+        } else if ctx.props().checked {
+            (color_text_off, color_text_on)
         } else {
-            (
-                format!("color: {};", color_text_on),
-                format!("color: {};", color_text_off),
-            )
+            (color_text_on, color_text_off)
         };
+        let (left_style, right_style) = (
+            format!("color: {};", left_color),
+            format!("color: {};", right_color),
+        );
 
         html! {
             <div
