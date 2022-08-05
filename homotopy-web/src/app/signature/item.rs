@@ -249,17 +249,27 @@ impl Component for ItemView {
             html! {}
         };
 
-        let on_mouse_enter = if self.mode == ItemViewMode::Viewing {
+        let on_mouse_over = if self.mode == ItemViewMode::Viewing {
             ctx.link()
                 .callback(|_| ItemViewMessage::SwitchTo(ItemViewMode::Hovering))
         } else {
             ctx.link().callback(|_| ItemViewMessage::Noop)
         };
-        let on_mouse_leave = if self.mode == ItemViewMode::Hovering {
+        let on_mouse_out = if self.mode == ItemViewMode::Hovering {
             ctx.link()
                 .callback(|_| ItemViewMessage::SwitchTo(ItemViewMode::Viewing))
         } else {
             ctx.link().callback(|_| ItemViewMessage::Noop)
+        };
+
+        let select_generator = match &ctx.props().item {
+            SignatureItem::Item(info) => {
+                let generator = info.generator;
+                ctx.props()
+                    .dispatch
+                    .reform(move |_| Action::SelectGenerator(generator))
+            }
+            SignatureItem::Folder(_, _) => Callback::noop(),
         };
 
         html! {
@@ -270,11 +280,11 @@ impl Component for ItemView {
                 ondragenter={ctx.props().on_drag_enter.clone()}
                 ondrop={ctx.props().on_drop.clone()}
                 ondragstart={ctx.props().on_drag_start.clone()}
-                onmouseenter={on_mouse_enter}
-                onmouseleave={on_mouse_leave}
+                onmouseover={on_mouse_over}
+                onmouseout={on_mouse_out}
             >
                 {Self::view_sliver(ctx)}
-                <div class="signature__item-contents">
+                <div class="signature__item-contents" onclick={select_generator}>
                     <div class="signature__item-info">
                         {self.view_left_buttons(ctx)}
                         {self.view_info(ctx)}
@@ -319,15 +329,6 @@ impl ItemView {
             SignatureItem::Item(info) => &info.name,
             SignatureItem::Folder(name, _) => name,
         };
-        let on_click = match &ctx.props().item {
-            SignatureItem::Item(info) => {
-                let generator = info.generator;
-                ctx.props()
-                    .dispatch
-                    .reform(move |_| Action::SelectGenerator(generator))
-            }
-            SignatureItem::Folder(_, _) => Callback::noop(),
-        };
 
         if self.mode == ItemViewMode::Editing {
             html! {
@@ -351,10 +352,7 @@ impl ItemView {
             }
         } else {
             html! {
-                <div
-                    class="signature__item-child signature__item-name"
-                    onclick={on_click}
-                >
+                <div class="signature__item-child signature__item-name">
                     <span class="signature__item-name">
                         {name}
                     </span>
