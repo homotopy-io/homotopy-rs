@@ -443,7 +443,15 @@ button, .button {
   justify-content: center;
   width: 100%;
   height: var(--signature-height);
+  transition: background-color 100ms;
 }
+
+@media (pointer: fine) {
+  .signature__item-info:hover {
+    background: var(--drawer-selected);
+  }
+}
+
 
 .signature__branch {
   width: 100%;
@@ -490,13 +498,6 @@ button, .button {
   padding: var(--space-0);
   display: flex;
   align-items: center;
-  transition: background-color 100ms;
-}
-
-@media (pointer: fine) {
-  .signature__item-child:hover {
-    background: var(--drawer-selected);
-  }
 }
 
 .signature__item-name, .signature__item-fill {
