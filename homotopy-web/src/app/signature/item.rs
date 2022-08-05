@@ -772,7 +772,7 @@ impl ItemView {
                         color={color.clone()}
                         onclick={toggle_framed}
                         checked={!info.framed}
-                        disabled={info.framed}
+                        disabled={!info.framed}
                     />
                 </div>
             },
