@@ -129,10 +129,11 @@ impl Default for ItemViewMode {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ItemViewMessage {
     SwitchTo(ItemViewMode),
     Edit(SignatureItemEdit),
+    CachePreview(Diagram, Html),
     Noop,
 }
 
@@ -176,10 +177,12 @@ fn custom_recolor_button(props: &CustomRecolorButtonProps) -> Html {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ItemView {
     mode: ItemViewMode,
     name: String,
+    preview: Html,
+    preview_diagram: Option<Diagram>,
 }
 
 impl Component for ItemView {
@@ -192,8 +195,8 @@ impl Component for ItemView {
             SignatureItem::Folder(name, _) => name.clone(),
         };
         Self {
-            mode: Default::default(),
             name,
+            ..Default::default()
         }
     }
 
@@ -209,6 +212,10 @@ impl Component for ItemView {
                 };
 
                 return apply_edit(&ctx.props().dispatch, ctx.props().node, edit);
+            }
+            ItemViewMessage::CachePreview(diagram, preview) => {
+                self.preview_diagram = Some(diagram);
+                self.preview = preview;
             }
             ItemViewMessage::Noop => {}
         }
@@ -272,7 +279,7 @@ impl Component for ItemView {
                         {self.view_left_buttons(ctx)}
                         {self.view_info(ctx)}
                         {self.view_property_indicators(ctx)}
-                        {Self::view_preview(ctx)}
+                        {self.view_preview(ctx)}
                         {self.view_right_buttons(ctx)}
                     </div>
                     {picker_and_prefs}
@@ -376,8 +383,14 @@ impl ItemView {
         }
     }
 
-    fn view_preview(ctx: &Context<Self>) -> Html {
+    fn view_preview(&self, ctx: &Context<Self>) -> Html {
         if let SignatureItem::Item(ref info) = ctx.props().item {
+            if let Some(old_diagram) = &self.preview_diagram {
+                if &info.diagram == old_diagram {
+                    return self.preview.clone();
+                }
+            }
+
             let svg_of = |diagram: Diagram, id: String| match diagram.dimension() {
                 0 => Self::view_diagram_svg::<0>(ctx, diagram, id),
                 1 => Self::view_diagram_svg::<1>(ctx, diagram, id),
@@ -409,11 +422,18 @@ impl ItemView {
                 }
             };
 
-            html! {
+            let preview = html! {
                 <div class="signature__generator-previews-wrapper">
                     {diagrams}
                 </div>
-            }
+            };
+
+            ctx.link().send_message(ItemViewMessage::CachePreview(
+                info.diagram.clone(),
+                preview.clone(),
+            ));
+
+            preview
         } else {
             html! {}
         }
