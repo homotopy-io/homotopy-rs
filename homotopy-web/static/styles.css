@@ -472,7 +472,6 @@ button, .button {
 .signature__dropzone {
   height: var(--space-1);
   width: 100%;
-  cursor: pointer;
   transition: height 100ms;
 }
 
@@ -676,6 +675,7 @@ span.signature__item-name {
   overflow: hidden;
   flex: 1 1 auto;
   outline: none;
+  cursor: pointer;
   transition: background-color 100ms;
 }
 
@@ -686,7 +686,7 @@ span.signature__item-name {
   box-sizing: border-box;
   overflow: hidden;
   color: var(--drawer-foreground);
-  cursor: pointer;
+  cursor: text;
   outline: none;
   text-align: center;
 }
@@ -697,7 +697,6 @@ span.signature__item-name {
   padding: calc(var(--space-0) + 2px);
   box-sizing: border-box;
   overflow: hidden;
-  cursor: pointer;
   border: none;
   outline: none;
   text-align: center;
