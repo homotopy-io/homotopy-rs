@@ -4,7 +4,7 @@ use super::{Sidebar, SidebarButton, SidebarDrawer, SidebarMsg};
 #[cfg(debug_assertions)]
 use crate::app::debug::DebugView;
 use crate::{
-    app::{project::ProjectView, settings::SettingsView, signature::SignatureView},
+    app::{project::{ProjectView}, settings::SettingsView, signature::{SignatureView}},
     components::Visible,
     model::{
         self,
@@ -100,8 +100,11 @@ declare_sidebar_drawers! {
         "Project",
         "project",
         "info",
-        |dispatch, _| html! {
-            <ProjectView dispatch={dispatch} />
+        |dispatch, proof: &Proof| html! {
+            <ProjectView 
+                dispatch={dispatch} 
+                metadata={proof.metadata().clone()}
+            />
         },
     }
 
