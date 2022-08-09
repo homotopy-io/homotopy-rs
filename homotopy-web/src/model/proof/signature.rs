@@ -22,13 +22,17 @@ pub const VERTEX_SHAPES: &[VertexShape] = &[VertexShape::Circle, VertexShape::Sq
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub enum SignatureItem {
-    Folder(String, bool),
+    Folder(FolderInfo),
     Item(GeneratorInfo),
 }
 
 impl Default for SignatureItem {
     fn default() -> Self {
-        Self::Folder("".to_owned(), true)
+        Self::Folder(FolderInfo {
+            id: 0,
+            name: "".to_owned(),
+            open: true,
+        })
     }
 }
 
@@ -59,7 +63,7 @@ impl Signature {
     pub fn iter(&self) -> impl Iterator<Item = &GeneratorInfo> {
         self.0.iter().filter_map(|(_, data)| match data.inner() {
             SignatureItem::Item(info) => Some(info),
-            &SignatureItem::Folder(_, _) => None,
+            &SignatureItem::Folder(_) => None,
         })
     }
 
@@ -70,6 +74,18 @@ impl Signature {
     fn next_generator_id(&self) -> usize {
         self.iter()
             .map(|info| info.generator.id)
+            .max()
+            .map_or(0, |id| id + 1)
+    }
+
+    fn next_folder_id(&self) -> usize {
+        self.0
+            .iter()
+            .filter_map(|(_, data)| match data.inner() {
+                SignatureItem::Item(_) => None,
+                SignatureItem::Folder(info) => Some(info),
+            })
+            .map(|info| info.id)
             .max()
             .map_or(0, |id| id + 1)
     }
@@ -110,7 +126,7 @@ impl Signature {
             (SignatureItem::Item(info), MakeFramed(false)) => info.framed = false,
             (SignatureItem::Item(info), MakeInvertible(true)) => info.invertible = true,
             (SignatureItem::Item(info), ShowSinglePreview(show)) => info.single_preview = show,
-            (SignatureItem::Folder(ref mut old, _), Rename(name)) => *old = name,
+            (SignatureItem::Folder(info), Rename(name)) => info.name = name,
             (_, _) => {}
         });
     }
@@ -156,15 +172,21 @@ impl Signature {
         match edit {
             SignatureEdit::Edit(node, edit) => self.edit(*node, edit.clone()),
             SignatureEdit::NewFolder(node) => {
-                self.0
-                    .push_onto(*node, SignatureItem::Folder("New folder".to_owned(), true));
+                self.0.push_onto(
+                    *node,
+                    SignatureItem::Folder(FolderInfo {
+                        id: self.next_folder_id(),
+                        name: "New folder".to_owned(),
+                        open: true,
+                    }),
+                );
             }
             SignatureEdit::MoveBefore(from, to) => self.0.reparent_before(*from, *to),
             SignatureEdit::MoveInto(from, to) => self.0.reparent_under(*from, *to),
             SignatureEdit::ToggleFolder(node) => {
                 self.0.with_mut(*node, |n| {
-                    if let SignatureItem::Folder(_, b) = n.inner_mut() {
-                        *b = !*b;
+                    if let SignatureItem::Folder(info) = n.inner_mut() {
+                        info.open = !info.open;
                     }
                 });
             }
@@ -210,4 +232,11 @@ impl From<Tree<SignatureItem>> for Signature {
     fn from(tree: Tree<SignatureItem>) -> Self {
         Self(tree)
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FolderInfo {
+    pub id: usize,
+    pub name: String,
+    pub open: bool,
 }
