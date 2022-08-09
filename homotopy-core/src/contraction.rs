@@ -1,4 +1,5 @@
 use std::{
+    cmp::Ordering,
     collections::HashMap,
     convert::{Into, TryInto},
     hash::Hash,
@@ -23,7 +24,7 @@ use thiserror::Error;
 
 use crate::{
     attach::{attach, BoundaryPath},
-    common::{Boundary, DimensionError, Height, SingularHeight},
+    common::{Boundary, DimensionError, Height, Orientation, SingularHeight},
     diagram::{Diagram, DiagramN},
     expansion::expand_propagate,
     graph::{Explodable, ExplosionOutput, ExternalRewrite, InternalRewrite},
@@ -408,7 +409,8 @@ fn collapse_base<'a, Ix: IndexType>(
         .len()
         .saturating_sub(max_dim_generator.dimension);
 
-    let mut orientations = HashMap::<Vec<Height>, isize>::default();
+    // Collect the orientations of the maximum-dimensional generator by subslice.
+    let mut orientations = HashMap::<&[Height], Vec<Orientation>>::default();
 
     for (i, (d, _bias, coord)) in graph.node_references() {
         let g: Generator = d.try_into().unwrap();
@@ -419,8 +421,10 @@ fn collapse_base<'a, Ix: IndexType>(
             }
             union_find.union(i, max_dim_index);
 
-            let key = coord[..codimension].to_vec();
-            *orientations.entry(key).or_default() += g.orientation;
+            orientations
+                .entry(&coord[..codimension])
+                .or_default()
+                .push(g.orientation);
         }
     }
 
@@ -440,19 +444,41 @@ fn collapse_base<'a, Ix: IndexType>(
         }
     }
 
-    // check orientations
-    let (_, &first_orientation) = orientations.iter().next().unwrap();
-    if !(first_orientation <= 1 && first_orientation >= -1) {
-        return Err(ContractionError::Invalid);
-    }
-    for (_, orientation) in orientations {
-        if orientation != first_orientation {
-            return Err(ContractionError::Invalid);
+    let orientation = {
+        // Check that the orientations in each subslice cancel out.
+        let slice_orientations = orientations
+            .into_values()
+            .map(|orientations| {
+                let counts = orientations.into_iter().counts();
+                let pos = counts
+                    .get(&Orientation::Positive)
+                    .copied()
+                    .unwrap_or_default();
+                let neg = counts
+                    .get(&Orientation::Negative)
+                    .copied()
+                    .unwrap_or_default();
+
+                match pos.cmp(&neg) {
+                    Ordering::Less => (neg == pos + 1).then_some(Orientation::Negative),
+                    Ordering::Equal => Some(Orientation::Zero),
+                    Ordering::Greater => (pos == neg + 1).then_some(Orientation::Positive),
+                }
+            })
+            .collect::<Option<Vec<_>>>()
+            .ok_or(ContractionError::Invalid)?;
+
+        // Check that all subslices yield the same orientation.
+        for x in &slice_orientations[1..] {
+            if *x != slice_orientations[0] {
+                return Err(ContractionError::Invalid);
+            }
         }
-    }
+        slice_orientations[0]
+    };
 
     let colimit = Generator {
-        orientation: first_orientation,
+        orientation,
         ..max_dim_generator
     };
 
@@ -827,7 +853,9 @@ fn collapse_recursive<Ix: IndexType>(
 impl Rewrite {
     fn is_redundant(&self) -> bool {
         match self {
-            Rewrite::Rewrite0(r) => r.target().map_or(false, |t| t.orientation == 0),
+            Rewrite::Rewrite0(r) => r
+                .target()
+                .map_or(false, |t| t.orientation == Orientation::Zero),
             Rewrite::RewriteN(r) => r.cones().iter().all(Cone::is_redundant),
         }
     }

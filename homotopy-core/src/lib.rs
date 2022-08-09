@@ -1,4 +1,4 @@
-pub use common::{Boundary, Direction, Generator, Height, SliceIndex};
+pub use common::{Boundary, Direction, Generator, Height, Orientation, SliceIndex};
 pub use contraction::Bias;
 pub use diagram::{Diagram, DiagramN};
 pub use rewrite::{Cospan, Rewrite, Rewrite0, RewriteN};

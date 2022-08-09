@@ -17,7 +17,7 @@ use serde::{
 use thiserror::Error;
 
 use crate::{
-    common::{DimensionError, Generator, MaxByDimension, Mode, RegularHeight, SingularHeight},
+    common::{DimensionError, Generator, MaxByDimension, Mode, Orientation, RegularHeight, SingularHeight},
     diagram::Diagram,
     monotone::{Monotone, Split},
     Boundary, Height, SliceIndex,
@@ -227,6 +227,14 @@ impl Cospan {
             backward: f(&self.backward),
         }
     }
+
+    pub fn inverse(&self) -> Self {
+        use Orientation::Negative;
+        Self {
+            forward: self.backward.clone().orientation_transform(Negative),
+            backward: self.forward.clone().orientation_transform(Negative),
+        }
+    }
 }
 
 impl fmt::Debug for Rewrite {
@@ -384,7 +392,7 @@ impl Rewrite {
     }
 
     #[must_use]
-    pub fn orientation_transform(self, k: isize) -> Self {
+    pub fn orientation_transform(self, k: Orientation) -> Self {
         use Rewrite::{Rewrite0, RewriteN};
         match self {
             Rewrite0(r) => Rewrite0(r.orientation_transform(k)),
@@ -537,7 +545,7 @@ impl Rewrite0 {
     }
 
     #[must_use]
-    pub fn orientation_transform(self, k: isize) -> Self {
+    pub fn orientation_transform(self, k: Orientation) -> Self {
         match self.0 {
             None => Self(None),
             Some((source, target, label)) => {
@@ -801,7 +809,7 @@ impl RewriteN {
     }
 
     #[must_use]
-    pub fn orientation_transform(self, k: isize) -> Self {
+    pub fn orientation_transform(self, k: Orientation) -> Self {
         let cones = self
             .cones()
             .iter()

@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use homotopy_core::Generator;
+use homotopy_core::{Generator, Orientation};
 
 use crate::style::{GeneratorStyle, SignatureStyleData};
 
@@ -42,7 +42,7 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
 }
 
 pub fn generator_class(generator: Generator, suffix: &str) -> String {
-    if generator.orientation > 0 {
+    if generator.orientation == Orientation::Positive {
         format!(
             "generator__{}-{}--{}",
             generator.id, generator.dimension, suffix
