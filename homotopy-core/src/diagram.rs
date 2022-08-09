@@ -502,17 +502,10 @@ impl DiagramN {
 
     #[must_use]
     pub fn inverse(&self) -> Self {
-        let cospans = self
-            .cospans()
-            .iter()
-            .map(|cs| Cospan {
-                forward: cs.backward.clone().orientation_transform(-1),
-                backward: cs.forward.clone().orientation_transform(-1),
-            })
-            .rev()
-            .collect();
-
-        Self::new_unsafe(self.target(), cospans)
+        Self::new(
+            self.target(),
+            self.cospans().iter().map(Cospan::inverse).rev().collect(),
+        )
     }
 
     #[must_use]

@@ -8,7 +8,7 @@ use thiserror::Error;
 use crate::{
     antipushout::{antipushout, factorize_inc},
     attach::{attach, BoundaryPath},
-    common::{Boundary, DimensionError, Direction, Height, RegularHeight, SingularHeight},
+    common::{Boundary, DimensionError, Direction, Height, Orientation, RegularHeight, SingularHeight},
     diagram::{Diagram, DiagramN},
     factorization::factorize,
     normalization::normalize_singular,
@@ -81,23 +81,20 @@ impl Cospan {
     /// Promotes a `Cospan` to one dimension higher by bubbling.
     #[must_use]
     pub fn bubble(&self) -> Self {
-        let reversed = Cospan {
-            forward: self.backward.clone().orientation_transform(-1),
-            backward: self.forward.clone().orientation_transform(-1),
-        };
+        use Orientation::Zero;
         let forward = RewriteN::new(
             self.forward.dimension() + 1,
             vec![Cone::new(
                 0,
-                vec![self.clone(), reversed],
+                vec![self.clone(), self.inverse()],
                 Cospan {
-                    forward: self.forward.clone().orientation_transform(0), // needs to be orientation 0
-                    backward: self.forward.clone().orientation_transform(0), // needs to be orientation 0
+                    forward: self.forward.clone().orientation_transform(Zero), // needs to be orientation 0
+                    backward: self.forward.clone().orientation_transform(Zero), // needs to be orientation 0
                 },
                 vec![
-                    self.forward.clone().orientation_transform(0), // needs to be orientation 0
-                    self.backward.clone().orientation_transform(0), // needs to be orientation 0
-                    self.forward.clone().orientation_transform(0), // needs to be orientation 0
+                    self.forward.clone().orientation_transform(Zero), // needs to be orientation 0
+                    self.backward.clone().orientation_transform(Zero), // needs to be orientation 0
+                    self.forward.clone().orientation_transform(Zero), // needs to be orientation 0
                 ],
                 vec![Rewrite::identity(self.forward.dimension()); 2],
             )],
@@ -109,10 +106,10 @@ impl Cospan {
                 0,
                 Default::default(),
                 Cospan {
-                    forward: self.forward.clone().orientation_transform(0),  // needs to be orientation 0
-                    backward: self.forward.clone().orientation_transform(0), // needs to be orientation 0
+                    forward: self.forward.clone().orientation_transform(Zero), // needs to be orientation 0
+                    backward: self.forward.clone().orientation_transform(Zero), // needs to be orientation 0
                 },
-                vec![self.forward.clone().orientation_transform(0)], // needs to be orientation 0
+                vec![self.forward.clone().orientation_transform(Zero)], // needs to be orientation 0
                 Default::default(),
             )],
         )
