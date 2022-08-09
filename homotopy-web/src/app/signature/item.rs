@@ -197,7 +197,7 @@ impl Component for ItemView {
     fn create(ctx: &Context<Self>) -> Self {
         let name = match &ctx.props().item {
             SignatureItem::Item(info) => info.name.clone(),
-            SignatureItem::Folder(name, _) => name.clone(),
+            SignatureItem::Folder(info) => info.name.clone(),
         };
         Self {
             name,
@@ -273,7 +273,7 @@ impl Component for ItemView {
                     .dispatch
                     .reform(move |_| Action::SelectGenerator(generator))
             }
-            SignatureItem::Folder(_, _) => Callback::noop(),
+            SignatureItem::Folder(_) => Callback::noop(),
         };
 
         html! {
@@ -313,7 +313,7 @@ impl ItemView {
         if mode == ItemViewMode::Viewing {
             let prev_name = match &ctx.props().item {
                 SignatureItem::Item(info) => &info.name,
-                SignatureItem::Folder(name, _) => name,
+                SignatureItem::Folder(info) => &info.name,
             };
             if &self.name != prev_name {
                 apply_edit(
@@ -331,7 +331,7 @@ impl ItemView {
     fn view_name(&self, ctx: &Context<Self>) -> Html {
         let name = match &ctx.props().item {
             SignatureItem::Item(info) => &info.name,
-            SignatureItem::Folder(name, _) => name,
+            SignatureItem::Folder(info) => &info.name,
         };
 
         if self.mode == ItemViewMode::Editing {
@@ -550,8 +550,8 @@ impl ItemView {
                     </>
                 }
             }
-            SignatureItem::Folder(_, open) => {
-                let icon = if *open { "folder_open" } else { "folder" };
+            SignatureItem::Folder(info) => {
+                let icon = if info.open { "folder_open" } else { "folder" };
                 let node = ctx.props().node;
                 let toggle = ctx
                     .props()
@@ -620,7 +620,7 @@ impl ItemView {
     }
 
     fn view_right_buttons(&self, ctx: &Context<Self>) -> Html {
-        if let SignatureItem::Folder(_, open) = ctx.props().item {
+        if let SignatureItem::Folder(info) = &ctx.props().item {
             let class = format!(
                 "signature__folder-right {}",
                 match self.mode {
@@ -633,7 +633,7 @@ impl ItemView {
             let buttons = match self.mode {
                 ItemViewMode::Viewing => html! {},
                 ItemViewMode::Hovering => {
-                    let new_folder = if open {
+                    let new_folder = if info.open {
                         html! {
                             <NewFolderButton
                                 dispatch={ctx.props().dispatch.clone()}

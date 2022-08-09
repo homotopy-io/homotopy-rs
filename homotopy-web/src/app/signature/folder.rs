@@ -132,6 +132,8 @@ fn render_drop_zone(props: &Props, node: Node, position: DropPosition) -> Html {
 
     html! {
         <li
+            // TODO: in future, we may wish to add keys to the dropzones, though it is not strictly
+            // necessary
             ref={drop_zone_ref}
             class="signature__dropzone"
             ondragenter={on_drag_enter}
@@ -147,9 +149,10 @@ fn render_item(props: &Props, node: Node) -> Html {
         .signature
         .as_tree()
         .with(node, |item| match item.inner() {
-            SignatureItem::Folder(_, _) => {
+            SignatureItem::Folder(info) => {
                 html! {
                     <ItemView
+                        key={format!("f-{}", info.id)}
                         dispatch={props.dispatch.clone()}
                         node={node}
                         item={item.inner().clone()}
@@ -161,9 +164,10 @@ fn render_item(props: &Props, node: Node) -> Html {
                     />
                 }
             }
-            SignatureItem::Item(_) => {
+            SignatureItem::Item(info) => {
                 html! {
                     <ItemView
+                        key={format!("i-{}", info.generator.id)}
                         dispatch={props.dispatch.clone()}
                         node={node}
                         item={item.inner().clone()}
@@ -178,7 +182,7 @@ fn render_item(props: &Props, node: Node) -> Html {
 fn render_children(props: &Props, node: Node) -> Html {
     let contents = props.signature.as_tree();
     contents.with(node, move |n| match n.inner() {
-        SignatureItem::Folder(_, true) => {
+        SignatureItem::Folder(info) if info.open => {
             let children = n.children().map(|child| render_tree(props, child));
             let class = format!(
                 "signature__branch {}",
