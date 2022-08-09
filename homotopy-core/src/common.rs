@@ -2,7 +2,7 @@ use std::{
     cmp::Ordering,
     fmt,
     iter::FusedIterator,
-    ops::{Index, IndexMut},
+    ops::{Index, IndexMut, Mul},
 };
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -13,7 +13,7 @@ use thiserror::Error;
 pub struct Generator {
     pub dimension: usize,
     pub id: usize,
-    pub orientation: isize,
+    pub orientation: Orientation,
 }
 
 impl Generator {
@@ -21,12 +21,12 @@ impl Generator {
         Self {
             dimension,
             id,
-            orientation: 1,
+            orientation: Orientation::Positive,
         }
     }
 
     #[must_use]
-    pub fn orientation_transform(self, k: isize) -> Self {
+    pub fn orientation_transform(self, k: Orientation) -> Self {
         Self {
             orientation: self.orientation * k,
             ..self
@@ -37,7 +37,7 @@ impl Generator {
 impl fmt::Debug for Generator {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_fmt(format_args!(
-            "{}:{}@{}",
+            "{}:{}^{}",
             self.id, self.dimension, self.orientation
         ))
     }
@@ -354,6 +354,38 @@ pub struct DimensionError;
 pub enum Mode {
     Deep,
     Shallow,
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+pub enum Orientation {
+    Negative,
+    Zero,
+    Positive,
+}
+
+impl Mul for Orientation {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        use Orientation::*;
+        match (self, rhs) {
+            (Zero, _) => Zero,
+            (_, Zero) => Zero,
+            (Positive, _) => rhs,
+            (_, Positive) => self,
+            (Negative, Negative) => Positive,
+        }
+    }
+}
+
+impl fmt::Display for Orientation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Negative => write!(f, "-"),
+            Self::Zero => write!(f, "0"),
+            Self::Positive => write!(f, "+"),
+        }
+    }
 }
 
 pub(crate) trait MaxByDimension: Iterator<Item = Generator> {
