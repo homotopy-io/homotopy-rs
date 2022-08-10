@@ -1,7 +1,8 @@
 use std::ops::Index;
 
 use homotopy_core::{
-    Boundary::*, Cospan, DiagramN, Generator, Height::*, Rewrite0, RewriteN, SliceIndex::*,
+    Boundary::*, Cospan, DiagramN, Generator, Height::*, Orientation, Rewrite0, RewriteN,
+    SliceIndex::*,
 };
 use proptest::prelude::*;
 
@@ -64,8 +65,8 @@ prop_compose! {
         let x = Generator::new(0, 0);
         let internal = |g: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, g, (g.id, vec![Boundary(Source)]).into()).into(),
-                backward: Rewrite0::new(x, g, (g.id, vec![Boundary(Target)]).into()).into(),
+                forward: Rewrite0::new(x, g, (g, vec![Boundary(Source)]).into(), Orientation::Positive).into(),
+                backward: Rewrite0::new(x, g, (g, vec![Boundary(Target)]).into(), Orientation::Positive).into(),
             }
         };
 
@@ -89,10 +90,11 @@ prop_compose! {
                             source,
                             target,
                             (
-                                filler_generator.id,
+                                filler_generator,
                                 vec![Boundary(Source), Interior(Singular(i))],
                             )
                                 .into(),
+                            Orientation::Positive,
                         )
                         .into()
                     })
@@ -106,10 +108,11 @@ prop_compose! {
                             x,
                             target,
                             (
-                                filler_generator.id,
+                                filler_generator,
                                 vec![Boundary(Source), Interior(Regular(r))],
                             )
                                 .into(),
+                            Orientation::Positive,
                         )
                         .into()
                     })
@@ -149,8 +152,8 @@ prop_compose! {
         let x = Generator::new(0, 0);
         let internal = |g: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, g, (g.id, vec![Boundary(Source)]).into()).into(),
-                backward: Rewrite0::new(x, g, (g.id, vec![Boundary(Target)]).into()).into(),
+                forward: Rewrite0::new(x, g, (g, vec![Boundary(Source)]).into(), Orientation::Positive).into(),
+                backward: Rewrite0::new(x, g, (g, vec![Boundary(Target)]).into(), Orientation::Positive).into(),
             }
         };
         (

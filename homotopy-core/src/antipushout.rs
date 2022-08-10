@@ -90,8 +90,8 @@ pub fn antipushout(
                 let s = std::cmp::min_by_key(*a, *b, |g| g.dimension);
                 vec![(
                     s.into(),
-                    Rewrite0::new(s, *a, todo!()).into(),
-                    Rewrite0::new(s, *b, todo!()).into(),
+                    Rewrite0::new(s, *a, todo!(), todo!()).into(),
+                    Rewrite0::new(s, *b, todo!(), todo!()).into(),
                 )]
             }
         }
@@ -263,9 +263,9 @@ fn factorize_inc_helper(
             (
                 sources
                     .into_iter()
-                    .map(|s| Rewrite::from(Rewrite0::new(s, m, todo!())))
+                    .map(|s| Rewrite::from(Rewrite0::new(s, m, todo!(), todo!())))
                     .collect_vec(),
-                Rewrite::from(Rewrite0::new(m, *t, todo!())),
+                Rewrite::from(Rewrite0::new(m, *t, todo!(), todo!())),
             )
         }
         Diagram::DiagramN(target) => {
