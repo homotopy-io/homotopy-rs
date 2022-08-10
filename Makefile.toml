@@ -24,21 +24,26 @@ watch = { watch = ["homotopy-common/src", "homotopy-core/src", "homotopy-graphic
 [tasks.build-highs]
 script = '''
 mkdir -p dist
-cp $(nix build .#highs --no-link --print-out-paths --extra-experimental-features flakes --extra-experimental-features nix-command)/highs.{js,wasm} dist/
+cp -f $(nix build .#highs --no-link --print-out-paths --extra-experimental-features flakes --extra-experimental-features nix-command)/highs.{js,wasm} dist/
 '''
 
 [tasks.dist-static]
 script = '''
 mkdir -p dist
 echo "Cleaning old files"
-find dist ! -name homotopy_web.js ! -name homotopy_web_bg.wasm -type f -exec rm -f {} +
+find dist \
+    ! -name highs.js \
+    ! -name highs.wasm \
+    ! -name homotopy_web.js \
+    ! -name homotopy_web_bg.wasm \
+    -type f -exec rm -f {} +
 cp -r homotopy-web/static/* dist/
 ls dist
 '''
 
 [tasks.dist-static-watch]
 run_task = { name = ["dist-static"] }
-watch = { watch = ["static"] }
+watch = { watch = ["homotopy-web/static"] }
 
 [tasks.dist]
 run_task = { name = ["build-wasm", "dist-static"] }
@@ -73,10 +78,5 @@ args = [
   "emulators:start"
 ]
 
-[tasks.run-server]
-run_task = [
-  { name = ["mkdir-dist", "devserver"] },
-]
-
 [tasks.serve]
-run_task = { name = ["run-server", "build-wasm-watch", "build-highs", "dist-static-watch"], parallel = true }
+run_task = { name = ["build-highs", "dist-static-watch", "build-wasm-watch", "devserver"], fork = true, parallel = true }
