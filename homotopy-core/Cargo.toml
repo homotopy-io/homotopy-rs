@@ -39,7 +39,7 @@ serde_json = "1.0.85"
 base64 = "0.13.0"
 
 [features]
-default = []
+default = ["safety-checks"]
 safety-checks = []
 fuzz = ["arbitrary", "homotopy-common/fuzz"]
 
