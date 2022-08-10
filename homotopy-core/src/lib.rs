@@ -73,7 +73,6 @@ pub mod rewrite;
 pub mod serialize;
 pub mod signature;
 pub mod typecheck;
-pub mod util;
 
 pub fn collect_garbage() {
     DiagramN::collect_garbage();

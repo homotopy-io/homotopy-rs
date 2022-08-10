@@ -65,15 +65,15 @@ pub fn render(
     let mut max_point = Point2D::<f32>::zero();
     for element in graphic {
         match element {
-            GraphicElement::Surface(g, path) => {
+            GraphicElement::Surface(g, _, path) => {
                 max_point = max_point.max(max_point_path(&path));
                 surfaces.push((g, path));
             }
-            GraphicElement::Wire(g, depth, path, _mask) => {
+            GraphicElement::Wire(g, _, depth, path, _mask) => {
                 max_point = max_point.max(max_point_path(&path));
                 wires.entry(depth).or_default().push((g, path));
             }
-            GraphicElement::Point(g, point) => {
+            GraphicElement::Point(g, _, point) => {
                 max_point = max_point.max(point);
                 points.push((g, point));
             }

@@ -11,6 +11,7 @@ use homotopy_common::{
     hash::{FastHashMap, FastHasher},
     idx::IdxVec,
 };
+use itertools::Itertools;
 use petgraph::{
     graph::{EdgeIndex, NodeIndex},
     visit::{EdgeRef, IntoNodeReferences, Topo, Walker},
@@ -18,7 +19,7 @@ use petgraph::{
 };
 
 use crate::{
-    common::{DimensionError, Generator, SliceIndex},
+    common::{Boundary, DimensionError, Generator, Orientation, SliceIndex},
     graph::{Explodable, SliceGraph},
     layout::Layout,
     Diagram, Direction, Height, Rewrite,
@@ -39,8 +40,8 @@ pub enum Homotopy {
 /// projection of a diagram, as well as information about homotopies.
 #[derive(Clone, Debug)]
 pub struct Projection<const N: usize> {
-    generators: IdxVec<NodeIndex, Generator>,
-    front_generators: IdxVec<NodeIndex, Generator>,
+    generators: IdxVec<NodeIndex, (Generator, Orientation)>,
+    front_generators: IdxVec<NodeIndex, (Generator, Orientation)>,
     homotopies: IdxVec<NodeIndex, Option<Homotopy>>,
     coord_to_node: FastHashMap<Coordinate<N>, NodeIndex>,
 }
@@ -59,25 +60,21 @@ impl<const N: usize> Projection<N> {
         }
 
         // Construct the exploded graph.
-        let mut graph: SliceGraph<Vec<SliceIndex>, _> =
-            SliceGraph::singleton(vec![], diagram.clone());
+        let mut graph: SliceGraph<Coordinate<N>, (usize, Direction)> =
+            SliceGraph::singleton([Boundary::Source.into(); N], diagram.clone());
         for i in 0..N {
             graph = graph
                 .explode(
                     |_, key, si| {
-                        let mut v = key.clone();
-                        v.push(si);
-                        Some(v)
+                        let mut key = *key;
+                        key[i] = si;
+                        Some(key)
                     },
-                    |_, _, r| (i == 0).then_some(r.direction()),
-                    |_, key, r| (i > 0 && r.is_atomic()).then_some(*key),
+                    |_, _, r| Some((i, r.direction())),
+                    |_, key, r| r.is_atomic().then(|| *key),
                 )?
                 .output;
         }
-        let graph: SliceGraph<Coordinate<N>, _> = graph.map(
-            |_, (indices, diagram)| (indices.clone().try_into().unwrap(), diagram.clone()),
-            |_, e| e.clone(),
-        );
 
         let mut generators = IdxVec::with_capacity(graph.node_count());
         let mut homotopies = IdxVec::with_capacity(graph.node_count());
@@ -88,13 +85,16 @@ impl<const N: usize> Projection<N> {
         for n in graph.node_indices() {
             let coord = graph[n].0;
 
-            let g = graph[n].1.max_generator();
-            let front_g = match &graph[n].1 {
-                Diagram::Diagram0(g) => *g,
-                Diagram::DiagramN(d) => match depths.node_depth(coord) {
-                    None => diagram.max_generator(),
-                    Some(i) => d.slice(Height::Singular(i)).unwrap().max_generator(),
-                },
+            let g = graph
+                .edges_directed(n, EdgeDirection::Incoming)
+                .filter_map(|e| e.weight().1.max_generator())
+                .dedup()
+                .exactly_one()
+                .unwrap_or_else(|_| (graph[n].1.max_generator(), Orientation::Positive));
+
+            let front_g = match (&graph[n].1, depths.node_depth(coord)) {
+                (Diagram::DiagramN(d), Some(i)) => d.cospans()[i].max_generator().unwrap(),
+                _ => g,
             };
 
             let h = || -> Option<Homotopy> {
@@ -112,11 +112,15 @@ impl<const N: usize> Projection<N> {
                 let mut output_rewrites = vec![];
                 let mut output_coords = vec![];
                 for e in graph.edges_directed(n, EdgeDirection::Incoming) {
+                    if e.weight().0 .0 > 0 {
+                        continue;
+                    }
+
                     let rewrite: &Rewrite = &e.weight().1;
                     let source_coord = graph[e.source()].0;
                     let depth = depths.edge_depth(source_coord, coord);
 
-                    match e.weight().0 {
+                    match e.weight().0 .1 {
                         Direction::Forward => {
                             inputs += 1;
                             input_depths.push(depth);
@@ -213,11 +217,11 @@ impl<const N: usize> Projection<N> {
         })
     }
 
-    pub fn generator(&self, p: Coordinate<N>) -> Generator {
+    pub fn generator(&self, p: Coordinate<N>) -> (Generator, Orientation) {
         self.generators[self.coord_to_node[&p]]
     }
 
-    pub fn front_generator(&self, p: Coordinate<N>) -> Generator {
+    pub fn front_generator(&self, p: Coordinate<N>) -> (Generator, Orientation) {
         self.front_generators[self.coord_to_node[&p]]
     }
 

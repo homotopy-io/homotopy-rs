@@ -346,18 +346,16 @@ impl<const N: usize> DiagramSvg<N> {
 
     /// Creates the SVG elements for the diagram.
     fn view_element(&self, ctx: &Context<Self>, index: usize, element: &GraphicElement<N>) -> Html {
-        let generator = element.generator();
-
         match element {
-            GraphicElement::Surface(_, path) => {
-                let class = generator_class(generator, "surface");
+            GraphicElement::Surface(generator, orientation, path) => {
+                let class = generator_class(*generator, *orientation, "surface");
                 let path = path_to_svg(&path.clone().transformed(&self.prepared.transform));
                 html! {
                     <path d={path} class={class} stroke-width={1} />
                 }
             }
-            GraphicElement::Wire(_, _, path, mask) => {
-                let class = generator_class(generator, "wire");
+            GraphicElement::Wire(generator, orientation, _, path, mask) => {
+                let class = generator_class(*generator, *orientation, "wire");
                 let path = path_to_svg(&path.clone().transformed(&self.prepared.transform));
 
                 if mask.is_empty() {
@@ -406,12 +404,12 @@ impl<const N: usize> DiagramSvg<N> {
                     }
                 }
             }
-            GraphicElement::Point(_, point) => {
+            GraphicElement::Point(generator, orientation, point) => {
                 use VertexShape::{Circle, Square};
-                let class = generator_class(generator, "point");
+                let class = generator_class(*generator, *orientation, "point");
                 let point = self.prepared.transform.transform_point(*point);
                 let radius = ctx.props().style.point_radius;
-                let shape = if let Some(info) = ctx.props().signature.generator_info(generator) {
+                let shape = if let Some(info) = ctx.props().signature.generator_info(*generator) {
                     info.shape.clone()
                 } else {
                     Default::default()

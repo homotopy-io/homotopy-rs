@@ -65,11 +65,11 @@ pub fn render(
     let mut points = Vec::default();
     for element in graphic {
         match element {
-            GraphicElement::Surface(g, path) => surfaces.push((g, path)),
-            GraphicElement::Wire(g, depth, path, _) => {
+            GraphicElement::Surface(g, _, path) => surfaces.push((g, path)),
+            GraphicElement::Wire(g, _, depth, path, _) => {
                 wires.entry(depth).or_default().push((g, path));
             }
-            GraphicElement::Point(g, point) => points.push((g, point)),
+            GraphicElement::Point(g, _, point) => points.push((g, point)),
         }
     }
 
