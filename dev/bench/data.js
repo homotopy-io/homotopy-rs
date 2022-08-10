@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1659626930727,
+  "lastUpdate": 1660142302028,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -38459,6 +38459,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 31.665,
             "range": "+/- 0.939",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thud@thud.dev",
+            "name": "Jasper Parish",
+            "username": "thud"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a326b06c680f8e389c6a6a8acd4301099aa81095",
+          "message": "Fix devserver reload for static files (#664)\n\n* Fork makefile tasks\r\n\r\n* Split task into subtasks for parallelism\r\n\r\nThis also corrects the `dist-static` task so that it won't delete highs\r\nbuild artifacts when rebuilding.\r\n\r\n* Make `build-highs` run in parallel\r\n\r\n* Remove unnecessary task",
+          "timestamp": "2022-08-10T14:39:57+01:00",
+          "tree_id": "8a781be4ed525bc4747c4742d515941a5332baa4",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/a326b06c680f8e389c6a6a8acd4301099aa81095"
+        },
+        "date": 1660142294107,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.8386,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 10.891,
+            "range": "+/- 0.004",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 49.363,
+            "range": "+/- 0.023",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 311.57,
+            "range": "+/- 0.160",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.6236,
+            "range": "+/- 0.001",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 26.235,
+            "range": "+/- 0.023",
             "unit": "s"
           }
         ]
