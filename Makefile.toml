@@ -38,7 +38,7 @@ ls dist
 
 [tasks.dist-static-watch]
 run_task = { name = ["dist-static"] }
-watch = { watch = ["static"] }
+watch = { watch = ["homotopy-web/static"] }
 
 [tasks.dist]
 run_task = { name = ["build-wasm", "dist-static"] }
@@ -79,4 +79,4 @@ run_task = [
 ]
 
 [tasks.serve]
-run_task = { name = ["run-server", "build-wasm-watch", "build-highs", "dist-static-watch"], parallel = true }
+run_task = { name = ["run-server", "build-wasm-watch", "build-highs", "dist-static-watch"], parallel = true, fork = true }
