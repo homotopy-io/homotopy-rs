@@ -884,15 +884,35 @@ impl RewriteN {
                             .extend(g_cone.singular_slices()[index + 1..].iter().cloned());
 
                         let mut regular_slices = vec![];
-                        regular_slices.extend(g_cone.regular_slices()[..index].iter().cloned());
-                        regular_slices.extend(
-                            f_cone
-                                .regular_slices()
-                                .iter()
-                                .map(|f_slice| f_slice.compose(g_slice))
-                                .collect::<Result<Vec<_>, _>>()?,
-                        );
-                        regular_slices.extend(g_cone.regular_slices()[index..].iter().cloned());
+                        if f_cone.is_unit() {
+                            if index > 1 {
+                                regular_slices
+                                    .extend(g_cone.regular_slices()[..index - 1].iter().cloned());
+                            }
+                            if index > 0 && index + 1 < g_cone.len() {
+                                regular_slices.extend(
+                                    f_cone
+                                        .regular_slices()
+                                        .iter()
+                                        .map(|f_slice| f_slice.compose(g_slice))
+                                        .collect::<Result<Vec<_>, _>>()?,
+                                );
+                            }
+                            if index + 2 < g_cone.len() {
+                                regular_slices
+                                    .extend(g_cone.regular_slices()[index + 1..].iter().cloned());
+                            }
+                        } else {
+                            regular_slices.extend(g_cone.regular_slices()[..index].iter().cloned());
+                            regular_slices.extend(
+                                f_cone
+                                    .regular_slices()
+                                    .iter()
+                                    .map(|f_slice| f_slice.compose(g_slice))
+                                    .collect::<Result<Vec<_>, _>>()?,
+                            );
+                            regular_slices.extend(g_cone.regular_slices()[index..].iter().cloned());
+                        }
 
                         delayed_offset -= 1 - f_cone.len() as isize;
 
