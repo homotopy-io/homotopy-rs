@@ -118,7 +118,7 @@ impl Diagram {
             Diagram0(g) => match &rewrite {
                 Rewrite::Rewrite0(r) => match &r.0 {
                     None => Ok(self),
-                    Some((source, target, _label)) => {
+                    Some((source, target, _label, _orientation)) => {
                         if g == *source {
                             Ok(Diagram0(*target))
                         } else {
@@ -141,7 +141,7 @@ impl Diagram {
             Diagram0(g) => match &rewrite {
                 Rewrite::Rewrite0(r) => match &r.0 {
                     None => Ok(self),
-                    Some((source, target, _label)) => {
+                    Some((source, target, _label, _orientation)) => {
                         if g == *target {
                             Ok(Diagram0(*source))
                         } else {
@@ -466,9 +466,12 @@ impl DiagramN {
 
     /// Determine the first maximum-dimensional generator.
     pub fn max_generator(&self) -> Generator {
-        let source = std::iter::once(self.source().max_generator());
-        let cospans = self.cospans().iter().filter_map(Cospan::max_generator);
-        source.chain(cospans).max_by_dimension().unwrap()
+        self.cospans()
+            .iter()
+            .filter_map(Cospan::max_generator)
+            .map(|(g, _)| g)
+            .max_by_dimension()
+            .unwrap_or_else(|| self.source().max_generator())
     }
 
     #[must_use]

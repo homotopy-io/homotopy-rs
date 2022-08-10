@@ -93,8 +93,15 @@ pub fn touching() -> (impl Signature, DiagramN) {
     let s = sig.add(x.identity(), x.identity()).unwrap();
     let s_generator = Generator::new(1, 2);
     let s_s = s.attach(&s, Target, &[]).unwrap();
-    let rewrite =
-        |coord| Rewrite0::new(x_generator, s_generator, (s_generator.id, coord).into()).into();
+    let rewrite = |coord| {
+        Rewrite0::new(
+            x_generator,
+            s_generator,
+            (s_generator, coord).into(),
+            Orientation::Positive,
+        )
+        .into()
+    };
     let fwd = rewrite(vec![Interior(Singular(0)), Boundary(Source)]);
     let bwd = rewrite(vec![Interior(Singular(0)), Boundary(Target)]);
     let up = rewrite(vec![Boundary(Source), Interior(Regular(0))]);
@@ -158,8 +165,15 @@ pub fn crossing() -> (impl Signature, DiagramN) {
     let s = sig.add(x.identity(), x.identity()).unwrap();
     let s_generator = Generator::new(1, 2);
     let s_s = s.attach(&s, Target, &[]).unwrap();
-    let rewrite =
-        |coord| Rewrite0::new(x_generator, s_generator, (s_generator.id, coord).into()).into();
+    let rewrite = |coord| {
+        Rewrite0::new(
+            x_generator,
+            s_generator,
+            (s_generator, coord).into(),
+            Orientation::Positive,
+        )
+        .into()
+    };
     let fwd = rewrite(vec![Interior(Singular(0)), Boundary(Source)]);
     let bwd = rewrite(vec![Interior(Singular(0)), Boundary(Target)]);
     let up = rewrite(vec![Boundary(Source), Interior(Regular(0))]);
