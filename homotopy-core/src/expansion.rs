@@ -8,7 +8,9 @@ use thiserror::Error;
 use crate::{
     antipushout::{antipushout, factorize_inc},
     attach::{attach, BoundaryPath},
-    common::{Boundary, DimensionError, Direction, Height, Orientation, RegularHeight, SingularHeight},
+    common::{
+        Boundary, DimensionError, Direction, Height, Orientation, RegularHeight, SingularHeight,
+    },
     diagram::{Diagram, DiagramN},
     factorization::factorize,
     normalization::normalize_singular,
@@ -187,8 +189,8 @@ impl DiagramN {
         if cs.forward == cs.backward
             && cs
                 .forward
-                .max_generator(Boundary::Target)
-                .map_or(false, |g| g.dimension < self.dimension())
+                .max_generator()
+                .map_or(false, |(g, _)| g.dimension < self.dimension())
         {
             Some(
                 RewriteN::new(

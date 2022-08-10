@@ -14,7 +14,7 @@ use homotopy_core::{
     expansion::ExpansionError,
     signature::SignatureClosure,
     typecheck::TypeError,
-    Cospan, Diagram, DiagramN,
+    Diagram, DiagramN,
 };
 use im::Vector;
 use serde::{Deserialize, Serialize};

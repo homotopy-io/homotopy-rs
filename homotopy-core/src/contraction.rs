@@ -89,7 +89,8 @@ impl DiagramN {
 
         attach(self, boundary_path, |slice| {
             let slice = slice.try_into().or(Err(ContractionError::Invalid))?;
-            let ContractExpand { contract, expand } = contract_in_path(&slice, interior_path, height, bias)?;
+            let ContractExpand { contract, expand } =
+                contract_in_path(&slice, interior_path, height, bias)?;
             let singular = slice.rewrite_forward(&contract).unwrap();
 
             let cospan = match boundary_path.boundary() {
@@ -372,9 +373,7 @@ fn collapse_base<'a, Ix: IndexType>(
     // find collapsible edges
     for (s, t) in graph.edge_references().filter_map(|e| {
         let r: &Rewrite0 = e.weight().try_into().unwrap();
-        r.0.as_ref()
-            .map_or(true, |(s, t, _)| s.id == t.id)
-            .then(|| (e.source(), e.target()))
+        r.is_identity().then(|| (e.source(), e.target()))
     }) {
         if (graph.edges_directed(s, Incoming).all(|p| {
             if let Some(c) = graph.find_edge(p.source(), t) {
@@ -421,10 +420,21 @@ fn collapse_base<'a, Ix: IndexType>(
             }
             union_find.union(i, max_dim_index);
 
+            // Find the orientation of the generator.
+            let orientation = graph
+                .edges_directed(i, Incoming)
+                .filter_map(|e| {
+                    let r0: &Rewrite0 = e.weight().try_into().unwrap();
+                    r0.orientation()
+                })
+                .dedup()
+                .exactly_one()
+                .unwrap();
+
             orientations
                 .entry(&coord[..codimension])
                 .or_default()
-                .push(g.orientation);
+                .push(orientation);
         }
     }
 
@@ -477,11 +487,6 @@ fn collapse_base<'a, Ix: IndexType>(
         slice_orientations[0]
     };
 
-    let colimit = Generator {
-        orientation,
-        ..max_dim_generator
-    };
-
     // construct colimit legs
     let legs = {
         let mut legs = IdxVec::with_capacity(graph.node_count());
@@ -490,14 +495,14 @@ fn collapse_base<'a, Ix: IndexType>(
             let r = {
                 let (p, q) = (union_find.find_mut(n), union_find.find_mut(max_dim_index));
                 if p == q {
-                    Rewrite0::new(g, colimit, Label::new(vec![]))
+                    Rewrite0::identity()
                 } else {
                     let label = quotient
                         .edge_weight(p, q)
                         .copied()
                         .ok_or(ContractionError::Invalid)?
                         .unwrap();
-                    Rewrite0::new(g, colimit, label.clone())
+                    Rewrite0::new(g, max_dim_generator, label.clone(), orientation)
                 }
             };
             legs.push(r.into());
@@ -506,7 +511,7 @@ fn collapse_base<'a, Ix: IndexType>(
     };
 
     let cocone = Cocone {
-        colimit: colimit.into(),
+        colimit: max_dim_generator.into(),
         legs,
     };
     Ok(cocone)
@@ -854,8 +859,8 @@ impl Rewrite {
     fn is_redundant(&self) -> bool {
         match self {
             Rewrite::Rewrite0(r) => r
-                .target()
-                .map_or(false, |t| t.orientation == Orientation::Zero),
+                .orientation()
+                .map_or(false, |orientation| orientation == Orientation::Zero),
             Rewrite::RewriteN(r) => r.cones().iter().all(Cone::is_redundant),
         }
     }

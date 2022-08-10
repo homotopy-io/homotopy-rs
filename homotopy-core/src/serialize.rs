@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     rewrite::{Cone, ConeInternal, Label, LabelNode},
-    Cospan, Diagram, DiagramN, Generator, Rewrite, Rewrite0, RewriteN,
+    Cospan, Diagram, DiagramN, Generator, Orientation, Rewrite, Rewrite0, RewriteN,
 };
 
 /// Similar to `Hash`, except supposed to be deterministic and shouldn't collide
@@ -90,6 +90,7 @@ impl Store {
                 source: r0.source(),
                 target: r0.target(),
                 label: r0.label().map(|l| self.pack_label(l)),
+                orientation: r0.orientation(),
             },
             Rewrite::RewriteN(rewrite) => {
                 let cones = rewrite
@@ -204,11 +205,18 @@ impl Store {
                     source,
                     target,
                     label,
-                } => match (source, target, label) {
-                    (None, None, None) => Some(Rewrite0(None).into()),
-                    (Some(source), Some(target), Some(label)) => {
-                        Some(Rewrite0(Some((source, target, self.unpack_label(label)?))).into())
-                    }
+                    orientation,
+                } => match (source, target, label, orientation) {
+                    (None, None, None, None) => Some(Rewrite0(None).into()),
+                    (Some(source), Some(target), Some(label), Some(orientation)) => Some(
+                        Rewrite0(Some((
+                            source,
+                            target,
+                            self.unpack_label(label)?,
+                            orientation,
+                        )))
+                        .into(),
+                    ),
                     _ => None,
                 },
                 RewriteSer::Rn { dimension, cones } => {
@@ -330,6 +338,9 @@ enum RewriteSer {
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
         label: Option<Vec<Key<LabelNode>>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default)]
+        orientation: Option<Orientation>,
     },
     Rn {
         dimension: NonZeroU32,
@@ -345,10 +356,12 @@ impl Hash for RewriteSer {
                 source,
                 target,
                 label,
+                orientation,
             } => {
                 source.hash(state);
                 target.hash(state);
                 label.hash(state);
+                orientation.hash(state);
             }
             RewriteSer::Rn { dimension, cones } => {
                 dimension.hash(state);
