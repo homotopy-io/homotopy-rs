@@ -537,19 +537,19 @@ span.signature__item-name {
 }
 
 .signature__folder-right {
+  flex: 0 0 auto;
   display: flex;
   flex-direction: row;
+  justify-content: right;
   wrap: nowrap;
-  opacity: 0%;
-  transition: opacity 50ms;
+  overflow: hidden;
+  width: 0;
+  transition: width 100ms;
 }
 
-.signature__folder-right.signature__folder-right-hover {
-  opacity: 100%;
-}
-
-.signature__folder-right.signature__folder-right-editing {
-  opacity: 100%;
+.signature__folder-right.signature__folder-right-hover,
+  .signature__folder-right.signature__folder-right-editing {
+  width: 64px;
 }
 
 .signature__generator-color {

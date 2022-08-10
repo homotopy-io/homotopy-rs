@@ -621,6 +621,7 @@ impl ItemView {
 
     fn view_right_buttons(&self, ctx: &Context<Self>) -> Html {
         if let SignatureItem::Folder(info) = &ctx.props().item {
+            let node = ctx.props().node;
             let class = format!(
                 "signature__folder-right {}",
                 match self.mode {
@@ -631,8 +632,7 @@ impl ItemView {
             );
 
             let buttons = match self.mode {
-                ItemViewMode::Viewing => html! {},
-                ItemViewMode::Hovering => {
+                ItemViewMode::Viewing | ItemViewMode::Hovering => {
                     let new_folder = if info.open {
                         html! {
                             <NewFolderButton
@@ -661,11 +661,18 @@ impl ItemView {
                     }
                 }
                 ItemViewMode::Editing => html! {
-                    <ItemViewButton icon={"done"} on_click={
-                        ctx.link().callback(move |_| {
-                            ItemViewMessage::SwitchTo(ItemViewMode::Hovering)
-                        })
-                    } />
+                    <>
+                        <ItemViewButton icon={"delete"} on_click={
+                            ctx.props().dispatch.reform(
+                                move |_| Action::EditSignature(SignatureEdit::Remove(node))
+                            )
+                        } />
+                        <ItemViewButton icon={"done"} on_click={
+                            ctx.link().callback(move |_| {
+                                ItemViewMessage::SwitchTo(ItemViewMode::Hovering)
+                            })
+                        } />
+                    </>
                 },
             };
 
