@@ -494,6 +494,10 @@ button, .button {
   height: var(--signature-height);
 }
 
+.signature__item input[type=text]:focus-within {
+  text-decoration: underline;
+}
+
 .signature__item-child {
   padding: var(--space-0);
   display: flex;
