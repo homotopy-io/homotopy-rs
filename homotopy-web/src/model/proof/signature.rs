@@ -154,8 +154,16 @@ impl Signature {
                 self.0
                     .push_onto(*node, SignatureItem::Folder("New folder".to_owned(), true));
             }
-            SignatureEdit::MoveBefore(from, to) => self.0.reparent_before(*from, *to),
-            SignatureEdit::MoveInto(from, to) => self.0.reparent_under(*from, *to),
+            SignatureEdit::MoveBefore(from, to) => {
+                if !self.0.descendents_of(*from).any(|node| node == *to) {
+                    self.0.reparent_before(*from, *to);
+                }
+            }
+            SignatureEdit::MoveInto(from, to) => {
+                if !self.0.descendents_of(*from).any(|node| node == *to) {
+                    self.0.reparent_under(*from, *to);
+                }
+            }
             SignatureEdit::ToggleFolder(node) => {
                 self.0.with_mut(*node, |n| {
                     if let SignatureItem::Folder(_, b) = n.inner_mut() {
