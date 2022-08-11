@@ -9,8 +9,11 @@ use yew::prelude::*;
 use yew_macro::function_component;
 
 use crate::{
-    app::diagram_svg::DiagramSvg,
-    components::icon::{Icon, IconSize},
+    app::{diagram_svg::DiagramSvg, AppSettings, AppSettingsKey},
+    components::{
+        icon::{Icon, IconSize},
+        settings::{KeyStore, Settings, Store},
+    },
     model::proof::{
         generators::GeneratorInfo, Action, Signature, SignatureEdit, SignatureItem,
         SignatureItemEdit, COLORS, VERTEX_SHAPES,
@@ -43,7 +46,7 @@ struct ItemViewButtonProps {
     class: String,
     #[prop_or_default]
     style: String,
-    #[prop_or(false)]
+    #[prop_or_default]
     light: bool,
 }
 
@@ -135,11 +138,12 @@ pub struct Preview {
     pub html: Html,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum ItemViewMessage {
     SwitchTo(ItemViewMode),
     Edit(SignatureItemEdit),
     CachePreview(Preview),
+    Setting(<Store<AppSettings> as KeyStore>::Message),
     Noop,
 }
 
@@ -183,11 +187,12 @@ fn custom_recolor_button(props: &CustomRecolorButtonProps) -> Html {
     }
 }
 
-#[derive(Debug, Default)]
 pub struct ItemView {
+    local: Store<AppSettings>,
     mode: ItemViewMode,
     name: String,
     preview_cache: Option<Preview>,
+    _settings: AppSettings,
 }
 
 impl Component for ItemView {
@@ -195,13 +200,21 @@ impl Component for ItemView {
     type Properties = ItemViewProps;
 
     fn create(ctx: &Context<Self>) -> Self {
+        const ITEM_SUBSCRIPTIONS: &[AppSettingsKey] = &[AppSettingsKey::show_previews];
+
+        let mut settings = AppSettings::connect(ctx.link().callback(ItemViewMessage::Setting));
+        settings.subscribe(ITEM_SUBSCRIPTIONS);
+
         let name = match &ctx.props().item {
             SignatureItem::Item(info) => info.name.clone(),
             SignatureItem::Folder(info) => info.name.clone(),
         };
         Self {
+            local: Default::default(),
+            mode: Default::default(),
             name,
-            ..Default::default()
+            preview_cache: Default::default(),
+            _settings: settings,
         }
     }
 
@@ -220,6 +233,10 @@ impl Component for ItemView {
             }
             ItemViewMessage::CachePreview(preview) => {
                 self.preview_cache = Some(preview);
+            }
+            ItemViewMessage::Setting(msg) => {
+                self.local.set(&msg);
+                return true;
             }
             ItemViewMessage::Noop => {}
         }
@@ -386,6 +403,10 @@ impl ItemView {
     }
 
     fn view_preview(&self, ctx: &Context<Self>) -> Html {
+        if !self.local.get_show_previews() {
+            return html! {};
+        }
+
         if let SignatureItem::Item(ref info) = ctx.props().item {
             if let Some(cache) = &self.preview_cache {
                 // Note that the following is executed on every change in `ItemViewMode`, ie. if
@@ -730,23 +751,34 @@ impl ItemView {
             return html! {};
         }
 
-        // The following is required to allow the div to respond to onclick events appropriately.
-        let get_input = move |e: MouseEvent| {
-            e.target_unchecked_into::<Element>()
-                .last_child()
-                .unwrap()
-                .unchecked_into::<HtmlInputElement>()
-        };
+        // The below macro (for convenience) dispatches a message with a `SignatureItemEdit` by
+        // getting the status of the <input> within the outer <div> of a preference.
+        macro_rules! toggle_or_noop {
+            ($edit_type:ident) => {
+                toggle_or_noop!($edit_type, false)
+            };
+            ($edit_type:ident, $flip:expr) => {
+                |e: MouseEvent| {
+                    let input = e
+                        .target_unchecked_into::<Element>()
+                        .last_child()
+                        .unwrap()
+                        .unchecked_into::<HtmlInputElement>();
 
-        let toggle_single_preview = ctx.link().callback(move |e: MouseEvent| {
-            ItemViewMessage::Edit(SignatureItemEdit::ShowSinglePreview(get_input(e).checked()))
-        });
-        let toggle_invertible = ctx.link().callback(move |e: MouseEvent| {
-            ItemViewMessage::Edit(SignatureItemEdit::MakeInvertible(!get_input(e).checked()))
-        });
-        let toggle_framed = ctx.link().callback(move |e: MouseEvent| {
-            ItemViewMessage::Edit(SignatureItemEdit::MakeFramed(get_input(e).checked()))
-        });
+                    if input.disabled() {
+                        ItemViewMessage::Noop
+                    } else {
+                        ItemViewMessage::Edit(SignatureItemEdit::$edit_type(
+                            $flip ^ input.checked(),
+                        ))
+                    }
+                }
+            };
+        }
+
+        let toggle_single_preview = ctx.link().callback(toggle_or_noop!(ShowSinglePreview));
+        let toggle_invertible = ctx.link().callback(toggle_or_noop!(MakeInvertible, true));
+        let toggle_framed = ctx.link().callback(toggle_or_noop!(MakeFramed));
 
         let color = if info.color.is_light() {
             "var(--drawer-foreground)".to_owned()
@@ -764,6 +796,7 @@ impl ItemView {
                         color={color.clone()}
                         onclick={toggle_single_preview}
                         checked={!info.single_preview}
+                        disabled={!self.local.get_show_previews()}
                     />
                     <GeneratorPreferenceCheckbox
                         left="Directed"
