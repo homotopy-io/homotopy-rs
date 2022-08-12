@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1660329471079,
+  "lastUpdate": 1660330184580,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -38639,6 +38639,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 25.627,
             "range": "+/- 0.573",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thud@thud.dev",
+            "name": "Jasper Parish",
+            "username": "thud"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8234b2a4959a26ae0f4832105fa842f809ba93e2",
+          "message": "Improve gl color handling (#668)\n\n* Redefine gamma constant for more realistic render\r\n* Make GL receive linear colors\r\n* Make points, wires, surfaces differ in color from eachother (like svg)\r\n* Remove unnecessary normalisation operation (causes lack of precision)",
+          "timestamp": "2022-08-12T17:51:28Z",
+          "tree_id": "05e29e7e544b1f46274a722c20436b99c4fe9d80",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/8234b2a4959a26ae0f4832105fa842f809ba93e2"
+        },
+        "date": 1660330173808,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.8171,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 10.841,
+            "range": "+/- 0.004",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 49.238,
+            "range": "+/- 0.040",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 311.09,
+            "range": "+/- 0.190",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.6166,
+            "range": "+/- 0.001",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 26.156,
+            "range": "+/- 0.017",
             "unit": "s"
           }
         ]
