@@ -27,7 +27,7 @@ thiserror = "1.0.32"
 [dev-dependencies]
 cargo-husky = { features = ["precommit-hook", "run-cargo-check", "run-cargo-test", "run-cargo-fmt", "run-cargo-clippy"], version = "1.5.0" }
 criterion = { version = "0.3.6", features = ["html_reports"] }
-insta = "1.18.1"
+insta = "1.18.2"
 proptest = "1.0.0"
 quickcheck = "1.0.3"
 quickcheck_macros = "1.0.0"
