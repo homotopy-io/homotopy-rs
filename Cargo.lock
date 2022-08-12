@@ -925,9 +925,9 @@ dependencies = [
 
 [[package]]
 name = "lyon_algorithms"
-version = "1.0.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e11bf139ada9104d99cbbf1834ffbcda97d0e146b1779a08c31a289c6dc2cce9"
+checksum = "6d53c2fefbc729e3c206d53d0cc7ccf90d3d31614f32e329f7e042d55e6b0573"
 dependencies = [
  "lyon_path",
 ]
