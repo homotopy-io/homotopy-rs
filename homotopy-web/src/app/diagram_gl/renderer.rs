@@ -119,12 +119,13 @@ impl Renderer {
         };
 
         let signature = &self.signature;
-        let color_of = |generator: &Generator| -> Vec3 {
+        let lightened_color_of = |generator: &Generator, lighten: f32| -> Vec3 {
             signature
                 .generator_style(*generator)
                 .unwrap()
                 .color()
-                .into_components::<f32>()
+                .lighten(lighten)
+                .into_linear_f32_components()
                 .into()
         };
 
@@ -147,7 +148,7 @@ impl Renderer {
                     frame.draw(draw!(program, array, &[], {
                         mv: v,
                         p: p,
-                        albedo: color_of(generator),
+                        albedo: lightened_color_of(generator, 0.),
                         t: t,
                     }));
                 }
@@ -161,11 +162,18 @@ impl Renderer {
                 .with_clear_color(Vec4::new(0., 0., 0., 0.));
 
             if !*settings.get_mesh_hidden() {
+                let diagram_dimension = self.scene.diagram.dimension() as usize;
                 for (generator, array) in &self.scene.components {
+                    // Set color lightening amount based on how generator is viewed.
+                    let lighten = match diagram_dimension - generator.dimension {
+                        1 => 0.05, // Wire
+                        2 => 0.1,  // Surface
+                        _ => 0.,
+                    };
                     frame.draw(draw!(program, array, &[], {
                         mv: v,
                         p: p,
-                        albedo: color_of(generator),
+                        albedo: lightened_color_of(generator, lighten),
                         t: t,
                     }));
                 }
@@ -186,7 +194,7 @@ impl Renderer {
                             frame.draw(draw!(&self.shaders.geometry_3d, vertex_mesh, &[], {
                                 mv: v * Mat4::from_translation(position.xyz()) * Mat4::from_scale(geometry_scale),
                                 p: p,
-                                albedo: color_of(&animation_curve.generator),
+                                albedo: lightened_color_of(&animation_curve.generator, 0.),
                                 t: t,
                             }));
                         }
@@ -211,7 +219,7 @@ impl Renderer {
                                 frame.draw(draw!(&self.shaders.geometry_3d, vertex_mesh, &[], {
                                 mv: v * Mat4::from_translation(point.xyz()) * Mat4::from_scale(scale),
                                 p: p,
-                                albedo: color_of(generator),
+                                albedo: lightened_color_of(generator, 0.),
                                 t: t,
                             }));
                             }

@@ -42,6 +42,10 @@ impl Color {
     {
         self.0.into_format().into_components()
     }
+
+    pub fn into_linear_f32_components(self) -> (f32, f32, f32) {
+        self.0.into_format::<f32>().into_linear().into_components()
+    }
 }
 
 // Convert from hex string (#rrggbb) to `Color`

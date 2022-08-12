@@ -17,7 +17,7 @@ declare_settings! {
         orthographic_3d: bool = false,
         specularity: u32 = 25,
         shininess: u32 = 64,
-        gamma: u32 = 14,
+        gamma: u32 = 22,
         animate_singularities: bool = true,
         singularity_duration: u32 = 5,
         geometry_scale: u32 = 10,
