@@ -62,7 +62,7 @@ pub enum DiagramGlMessage {
     Setting(<Store<AppSettings> as KeyStore>::Message),
 }
 
-#[derive(Properties, PartialEq, Clone)]
+#[derive(Properties, Clone, PartialEq, Eq)]
 pub struct DiagramGlProps {
     pub diagram: Diagram,
     pub signature: Signature,

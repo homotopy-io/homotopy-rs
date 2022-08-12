@@ -91,7 +91,7 @@ pub struct SidebarProps {
     pub dispatch: Callback<model::Action>,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum SidebarMsg {
     Toggle(drawers::NavDrawer),
     Dispatch(model::Action),
