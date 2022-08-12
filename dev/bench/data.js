@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1660235085686,
+  "lastUpdate": 1660329471079,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -38579,6 +38579,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 26.394,
             "range": "+/- 0.019",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thud@thud.dev",
+            "name": "Jasper Parish",
+            "username": "thud"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "dca0e6f3260c86477aa0586dda461dbdbb52dfe7",
+          "message": "Fix nix CI lint (#669)\n\n* Update flake.lock\r\n* Fix clippy lints",
+          "timestamp": "2022-08-12T17:40:48Z",
+          "tree_id": "9e43df8b2d6903de8f88fc3e8d72477a8f18be9e",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/dca0e6f3260c86477aa0586dda461dbdbb52dfe7"
+        },
+        "date": 1660329463119,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.7911,
+            "range": "+/- 0.100",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 10.87,
+            "range": "+/- 0.316",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 44.158,
+            "range": "+/- 0.492",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 300.47,
+            "range": "+/- 4.870",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.5426,
+            "range": "+/- 0.068",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 25.627,
+            "range": "+/- 0.573",
             "unit": "s"
           }
         ]
