@@ -30,7 +30,7 @@ declare_settings! {
     }
 }
 
-#[derive(Properties, Clone, PartialEq)]
+#[derive(Properties, Clone, PartialEq, Eq)]
 pub struct SettingsProps {}
 
 pub struct SettingsView {

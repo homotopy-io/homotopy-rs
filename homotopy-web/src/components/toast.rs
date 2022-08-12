@@ -42,7 +42,7 @@ pub struct Toast {
     pub message: String,
 }
 
-#[derive(Clone, PartialEq, Properties)]
+#[derive(Clone, Properties, PartialEq, Eq)]
 pub struct ToasterProps {
     #[prop_or(1500)]
     pub timeout: u32,

@@ -140,7 +140,7 @@ impl Default for ScrubState {
     }
 }
 
-#[derive(Properties, PartialEq)]
+#[derive(Properties, PartialEq, Eq)]
 pub struct ScrubProperties {
     pub slices: usize,
 }

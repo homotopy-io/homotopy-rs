@@ -31,7 +31,7 @@ mod signature;
 mod signature_stylesheet;
 mod workspace;
 
-#[derive(Default, Clone, Debug, PartialEq, Properties)]
+#[derive(Default, Clone, Debug, Properties, PartialEq, Eq)]
 pub struct Props {}
 
 pub enum Message {

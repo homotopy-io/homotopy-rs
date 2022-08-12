@@ -1,7 +1,7 @@
 use yew::prelude::*;
 use yew_macro::function_component;
 
-#[derive(Debug, Clone, PartialEq, Properties)]
+#[derive(Debug, Clone, Properties, PartialEq, Eq)]
 pub struct Props {
     pub name: String,
     pub size: IconSize,
