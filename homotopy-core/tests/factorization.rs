@@ -102,7 +102,7 @@ fn bead_rewrite_base() -> Result<(), String> {
     // x -> bead_rewrite <- x -> bead <- x
     let g = RewriteN::from_slices(
         1,
-        source.cospans(),
+        target.cospans(),
         terminal.cospans(),
         vec![
             vec![
