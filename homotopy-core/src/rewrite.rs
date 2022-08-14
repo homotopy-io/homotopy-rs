@@ -671,61 +671,6 @@ impl RewriteN {
         Self::new_unsafe(dimension, cones)
     }
 
-    #[inline]
-    pub fn from_monotone(
-        dimension: usize,
-        source_cospans: &[Cospan],
-        target_cospans: &[Cospan],
-        mono: &Monotone,
-        singular_slices: &[Rewrite],
-    ) -> Self {
-        let rewrite = Self::from_monotone_unsafe(
-            dimension,
-            source_cospans,
-            target_cospans,
-            mono,
-            singular_slices,
-        );
-        if cfg!(feature = "safety-checks") {
-            rewrite.check(Mode::Shallow).expect("Rewrite is malformed");
-        }
-        rewrite
-    }
-
-    /// Unsafe version of `from_monotone` which does not check if the rewrite is well-formed.
-    #[inline]
-    pub fn from_monotone_unsafe(
-        dimension: usize,
-        source_cospans: &[Cospan],
-        target_cospans: &[Cospan],
-        mono: &Monotone,
-        singular_slices: &[Rewrite],
-    ) -> Self {
-        // try to determine regular slices by pulling back from target cospans
-        let mut cones_regular_slices: Vec<Vec<Rewrite>> = vec![vec![]; target_cospans.len()];
-        let mut cones_singular_slices: Vec<Vec<Rewrite>> = vec![vec![]; target_cospans.len()];
-        for (i, Split { source, target }) in mono.cones().enumerate() {
-            for j in source.clone() {
-                cones_singular_slices[i].push(singular_slices[j].clone());
-            }
-            for j in source.start..=source.end {
-                cones_regular_slices[i].push(if j % 2 == source.start % 2 {
-                    target_cospans[target].forward.clone()
-                } else {
-                    target_cospans[target].backward.clone()
-                });
-            }
-        }
-
-        Self::from_slices_unsafe(
-            dimension,
-            source_cospans,
-            target_cospans,
-            cones_regular_slices,
-            cones_singular_slices,
-        )
-    }
-
     pub(crate) fn collect_garbage() {
         REWRITE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
     }

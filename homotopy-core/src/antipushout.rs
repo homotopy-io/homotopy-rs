@@ -158,21 +158,8 @@ pub fn antipushout(
 
                                 let s = construct_source(a, h_mono, &h_slices, &s_slices);
 
-                                let h = RewriteN::from_monotone_unsafe(
-                                    s.dimension(),
-                                    s.cospans(),
-                                    a.cospans(),
-                                    h_mono,
-                                    &h_slices,
-                                );
-
-                                let k = RewriteN::from_monotone_unsafe(
-                                    s.dimension(),
-                                    s.cospans(),
-                                    b.cospans(),
-                                    k_mono,
-                                    &k_slices,
-                                );
+                                let h: RewriteN = todo!();
+                                let k: RewriteN = todo!();
 
                                 (s.into(), h.into(), k.into())
                             })
