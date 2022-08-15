@@ -647,60 +647,60 @@ impl ProofState {
                     std::cmp::Ordering::Less => {
                         if info.invertible {
                             // bubble
-                            // let bubble = |diagram: &DiagramN| {
-                            //     let (mut source, mut half) =
-                            //         (diagram.source(), diagram.cospans()[0].clone());
-                            //     while source.dimension() < haystack.dimension() {
-                            //         source = source.identity().into();
-                            //         half = half.bubble();
-                            //     }
-                            //     let reversed = Cospan {
-                            //         forward: half.backward.clone(),
-                            //         backward: half.forward.clone(),
-                            //     };
-                            //     DiagramN::new(source, vec![reversed, half])
-                            // };
-                            // let diagram = DiagramN::try_from(info.diagram.clone())?;
+                            let bubble = |diagram: &DiagramN| {
+                                let (mut source, mut half) =
+                                    (diagram.source(), diagram.cospans()[0].clone());
+                                while source.dimension() < haystack.dimension() {
+                                    source = source.identity().into();
+                                    half = half.bubble();
+                                }
+                                let reversed = Cospan {
+                                    forward: half.backward.clone(),
+                                    backward: half.forward.clone(),
+                                };
+                                DiagramN::new(source, vec![reversed, half])
+                            };
+                            let diagram = DiagramN::try_from(info.diagram.clone())?;
 
-                            // let original = bubble(&diagram);
-                            // let needle = original
-                            //     .slice(boundary.flip())
-                            //     .ok_or(ModelError::NoAttachment)?;
+                            let original = bubble(&diagram);
+                            let needle = original
+                                .slice(boundary.flip())
+                                .ok_or(ModelError::NoAttachment)?;
 
-                            // matches.extend(
-                            //     haystack
-                            //         .embeddings(&needle)
-                            //         .filter(|embedding| {
-                            //             contains_point(needle.clone(), &point, embedding)
-                            //         })
-                            //         .map(|embedding| AttachOption {
-                            //             embedding: embedding.into_iter().collect(),
-                            //             generator: info.generator,
-                            //             boundary_path,
-                            //             diagram: original.clone(),
-                            //             tag: Some("bubble"),
-                            //         }),
-                            // );
+                            matches.extend(
+                                haystack
+                                    .embeddings(&needle)
+                                    .filter(|embedding| {
+                                        contains_point(needle.clone(), &point, embedding)
+                                    })
+                                    .map(|embedding| AttachOption {
+                                        embedding: embedding.into_iter().collect(),
+                                        generator: info.generator,
+                                        boundary_path,
+                                        diagram: original.clone(),
+                                        tag: Some("bubble"),
+                                    }),
+                            );
 
-                            // let inverse = bubble(&diagram.inverse());
-                            // let inverse_needle = inverse
-                            //     .slice(boundary.flip())
-                            //     .ok_or(ModelError::NoAttachment)?;
+                            let inverse = bubble(&diagram.inverse());
+                            let inverse_needle = inverse
+                                .slice(boundary.flip())
+                                .ok_or(ModelError::NoAttachment)?;
 
-                            // matches.extend(
-                            //     haystack
-                            //         .embeddings(&inverse_needle)
-                            //         .filter(|embedding| {
-                            //             contains_point(inverse_needle.clone(), &point, embedding)
-                            //         })
-                            //         .map(|embedding| AttachOption {
-                            //             embedding: embedding.into_iter().collect(),
-                            //             generator: info.generator,
-                            //             boundary_path,
-                            //             diagram: inverse.clone(),
-                            //             tag: Some("inverse bubble"),
-                            //         }),
-                            // );
+                            matches.extend(
+                                haystack
+                                    .embeddings(&inverse_needle)
+                                    .filter(|embedding| {
+                                        contains_point(inverse_needle.clone(), &point, embedding)
+                                    })
+                                    .map(|embedding| AttachOption {
+                                        embedding: embedding.into_iter().collect(),
+                                        generator: info.generator,
+                                        boundary_path,
+                                        diagram: inverse.clone(),
+                                        tag: Some("inverse bubble"),
+                                    }),
+                            );
                         }
                     }
                     std::cmp::Ordering::Equal => {
