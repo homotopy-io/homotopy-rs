@@ -148,7 +148,7 @@ impl Renderer {
                     frame.draw(draw!(program, array, &[], {
                         mv: v,
                         p: p,
-                        albedo: lightened_color_of(generator, 0.),
+                        albedo: lightened_color_of(generator, 0.05),
                         t: t,
                     }));
                 }
@@ -162,12 +162,13 @@ impl Renderer {
                 .with_clear_color(Vec4::new(0., 0., 0., 0.));
 
             if !*settings.get_mesh_hidden() {
+                let view_dimension = self.scene.view.dimension();
                 let diagram_dimension = self.scene.diagram.dimension() as usize;
                 for (generator, array) in &self.scene.components {
                     // Set color lightening amount based on how generator is viewed.
-                    let lighten = match diagram_dimension - generator.dimension {
-                        1 => 0.05, // Wire
-                        2 => 0.1,  // Surface
+                    let lighten = match (view_dimension, diagram_dimension - generator.dimension) {
+                        (3, 1) | (4, 2) => 0.05, // Wire
+                        (3, 2) | (4, 3) => 0.1,  // Surface
                         _ => 0.,
                     };
                     frame.draw(draw!(program, array, &[], {
