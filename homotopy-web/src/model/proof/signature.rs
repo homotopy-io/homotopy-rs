@@ -99,9 +99,9 @@ impl Signature {
             name: format!("{} {}", name, id),
             framed: true,
             invertible: false,
-            single_preview: !matches!(generator.dimension, 1 | 2),
+            single_preview: matches!(generator.dimension, 1 | 2),
             color: Color::from_str(COLORS[id % COLORS.len()]).unwrap(),
-            shape: VERTEX_SHAPES[(id / COLORS.len()) % VERTEX_SHAPES.len()].clone(),
+            shape: Default::default(),
             diagram: diagram.into(),
         };
 

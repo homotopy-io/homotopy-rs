@@ -440,9 +440,7 @@ impl ItemView {
                         html! {
                             <>
                                 {svg_of(diagram_n.source(), "signature__generator-preview-source".to_owned())}
-                                <div class="signature__generator-preview-spacer">
-                                    <span class="signature__generator-preview-source-target-symbol">{"\u{1F86A}"}</span>
-                                </div>
+                                <div class="signature__generator-preview-spacer" />
                                 {svg_of(diagram_n.target(), "signature__generator-preview-source".to_owned())}
                             </>
                         }

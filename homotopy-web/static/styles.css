@@ -623,9 +623,8 @@ span.signature__item-name {
 
 .signature__generator-preview-spacer {
   box-sizing: border-box;
+  width: 5px;
   height: 18px;
-  font-size: 12px;
-  text-align: center;
 }
 
 .signature__generator-picker {
