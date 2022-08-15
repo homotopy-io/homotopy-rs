@@ -852,7 +852,7 @@ impl RewriteN {
                                 regular_slices
                                     .extend(g_cone.regular_slices()[..index - 1].iter().cloned());
                             }
-                            if index > 0 && index + 1 < g_cone.len() {
+                            if g_cone.len() == 1 || index > 0 && index + 1 < g_cone.len() {
                                 regular_slices.extend(
                                     f_cone
                                         .regular_slices()
