@@ -148,8 +148,8 @@ impl Iterator for SlicesToCones {
     type Item = Cone;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let slices = self.slices_iterator.next();
-        slices.map(|slices| {
+        loop {
+            let slices = self.slices_iterator.next()?;
             let mut regular_slices = Vec::with_capacity(slices.len() / 2 + 1);
             let mut singular_slices = Vec::with_capacity(slices.len() / 2);
             for (i, slice) in slices.into_iter().enumerate() {
@@ -169,9 +169,10 @@ impl Iterator for SlicesToCones {
                 regular_slices,
                 singular_slices,
             );
-            // TODO: check cone here for well-formedness
-            cone
-        })
+            if cone.check().is_ok() {
+                return Some(cone);
+            }
+        }
     }
 }
 
