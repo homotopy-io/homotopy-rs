@@ -161,20 +161,14 @@ fn bead_rewrite_base() -> Result<(), String> {
     let mut with_identity = factorize(
         f.clone().into(),
         Rewrite::identity(1),
-        source.clone().into(),
-        target.clone().into(),
+        terminal.clone().into(),
     );
     assert_eq!(with_identity.next(), Some(f.clone().into()));
 
-    let mut with_f = factorize(
-        f.clone().into(),
-        f.clone().into(),
-        source.clone().into(),
-        target.clone().into(),
-    );
+    let mut with_f = factorize(f.clone().into(), f.clone().into(), terminal.clone().into());
     assert_eq!(with_f.next(), Some(Rewrite::identity(1)));
 
-    let mut with_g = factorize(f.into(), g.into(), source.into(), target.into());
+    let mut with_g = factorize(f.into(), g.into(), terminal.into());
     assert_eq!(with_g.next(), Some(h.into()));
 
     Ok(())
