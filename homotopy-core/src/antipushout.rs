@@ -179,7 +179,7 @@ fn construct_source(
     source_slices: &[Diagram],
 ) -> DiagramN {
     let mut cospans = vec![];
-    let target_slices = target.slices().collect_vec();
+    let target_slices = target.singular_slices();
     for (ti, cospan) in target.cospans().iter().enumerate() {
         let preimage = mono.preimage(ti);
         if !preimage.is_empty() {
@@ -189,8 +189,7 @@ fn construct_source(
             let mut rewrites = vec![factorize(
                 cospan.forward.clone(),
                 slices[start].clone(),
-                target_slices[usize::from(Height::Regular(ti))].clone(),
-                source_slices[start].clone(),
+                target_slices[ti].clone(),
             )
             .next()
             .unwrap()];
@@ -199,7 +198,7 @@ fn construct_source(
                 let span = &antipushout(
                     &source_slices[si],
                     &source_slices[si + 1],
-                    &target_slices[usize::from(Height::Singular(ti))],
+                    &target_slices[ti],
                     &slices[si],
                     &slices[si + 1],
                 )[0];
@@ -211,8 +210,7 @@ fn construct_source(
                 factorize(
                     cospan.backward.clone(),
                     slices[end - 1].clone(),
-                    target_slices[usize::from(Height::Regular(ti + 1))].clone(),
-                    source_slices[end - 1].clone(),
+                    target_slices[ti].clone(),
                 )
                 .next()
                 .unwrap(),
@@ -284,22 +282,14 @@ fn factorize_inc_helper(
                     let forward = factorize(
                         target_cospan.forward.clone(),
                         q.clone(),
-                        target_slice
-                            .clone()
-                            .rewrite_backward(&target_cospan.forward)
-                            .unwrap(),
-                        target_slice.clone().rewrite_backward(&q).unwrap(),
+                        target_slice.clone(),
                     )
                     .next()
                     .unwrap();
                     let backward = factorize(
                         target_cospan.backward.clone(),
                         q.clone(),
-                        target_slice
-                            .clone()
-                            .rewrite_backward(&target_cospan.backward)
-                            .unwrap(),
-                        target_slice.clone().rewrite_backward(&q).unwrap(),
+                        target_slice.clone(),
                     )
                     .next()
                     .unwrap();

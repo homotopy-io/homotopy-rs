@@ -58,17 +58,13 @@ impl Monotone {
         self.0.iter().copied()
     }
 
-    pub fn cones(&self) -> impl Iterator<Item = Split> + '_ {
+    pub fn cones(&self, target_size: usize) -> impl Iterator<Item = Split> + '_ {
         let mut prev = 0;
-        (0..=self.end().unwrap_or_default()).map(move |target| {
+        (0..target_size).map(move |target| {
             let source = self.preimage_from(prev, target);
             prev = source.end;
             Split { source, target }
         })
-    }
-
-    pub fn end(&self) -> Option<usize> {
-        self.0.last().copied()
     }
 
     /// Compose two monotones maps.

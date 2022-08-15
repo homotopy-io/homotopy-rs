@@ -446,16 +446,14 @@ pub(crate) fn expand_propagate(
     let forward = factorize(
         target_cospan.forward.clone(),
         expansion.clone(),
-        diagram.slice(Height::Regular(height)).unwrap(),
-        slice.clone().rewrite_backward(&expansion).unwrap(),
+        slice.clone(),
     )
     .next();
 
     let backward = factorize(
         target_cospan.backward.clone(),
         expansion.clone(),
-        diagram.slice(Height::Regular(height + 1)).unwrap(),
-        slice.clone().rewrite_backward(&expansion).unwrap(),
+        slice.clone(),
     )
     .next();
 
