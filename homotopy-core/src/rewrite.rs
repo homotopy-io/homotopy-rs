@@ -1100,6 +1100,33 @@ impl Cone {
         }
     }
 
+    pub(crate) fn slice(&self, source_height: Height) -> &Rewrite {
+        use Height::{Regular, Singular};
+        match self.internal.get() {
+            ConeInternal::Cone0 { regular_slice, .. } => {
+                assert_eq!(source_height, Regular(0));
+                regular_slice
+            }
+            ConeInternal::ConeN {
+                source,
+                target,
+                regular_slices,
+                singular_slices,
+            } => match source_height {
+                Regular(i) => {
+                    if i == 0 {
+                        &target.forward
+                    } else if i == source.len() {
+                        &target.backward
+                    } else {
+                        &regular_slices[i - 1]
+                    }
+                }
+                Singular(i) => &singular_slices[i],
+            },
+        }
+    }
+
     pub(crate) fn collect_garbage() {
         CONE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
     }
