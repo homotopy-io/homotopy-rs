@@ -9,7 +9,7 @@ use crate::{
 };
 
 /// Given `Rewrite`s A -f> C <g- B, find some `Rewrite` A -h> B which factorises f = g ∘ h.
-pub fn factorize(f: Rewrite, g: Rewrite, source: Diagram, target: Diagram) -> Factorization {
+pub fn factorize(f: Rewrite, g: Rewrite, target: Diagram) -> Factorization {
     if g.is_identity() {
         return Factorization::Unique(f.into());
     }
@@ -18,42 +18,17 @@ pub fn factorize(f: Rewrite, g: Rewrite, source: Diagram, target: Diagram) -> Fa
         return Factorization::Unique(Rewrite::identity(f.dimension()).into());
     }
 
-    match (f, g, source, target) {
-        (
-            Rewrite::Rewrite0(f),
-            Rewrite::Rewrite0(g),
-            Diagram::Diagram0(s),
-            Diagram::Diagram0(t),
-        ) => {
-            assert!(f.source().is_none() || f.source() == Some(s));
-            assert!(g.source().is_none() || g.source() == Some(t));
+    match (f, g, target) {
+        (Rewrite::Rewrite0(f), Rewrite::Rewrite0(g), Diagram::Diagram0(t)) => {
+            assert!(f.target() == None || f.target() == Some(t));
+            assert!(g.target() == None || g.target() == Some(t));
 
-            Factorization::Unique((s == t).then(|| Rewrite::identity(0)))
+            Factorization::Unique(None)
         }
-        (
-            Rewrite::RewriteN(f),
-            Rewrite::RewriteN(g),
-            Diagram::DiagramN(source),
-            Diagram::DiagramN(target),
-        ) => {
+        (Rewrite::RewriteN(f), Rewrite::RewriteN(g), Diagram::DiagramN(target)) => {
             assert_eq!(f.dimension(), g.dimension());
-            assert_eq!(f.dimension(), source.dimension());
-            assert_eq!(g.dimension(), target.dimension());
+            assert_eq!(f.dimension(), target.dimension());
 
-            let common = source
-                .clone()
-                .rewrite_forward(&f)
-                .expect("malformed input for factorization");
-            assert_eq!(
-                &common,
-                &target
-                    .clone()
-                    .rewrite_forward(&g)
-                    .expect("malformed input for factorization")
-            );
-
-            let sources = source.slices().collect::<Vec<_>>();
-            let targets = target.slices().collect::<Vec<_>>();
             let cones = {
                 // the defining property of cones is that each singular height in the
                 // target of a rewrite corresponds to exactly one (possibly sparse) cone,
@@ -68,8 +43,11 @@ pub fn factorize(f: Rewrite, g: Rewrite, source: Diagram, target: Diagram) -> Fa
                 // ultimately, obtain Vec<Vec<Cone>> with length = #singular heights in the
                 // common target of f and g, whose concatenation give the cones of h
                 let mut offset = 0;
-                (0..common.size())
-                    .map(|i| {
+                target
+                    .singular_slices()
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, singular)| {
                         let f_cone = f.cone_over_target(i).cloned();
                         if let Some(c) = &f_cone {
                             offset = c.index;
@@ -78,22 +56,18 @@ pub fn factorize(f: Rewrite, g: Rewrite, source: Diagram, target: Diagram) -> Fa
                         }
                         match g.cone_over_target(i).cloned() {
                             None => ConeFactorization::Unique(
-                                f_cone.map(|c| vec![c]).unwrap_or_default(),
+                                f_cone.map(|c| vec![c]).unwrap_or_default().into(),
                             ),
-                            g_cone if f_cone == g_cone => ConeFactorization::Unique(vec![]),
+                            g_cone if f_cone == g_cone => ConeFactorization::Unique(vec![].into()),
                             Some(g_cone) => {
                                 let f_cone_len = f_cone.as_ref().map_or(1, Cone::len);
                                 let constraints: Vec<Range<usize>> =
                                     vec![0..g_cone.singular_slices().len(); f_cone_len];
                                 let monotone = MonotoneIterator::new(false, &constraints);
-                                let source = sources[offset..offset + f_cone_len].to_vec();
-                                let target =
-                                    targets[g_cone.index..g_cone.index + g_cone.len()].to_vec();
                                 ConeFactorization::Iterator(ConeFactorizationInternal {
                                     f_cone,
                                     g_cone,
-                                    source,
-                                    target,
+                                    singular,
                                     monotone,
                                     base_offset: offset,
                                     cur: None,
@@ -133,7 +107,7 @@ impl std::iter::FusedIterator for Factorization {}
 
 #[derive(Clone)]
 pub enum ConeFactorization {
-    Unique(Vec<Cone>),
+    Unique(Option<Vec<Cone>>),
     Iterator(ConeFactorizationInternal),
 }
 
@@ -142,7 +116,7 @@ impl Iterator for ConeFactorization {
 
     fn next(&mut self) -> Option<Self::Item> {
         match self {
-            ConeFactorization::Unique(cones) => std::iter::once(cones.clone()).next(),
+            ConeFactorization::Unique(cones) => cones.take(),
             ConeFactorization::Iterator(cones) => cones.next(),
         }
     }
@@ -154,8 +128,7 @@ impl std::iter::FusedIterator for ConeFactorization {}
 pub struct ConeFactorizationInternal {
     f_cone: Option<Cone>,
     g_cone: Cone,
-    source: Vec<Diagram>,
-    target: Vec<Diagram>,
+    singular: Diagram,
     monotone: MonotoneIterator,
     base_offset: usize,
     cur: Option<MultiProduct<SlicesToCones>>,
@@ -210,30 +183,26 @@ impl Iterator for ConeFactorizationInternal {
             match &mut self.cur {
                 None => {
                     let underlying = self.monotone.next()?;
-                    let slices_iterator = underlying.cones().map(|Split { source, target }| {
-                        let (g_slice, g_source) = (
-                            &self.g_cone.singular_slices()[target],
-                            &self.target[usize::from(Height::Singular(target))],
-                        );
-                        let dimension = g_slice.dimension();
-                        let product = (usize::from(Height::Regular(source.start))
-                            ..=usize::from(Height::Regular(source.end + 1)))
-                            .map(|h| {
-                                let (f_slice, f_source) = (
-                                    self.f_cone.as_ref().map_or(
-                                        Rewrite::identity(dimension),
-                                        |c| match Height::from(h) {
-                                            Height::Singular(i) => c.singular_slices()[i].clone(),
-                                            Height::Regular(i) => c.regular_slices()[i].clone(),
-                                        },
-                                    ),
-                                    self.source[h].clone(),
-                                );
-                                factorize(f_slice, g_slice.clone(), f_source, g_source.clone())
-                            })
-                            .multi_cartesian_product();
-                        (Split { source, target }, product)
-                    });
+                    let slices_iterator =
+                        underlying
+                            .cones(self.g_cone.len())
+                            .map(|Split { source, target }| {
+                                let g_slice = &self.g_cone.singular_slices()[target];
+                                let dimension = g_slice.dimension();
+                                let product = (usize::from(Height::Regular(source.start))
+                                    ..=usize::from(Height::Regular(source.end)))
+                                    .map(|h| {
+                                        let f_slice = self
+                                            .f_cone
+                                            .as_ref()
+                                            .map_or(Rewrite::identity(dimension), |c| {
+                                                c.slice(Height::from(h)).clone()
+                                            });
+                                        factorize(f_slice, g_slice.clone(), self.singular.clone())
+                                    })
+                                    .multi_cartesian_product();
+                                (Split { source, target }, product)
+                            });
                     self.cur = Some({
                         slices_iterator
                             .map(|(Split { source, target }, product)| SlicesToCones {
