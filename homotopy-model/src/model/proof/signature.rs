@@ -41,19 +41,20 @@ pub enum SignatureItemEdit {
     Rename(String),
     Recolor(Color),
     Reshape(VertexShape),
-    MakeOriented(usize, bool),
-    MakeInvertible(usize, bool),
-    ShowSourceTarget(usize, bool),
+    MakeOriented(Generator, bool),
+    MakeInvertible(Generator, bool),
+    ShowSourceTarget(Generator, bool),
 }
 
 #[cfg(feature = "fuzz")]
 impl<'a> arbitrary::Arbitrary<'a> for SignatureItemEdit {
     fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let flag: bool = *u.choose(&[false, true])?;
+        let g: Generator = u.arbitrary()?;
         u.choose(&[
-            SignatureItemEdit::MakeOriented(false),
-            SignatureItemEdit::MakeOriented(true),
-            SignatureItemEdit::MakeInvertible(false),
-            SignatureItemEdit::MakeInvertible(true),
+            SignatureItemEdit::MakeOriented(g, flag),
+            SignatureItemEdit::MakeInvertible(g, flag),
+            SignatureItemEdit::ShowSourceTarget(g, flag)
         ])
         .map(|s| s.clone())
     }
@@ -108,15 +109,19 @@ impl Signature {
     where
         D: Into<Diagram>,
     {
+        let diagram: Diagram = diagram.into();
         let info = GeneratorInfo {
             generator,
             name: format!("{} {}", name, id),
             oriented: false,
-            invertible: false,
+            invertible: diagram.generators().iter().any(|g| {
+                self.generator_info(*g)
+                    .map_or(false, |info| info.invertible)
+            }),
             single_preview: true,
             color: Color::from_str(COLORS[id % COLORS.len()]).unwrap(),
             shape: Default::default(),
-            diagram: diagram.into(),
+            diagram,
         };
 
         self.0.push_onto(self.0.root(), SignatureItem::Item(info));
@@ -140,7 +145,6 @@ impl Signature {
                 (SignatureItem::Item(info), Rename(name)) => info.name = name,
                 (SignatureItem::Item(info), Recolor(color)) => info.color = color,
                 (SignatureItem::Item(info), Reshape(shape)) => info.shape = shape,
-                (SignatureItem::Item(info), MakeInvertible(_, true)) => info.invertible = true,
                 (SignatureItem::Item(info), ShowSourceTarget(_, show)) => {
                     info.single_preview = !show
                 }
@@ -191,12 +195,12 @@ impl Signature {
 
     pub fn update(&mut self, edit: &SignatureEdit) -> Result<(), ModelError> {
         match edit {
-            // Intercept `MakeOriented` edits in order to update the whole signature.
+            // Intercept `MakeOriented` and `MakeInvertible` edits in order to update the whole signature.
             SignatureEdit::Edit(node, edit) => match edit {
                 SignatureItemEdit::MakeOriented(g, true) => {
                     self.0 = self.0.clone().map(|item| match item {
                         SignatureItem::Item(info) => {
-                            let oriented = if info.generator.id == *g {
+                            let oriented = if info.generator == *g {
                                 true
                             } else {
                                 info.oriented
@@ -206,6 +210,19 @@ impl Signature {
                                 diagram: info.diagram.remove_framing(*g),
                                 ..info
                             })
+                        }
+                        _ => item,
+                    });
+                }
+                SignatureItemEdit::MakeInvertible(g, true) => {
+                    self.0 = self.0.clone().map(|item| match item {
+                        SignatureItem::Item(info) => {
+                            let invertible = if info.diagram.generators().contains(g) {
+                                true
+                            } else {
+                                info.invertible
+                            };
+                            SignatureItem::Item(GeneratorInfo { invertible, ..info })
                         }
                         _ => item,
                     });

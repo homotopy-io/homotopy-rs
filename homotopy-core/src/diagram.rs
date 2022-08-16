@@ -159,14 +159,14 @@ impl Diagram {
 
     /// Removes the framing information belonging to the generators with given id.
     #[must_use]
-    pub fn remove_framing(&self, id: usize) -> Self {
+    pub fn remove_framing(&self, generator: Generator) -> Self {
         match self {
             Self::Diagram0(g) => Self::Diagram0(*g),
             Self::DiagramN(d) => Self::DiagramN(DiagramN::new_unsafe(
-                d.source().remove_framing(id),
+                d.source().remove_framing(generator),
                 d.cospans()
                     .iter()
-                    .map(|cs| cs.map(|r| r.remove_framing(id)))
+                    .map(|cs| cs.map(|r| r.remove_framing(generator)))
                     .collect(),
             )),
         }
