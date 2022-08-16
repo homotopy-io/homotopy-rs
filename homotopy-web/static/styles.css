@@ -566,6 +566,7 @@ span.signature__item-name {
   width: 26px;
   flex: 0 0 auto;
   transition: width 50ms;
+  border-radius: 0 var(--space-0) var(--space-0) 0;
 }
 
 .signature__generator-color.signature__generator-color-hover,
