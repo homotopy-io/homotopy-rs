@@ -10,6 +10,7 @@ pub struct GeneratorInfo {
     pub name: String,
     pub framed: bool,
     pub invertible: bool,
+    pub single_preview: bool,
     pub color: Color,
     pub shape: VertexShape,
     pub diagram: Diagram,

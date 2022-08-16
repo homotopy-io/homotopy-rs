@@ -1,17 +1,22 @@
 use std::str::FromStr;
 
 use homotopy_common::tree::Node;
+use homotopy_core::Diagram;
 use homotopy_graphics::style::{Color, VertexShape};
 use wasm_bindgen::JsCast;
-use web_sys::{HtmlElement, HtmlInputElement};
+use web_sys::{Element, HtmlInputElement};
 use yew::prelude::*;
 use yew_macro::function_component;
 
 use crate::{
-    components::icon::{Icon, IconSize},
+    app::{diagram_svg::DiagramSvg, AppSettings, AppSettingsKey},
+    components::{
+        icon::{Icon, IconSize},
+        settings::{KeyStore, Settings, Store},
+    },
     model::proof::{
-        generators::GeneratorInfo, Action, SignatureEdit, SignatureItem, SignatureItemEdit, COLORS,
-        VERTEX_SHAPES,
+        generators::GeneratorInfo, Action, Signature, SignatureEdit, SignatureItem,
+        SignatureItemEdit, COLORS, VERTEX_SHAPES,
     },
 };
 
@@ -41,6 +46,8 @@ struct ItemViewButtonProps {
     class: String,
     #[prop_or_default]
     style: String,
+    #[prop_or_default]
+    light: bool,
 }
 
 #[function_component(ItemViewButton)]
@@ -61,7 +68,7 @@ fn item_view_button(props: &ItemViewButtonProps) -> Html {
             style={props.style.clone()}
             onclick={props.on_click.clone()}
         >
-            <Icon name={props.icon.clone()} size={IconSize::Icon18} />
+            <Icon name={props.icon.clone()} size={IconSize::Icon18} light={props.light} />
         </span>
     }
 }
@@ -100,6 +107,7 @@ pub struct ItemViewProps {
     pub dispatch: Callback<Action>,
     pub node: Node,
     pub item: SignatureItem,
+    pub signature: Signature,
 
     #[prop_or_default]
     pub on_drag_over: Callback<DragEvent>,
@@ -114,6 +122,7 @@ pub struct ItemViewProps {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ItemViewMode {
     Viewing,
+    Hovering,
     Editing,
 }
 
@@ -123,10 +132,18 @@ impl Default for ItemViewMode {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
+pub struct Preview {
+    pub signature: Signature,
+    pub html: Html,
+}
+
+#[derive(Debug, Clone)]
 pub enum ItemViewMessage {
     SwitchTo(ItemViewMode),
     Edit(SignatureItemEdit),
+    CachePreview(Preview),
+    Setting(<Store<AppSettings> as KeyStore>::Message),
     Noop,
 }
 
@@ -140,8 +157,6 @@ struct CustomRecolorButtonProps {
     oninput: Callback<InputEvent>,
     onkeyup: Callback<KeyboardEvent>,
     value: Color,
-    #[prop_or_default]
-    class: String,
 }
 
 #[function_component(CustomRecolorButton)]
@@ -165,17 +180,19 @@ fn custom_recolor_button(props: &CustomRecolorButtonProps) -> Html {
                     />
                 </div>
             </div>
-            <div class={"signature__generator-picker-custom-inner"}>
-                <Icon name={"palette"} size={IconSize::Icon18} />
+            <div class="signature__generator-picker-custom-inner">
+                <Icon name={"palette"} size={IconSize::Icon18} light={!props.value.is_light()} />
             </div>
         </div>
     }
 }
 
-#[derive(Debug)]
 pub struct ItemView {
+    local: Store<AppSettings>,
     mode: ItemViewMode,
     name: String,
+    preview_cache: Option<Preview>,
+    _settings: AppSettings,
 }
 
 impl Component for ItemView {
@@ -183,13 +200,21 @@ impl Component for ItemView {
     type Properties = ItemViewProps;
 
     fn create(ctx: &Context<Self>) -> Self {
+        const ITEM_SUBSCRIPTIONS: &[AppSettingsKey] = &[AppSettingsKey::show_previews];
+
+        let mut settings = AppSettings::connect(ctx.link().callback(ItemViewMessage::Setting));
+        settings.subscribe(ITEM_SUBSCRIPTIONS);
+
         let name = match &ctx.props().item {
             SignatureItem::Item(info) => info.name.clone(),
-            SignatureItem::Folder(name, _) => name.clone(),
+            SignatureItem::Folder(info) => info.name.clone(),
         };
         Self {
+            local: Default::default(),
             mode: Default::default(),
             name,
+            preview_cache: Default::default(),
+            _settings: settings,
         }
     }
 
@@ -206,6 +231,13 @@ impl Component for ItemView {
 
                 return apply_edit(&ctx.props().dispatch, ctx.props().node, edit);
             }
+            ItemViewMessage::CachePreview(preview) => {
+                self.preview_cache = Some(preview);
+            }
+            ItemViewMessage::Setting(msg) => {
+                self.local.set(&msg);
+                return true;
+            }
             ItemViewMessage::Noop => {}
         }
 
@@ -216,14 +248,20 @@ impl Component for ItemView {
         let item = &ctx.props().item;
 
         let class = format!(
-            "signature__item {}",
-            match (self.mode, item) {
-                (ItemViewMode::Editing, SignatureItem::Item(info)) => format!(
-                    "signature__item-editing signature__item-generator-{}",
-                    info.generator.dimension
-                ),
-                (ItemViewMode::Editing, _) => "signature__folder-editing".to_owned(),
-                (_, _) => "".to_owned(),
+            "signature__item signature__{item} signature__{item}-{mode} {generator_dimension}",
+            item = match item {
+                SignatureItem::Item(_) => "generator",
+                SignatureItem::Folder(_) => "folder",
+            },
+            mode = match self.mode {
+                ItemViewMode::Editing => "editing",
+                ItemViewMode::Hovering => "hovering",
+                ItemViewMode::Viewing => "viewing",
+            },
+            generator_dimension = match item {
+                SignatureItem::Item(info) =>
+                    format!("signature__generator-{}d", info.generator.dimension),
+                SignatureItem::Folder(_) => "".to_owned(),
             }
         );
 
@@ -238,20 +276,51 @@ impl Component for ItemView {
             html! {}
         };
 
+        let on_mouse_over = if self.mode == ItemViewMode::Viewing {
+            ctx.link()
+                .callback(|_| ItemViewMessage::SwitchTo(ItemViewMode::Hovering))
+        } else {
+            ctx.link().callback(|_| ItemViewMessage::Noop)
+        };
+        let on_mouse_out = if self.mode == ItemViewMode::Hovering {
+            ctx.link()
+                .callback(|_| ItemViewMessage::SwitchTo(ItemViewMode::Viewing))
+        } else {
+            ctx.link().callback(|_| ItemViewMessage::Noop)
+        };
+
+        let select_generator = match &ctx.props().item {
+            SignatureItem::Item(info) => {
+                let generator = info.generator;
+                ctx.props()
+                    .dispatch
+                    .reform(move |_| Action::SelectGenerator(generator))
+            }
+            SignatureItem::Folder(_) => Callback::noop(),
+        };
+
         html! {
             <div
                 class={class}
-                draggable={(self.mode == ItemViewMode::Viewing).to_string()}
+                draggable={(self.mode != ItemViewMode::Editing).to_string()}
                 ondragover={ctx.props().on_drag_over.clone()}
                 ondragenter={ctx.props().on_drag_enter.clone()}
                 ondrop={ctx.props().on_drop.clone()}
                 ondragstart={ctx.props().on_drag_start.clone()}
+                onmouseover={on_mouse_over}
+                onmouseout={on_mouse_out}
             >
-                <div class="signature__item-info">
-                    {self.view_info(ctx)}
-                    {self.view_buttons(ctx)}
+                {Self::view_sliver(ctx)}
+                <div class="signature__item-contents" onclick={select_generator}>
+                    <div class="signature__item-info">
+                        {self.view_left_buttons(ctx)}
+                        {self.view_info(ctx)}
+                        {self.view_property_indicators(ctx)}
+                        {self.view_preview(ctx)}
+                        {self.view_right_buttons(ctx)}
+                    </div>
+                    {picker_and_prefs}
                 </div>
-                {picker_and_prefs}
             </div>
         }
     }
@@ -267,7 +336,7 @@ impl ItemView {
         if mode == ItemViewMode::Viewing {
             let prev_name = match &ctx.props().item {
                 SignatureItem::Item(info) => &info.name,
-                SignatureItem::Folder(name, _) => name,
+                SignatureItem::Folder(info) => &info.name,
             };
             if &self.name != prev_name {
                 apply_edit(
@@ -285,28 +354,10 @@ impl ItemView {
     fn view_name(&self, ctx: &Context<Self>) -> Html {
         let name = match &ctx.props().item {
             SignatureItem::Item(info) => &info.name,
-            SignatureItem::Folder(name, _) => name,
-        };
-        let on_click = match &ctx.props().item {
-            SignatureItem::Item(info) => {
-                let generator = info.generator;
-                ctx.props()
-                    .dispatch
-                    .reform(move |_| Action::SelectGenerator(generator))
-            }
-            SignatureItem::Folder(_, _) => Callback::noop(),
+            SignatureItem::Folder(info) => &info.name,
         };
 
-        if self.mode == ItemViewMode::Viewing {
-            html! {
-                <span
-                    class="signature__item-child signature__item-name"
-                    onclick={on_click}
-                >
-                    {name}
-                </span>
-            }
-        } else {
+        if self.mode == ItemViewMode::Editing {
             html! {
                 <input
                     type="text"
@@ -326,16 +377,109 @@ impl ItemView {
                     })}
                 />
             }
+        } else {
+            html! {
+                <div class="signature__item-child signature__item-name">
+                    <span class="signature__item-name">
+                        {name}
+                    </span>
+                </div>
+            }
         }
     }
 
-    fn view_color(color: &Color) -> Html {
-        let style = format!("background: {}", color.clone());
+    fn view_sliver(ctx: &Context<Self>) -> Html {
+        if let SignatureItem::Item(ref info) = ctx.props().item {
+            let style = format!("background-color: {}", info.color.hex());
+            let class = format!(
+                "signature__generator-color-sliver {}",
+                if info.color.is_light() {
+                    "signature__generator-color-sliver-light"
+                } else {
+                    ""
+                }
+            );
 
+            html! {
+                <div class={class} style={style}/>
+            }
+        } else {
+            html! {}
+        }
+    }
+
+    fn view_preview(&self, ctx: &Context<Self>) -> Html {
+        if !self.local.get_show_previews() {
+            return html! {};
+        }
+
+        if let SignatureItem::Item(ref info) = ctx.props().item {
+            if let Some(cache) = &self.preview_cache {
+                // Note that the following is executed on every change in `ItemViewMode`, ie. if
+                // the user hovers over a signature item, then this requires an entire diff on
+                // signatures. I can't see an easy and always-correct way of getting around this.
+                // It may well also be the case that preview caching is slower than no caching for
+                // small diagrams.
+                if ctx.props().signature == cache.signature {
+                    return cache.html.clone();
+                }
+            }
+
+            let svg_of = |diagram: Diagram, id: String| match diagram.dimension() {
+                0 => Self::view_diagram_svg::<0>(ctx, diagram, id),
+                1 => Self::view_diagram_svg::<1>(ctx, diagram, id),
+                _ => Self::view_diagram_svg::<2>(ctx, diagram, id),
+            };
+
+            let diagrams = match &info.diagram {
+                Diagram::Diagram0(_) => svg_of(
+                    info.diagram.clone(),
+                    "signature__generator-preview".to_owned(),
+                ),
+                Diagram::DiagramN(diagram_n) => {
+                    if info.single_preview {
+                        svg_of(
+                            info.diagram.clone(),
+                            "signature__generator-preview".to_owned(),
+                        )
+                    } else {
+                        html! {
+                            <>
+                                {svg_of(diagram_n.source(), "signature__generator-preview-source".to_owned())}
+                                <div class="signature__generator-preview-spacer" />
+                                {svg_of(diagram_n.target(), "signature__generator-preview-source".to_owned())}
+                            </>
+                        }
+                    }
+                }
+            };
+
+            let preview_html = html! {
+                <div class="signature__generator-previews-wrapper">
+                    {diagrams}
+                </div>
+            };
+
+            ctx.link()
+                .send_message(ItemViewMessage::CachePreview(Preview {
+                    signature: ctx.props().signature.clone(),
+                    html: preview_html.clone(),
+                }));
+
+            preview_html
+        } else {
+            html! {}
+        }
+    }
+
+    fn view_diagram_svg<const N: usize>(ctx: &Context<Self>, diagram: Diagram, id: String) -> Html {
         html! {
-            <span
-                class={"signature__item-child signature__generator-color"}
-                style={style}
+            <DiagramSvg<N>
+                    diagram={diagram}
+                    id={id}
+                    signature={ctx.props().signature.clone()}
+                    max_width={Some(42.0)}
+                    max_height={Some(32.0)}
             />
         }
     }
@@ -382,14 +526,15 @@ impl ItemView {
                 VertexShape::Circle => "circle",
                 VertexShape::Square => "square",
             };
-            let mut class = "signature__generator-picker-preset".to_owned();
-            if *shape == selected_shape {
-                class += " signature__generator-picker-preset-shape-selected";
-            }
+            let icon_class = if *shape == selected_shape {
+                ""
+            } else {
+                "md-inactive"
+            };
 
             html! {
-                <div {class} onclick={reshape}>
-                    <Icon name={icon_name} size={IconSize::Icon18} />
+                <div class="signature__generator-picker-preset" onclick={reshape}>
+                    <Icon name={icon_name} size={IconSize::Icon18} class={icon_class} />
                 </div>
             }
         });
@@ -406,7 +551,11 @@ impl ItemView {
                         oninput={custom_recolor}
                         onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
                             e.stop_propagation();
-                            ItemViewMessage::Noop
+                            if e.key().to_ascii_lowercase() == "enter" {
+                                ItemViewMessage::SwitchTo(ItemViewMode::Viewing)
+                            } else {
+                                ItemViewMessage::Noop
+                            }
                         })}
                     />
                 </div>
@@ -419,16 +568,15 @@ impl ItemView {
             SignatureItem::Item(info) => {
                 html! {
                     <>
-                        {Self::view_color(&info.color)}
-                        {self.view_name(ctx)}
-                        <span class="signature__item-child">
+                        <span class="signature__item-child signature__generator-dimension">
                             {info.diagram.dimension()}
                         </span>
+                        {self.view_name(ctx)}
                     </>
                 }
             }
-            SignatureItem::Folder(_, open) => {
-                let icon = if *open { "folder_open" } else { "folder" };
+            SignatureItem::Folder(info) => {
+                let icon = if info.open { "folder_open" } else { "folder" };
                 let node = ctx.props().node;
                 let toggle = ctx
                     .props()
@@ -445,47 +593,160 @@ impl ItemView {
         }
     }
 
-    fn view_buttons(&self, ctx: &Context<Self>) -> Html {
-        if self.mode == ItemViewMode::Viewing {
-            let new_folder = if let SignatureItem::Folder(_, true) = ctx.props().item {
+    fn view_left_buttons(&self, ctx: &Context<Self>) -> Html {
+        use ItemViewMode::{Editing, Hovering, Viewing};
+        if let SignatureItem::Item(ref info) = ctx.props().item {
+            let icon_light = !info.color.is_light();
+            let style = format!("background-color: {};", info.color.hex());
+            let class = format!(
+                "signature__generator-color {}",
+                match self.mode {
+                    Viewing => "",
+                    Hovering => "signature__generator-color-hover",
+                    Editing => "signature__generator-color-edit",
+                }
+            );
+
+            let inner = if self.mode == Editing {
+                let node = ctx.props().node;
+
                 html! {
-                    <NewFolderButton
-                        dispatch={ctx.props().dispatch.clone()}
-                        node={ctx.props().node}
-                        kind={NewFolderKind::Inline}
-                    />
+                    <>
+                        <ItemViewButton icon={"done"} light={icon_light} on_click={
+                            ctx.link().callback(move |_| {
+                                ItemViewMessage::SwitchTo(Hovering)
+                            })
+                        } />
+                        <ItemViewButton icon={"delete"} light={icon_light} on_click={
+                            ctx.props().dispatch.reform(
+                                move |_| Action::EditSignature(SignatureEdit::Remove(node))
+                                )
+                        } />
+                    </>
+                }
+            } else {
+                html! {
+                    <ItemViewButton icon={"settings"} light={icon_light} on_click={
+                        ctx.link().callback(move |_| {
+                            ItemViewMessage::SwitchTo(Editing)
+                        })
+                    } />
+                }
+            };
+
+            html! {
+                <div class={class} style={style}>
+                {inner}
+                </div>
+            }
+        } else {
+            html! {}
+        }
+    }
+
+    fn view_right_buttons(&self, ctx: &Context<Self>) -> Html {
+        if let SignatureItem::Folder(info) = &ctx.props().item {
+            let node = ctx.props().node;
+            let class = format!(
+                "signature__folder-right {}",
+                match self.mode {
+                    ItemViewMode::Viewing => "",
+                    ItemViewMode::Hovering => "signature__folder-right-hover",
+                    ItemViewMode::Editing => "signature__folder-right-editing",
+                },
+            );
+
+            let buttons = match self.mode {
+                ItemViewMode::Viewing | ItemViewMode::Hovering => {
+                    let new_folder = if info.open {
+                        html! {
+                            <NewFolderButton
+                                dispatch={ctx.props().dispatch.clone()}
+                                node={ctx.props().node}
+                                kind={NewFolderKind::Inline}
+                            />
+                        }
+                    } else {
+                        html! {}
+                    };
+
+                    let settings = html! {
+                        <ItemViewButton icon={"settings"} on_click={
+                            ctx.link().callback(move |_| {
+                                ItemViewMessage::SwitchTo(ItemViewMode::Editing)
+                            })
+                        } />
+                    };
+
+                    html! {
+                        <>
+                            {new_folder}
+                            {settings}
+                        </>
+                    }
+                }
+                ItemViewMode::Editing => html! {
+                    <>
+                        <ItemViewButton icon={"delete"} on_click={
+                            ctx.props().dispatch.reform(
+                                move |_| Action::EditSignature(SignatureEdit::Remove(node))
+                            )
+                        } />
+                        <ItemViewButton icon={"done"} on_click={
+                            ctx.link().callback(move |_| {
+                                ItemViewMessage::SwitchTo(ItemViewMode::Hovering)
+                            })
+                        } />
+                    </>
+                },
+            };
+
+            html! {
+                <div class={class}>
+                    {buttons}
+                </div>
+            }
+        } else {
+            html! {}
+        }
+    }
+
+    fn view_property_indicators(&self, ctx: &Context<Self>) -> Html {
+        if self.mode == ItemViewMode::Editing {
+            return html! {};
+        }
+
+        if let SignatureItem::Item(ref info) = ctx.props().item {
+            // To avoid unnecessary String operations, we define all classes beforehand
+            let invertible_class =
+                "signature__generator-indicator signature__generator-indicator-invertible";
+            let oriented_class =
+                "signature__generator-indicator signature__generator-indicator-oriented";
+
+            let invertible = if info.invertible {
+                html! {
+                    <span class={invertible_class}>{"I"}</span>
                 }
             } else {
                 html! {}
             };
 
-            html! {
-                <>
-                    {new_folder}
-                    <ItemViewButton icon={"settings"} on_click={
-                        ctx.link().callback(move |_| {
-                            ItemViewMessage::SwitchTo(ItemViewMode::Editing)
-                        })
-                    } />
-                </>
-            }
-        } else {
-            let node = ctx.props().node;
+            let oriented = if info.framed {
+                html! {}
+            } else {
+                html! {
+                    <span class={oriented_class}>{"O"}</span>
+                }
+            };
 
             html! {
-                <>
-                    <ItemViewButton icon={"delete"} on_click={
-                        ctx.props().dispatch.reform(
-                            move |_| Action::EditSignature(SignatureEdit::Remove(node))
-                        )
-                    } />
-                    <ItemViewButton icon={"done"} on_click={
-                        ctx.link().callback(move |_| {
-                            ItemViewMessage::SwitchTo(ItemViewMode::Viewing)
-                        })
-                    } />
-                </>
+                <div class="signature__generator-indicators-wrapper">
+                    {invertible}
+                    {oriented}
+                </div>
             }
+        } else {
+            html! {}
         }
     }
 
@@ -494,35 +755,70 @@ impl ItemView {
             return html! {};
         }
 
-        // The following is required to allow the div to respond to onclick events appropriately.
-        let toggle_framed = ctx.link().callback(move |e: MouseEvent| {
-            let div: HtmlElement = e.target_unchecked_into();
-            let input: HtmlInputElement = div.last_element_child().unwrap().unchecked_into();
-            ItemViewMessage::Edit(SignatureItemEdit::MakeFramed(!input.checked()))
-        });
-        let toggle_invertible = ctx.link().callback(move |e: MouseEvent| {
-            let div: HtmlElement = e.target_unchecked_into();
-            let input: HtmlInputElement = div.last_element_child().unwrap().unchecked_into();
-            ItemViewMessage::Edit(SignatureItemEdit::MakeInvertible(!input.checked()))
-        });
+        // The below macro (for convenience) dispatches a message with a `SignatureItemEdit` by
+        // getting the status of the <input> within the outer <div> of a preference.
+        macro_rules! toggle_or_noop {
+            ($edit_type:ident) => {
+                toggle_or_noop!($edit_type, false)
+            };
+            ($edit_type:ident, $flip:expr) => {
+                |e: MouseEvent| {
+                    let input = e
+                        .target_unchecked_into::<Element>()
+                        .last_child()
+                        .unwrap()
+                        .unchecked_into::<HtmlInputElement>();
+
+                    if input.disabled() {
+                        ItemViewMessage::Noop
+                    } else {
+                        ItemViewMessage::Edit(SignatureItemEdit::$edit_type(
+                            $flip ^ input.checked(),
+                        ))
+                    }
+                }
+            };
+        }
+
+        let toggle_single_preview = ctx.link().callback(toggle_or_noop!(ShowSinglePreview));
+        let toggle_invertible = ctx.link().callback(toggle_or_noop!(MakeInvertible, true));
+        let toggle_framed = ctx.link().callback(toggle_or_noop!(MakeFramed));
+
+        let color = if info.color.is_light() {
+            "var(--drawer-foreground)".to_owned()
+        } else {
+            info.color.hex()
+        };
 
         match info.generator.dimension {
             0 => Html::default(),
             _ => html! {
-                <>
+                <div class="signature__generator-preferences-wrapper">
                     <GeneratorPreferenceCheckbox
-                        name="Framed"
-                        onclick={toggle_framed}
-                        checked={info.framed}
-                        disabled={!info.framed}
+                        left="Single Preview"
+                        right="Source-Target"
+                        color={color.clone()}
+                        onclick={toggle_single_preview}
+                        checked={!info.single_preview}
+                        disabled={!self.local.get_show_previews()}
                     />
                     <GeneratorPreferenceCheckbox
-                        name="Invertible"
+                        left="Directed"
+                        right="Invertible"
+                        color={color.clone()}
                         onclick={toggle_invertible}
                         checked={info.invertible}
                         disabled={info.invertible}
                     />
-                </>
+                    <GeneratorPreferenceCheckbox
+                        left="Framed"
+                        right="Oriented"
+                        color={color.clone()}
+                        onclick={toggle_framed}
+                        checked={!info.framed}
+                        disabled={!info.framed}
+                    />
+                </div>
             },
         }
     }

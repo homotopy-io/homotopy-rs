@@ -14,6 +14,7 @@ declare_settings! {
         subdivision_depth: u32 = 2,
         geometry_samples: u32 = 10,
 
+        show_previews: bool = true,
         orthographic_3d: bool = false,
         specularity: u32 = 25,
         shininess: u32 = 64,
@@ -104,6 +105,13 @@ impl Component for SettingsView {
                 </div>
                 <div class="settings__segment">
                     <h4>{"Style"}</h4>
+                    {
+                        self.view_checkbox(
+                            "Show previews in signature",
+                            |local| *local.get_show_previews(),
+                            AppSettingsDispatch::set_show_previews,
+                        )
+                    }
                     {
                         self.view_checkbox(
                             "Orthographic projection",
