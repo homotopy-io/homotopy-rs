@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1660673544826,
+  "lastUpdate": 1660675184265,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -38939,6 +38939,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 30.633,
             "range": "+/- 0.109",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thud@thud.dev",
+            "name": "Jasper Parish",
+            "username": "thud"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "05701e8493caabc78fbc08480c5ed02cc9ce8590",
+          "message": "Better hovering mechanics for signature items (#682)\n\n* Display dimension for generators in color strip\r\n* Make border rounded for all corners of color box",
+          "timestamp": "2022-08-16T17:29:57Z",
+          "tree_id": "e7e39dd4f7d1fe91b7f03766b41beab204401c2e",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/05701e8493caabc78fbc08480c5ed02cc9ce8590"
+        },
+        "date": 1660675171293,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.6165,
+            "range": "+/- 0.056",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 13.779,
+            "range": "+/- 0.175",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 59.963,
+            "range": "+/- 1.289",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 371.92,
+            "range": "+/- 4.020",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 3.2015,
+            "range": "+/- 0.037",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 31.704,
+            "range": "+/- 0.239",
             "unit": "s"
           }
         ]
