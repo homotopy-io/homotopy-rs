@@ -653,7 +653,6 @@ impl ProofState {
     fn attach(&mut self, option: &AttachOption) {
         if let Some(workspace) = &mut self.workspace {
             // TODO: Better error handling, although none of these errors should occur
-            let diagram: DiagramN = workspace.diagram.clone().try_into().unwrap();
             let generator: DiagramN = self
                 .signature
                 .generator_info(option.generator)
@@ -665,10 +664,12 @@ impl ProofState {
             let embedding: Vec<_> = option.embedding.iter().copied().collect();
 
             let result = match &option.boundary_path {
-                Some(bp) => diagram
+                Some(bp) => <&DiagramN>::try_from(&workspace.diagram)
+                    .unwrap()
                     .attach(&generator, bp.boundary(), &embedding)
                     .unwrap(),
-                None => diagram
+                None => workspace
+                    .diagram
                     .identity()
                     .attach(&generator, Boundary::Target, &embedding)
                     .unwrap(),
