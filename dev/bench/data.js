@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1660644571047,
+  "lastUpdate": 1660645985006,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -38759,6 +38759,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 29.649,
             "range": "+/- 0.248",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thud@thud.dev",
+            "name": "Jasper Parish",
+            "username": "thud"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "16cff6a96bb435a1b37378c3f72c689e107660ea",
+          "message": "Substantial improvements to signature UI (#632)\n\n* Add toggle for signature previews\r\n\r\n* Add `single_preview` to `GeneratorInfo`\r\n* Add toggle in generators for `single_preview`\r\n* Deal with long generator names (but not for <input>) (#545)\r\n\r\n* Reorder generator preferences\r\n\r\n* Recolor shape picker based on generator colour\r\n\r\n* Add basic indicators for invertibility/framed\r\n\r\n* Migrate to switch style inputs over checkboxes\r\n\r\n* Use better colours for icons and generator prefs\r\n\r\n* Improve dynamic buttons for folders\r\n\r\n* Fix folder buttons when editing\r\n\r\n* Fix shape picker colours\r\n\r\n* Trigger item view mode switch on finish hex input\r\n\r\n* Replace white generator preset color with grey\r\n\r\n* Cache previews to avoid frequent redraws\r\n\r\n* Improve hovering stability substantially\r\n\r\n* Adjust cursors for generator settings\r\n\r\n* Make preview caching overly careful\r\n\r\nIdeally, these caches could be implemented in such a way that they are\r\nonly recalculated when absolutely necessary. Unfortunately, this seems\r\nnon-trivial in current implementation (we would have to diff parts of\r\nthe signature tree).\r\nThis commit functions by diffing the entire signature for each signature\r\nitem `update()` (ie. transitions between viewing, hovering and edit).\r\n\r\n* Recolour dimension text for clarity\r\n\r\n* Recolour disabled generator preferences\r\n\r\n* Add `Yew` keys to signature items and folders (#660)\r\n\r\nThis creates a new field for folders `id`, which is used in the creation\r\nof keys for folders. In order for this change to play well with the old\r\nserialisation code, this field is not deserialised (on import) and\r\ninstead regenerated whilst importing. This is not ideal but will work\r\nfine for the period while we get ready to replace the existing\r\nserialisation code.\r\n\r\n* Add underline to text inputs\r\n\r\n* Add global setting for toggling preview visibility\r\n\r\n* Refine default behaviour\r\n\r\n* Default to single previews for 1d and 2d",
+          "timestamp": "2022-08-16T10:40:31+01:00",
+          "tree_id": "c03d86e5ac32c81b38ff879efc1cf5a2afaf368e",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/16cff6a96bb435a1b37378c3f72c689e107660ea"
+        },
+        "date": 1660645976168,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.4857,
+            "range": "+/- 0.004",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 9.5462,
+            "range": "+/- 0.014",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 43.161,
+            "range": "+/- 0.069",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 273.08,
+            "range": "+/- 0.330",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.3046,
+            "range": "+/- 0.002",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 23.04,
+            "range": "+/- 0.034",
             "unit": "s"
           }
         ]
