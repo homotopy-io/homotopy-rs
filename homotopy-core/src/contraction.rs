@@ -214,7 +214,10 @@ fn contract_base(
                     (Some(f_cone), None) => f_cones.push(f_cone.clone()),
                     (Some(f_cone), Some(b_cone)) => {
                         if f_cone.internal == b_cone.internal && f_cone.is_redundant() {
-                            s_cones.push(f_cone.clone());
+                            s_cones.push(Cone {
+                                index: height,
+                                internal: f_cone.internal.clone(),
+                            });
                         } else {
                             f_cones.push(f_cone.clone());
                             b_cones.push(b_cone.clone());
