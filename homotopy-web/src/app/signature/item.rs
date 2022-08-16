@@ -248,14 +248,20 @@ impl Component for ItemView {
         let item = &ctx.props().item;
 
         let class = format!(
-            "signature__item {}",
-            match (self.mode, item) {
-                (ItemViewMode::Editing, SignatureItem::Item(info)) => format!(
-                    "signature__item-editing signature__item-generator-{}",
-                    info.generator.dimension
-                ),
-                (ItemViewMode::Editing, _) => "signature__folder-editing".to_owned(),
-                (_, _) => "".to_owned(),
+            "signature__item signature__{item} signature__{item}-{mode} {generator_dimension}",
+            item = match item {
+                SignatureItem::Item(_) => "generator",
+                SignatureItem::Folder(_) => "folder",
+            },
+            mode = match self.mode {
+                ItemViewMode::Editing => "editing",
+                ItemViewMode::Hovering => "hovering",
+                ItemViewMode::Viewing => "viewing",
+            },
+            generator_dimension = match item {
+                SignatureItem::Item(info) =>
+                    format!("signature__generator-{}d", info.generator.dimension),
+                SignatureItem::Folder(_) => "".to_owned(),
             }
         );
 

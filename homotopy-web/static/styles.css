@@ -418,18 +418,22 @@ button, .button {
 }
 
 .signature__item-contents {
-  max-width: calc(100% - 6px);
+  width: 100%;
   height: 100%;
   flex: 1 0 auto;
   display: flex;
   flex-direction: column;
 }
 
-.signature__item.signature__item-editing {
+.signature__generator .signature__item-contents {
+  max-width: calc(100% - 6px);
+}
+
+.signature__item.signature__generator-editing {
   height: 262px;
 }
 
-.signature__item.signature__item-editing.signature__item-generator-0 {
+.signature__item.signature__generator-editing.signature__generator-0d {
   height: 166px;
 }
 
@@ -445,6 +449,8 @@ button, .button {
   width: 100%;
   height: var(--signature-height);
   transition: background-color 100ms;
+  padding-right: 4px;
+  box-sizing: border-box;
 }
 
 @media (pointer: fine) {
