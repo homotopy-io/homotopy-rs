@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1660689439672,
+  "lastUpdate": 1660690529696,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -39059,6 +39059,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 26.187,
             "range": "+/- 0.025",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "9ca900168cb7bc6180c25ccbfad95f7e5a7531fa",
+          "message": "Fix attachment in 0D",
+          "timestamp": "2022-08-16T22:39:44+01:00",
+          "tree_id": "0e7c6f25f00883b37858c4608f098ba15c8b262b",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/9ca900168cb7bc6180c25ccbfad95f7e5a7531fa"
+        },
+        "date": 1660690511349,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.5591,
+            "range": "+/- 0.073",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 13.679,
+            "range": "+/- 0.241",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 62.44,
+            "range": "+/- 1.134",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 394.83,
+            "range": "+/- 5.550",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 3.2289,
+            "range": "+/- 0.012",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 32.616,
+            "range": "+/- 0.112",
             "unit": "s"
           }
         ]
