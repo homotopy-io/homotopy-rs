@@ -438,10 +438,10 @@ impl Rewrite {
     }
 
     #[must_use]
-    pub fn remove_framing(&self, id: usize) -> Self {
+    pub fn remove_framing(&self, generator: Generator) -> Self {
         match self {
-            Self::Rewrite0(r) => Self::Rewrite0(r.remove_framing(id)),
-            Self::RewriteN(r) => Self::RewriteN(r.remove_framing(id)),
+            Self::Rewrite0(r) => Self::Rewrite0(r.remove_framing(generator)),
+            Self::RewriteN(r) => Self::RewriteN(r.remove_framing(generator)),
         }
     }
 }
@@ -529,16 +529,16 @@ impl Rewrite0 {
         self.target().zip(self.orientation())
     }
 
-    pub fn remove_framing(&self, id: usize) -> Self {
+    pub fn remove_framing(&self, generator: Generator) -> Self {
         match &self.0 {
             None => Self(None),
             Some((source, target, label, orientation)) => {
-                let new_label = if target.id == id {
+                let label = if *target == generator {
                     Label::new(vec![])
                 } else {
                     label.clone()
                 };
-                Self::new(*source, *target, new_label, *orientation)
+                Self::new(*source, *target, label, *orientation)
             }
         }
     }
@@ -963,7 +963,7 @@ impl RewriteN {
         })
     }
 
-    pub fn remove_framing(&self, id: usize) -> Self {
+    pub fn remove_framing(&self, generator: Generator) -> Self {
         let cones = self
             .cones()
             .iter()
@@ -971,19 +971,19 @@ impl RewriteN {
                 let regular_slices = cone
                     .regular_slices()
                     .into_iter()
-                    .map(|slice| slice.remove_framing(id))
+                    .map(|slice| slice.remove_framing(generator))
                     .collect::<Vec<_>>();
                 let singular_slices = cone
                     .singular_slices()
                     .into_iter()
-                    .map(|slice| slice.remove_framing(id))
+                    .map(|slice| slice.remove_framing(generator))
                     .collect::<Vec<_>>();
                 let source = cone
                     .source()
                     .iter()
-                    .map(|cs| cs.map(|r| r.remove_framing(id)))
+                    .map(|cs| cs.map(|r| r.remove_framing(generator)))
                     .collect();
-                let target = cone.target().map(|r| r.remove_framing(id));
+                let target = cone.target().map(|r| r.remove_framing(generator));
                 Cone::new_untrimmed(cone.index, source, target, regular_slices, singular_slices)
             })
             .collect();

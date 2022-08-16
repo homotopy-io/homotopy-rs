@@ -773,10 +773,9 @@ impl ItemView {
     }
 
     fn view_preferences(&self, ctx: &Context<Self>, info: &GeneratorInfo) -> Html {
-        let id = if let SignatureItem::Item(info) = &ctx.props().item {
-            info.generator.id
-        } else {
-            unreachable!()
+        let g = match &ctx.props().item {
+            SignatureItem::Item(info) => info.generator,
+            _ => unreachable!(),
         };
 
         if self.mode != ItemViewMode::Editing {
@@ -797,7 +796,7 @@ impl ItemView {
                     if input.disabled() {
                         ItemViewMessage::Noop
                     } else {
-                        ItemViewMessage::Edit(SignatureItemEdit::$edit_type(id, !input.checked()))
+                        ItemViewMessage::Edit(SignatureItemEdit::$edit_type(g, !input.checked()))
                     }
                 }
             };
