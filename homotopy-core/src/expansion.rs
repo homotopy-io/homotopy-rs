@@ -178,16 +178,21 @@ fn expand_base_regular(
     diagram.smooth(i).ok_or(ExpansionError::Unsmoothable)
 }
 
+impl Cospan {
+    fn is_smoothable(&self) -> bool {
+        self.forward == self.backward
+            && self
+                .forward
+                .max_generator()
+                .map_or(false, |(g, _)| g.dimension <= self.forward.dimension())
+    }
+}
+
 impl DiagramN {
     // Attempt to remove the cospan at the given index.
     fn smooth(&self, i: usize) -> Option<Rewrite> {
         let cs = &self.cospans()[i];
-        if cs.forward == cs.backward
-            && cs
-                .forward
-                .max_generator()
-                .map_or(false, |(g, _)| g.dimension < self.dimension())
-        {
+        if cs.is_smoothable() {
             Some(
                 RewriteN::new(
                     self.dimension(),
@@ -547,6 +552,10 @@ pub(crate) fn expand_propagate(
         // }
         _ => {
             // Insert a bubble
+            // This is only logically valid if the target cospan is smoothable.
+            if !target_cospan.is_smoothable() {
+                return Err(ExpansionError::Unsmoothable);
+            }
             RewriteN::new(
                 diagram.dimension(),
                 vec![Cone::new(
