@@ -855,7 +855,7 @@ fn collapse_recursive<Ix: IndexType>(
 }
 
 impl Rewrite {
-    fn is_redundant(&self) -> bool {
+    pub fn is_redundant(&self) -> bool {
         match self {
             Rewrite::Rewrite0(r) => r
                 .orientation()

@@ -168,10 +168,22 @@ fn expand_base_regular(
             Direction::Backward => 1,
         }; // cospans[i] needs to be deleted by the smoothing rewrite
 
-    diagram
-        .smooth(i)
-        .map(Rewrite::from)
-        .ok_or(ExpansionError::Unsmoothable)
+    let cs = &diagram.cospans()[i];
+    if cs.is_smoothable() {
+        Ok(RewriteN::new(
+            diagram.dimension(),
+            vec![Cone::new(
+                i,
+                vec![],
+                cs.clone(),
+                vec![cs.forward.clone()],
+                vec![],
+            )],
+        )
+        .into())
+    } else {
+        Err(ExpansionError::Unsmoothable)
+    }
 }
 
 impl Cospan {
@@ -181,27 +193,6 @@ impl Cospan {
                 .forward
                 .max_generator()
                 .map_or(false, |(g, _)| g.dimension <= self.forward.dimension())
-    }
-}
-
-impl DiagramN {
-    // Attempt to remove the cospan at the given index.
-    fn smooth(&self, height: SingularHeight) -> Option<RewriteN> {
-        let cs = &self.cospans()[height];
-        if cs.is_smoothable() {
-            Some(RewriteN::new(
-                self.dimension(),
-                vec![Cone::new(
-                    height,
-                    Default::default(),
-                    cs.clone(),
-                    vec![cs.forward.clone()],
-                    Default::default(),
-                )],
-            ))
-        } else {
-            None
-        }
     }
 }
 
@@ -454,18 +445,26 @@ pub(crate) fn expand_propagate(
     .next();
 
     let expansion_rewrite = match (forward, backward) {
-        (Some(forward), Some(backward)) => diagram.smooth(height).unwrap_or_else(|| {
-            RewriteN::new(
-                diagram.dimension(),
-                vec![Cone::new_untrimmed(
+        (Some(forward), Some(backward)) => {
+            let cone = if forward == backward && forward.is_redundant() {
+                Cone::new_untrimmed(
+                    height,
+                    vec![],
+                    target_cospan.clone(),
+                    vec![target_cospan.forward.clone()],
+                    vec![],
+                )
+            } else {
+                Cone::new_untrimmed(
                     height,
                     vec![Cospan { forward, backward }],
                     target_cospan.clone(),
                     vec![],
                     vec![expansion],
-                )],
-            )
-        }),
+                )
+            };
+            RewriteN::new(diagram.dimension(), vec![cone])
+        }
         // (Some(forward), None) => {
         //     let (backward, inclusion) = factorize_inc(
         //         &slice
