@@ -565,16 +565,7 @@ impl ItemView {
 
     fn view_info(&self, ctx: &Context<Self>) -> Html {
         match &ctx.props().item {
-            SignatureItem::Item(info) => {
-                html! {
-                    <>
-                        <span class="signature__item-child signature__generator-dimension">
-                            {info.diagram.dimension()}
-                        </span>
-                        {self.view_name(ctx)}
-                    </>
-                }
-            }
+            SignatureItem::Item(_info) => self.view_name(ctx),
             SignatureItem::Folder(info) => {
                 let icon = if info.open { "folder_open" } else { "folder" };
                 let node = ctx.props().node;
@@ -606,31 +597,49 @@ impl ItemView {
                     Editing => "signature__generator-color-edit",
                 }
             );
+            let dimension_class = format!(
+                "signature__item-child signature__generator-dimension {}",
+                if info.color.is_light() {
+                    ""
+                } else {
+                    "signature__generator-dimension-light"
+                }
+            );
 
-            let inner = if self.mode == Editing {
-                let node = ctx.props().node;
-
-                html! {
+            let inner = match self.mode {
+                Viewing | Hovering => html! {
                     <>
-                        <ItemViewButton icon={"done"} light={icon_light} on_click={
-                            ctx.link().callback(move |_| {
-                                ItemViewMessage::SwitchTo(Hovering)
-                            })
-                        } />
+                        <span class={dimension_class}>
+                            {info.diagram.dimension()}
+                        </span>
+                        <ItemViewButton
+                            icon={"settings"}
+                            light={icon_light}
+                            class="signature__generator-settings-btn"
+                            on_click={
+                                ctx.link().callback(move |_| {
+                                    ItemViewMessage::SwitchTo(Editing)
+                                })
+                            } />
+                    </>
+                },
+                Editing => {
+                    let node = ctx.props().node;
+
+                    html! {
+                        <>
+                            <ItemViewButton icon={"done"} light={icon_light} on_click={
+                                ctx.link().callback(move |_| {
+                                    ItemViewMessage::SwitchTo(Hovering)
+                                })
+                            } />
                         <ItemViewButton icon={"delete"} light={icon_light} on_click={
                             ctx.props().dispatch.reform(
                                 move |_| Action::EditSignature(SignatureEdit::Remove(node))
                                 )
                         } />
-                    </>
-                }
-            } else {
-                html! {
-                    <ItemViewButton icon={"settings"} light={icon_light} on_click={
-                        ctx.link().callback(move |_| {
-                            ItemViewMessage::SwitchTo(Editing)
-                        })
-                    } />
+                        </>
+                    }
                 }
             };
 
