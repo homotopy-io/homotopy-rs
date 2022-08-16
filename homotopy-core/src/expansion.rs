@@ -86,33 +86,29 @@ impl Cospan {
         use Orientation::Zero;
         let forward = RewriteN::new(
             self.forward.dimension() + 1,
-            vec![Cone::new(
+            vec![Cone::new_untrimmed(
                 0,
-                vec![self.clone(), self.inverse()],
+                Default::default(),
                 Cospan {
-                    forward: self.forward.clone().orientation_transform(Zero), // needs to be orientation 0
-                    backward: self.forward.clone().orientation_transform(Zero), // needs to be orientation 0
+                    forward: self.forward.clone().orientation_transform(Zero),
+                    backward: self.forward.clone().orientation_transform(Zero),
                 },
-                vec![
-                    self.forward.clone().orientation_transform(Zero), // needs to be orientation 0
-                    self.backward.clone().orientation_transform(Zero), // needs to be orientation 0
-                    self.forward.clone().orientation_transform(Zero), // needs to be orientation 0
-                ],
-                vec![Rewrite::identity(self.forward.dimension()); 2],
+                vec![self.forward.clone().orientation_transform(Zero)],
+                Default::default(),
             )],
         )
         .into();
         let backward = RewriteN::new(
             self.forward.dimension() + 1,
-            vec![Cone::new(
+            vec![Cone::new_untrimmed(
                 0,
-                Default::default(),
+                vec![self.clone(), self.inverse()],
                 Cospan {
-                    forward: self.forward.clone().orientation_transform(Zero), // needs to be orientation 0
-                    backward: self.forward.clone().orientation_transform(Zero), // needs to be orientation 0
+                    forward: self.forward.clone().orientation_transform(Zero),
+                    backward: self.forward.clone().orientation_transform(Zero),
                 },
-                vec![self.forward.clone().orientation_transform(Zero)], // needs to be orientation 0
-                Default::default(),
+                vec![self.backward.clone().orientation_transform(Zero)],
+                vec![Rewrite::identity(self.forward.dimension()); 2],
             )],
         )
         .into();
