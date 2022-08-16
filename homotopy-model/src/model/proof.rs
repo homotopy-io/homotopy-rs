@@ -645,24 +645,20 @@ impl ProofState {
             for info in self.signature.iter().filter(|info| {
                 info.generator.dimension > 0 && info.diagram.dimension() <= haystack.dimension() + 1
             }) {
-                match info.diagram.dimension().cmp(&(haystack.dimension() + 1)) {
+                let diagram: &DiagramN = (&info.diagram).try_into()?;
+                match diagram.dimension().cmp(&(haystack.dimension() + 1)) {
                     std::cmp::Ordering::Less => {
                         if info.invertible {
                             // bubble
                             let bubble = |diagram: &DiagramN| {
-                                let (mut source, mut half) =
+                                let (mut source, mut cospan) =
                                     (diagram.source(), diagram.cospans()[0].clone());
                                 while source.dimension() < haystack.dimension() {
                                     source = source.identity().into();
-                                    half = half.bubble();
+                                    cospan = cospan.bubble();
                                 }
-                                let reversed = Cospan {
-                                    forward: half.backward.clone(),
-                                    backward: half.forward.clone(),
-                                };
-                                DiagramN::new(source, vec![reversed, half])
+                                DiagramN::new(source, vec![cospan])
                             };
-                            let diagram = DiagramN::try_from(info.diagram.clone())?;
 
                             let original = bubble(&diagram);
                             let needle = original
@@ -672,9 +668,7 @@ impl ProofState {
                             matches.extend(
                                 haystack
                                     .embeddings(&needle)
-                                    .filter(|embedding| {
-                                        contains_point(needle.clone(), &point, embedding)
-                                    })
+                                    .filter(|embedding| contains_point(&needle, &point, embedding))
                                     .map(|embedding| AttachOption {
                                         embedding: embedding.into_iter().collect(),
                                         generator: info.generator,
@@ -693,7 +687,7 @@ impl ProofState {
                                 haystack
                                     .embeddings(&inverse_needle)
                                     .filter(|embedding| {
-                                        contains_point(inverse_needle.clone(), &point, embedding)
+                                        contains_point(&inverse_needle, &point, embedding)
                                     })
                                     .map(|embedding| AttachOption {
                                         embedding: embedding.into_iter().collect(),
@@ -706,58 +700,38 @@ impl ProofState {
                         }
                     }
                     std::cmp::Ordering::Equal => {
-                        let needle = DiagramN::try_from(info.diagram.clone())
-                            .unwrap()
+                        let needle = diagram
                             .slice(boundary.flip())
                             .ok_or(ModelError::NoAttachment)?;
 
                         matches.extend(
                             haystack
                                 .embeddings(&needle)
-                                .filter(|embedding| {
-                                    contains_point(needle.clone(), &point, embedding)
-                                })
+                                .filter(|embedding| contains_point(&needle, &point, embedding))
                                 .map(|embedding| AttachOption {
                                     embedding: embedding.into_iter().collect(),
                                     boundary_path,
                                     generator: info.generator,
-                                    diagram: DiagramN::try_from(
-                                        self.signature
-                                            .generator_info(info.generator)
-                                            .unwrap()
-                                            .diagram
-                                            .clone(),
-                                    )
-                                    .unwrap(),
+                                    diagram: diagram.clone(),
                                     tag: None,
                                 }),
                         );
 
                         if info.invertible {
-                            let inverse_needle = DiagramN::try_from(info.diagram.clone())
-                                .unwrap()
-                                .slice(boundary)
-                                .ok_or(ModelError::NoAttachment)?;
+                            let inverse_needle =
+                                diagram.slice(boundary).ok_or(ModelError::NoAttachment)?;
 
                             matches.extend(
                                 haystack
                                     .embeddings(&inverse_needle)
                                     .filter(|embedding| {
-                                        contains_point(inverse_needle.clone(), &point, embedding)
+                                        contains_point(&inverse_needle, &point, embedding)
                                     })
                                     .map(|embedding| AttachOption {
                                         embedding: embedding.into_iter().collect(),
                                         boundary_path,
                                         generator: info.generator,
-                                        diagram: DiagramN::try_from(
-                                            self.signature
-                                                .generator_info(info.generator)
-                                                .unwrap()
-                                                .diagram
-                                                .clone(),
-                                        )
-                                        .unwrap()
-                                        .inverse(),
+                                        diagram: diagram.inverse(),
                                         tag: Some("inverse"),
                                     }),
                             );
@@ -1140,7 +1114,7 @@ impl<'a> arbitrary::Arbitrary<'a> for AttachOption {
     }
 }
 
-fn contains_point(diagram: Diagram, point: &[Height], embedding: &[RegularHeight]) -> bool {
+fn contains_point(diagram: &Diagram, point: &[Height], embedding: &[RegularHeight]) -> bool {
     use Diagram::{Diagram0, DiagramN};
 
     match (point.split_first(), diagram) {
@@ -1157,7 +1131,7 @@ fn contains_point(diagram: Diagram, point: &[Height], embedding: &[RegularHeight
             let height = Height::from(usize::from(*height) - usize::from(shift));
 
             match diagram.slice(height) {
-                Some(slice) => contains_point(slice, point, embedding),
+                Some(slice) => contains_point(&slice, point, embedding),
                 None => false,
             }
         }
