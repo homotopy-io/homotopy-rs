@@ -80,7 +80,7 @@ pub struct HighlightSvg<const N: usize> {
 #[allow(clippy::enum_variant_names)]
 pub enum DiagramSvgMessage {
     OnMouseDown(Point2D<f32>),
-    OnMouseMove(Point2D<f32>),
+    OnMouseMove(Point2D<f32>, bool),
     OnMouseUp,
     OnTouchUpdate(Vec<(Finger, Point2D<f32>)>),
     OnTouchMove(Vec<(Finger, Point2D<f32>)>),
@@ -197,8 +197,8 @@ impl<const N: usize> Component for DiagramSvg<N> {
                 self.drag_start = Some(point);
                 false
             }
-            DiagramSvgMessage::OnMouseMove(point) => {
-                self.pointer_move(ctx, point);
+            DiagramSvgMessage::OnMouseMove(point, shift_key) => {
+                self.pointer_move(ctx, point, shift_key);
                 false
             }
             DiagramSvgMessage::OnMouseUp => {
@@ -215,7 +215,7 @@ impl<const N: usize> Component for DiagramSvg<N> {
             }
             DiagramSvgMessage::OnTouchMove(touches) => {
                 if touches.len() == 1 {
-                    self.pointer_move(ctx, touches[0].1);
+                    self.pointer_move(ctx, touches[0].1, false);
                 }
                 false
             }
@@ -266,7 +266,7 @@ impl<const N: usize> Component for DiagramSvg<N> {
                 if !e.alt_key() {
                     let x = e.client_x() as f32;
                     let y = e.client_y() as f32;
-                    link.send_message(DiagramSvgMessage::OnMouseMove((x, y).into()));
+                    link.send_message(DiagramSvgMessage::OnMouseMove((x, y).into(), e.shift_key()));
                 }
             })
         };
@@ -494,7 +494,7 @@ impl<const N: usize> DiagramSvg<N> {
             .map(|(simplex, _)| simplex.clone())
     }
 
-    fn pointer_move(&mut self, ctx: &Context<Self>, point: Point2D<f32>) {
+    fn pointer_move(&mut self, ctx: &Context<Self>, point: Point2D<f32>, shift_key: bool) {
         if let Some(start) = self.drag_start {
             let diff: Vector2D<f32> = point - start;
             let distance = ctx.props().style.scale * 0.5;
@@ -516,6 +516,7 @@ impl<const N: usize> DiagramSvg<N> {
                 &simplex,
                 ctx.props().diagram.clone(),
                 &self.prepared.depths,
+                shift_key,
             );
 
             if let Some(homotopy) = homotopy {
@@ -547,6 +548,7 @@ fn drag_to_homotopy<const N: usize>(
     simplex: &Simplex<N>,
     diagram: Diagram,
     depths: &Depths<N>,
+    force_same: bool,
 ) -> Option<Homotopy> {
     use Height::{Regular, Singular};
     use SliceIndex::{Boundary, Interior};
@@ -659,7 +661,9 @@ fn drag_to_homotopy<const N: usize>(
                     direction,
                 }))
             } else {
-                let bias = if horizontal || abs_radians >= 2.0 * PI / 3.0 {
+                let bias = if force_same {
+                    Some(Bias::Same)
+                } else if horizontal || abs_radians >= 2.0 * PI / 3.0 {
                     Some(Bias::Lower)
                 } else if abs_radians <= PI / 3.0 {
                     Some(Bias::Higher)
