@@ -629,7 +629,10 @@ span.signature__item-name {
 }
 
 .signature__generator-indicators-wrapper {
-  opacity: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: right;
+  padding: var(--space-0) 0;
 }
 
 .signature__generator-indicator {
