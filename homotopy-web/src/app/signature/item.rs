@@ -731,12 +731,12 @@ impl ItemView {
                 html! {}
             };
 
-            let oriented = if info.framed {
-                html! {}
-            } else {
+            let oriented = if info.oriented {
                 html! {
                     <span class={oriented_class}>{"O"}</span>
                 }
+            } else {
+                html! {}
             };
 
             html! {
@@ -759,9 +759,6 @@ impl ItemView {
         // getting the status of the <input> within the outer <div> of a preference.
         macro_rules! toggle_or_noop {
             ($edit_type:ident) => {
-                toggle_or_noop!($edit_type, false)
-            };
-            ($edit_type:ident, $flip:expr) => {
                 |e: MouseEvent| {
                     let input = e
                         .target_unchecked_into::<Element>()
@@ -772,17 +769,15 @@ impl ItemView {
                     if input.disabled() {
                         ItemViewMessage::Noop
                     } else {
-                        ItemViewMessage::Edit(SignatureItemEdit::$edit_type(
-                            $flip ^ input.checked(),
-                        ))
+                        ItemViewMessage::Edit(SignatureItemEdit::$edit_type(!input.checked()))
                     }
                 }
             };
         }
 
-        let toggle_single_preview = ctx.link().callback(toggle_or_noop!(ShowSinglePreview));
-        let toggle_invertible = ctx.link().callback(toggle_or_noop!(MakeInvertible, true));
-        let toggle_framed = ctx.link().callback(toggle_or_noop!(MakeFramed));
+        let toggle_single_preview = ctx.link().callback(toggle_or_noop!(ShowSourceTarget));
+        let toggle_invertible = ctx.link().callback(toggle_or_noop!(MakeInvertible));
+        let toggle_framed = ctx.link().callback(toggle_or_noop!(MakeOriented));
 
         let color = if info.color.is_light() {
             "var(--drawer-foreground)".to_owned()
@@ -815,8 +810,8 @@ impl ItemView {
                         right="Oriented"
                         color={color.clone()}
                         onclick={toggle_framed}
-                        checked={!info.framed}
-                        disabled={!info.framed}
+                        checked={info.oriented}
+                        disabled={info.oriented}
                     />
                 </div>
             },

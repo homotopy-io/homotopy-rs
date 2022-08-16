@@ -41,9 +41,9 @@ pub enum SignatureItemEdit {
     Rename(String),
     Recolor(Color),
     Reshape(VertexShape),
-    MakeFramed(bool),
+    MakeOriented(bool),
     MakeInvertible(bool),
-    ShowSinglePreview(bool),
+    ShowSourceTarget(bool),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -97,9 +97,9 @@ impl Signature {
         let info = GeneratorInfo {
             generator,
             name: format!("{} {}", name, id),
-            framed: true,
+            oriented: false,
             invertible: false,
-            single_preview: matches!(generator.dimension, 1 | 2),
+            single_preview: matches!(generator.dimension, 0 | 1 | 2),
             color: Color::from_str(COLORS[id % COLORS.len()]).unwrap(),
             shape: Default::default(),
             diagram: diagram.into(),
@@ -117,15 +117,15 @@ impl Signature {
 
     fn edit(&mut self, node: Node, edit: SignatureItemEdit) {
         use SignatureItemEdit::{
-            MakeFramed, MakeInvertible, Recolor, Rename, Reshape, ShowSinglePreview,
+            MakeInvertible, MakeOriented, Recolor, Rename, Reshape, ShowSourceTarget,
         };
         self.0.with_mut(node, move |n| match (n.inner_mut(), edit) {
             (SignatureItem::Item(info), Rename(name)) => info.name = name,
             (SignatureItem::Item(info), Recolor(color)) => info.color = color,
             (SignatureItem::Item(info), Reshape(shape)) => info.shape = shape,
-            (SignatureItem::Item(info), MakeFramed(false)) => info.framed = false,
+            (SignatureItem::Item(info), MakeOriented(true)) => info.oriented = true,
             (SignatureItem::Item(info), MakeInvertible(true)) => info.invertible = true,
-            (SignatureItem::Item(info), ShowSinglePreview(show)) => info.single_preview = show,
+            (SignatureItem::Item(info), ShowSourceTarget(show)) => info.single_preview = !show,
             (SignatureItem::Folder(info), Rename(name)) => info.name = name,
             (_, _) => {}
         });

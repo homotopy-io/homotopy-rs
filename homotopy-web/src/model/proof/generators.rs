@@ -8,7 +8,7 @@ use super::signature::Signature;
 pub struct GeneratorInfo {
     pub generator: Generator,
     pub name: String,
-    pub framed: bool,
+    pub oriented: bool,
     pub invertible: bool,
     pub single_preview: bool,
     pub color: Color,
