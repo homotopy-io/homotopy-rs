@@ -559,22 +559,39 @@ span.signature__item-name {
 }
 
 .signature__generator-color {
-  display: flex;
-  flex-direction: row;
+  position: relative;
   wrap: nowrap;
   overflow: hidden;
   color: var(--drawer-background);
-  width: 0;
+  width: 26px;
   flex: 0 0 auto;
   transition: width 50ms;
 }
 
-.signature__generator-color.signature__generator-color-hover {
-  width: 32px;
+.signature__generator-color.signature__generator-color-hover,
+.signature__generator-color.signature__generator-color-edit {
+  display: flex;
+  flex-direction: row;
 }
 
 .signature__generator-color.signature__generator-color-edit {
   width: 64px;
+}
+
+.signature__generator-settings-btn {
+  position: absolute;
+  right: 0;
+  box-sizing: border-box;
+  opacity: 0;
+  transition: opacity 100ms;
+}
+
+.signature__generator-color-hover .signature__generator-settings-btn {
+  opacity: 1;
+}
+
+.signature__item-editing .signature__generator-settings-btn {
+  position: static;
 }
 
 .signature__generator-color-sliver {
@@ -589,14 +606,29 @@ span.signature__item-name {
 }
 
 .signature__generator-dimension {
-  color: var(--drawer-foreground-dimmed-text);
+  position: absolute;
+  width: calc(100% + 6px);
+  right: 0;
+  display: block;
+  text-align: center;
+  color: var(--drawer-foreground);
+  font-weight: bold;
+  font-size: 17px;
+  opacity: 1;
+  transition: opacity 100ms;
+  box-sizing: border-box;
+}
+
+.signature__generator-dimension.signature__generator-dimension-light {
+  color: var(--drawer-background);
+}
+
+.signature__generator-color-hover .signature__generator-dimension {
+  opacity: 0;
 }
 
 .signature__generator-indicators-wrapper {
-  display: flex;
-  flex-direction: row;
-  align-items: right;
-  padding: var(--space-0) 0;
+  opacity: 0;
 }
 
 .signature__generator-indicator {
