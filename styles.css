@@ -12,8 +12,10 @@
   --drawer-background: #f9f9f9;
   --drawer-background-dimmed: #f1f1f1;
   --drawer-foreground: #575f66;
+  --drawer-foreground-dimmed: #575f6655;
+  --drawer-foreground-dimmed-text: #575f66cc;
   --drawer-border: #e1e1e1;
-  --drawer-selected: #d1e4f4;
+  --drawer-selected: #66aeeb55;
 
   --button-border: #e1e1e1;
   --button-background: #f0f0f0;
@@ -383,6 +385,18 @@ button, .button {
   box-sizing: border-box;
 }
 
+.drawer__content .material-icons.md-light {
+  color: var(--drawer-background);
+}
+
+.drawer__content .material-icons.md-dark {
+  color: var(--drawer-foreground);
+}
+
+.drawer__content .material-icons.md-dark.md-inactive {
+  color: var(--drawer-foreground-dimmed);
+}
+
 .drawer__icon {
   cursor: pointer;
   padding: var(--space-1);
@@ -398,15 +412,28 @@ button, .button {
   cursor: pointer;
   height: var(--signature-height);
   overflow: hidden;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: stretch;
   transition: height 100ms;
 }
 
-.signature__item.signature__item-editing {
-  height: 222px;
+.signature__item-contents {
+  width: 100%;
+  height: 100%;
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
 }
 
-.signature__item.signature__item-editing.signature__item-generator-0 {
+.signature__generator .signature__item-contents {
+  max-width: calc(100% - 6px);
+}
+
+.signature__item.signature__generator-editing {
+  height: 262px;
+}
+
+.signature__item.signature__generator-editing.signature__generator-0d {
   height: 166px;
 }
 
@@ -418,10 +445,20 @@ button, .button {
   display: flex;
   flex-direction: row;
   align-items: stretch;
+  justify-content: center;
   width: 100%;
   height: var(--signature-height);
-  margin-bottom: var(--space-0);
+  transition: background-color 100ms;
+  padding-right: 4px;
+  box-sizing: border-box;
 }
+
+@media (pointer: fine) {
+  .signature__item-info:hover {
+    background: var(--drawer-selected);
+  }
+}
+
 
 .signature__branch {
   width: 100%;
@@ -442,7 +479,6 @@ button, .button {
 .signature__dropzone {
   height: var(--space-1);
   width: 100%;
-  cursor: pointer;
   transition: height 100ms;
 }
 
@@ -464,36 +500,39 @@ button, .button {
   height: var(--signature-height);
 }
 
+.signature__item input[type=text]:focus-within {
+  text-decoration: underline;
+}
+
 .signature__item-child {
   padding: var(--space-0);
   display: flex;
   align-items: center;
-  transition: background-color 100ms;
-}
-
-@media (pointer: fine) {
-  .signature__item-child:hover {
-    background: var(--drawer-selected);
-  }
 }
 
 .signature__item-name, .signature__item-fill {
-  flex: 1;
+  flex: 1 1 auto;
   white-space: nowrap;
   overflow: hidden;
-  height: 100%;
   box-sizing: border-box;
 }
 
 .signature__item-fill {
-    cursor: pointer;
+  cursor: pointer;
+  height: 100%;
 }
 
-.signature__item-name {
+div.signature__item-name {
   padding-left: 0;
   padding-right: 0;
   border-left: var(--space-1) solid transparent;
   border-right: var(--space-1) solid transparent;
+  display: flex;
+  align-items: center;
+}
+
+span.signature__item-name {
+  text-overflow: ellipsis;
 }
 
 .signature__item-name-input {
@@ -503,8 +542,95 @@ button, .button {
   user-select: text;
 }
 
+.signature__folder-right {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: row;
+  justify-content: right;
+  wrap: nowrap;
+  overflow: hidden;
+  width: 0;
+  transition: width 100ms;
+}
+
+.signature__folder-right.signature__folder-right-hover,
+  .signature__folder-right.signature__folder-right-editing {
+  width: 64px;
+}
+
 .signature__generator-color {
+  display: flex;
+  flex-direction: row;
+  wrap: nowrap;
+  overflow: hidden;
   color: var(--drawer-background);
+  width: 0;
+  flex: 0 0 auto;
+  transition: width 50ms;
+}
+
+.signature__generator-color.signature__generator-color-hover {
+  width: 32px;
+}
+
+.signature__generator-color.signature__generator-color-edit {
+  width: 64px;
+}
+
+.signature__generator-color-sliver {
+  flex: 0 0 auto;
+  height: 100%;
+  width: 6px;
+  box-sizing: border-box;
+}
+
+.signature__generator-color-sliver-light {
+  box-shadow: inset 2px 0 0 #575f6655;
+}
+
+.signature__generator-dimension {
+  color: var(--drawer-foreground-dimmed-text);
+}
+
+.signature__generator-indicators-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: right;
+  padding: var(--space-0) 0;
+}
+
+.signature__generator-indicator {
+  border-radius: var(--space-0);
+  width: 18px;
+  color: var(--drawer-background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 2px;
+  font-weight: bold;
+}
+
+.signature__generator-indicator-invertible {
+  background-color: #2980b9;
+}
+
+.signature__generator-indicator-oriented {
+  background-color: #27ae60;
+}
+
+.signature__generator-previews-wrapper {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.signature__generator-preview-spacer {
+  box-sizing: border-box;
+  width: 5px;
+  height: 18px;
 }
 
 .signature__generator-picker {
@@ -513,17 +639,17 @@ button, .button {
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
-  margin-top: var(--space-1);
+  padding: var(--space-1) var(--space-1) 0 var(--space-1);
   gap: var(--space-0);
   box-sizing: border-box;
 }
 
 .signature__generator-picker-color {
-    justify-content: space-between;
+  justify-content: space-between;
 }
 
 .signature__generator-picker-shape {
-    justify-content: flex-start;
+  justify-content: flex-start;
 }
 
 .signature__generator-picker-preset {
@@ -533,11 +659,8 @@ button, .button {
 }
 
 .signature__generator-picker-shape > .signature__generator-picker-preset {
-    flex: 0;
-}
-
-.signature__generator-picker-preset-shape-selected {
-    color: black;
+  flex: 0;
+  transition: color 100ms;
 }
 
 .signature__generator-picker-custom-wrapper {
@@ -566,6 +689,7 @@ button, .button {
   overflow: hidden;
   flex: 1 1 auto;
   outline: none;
+  cursor: pointer;
   transition: background-color 100ms;
 }
 
@@ -576,7 +700,7 @@ button, .button {
   box-sizing: border-box;
   overflow: hidden;
   color: var(--drawer-foreground);
-  cursor: pointer;
+  cursor: text;
   outline: none;
   text-align: center;
 }
@@ -587,7 +711,6 @@ button, .button {
   padding: calc(var(--space-0) + 2px);
   box-sizing: border-box;
   overflow: hidden;
-  cursor: pointer;
   border: none;
   outline: none;
   text-align: center;
@@ -613,40 +736,63 @@ button, .button {
   justify-content: space-between;
   box-sizing: border-box;
   pointer-events: none;
-  color: var(--drawer-background);
+}
+
+.signature__generator-preferences-wrapper {
+  width: 100%;
+  padding: var(--space-0) var(--space-1) 0 var(--space-1);
+  box-sizing: border-box;
 }
 
 .signature__generator-preference {
-  width: 100%;
-  height: 28px;
+  position: relative;
+  width: auto;
+  height: 26px;
   padding: var(--space-0);
+  margin-top: var(--space-0);
+  border-radius: var(--space-0);
+  transition: background-color 100ms;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.signature__generator-preference:hover {
+  background-color: var(--drawer-selected);
+}
+
+.signature__generator-preference-options-wrapper {
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  box-sizing: border-box;
-  border-radius: var(--space-0);
-  transition: background-color 100ms;
-  cursor: pointer;
-}
-
-.signature__generator-preference:hover {
-    background-color: var(--drawer-selected);
-}
-
-.signature__generator-preference span {
   pointer-events: none;
+}
+
+.signature__generator-preference-option {
+  white-space: nowrap;
+  pointer-events: none;
+  transition: color 250ms;
+}
+
+.signature__generator-preference-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 50%;
+  height: 100%;
+  transition: transform 100ms;
+  pointer-events: none;
+  z-index: -1;
 }
 
 .signature__generator-preference input[type=checkbox] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  pointer-events: none;
-}
-
-.signature__generator-preference select {
-  height: 18px;
+  opacity: 0;
+  width: 0;
+  height: 0;
 }
 
 /* Diagram SVG */
