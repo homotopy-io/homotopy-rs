@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 pub mod history;
+pub mod migration;
 pub mod proof;
 pub mod serialize;
 
@@ -195,7 +196,12 @@ impl State {
 
             Action::ImportProof(data) => {
                 let (signature, workspace) =
-                    serialize::deserialize(&Vec::<u8>::from(data)).ok_or(ModelError::Import)?;
+                    match serialize::deserialize(&Vec::<u8>::from(data.clone())) {
+                        Some(res) => res,
+                        None => migration::deserialize(&Vec::<u8>::from(data))
+                            .ok_or(ModelError::Import)?,
+                    };
+
                 for g in signature.iter() {
                     g.diagram
                         .check(Mode::Deep)
