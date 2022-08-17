@@ -60,6 +60,16 @@ impl Component for SettingsView {
     fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
             <div class="settings">
+                <h3>{"General"}</h3>
+                <div class="settings__segment">
+                    {
+                        self.view_checkbox(
+                            "Show previews in signature",
+                            |local| *local.get_show_previews(),
+                            AppSettingsDispatch::set_show_previews,
+                        )
+                    }
+                </div>
                 <h3>{"3D renderer"}</h3>
                 <div class="settings__segment">
                     <h4>{"Quality"}</h4>
@@ -105,13 +115,6 @@ impl Component for SettingsView {
                 </div>
                 <div class="settings__segment">
                     <h4>{"Style"}</h4>
-                    {
-                        self.view_checkbox(
-                            "Show previews in signature",
-                            |local| *local.get_show_previews(),
-                            AppSettingsDispatch::set_show_previews,
-                        )
-                    }
                     {
                         self.view_checkbox(
                             "Orthographic projection",
