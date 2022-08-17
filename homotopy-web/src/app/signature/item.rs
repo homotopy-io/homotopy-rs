@@ -289,14 +289,14 @@ impl Component for ItemView {
             ctx.link().callback(|_| ItemViewMessage::Noop)
         };
 
-        let select_generator = match &ctx.props().item {
-            SignatureItem::Item(info) => {
+        let select_generator = match (self.mode, &ctx.props().item) {
+            (ItemViewMode::Viewing | ItemViewMode::Hovering, SignatureItem::Item(info)) => {
                 let generator = info.generator;
                 ctx.props()
                     .dispatch
                     .reform(move |_| Action::SelectGenerator(generator))
             }
-            SignatureItem::Folder(_) => Callback::noop(),
+            _ => Callback::noop(),
         };
 
         html! {
