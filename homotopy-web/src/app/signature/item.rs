@@ -479,7 +479,7 @@ impl ItemView {
                     id={id}
                     signature={ctx.props().signature.clone()}
                     max_width={Some(42.0)}
-                    max_height={Some(32.0)}
+                    max_height={Some(30.0)}
             />
         }
     }
