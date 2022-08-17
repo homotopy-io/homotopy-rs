@@ -173,7 +173,7 @@ impl<const N: usize> GraphicElement<N> {
                         .push(orient_surface(ps));
                 }
                 Simplex::Wire(ps) => {
-                    let generator = projection.generator(ps[0]);
+                    let generator = projection.front_generator(ps[0]);
 
                     let (depth, mask) = match depths.edge_depth(ps[0], ps[1]) {
                         Some(depth) => (
