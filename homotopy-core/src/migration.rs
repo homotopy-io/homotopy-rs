@@ -18,6 +18,8 @@ pub struct OldProof {
     #[serde(skip)]
     pub generator_info: Vec<OldGeneratorInfo>,
     #[serde(skip)]
+    pub workspace: Option<OldWorkspace>,
+    #[serde(skip)]
     generators: HashMap<usize, Generator>,
     #[serde(skip)]
     diagrams: HashMap<usize, Diagram>,
@@ -32,6 +34,12 @@ pub struct OldGeneratorInfo {
     pub name: String,
     pub color: String,
     pub diagram: Diagram,
+}
+
+pub struct OldWorkspace {
+    pub diagram: Diagram,
+    // pub path: Vec<SliceIndex>,
+    // pub view: u8,
 }
 
 impl OldProof {
@@ -55,7 +63,7 @@ impl OldProof {
             let i: usize = from_value(v["_l"].clone())?;
             self.load_generator(i)?;
         }
-        let workspace = self.load_workspace();
+        self.load_workspace()?;
         Ok(())
     }
 
@@ -124,14 +132,12 @@ impl OldProof {
         }
 
         let dim: usize = from_value(self.stored[index][1]["n"].clone())?;
-        let diagram: Diagram = match dim {
-            0 => {
+        let diagram: Diagram = {
+            if dim == 0 {
                 let id: String = from_value(self.stored[index][1]["f"]["id"].clone())?;
                 let id: usize = id.parse().unwrap();
                 self.generators[&id].into()
-            }
-
-            _ => {
+            } else {
                 // Load source
                 let source_index: usize =
                     from_value(self.stored[index][1]["f"]["source"]["_l"].clone())?;
@@ -193,29 +199,24 @@ impl OldProof {
             from_value(self.stored[index][1]["f"]["components"]["_l"].clone())?;
         let cones_data = self.generate_vec(cones_index)?;
 
-        let rewrite: Rewrite = match dim {
-            // Case Rewrite0
-            0 => {
+        let rewrite: Rewrite = {
+            if dim == 0 {
                 let i: usize = from_value(cones_data[0]["_l"].clone())?;
 
                 let source: String = from_value(self.stored[i][1]["f"]["source_id"].clone())?;
                 let source: usize = source.parse().unwrap();
-                let source = self.generators[&source].clone();
+                let source = self.generators[&source];
 
                 let target: String = from_value(self.stored[i][1]["f"]["target_id"].clone())?;
                 let target: usize = target.parse().unwrap();
-                let target = self.generators[&target].clone();
+                let target = self.generators[&target];
 
                 Rewrite0::new(source, target).into()
-            }
-            // Case RewriteN
-            _ => {
+            } else {
                 let mut cones: Vec<Cone> = Vec::new();
-                let mut acc = 0;
                 for v in cones_data {
                     let i: usize = from_value(v["_l"].clone())?;
                     let c = self.load_cone(i)?;
-                    acc = acc + 1;
                     cones.push(c);
                 }
                 RewriteN::new(dim, cones).into()
@@ -262,6 +263,23 @@ impl OldProof {
     }
 
     fn load_workspace(&mut self) -> Result<()> {
+        // Extract workspace information
+        let i: usize = from_value(self.stored[self.head][1]["f"]["workspace"]["_l"].clone())?;
+        let diagram_index: usize = match from_value(self.stored[i][1]["f"]["diagram"]["_l"].clone())
+        {
+            Ok(v) => v,
+            Err(_) => return Ok(()),
+        };
+        //let slices_index = from_value(self.stored[i][1]["f"]["slice"]["_l"].clone())?;
+        //let projection = from_value(self.stored[i][1]["f"]["projection"].clone())?;
+
+        // load diagram
+        let diagram = self.load_diagram(diagram_index)?;
+
+        // TODO: load path, view
+
+        self.workspace = Some(OldWorkspace { diagram });
+
         Ok(())
     }
 }
@@ -299,7 +317,7 @@ impl From<std::io::Error> for OldProofError {
 }
 
 fn decode_bufreader(bytes: &[u8]) -> io::Result<String> {
-    let mut z = ZlibDecoder::new(&bytes[..]);
+    let mut z = ZlibDecoder::new(bytes);
     let mut s = String::new();
     z.read_to_string(&mut s)?;
     Ok(s)

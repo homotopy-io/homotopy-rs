@@ -3,7 +3,7 @@ use homotopy_graphics::style::{Color, VertexShape};
 use serde::Deserialize;
 
 use super::{Signature, Workspace};
-use crate::model::proof::{generators::GeneratorInfo, SignatureItem};
+use crate::model::proof::{generators::GeneratorInfo, SignatureItem, View};
 
 #[derive(Deserialize)]
 struct Export {
@@ -57,11 +57,22 @@ fn load(proof: OldProof) -> Option<(Signature, Option<Workspace>)> {
             single_preview: true,
             color,
             shape: VertexShape::default(),
-            diagram: v.diagram,
+            diagram: v.diagram.clone(),
         };
         signature.insert_item(SignatureItem::Item(info));
     }
 
-    let workspace = None;
+    let workspace = match proof.workspace {
+        Some(w) => Some(Workspace {
+            diagram: w.diagram.clone(),
+            path: Default::default(),
+            view: View::new(w.diagram.dimension().min(2) as u8),
+            attach: Default::default(),
+            attachment_highlight: Default::default(),
+            slice_highlight: Default::default(),
+        }),
+        None => None,
+    };
+
     Some((signature, workspace))
 }
