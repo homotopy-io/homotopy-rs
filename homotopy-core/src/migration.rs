@@ -6,7 +6,10 @@ use serde::Deserialize;
 use serde_json::{from_value, Value};
 use thiserror::Error;
 
-use crate::{rewrite::Cone, Cospan, Diagram, DiagramN, Generator, Rewrite, Rewrite0, RewriteN};
+use crate::{
+    rewrite::{Cone, Label},
+    Cospan, Diagram, DiagramN, Generator, Orientation, Rewrite, Rewrite0, RewriteN,
+};
 
 #[derive(Deserialize)]
 pub struct OldProof {
@@ -214,7 +217,7 @@ impl OldProof {
                 let target: usize = target.parse().unwrap();
                 let target = self.generators[&target];
 
-                Rewrite0::new(source, target, todo!(), todo!()).into()
+                Rewrite0::new(source, target, Label::new(vec![]), Orientation::Positive).into()
             } else {
                 let mut cones: Vec<Cone> = Vec::new();
                 for v in cones_data {
@@ -253,14 +256,24 @@ impl OldProof {
 
         // Slices
         let sublimits = self.generate_vec(slices_index)?;
-        let mut slices: Vec<Rewrite> = Vec::new();
+        let mut singular_slices: Vec<Rewrite> = Vec::new();
         for v in sublimits {
             let i: usize = from_value(v["_l"].clone())?;
             let c = self.load_rewrite(i)?;
-            slices.push(c);
+            singular_slices.push(c);
         }
 
-        let cone = Cone::new(cone_index, source, target, todo!(), slices);
+        let regular_slices = if source.is_empty() {
+            vec![target.forward.clone()]
+        } else {
+            let mut regular_slices = vec![];
+            for i in 1..source.len() {
+                regular_slices.push(source[i].forward.compose(&singular_slices[i]).unwrap());
+            }
+            regular_slices
+        };
+
+        let cone = Cone::new_untrimmed(cone_index, source, target, regular_slices, singular_slices);
         self.cones.insert(index, cone.clone());
         Ok(cone)
     }
