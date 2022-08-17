@@ -21,8 +21,9 @@ macro_rules! declare_sidebar_drawers {
             $class:literal,
             $icon:literal,
             $body:expr,
-            $($top_icon:literal,
-              $action:expr,)?
+            $(min_width: $min_width:expr,)?
+            $(top_icon: $top_icon:literal,
+              top_icon_action: $action:expr,)?
         }
     )*) => {
         #[allow(unused)]
@@ -38,8 +39,10 @@ macro_rules! declare_sidebar_drawers {
         impl NavDrawer {
             pub(super) fn view(
                 self,
-                dispatch: &Callback<model::Action>,
+                model_dispatch: &Callback<model::Action>,
+                sidebar_dispatch: &Callback<SidebarMsg>,
                 proof: &Proof,
+                initial_width: i32,
             ) -> Html {
                 match self {
                     $(
@@ -50,14 +53,17 @@ macro_rules! declare_sidebar_drawers {
                                 <SidebarDrawer
                                     title={$title}
                                     class={$class}
-                                    dispatch={dispatch}
+                                    initial_width={initial_width}
+                                    $(min_width={$min_width})?
+                                    model_dispatch={model_dispatch}
+                                    sidebar_dispatch={sidebar_dispatch}
                                     $(icon={$top_icon})?
                                     $(on_click={
                                         let action = $action;
                                         action(proof)
                                     })?
                                 >
-                                    {body(dispatch, proof)}
+                                    {body(model_dispatch, proof)}
                                 </SidebarDrawer>
                             }
                         }
@@ -115,6 +121,7 @@ declare_sidebar_drawers! {
         |_, _| html! {
             <SettingsView />
         },
+        min_width: 250,
     }
 
     DRAWER_SIGNATURE {
@@ -127,8 +134,8 @@ declare_sidebar_drawers! {
                 dispatch={dispatch.reform(model::Action::Proof)}
             />
         },
-        "create_new_folder",
-        |proof: &Proof| model::Action::Proof(Action::EditSignature(SignatureEdit::NewFolder(proof.signature().as_tree().root()))),
+        top_icon: "create_new_folder",
+        top_icon_action: |proof: &Proof| model::Action::Proof(Action::EditSignature(SignatureEdit::NewFolder(proof.signature().as_tree().root()))),
     }
 
     #[cfg(debug_assertions)]

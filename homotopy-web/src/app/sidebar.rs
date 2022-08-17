@@ -52,7 +52,11 @@ pub fn sidebar_button(props: &SidebarButtonProps) -> Html {
 pub struct SidebarDrawerProps {
     pub class: &'static str,
     pub title: &'static str,
-    pub dispatch: Callback<model::Action>,
+    pub model_dispatch: Callback<model::Action>,
+    pub sidebar_dispatch: Callback<SidebarMsg>,
+    pub initial_width: i32,
+    #[prop_or(SidebarDrawer::MIN_WIDTH)]
+    pub min_width: i32,
     #[prop_or_default]
     pub children: Children,
     #[prop_or_default]
@@ -61,27 +65,130 @@ pub struct SidebarDrawerProps {
     pub on_click: Option<model::Action>,
 }
 
-#[function_component(SidebarDrawer)]
-pub fn sidebar_drawer(props: &SidebarDrawerProps) -> Html {
-    html! {
-        <aside class={format!("{} drawer", props.class)}>
-            <div class="drawer__header">
-                <span class="drawer__title">
-                    {props.title}
-                </span>
-                if let (Some(icon), Some(action)) = (props.icon, props.on_click.as_ref().cloned()) {
-                    <span
-                        class="drawer__icon"
-                        onclick={props.dispatch.reform(move |_| action.clone())}
-                    >
-                        <Icon name={icon} size={IconSize::Icon18} />
-                    </span>
-                }
-            </div>
-            <div class="drawer__content">
-                { for props.children.iter() }
-            </div>
-        </aside>
+// Messages corresponding to mouse events on resize bar (right border of drawer)
+pub enum SidebarDrawerMsg {
+    ResizeStart,
+    Resize(i32),
+    ResizeDone,
+}
+
+pub struct SidebarDrawer {
+    width: i32,
+    resize_closure: Closure<dyn FnMut(MouseEvent)>,
+    resize_done_closure: Closure<dyn FnMut(MouseEvent)>,
+}
+
+impl SidebarDrawer {
+    const MIN_WIDTH: i32 = 200; // px
+    const MAX_WIDTH: i32 = 400; // px
+    const DEFAULT_WIDTH: i32 = 250; // px
+    const RESIZE_OFFSET: i32 = 2; // px, useful for recentering cursor while mouse button held
+}
+
+impl Component for SidebarDrawer {
+    type Message = SidebarDrawerMsg;
+    type Properties = SidebarDrawerProps;
+
+    fn create(ctx: &Context<Self>) -> Self {
+        let resize_msg = ctx.link().callback(SidebarDrawerMsg::Resize);
+        let done_msg = ctx.link().callback(|_| SidebarDrawerMsg::ResizeDone);
+
+        let mouse_move_handler = move |e: MouseEvent| {
+            let width = e.client_x() - Sidebar::WIDTH + Self::RESIZE_OFFSET;
+            resize_msg.emit(width);
+        };
+        let mouse_up_handler = move |_| {
+            done_msg.emit(());
+        };
+
+        let resize_closure = Closure::wrap(Box::new(mouse_move_handler) as Box<dyn FnMut(_)>);
+        let resize_done_closure = Closure::wrap(Box::new(mouse_up_handler) as Box<dyn FnMut(_)>);
+
+        Self {
+            width: ctx.props().initial_width,
+            resize_closure,
+            resize_done_closure,
+        }
+    }
+
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        use SidebarDrawerMsg::{Resize, ResizeDone, ResizeStart};
+
+        match msg {
+            ResizeStart => {
+                let window = web_sys::window().unwrap();
+                window
+                    .add_event_listener_with_callback(
+                        "mousemove",
+                        self.resize_closure.as_ref().unchecked_ref(),
+                    )
+                    .unwrap();
+                window
+                    .add_event_listener_with_callback(
+                        "mouseup",
+                        self.resize_done_closure.as_ref().unchecked_ref(),
+                    )
+                    .unwrap();
+                false
+            }
+            Resize(width) => {
+                self.width = width.min(Self::MAX_WIDTH).max(Self::MIN_WIDTH);
+                true
+            }
+            ResizeDone => {
+                let window = web_sys::window().unwrap();
+                window
+                    .remove_event_listener_with_callback(
+                        "mousemove",
+                        self.resize_closure.as_ref().unchecked_ref(),
+                    )
+                    .unwrap();
+                window
+                    .remove_event_listener_with_callback(
+                        "mouseup",
+                        self.resize_done_closure.as_ref().unchecked_ref(),
+                    )
+                    .unwrap();
+                ctx.props()
+                    .sidebar_dispatch
+                    .emit(SidebarMsg::ResizeDrawer(self.width));
+                false
+            }
+        }
+    }
+
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let width = self.width.max(ctx.props().min_width);
+        html! {
+            <aside
+                class={format!("{} drawer", ctx.props().class)}
+                style={format!("width: {}px;", width)}
+                >
+                <div class="drawer__inner">
+                    <div class="drawer__header">
+                        <span class="drawer__title">
+                            {ctx.props().title}
+                        </span>
+                        if let (Some(icon), Some(action)) = (ctx.props().icon, ctx.props().on_click.as_ref().cloned()) {
+                            <span
+                                class="drawer__icon"
+                                onclick={ctx.props().model_dispatch.reform(move |_| action.clone())}
+                            >
+                                <Icon name={icon} size={IconSize::Icon18} />
+                            </span>
+                        }
+                    </div>
+                    <div class="drawer__content">
+                        { for ctx.props().children.iter() }
+                    </div>
+                </div>
+                <div
+                    class="drawer__resize-bar"
+                    draggable="false"
+                    onmousedown={ctx.link().callback(|_| SidebarDrawerMsg::ResizeStart)}
+                />
+            </aside>
+        }
     }
 }
 
@@ -91,14 +198,16 @@ pub struct SidebarProps {
     pub dispatch: Callback<model::Action>,
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SidebarMsg {
-    Toggle(drawers::NavDrawer),
     Dispatch(model::Action),
+    ResizeDrawer(i32),
+    Toggle(drawers::NavDrawer),
 }
 
 #[derive(Default)]
 pub struct Sidebar {
+    drawer_width: i32,
     open: Option<drawers::NavDrawer>,
     // Hold onto bindings so that they are dropped when the app is destroyed
     keybindings: Option<Closure<dyn FnMut(KeyboardEvent)>>,
@@ -109,13 +218,20 @@ impl Component for Sidebar {
     type Properties = SidebarProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let mut sidebar = Self::default();
+        let mut sidebar = Sidebar {
+            drawer_width: SidebarDrawer::DEFAULT_WIDTH,
+            ..Self::default()
+        };
         sidebar.install_keyboard_shortcuts(ctx);
         sidebar
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            SidebarMsg::ResizeDrawer(width) => {
+                self.drawer_width = width;
+                false
+            }
             SidebarMsg::Toggle(drawer) if Some(drawer) == self.open => {
                 self.open = None;
                 true
@@ -154,8 +270,11 @@ impl Component for Sidebar {
 }
 
 impl Sidebar {
+    const WIDTH: i32 = 48; // px
+
     fn drawer(&self, ctx: &Context<Self>) -> Html {
-        let dispatch = &ctx.props().dispatch;
+        let model_dispatch = &ctx.props().dispatch;
+        let sidebar_dispatch = ctx.link().callback(|x| x);
         let proof = &ctx.props().proof;
 
         if proof.show_image_export {
@@ -163,12 +282,14 @@ impl Sidebar {
                 <SidebarDrawer
                     class="dialog"
                     title="Image export"
-                    dispatch={dispatch}
+                    model_dispatch={model_dispatch}
+                    sidebar_dispatch={sidebar_dispatch}
+                    initial_width={self.drawer_width}
                     icon="close"
                     on_click={model::Action::ToggleImageExport}
                 >
                     <ImageExportView
-                        dispatch={dispatch.clone()}
+                        dispatch={model_dispatch.clone()}
                         view_dim={proof.workspace().as_ref().unwrap().view.dimension()}
                     />
                 </SidebarDrawer>
@@ -184,12 +305,14 @@ impl Sidebar {
                 <SidebarDrawer
                     class="attach"
                     title="Attach"
-                    dispatch={dispatch}
+                    model_dispatch={model_dispatch}
+                    sidebar_dispatch={sidebar_dispatch}
+                    initial_width={self.drawer_width}
                     icon="close"
                     on_click={model::Action::from(proof::Action::ClearAttach)}
                 >
                     <AttachView
-                        dispatch={dispatch.reform(model::Action::Proof)}
+                        dispatch={model_dispatch.reform(model::Action::Proof)}
                         options={attach_options}
                         signature={ctx.props().proof.signature().clone()}
                     />
@@ -198,7 +321,14 @@ impl Sidebar {
         }
 
         self.open
-            .map(|drawer| drawer.view(dispatch, &ctx.props().proof))
+            .map(|drawer| {
+                drawer.view(
+                    model_dispatch,
+                    &sidebar_dispatch,
+                    &ctx.props().proof,
+                    self.drawer_width,
+                )
+            })
             .unwrap_or_default()
     }
 
