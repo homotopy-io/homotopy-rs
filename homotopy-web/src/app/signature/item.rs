@@ -617,7 +617,8 @@ impl ItemView {
                             light={icon_light}
                             class="signature__generator-settings-btn"
                             on_click={
-                                ctx.link().callback(move |_| {
+                                ctx.link().callback(move |e: MouseEvent| {
+                                    e.stop_propagation();
                                     ItemViewMessage::SwitchTo(Editing)
                                 })
                             } />
