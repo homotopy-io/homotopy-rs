@@ -2,7 +2,10 @@ use folder::FolderView;
 use yew::prelude::*;
 use yew_macro::function_component;
 
-use crate::model::proof::{Action, Signature};
+use crate::{
+    app::sidebar::DrawerViewSize,
+    model::proof::{Action, Signature},
+};
 
 mod folder;
 mod item;
@@ -11,6 +14,7 @@ mod item;
 pub struct Props {
     pub signature: Signature,
     pub dispatch: Callback<Action>,
+    pub drawer_view_size: DrawerViewSize,
 }
 
 #[function_component(SignatureView)]
@@ -21,6 +25,7 @@ pub fn signature_view(props: &Props) -> Html {
         <FolderView
             dispatch={props.dispatch.clone()}
             signature={props.signature.clone()}
+            drawer_view_size={props.drawer_view_size}
         />
     }
 }

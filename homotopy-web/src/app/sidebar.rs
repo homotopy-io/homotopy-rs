@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::{closure::Closure, JsCast};
 use yew::prelude::*;
 use yew_macro::function_component;
@@ -48,12 +49,42 @@ pub fn sidebar_button(props: &SidebarButtonProps) -> Html {
     }
 }
 
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum DrawerViewSize {
+    TemporarilyHidden,
+    Compact,
+    Regular,
+    Expanded,
+}
+
+impl Default for DrawerViewSize {
+    fn default() -> Self {
+        Self::Regular
+    }
+}
+
+// from pixel width of drawer to size
+impl From<i32> for DrawerViewSize {
+    fn from(px: i32) -> Self {
+        if px < 50 {
+            Self::TemporarilyHidden
+        } else if px < 180 {
+            Self::Compact
+        } else if px < 300 {
+            Self::Regular
+        } else {
+            Self::Expanded
+        }
+    }
+}
+
 #[derive(Properties, Clone, PartialEq)]
 pub struct SidebarDrawerProps {
     pub class: &'static str,
     pub title: &'static str,
     pub model_dispatch: Callback<model::Action>,
     pub sidebar_dispatch: Callback<SidebarMsg>,
+    pub drawer_view_size: DrawerViewSize,
     pub initial_width: i32,
     #[prop_or(SidebarDrawer::MIN_WIDTH)]
     pub min_width: i32,
@@ -74,6 +105,7 @@ pub enum SidebarDrawerMsg {
 
 pub struct SidebarDrawer {
     width: i32,
+    drawer_view_size: DrawerViewSize,
     resize_closure: Closure<dyn FnMut(MouseEvent)>,
     resize_done_closure: Closure<dyn FnMut(MouseEvent)>,
 }
@@ -106,6 +138,7 @@ impl Component for SidebarDrawer {
 
         Self {
             width: ctx.props().initial_width,
+            drawer_view_size: ctx.props().drawer_view_size,
             resize_closure,
             resize_done_closure,
         }
@@ -133,6 +166,13 @@ impl Component for SidebarDrawer {
             }
             Resize(width) => {
                 self.width = width.min(Self::MAX_WIDTH).max(Self::MIN_WIDTH);
+                let new_dvs = DrawerViewSize::from(width);
+                if self.drawer_view_size != new_dvs {
+                    ctx.props()
+                        .sidebar_dispatch
+                        .emit(SidebarMsg::ResizeDrawerView(new_dvs));
+                    self.drawer_view_size = new_dvs;
+                }
                 true
             }
             ResizeDone => {
@@ -151,7 +191,7 @@ impl Component for SidebarDrawer {
                     .unwrap();
                 ctx.props()
                     .sidebar_dispatch
-                    .emit(SidebarMsg::ResizeDrawer(self.width));
+                    .emit(SidebarMsg::SaveDrawerWidth(self.width));
                 false
             }
         }
@@ -159,9 +199,16 @@ impl Component for SidebarDrawer {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let width = self.width.max(ctx.props().min_width);
+        let size_class = match ctx.props().drawer_view_size {
+            DrawerViewSize::TemporarilyHidden => "temporarily-hidden",
+            DrawerViewSize::Compact => "compact",
+            DrawerViewSize::Regular => "regular",
+            DrawerViewSize::Expanded => "expanded",
+        };
+
         html! {
             <aside
-                class={format!("{} drawer", ctx.props().class)}
+                class={format!("{} drawer drawer-{}", ctx.props().class, size_class)}
                 style={format!("width: {}px;", width)}
                 >
                 <div class="drawer__inner">
@@ -201,13 +248,15 @@ pub struct SidebarProps {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SidebarMsg {
     Dispatch(model::Action),
-    ResizeDrawer(i32),
+    SaveDrawerWidth(i32),
+    ResizeDrawerView(DrawerViewSize),
     Toggle(drawers::NavDrawer),
 }
 
 #[derive(Default)]
 pub struct Sidebar {
-    drawer_width: i32,
+    last_drawer_width: i32,
+    drawer_view_size: DrawerViewSize,
     open: Option<drawers::NavDrawer>,
     // Hold onto bindings so that they are dropped when the app is destroyed
     keybindings: Option<Closure<dyn FnMut(KeyboardEvent)>>,
@@ -219,7 +268,8 @@ impl Component for Sidebar {
 
     fn create(ctx: &Context<Self>) -> Self {
         let mut sidebar = Sidebar {
-            drawer_width: SidebarDrawer::DEFAULT_WIDTH,
+            last_drawer_width: SidebarDrawer::DEFAULT_WIDTH,
+            drawer_view_size: DrawerViewSize::from(SidebarDrawer::DEFAULT_WIDTH),
             ..Self::default()
         };
         sidebar.install_keyboard_shortcuts(ctx);
@@ -228,9 +278,17 @@ impl Component for Sidebar {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            SidebarMsg::ResizeDrawer(width) => {
-                self.drawer_width = width;
+            SidebarMsg::SaveDrawerWidth(width) => {
+                self.last_drawer_width = width;
+                self.drawer_view_size = width.into();
                 false
+            }
+            SidebarMsg::ResizeDrawerView(size) => {
+                if self.drawer_view_size != size {
+                    log::debug!("drawer_view size changed to {:?}", size);
+                }
+                self.drawer_view_size = size;
+                true
             }
             SidebarMsg::Toggle(drawer) if Some(drawer) == self.open => {
                 self.open = None;
@@ -284,7 +342,8 @@ impl Sidebar {
                     title="Image export"
                     model_dispatch={model_dispatch}
                     sidebar_dispatch={sidebar_dispatch}
-                    initial_width={self.drawer_width}
+                    drawer_view_size={self.drawer_view_size}
+                    initial_width={self.last_drawer_width}
                     icon="close"
                     on_click={model::Action::ToggleImageExport}
                 >
@@ -307,7 +366,8 @@ impl Sidebar {
                     title="Attach"
                     model_dispatch={model_dispatch}
                     sidebar_dispatch={sidebar_dispatch}
-                    initial_width={self.drawer_width}
+                    drawer_view_size={self.drawer_view_size}
+                    initial_width={self.last_drawer_width}
                     icon="close"
                     on_click={model::Action::from(proof::Action::ClearAttach)}
                 >
@@ -326,7 +386,8 @@ impl Sidebar {
                     model_dispatch,
                     &sidebar_dispatch,
                     &ctx.props().proof,
-                    self.drawer_width,
+                    self.last_drawer_width,
+                    self.drawer_view_size,
                 )
             })
             .unwrap_or_default()

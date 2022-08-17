@@ -1,6 +1,6 @@
 use yew::{callback::Callback, prelude::*};
 
-use super::{Sidebar, SidebarButton, SidebarDrawer, SidebarMsg};
+use super::{DrawerViewSize, Sidebar, SidebarButton, SidebarDrawer, SidebarMsg};
 #[cfg(debug_assertions)]
 use crate::app::debug::DebugView;
 use crate::{
@@ -43,6 +43,7 @@ macro_rules! declare_sidebar_drawers {
                 sidebar_dispatch: &Callback<SidebarMsg>,
                 proof: &Proof,
                 initial_width: i32,
+                drawer_view_size: DrawerViewSize,
             ) -> Html {
                 match self {
                     $(
@@ -57,13 +58,14 @@ macro_rules! declare_sidebar_drawers {
                                     $(min_width={$min_width})?
                                     model_dispatch={model_dispatch}
                                     sidebar_dispatch={sidebar_dispatch}
+                                    drawer_view_size={drawer_view_size}
                                     $(icon={$top_icon})?
                                     $(on_click={
                                         let action = $action;
                                         action(proof)
                                     })?
                                 >
-                                    {body(model_dispatch, proof)}
+                                    {body(model_dispatch, proof, drawer_view_size)}
                                 </SidebarDrawer>
                             }
                         }
@@ -106,7 +108,7 @@ declare_sidebar_drawers! {
         "Project",
         "project",
         "info",
-        |dispatch, proof: &Proof| html! {
+        |dispatch, proof: &Proof, _| html! {
             <ProjectView
                 dispatch={dispatch}
                 metadata={proof.metadata().clone()}
@@ -118,7 +120,7 @@ declare_sidebar_drawers! {
         "Settings",
         "settings",
         "settings",
-        |_, _| html! {
+        |_, _, _| html! {
             <SettingsView />
         },
         min_width: 250,
@@ -128,10 +130,11 @@ declare_sidebar_drawers! {
         "Signature",
         "signature",
         "list",
-        |dispatch: &Callback<model::Action>, proof: &Proof| html! {
+        |dispatch: &Callback<model::Action>, proof: &Proof, drawer_view_size: DrawerViewSize| html! {
             <SignatureView
                 signature={proof.signature().clone()}
                 dispatch={dispatch.reform(model::Action::Proof)}
+                drawer_view_size={drawer_view_size}
             />
         },
         top_icon: "create_new_folder",
@@ -143,7 +146,7 @@ declare_sidebar_drawers! {
         "Debug",
         "debug",
         "bug_report",
-        |_, proof: &Proof| html! {
+        |_, proof: &Proof, _| html! {
             <DebugView proof={proof.clone()} />
         },
     }

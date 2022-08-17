@@ -9,7 +9,7 @@ use yew::prelude::*;
 use yew_macro::function_component;
 
 use crate::{
-    app::{diagram_svg::DiagramSvg, AppSettings, AppSettingsKey},
+    app::{diagram_svg::DiagramSvg, sidebar::DrawerViewSize, AppSettings, AppSettingsKey},
     components::{
         icon::{Icon, IconSize},
         settings::{KeyStore, Settings, Store},
@@ -108,6 +108,7 @@ pub struct ItemViewProps {
     pub node: Node,
     pub item: SignatureItem,
     pub signature: Signature,
+    pub drawer_view_size: DrawerViewSize,
 
     #[prop_or_default]
     pub on_drag_over: Callback<DragEvent>,
