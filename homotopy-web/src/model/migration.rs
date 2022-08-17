@@ -52,7 +52,7 @@ fn load(proof: OldProof) -> Option<(Signature, Option<Workspace>)> {
         let info = GeneratorInfo {
             generator: v.generator,
             name: v.name,
-            oriented: false,
+            oriented: true,
             invertible: false,
             single_preview: true,
             color,
