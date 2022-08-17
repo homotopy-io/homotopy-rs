@@ -5,7 +5,7 @@ use itertools::{Itertools, MultiProduct};
 use crate::{
     monotone::{MonotoneIterator, Split},
     rewrite::Cone,
-    Diagram, Height, Rewrite, RewriteN,
+    Cospan, Diagram, Height, Rewrite, RewriteN,
 };
 
 /// Given `Rewrite`s A -f> C <g- B, find some `Rewrite` A -h> B which factorises f = g ∘ h.
@@ -69,7 +69,7 @@ pub fn factorize(f: Rewrite, g: Rewrite, target: Diagram) -> Factorization {
                                     g_cone,
                                     singular,
                                     monotone,
-                                    base_offset: offset,
+                                    offset,
                                     cur: None,
                                 })
                             }
@@ -130,50 +130,8 @@ pub struct ConeFactorizationInternal {
     g_cone: Cone,
     singular: Diagram,
     monotone: MonotoneIterator,
-    base_offset: usize,
-    cur: Option<MultiProduct<SlicesToCones>>,
-}
-
-#[derive(Clone)]
-struct SlicesToCones {
-    slices_iterator: MultiProduct<Factorization>,
-    base_offset: usize,
-    source: Range<usize>,
-    target: usize,
-    f_cone: Option<Cone>,
-    g_cone: Cone,
-}
-
-impl Iterator for SlicesToCones {
-    type Item = Cone;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            let slices = self.slices_iterator.next()?;
-            let mut regular_slices = Vec::with_capacity(slices.len() / 2 + 1);
-            let mut singular_slices = Vec::with_capacity(slices.len() / 2);
-            for (i, slice) in slices.into_iter().enumerate() {
-                if i % 2 == 0 {
-                    regular_slices.push(slice);
-                } else {
-                    singular_slices.push(slice);
-                }
-            }
-            let cone = Cone::new(
-                self.base_offset + self.source.start,
-                self.f_cone.as_ref().map_or_else(
-                    || vec![self.g_cone.target().clone()],
-                    |c| c.source()[self.source.clone()].to_vec(),
-                ),
-                self.g_cone.source()[self.target].clone(),
-                regular_slices,
-                singular_slices,
-            );
-            if cone.check().is_ok() {
-                return Some(cone);
-            }
-        }
-    }
+    offset: usize,
+    cur: Option<MultiProduct<ConeIterator>>,
 }
 
 impl Iterator for ConeFactorizationInternal {
@@ -183,45 +141,46 @@ impl Iterator for ConeFactorizationInternal {
         loop {
             match &mut self.cur {
                 None => {
-                    let underlying = self.monotone.next()?;
-                    let slices_iterator =
-                        underlying
-                            .cones(self.g_cone.len())
-                            .map(|Split { source, target }| {
-                                let g_slice = &self.g_cone.singular_slices()[target];
-                                let dimension = g_slice.dimension();
-                                let product = (usize::from(Height::Regular(source.start))
-                                    ..=usize::from(Height::Regular(source.end)))
-                                    .map(|h| {
-                                        let f_slice = self
-                                            .f_cone
-                                            .as_ref()
-                                            .map_or(Rewrite::identity(dimension), |c| {
-                                                c.slice(Height::from(h)).clone()
-                                            });
-                                        factorize(f_slice, g_slice.clone(), self.singular.clone())
-                                    })
-                                    .multi_cartesian_product();
-                                (Split { source, target }, product)
-                            });
-                    self.cur = Some({
-                        slices_iterator
-                            .map(|(Split { source, target }, product)| SlicesToCones {
-                                base_offset: self.base_offset,
-                                f_cone: self.f_cone.clone(),
-                                g_cone: self.g_cone.clone(),
-                                source,
-                                target,
-                                slices_iterator: product,
-                            })
-                            .multi_cartesian_product()
-                    });
+                    self.cur = self
+                        .monotone
+                        .next()?
+                        .cones(self.g_cone.len())
+                        .map(|Split { source, target }| {
+                            let f_slice = |h: Height| {
+                                self.f_cone.as_ref().map_or_else(
+                                    || Rewrite::identity(self.singular.dimension()),
+                                    |f_cone| f_cone.slice(h).clone(),
+                                )
+                            };
+                            let g_slice = &self.g_cone.singular_slices()[target];
+
+                            let slices_product = (usize::from(Height::Regular(source.start))
+                                ..=usize::from(Height::Regular(source.end)))
+                                .map(|i| {
+                                    factorize(
+                                        f_slice(Height::from(i)),
+                                        g_slice.clone(),
+                                        self.singular.clone(),
+                                    )
+                                })
+                                .multi_cartesian_product();
+
+                            ConeIterator {
+                                slices_product,
+                                index: self.offset + source.start,
+                                source: self.f_cone.as_ref().map_or_else(
+                                    || vec![self.g_cone.target().clone()],
+                                    |f_cone| f_cone.source()[source].to_vec(),
+                                ),
+                                target: self.g_cone.source()[target].clone(),
+                            }
+                        })
+                        .multi_cartesian_product()
+                        .into();
                 }
                 Some(cone_factorizations) => match cone_factorizations.next() {
+                    None => self.cur = None,
                     Some(slices) => return Some(slices),
-                    None => {
-                        self.cur = None;
-                    }
                 },
             }
         }
@@ -229,3 +188,33 @@ impl Iterator for ConeFactorizationInternal {
 }
 
 impl std::iter::FusedIterator for ConeFactorizationInternal {}
+
+#[derive(Clone)]
+struct ConeIterator {
+    index: usize,
+    source: Vec<Cospan>,
+    target: Cospan,
+    slices_product: MultiProduct<Factorization>,
+}
+
+impl Iterator for ConeIterator {
+    type Item = Cone;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            let slices = self.slices_product.next()?;
+            let cone = Cone::new(
+                self.index,
+                self.source.clone(),
+                self.target.clone(),
+                slices.iter().step_by(2).cloned().collect(),
+                slices.into_iter().skip(1).step_by(2).collect(),
+            );
+            if cone.check().is_ok() {
+                return Some(cone);
+            }
+        }
+    }
+}
+
+impl std::iter::FusedIterator for ConeIterator {}
