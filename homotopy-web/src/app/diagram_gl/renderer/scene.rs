@@ -1,28 +1,35 @@
-use std::mem;
+use std::{mem, rc::Rc};
 
 use homotopy_common::idx::IdxVec;
 use homotopy_core::{Diagram, Generator};
 use homotopy_graphics::{
     geom::{CubicalGeometry, SimplicialGeometry, VertData},
     gl::{array::VertexArray, GlCtx, Result},
-    style::{SignatureStyleData, VertexShape},
+    style::{GeneratorStyle, SignatureStyleData, VertexShape},
     vertex_array,
 };
-use ultraviolet::Vec4;
+use ultraviolet::{Vec3, Vec4};
 
 use crate::model::proof::View;
 
 pub struct Scene {
     pub diagram: Diagram,
     pub view: View,
-    pub components: Vec<(Generator, VertexArray)>,
+    pub components: Vec<Component<VertexArray>>,
     pub wireframe_components: Vec<VertexArray>,
-    pub cylinder_components: Vec<(Generator, VertexArray)>,
+    pub cylinder_components: Vec<Component<VertexArray>>,
     pub animation_curves: Vec<AnimationCurve>,
-    pub animation_singularities: Vec<(Generator, Vec4)>,
-    pub sphere: Option<VertexArray>,
-    pub cube: Option<VertexArray>,
+    pub animation_singularities: Vec<Component<Vec4>>,
+    pub sphere: Option<Rc<VertexArray>>,
+    pub cube: Option<Rc<VertexArray>>,
     pub duration: f32,
+}
+
+pub struct Component<V> {
+    pub generator: Generator,
+    pub vertices: V,
+    pub albedo: Vec3,
+    pub vertex_shape: Option<Rc<VertexArray>>,
 }
 
 pub struct AnimationCurve {
@@ -30,6 +37,8 @@ pub struct AnimationCurve {
     pub begin: f32,
     pub end: f32,
     pub key_frames: Vec<Vec4>,
+    pub albedo: Vec3,
+    pub vertex_shape: Option<Rc<VertexArray>>,
 }
 
 impl AnimationCurve {
@@ -117,11 +126,11 @@ impl Scene {
         sphere_mesh.mk_point(p);
         sphere_mesh.inflate_point_3d(p, geometry_samples, &VertexShape::Circle);
         if let Some(sphere_buffers) = sphere_mesh.buffer_tris(ctx)?.into_iter().next() {
-            self.sphere = Some(vertex_array!(
+            self.sphere = Some(Rc::new(vertex_array!(
                 ctx,
                 &sphere_buffers.element_buffer,
                 [&sphere_buffers.vertex_buffer, &sphere_buffers.normal_buffer]
-            )?);
+            )?));
         }
 
         let mut cube_mesh: SimplicialGeometry = Default::default();
@@ -133,11 +142,11 @@ impl Scene {
         cube_mesh.mk_point(p);
         cube_mesh.inflate_point_3d(p, geometry_samples, &VertexShape::Square);
         if let Some(cube_buffers) = cube_mesh.buffer_tris(ctx)?.into_iter().next() {
-            self.cube = Some(vertex_array!(
+            self.cube = Some(Rc::new(vertex_array!(
                 ctx,
                 &cube_buffers.element_buffer,
                 [&cube_buffers.vertex_buffer, &cube_buffers.normal_buffer]
-            )?);
+            )?));
         }
 
         let mut cubical = match self.view.dimension() {
@@ -159,17 +168,48 @@ impl Scene {
             simplicial.subdivide(smooth_time, subdivision_depth);
         }
 
-        if self.view.dimension() <= 3 {
+        let view_dimension = self.view.dimension();
+        let diagram_dimension = self.diagram.dimension() as usize;
+
+        let color_of = |generator: &Generator| -> Vec3 {
+            let lighten = match (view_dimension, diagram_dimension - generator.dimension) {
+                (3, 1) | (4, 2) => 0.05, // Wire
+                (3, 2) | (4, 3) => 0.1,  // Surface
+                _ => 0.,
+            };
+            signature_styles
+                .generator_style(*generator)
+                .unwrap()
+                .color()
+                .lighten(lighten)
+                .into_linear_f32_components()
+                .into()
+        };
+        let shape_of = |generator: &Generator| -> Option<Rc<VertexArray>> {
+            signature_styles
+                .generator_style(*generator)
+                .unwrap()
+                .shape()
+                .and_then(|shape| match shape {
+                    VertexShape::Circle => self.sphere.as_ref().map(Rc::clone),
+                    VertexShape::Square => self.cube.as_ref().map(Rc::clone),
+                })
+        };
+
+        if view_dimension <= 3 {
             simplicial.inflate_3d(geometry_samples, signature_styles);
             for tri_buffers in simplicial.buffer_tris(ctx)? {
-                self.components.push((
-                    tri_buffers.generator,
-                    vertex_array!(
+                let generator = tri_buffers.generator;
+                self.components.push(Component {
+                    generator,
+                    vertices: vertex_array!(
                         ctx,
                         &tri_buffers.element_buffer,
                         [&tri_buffers.vertex_buffer, &tri_buffers.normal_buffer]
                     )?,
-                ));
+                    albedo: color_of(&generator),
+                    vertex_shape: shape_of(&generator),
+                });
 
                 self.wireframe_components.push(vertex_array!(
                     ctx,
@@ -179,9 +219,10 @@ impl Scene {
             }
         } else {
             for tetra_buffers in simplicial.buffer_tetras(ctx)? {
-                self.components.push((
-                    tetra_buffers.generator,
-                    vertex_array!(
+                let generator = tetra_buffers.generator;
+                self.components.push(Component {
+                    generator,
+                    vertices: vertex_array!(
                         ctx,
                         &tetra_buffers.element_buffer,
                         [
@@ -191,7 +232,9 @@ impl Scene {
                             &tetra_buffers.normal_end_buffer,
                         ]
                     )?,
-                ));
+                    albedo: color_of(&generator),
+                    vertex_shape: shape_of(&generator),
+                });
             }
 
             for projected_buffers in simplicial.buffer_projected_wireframe(ctx)? {
@@ -203,9 +246,10 @@ impl Scene {
             }
 
             for cylinder_buffers in simplicial.buffer_cylinder_wireframe(ctx)? {
-                self.cylinder_components.push((
-                    cylinder_buffers.generator,
-                    vertex_array!(
+                let generator = cylinder_buffers.generator;
+                self.cylinder_components.push(Component {
+                    generator,
+                    vertices: vertex_array!(
                         ctx,
                         &cylinder_buffers.element_buffer,
                         [
@@ -213,7 +257,9 @@ impl Scene {
                             &cylinder_buffers.vert_end_buffer
                         ]
                     )?,
-                ));
+                    albedo: color_of(&generator),
+                    vertex_shape: shape_of(&generator),
+                });
             }
 
             let mut curves = IdxVec::new();
@@ -239,6 +285,8 @@ impl Scene {
                         .into_iter()
                         .map(|v| simplicial.verts[v].position)
                         .collect(),
+                    albedo: color_of(&generator),
+                    vertex_shape: shape_of(&generator),
                 });
             }
 
@@ -248,7 +296,12 @@ impl Scene {
                     position,
                     ..
                 } = simplicial.verts[point];
-                self.animation_singularities.push((generator, position));
+                self.animation_singularities.push(Component {
+                    generator,
+                    vertices: position,
+                    albedo: color_of(&generator),
+                    vertex_shape: shape_of(&generator),
+                });
             }
         }
 
