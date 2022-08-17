@@ -90,7 +90,10 @@ impl OldProof {
     // turns an encoded array at [index] to a vec
     fn generate_vec(&mut self, index: usize) -> Result<Vec<Value>> {
         let map: HashMap<String, Value> = from_value(self.stored[index][1]["f"].clone())?;
-        let mut v: Vec<(String, Value)> = map.into_iter().collect();
+        let mut v: Vec<(usize, Value)> = map
+            .into_iter()
+            .map(|x| (x.0.parse().unwrap(), x.1))
+            .collect();
         v.sort_by(|x, y| x.0.cmp(&y.0));
         let v: Vec<Value> = v.into_iter().map(|x| x.1).collect();
         Ok(v)
@@ -160,7 +163,7 @@ impl OldProof {
                     cospans.push(c);
                 }
 
-                //log::debug!("forming diagram {}", index);
+                log::debug!("forming diagram {}", index);
                 DiagramN::new(source, cospans).into()
             }
         };

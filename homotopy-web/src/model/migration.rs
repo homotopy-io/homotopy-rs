@@ -46,7 +46,6 @@ pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
 fn load(proof: OldProof) -> Option<(Signature, Option<Workspace>)> {
     let mut signature: Signature = Default::default();
 
-    // generators gives a sorted list of GeneratorInfos
     for v in proof.generator_info {
         let color: Color = v.color.parse().ok()?;
         let info = GeneratorInfo {
