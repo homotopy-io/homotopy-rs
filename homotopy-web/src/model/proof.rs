@@ -251,9 +251,11 @@ impl ProofState {
                     self.signature.has_descendents_in(node, &ws.diagram)
                 })
             }
-            Action::SelectGenerator(_) => self.workspace.is_none(),
             Action::AscendSlice(i) => i > 0,
-            Action::ClearWorkspace | Action::DescendSlice(_) | Action::UpdateView(_) => true,
+            Action::SelectGenerator(_)
+            | Action::ClearWorkspace
+            | Action::DescendSlice(_)
+            | Action::UpdateView(_) => true,
             _ => false,
         }
     }
@@ -437,10 +439,6 @@ impl ProofState {
 
     /// Handler for [Action::SelectGenerator].
     fn select_generator(&mut self, generator: Generator) -> Result<(), ModelError> {
-        if self.workspace.is_some() {
-            return Ok(());
-        }
-
         let info = self
             .signature
             .generator_info(generator)
