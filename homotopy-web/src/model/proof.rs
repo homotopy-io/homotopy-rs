@@ -64,6 +64,12 @@ impl View {
     const MIN: u8 = 0;
     const MAX: u8 = 4;
 
+    pub fn new(dim: u8) -> Self {
+        Self {
+            dimension: dim.clamp(Self::MIN, Self::MAX),
+        }
+    }
+
     #[must_use]
     pub fn inc(self) -> Self {
         Self {

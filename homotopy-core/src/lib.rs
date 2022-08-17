@@ -65,6 +65,7 @@ pub mod factorization;
 pub mod graph;
 pub mod layout;
 pub mod mesh;
+pub mod migration;
 pub mod monotone;
 pub mod normalization;
 pub mod projection;
