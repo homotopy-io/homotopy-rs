@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1660775888282,
+  "lastUpdate": 1660776478784,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -39539,6 +39539,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 26.224,
             "range": "+/- 0.035",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "5543b97ff0270e6778f9058a1037af2c49ac3e18",
+          "message": "Make click zone for dragging a vertex bigger (fix #699)",
+          "timestamp": "2022-08-17T22:47:07+01:00",
+          "tree_id": "ed955b2355640f3c67e75dc70b1df46236905766",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/5543b97ff0270e6778f9058a1037af2c49ac3e18"
+        },
+        "date": 1660776468747,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.8022,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 10.764,
+            "range": "+/- 0.004",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 48.884,
+            "range": "+/- 0.033",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 311.18,
+            "range": "+/- 0.310",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.6282,
+            "range": "+/- 0.001",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 26.287,
+            "range": "+/- 0.024",
             "unit": "s"
           }
         ]
