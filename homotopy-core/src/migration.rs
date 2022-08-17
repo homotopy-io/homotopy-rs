@@ -163,7 +163,7 @@ impl OldProof {
                     cospans.push(c);
                 }
 
-                log::debug!("forming diagram {}", index);
+                //log::debug!("forming diagram {}", index);
                 DiagramN::new(source, cospans).into()
             }
         };
