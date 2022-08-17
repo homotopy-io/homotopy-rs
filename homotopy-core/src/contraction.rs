@@ -295,10 +295,47 @@ fn contract_in_path(
                 Height::Singular(i) => {
                     let source_cospan = &diagram.cospans()[*i];
                     let contract_base = contract_base.into();
-                    let (forward, backward) = (
-                        source_cospan.forward.compose(&contract_base).unwrap(),
-                        source_cospan.backward.compose(&contract_base).unwrap(),
-                    );
+                    let (forward, backward) = {
+                        // compose by collapse
+                        let mut graph = DiGraph::new();
+                        let regular_prev = diagram
+                            .slice(SliceIndex::Interior(Height::Regular(*i)))
+                            .ok_or(ContractionError::Invalid)?;
+                        let r_p = graph.add_node((
+                            regular_prev.clone(),
+                            None,
+                            vec![Height::Regular(0), Height::Regular(*i)],
+                        ));
+                        let singular = regular_prev
+                            .rewrite_forward(&source_cospan.forward)
+                            .map_err(|_err| ContractionError::Invalid)?;
+                        let s = graph.add_node((
+                            singular.clone(),
+                            None,
+                            vec![Height::Regular(0), Height::Singular(*i)],
+                        ));
+                        graph.add_edge(r_p, s, source_cospan.forward.clone());
+                        let regular_next = singular
+                            .clone()
+                            .rewrite_backward(&source_cospan.backward)
+                            .map_err(|_err| ContractionError::Invalid)?;
+                        let r_n = graph.add_node((
+                            regular_next,
+                            None,
+                            vec![Height::Regular(0), Height::Regular(*i + 1)],
+                        ));
+                        graph.add_edge(r_n, s, source_cospan.backward.clone());
+                        let c = graph.add_node((
+                            singular
+                                .rewrite_forward(&contract_base)
+                                .map_err(|_err| ContractionError::Invalid)?,
+                            None,
+                            vec![Height::Singular(0), Height::Singular(*i)],
+                        ));
+                        graph.add_edge(s, c, contract_base.clone());
+                        let cocone = collapse(&graph)?;
+                        (cocone.legs[r_p].clone(), cocone.legs[r_n].clone())
+                    };
                     let contract = RewriteN::new(
                         diagram.dimension(),
                         vec![Cone::new(
