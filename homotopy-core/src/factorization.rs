@@ -5,6 +5,7 @@ use itertools::{Itertools, MultiProduct};
 use crate::{
     monotone::{MonotoneIterator, Split},
     rewrite::Cone,
+    typecheck::Mode,
     Cospan, Diagram, Height, Rewrite, RewriteN,
 };
 
@@ -210,7 +211,7 @@ impl Iterator for ConeIterator {
                 slices.iter().step_by(2).cloned().collect(),
                 slices.into_iter().skip(1).step_by(2).collect(),
             );
-            if cone.check().is_ok() {
+            if cone.check(Mode::Shallow).is_ok() {
                 return Some(cone);
             }
         }
