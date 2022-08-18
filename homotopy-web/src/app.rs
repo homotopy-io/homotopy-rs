@@ -207,7 +207,9 @@ impl App {
                     dispatch={dispatch}
                     proof={proof}
                 />
-                <ToasterComponent timeout={3000} />
+                <div class="toaster">
+                    <ToasterComponent timeout={3000} />
+                </div>
                 <div class="boundary__and__workspace">
                     {boundary_preview}
                     {workspace}
