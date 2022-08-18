@@ -160,29 +160,20 @@ fn contract_base(
     graph.add_edge(r1, s1, cospan1.forward.clone());
     graph.add_edge(r2, s1, cospan1.backward.clone());
     let result = collapse(&graph)?;
-    let mut regular_slices = vec![];
-    let mut singular_slices = vec![];
-    for (i, r) in result.legs {
-        if i.index() % 2 == 0 {
-            regular_slices.push(r);
-        } else {
-            singular_slices.push(r);
-        }
-    }
 
     let cospan = Cospan {
-        forward: regular_slices[0].clone(),
-        backward: regular_slices[2].clone(),
+        forward: result.legs[r0].clone(),
+        backward: result.legs[r2].clone(),
     };
 
     let contract = RewriteN::new(
         diagram.dimension(),
-        vec![Cone::new(
+        vec![Cone::new_untrimmed(
             height,
             vec![cospan0.clone(), cospan1.clone()],
             cospan.clone(),
-            regular_slices,
-            singular_slices,
+            vec![result.legs[r1].clone()],
+            vec![result.legs[s0].clone(), result.legs[s1].clone()],
         )],
     );
 
