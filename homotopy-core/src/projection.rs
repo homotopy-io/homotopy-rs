@@ -93,7 +93,7 @@ impl<const N: usize> Projection<N> {
                 .unwrap_or_else(|_| (graph[n].1.max_generator(), Orientation::Positive));
 
             let front_g = match (&graph[n].1, depths.node_depth(coord)) {
-                (Diagram::DiagramN(d), Some(i)) => d.cospans()[i].max_generator().unwrap(),
+                (Diagram::DiagramN(d), Some(i)) => d.cospans()[i].max_generator().unwrap_or(g),
                 _ => g,
             };
 
