@@ -396,8 +396,12 @@ button, .button {
 }
 
 .drawer__title {
+  width: 100%;
   font-size: 1.2em;
   padding: var(--space-0);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .drawer__content {
@@ -457,6 +461,9 @@ button, .button {
   border: none;
   background: transparent;
   user-select: text;
+
+.drawer-compact .drawer__icon {
+  display: none;
 }
 
 /* Signature */
@@ -502,7 +509,7 @@ button, .button {
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  justify-content: center;
+  justify-content: space-between;
   width: 100%;
   height: var(--signature-height);
   transition: background-color 100ms;
@@ -568,6 +575,10 @@ button, .button {
   white-space: nowrap;
   overflow: hidden;
   box-sizing: border-box;
+}
+
+.drawer-compact .signature__item-name {
+  display: none;
 }
 
 .signature__item-fill {
@@ -720,6 +731,10 @@ span.signature__item-name {
 .signature__generator-previews-wrapper svg {
   width: 42px;
   height: 30px;
+}
+
+.drawer-compact .signature__generator-previews-wrapper {
+  display: none;
 }
 
 .signature__generator-preview-spacer {

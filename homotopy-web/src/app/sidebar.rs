@@ -78,6 +78,18 @@ impl From<i32> for DrawerViewSize {
     }
 }
 
+impl DrawerViewSize {
+    // Some drawer view sizes (eg. compact) will snap the drawer to a certain width (px).
+    fn snap_width(self) -> Option<i32> {
+        match self {
+            Self::TemporarilyHidden => Some(0),
+            Self::Compact => Some(65),
+            Self::Regular => None,
+            Self::Expanded => None,
+        }
+    }
+}
+
 #[derive(Properties, Clone, PartialEq)]
 pub struct SidebarDrawerProps {
     pub class: &'static str,
@@ -86,7 +98,7 @@ pub struct SidebarDrawerProps {
     pub sidebar_dispatch: Callback<SidebarMsg>,
     pub drawer_view_size: DrawerViewSize,
     pub initial_width: i32,
-    #[prop_or(SidebarDrawer::MIN_WIDTH)]
+    #[prop_or(0)]
     pub min_width: i32,
     #[prop_or_default]
     pub children: Children,
@@ -111,7 +123,6 @@ pub struct SidebarDrawer {
 }
 
 impl SidebarDrawer {
-    const MIN_WIDTH: i32 = 200; // px
     const MAX_WIDTH: i32 = 400; // px
     const DEFAULT_WIDTH: i32 = 250; // px
     const RESIZE_OFFSET: i32 = 2; // px, useful for recentering cursor while mouse button held
@@ -165,13 +176,18 @@ impl Component for SidebarDrawer {
                 false
             }
             Resize(width) => {
-                self.width = width.min(Self::MAX_WIDTH).max(Self::MIN_WIDTH);
                 let new_dvs = DrawerViewSize::from(width);
                 if self.drawer_view_size != new_dvs {
                     ctx.props()
                         .sidebar_dispatch
                         .emit(SidebarMsg::ResizeDrawerView(new_dvs));
                     self.drawer_view_size = new_dvs;
+                }
+
+                if let Some(snap_width) = self.drawer_view_size.snap_width() {
+                    self.width = snap_width;
+                } else {
+                    self.width = width.min(Self::MAX_WIDTH);
                 }
                 true
             }
@@ -189,9 +205,15 @@ impl Component for SidebarDrawer {
                         self.resize_done_closure.as_ref().unchecked_ref(),
                     )
                     .unwrap();
-                ctx.props()
-                    .sidebar_dispatch
-                    .emit(SidebarMsg::SaveDrawerWidth(self.width));
+                if self.drawer_view_size == DrawerViewSize::TemporarilyHidden {
+                    ctx.props()
+                        .sidebar_dispatch
+                        .emit(SidebarMsg::Toggle(drawers::NavDrawer::DRAWER_SIGNATURE));
+                } else {
+                    ctx.props()
+                        .sidebar_dispatch
+                        .emit(SidebarMsg::SaveDrawerWidth(self.width));
+                }
                 false
             }
         }

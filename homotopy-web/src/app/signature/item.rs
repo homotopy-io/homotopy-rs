@@ -143,7 +143,7 @@ pub struct Preview {
 pub enum ItemViewMessage {
     SwitchTo(ItemViewMode),
     Edit(SignatureItemEdit),
-    CachePreview(Preview),
+    CachePreview(bool, Diagram),
     Setting(<Store<AppSettings> as KeyStore>::Message),
     Noop,
 }
@@ -232,8 +232,9 @@ impl Component for ItemView {
 
                 return apply_edit(&ctx.props().dispatch, ctx.props().node, edit);
             }
-            ItemViewMessage::CachePreview(preview) => {
-                self.preview_cache = Some(preview);
+            ItemViewMessage::CachePreview(show_single_preview, diagram) => {
+                self.cache_preview(ctx, show_single_preview, &diagram);
+                return true;
             }
             ItemViewMessage::Setting(msg) => {
                 self.local.set(&msg);
@@ -409,6 +410,44 @@ impl ItemView {
         }
     }
 
+    fn cache_preview(&mut self, ctx: &Context<Self>, single_preview: bool, diagram: &Diagram) {
+        let svg_of = |diagram: Diagram, id: String| match diagram.dimension() {
+            0 => Self::view_diagram_svg::<0>(ctx, diagram, id),
+            1 => Self::view_diagram_svg::<1>(ctx, diagram, id),
+            _ => Self::view_diagram_svg::<2>(ctx, diagram, id),
+        };
+
+        let diagrams = match &diagram {
+            Diagram::Diagram0(_) => {
+                svg_of(diagram.clone(), "signature__generator-preview".to_owned())
+            }
+            Diagram::DiagramN(diagram_n) => {
+                if single_preview {
+                    svg_of(diagram.clone(), "signature__generator-preview".to_owned())
+                } else {
+                    html! {
+                        <>
+                        {svg_of(diagram_n.source(), "signature__generator-preview-source".to_owned())}
+                        <div class="signature__generator-preview-spacer" />
+                        {svg_of(diagram_n.target(), "signature__generator-preview-source".to_owned())}
+                        </>
+                    }
+                }
+            }
+        };
+
+        let preview_html = html! {
+            <div class="signature__generator-previews-wrapper">
+            {diagrams}
+            </div>
+        };
+
+        self.preview_cache = Some(Preview {
+            signature: ctx.props().signature.clone(),
+            html: preview_html,
+        });
+    }
+
     fn view_preview(&self, ctx: &Context<Self>) -> Html {
         if !self.local.get_show_previews() {
             return html! {};
@@ -425,52 +464,13 @@ impl ItemView {
                     return cache.html.clone();
                 }
             }
-
-            let svg_of = |diagram: Diagram, id: String| match diagram.dimension() {
-                0 => Self::view_diagram_svg::<0>(ctx, diagram, id),
-                1 => Self::view_diagram_svg::<1>(ctx, diagram, id),
-                _ => Self::view_diagram_svg::<2>(ctx, diagram, id),
-            };
-
-            let diagrams = match &info.diagram {
-                Diagram::Diagram0(_) => svg_of(
-                    info.diagram.clone(),
-                    "signature__generator-preview".to_owned(),
-                ),
-                Diagram::DiagramN(diagram_n) => {
-                    if info.single_preview {
-                        svg_of(
-                            info.diagram.clone(),
-                            "signature__generator-preview".to_owned(),
-                        )
-                    } else {
-                        html! {
-                            <>
-                                {svg_of(diagram_n.source(), "signature__generator-preview-source".to_owned())}
-                                <div class="signature__generator-preview-spacer" />
-                                {svg_of(diagram_n.target(), "signature__generator-preview-source".to_owned())}
-                            </>
-                        }
-                    }
-                }
-            };
-
-            let preview_html = html! {
-                <div class="signature__generator-previews-wrapper">
-                    {diagrams}
-                </div>
-            };
-
-            ctx.link()
-                .send_message(ItemViewMessage::CachePreview(Preview {
-                    signature: ctx.props().signature.clone(),
-                    html: preview_html.clone(),
-                }));
-
-            preview_html
-        } else {
-            html! {}
+            ctx.link().send_message(ItemViewMessage::CachePreview(
+                info.single_preview,
+                info.diagram.clone(),
+            ));
         }
+
+        html! {}
     }
 
     fn view_diagram_svg<const N: usize>(ctx: &Context<Self>, diagram: Diagram, id: String) -> Html {
