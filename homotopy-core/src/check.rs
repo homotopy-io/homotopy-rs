@@ -46,8 +46,7 @@ impl DiagramN {
     }
 
     fn check_worker(&self, mode: Mode) -> Result<(), Vec<MalformedDiagram>> {
-        let cached = DIAGRAM_CACHE.with(|cache| cache.borrow().get(self).cloned());
-        if let Some(errors) = cached {
+        if let Some(errors) = DIAGRAM_CACHE.with(|cache| cache.borrow().get(self).cloned()) {
             return if errors.is_empty() {
                 Ok(())
             } else {
@@ -154,8 +153,7 @@ impl RewriteN {
     }
 
     fn check_worker(&self, mode: Mode) -> Result<(), Vec<MalformedRewrite>> {
-        let cached = REWRITE_CACHE.with(|cache| cache.borrow().get(self).cloned());
-        if let Some(errors) = cached {
+        if let Some(errors) = REWRITE_CACHE.with(|cache| cache.borrow().get(self).cloned()) {
             return if errors.is_empty() {
                 Ok(())
             } else {
@@ -165,25 +163,19 @@ impl RewriteN {
 
         let mut errors: Vec<MalformedRewrite> = Vec::new();
         for (i, cone) in self.cones().iter().enumerate() {
-            if mode == Mode::Deep {
-                // Check that the regular slices are well-formed.
-                for (j, slice) in cone.regular_slices().iter().enumerate() {
-                    if let Err(e) = slice.check_worker(mode) {
-                        errors.push(MalformedRewrite::RegularSlice(i, j, e));
-                    }
-                }
-
-                // Check that the singular slices are well-formed.
-                for (j, slice) in cone.singular_slices().iter().enumerate() {
-                    if let Err(e) = slice.check_worker(mode) {
-                        errors.push(MalformedRewrite::SingularSlice(i, j, e));
-                    }
-                }
-            }
-
-            if let Err(e) = cone.check() {
+            if let Err(e) = cone.check(mode) {
                 errors.push(MalformedRewrite::Cone(i, e));
             }
+
+            // Check that the cone is not trivial.
+            if cone.is_identity() {
+                errors.push(MalformedRewrite::TrivialCone(i));
+            }
+        }
+
+        // Check that the cones are ordered by index.
+        if self.cones().windows(2).any(|w| w[0].index > w[1].index) {
+            errors.push(MalformedRewrite::NotOrderedCorrectly);
         }
 
         REWRITE_CACHE.with(|cache| cache.borrow_mut().insert(self.clone(), errors.clone()));
@@ -197,8 +189,42 @@ impl RewriteN {
 }
 
 impl Cone {
-    pub fn check(&self) -> Result<(), Vec<MalformedCone>> {
+    pub fn check(&self, mode: Mode) -> Result<(), Vec<MalformedCone>> {
         let mut errors = vec![];
+
+        if mode == Mode::Deep {
+            // Check that the source is well-formed.
+            for (i, cs) in self.source().iter().enumerate() {
+                if let Err(e) = cs.forward.check_worker(mode) {
+                    errors.push(MalformedCone::Source(i, e));
+                }
+                if let Err(e) = cs.backward.check_worker(mode) {
+                    errors.push(MalformedCone::Source(i, e));
+                }
+            }
+
+            // Check that the target is well-formed.
+            if let Err(e) = self.target().forward.check_worker(mode) {
+                errors.push(MalformedCone::Target(e));
+            }
+            if let Err(e) = self.target().backward.check_worker(mode) {
+                errors.push(MalformedCone::Target(e));
+            }
+
+            // Check that the regular slices are well-formed.
+            for (i, slice) in self.regular_slices().iter().enumerate() {
+                if let Err(e) = slice.check_worker(mode) {
+                    errors.push(MalformedCone::RegularSlice(i, e));
+                }
+            }
+
+            // Check that the singular slices are well-formed.
+            for (i, slice) in self.singular_slices().iter().enumerate() {
+                if let Err(e) = slice.check_worker(mode) {
+                    errors.push(MalformedCone::SingularSlice(i, e));
+                }
+            }
+        }
 
         // Check commutativity conditions.
         match self.internal.get() {
@@ -283,17 +309,29 @@ pub enum MalformedRewrite {
     #[error("cone {0} is malformed: {1:?}")]
     Cone(usize, Vec<MalformedCone>),
 
-    #[error("regular slice {1} of cone {0} is malformed: {2:?}")]
-    RegularSlice(usize, usize, Vec<MalformedRewrite>),
+    #[error("cone {0} is trivial.")]
+    TrivialCone(usize),
 
-    #[error("singular slice {1} of cone {0} is malformed: {2:?}")]
-    SingularSlice(usize, usize, Vec<MalformedRewrite>),
+    #[error("cones are not ordered correctly.")]
+    NotOrderedCorrectly,
 }
 
 #[derive(Clone, Debug, Error)]
 pub enum MalformedCone {
     #[error(transparent)]
     Composition(#[from] CompositionError),
+
+    #[error("source {0} is malformed: {1:?}")]
+    Source(usize, Vec<MalformedRewrite>),
+
+    #[error("target is malformed: {0:?}")]
+    Target(Vec<MalformedRewrite>),
+
+    #[error("regular slice {0} is malformed: {1:?}")]
+    RegularSlice(usize, Vec<MalformedRewrite>),
+
+    #[error("singular slice {0} is malformed: {1:?}")]
+    SingularSlice(usize, Vec<MalformedRewrite>),
 
     #[error("unit cone fails to be commutative.")]
     NotCommutative0,
