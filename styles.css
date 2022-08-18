@@ -44,6 +44,9 @@ body, html {
   flex: 1;
   font-size: 14px;
   overflow: hidden;
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
 }
 
 input, button {
@@ -1122,3 +1125,10 @@ input[type="color"]::-webkit-color-swatch-wrapper {
 input[type="color"]::-webkit-color-swatch {
   border: none;
 }
+
+.selectable {
+  -webkit-user-select: text; /* Safari */
+  -ms-user-select: text; /* IE 10 and IE 11 */
+  user-select: text; /* Standard syntax */
+}
+
