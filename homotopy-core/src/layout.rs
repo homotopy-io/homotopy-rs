@@ -55,9 +55,14 @@ impl<const N: usize> Layout<N> {
     }
 
     pub fn get(&self, path: [SliceIndex; N]) -> [f32; N] {
-        let mut position = self.positions[&path];
+        self.get_checked(path).unwrap()
+    }
+
+    // TODO(@calintat): Remove this once #712 is fixed.
+    pub fn get_checked(&self, path: [SliceIndex; N]) -> Option<[f32; N]> {
+        let mut position = *self.positions.get(&path)?;
         position.reverse();
-        position
+        Some(position)
     }
 }
 
