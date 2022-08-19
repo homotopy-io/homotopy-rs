@@ -273,7 +273,7 @@ impl ProofState {
             SliceIndex::{Boundary, Interior},
         };
         match *action {
-            Action::CreateGeneratorZero => true,
+            Action::CreateGeneratorZero | Action::Select(_) => true,
             Action::SetBoundary(boundary) => self.workspace.as_ref().map_or(false, |ws| {
                 self.boundary.as_ref().map_or(true, |selected| {
                     selected.boundary == boundary || globularity(&selected.diagram, &ws.diagram)
@@ -307,7 +307,6 @@ impl ProofState {
                         }
                     })
             }
-            Action::Select(_) => self.workspace().map_or(true, |ws| ws.attach.is_some()),
             Action::AscendSlice(_) | Action::SwitchSlice(_) => self
                 .workspace
                 .as_ref()
@@ -466,7 +465,7 @@ impl ProofState {
 
     /// Handler for [Action::Select].
     fn select(&mut self, index: usize) -> Result<(), ModelError> {
-        match self.workspace() {
+        match self.attach_options() {
             None => {
                 // Select a generator
                 let info = self
@@ -486,15 +485,9 @@ impl ProofState {
                     slice_highlight: Default::default(),
                 });
             }
-            Some(ws) => {
+            Some(att) => {
                 // Select an attachment option.
-                let option = ws
-                    .attach
-                    .as_ref()
-                    .ok_or(ModelError::InvalidAction)?
-                    .get(index)
-                    .ok_or(ModelError::IndexOutOfBounds)?;
-
+                let option = att.get(index).ok_or(ModelError::IndexOutOfBounds)?;
                 self.attach(&option.clone());
             }
         }
@@ -927,6 +920,13 @@ impl ProofState {
 
     pub fn signature(&self) -> &Signature {
         &self.signature
+    }
+
+    pub fn attach_options(&self) -> Option<&Vector<AttachOption>> {
+        match self.workspace() {
+            Some(ws) => ws.attach.as_ref(),
+            None => None,
+        }
     }
 
     pub fn render_style() -> RenderStyle {
