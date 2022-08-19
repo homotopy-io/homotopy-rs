@@ -334,7 +334,7 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
                     Cospan { forward, backward }
                 };
 
-                restricted_cones.push(Cone::new(
+                restricted_cones.push(Cone::new_with_flanges(
                     cone.index - rewrite.regular_image(*height),
                     restricted_source,
                     restricted_target,
