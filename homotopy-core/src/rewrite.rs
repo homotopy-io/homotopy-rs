@@ -392,7 +392,7 @@ impl Rewrite {
     }
 
     #[must_use]
-    pub fn orientation_transform(self, k: Orientation) -> Self {
+    pub fn orientation_transform(&self, k: Orientation) -> Self {
         use Rewrite::{Rewrite0, RewriteN};
         match self {
             Rewrite0(r) => Rewrite0(r.orientation_transform(k)),
@@ -481,11 +481,11 @@ impl Rewrite0 {
     }
 
     #[must_use]
-    pub fn orientation_transform(self, k: Orientation) -> Self {
-        match self.0 {
+    pub fn orientation_transform(&self, k: Orientation) -> Self {
+        match &self.0 {
             None => Self(None),
             Some((source, target, label)) => {
-                Self::new(source, target.orientation_transform(k), label)
+                Self::new(*source, target.orientation_transform(k), label.clone())
             }
         }
     }
@@ -690,7 +690,7 @@ impl RewriteN {
     }
 
     #[must_use]
-    pub fn orientation_transform(self, k: Orientation) -> Self {
+    pub fn orientation_transform(&self, k: Orientation) -> Self {
         let cones = self
             .cones()
             .iter()
