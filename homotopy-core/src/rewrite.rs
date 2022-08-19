@@ -4,7 +4,7 @@ use std::{
     convert::{From, Into},
     fmt,
     hash::Hash,
-    ops::{Add, Range},
+    ops::Range,
 };
 
 use hashconsing::{HConsed, HConsign, HashConsign};
@@ -19,7 +19,6 @@ use thiserror::Error;
 use crate::{
     common::{DimensionError, Generator, MaxByDimension, Mode, Orientation, RegularHeight, SingularHeight},
     diagram::Diagram,
-    monotone::{Monotone, Split},
     Boundary, Height, SliceIndex,
 };
 
@@ -90,37 +89,21 @@ pub enum Rewrite {
     RewriteN(RewriteN),
 }
 
-type Coordinate<T> = Vec<T>;
-pub(crate) type LabelNode = (usize, Coordinate<SliceIndex>);
+type Coordinate = Vec<SliceIndex>;
+pub(crate) type LabelNode = (usize, Coordinate);
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, PartialOrd, Ord)]
-pub struct Label(pub(crate) Vec<HConsed<LabelNode>>);
-
-impl Add for Label {
-    type Output = Self;
-
-    fn add(mut self, mut rhs: Self) -> Self::Output {
-        Self({
-            self.0.append(&mut rhs.0);
-            self.0
-        })
-    }
-}
+pub struct Label(pub(crate) Option<HConsed<LabelNode>>);
 
 impl Label {
-    pub fn new(nodes: Vec<LabelNode>) -> Self {
-        Self(
-            nodes
-                .into_iter()
-                .map(|node| LABEL_FACTORY.with(|factory| factory.borrow_mut().mk(node)))
-                .collect(),
-        )
+    pub fn new(node: Option<LabelNode>) -> Self {
+        Self(node.map(|node| LABEL_FACTORY.with(|factory| factory.borrow_mut().mk(node))))
     }
 }
 
 impl From<LabelNode> for Label {
     fn from(node: LabelNode) -> Self {
-        Self::new(vec![node])
+        Self::new(Some(node))
     }
 }
 
@@ -129,7 +112,7 @@ impl Serialize for Label {
     where
         S: serde::Serializer,
     {
-        let nodes: Vec<LabelNode> = self.0.iter().map(|node| node.get().clone()).collect();
+        let nodes: Option<LabelNode> = self.0.as_ref().map(|node| node.get().clone());
         nodes.serialize(serializer)
     }
 }
@@ -139,7 +122,7 @@ impl<'de> Deserialize<'de> for Label {
     where
         D: serde::Deserializer<'de>,
     {
-        let nodes: Vec<LabelNode> = Deserialize::deserialize(deserializer)?;
+        let nodes: Option<LabelNode> = Deserialize::deserialize(deserializer)?;
         Ok(Label::new(nodes))
     }
 }
@@ -315,11 +298,7 @@ impl<'a> TryFrom<&'a Rewrite> for &'a Rewrite0 {
 }
 
 impl Rewrite {
-    pub fn cone_over_generator(
-        generator: Generator,
-        base: Diagram,
-        prefix: Coordinate<SliceIndex>,
-    ) -> Self {
+    pub fn cone_over_generator(generator: Generator, base: Diagram, prefix: Coordinate) -> Self {
         use Height::{Regular, Singular};
         use SliceIndex::{Boundary, Interior};
 
@@ -327,7 +306,7 @@ impl Rewrite {
 
         match base {
             Diagram::Diagram0(base) => {
-                Rewrite0::new(base, generator, Label::new(vec![(generator.id, prefix)])).into()
+                Rewrite0::new(base, generator, Label::new(Some((generator.id, prefix)))).into()
             }
             Diagram::DiagramN(base) => {
                 let mut regular_slices: Vec<_> = Default::default();
@@ -497,10 +476,10 @@ impl Rewrite0 {
             (None, None) => Ok(Self::identity()),
             (Some((f_s, f_t, f_l)), Some((g_s, g_t, g_l))) if f_t == g_s => {
                 assert!(
-                    f_l.0.is_empty() && g_l.0.is_empty(),
+                    f_l.0.is_none() && g_l.0.is_none(),
                     "Composition of labelled rewrites is illegal"
                 );
-                Ok(Self::new(*f_s, *g_t, Label::new(vec![])))
+                Ok(Self::new(*f_s, *g_t, Label::new(None)))
             }
             (f, g) => {
                 log::error!("Failed to compose source: {:?}, target: {:?}", f, g);
@@ -533,7 +512,7 @@ impl Rewrite0 {
             None => Self(None),
             Some((source, target, label)) => {
                 let new_label = if target.id == generator.id {
-                    Label::new(vec![])
+                    Label::new(None)
                 } else {
                     label.clone()
                 };
@@ -1269,21 +1248,11 @@ mod test {
         let y = Generator::new(1, 0);
         let z = Generator::new(2, 0);
 
-        let f = Generator::new(3, 1);
-        let g = Generator::new(4, 1);
-
-        let first = Rewrite0::new(x, y, (f.id, vec![Boundary(Source)]).into());
-        let second = Rewrite0::new(y, z, (g.id, vec![Boundary(Source)]).into());
+        let first = Rewrite0::new(x, y, Label::new(None));
+        let second = Rewrite0::new(y, z, Label::new(None));
 
         let actual = first.compose(&second).unwrap();
-        let expected = Rewrite0::new(
-            x,
-            z,
-            Label::new(vec![
-                (f.id, vec![Boundary(Source)]),
-                (g.id, vec![Boundary(Source)]),
-            ]),
-        );
+        let expected = Rewrite0::new(x, z, Label::new(None));
         assert_eq!(actual, expected);
     }
 
@@ -1293,29 +1262,20 @@ mod test {
         let f = Generator::new(1, 1);
         let g = Generator::new(2, 1);
         let h = Generator::new(3, 1);
-        let x_to_g = Generator::new(5, 2);
-        let g_to_h = Generator::new(7, 2);
 
         let internal = |gen: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Source)]).into()).into(),
-                backward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Target)]).into()).into(),
+                forward: Rewrite0::new(x, gen, Label::new(None)).into(),
+                backward: Rewrite0::new(x, gen, Label::new(None)).into(),
             }
         };
-        let up = |gen: Generator, r: usize| -> Rewrite {
-            Rewrite0::new(
-                x,
-                gen,
-                (gen.id + 3, vec![Boundary(Source), Interior(Regular(r))]).into(),
-            )
-            .into()
-        };
+        let up = |gen: Generator| -> Rewrite { Rewrite0::new(x, gen, Label::new(None)).into() };
 
         let first = RewriteN::from_slices(
             1,
             &[],
             &[internal(f), internal(g)],
-            vec![vec![up(f, 0)], vec![up(g, 0)]],
+            vec![vec![up(f)], vec![up(g)]],
             vec![vec![], vec![]],
         );
 
@@ -1323,15 +1283,10 @@ mod test {
             1,
             &[internal(f), internal(g)],
             &[internal(f), internal(h)],
-            vec![vec![up(f, 0), up(f, 1)], vec![up(h, 0), up(h, 1)]],
+            vec![vec![up(f), up(f)], vec![up(h), up(h)]],
             vec![
                 vec![Rewrite0::identity().into()],
-                vec![Rewrite0::new(
-                    g,
-                    h,
-                    (g_to_h.id, vec![Boundary(Source), Interior(Singular(0))]).into(),
-                )
-                .into()],
+                vec![Rewrite0::new(g, h, Label::new(None)).into()],
             ],
         );
 
@@ -1340,16 +1295,8 @@ mod test {
             &[],
             &[internal(f), internal(h)],
             vec![
-                vec![up(f, 0)],
-                vec![Rewrite0::new(
-                    x,
-                    h,
-                    Label::new(vec![
-                        (x_to_g.id, vec![Boundary(Source), Interior(Regular(0))]),
-                        (g_to_h.id, vec![Boundary(Source), Interior(Singular(0))]),
-                    ]),
-                )
-                .into()],
+                vec![up(f)],
+                vec![Rewrite0::new(x, h, Label::new(None)).into()],
             ],
             vec![vec![], vec![]],
         );
@@ -1365,41 +1312,23 @@ mod test {
         let f = Generator::new(1, 1);
         let g = Generator::new(2, 1);
         let h = Generator::new(3, 1);
-        let x_to_f = Generator::new(4, 2);
-        let f_to_g = Generator::new(7, 2);
 
         let internal = |gen: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Source)]).into()).into(),
-                backward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Target)]).into()).into(),
+                forward: Rewrite0::new(x, gen, Label::new(None)).into(),
+                backward: Rewrite0::new(x, gen, Label::new(None)).into(),
             }
         };
-        let up = |gen: Generator, r: usize| -> Rewrite {
-            Rewrite0::new(
-                x,
-                gen,
-                (gen.id + 3, vec![Boundary(Source), Interior(Regular(r))]).into(),
-            )
-            .into()
-        };
+        let up = |gen: Generator| -> Rewrite { Rewrite0::new(x, gen, Label::new(None)).into() };
 
-        let first =
-            RewriteN::from_slices(1, &[], &[internal(f)], vec![vec![up(f, 0)]], vec![vec![]]);
+        let first = RewriteN::from_slices(1, &[], &[internal(f)], vec![vec![up(f)]], vec![vec![]]);
 
         let second = RewriteN::from_slices(
             1,
             &[internal(f)],
             &[internal(g), internal(h)],
-            vec![vec![up(g, 0), up(g, 1)], vec![up(h, 0)]],
-            vec![
-                vec![Rewrite0::new(
-                    f,
-                    g,
-                    (f_to_g.id, vec![Boundary(Source), Interior(Singular(0))]).into(),
-                )
-                .into()],
-                vec![],
-            ],
+            vec![vec![up(g), up(g)], vec![up(h)]],
+            vec![vec![Rewrite0::new(f, g, Label::new(None)).into()], vec![]],
         );
 
         let expected = RewriteN::from_slices(
@@ -1407,16 +1336,8 @@ mod test {
             &[],
             &[internal(g), internal(h)],
             vec![
-                vec![Rewrite0::new(
-                    x,
-                    g,
-                    Label::new(vec![
-                        (x_to_f.id, vec![Boundary(Source), Interior(Regular(0))]),
-                        (f_to_g.id, vec![Boundary(Source), Interior(Singular(0))]),
-                    ]),
-                )
-                .into()],
-                vec![up(h, 0)],
+                vec![Rewrite0::new(x, g, Label::new(None)).into()],
+                vec![up(h)],
             ],
             vec![vec![], vec![]],
         );
@@ -1433,43 +1354,22 @@ mod test {
         let g = Generator::new(2, 1);
         let internal = |gen: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Source)]).into()).into(),
-                backward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Target)]).into()).into(),
+                forward: Rewrite0::new(x, gen, Label::new(None)).into(),
+                backward: Rewrite0::new(x, gen, Label::new(None)).into(),
             }
         };
-        let up = |gen: Generator, r: usize| -> Rewrite {
-            Rewrite0::new(
-                x,
-                gen,
-                (
-                    Generator::new(gen.id + 2, 2).id,
-                    vec![Boundary(Source), Interior(Regular(r))],
-                )
-                    .into(),
-            )
-            .into()
-        };
-        let f_to_g: Rewrite = Rewrite0::new(
-            f,
-            g,
-            (7, vec![Boundary(Source), Interior(Singular(0))]).into(),
-        )
-        .into();
-        let g_to_f: Rewrite = Rewrite0::new(
-            g,
-            f,
-            (4, vec![Boundary(Source), Interior(Singular(0))]).into(),
-        )
-        .into();
+        let up = |gen: Generator| -> Rewrite { Rewrite0::new(x, gen, Label::new(None)).into() };
+        let f_to_g: Rewrite = Rewrite0::new(f, g, Label::new(None)).into();
+        let g_to_f: Rewrite = Rewrite0::new(g, f, Label::new(None)).into();
 
         let first = RewriteN::from_slices(
             1,
             &[internal(g), internal(g), internal(f), internal(f)],
             &[internal(g), internal(g), internal(f)],
             vec![
-                vec![up(g, 0), up(g, 1), up(g, 2)],
-                vec![up(g, 0), up(g, 1)],
-                vec![up(f, 0), up(f, 1)],
+                vec![up(g), up(g), up(g)],
+                vec![up(g), up(g)],
+                vec![up(f), up(f)],
             ],
             vec![
                 vec![Rewrite::identity(0), Rewrite::identity(0)],
@@ -1486,21 +1386,21 @@ mod test {
                         0,
                         vec![internal(g), internal(g)],
                         internal(g),
-                        vec![up(g, 0), up(g, 1), up(g, 2)],
+                        vec![up(g), up(g), up(g)],
                         vec![Rewrite::identity(0), Rewrite::identity(0)]
                     ),
                     Cone::new(
                         2,
                         vec![internal(f)],
                         internal(g),
-                        vec![up(g, 0), up(g, 1)],
+                        vec![up(g), up(g)],
                         vec![f_to_g.clone()]
                     ),
                     Cone::new(
                         3,
                         vec![internal(f)],
                         internal(f),
-                        vec![up(f, 0), up(f, 1)],
+                        vec![up(f), up(f)],
                         vec![Rewrite::identity(0)]
                     )
                 ]
@@ -1510,11 +1410,7 @@ mod test {
             1,
             &[internal(g), internal(g), internal(f)],
             &[internal(f), internal(f), internal(g)],
-            vec![
-                vec![up(f, 0), up(f, 1)],
-                vec![up(f, 0), up(f, 1)],
-                vec![up(g, 0), up(g, 1)],
-            ],
+            vec![vec![up(f), up(f)], vec![up(f), up(f)], vec![up(g), up(g)]],
             vec![
                 vec![g_to_f.clone()],
                 vec![g_to_f.clone()],
