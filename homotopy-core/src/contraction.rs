@@ -404,7 +404,9 @@ fn collapse_base<'a, Ix: IndexType>(
     // find collapsible edges
     for (s, t) in graph.edge_references().filter_map(|e| {
         let r: &Rewrite0 = e.weight().try_into().unwrap();
-        r.is_identity().then(|| (e.source(), e.target()))
+        r.0.as_ref()
+            .map_or(true, |(s, t, _)| s.id == t.id)
+            .then(|| (e.source(), e.target()))
     }) {
         if (graph.edges_directed(s, Incoming).all(|p| {
             if let Some(c) = graph.find_edge(p.source(), t) {
@@ -451,21 +453,10 @@ fn collapse_base<'a, Ix: IndexType>(
             }
             union_find.union(i, max_dim_index);
 
-            // Find the orientation of the generator.
-            let orientation = graph
-                .edges_directed(i, Incoming)
-                .filter_map(|e| {
-                    let r0: &Rewrite0 = e.weight().try_into().unwrap();
-                    r0.orientation()
-                })
-                .dedup()
-                .exactly_one()
-                .unwrap();
-
             orientations
                 .entry(&coord[..codimension])
                 .or_default()
-                .push(orientation);
+                .push(g.orientation);
         }
     }
 
@@ -518,6 +509,11 @@ fn collapse_base<'a, Ix: IndexType>(
         slice_orientations[0]
     };
 
+    let colimit = Generator {
+        orientation,
+        ..max_dim_generator
+    };
+
     // construct colimit legs
     let legs = {
         let mut legs = IdxVec::with_capacity(graph.node_count());
@@ -526,14 +522,14 @@ fn collapse_base<'a, Ix: IndexType>(
             let r = {
                 let (p, q) = (union_find.find_mut(n), union_find.find_mut(max_dim_index));
                 if p == q {
-                    Rewrite0::identity()
+                    Rewrite0::new(g, colimit, Label::new(vec![]))
                 } else {
                     let label = quotient
                         .edge_weight(p, q)
                         .copied()
                         .ok_or(ContractionError::Invalid)?
                         .unwrap();
-                    Rewrite0::new(g, max_dim_generator, label.clone(), orientation)
+                    Rewrite0::new(g, colimit, label.clone())
                 }
             };
             legs.push(r.into());
@@ -542,7 +538,7 @@ fn collapse_base<'a, Ix: IndexType>(
     };
 
     let cocone = Cocone {
-        colimit: max_dim_generator.into(),
+        colimit: colimit.into(),
         legs,
     };
     Ok(cocone)
@@ -890,8 +886,8 @@ impl Rewrite {
     pub fn is_redundant(&self) -> bool {
         match self {
             Rewrite::Rewrite0(r) => r
-                .orientation()
-                .map_or(false, |orientation| orientation == Orientation::Zero),
+                .target()
+                .map_or(true, |t| t.orientation == Orientation::Zero),
             Rewrite::RewriteN(r) => r.cones().iter().all(Cone::is_redundant),
         }
     }

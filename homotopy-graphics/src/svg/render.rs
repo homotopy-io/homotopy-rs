@@ -3,7 +3,7 @@ use std::{cmp::Ordering, hash::Hash};
 use euclid::default::Transform2D;
 use homotopy_common::hash::FastHashMap;
 use homotopy_core::{
-    common::{Generator, Height, Orientation, SliceIndex},
+    common::{Generator, Height, SliceIndex},
     complex::Simplex,
     layout::Layout,
     projection::{Depths, Homotopy, Projection},
@@ -113,11 +113,11 @@ impl<const N: usize> From<&ActionRegion<N>> for Simplex<N> {
 #[derive(Debug, Clone)]
 pub enum GraphicElement<const N: usize> {
     /// A surface given by a closed path to be filled.
-    Surface(Generator, Orientation, Path),
+    Surface(Generator, Path),
     /// A wire given by a depth and a path to be stroked.
-    Wire(Generator, Orientation, usize, Path, Vec<Path>),
+    Wire(Generator, usize, Path, Vec<Path>),
     /// A point that is drawn as determined by its vertex_shape
-    Point(Generator, Orientation, Point),
+    Point(Generator, Point),
 }
 
 impl<const N: usize> GraphicElement<N> {
@@ -126,25 +126,23 @@ impl<const N: usize> GraphicElement<N> {
     pub fn transformed(&self, transform: &Transform2D<f32>) -> Self {
         use GraphicElement::{Point, Surface, Wire};
         match self {
-            Surface(g, o, path) => Surface(*g, *o, path.clone().transformed(transform)),
-            Wire(g, o, depth, path, mask) => {
+            Surface(g, path) => Surface(*g, path.clone().transformed(transform)),
+            Wire(g, depth, path, mask) => {
                 let path = path.clone().transformed(transform);
                 let mask = mask
                     .iter()
                     .map(|mask| mask.clone().transformed(transform))
                     .collect();
-                Wire(*g, *o, *depth, path, mask)
+                Wire(*g, *depth, path, mask)
             }
-            Point(g, o, point) => Point(*g, *o, transform.transform_point(*point)),
+            Point(g, point) => Point(*g, transform.transform_point(*point)),
         }
     }
 
     pub fn generator(&self) -> Generator {
         use GraphicElement::{Point, Surface, Wire};
         match self {
-            Surface(generator, _, _) | Wire(generator, _, _, _, _) | Point(generator, _, _) => {
-                *generator
-            }
+            Surface(generator, _) | Wire(generator, _, _, _) | Point(generator, _) => *generator,
         }
     }
 
@@ -166,20 +164,19 @@ impl<const N: usize> GraphicElement<N> {
         let mut surface_elements = Vec::new();
         let mut point_elements = Vec::new();
 
-        let mut grouped_surfaces =
-            FastHashMap::<(Generator, Orientation), Vec<[Coordinate<N>; 3]>>::default();
+        let mut grouped_surfaces = FastHashMap::<Generator, Vec<[Coordinate<N>; 3]>>::default();
 
         for (simplex, _) in complex.iter().filter(|(_, visible)| *visible) {
             match simplex {
                 Simplex::Surface(ps) => {
-                    let (generator, orientation) = projection.generator(ps[0]);
+                    let generator = projection.generator(ps[0]);
                     grouped_surfaces
-                        .entry((generator, orientation))
+                        .entry(generator)
                         .or_default()
                         .push(orient_surface(ps));
                 }
                 Simplex::Wire(ps) => {
-                    let (generator, orientation) = projection.front_generator(ps[0]);
+                    let generator = projection.front_generator(ps[0]);
 
                     let (depth, mask) = match depths.edge_depth(ps[0], ps[1]) {
                         Some(depth) => (
@@ -194,28 +191,24 @@ impl<const N: usize> GraphicElement<N> {
                     };
                     wire_elements.push(Self::Wire(
                         generator,
-                        orientation,
                         depth,
                         build_path(&orient_wire(ps), false, layout, projection),
                         mask,
                     ));
                 }
                 Simplex::Point([p]) => {
-                    let (generator, orientation) = projection.front_generator(*p);
+                    let generator = projection.front_generator(*p);
                     // In 2D, we ignore points which are labelled by homotopies.
                     // TODO(@calintat): This should only apply to locally identity-like homotopies.
                     if N <= 1 || generator.dimension >= diagram.dimension() {
-                        point_elements.push(Self::Point(
-                            generator,
-                            orientation,
-                            project_2d(layout.get(*p)).into(),
-                        ));
+                        point_elements
+                            .push(Self::Point(generator, project_2d(layout.get(*p)).into()));
                     }
                 }
             }
         }
 
-        for ((generator, orientation), surfaces) in grouped_surfaces {
+        for (generator, surfaces) in grouped_surfaces {
             let mut path_builder = NoAttributes::new().with_svg();
 
             for points in merge_simplices(surfaces) {
@@ -225,7 +218,7 @@ impl<const N: usize> GraphicElement<N> {
             // Quick enough to do it every time
             let path = simplify_path(&path_builder.build());
 
-            surface_elements.push(Self::Surface(generator, orientation, path));
+            surface_elements.push(Self::Surface(generator, path));
         }
 
         let mut elements = surface_elements;
@@ -236,11 +229,9 @@ impl<const N: usize> GraphicElement<N> {
 
     pub fn to_shape(&self, wire_thickness: f32, point_radius: f32) -> Shape {
         match self {
-            GraphicElement::Surface(_, _, path) => Fill::new(path.clone()).into(),
-            GraphicElement::Wire(_, _, _, path, _) => {
-                Stroke::new(path.clone(), wire_thickness).into()
-            }
-            GraphicElement::Point(_, _, point) => Circle::new(*point, point_radius).into(),
+            GraphicElement::Surface(_, path) => Fill::new(path.clone()).into(),
+            GraphicElement::Wire(_, _, path, _) => Stroke::new(path.clone(), wire_thickness).into(),
+            GraphicElement::Point(_, point) => Circle::new(*point, point_radius).into(),
         }
     }
 }
