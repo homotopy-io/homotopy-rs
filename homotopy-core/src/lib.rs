@@ -5,6 +5,7 @@ pub use rewrite::{Cospan, Rewrite, Rewrite0, RewriteN};
 
 pub mod antipushout;
 pub mod attach;
+pub mod bubble;
 pub mod check;
 pub mod common;
 pub mod complex;
