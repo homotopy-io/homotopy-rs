@@ -6,7 +6,7 @@ use thiserror::Error;
 use crate::{
     common::Mode,
     diagram::RewritingError,
-    rewrite::{CompositionError, Cone, ConeInternal},
+    rewrite::{CompositionError, Cone, ConeInternal, Label},
     Cospan, Diagram, DiagramN, Direction, Height, Rewrite, Rewrite0, RewriteN,
 };
 
@@ -232,11 +232,11 @@ impl Cone {
                 target,
                 regular_slice,
             } => {
-                if !regular_slice.agrees_with(&target.forward) {
+                if regular_slice.strip_labels() != target.forward.strip_labels() {
                     errors.push(MalformedCone::NotCommutative0);
                 }
 
-                if !regular_slice.agrees_with(&target.backward) {
+                if regular_slice.strip_labels() != target.backward.strip_labels() {
                     errors.push(MalformedCone::NotCommutative0);
                 }
             }
@@ -250,22 +250,32 @@ impl Cone {
                     .first()
                     .unwrap()
                     .forward
-                    .compose(&singular_slices.first().unwrap())
+                    .strip_labels()
+                    .compose(&singular_slices.first().unwrap().strip_labels())
                 {
-                    Ok(f) if f.agrees_with(&target.forward) => { /* no error */ }
+                    Ok(f) if f == target.forward.strip_labels() => { /* no error */ }
                     Ok(_) => errors.push(MalformedCone::NotCommutativeN(0)),
                     Err(ce) => errors.push(ce.into()),
                 };
 
                 for (i, regular_slice) in regular_slices.iter().enumerate() {
-                    match source[i].backward.compose(&singular_slices[i]) {
-                        Ok(f) if f.agrees_with(&regular_slice) => { /* no error */ }
+                    let regular_slice = regular_slice.strip_labels();
+                    match source[i]
+                        .backward
+                        .strip_labels()
+                        .compose(&singular_slices[i].strip_labels())
+                    {
+                        Ok(f) if f == regular_slice => { /* no error */ }
                         Ok(_) => errors.push(MalformedCone::NotCommutativeN(i + 1)),
                         Err(ce) => errors.push(ce.into()),
                     }
 
-                    match source[i + 1].forward.compose(&singular_slices[i + 1]) {
-                        Ok(f) if f.agrees_with(&regular_slice) => { /* no error */ }
+                    match source[i + 1]
+                        .forward
+                        .strip_labels()
+                        .compose(&singular_slices[i + 1].strip_labels())
+                    {
+                        Ok(f) if f == regular_slice => { /* no error */ }
                         Ok(_) => errors.push(MalformedCone::NotCommutativeN(i + 1)),
                         Err(ce) => errors.push(ce.into()),
                     }
@@ -275,9 +285,10 @@ impl Cone {
                     .last()
                     .unwrap()
                     .backward
-                    .compose(&singular_slices.last().unwrap())
+                    .strip_labels()
+                    .compose(&singular_slices.last().unwrap().strip_labels())
                 {
-                    Ok(f) if f.agrees_with(&target.backward) => { /* no error */ }
+                    Ok(f) if f == target.backward.strip_labels() => { /* no error */ }
                     Ok(_) => errors.push(MalformedCone::NotCommutativeN(self.len())),
                     Err(ce) => errors.push(ce.into()),
                 };
@@ -340,49 +351,57 @@ pub enum MalformedCone {
     NotCommutativeN(usize),
 }
 
+impl Cospan {
+    fn strip_labels(&self) -> Self {
+        Cospan {
+            forward: self.forward.strip_labels(),
+            backward: self.backward.strip_labels(),
+        }
+    }
+}
+
 impl Rewrite {
-    /// Checks if `self` agrees with `other` ignoring labels.
-    fn agrees_with(&self, other: &Self) -> bool {
+    fn strip_labels(&self) -> Self {
         use Rewrite::{Rewrite0, RewriteN};
-        match (self, other) {
-            (Rewrite0(f), Rewrite0(g)) => f.agrees_with(g),
-            (RewriteN(f), RewriteN(g)) => f.agrees_with(g),
-            _ => false,
+        match self {
+            Rewrite0(f) => Rewrite0(f.strip_labels()),
+            RewriteN(f) => RewriteN(f.strip_labels()),
         }
     }
 }
 
 impl Rewrite0 {
-    fn agrees_with(&self, other: &Self) -> bool {
-        match (&self.0, &other.0) {
-            (None, None) => true,
-            (Some((f_s, f_t, _)), Some((g_s, g_t, _))) => *f_s == *g_s && *f_t == *g_t,
-            _ => false,
-        }
+    fn strip_labels(&self) -> Self {
+        Rewrite0(
+            self.0
+                .as_ref()
+                .map(|(s, t, _)| (*s, *t, Label::new(vec![]))),
+        )
     }
 }
 
 impl RewriteN {
-    fn agrees_with(&self, other: &Self) -> bool {
-        if self.cones().len() != other.cones().len() {
-            return false;
-        }
-        std::iter::zip(self.cones(), other.cones()).all(|(f_cone, g_cone)| {
-            f_cone.index == g_cone.index
-                && f_cone.len() == g_cone.len()
-                && std::iter::zip(f_cone.source(), g_cone.source())
-                    .all(|(f_cs, g_cs)| f_cs.agrees_with(g_cs))
-                && f_cone.target().agrees_with(g_cone.target())
-                && std::iter::zip(f_cone.regular_slices(), g_cone.regular_slices())
-                    .all(|(f_slice, g_slice)| f_slice.agrees_with(g_slice))
-                && std::iter::zip(f_cone.singular_slices(), g_cone.singular_slices())
-                    .all(|(f_slice, g_slice)| f_slice.agrees_with(g_slice))
-        })
-    }
-}
-
-impl Cospan {
-    fn agrees_with(&self, other: &Self) -> bool {
-        self.forward.agrees_with(&other.forward) && self.backward.agrees_with(&other.backward)
+    fn strip_labels(&self) -> Self {
+        RewriteN::new(
+            self.dimension(),
+            self.cones()
+                .iter()
+                .map(|c| {
+                    let source = c.source().iter().map(|cs| cs.strip_labels()).collect();
+                    let target = c.target().strip_labels();
+                    let regular_slices = c
+                        .regular_slices()
+                        .iter()
+                        .map(|slice| slice.strip_labels())
+                        .collect();
+                    let singular_slices = c
+                        .singular_slices()
+                        .iter()
+                        .map(|slice| slice.strip_labels())
+                        .collect();
+                    Cone::new_untrimmed(c.index, source, target, regular_slices, singular_slices)
+                })
+                .collect(),
+        )
     }
 }
