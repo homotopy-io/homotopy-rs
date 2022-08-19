@@ -236,19 +236,13 @@ impl Store {
                 ConeInternal::Cone0 {
                     target,
                     regular_slice,
-                } => Cone::new_untrimmed(
-                    cone.index as usize,
-                    vec![],
-                    target,
-                    vec![regular_slice],
-                    vec![],
-                ),
+                } => Cone::new_0(cone.index as usize, target, regular_slice),
                 ConeInternal::ConeN {
                     source,
                     target,
                     regular_slices,
                     singular_slices,
-                } => Cone::new_untrimmed(
+                } => Cone::new_n(
                     cone.index as usize,
                     source,
                     target,
@@ -262,25 +256,29 @@ impl Store {
                     .source
                     .into_iter()
                     .map(|cospan| self.unpack_cospan(&cospan))
-                    .collect::<Option<_>>()?;
+                    .collect::<Option<Vec<_>>>()?;
                 let target = self.unpack_cospan(&serialized.target)?;
                 let regular_slices = serialized
                     .regular_slices
                     .into_iter()
                     .map(|slice| self.unpack_rewrite(slice))
-                    .collect::<Option<_>>()?;
+                    .collect::<Option<Vec<_>>>()?;
                 let singular_slices = serialized
                     .singular_slices
                     .into_iter()
                     .map(|slice| self.unpack_rewrite(slice))
-                    .collect::<Option<_>>()?;
-                let cone = Some(Cone::new_untrimmed(
-                    cone.index as usize,
-                    source,
-                    target,
-                    regular_slices,
-                    singular_slices,
-                ));
+                    .collect::<Option<Vec<_>>>()?;
+                let cone = Some(if source.is_empty() {
+                    Cone::new_0(cone.index as usize, target, regular_slices[0].clone())
+                } else {
+                    Cone::new_n(
+                        cone.index as usize,
+                        source,
+                        target,
+                        regular_slices,
+                        singular_slices,
+                    )
+                });
                 cone.as_ref()
                     .cloned()
                     .map(|c| self.cone_keys.insert(c.internal.get().clone(), key));
