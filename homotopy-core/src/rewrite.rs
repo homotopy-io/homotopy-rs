@@ -828,24 +828,12 @@ impl RewriteN {
                         singular_slices
                             .extend(g_cone.singular_slices()[index + 1..].iter().cloned());
 
-                        let regular_slices = if source.is_empty() {
-                            vec![g_cone.target().forward.clone()]
-                        } else {
-                            let mut regular_slices = vec![];
-                            for i in 1..source.len() {
-                                regular_slices
-                                    .push(source[i].forward.compose(&singular_slices[i]).unwrap());
-                            }
-                            regular_slices
-                        };
-
                         delayed_offset -= 1 - f_cone.len() as isize;
 
-                        g_cones.push(Cone::new_untrimmed(
+                        g_cones.push(Cone::new_unlabelled(
                             g_cone.index,
                             source,
                             g_cone.target().clone(),
-                            regular_slices,
                             singular_slices,
                         ));
                     }
@@ -1057,6 +1045,27 @@ impl Cone {
                 }),
             }
         }
+    }
+
+    /// Constructs a cone where the regular slices are computed from the rest of the data.
+    /// Note: This should only be used for *unlabelled* rewrites.
+    pub(crate) fn new_unlabelled(
+        index: usize,
+        source: Vec<Cospan>,
+        target: Cospan,
+        singular_slices: Vec<Rewrite>,
+    ) -> Self {
+        let regular_slices = if source.is_empty() {
+            vec![target.forward.clone()]
+        } else {
+            let mut regular_slices = vec![];
+            for i in 1..source.len() {
+                regular_slices.push(source[i].forward.compose(&singular_slices[i]).unwrap());
+            }
+            regular_slices
+        };
+
+        Self::new_untrimmed(index, source, target, regular_slices, singular_slices)
     }
 
     pub(crate) fn source(&self) -> &[Cospan] {
