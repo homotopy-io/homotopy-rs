@@ -356,7 +356,7 @@ impl Rewrite0 {
     fn agrees_with(&self, other: &Self) -> bool {
         match (&self.0, &other.0) {
             (None, None) => true,
-            (Some((f_s, f_t, _, _)), Some((g_s, g_t, _, _))) => *f_s == *g_s && *f_t == *g_t,
+            (Some((f_s, f_t, _)), Some((g_s, g_t, _))) => *f_s == *g_s && *f_t == *g_t,
             _ => false,
         }
     }
