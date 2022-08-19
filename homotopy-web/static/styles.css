@@ -357,7 +357,7 @@ button, .button {
   box-sizing: border-box;
   touch-action: none;
   z-index: 1000;
-  overflow-y: scroll;
+  overflow-y: auto;
   overflow-x: hidden;
 }
 
