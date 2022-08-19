@@ -191,8 +191,8 @@ impl Cospan {
         self.forward == self.backward
             && self
                 .forward
-                .max_generator()
-                .map_or(false, |(g, _)| g.dimension <= self.forward.dimension())
+                .max_generator(Boundary::Target)
+                .map_or(false, |g| g.dimension <= self.forward.dimension())
     }
 }
 

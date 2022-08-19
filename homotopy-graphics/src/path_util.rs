@@ -1,6 +1,6 @@
 use euclid::approxeq::ApproxEq;
 use homotopy_common::hash::FastHashMap;
-use homotopy_core::{Generator, Orientation};
+use homotopy_core::common::Generator;
 use lyon_path::{path::Builder, Path};
 
 use crate::svg::{render::GraphicElement, shape::Point};
@@ -11,15 +11,15 @@ pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<Gr
 
     // (depth, gen) -> Vec<(path, start, end)>
     let mut grouped_wires =
-        FastHashMap::<(usize, Generator, Orientation), Vec<(Builder, Point, Point)>>::default();
+        FastHashMap::<(usize, Generator), Vec<(Builder, Point, Point)>>::default();
 
     for element in graphic {
         match element {
-            GraphicElement::Surface(g, o, path) => {
-                new_graphic.push(GraphicElement::Surface(*g, *o, simplify_path(path)));
+            GraphicElement::Surface(g, path) => {
+                new_graphic.push(GraphicElement::Surface(*g, simplify_path(path)));
             }
-            GraphicElement::Wire(g, o, depth, path, _) => {
-                let entry = grouped_wires.entry((*depth, *g, *o)).or_default();
+            GraphicElement::Wire(g, depth, path, _) => {
+                let entry = grouped_wires.entry((*depth, *g)).or_default();
 
                 let extremes = path_extremes(path).unwrap();
 
@@ -76,14 +76,13 @@ pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<Gr
         }
     }
 
-    for ((depth, g, o), wires) in grouped_wires {
+    for ((depth, g), wires) in grouped_wires {
         let mut merged_path = Path::builder();
         for (builder, _, _) in wires {
             merged_path.extend_from_paths(&[builder.build().as_slice()]);
         }
         new_graphic.push(GraphicElement::Wire(
             g,
-            o,
             depth,
             simplify_path(&merged_path.build()),
             Vec::new(),

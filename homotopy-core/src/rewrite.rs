@@ -20,6 +20,7 @@ use crate::{
     common::{DimensionError, Generator, Mode, Orientation, RegularHeight, SingularHeight},
     diagram::Diagram,
     monotone::{Monotone, Split},
+    util::first_max_generator,
     Boundary, Height, SliceIndex,
 };
 
@@ -54,11 +55,13 @@ pub struct RewriteInternal {
     dimension: usize,
     cones: Vec<Cone>,
     #[serde(skip_serializing)]
-    max_generator: OnceCell<Option<(Generator, Orientation)>>,
+    max_generator_source: OnceCell<Option<Generator>>,
+    #[serde(skip_serializing)]
+    max_generator_target: OnceCell<Option<Generator>>,
 }
 
 #[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
-pub struct Rewrite0(pub(crate) Option<(Generator, Generator, Label, Orientation)>);
+pub struct Rewrite0(pub(crate) Option<(Generator, Generator, Label)>);
 
 #[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
 pub struct RewriteN(HConsed<RewriteInternal>);
@@ -79,7 +82,7 @@ pub enum Rewrite {
 }
 
 type Coordinate<T> = Vec<T>;
-pub(crate) type LabelNode = (Generator, Coordinate<SliceIndex>);
+pub(crate) type LabelNode = (usize, Coordinate<SliceIndex>);
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, PartialOrd, Ord)]
 pub struct Label(pub(crate) Vec<HConsed<LabelNode>>);
@@ -157,11 +160,15 @@ impl Cospan {
         self.forward.is_identity() && self.backward.is_identity()
     }
 
-    pub(crate) fn max_generator(&self) -> Option<(Generator, Orientation)> {
-        [self.forward.max_generator(), self.backward.max_generator()]
-            .into_iter()
-            .flatten()
-            .max_by_key(|(g, _)| g.dimension)
+    pub(crate) fn max_generator(&self) -> Option<Generator> {
+        let generators = [
+            self.forward.max_generator(Boundary::Source),
+            self.forward.max_generator(Boundary::Target),
+            self.backward.max_generator(Boundary::Target),
+            self.backward.max_generator(Boundary::Source),
+        ];
+
+        first_max_generator(generators.iter().copied().flatten())
     }
 
     #[must_use]
@@ -273,13 +280,9 @@ impl Rewrite {
         use crate::Boundary::{Source, Target};
 
         match base {
-            Diagram::Diagram0(base) => Rewrite0::new(
-                base,
-                generator,
-                (generator, prefix).into(),
-                Orientation::Positive,
-            )
-            .into(),
+            Diagram::Diagram0(base) => {
+                Rewrite0::new(base, generator, Label::new(vec![(generator.id, prefix)])).into()
+            }
             Diagram::DiagramN(base) => {
                 let mut regular_slices: Vec<_> = Default::default();
                 let mut singular_slices: Vec<_> = Default::default();
@@ -376,10 +379,10 @@ impl Rewrite {
         }
     }
 
-    pub(crate) fn max_generator(&self) -> Option<(Generator, Orientation)> {
+    pub(crate) fn max_generator(&self, boundary: Boundary) -> Option<Generator> {
         match self {
-            Self::Rewrite0(r) => r.max_generator(),
-            Self::RewriteN(r) => r.max_generator(),
+            Self::Rewrite0(r) => r.max_generator(boundary),
+            Self::RewriteN(r) => r.max_generator(boundary),
         }
     }
 
@@ -402,12 +405,11 @@ impl Rewrite {
 impl fmt::Debug for Rewrite0 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self(Some((s, t, l, o))) => f
+            Self(Some((s, t, l))) => f
                 .debug_tuple("Rewrite0")
                 .field(&s)
                 .field(&t)
                 .field(&l)
-                .field(&o)
                 .finish(),
             Self(None) => f.debug_struct("Rewrite0").finish(),
         }
@@ -420,7 +422,7 @@ impl Serialize for Rewrite0 {
         S: serde::Serializer,
     {
         match &self.0 {
-            Some((source, target, label, orientation)) => {
+            Some((source, target, label)) => {
                 struct Coord<'a>(&'a Coordinate<SliceIndex>);
                 impl Serialize for Coord<'_> {
                     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -450,7 +452,7 @@ impl Serialize for Rewrite0 {
 
                 #[derive(Serialize)]
                 struct Label<'a> {
-                    generator: Generator,
+                    generator: usize,
                     coordinate: Coord<'a>,
                 }
 
@@ -471,7 +473,6 @@ impl Serialize for Rewrite0 {
                         })
                         .collect::<Vec<_>>(),
                 )?;
-                r0.serialize_field("orientation", orientation)?;
                 r0.end()
             }
             None => serializer.serialize_unit_struct("Rewrite0"),
@@ -480,17 +481,12 @@ impl Serialize for Rewrite0 {
 }
 
 impl Rewrite0 {
-    pub fn new(
-        source: Generator,
-        target: Generator,
-        label: Label,
-        orientation: Orientation,
-    ) -> Self {
+    pub fn new(source: Generator, target: Generator, label: Label) -> Self {
         assert!(source.dimension <= target.dimension);
         if source == target {
             Self(None)
         } else {
-            Self(Some((source, target, label, orientation)))
+            Self(Some((source, target, label)))
         }
     }
 
@@ -506,8 +502,8 @@ impl Rewrite0 {
     pub fn orientation_transform(self, k: Orientation) -> Self {
         match self.0 {
             None => Self(None),
-            Some((source, target, label, orientation)) => {
-                Self::new(source, target, label, orientation * k)
+            Some((source, target, label)) => {
+                Self::new(source, target.orientation_transform(k), label)
             }
         }
     }
@@ -517,8 +513,8 @@ impl Rewrite0 {
             (Some(_), None) => Ok(self.clone()),
             (None, Some(_)) => Ok(g.clone()),
             (None, None) => Ok(Self::identity()),
-            (Some((f_s, f_t, f_l, _)), Some((g_s, g_t, g_l, g_o))) if f_t == g_s => {
-                Ok(Self::new(*f_s, *g_t, f_l.clone() + g_l.clone(), *g_o))
+            (Some((f_s, f_t, f_l)), Some((g_s, g_t, g_l))) if f_t == g_s => {
+                Ok(Self::new(*f_s, *g_t, f_l.clone() + g_l.clone()))
             }
             (f, g) => {
                 log::error!("Failed to compose source: {:?}, target: {:?}", f, g);
@@ -528,35 +524,34 @@ impl Rewrite0 {
     }
 
     pub fn source(&self) -> Option<Generator> {
-        self.0.as_ref().map(|(source, _, _, _)| *source)
+        self.0.as_ref().map(|(source, _, _)| *source)
     }
 
     pub fn target(&self) -> Option<Generator> {
-        self.0.as_ref().map(|(_, target, _, _)| *target)
+        self.0.as_ref().map(|(_, target, _)| *target)
     }
 
     pub fn label(&self) -> Option<&Label> {
-        self.0.as_ref().map(|(_, _, label, _)| label)
+        self.0.as_ref().map(|(_, _, label)| label)
     }
 
-    pub fn orientation(&self) -> Option<Orientation> {
-        self.0.as_ref().map(|(_, _, _, orientation)| *orientation)
-    }
-
-    pub(crate) fn max_generator(&self) -> Option<(Generator, Orientation)> {
-        self.target().zip(self.orientation())
+    pub(crate) fn max_generator(&self, boundary: Boundary) -> Option<Generator> {
+        match boundary {
+            Boundary::Source => self.source(),
+            Boundary::Target => self.target(),
+        }
     }
 
     pub fn remove_framing(&self, generator: Generator) -> Self {
         match &self.0 {
             None => Self(None),
-            Some((source, target, label, orientation)) => {
-                let label = if *target == generator {
+            Some((source, target, label)) => {
+                let new_label = if target.id == generator.id {
                     Label::new(vec![])
                 } else {
                     label.clone()
                 };
-                Self::new(*source, *target, label, *orientation)
+                Self::new(*source, *target, new_label)
             }
         }
     }
@@ -610,7 +605,8 @@ impl RewriteN {
             factory.borrow_mut().mk(RewriteInternal {
                 dimension,
                 cones,
-                max_generator: OnceCell::new(),
+                max_generator_source: OnceCell::new(),
+                max_generator_target: OnceCell::new(),
             })
         }))
     }
@@ -971,14 +967,24 @@ impl RewriteN {
         start..(start + 1)
     }
 
-    pub(crate) fn max_generator(&self) -> Option<(Generator, Orientation)> {
-        *self.0.max_generator.get_or_init(|| {
-            self.cones()
-                .iter()
-                .filter_map(|cone| cone.target().max_generator())
-                .rev()
-                .max_by_key(|(g, _)| g.dimension)
-        })
+    pub(crate) fn max_generator(&self, boundary: Boundary) -> Option<Generator> {
+        match boundary {
+            Boundary::Source => *self.0.max_generator_source.get_or_init(|| {
+                first_max_generator(
+                    self.cones()
+                        .iter()
+                        .flat_map(Cone::source)
+                        .filter_map(Cospan::max_generator),
+                )
+            }),
+            Boundary::Target => *self.0.max_generator_target.get_or_init(|| {
+                first_max_generator(
+                    self.cones()
+                        .iter()
+                        .filter_map(|cone| cone.target().max_generator()),
+                )
+            }),
+        }
     }
 
     pub fn remove_framing(&self, generator: Generator) -> Self {
@@ -1210,20 +1216,8 @@ mod test {
         let f = Generator::new(1, 1);
         let internal = |gen: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(
-                    x,
-                    gen,
-                    (gen, vec![Boundary(Source)]).into(),
-                    Orientation::Positive,
-                )
-                .into(),
-                backward: Rewrite0::new(
-                    x,
-                    gen,
-                    (gen, vec![Boundary(Target)]).into(),
-                    Orientation::Positive,
-                )
-                .into(),
+                forward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Source)]).into()).into(),
+                backward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Target)]).into()).into(),
             }
         };
         let up = |gen: Generator, r: usize| -> Rewrite {
@@ -1231,11 +1225,10 @@ mod test {
                 x,
                 gen,
                 (
-                    Generator::new(gen.id + 1, 2),
+                    Generator::new(gen.id + 1, 2).id,
                     vec![Boundary(Source), Interior(Regular(r))],
                 )
                     .into(),
-                Orientation::Positive,
             )
             .into()
         };
@@ -1306,28 +1299,17 @@ mod test {
         let f = Generator::new(3, 1);
         let g = Generator::new(4, 1);
 
-        let first = Rewrite0::new(
-            x,
-            y,
-            (f, vec![Boundary(Source)]).into(),
-            Orientation::Positive,
-        );
-        let second = Rewrite0::new(
-            y,
-            z,
-            (g, vec![Boundary(Source)]).into(),
-            Orientation::Positive,
-        );
+        let first = Rewrite0::new(x, y, (f.id, vec![Boundary(Source)]).into());
+        let second = Rewrite0::new(y, z, (g.id, vec![Boundary(Source)]).into());
 
         let actual = first.compose(&second).unwrap();
         let expected = Rewrite0::new(
             x,
             z,
             Label::new(vec![
-                (f, vec![Boundary(Source)]),
-                (g, vec![Boundary(Source)]),
+                (f.id, vec![Boundary(Source)]),
+                (g.id, vec![Boundary(Source)]),
             ]),
-            Orientation::Positive,
         );
         assert_eq!(actual, expected);
     }
@@ -1343,32 +1325,15 @@ mod test {
 
         let internal = |gen: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(
-                    x,
-                    gen,
-                    (gen, vec![Boundary(Source)]).into(),
-                    Orientation::Positive,
-                )
-                .into(),
-                backward: Rewrite0::new(
-                    x,
-                    gen,
-                    (gen, vec![Boundary(Target)]).into(),
-                    Orientation::Positive,
-                )
-                .into(),
+                forward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Source)]).into()).into(),
+                backward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Target)]).into()).into(),
             }
         };
         let up = |gen: Generator, r: usize| -> Rewrite {
             Rewrite0::new(
                 x,
                 gen,
-                (
-                    Generator::new(gen.id + 3, 2),
-                    vec![Boundary(Source), Interior(Regular(r))],
-                )
-                    .into(),
-                Orientation::Positive,
+                (gen.id + 3, vec![Boundary(Source), Interior(Regular(r))]).into(),
             )
             .into()
         };
@@ -1391,8 +1356,7 @@ mod test {
                 vec![Rewrite0::new(
                     g,
                     h,
-                    (g_to_h, vec![Boundary(Source), Interior(Singular(0))]).into(),
-                    Orientation::Positive,
+                    (g_to_h.id, vec![Boundary(Source), Interior(Singular(0))]).into(),
                 )
                 .into()],
             ],
@@ -1408,10 +1372,9 @@ mod test {
                     x,
                     h,
                     Label::new(vec![
-                        (x_to_g, vec![Boundary(Source), Interior(Regular(0))]),
-                        (g_to_h, vec![Boundary(Source), Interior(Singular(0))]),
+                        (x_to_g.id, vec![Boundary(Source), Interior(Regular(0))]),
+                        (g_to_h.id, vec![Boundary(Source), Interior(Singular(0))]),
                     ]),
-                    Orientation::Positive,
                 )
                 .into()],
             ],
@@ -1434,32 +1397,15 @@ mod test {
 
         let internal = |gen: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(
-                    x,
-                    gen,
-                    (gen, vec![Boundary(Source)]).into(),
-                    Orientation::Positive,
-                )
-                .into(),
-                backward: Rewrite0::new(
-                    x,
-                    gen,
-                    (gen, vec![Boundary(Target)]).into(),
-                    Orientation::Positive,
-                )
-                .into(),
+                forward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Source)]).into()).into(),
+                backward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Target)]).into()).into(),
             }
         };
         let up = |gen: Generator, r: usize| -> Rewrite {
             Rewrite0::new(
                 x,
                 gen,
-                (
-                    Generator::new(gen.id + 3, 2),
-                    vec![Boundary(Source), Interior(Regular(r))],
-                )
-                    .into(),
-                Orientation::Positive,
+                (gen.id + 3, vec![Boundary(Source), Interior(Regular(r))]).into(),
             )
             .into()
         };
@@ -1476,8 +1422,7 @@ mod test {
                 vec![Rewrite0::new(
                     f,
                     g,
-                    (f_to_g, vec![Boundary(Source), Interior(Singular(0))]).into(),
-                    Orientation::Positive,
+                    (f_to_g.id, vec![Boundary(Source), Interior(Singular(0))]).into(),
                 )
                 .into()],
                 vec![],
@@ -1493,10 +1438,9 @@ mod test {
                     x,
                     g,
                     Label::new(vec![
-                        (x_to_f, vec![Boundary(Source), Interior(Regular(0))]),
-                        (f_to_g, vec![Boundary(Source), Interior(Singular(0))]),
+                        (x_to_f.id, vec![Boundary(Source), Interior(Regular(0))]),
+                        (f_to_g.id, vec![Boundary(Source), Interior(Singular(0))]),
                     ]),
-                    Orientation::Positive,
                 )
                 .into()],
                 vec![up(h, 0)],
@@ -1516,20 +1460,8 @@ mod test {
         let g = Generator::new(2, 1);
         let internal = |gen: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(
-                    x,
-                    gen,
-                    (gen, vec![Boundary(Source)]).into(),
-                    Orientation::Positive,
-                )
-                .into(),
-                backward: Rewrite0::new(
-                    x,
-                    gen,
-                    (gen, vec![Boundary(Target)]).into(),
-                    Orientation::Positive,
-                )
-                .into(),
+                forward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Source)]).into()).into(),
+                backward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Target)]).into()).into(),
             }
         };
         let up = |gen: Generator, r: usize| -> Rewrite {
@@ -1537,34 +1469,23 @@ mod test {
                 x,
                 gen,
                 (
-                    Generator::new(gen.id + 2, 2),
+                    Generator::new(gen.id + 2, 2).id,
                     vec![Boundary(Source), Interior(Regular(r))],
                 )
                     .into(),
-                Orientation::Positive,
             )
             .into()
         };
         let f_to_g: Rewrite = Rewrite0::new(
             f,
             g,
-            (
-                Generator::new(7, 2),
-                vec![Boundary(Source), Interior(Singular(0))],
-            )
-                .into(),
-            Orientation::Positive,
+            (7, vec![Boundary(Source), Interior(Singular(0))]).into(),
         )
         .into();
         let g_to_f: Rewrite = Rewrite0::new(
             g,
             f,
-            (
-                Generator::new(4, 2),
-                vec![Boundary(Source), Interior(Singular(0))],
-            )
-                .into(),
-            Orientation::Positive,
+            (4, vec![Boundary(Source), Interior(Singular(0))]).into(),
         )
         .into();
 

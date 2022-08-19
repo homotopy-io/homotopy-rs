@@ -13,17 +13,33 @@ use thiserror::Error;
 pub struct Generator {
     pub dimension: usize,
     pub id: usize,
+    pub orientation: Orientation,
 }
 
 impl Generator {
     pub fn new(id: usize, dimension: usize) -> Self {
-        Self { dimension, id }
+        Self {
+            dimension,
+            id,
+            orientation: Orientation::Positive,
+        }
+    }
+
+    #[must_use]
+    pub fn orientation_transform(self, k: Orientation) -> Self {
+        Self {
+            orientation: self.orientation * k,
+            ..self
+        }
     }
 }
 
 impl fmt::Debug for Generator {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_fmt(format_args!("{}:{}", self.id, self.dimension))
+        f.write_fmt(format_args!(
+            "{}:{}^{}",
+            self.id, self.dimension, self.orientation
+        ))
     }
 }
 
