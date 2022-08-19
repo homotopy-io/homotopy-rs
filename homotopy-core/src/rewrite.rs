@@ -496,7 +496,11 @@ impl Rewrite0 {
             (None, Some(_)) => Ok(g.clone()),
             (None, None) => Ok(Self::identity()),
             (Some((f_s, f_t, f_l)), Some((g_s, g_t, g_l))) if f_t == g_s => {
-                Ok(Self::new(*f_s, *g_t, f_l.clone() + g_l.clone()))
+                assert!(
+                    f_l.0.is_empty() && g_l.0.is_empty(),
+                    "Composition of labelled rewrites is illegal"
+                );
+                Ok(Self::new(*f_s, *g_t, Label::new(vec![])))
             }
             (f, g) => {
                 log::error!("Failed to compose source: {:?}, target: {:?}", f, g);
@@ -824,36 +828,16 @@ impl RewriteN {
                         singular_slices
                             .extend(g_cone.singular_slices()[index + 1..].iter().cloned());
 
-                        let mut regular_slices = vec![];
-                        if f_cone.is_unit() {
-                            if index > 1 {
-                                regular_slices
-                                    .extend(g_cone.regular_slices()[..index - 1].iter().cloned());
-                            }
-                            if g_cone.len() == 1 || index > 0 && index + 1 < g_cone.len() {
-                                regular_slices.extend(
-                                    f_cone
-                                        .regular_slices()
-                                        .iter()
-                                        .map(|f_slice| f_slice.compose(g_slice))
-                                        .collect::<Result<Vec<_>, _>>()?,
-                                );
-                            }
-                            if index + 2 < g_cone.len() {
-                                regular_slices
-                                    .extend(g_cone.regular_slices()[index + 1..].iter().cloned());
-                            }
+                        let regular_slices = if source.is_empty() {
+                            vec![g_cone.target().forward.clone()]
                         } else {
-                            regular_slices.extend(g_cone.regular_slices()[..index].iter().cloned());
-                            regular_slices.extend(
-                                f_cone
-                                    .regular_slices()
-                                    .iter()
-                                    .map(|f_slice| f_slice.compose(g_slice))
-                                    .collect::<Result<Vec<_>, _>>()?,
-                            );
-                            regular_slices.extend(g_cone.regular_slices()[index..].iter().cloned());
-                        }
+                            let mut regular_slices = vec![];
+                            for i in 1..source.len() {
+                                regular_slices
+                                    .push(source[i].forward.compose(&singular_slices[i]).unwrap());
+                            }
+                            regular_slices
+                        };
 
                         delayed_offset -= 1 - f_cone.len() as isize;
 
