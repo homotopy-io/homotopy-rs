@@ -83,7 +83,7 @@ impl Signature {
     }
 
     pub fn generator_info(&self, generator: Generator) -> Option<&GeneratorInfo> {
-        self.iter().find(|info| info.generator == generator)
+        self.iter().find(|info| info.generator.id == generator.id)
     }
 
     fn next_generator_id(&self) -> usize {
