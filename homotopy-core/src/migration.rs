@@ -8,7 +8,7 @@ use thiserror::Error;
 
 use crate::{
     rewrite::{Cone, Label},
-    Cospan, Diagram, DiagramN, Generator, Orientation, Rewrite, Rewrite0, RewriteN,
+    Cospan, Diagram, DiagramN, Generator, Rewrite, Rewrite0, RewriteN,
 };
 
 #[derive(Deserialize)]
@@ -263,17 +263,7 @@ impl OldProof {
             singular_slices.push(c);
         }
 
-        let regular_slices = if source.is_empty() {
-            vec![target.forward.clone()]
-        } else {
-            let mut regular_slices = vec![];
-            for i in 1..source.len() {
-                regular_slices.push(source[i].forward.compose(&singular_slices[i]).unwrap());
-            }
-            regular_slices
-        };
-
-        let cone = Cone::new_untrimmed(cone_index, source, target, regular_slices, singular_slices);
+        let cone = Cone::new_unlabelled(cone_index, source, target, singular_slices);
         self.cones.insert(index, cone.clone());
         Ok(cone)
     }
