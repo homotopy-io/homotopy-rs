@@ -218,7 +218,7 @@ impl OldProof {
                 let target: usize = target.parse().unwrap();
                 let target = self.generators[&target];
 
-                Rewrite0::new(source, target, Label::new(vec![])).into()
+                Rewrite0::new(source, target, Label::new(None)).into()
             } else {
                 let mut cones: Vec<Cone> = Vec::new();
                 for v in cones_data {

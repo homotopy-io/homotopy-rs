@@ -372,11 +372,7 @@ impl Rewrite {
 
 impl Rewrite0 {
     fn strip_labels(&self) -> Self {
-        Rewrite0(
-            self.0
-                .as_ref()
-                .map(|(s, t, _)| (*s, *t, Label::new(vec![]))),
-        )
+        Rewrite0(self.0.as_ref().map(|(s, t, _)| (*s, *t, Label::new(None))))
     }
 }
 
