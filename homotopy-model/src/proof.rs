@@ -6,6 +6,7 @@ use std::{
 use homotopy::Homotopy;
 use homotopy_core::{
     attach::BoundaryPath,
+    bubble::bubble,
     common::{Boundary, DimensionError, Direction, Generator, Height, RegularHeight, SliceIndex},
     contraction::ContractionError,
     diagram::{globularity, NewDiagramError},
@@ -652,8 +653,7 @@ impl ProofState {
                                 let (mut source, mut cospan) =
                                     (diagram.source(), diagram.cospans()[0].clone());
                                 while source.dimension() < haystack.dimension() {
-                                    source = source.identity().into();
-                                    cospan = cospan.bubble();
+                                    (source, cospan) = bubble(source, cospan);
                                 }
                                 DiagramN::new(source, vec![cospan])
                             };
