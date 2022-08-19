@@ -36,6 +36,19 @@ impl Color {
         Self(palette::Lighten::lighten(self.0.into_linear(), amount).into())
     }
 
+    // we combine saturate and lighten into a single function since we need to convert SRGB into
+    // HSL or HSV color space anyway and we save some computation by lightening this directly
+    // instead of the resulting SRGB.
+    #[must_use]
+    pub fn desaturate_and_lighten(&self, desaturate: f32, lighten: f32) -> Self {
+        let hsl: palette::Hsl =
+            palette::convert::FromColor::from_color(self.0.into_format::<f32>());
+        let desaturated = palette::Saturate::saturate(hsl, -desaturate);
+        let lightened = palette::Lighten::lighten(desaturated, lighten);
+        let srgb: palette::Srgb<f32> = palette::convert::FromColor::from_color(lightened);
+        Self(srgb.into_format())
+    }
+
     pub fn is_light(&self) -> bool {
         palette::RelativeContrast::get_contrast_ratio(
             palette::Srgb::new(1., 1., 1.),
@@ -60,7 +73,9 @@ impl FromStr for Color {
     type Err = palette::rgb::FromHexError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        palette::Srgb::<u8>::from_str(s).map(Self)
+        palette::Srgb::<u8>::from_str(s)
+            .map(palette::Srgb::into_format)
+            .map(Self)
     }
 }
 

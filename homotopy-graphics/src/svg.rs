@@ -10,10 +10,6 @@ pub mod shape;
 pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
     let mut stylesheet = String::new();
 
-    writeln!(stylesheet, ".inverse--wire {{ stroke-dasharray: 2; }}").unwrap();
-
-    writeln!(stylesheet, ".inverse--point {{ stroke: #ffffff; }}").unwrap();
-
     for (generator, style) in styles.as_pairs() {
         writeln!(
             stylesheet,
@@ -34,6 +30,28 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
             ".{name} {{ fill: {color}; }}",
             name = generator_class(generator, "point"),
             color = &style.color().hex()
+        )
+        .unwrap();
+
+        writeln!(
+            stylesheet,
+            ".{name}.inverse--surface {{ fill: {color}; stroke: {color}; }}",
+            name = generator_class(generator, "surface"),
+            color = &style.color().desaturate_and_lighten(0.3, 0.1).hex()
+        )
+        .unwrap();
+        writeln!(
+            stylesheet,
+            ".{name}.inverse--wire {{ stroke: {color}; }}",
+            name = generator_class(generator, "wire"),
+            color = &style.color().desaturate_and_lighten(0.3, 0.05).hex()
+        )
+        .unwrap();
+        writeln!(
+            stylesheet,
+            ".{name}.inverse--point {{ fill: {color}; }}",
+            name = generator_class(generator, "point"),
+            color = &style.color().desaturate_and_lighten(0.3, 0.).hex()
         )
         .unwrap();
     }
