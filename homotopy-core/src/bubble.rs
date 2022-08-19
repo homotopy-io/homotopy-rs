@@ -16,7 +16,7 @@ pub fn bubble(source: Diagram, cospan: Cospan) -> (Diagram, Cospan) {
 
     let contract = RewriteN::new(
         source.dimension() + 1,
-        vec![Cone::new_untrimmed(
+        vec![Cone::new_n(
             0,
             vec![cospan, inverse],
             Cospan {
@@ -33,15 +33,13 @@ pub fn bubble(source: Diagram, cospan: Cospan) -> (Diagram, Cospan) {
 
     let expand = RewriteN::new(
         source.dimension() + 1,
-        vec![Cone::new_untrimmed(
+        vec![Cone::new_0(
             0,
-            vec![],
             Cospan {
                 forward: f0.clone(),
                 backward: f0.clone(),
             },
-            vec![f0],
-            vec![],
+            f0,
         )],
     );
 
@@ -69,7 +67,7 @@ impl Rewrite {
                     .iter()
                     .enumerate()
                     .map(|(i, cs)| {
-                        Cone::new_untrimmed(
+                        Cone::new_n(
                             i,
                             vec![cs.clone()],
                             Cospan {

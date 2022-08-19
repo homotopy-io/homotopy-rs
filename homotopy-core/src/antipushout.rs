@@ -311,7 +311,7 @@ fn factorize_inc_helper(
                         for _ in start..end {
                             slices.push(ps.remove(0));
                         }
-                        Cone::new(
+                        Cone::new_with_flanges(
                             start,
                             source_cospans,
                             middle_cospan.clone(),
@@ -321,11 +321,11 @@ fn factorize_inc_helper(
                     });
                 }
 
-                q_cones.push(Cone::new(
+                q_cones.push(Cone::new_n(
                     ti,
                     vec![middle_cospan],
                     target_cospan,
-                    todo!(),
+                    vec![],
                     vec![q],
                 ));
             }

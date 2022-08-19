@@ -351,15 +351,6 @@ pub enum MalformedCone {
     NotCommutativeN(usize),
 }
 
-impl Cospan {
-    fn strip_labels(&self) -> Self {
-        Cospan {
-            forward: self.forward.strip_labels(),
-            backward: self.backward.strip_labels(),
-        }
-    }
-}
-
 impl Rewrite {
     fn strip_labels(&self) -> Self {
         use Rewrite::{Rewrite0, RewriteN};
@@ -382,20 +373,30 @@ impl RewriteN {
             self.dimension(),
             self.cones()
                 .iter()
-                .map(|c| {
-                    let source = c.source().iter().map(|cs| cs.strip_labels()).collect();
-                    let target = c.target().strip_labels();
-                    let regular_slices = c
-                        .regular_slices()
-                        .iter()
-                        .map(|slice| slice.strip_labels())
-                        .collect();
-                    let singular_slices = c
-                        .singular_slices()
-                        .iter()
-                        .map(|slice| slice.strip_labels())
-                        .collect();
-                    Cone::new_untrimmed(c.index, source, target, regular_slices, singular_slices)
+                .map(|c| match c.internal.get() {
+                    ConeInternal::Cone0 {
+                        target,
+                        regular_slice,
+                    } => Cone::new_0(
+                        c.index,
+                        target.map(Rewrite::strip_labels),
+                        regular_slice.strip_labels(),
+                    ),
+                    ConeInternal::ConeN {
+                        source,
+                        target,
+                        regular_slices,
+                        singular_slices,
+                    } => Cone::new_n(
+                        c.index,
+                        source
+                            .iter()
+                            .map(|cs| cs.map(Rewrite::strip_labels))
+                            .collect(),
+                        target.map(Rewrite::strip_labels),
+                        regular_slices.iter().map(Rewrite::strip_labels).collect(),
+                        singular_slices.iter().map(Rewrite::strip_labels).collect(),
+                    ),
                 })
                 .collect(),
         )

@@ -168,7 +168,7 @@ fn contract_base(
 
     let contract = RewriteN::new(
         diagram.dimension(),
-        vec![Cone::new_untrimmed(
+        vec![Cone::new_n(
             height,
             vec![cospan0.clone(), cospan1.clone()],
             cospan.clone(),
@@ -182,7 +182,7 @@ fn contract_base(
             // Coarse smoothing
             // A cospan is smoothable if the forward and backward rewrites are identical and redundant.
             let cone = (cospan.forward == cospan.backward && cospan.forward.is_redundant())
-                .then(|| Cone::new(height, vec![], cospan.clone(), vec![cospan.forward], vec![]));
+                .then(|| Cone::new_0(height, cospan.clone(), cospan.forward));
             RewriteN::new(diagram.dimension(), cone.into_iter().collect())
         }
         Diagram::DiagramN(colimit) => {
@@ -224,10 +224,10 @@ fn contract_base(
 
             let cone = if smooth_cospan.is_identity() {
                 // Decrease diagram height by 1.
-                Cone::new_untrimmed(height, vec![], cospan, vec![smooth], vec![])
+                Cone::new_0(height, cospan, smooth)
             } else {
                 // Keep diagram height the same.
-                Cone::new_untrimmed(height, vec![smooth_cospan], cospan, vec![], vec![smooth])
+                Cone::new_n(height, vec![smooth_cospan], cospan, vec![], vec![smooth])
             };
 
             RewriteN::new(diagram.dimension(), vec![cone])
@@ -260,15 +260,13 @@ fn contract_in_path(
                 Height::Regular(i) => {
                     let contract = RewriteN::new(
                         diagram.dimension(),
-                        vec![Cone::new(
+                        vec![Cone::new_0(
                             *i,
-                            vec![],
                             Cospan {
                                 forward: contract_base.clone().into(),
                                 backward: contract_base.clone().into(),
                             },
-                            vec![contract_base.into()],
-                            vec![],
+                            contract_base.into(),
                         )],
                     );
                     let expand = expand_propagate(
@@ -328,14 +326,11 @@ fn contract_in_path(
                     };
                     let contract = RewriteN::new(
                         diagram.dimension(),
-                        vec![Cone::new(
+                        vec![Cone::new_n(
                             *i,
                             vec![source_cospan.clone()],
-                            Cospan {
-                                forward: forward.clone(),
-                                backward: backward.clone(),
-                            },
-                            vec![forward, backward],
+                            Cospan { forward, backward },
+                            vec![],
                             vec![contract_base],
                         )],
                     );

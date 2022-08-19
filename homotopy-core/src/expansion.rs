@@ -135,13 +135,7 @@ fn expand_base_regular(
     if cs.is_smoothable() {
         Ok(RewriteN::new(
             diagram.dimension(),
-            vec![Cone::new(
-                i,
-                vec![],
-                cs.clone(),
-                vec![cs.forward.clone()],
-                vec![],
-            )],
+            vec![Cone::new_0(i, cs.clone(), cs.forward.clone())],
         )
         .into())
     } else {
@@ -182,7 +176,7 @@ fn expand_base_singular(
         Direction::Forward => {
             let expansion = expand_cospan(h1, forward, backward)?;
 
-            let cone = Cone::new(
+            let cone = Cone::new_n(
                 h0,
                 vec![
                     Cospan {
@@ -195,11 +189,7 @@ fn expand_base_singular(
                     },
                 ],
                 cospan.clone(),
-                vec![
-                    forward.slice(h1),
-                    expansion.regular_slice.into(),
-                    backward.slice(h1),
-                ],
+                vec![expansion.regular_slice.into()],
                 vec![
                     expansion.singular_slices[0].clone().into(),
                     expansion.singular_slices[1].clone().into(),
@@ -211,7 +201,7 @@ fn expand_base_singular(
         Direction::Backward => {
             let expansion = expand_cospan(h1, backward, forward)?;
 
-            let cone = Cone::new(
+            let cone = Cone::new_n(
                 h0,
                 vec![
                     Cospan {
@@ -224,11 +214,7 @@ fn expand_base_singular(
                     },
                 ],
                 cospan.clone(),
-                vec![
-                    forward.slice(h1),
-                    expansion.regular_slice.into(),
-                    backward.slice(h1),
-                ],
+                vec![expansion.regular_slice.into()],
                 vec![
                     expansion.singular_slices[1].clone().into(),
                     expansion.singular_slices[0].clone().into(),
@@ -410,15 +396,9 @@ pub(crate) fn expand_propagate(
     let expansion_rewrite = match (forward, backward) {
         (Some(forward), Some(backward)) => {
             let cone = if forward == backward && forward.is_redundant() {
-                Cone::new_untrimmed(
-                    height,
-                    vec![],
-                    target_cospan.clone(),
-                    vec![target_cospan.forward.clone()],
-                    vec![],
-                )
+                Cone::new_0(height, target_cospan.clone(), target_cospan.forward.clone())
             } else {
-                Cone::new_untrimmed(
+                Cone::new_n(
                     height,
                     vec![Cospan { forward, backward }],
                     target_cospan.clone(),
@@ -448,7 +428,7 @@ pub(crate) fn expand_propagate(
 
         //     RewriteN::new(
         //         diagram.dimension(),
-        //         vec![Cone::new(
+        //         vec![Cone::new_n(
         //             height,
         //             vec![
         //                 Cospan {
@@ -486,7 +466,7 @@ pub(crate) fn expand_propagate(
 
         //     RewriteN::new(
         //         diagram.dimension(),
-        //         vec![Cone::new(
+        //         vec![Cone::new_n(
         //             height,
         //             vec![
         //                 Cospan {
@@ -512,7 +492,7 @@ pub(crate) fn expand_propagate(
             }
             RewriteN::new(
                 diagram.dimension(),
-                vec![Cone::new(
+                vec![Cone::new_n(
                     height,
                     vec![
                         Cospan {
@@ -525,15 +505,8 @@ pub(crate) fn expand_propagate(
                         },
                     ],
                     target_cospan.clone(),
-                    vec![
-                        target_cospan.forward.clone(),
-                        expansion,
-                        target_cospan.backward.clone(),
-                    ],
-                    vec![
-                        Rewrite::identity(diagram.dimension() - 1),
-                        Rewrite::identity(diagram.dimension() - 1),
-                    ],
+                    vec![expansion],
+                    vec![Rewrite::identity(diagram.dimension() - 1); 2],
                 )],
             )
         }
