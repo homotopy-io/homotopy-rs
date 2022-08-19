@@ -204,7 +204,7 @@ impl Iterator for ConeIterator {
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             let slices = self.slices_product.next()?;
-            let cone = Cone::new(
+            let cone = Cone::new_with_flanges(
                 self.index,
                 self.source.clone(),
                 self.target.clone(),
