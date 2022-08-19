@@ -60,7 +60,7 @@ impl Rewrite {
         match source {
             Diagram::Diagram0(s) => {
                 let t = s.orientation_transform(Zero);
-                Rewrite0::new(*s, t, Label::new(vec![])).into()
+                Rewrite0::new(*s, t, Label::new(None)).into()
             }
             Diagram::DiagramN(source) => {
                 let singular = source.singular_slices();

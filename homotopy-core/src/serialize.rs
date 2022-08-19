@@ -293,7 +293,9 @@ impl Store {
             let label = Some(Label::new(
                 keys.iter()
                     .map(|key| self.label_nodes.get(key).cloned())
-                    .collect::<Option<_>>()?,
+                    .collect::<Option<Vec<_>>>()?
+                    .get(0)
+                    .cloned(),
             ));
             label
                 .as_ref()

@@ -522,7 +522,7 @@ fn collapse_base<'a, Ix: IndexType>(
             let r = {
                 let (p, q) = (union_find.find_mut(n), union_find.find_mut(max_dim_index));
                 if p == q {
-                    Rewrite0::new(g, colimit, Label::new(vec![]))
+                    Rewrite0::new(g, colimit, Label::new(None))
                 } else {
                     let label = quotient
                         .edge_weight(p, q)
