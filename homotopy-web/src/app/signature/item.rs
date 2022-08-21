@@ -135,6 +135,7 @@ impl Default for ItemViewMode {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Preview {
+    pub drawer_view_size: DrawerViewSize,
     pub signature: Signature,
     pub html: Html,
 }
@@ -411,10 +412,16 @@ impl ItemView {
     }
 
     fn cache_preview(&mut self, ctx: &Context<Self>, single_preview: bool, diagram: &Diagram) {
+        let (max_width, max_height) = match ctx.props().drawer_view_size {
+            DrawerViewSize::Expanded => (84.0, 60.),
+            _ => (42.0, 30.),
+
+        };
+
         let svg_of = |diagram: Diagram, id: String| match diagram.dimension() {
-            0 => Self::view_diagram_svg::<0>(ctx, diagram, id),
-            1 => Self::view_diagram_svg::<1>(ctx, diagram, id),
-            _ => Self::view_diagram_svg::<2>(ctx, diagram, id),
+            0 => Self::view_diagram_svg::<0>(ctx, diagram, id, max_width, max_height),
+            1 => Self::view_diagram_svg::<1>(ctx, diagram, id, max_width, max_height),
+            _ => Self::view_diagram_svg::<2>(ctx, diagram, id, max_width, max_height),
         };
 
         let diagrams = match &diagram {
@@ -443,6 +450,7 @@ impl ItemView {
         };
 
         self.preview_cache = Some(Preview {
+            drawer_view_size: ctx.props().drawer_view_size,
             signature: ctx.props().signature.clone(),
             html: preview_html,
         });
@@ -460,7 +468,7 @@ impl ItemView {
                 // signatures. I can't see an easy and always-correct way of getting around this.
                 // It may well also be the case that preview caching is slower than no caching for
                 // small diagrams.
-                if ctx.props().signature == cache.signature {
+                if ctx.props().signature == cache.signature && ctx.props().drawer_view_size == cache.drawer_view_size {
                     return cache.html.clone();
                 }
             }
@@ -473,14 +481,14 @@ impl ItemView {
         html! {}
     }
 
-    fn view_diagram_svg<const N: usize>(ctx: &Context<Self>, diagram: Diagram, id: String) -> Html {
+    fn view_diagram_svg<const N: usize>(ctx: &Context<Self>, diagram: Diagram, id: String, max_width: f32, max_height: f32) -> Html {
         html! {
             <DiagramSvg<N>
                     diagram={diagram}
                     id={id}
                     signature={ctx.props().signature.clone()}
-                    max_width={Some(42.0)}
-                    max_height={Some(30.0)}
+                    max_width={Some(max_width)}
+                    max_height={Some(max_height)}
             />
         }
     }

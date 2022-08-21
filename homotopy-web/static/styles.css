@@ -501,6 +501,10 @@ button, .button {
   height: 166px;
 }
 
+.drawer-expanded .signature__item {
+  height: calc(2 * var(--signature-height));
+}
+
 .signature__item.signature__folder-editing {
   height: 32px;
 }
@@ -523,6 +527,9 @@ button, .button {
   }
 }
 
+.drawer-expanded .signature__item-info {
+  height: 100%;
+}
 
 .signature__branch {
   width: 100%;
@@ -587,16 +594,27 @@ button, .button {
 }
 
 div.signature__item-name {
+  height: var(--signature-height);
   padding-left: 0;
   padding-right: 0;
   border-left: var(--space-1) solid transparent;
   border-right: var(--space-1) solid transparent;
   display: flex;
-  align-items: center;
 }
 
 span.signature__item-name {
+  height: 75%;
+  align-self: center;
   text-overflow: ellipsis;
+  transition: font-size 100ms;
+  position; relative;
+  top: -5px;
+}
+
+.drawer-expanded span.signature__item-name {
+  height: 100%;
+  align-self: flex-start;
+  font-size: 20px;
 }
 
 .signature__item-name-input {
@@ -627,6 +645,7 @@ span.signature__item-name {
   wrap: nowrap;
   overflow: hidden;
   color: var(--drawer-background);
+  height: var(--signature-height);
   width: 26px;
   flex: 0 0 auto;
   transition: width 50ms;
