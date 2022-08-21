@@ -440,7 +440,7 @@ button, .button {
 /* TODO: Wraparound */
 
 .metadata_title {
-  inline-size: 150px; 
+  inline-size: 150px;
   overflow: hidden;
   font-size: 1.6em;
   padding: var(--space-1);
@@ -582,10 +582,6 @@ button, .button {
   white-space: nowrap;
   overflow: hidden;
   box-sizing: border-box;
-}
-
-.drawer-compact .signature__item-name {
-  display: none;
 }
 
 .signature__item-fill {
@@ -754,6 +750,12 @@ span.signature__item-name {
 
 .drawer-compact .signature__generator-previews-wrapper {
   display: none;
+  transition: 100ms;
+}
+
+.drawer-regular .signature__generator-previews-wrapper svg {
+  width: 42px;
+  height: 30px;
 }
 
 .signature__generator-preview-spacer {
