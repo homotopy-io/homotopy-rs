@@ -52,7 +52,6 @@ pub fn sidebar_button(props: &SidebarButtonProps) -> Html {
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum DrawerViewSize {
     TemporarilyHidden,
-    Compact,
     Regular,
     Expanded,
 }
@@ -66,10 +65,8 @@ impl Default for DrawerViewSize {
 // from pixel width of drawer to size
 impl From<i32> for DrawerViewSize {
     fn from(px: i32) -> Self {
-        if px < 50 {
+        if px < 100 {
             Self::TemporarilyHidden
-        } else if px < 180 {
-            Self::Compact
         } else if px < 300 {
             Self::Regular
         } else {
@@ -83,7 +80,6 @@ impl DrawerViewSize {
     fn snap_width(self) -> Option<i32> {
         match self {
             Self::TemporarilyHidden => Some(0),
-            Self::Compact => Some(65),
             Self::Regular => None,
             Self::Expanded => None,
         }
@@ -223,7 +219,6 @@ impl Component for SidebarDrawer {
         let width = self.width.max(ctx.props().min_width);
         let size_class = match ctx.props().drawer_view_size {
             DrawerViewSize::TemporarilyHidden => "temporarily-hidden",
-            DrawerViewSize::Compact => "compact",
             DrawerViewSize::Regular => "regular",
             DrawerViewSize::Expanded => "expanded",
         };

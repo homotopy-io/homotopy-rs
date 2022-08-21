@@ -415,7 +415,6 @@ impl ItemView {
         let (max_width, max_height) = match ctx.props().drawer_view_size {
             DrawerViewSize::Expanded => (84.0, 60.),
             _ => (42.0, 30.),
-
         };
 
         let svg_of = |diagram: Diagram, id: String| match diagram.dimension() {
@@ -468,7 +467,9 @@ impl ItemView {
                 // signatures. I can't see an easy and always-correct way of getting around this.
                 // It may well also be the case that preview caching is slower than no caching for
                 // small diagrams.
-                if ctx.props().signature == cache.signature && ctx.props().drawer_view_size == cache.drawer_view_size {
+                if ctx.props().signature == cache.signature
+                    && ctx.props().drawer_view_size == cache.drawer_view_size
+                {
                     return cache.html.clone();
                 }
             }
@@ -481,7 +482,13 @@ impl ItemView {
         html! {}
     }
 
-    fn view_diagram_svg<const N: usize>(ctx: &Context<Self>, diagram: Diagram, id: String, max_width: f32, max_height: f32) -> Html {
+    fn view_diagram_svg<const N: usize>(
+        ctx: &Context<Self>,
+        diagram: Diagram,
+        id: String,
+        max_width: f32,
+        max_height: f32,
+    ) -> Html {
         html! {
             <DiagramSvg<N>
                     diagram={diagram}
