@@ -14,10 +14,13 @@ struct Export {
 
 #[derive(Deserialize)]
 struct Metadata {
+    #[serde(default)]
     #[serde(rename = "title")]
     _title: String,
+    #[serde(default)]
     #[serde(rename = "author")]
     _author: String,
+    #[serde(default)]
     #[serde(rename = "abstract")]
     _user_abstract: String,
 }
