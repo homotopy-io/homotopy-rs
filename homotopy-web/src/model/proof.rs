@@ -64,6 +64,12 @@ impl View {
     const MIN: u8 = 0;
     const MAX: u8 = 4;
 
+    pub fn new(dim: u8) -> Self {
+        Self {
+            dimension: dim.clamp(Self::MIN, Self::MAX),
+        }
+    }
+
     #[must_use]
     pub fn inc(self) -> Self {
         Self {
@@ -251,9 +257,11 @@ impl ProofState {
                     self.signature.has_descendents_in(node, &ws.diagram)
                 })
             }
-            Action::SelectGenerator(_) => self.workspace.is_none(),
             Action::AscendSlice(i) => i > 0,
-            Action::ClearWorkspace | Action::DescendSlice(_) | Action::UpdateView(_) => true,
+            Action::SelectGenerator(_)
+            | Action::ClearWorkspace
+            | Action::DescendSlice(_)
+            | Action::UpdateView(_) => true,
             _ => false,
         }
     }
@@ -265,7 +273,7 @@ impl ProofState {
             SliceIndex::{Boundary, Interior},
         };
         match *action {
-            Action::CreateGeneratorZero => true,
+            Action::CreateGeneratorZero | Action::Select(_) => true,
             Action::SetBoundary(boundary) => self.workspace.as_ref().map_or(false, |ws| {
                 self.boundary.as_ref().map_or(true, |selected| {
                     selected.boundary == boundary || globularity(&selected.diagram, &ws.diagram)
@@ -299,7 +307,6 @@ impl ProofState {
                         }
                     })
             }
-            Action::Select(_) => self.workspace().map_or(true, |ws| ws.attach.is_some()),
             Action::AscendSlice(_) | Action::SwitchSlice(_) => self
                 .workspace
                 .as_ref()
@@ -437,10 +444,6 @@ impl ProofState {
 
     /// Handler for [Action::SelectGenerator].
     fn select_generator(&mut self, generator: Generator) -> Result<(), ModelError> {
-        if self.workspace.is_some() {
-            return Ok(());
-        }
-
         let info = self
             .signature
             .generator_info(generator)
@@ -462,7 +465,7 @@ impl ProofState {
 
     /// Handler for [Action::Select].
     fn select(&mut self, index: usize) -> Result<(), ModelError> {
-        match self.workspace() {
+        match self.attach_options() {
             None => {
                 // Select a generator
                 let info = self
@@ -482,15 +485,9 @@ impl ProofState {
                     slice_highlight: Default::default(),
                 });
             }
-            Some(ws) => {
+            Some(att) => {
                 // Select an attachment option.
-                let option = ws
-                    .attach
-                    .as_ref()
-                    .ok_or(ModelError::InvalidAction)?
-                    .get(index)
-                    .ok_or(ModelError::IndexOutOfBounds)?;
-
+                let option = att.get(index).ok_or(ModelError::IndexOutOfBounds)?;
                 self.attach(&option.clone());
             }
         }
@@ -653,7 +650,6 @@ impl ProofState {
     fn attach(&mut self, option: &AttachOption) {
         if let Some(workspace) = &mut self.workspace {
             // TODO: Better error handling, although none of these errors should occur
-            let diagram: DiagramN = workspace.diagram.clone().try_into().unwrap();
             let generator: DiagramN = self
                 .signature
                 .generator_info(option.generator)
@@ -665,10 +661,12 @@ impl ProofState {
             let embedding: Vec<_> = option.embedding.iter().copied().collect();
 
             let result = match &option.boundary_path {
-                Some(bp) => diagram
+                Some(bp) => <&DiagramN>::try_from(&workspace.diagram)
+                    .unwrap()
                     .attach(&generator, bp.boundary(), &embedding)
                     .unwrap(),
-                None => diagram
+                None => workspace
+                    .diagram
                     .identity()
                     .attach(&generator, Boundary::Target, &embedding)
                     .unwrap(),
@@ -922,6 +920,13 @@ impl ProofState {
 
     pub fn signature(&self) -> &Signature {
         &self.signature
+    }
+
+    pub fn attach_options(&self) -> Option<&Vector<AttachOption>> {
+        match self.workspace() {
+            Some(ws) => ws.attach.as_ref(),
+            None => None,
+        }
     }
 
     pub fn render_style() -> RenderStyle {

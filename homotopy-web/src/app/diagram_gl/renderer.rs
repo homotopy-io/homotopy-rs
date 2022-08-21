@@ -1,15 +1,19 @@
-use homotopy_core::Generator;
 use homotopy_graphics::{
     draw,
     gl::{
         frame::{DepthTest, Frame},
         GlCtx, Result,
     },
-    style::{GeneratorStyle, SignatureStyleData, VertexShape},
 };
-use ultraviolet::{Mat4, Vec3, Vec4};
+use ultraviolet::{Mat4, Vec4};
 
-use self::{axes::Axes, gbuffer::GBuffer, quad::Quad, scene::Scene, shaders::Shaders};
+use self::{
+    axes::Axes,
+    gbuffer::GBuffer,
+    quad::Quad,
+    scene::{Component, Scene},
+    shaders::Shaders,
+};
 use super::{orbit_camera::OrbitCamera, DiagramGlProps};
 use crate::{app::AppSettings, components::settings::Store, model::proof::Signature};
 
@@ -118,24 +122,6 @@ impl Renderer {
             &self.shaders.geometry_4d
         };
 
-        let signature = &self.signature;
-        let color_of = |generator: &Generator| -> Vec3 {
-            signature
-                .generator_style(*generator)
-                .unwrap()
-                .color()
-                .into_components::<f32>()
-                .into()
-        };
-
-        let shape_of = |generator: &Generator| -> VertexShape {
-            signature
-                .generator_style(*generator)
-                .unwrap()
-                .shape()
-                .unwrap_or_default()
-        };
-
         // Render animated wireframes to cylinder buffer
         if self.scene.view.dimension() == 4 {
             let mut frame = Frame::new(&mut self.ctx)
@@ -143,11 +129,14 @@ impl Renderer {
                 .with_clear_color(Vec4::new(0., 0., 0., 0.));
 
             if !*settings.get_mesh_hidden() {
-                for (generator, array) in &self.scene.cylinder_components {
-                    frame.draw(draw!(program, array, &[], {
+                for Component {
+                    vertices, albedo, ..
+                } in &self.scene.cylinder_components
+                {
+                    frame.draw(draw!(program, vertices, &[], {
                         mv: v,
                         p: p,
-                        albedo: color_of(generator),
+                        albedo: *albedo,
                         t: t,
                     }));
                 }
@@ -161,11 +150,15 @@ impl Renderer {
                 .with_clear_color(Vec4::new(0., 0., 0., 0.));
 
             if !*settings.get_mesh_hidden() {
-                for (generator, array) in &self.scene.components {
-                    frame.draw(draw!(program, array, &[], {
+                for Component {
+                    vertices, albedo, ..
+                } in &self.scene.components
+                {
+                    // Set color lightening amount based on how generator is viewed.
+                    frame.draw(draw!(program, vertices, &[], {
                         mv: v,
                         p: p,
-                        albedo: color_of(generator),
+                        albedo: *albedo,
                         t: t,
                     }));
                 }
@@ -174,19 +167,13 @@ impl Renderer {
                     let duration = self.scene.diagram.size().unwrap() as f32;
 
                     for animation_curve in &self.scene.animation_curves {
-                        if let (Some(position), Some(sphere), Some(cube)) = (
-                            animation_curve.at(t),
-                            self.scene.sphere.as_ref(),
-                            self.scene.cube.as_ref(),
-                        ) {
-                            let vertex_mesh = match shape_of(&animation_curve.generator) {
-                                VertexShape::Circle => sphere,
-                                VertexShape::Square => cube,
-                            };
-                            frame.draw(draw!(&self.shaders.geometry_3d, vertex_mesh, &[], {
+                        if let (Some(position), Some(vertex_shape)) =
+                            (animation_curve.at(t), animation_curve.vertex_shape.as_ref())
+                        {
+                            frame.draw(draw!(&self.shaders.geometry_3d, vertex_shape, &[], {
                                 mv: v * Mat4::from_translation(position.xyz()) * Mat4::from_scale(geometry_scale),
                                 p: p,
-                                albedo: color_of(&animation_curve.generator),
+                                albedo: animation_curve.albedo,
                                 t: t,
                             }));
                         }
@@ -195,25 +182,21 @@ impl Renderer {
                     if *settings.get_animate_singularities() {
                         let radius = *settings.get_singularity_duration() as f32 / 10.;
 
-                        for (generator, point) in &self.scene.animation_singularities {
-                            let dt = duration * (point.w - t).abs();
-                            if dt > radius {
-                                continue;
-                            }
+                        for singularity in &self.scene.animation_singularities {
+                            if let Some(vertex_shape) = &singularity.vertex_shape {
+                                let point = singularity.vertices;
+                                let dt = duration * (point.w - t).abs();
+                                if dt > radius {
+                                    continue;
+                                }
 
-                            let vertex_mesh = match shape_of(generator) {
-                                VertexShape::Circle => self.scene.sphere.as_ref(),
-                                VertexShape::Square => self.scene.cube.as_ref(),
-                            };
-
-                            if let Some(vertex_mesh) = vertex_mesh {
                                 let scale = geometry_scale * 1.4 * f32::sqrt(1. - dt / radius);
-                                frame.draw(draw!(&self.shaders.geometry_3d, vertex_mesh, &[], {
-                                mv: v * Mat4::from_translation(point.xyz()) * Mat4::from_scale(scale),
-                                p: p,
-                                albedo: color_of(generator),
-                                t: t,
-                            }));
+                                frame.draw(draw!(&self.shaders.geometry_3d, vertex_shape, &[], {
+                                    mv: v * Mat4::from_translation(point.xyz()) * Mat4::from_scale(scale),
+                                    p: p,
+                                    albedo: singularity.albedo,
+                                    t: t,
+                                }));
                             }
                         }
                     }

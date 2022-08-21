@@ -36,11 +36,22 @@ impl Color {
         Self(palette::Lighten::lighten(self.0.into_linear(), amount).into())
     }
 
+    pub fn is_light(&self) -> bool {
+        palette::RelativeContrast::get_contrast_ratio(
+            palette::Srgb::new(1., 1., 1.),
+            self.0.into_format::<f32>(),
+        ) < 1.5
+    }
+
     pub fn into_components<T>(self) -> (T, T, T)
     where
         T: palette::stimulus::FromStimulus<u8>,
     {
         self.0.into_format().into_components()
+    }
+
+    pub fn into_linear_f32_components(self) -> (f32, f32, f32) {
+        self.0.into_format::<f32>().into_linear().into_components()
     }
 }
 

@@ -13,7 +13,7 @@ use obake::AnyVersion;
 use wasm_bindgen::JsCast;
 
 use super::{
-    proof::{generators::GeneratorInfo, SignatureItem, View},
+    proof::{generators::GeneratorInfo, FolderInfo, SignatureItem, View},
     Signature, Workspace,
 };
 
@@ -145,7 +145,7 @@ pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> 
     signature.clean_up();
     // Pack signature data
     data.signature = signature.map(|item| match item {
-        SignatureItem::Folder(name, open) => SignatureData::Folder(name, open),
+        SignatureItem::Folder(info) => SignatureData::Folder(info.name, info.open),
         SignatureItem::Item(info) => SignatureData::Item(GeneratorData {
             generator: info.generator,
             diagram: data.store.pack_diagram(&info.diagram),
@@ -181,19 +181,29 @@ pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
     let data: Data = data.into();
     let mut store = data.store;
 
+    let mut folder_index = 0;
     let signature = data
         .signature
         .map(|s| {
             Some(match s {
-                SignatureData::Folder(name, open) => SignatureItem::Folder(name, open),
+                SignatureData::Folder(name, open) => {
+                    folder_index += 1;
+                    SignatureItem::Folder(FolderInfo {
+                        id: folder_index,
+                        name,
+                        open: open.to_owned(),
+                    })
+                }
                 SignatureData::Item(gd) => SignatureItem::Item(GeneratorInfo {
                     generator: gd.generator,
                     name: gd.name,
                     color: gd.color,
                     shape: Default::default(),
                     diagram: store.unpack_diagram(gd.diagram)?,
-                    framed: true,
+                    oriented: false,
                     invertible: false,
+                    // TODO: `single_preview` should be properly serialized
+                    single_preview: matches!(gd.generator.dimension, 0 | 1 | 2),
                 }),
             })
         })

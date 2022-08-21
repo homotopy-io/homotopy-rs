@@ -14,10 +14,11 @@ declare_settings! {
         subdivision_depth: u32 = 2,
         geometry_samples: u32 = 10,
 
+        show_previews: bool = true,
         orthographic_3d: bool = false,
         specularity: u32 = 25,
         shininess: u32 = 64,
-        gamma: u32 = 14,
+        gamma: u32 = 22,
         animate_singularities: bool = true,
         singularity_duration: u32 = 5,
         geometry_scale: u32 = 10,
@@ -30,7 +31,7 @@ declare_settings! {
     }
 }
 
-#[derive(Properties, Clone, PartialEq)]
+#[derive(Properties, Clone, PartialEq, Eq)]
 pub struct SettingsProps {}
 
 pub struct SettingsView {
@@ -59,6 +60,16 @@ impl Component for SettingsView {
     fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
             <div class="settings">
+                <h3>{"General"}</h3>
+                <div class="settings__segment">
+                    {
+                        self.view_checkbox(
+                            "Show previews in signature",
+                            |local| *local.get_show_previews(),
+                            AppSettingsDispatch::set_show_previews,
+                        )
+                    }
+                </div>
                 <h3>{"3D renderer"}</h3>
                 <div class="settings__segment">
                     <h4>{"Quality"}</h4>

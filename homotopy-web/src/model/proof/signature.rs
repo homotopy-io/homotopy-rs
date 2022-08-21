@@ -14,7 +14,7 @@ pub const COLORS: &[&str] = &[
     "#8e44ad", // wisteria
     "#27ae60", // nephritis
     "#f1c40f", // sunflower
-    "#ffffff", // white
+    "#f6f5f4", // white(ish)
     "#000000", // black
 ];
 
@@ -22,13 +22,17 @@ pub const VERTEX_SHAPES: &[VertexShape] = &[VertexShape::Circle, VertexShape::Sq
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub enum SignatureItem {
-    Folder(String, bool),
+    Folder(FolderInfo),
     Item(GeneratorInfo),
 }
 
 impl Default for SignatureItem {
     fn default() -> Self {
-        Self::Folder("".to_owned(), true)
+        Self::Folder(FolderInfo {
+            id: 0,
+            name: "".to_owned(),
+            open: true,
+        })
     }
 }
 
@@ -37,8 +41,9 @@ pub enum SignatureItemEdit {
     Rename(String),
     Recolor(Color),
     Reshape(VertexShape),
-    MakeFramed(bool),
+    MakeOriented(bool),
     MakeInvertible(bool),
+    ShowSourceTarget(bool),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -58,7 +63,7 @@ impl Signature {
     pub fn iter(&self) -> impl Iterator<Item = &GeneratorInfo> {
         self.0.iter().filter_map(|(_, data)| match data.inner() {
             SignatureItem::Item(info) => Some(info),
-            &SignatureItem::Folder(_, _) => None,
+            &SignatureItem::Folder(_) => None,
         })
     }
 
@@ -73,6 +78,18 @@ impl Signature {
             .map_or(0, |id| id + 1)
     }
 
+    fn next_folder_id(&self) -> usize {
+        self.0
+            .iter()
+            .filter_map(|(_, data)| match data.inner() {
+                SignatureItem::Item(_) => None,
+                SignatureItem::Folder(info) => Some(info),
+            })
+            .map(|info| info.id)
+            .max()
+            .map_or(0, |id| id + 1)
+    }
+
     fn insert<D>(&mut self, id: usize, generator: Generator, diagram: D, name: &str)
     where
         D: Into<Diagram>,
@@ -80,14 +97,19 @@ impl Signature {
         let info = GeneratorInfo {
             generator,
             name: format!("{} {}", name, id),
-            framed: true,
+            oriented: false,
             invertible: false,
+            single_preview: matches!(generator.dimension, 0 | 1 | 2),
             color: Color::from_str(COLORS[id % COLORS.len()]).unwrap(),
-            shape: VertexShape::default(),
+            shape: Default::default(),
             diagram: diagram.into(),
         };
 
         self.0.push_onto(self.0.root(), SignatureItem::Item(info));
+    }
+
+    pub fn insert_item(&mut self, item: SignatureItem) {
+        self.0.push_onto(self.0.root(), item);
     }
 
     fn find_node(&self, generator: Generator) -> Option<Node> {
@@ -98,14 +120,17 @@ impl Signature {
     }
 
     fn edit(&mut self, node: Node, edit: SignatureItemEdit) {
-        use SignatureItemEdit::{MakeFramed, MakeInvertible, Recolor, Rename, Reshape};
+        use SignatureItemEdit::{
+            MakeInvertible, MakeOriented, Recolor, Rename, Reshape, ShowSourceTarget,
+        };
         self.0.with_mut(node, move |n| match (n.inner_mut(), edit) {
             (SignatureItem::Item(info), Rename(name)) => info.name = name,
             (SignatureItem::Item(info), Recolor(color)) => info.color = color,
             (SignatureItem::Item(info), Reshape(shape)) => info.shape = shape,
-            (SignatureItem::Item(info), MakeFramed(false)) => info.framed = false,
+            (SignatureItem::Item(info), MakeOriented(true)) => info.oriented = true,
             (SignatureItem::Item(info), MakeInvertible(true)) => info.invertible = true,
-            (SignatureItem::Folder(ref mut old, _), Rename(name)) => *old = name,
+            (SignatureItem::Item(info), ShowSourceTarget(show)) => info.single_preview = !show,
+            (SignatureItem::Folder(info), Rename(name)) => info.name = name,
             (_, _) => {}
         });
     }
@@ -151,15 +176,29 @@ impl Signature {
         match edit {
             SignatureEdit::Edit(node, edit) => self.edit(*node, edit.clone()),
             SignatureEdit::NewFolder(node) => {
-                self.0
-                    .push_onto(*node, SignatureItem::Folder("New folder".to_owned(), true));
+                self.0.push_onto(
+                    *node,
+                    SignatureItem::Folder(FolderInfo {
+                        id: self.next_folder_id(),
+                        name: "New folder".to_owned(),
+                        open: true,
+                    }),
+                );
             }
-            SignatureEdit::MoveBefore(from, to) => self.0.reparent_before(*from, *to),
-            SignatureEdit::MoveInto(from, to) => self.0.reparent_under(*from, *to),
+            SignatureEdit::MoveBefore(from, to) => {
+                if !self.0.descendents_of(*from).any(|node| node == *to) {
+                    self.0.reparent_before(*from, *to);
+                }
+            }
+            SignatureEdit::MoveInto(from, to) => {
+                if !self.0.descendents_of(*from).any(|node| node == *to) {
+                    self.0.reparent_under(*from, *to);
+                }
+            }
             SignatureEdit::ToggleFolder(node) => {
                 self.0.with_mut(*node, |n| {
-                    if let SignatureItem::Folder(_, b) = n.inner_mut() {
-                        *b = !*b;
+                    if let SignatureItem::Folder(info) = n.inner_mut() {
+                        info.open = !info.open;
                     }
                 });
             }
@@ -205,4 +244,11 @@ impl From<Tree<SignatureItem>> for Signature {
     fn from(tree: Tree<SignatureItem>) -> Self {
         Self(tree)
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FolderInfo {
+    pub id: usize,
+    pub name: String,
+    pub open: bool,
 }

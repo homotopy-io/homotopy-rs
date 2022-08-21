@@ -134,7 +134,7 @@ impl<const N: usize> PreparedDiagram<N> {
             .map(|action| {
                 let shape = action
                     .transformed(&transform)
-                    .to_shape(style.wire_thickness, style.point_radius);
+                    .to_shape(style.wire_thickness, style.point_radius * 3.0);
                 ((&action).into(), shape)
             })
             .collect();
@@ -444,6 +444,11 @@ impl<const N: usize> DiagramSvg<N> {
             return Default::default();
         };
 
+        let (from, to) = match (self.position(highlight.from), self.position(highlight.to)) {
+            (Some(from), Some(to)) => (from, to),
+            _ => return Default::default(),
+        };
+
         let padding = match highlight.kind {
             HighlightKind::Attach => {
                 let padding = ctx.props().style.scale * 0.25;
@@ -452,8 +457,8 @@ impl<const N: usize> DiagramSvg<N> {
             HighlightKind::Slice => Vector2D::new(0.0, ctx.props().style.scale * 0.5),
         };
 
-        let from = self.position(highlight.from) + padding;
-        let to = self.position(highlight.to) - padding;
+        let from = from + padding;
+        let to = to - padding;
 
         let path = format!(
             "M {from_x} {from_y} L {from_x} {to_y} L {to_x} {to_y} L {to_x} {from_y} Z",
@@ -477,9 +482,9 @@ impl<const N: usize> DiagramSvg<N> {
         }
     }
 
-    fn position(&self, point: [SliceIndex; N]) -> Point2D<f32> {
-        let point = project_2d(self.prepared.layout.get(point)).into();
-        self.prepared.transform.transform_point(point)
+    fn position(&self, point: [SliceIndex; N]) -> Option<Point2D<f32>> {
+        let point = project_2d(self.prepared.layout.get_checked(point)?).into();
+        Some(self.prepared.transform.transform_point(point))
     }
 
     fn simplex_at(&self, point: Point2D<f32>) -> Option<Simplex<N>> {
