@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1660922569773,
+  "lastUpdate": 1661105114996,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -39779,6 +39779,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 31.086,
             "range": "+/- 0.356",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "50454943+H-Yulong@users.noreply.github.com",
+            "name": "Yulong Huang",
+            "username": "H-Yulong"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "78e5e7936f38516b7608b821ea39e3733db54fb3",
+          "message": "add serde default to metadata fields (#725)\n\nCo-authored-by: Yulong Huang <yh419@cam.ac.uk>",
+          "timestamp": "2022-08-22T01:04:42+08:00",
+          "tree_id": "c3b3a12255a0f3517befea1675ec327906e82b1d",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/78e5e7936f38516b7608b821ea39e3733db54fb3"
+        },
+        "date": 1661105104844,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.833,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 11.064,
+            "range": "+/- 0.004",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 50.327,
+            "range": "+/- 0.059",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 321.3,
+            "range": "+/- 0.300",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.7164,
+            "range": "+/- 0.002",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 27.153,
+            "range": "+/- 0.033",
             "unit": "s"
           }
         ]
