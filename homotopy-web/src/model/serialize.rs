@@ -203,7 +203,7 @@ pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
                     oriented: false,
                     invertible: false,
                     // TODO: `single_preview` should be properly serialized
-                    single_preview: matches!(gd.generator.dimension, 0 | 1 | 2),
+                    single_preview: true,
                 }),
             })
         })
