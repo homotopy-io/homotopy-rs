@@ -92,7 +92,6 @@ pub struct SidebarDrawerProps {
     pub title: &'static str,
     pub model_dispatch: Callback<model::Action>,
     pub sidebar_dispatch: Callback<SidebarMsg>,
-    pub drawer_view_size: DrawerViewSize,
     pub initial_width: i32,
     #[prop_or(0)]
     pub min_width: i32,
@@ -143,9 +142,11 @@ impl Component for SidebarDrawer {
         let resize_closure = Closure::wrap(Box::new(mouse_move_handler) as Box<dyn FnMut(_)>);
         let resize_done_closure = Closure::wrap(Box::new(mouse_up_handler) as Box<dyn FnMut(_)>);
 
+        let drawer_view_size = DrawerViewSize::from(ctx.props().initial_width);
+
         Self {
             width: ctx.props().initial_width,
-            drawer_view_size: ctx.props().drawer_view_size,
+            drawer_view_size,
             resize_closure,
             resize_done_closure,
         }
@@ -219,7 +220,7 @@ impl Component for SidebarDrawer {
         } else {
             0
         };
-        let size_class = match ctx.props().drawer_view_size {
+        let size_class = match self.drawer_view_size {
             DrawerViewSize::TemporarilyHidden => "temporarily-hidden",
             DrawerViewSize::Regular => "regular",
             DrawerViewSize::Expanded => "expanded",
@@ -310,6 +311,7 @@ impl Component for Sidebar {
                 true
             }
             SidebarMsg::Toggle(None) => {
+                self.drawer_view_size = self.last_drawer_width.into();
                 self.open = None;
                 true
             }
@@ -390,7 +392,6 @@ impl Sidebar {
                     title="Attach"
                     model_dispatch={model_dispatch}
                     sidebar_dispatch={sidebar_dispatch}
-                    drawer_view_size={self.drawer_view_size}
                     initial_width={self.last_drawer_width}
                     icon="close"
                     on_click={model::Action::from(proof::Action::ClearAttach)}

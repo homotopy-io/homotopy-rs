@@ -58,7 +58,6 @@ macro_rules! declare_sidebar_drawers {
                                     $(min_width={$min_width})?
                                     model_dispatch={model_dispatch}
                                     sidebar_dispatch={sidebar_dispatch}
-                                    drawer_view_size={drawer_view_size}
                                     $(icon={$top_icon})?
                                     $(on_click={
                                         let action = $action;
