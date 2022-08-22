@@ -99,7 +99,7 @@ impl Signature {
             name: format!("{} {}", name, id),
             oriented: false,
             invertible: false,
-            single_preview: matches!(generator.dimension, 0 | 1 | 2),
+            single_preview: true,
             color: Color::from_str(COLORS[id % COLORS.len()]).unwrap(),
             shape: Default::default(),
             diagram: diagram.into(),
