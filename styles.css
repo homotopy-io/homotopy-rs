@@ -636,6 +636,7 @@ span.signature__item-name {
   flex-direction: row;
   align-items: right;
   padding: var(--space-0) 0;
+  margin-right: 2px;
 }
 
 .signature__generator-indicator {
@@ -664,6 +665,11 @@ span.signature__item-name {
   align-items: center;
   justify-content: center;
   pointer-events: none;
+}
+
+.signature__generator-previews-wrapper svg {
+  width: 42px;
+  height: 30px;
 }
 
 .signature__generator-preview-spacer {
