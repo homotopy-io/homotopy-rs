@@ -352,7 +352,7 @@ pub enum MalformedCone {
 }
 
 impl Rewrite {
-    fn strip_labels(&self) -> Self {
+    pub fn strip_labels(&self) -> Self {
         use Rewrite::{Rewrite0, RewriteN};
         match self {
             Rewrite0(f) => Rewrite0(f.strip_labels()),
@@ -377,11 +377,7 @@ impl RewriteN {
                     ConeInternal::Cone0 {
                         target,
                         regular_slice,
-                    } => Cone::new_0(
-                        c.index,
-                        target.map(Rewrite::strip_labels),
-                        regular_slice.strip_labels(),
-                    ),
+                    } => Cone::new_0(c.index, target.clone(), regular_slice.strip_labels()),
                     ConeInternal::ConeN {
                         source,
                         target,
@@ -389,11 +385,8 @@ impl RewriteN {
                         singular_slices,
                     } => Cone::new_n(
                         c.index,
-                        source
-                            .iter()
-                            .map(|cs| cs.map(Rewrite::strip_labels))
-                            .collect(),
-                        target.map(Rewrite::strip_labels),
+                        source.clone(),
+                        target.clone(),
                         regular_slices.iter().map(Rewrite::strip_labels).collect(),
                         singular_slices.iter().map(Rewrite::strip_labels).collect(),
                     ),

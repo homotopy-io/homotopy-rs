@@ -1,11 +1,11 @@
 #[allow(clippy::wildcard_imports)]
 use crate::*;
 use crate::{
+    attach::BoundaryPath,
     rewrite::Cone,
     signature::{Signature, SignatureBuilder},
     Boundary::{Source, Target},
-    Height::{Regular, Singular},
-    SliceIndex::{Boundary, Interior},
+    Height::Regular,
 };
 
 //    |       |
@@ -93,12 +93,13 @@ pub fn touching() -> (impl Signature, DiagramN) {
     let s = sig.add(x.identity(), x.identity()).unwrap();
     let s_generator = Generator::new(1, 2);
     let s_s = s.attach(&s, Target, &[]).unwrap();
-    let rewrite =
-        |coord| Rewrite0::new(x_generator, s_generator, (s_generator.id, coord).into()).into();
-    let fwd = rewrite(vec![Interior(Singular(0)), Boundary(Source)]);
-    let bwd = rewrite(vec![Interior(Singular(0)), Boundary(Target)]);
-    let up = rewrite(vec![Boundary(Source), Interior(Regular(0))]);
-    let down = rewrite(vec![Boundary(Target), Interior(Regular(0))]);
+    let rewrite = |bp, coord| {
+        Rewrite0::new(x_generator, s_generator, (s_generator.id, bp, coord).into()).into()
+    };
+    let fwd = rewrite(BoundaryPath(Source, 1), vec![]);
+    let bwd = rewrite(BoundaryPath(Target, 1), vec![]);
+    let up = rewrite(BoundaryPath(Source, 0), vec![Regular(0)]);
+    let down = rewrite(BoundaryPath(Target, 0), vec![Regular(0)]);
     let s_internal = Cospan {
         forward: fwd,
         backward: bwd,
@@ -154,12 +155,13 @@ pub fn crossing() -> (impl Signature, DiagramN) {
     let s = sig.add(x.identity(), x.identity()).unwrap();
     let s_generator = Generator::new(1, 2);
     let s_s = s.attach(&s, Target, &[]).unwrap();
-    let rewrite =
-        |coord| Rewrite0::new(x_generator, s_generator, (s_generator.id, coord).into()).into();
-    let fwd = rewrite(vec![Interior(Singular(0)), Boundary(Source)]);
-    let bwd = rewrite(vec![Interior(Singular(0)), Boundary(Target)]);
-    let up = rewrite(vec![Boundary(Source), Interior(Regular(0))]);
-    let down = rewrite(vec![Boundary(Target), Interior(Regular(0))]);
+    let rewrite = |bp, coord| {
+        Rewrite0::new(x_generator, s_generator, (s_generator.id, bp, coord).into()).into()
+    };
+    let fwd = rewrite(BoundaryPath(Source, 1), vec![]);
+    let bwd = rewrite(BoundaryPath(Target, 1), vec![]);
+    let up = rewrite(BoundaryPath(Source, 0), vec![Regular(0)]);
+    let down = rewrite(BoundaryPath(Target, 0), vec![Regular(0)]);
     let s_internal = Cospan {
         forward: fwd,
         backward: bwd,
