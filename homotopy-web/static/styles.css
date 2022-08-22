@@ -617,6 +617,7 @@ input.signature__item-name {
   height: 75%;
   align-self: center;
   text-overflow: ellipsis;
+  overflow-y: show;
   transition: font-size 100ms;
   position; relative;
   top: -5px;
