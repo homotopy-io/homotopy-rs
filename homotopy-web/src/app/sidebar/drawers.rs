@@ -84,7 +84,7 @@ macro_rules! declare_sidebar_drawers {
                             <SidebarButton
                                 label={$title}
                                 icon={$icon}
-                                action={SidebarMsg::Toggle(NavDrawer::$name)}
+                                action={SidebarMsg::Toggle(Some(NavDrawer::$name))}
                                 shortcut={None}
                                 dispatch={ctx.link().callback(|x| x)}
                                 visibility={Visible}
@@ -114,6 +114,7 @@ declare_sidebar_drawers! {
                 metadata={proof.metadata().clone()}
             />
         },
+        min_width: 250,
     }
 
     DRAWER_SETTINGS {
@@ -137,6 +138,7 @@ declare_sidebar_drawers! {
                 drawer_view_size={drawer_view_size}
             />
         },
+        min_width: 250,
         top_icon: "create_new_folder",
         top_icon_action: |proof: &Proof| model::Action::Proof(Action::EditSignature(SignatureEdit::NewFolder(proof.signature().as_tree().root()))),
     }
@@ -149,5 +151,6 @@ declare_sidebar_drawers! {
         |_, proof: &Proof, _| html! {
             <DebugView proof={proof.clone()} />
         },
+        min_width: 250,
     }
 }

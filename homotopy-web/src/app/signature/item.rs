@@ -727,7 +727,9 @@ impl ItemView {
     }
 
     fn view_property_indicators(&self, ctx: &Context<Self>) -> Html {
-        if self.mode == ItemViewMode::Editing {
+        if ctx.props().drawer_view_size != DrawerViewSize::Expanded
+            && self.mode == ItemViewMode::Editing
+        {
             return html! {};
         }
 

@@ -202,9 +202,7 @@ impl Component for SidebarDrawer {
                     )
                     .unwrap();
                 if self.drawer_view_size == DrawerViewSize::TemporarilyHidden {
-                    ctx.props()
-                        .sidebar_dispatch
-                        .emit(SidebarMsg::Toggle(drawers::NavDrawer::DRAWER_SIGNATURE));
+                    ctx.props().sidebar_dispatch.emit(SidebarMsg::Toggle(None));
                 } else {
                     ctx.props()
                         .sidebar_dispatch
@@ -216,7 +214,11 @@ impl Component for SidebarDrawer {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let width = self.width.max(ctx.props().min_width);
+        let width = if self.width > 0 {
+            self.width.max(ctx.props().min_width)
+        } else {
+            0
+        };
         let size_class = match ctx.props().drawer_view_size {
             DrawerViewSize::TemporarilyHidden => "temporarily-hidden",
             DrawerViewSize::Regular => "regular",
@@ -267,7 +269,7 @@ pub enum SidebarMsg {
     Dispatch(model::Action),
     SaveDrawerWidth(i32),
     ResizeDrawerView(DrawerViewSize),
-    Toggle(drawers::NavDrawer),
+    Toggle(Option<drawers::NavDrawer>),
 }
 
 #[derive(Default)]
@@ -307,19 +309,24 @@ impl Component for Sidebar {
                 self.drawer_view_size = size;
                 true
             }
-            SidebarMsg::Toggle(drawer) if Some(drawer) == self.open => {
+            SidebarMsg::Toggle(None) => {
+                self.open = None;
+                true
+            }
+            SidebarMsg::Toggle(drawer) if drawer == self.open => {
                 self.open = None;
                 true
             }
             SidebarMsg::Toggle(drawer) => {
-                self.open = Some(drawer);
+                self.open = drawer;
                 true
             }
             SidebarMsg::Dispatch(action) => {
                 if let model::Action::Proof(proof::Action::CreateGeneratorZero) = action {
                     if self.open.is_none() {
-                        ctx.link()
-                            .send_message(SidebarMsg::Toggle(drawers::NavDrawer::DRAWER_SIGNATURE));
+                        ctx.link().send_message(SidebarMsg::Toggle(Some(
+                            drawers::NavDrawer::DRAWER_SIGNATURE,
+                        )));
                     }
                 }
                 ctx.props().dispatch.emit(action);
