@@ -17,10 +17,11 @@ use serde::{
 use thiserror::Error;
 
 use crate::{
+    attach::BoundaryPath,
     common::{DimensionError, Generator, Mode, Orientation, RegularHeight, SingularHeight},
     diagram::Diagram,
     util::first_max_generator,
-    Boundary, Height, SliceIndex,
+    Boundary, Height,
 };
 
 thread_local! {
@@ -80,8 +81,7 @@ pub enum Rewrite {
     RewriteN(RewriteN),
 }
 
-type Coordinate = Vec<SliceIndex>;
-pub(crate) type LabelNode = (usize, Coordinate);
+pub(crate) type LabelNode = (usize, BoundaryPath, Vec<Height>);
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, PartialOrd, Ord)]
 pub struct Label(pub(crate) Option<HConsed<LabelNode>>);
@@ -252,16 +252,24 @@ impl<'a> TryFrom<&'a Rewrite> for &'a Rewrite0 {
 }
 
 impl Rewrite {
-    pub fn cone_over_generator(generator: Generator, base: Diagram, prefix: Coordinate) -> Self {
+    pub fn cone_over_generator(
+        generator: Generator,
+        base: Diagram,
+        boundary_path: BoundaryPath,
+        depth: usize,
+        prefix: &[Height],
+    ) -> Self {
         use Height::{Regular, Singular};
-        use SliceIndex::{Boundary, Interior};
 
         use crate::Boundary::{Source, Target};
 
         match base {
-            Diagram::Diagram0(base) => {
-                Rewrite0::new(base, generator, Label::new(Some((generator.id, prefix)))).into()
-            }
+            Diagram::Diagram0(base) => Rewrite0::new(
+                base,
+                generator,
+                Label::new(Some((generator.id, boundary_path, prefix.to_vec()))),
+            )
+            .into(),
             Diagram::DiagramN(base) => {
                 let mut regular_slices: Vec<_> = Default::default();
                 let mut singular_slices: Vec<_> = Default::default();
@@ -272,12 +280,16 @@ impl Rewrite {
                         Regular(i) => regular_slices.push(Self::cone_over_generator(
                             generator,
                             slice,
-                            [prefix.as_slice(), &[Interior(Regular(i))]].concat(),
+                            boundary_path,
+                            depth + 1,
+                            &[prefix, &[Regular(i)]].concat(),
                         )),
                         Singular(i) => singular_slices.push(Self::cone_over_generator(
                             generator,
                             slice,
-                            [prefix.as_slice(), &[Interior(Singular(i))]].concat(),
+                            boundary_path,
+                            depth + 1,
+                            &[prefix, &[Singular(i)]].concat(),
                         )),
                     });
                 RewriteN::new(
@@ -289,22 +301,16 @@ impl Rewrite {
                             forward: Self::cone_over_generator(
                                 generator,
                                 base.source(),
-                                [
-                                    &[Interior(Singular(0))],
-                                    &prefix.as_slice()[..prefix.len() - 1],
-                                    &[Boundary(Source)],
-                                ]
-                                .concat(),
+                                BoundaryPath(Source, depth + 1),
+                                depth + 1,
+                                &[],
                             ),
                             backward: Self::cone_over_generator(
                                 generator,
                                 base.target(),
-                                [
-                                    &[Interior(Singular(0))],
-                                    &prefix.as_slice()[..prefix.len() - 1],
-                                    &[Boundary(Target)],
-                                ]
-                                .concat(),
+                                BoundaryPath(Target, depth + 1),
+                                depth + 1,
+                                &[],
                             ),
                         },
                         regular_slices,
@@ -402,7 +408,7 @@ impl Serialize for Rewrite0 {
     {
         match &self.0 {
             Some((source, target, label)) => {
-                struct Coord<'a>(&'a Coordinate);
+                struct Coord<'a>(&'a [Height]);
                 impl Serialize for Coord<'_> {
                     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
                     where
@@ -411,16 +417,10 @@ impl Serialize for Rewrite0 {
                         let mut seq = serializer.serialize_seq(Some(self.0.len()))?;
                         for i in self.0 {
                             match i {
-                                SliceIndex::Boundary(Boundary::Source) => {
-                                    seq.serialize_element("source")?;
-                                }
-                                SliceIndex::Boundary(Boundary::Target) => {
-                                    seq.serialize_element("target")?;
-                                }
-                                SliceIndex::Interior(Height::Regular(i)) => {
+                                Height::Regular(i) => {
                                     seq.serialize_element(&format!("R{}", i))?;
                                 }
-                                SliceIndex::Interior(Height::Singular(i)) => {
+                                Height::Singular(i) => {
                                     seq.serialize_element(&format!("S{}", i))?;
                                 }
                             }
@@ -432,6 +432,7 @@ impl Serialize for Rewrite0 {
                 #[derive(Serialize)]
                 struct Label<'a> {
                     generator: usize,
+                    boundary_path: BoundaryPath,
                     coordinate: Coord<'a>,
                 }
 
@@ -441,9 +442,10 @@ impl Serialize for Rewrite0 {
                 r0.serialize_field(
                     "label",
                     &label.0.as_ref().map(|ln| {
-                        let (generator, coordinate) = ln.get();
+                        let (generator, boundary_path, coordinate) = ln.get();
                         Label {
                             generator: *generator,
+                            boundary_path: *boundary_path,
                             coordinate: Coord(coordinate),
                         }
                     }),
@@ -1073,14 +1075,14 @@ impl Cone {
         singular_slices: Vec<Rewrite>,
     ) -> Self {
         if source.is_empty() {
-            let regular_slice = target.forward.clone();
+            let regular_slice = target.forward.strip_labels();
             Self::new_0(index, target, regular_slice)
         } else {
             let regular_slices = source
                 .iter()
                 .zip(&singular_slices)
                 .skip(1)
-                .map(|(cs, slice)| cs.forward.compose(slice).unwrap())
+                .map(|(cs, slice)| cs.forward.strip_labels().compose(slice).unwrap())
                 .collect();
             Self::new_n(index, source, target, regular_slices, singular_slices)
         }
@@ -1211,7 +1213,6 @@ mod test {
         examples::{scalar, two_monoid},
         Boundary::*,
         Height::*,
-        SliceIndex::*,
     };
 
     #[test]
@@ -1220,8 +1221,8 @@ mod test {
         let f = Generator::new(1, 1);
         let internal = |gen: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Source)]).into()).into(),
-                backward: Rewrite0::new(x, gen, (gen.id, vec![Boundary(Target)]).into()).into(),
+                forward: Rewrite0::new(x, gen, (gen.id, Source.into(), vec![]).into()).into(),
+                backward: Rewrite0::new(x, gen, (gen.id, Target.into(), vec![]).into()).into(),
             }
         };
         let up = |gen: Generator, r: usize| -> Rewrite {
@@ -1230,7 +1231,8 @@ mod test {
                 gen,
                 (
                     Generator::new(gen.id + 1, 2).id,
-                    vec![Boundary(Source), Interior(Regular(r))],
+                    BoundaryPath(Source, 0),
+                    vec![Regular(r)],
                 )
                     .into(),
             )

@@ -213,8 +213,6 @@ impl DiagramN {
         S: Into<Diagram>,
         T: Into<Diagram>,
     {
-        use SliceIndex::Boundary;
-
         use crate::Boundary::{Source, Target};
 
         let source: Diagram = source.into();
@@ -235,9 +233,17 @@ impl DiagramN {
             forward: Rewrite::cone_over_generator(
                 generator,
                 source.clone(),
-                vec![Boundary(Source)],
+                BoundaryPath(Source, 0),
+                0,
+                &[],
             ),
-            backward: Rewrite::cone_over_generator(generator, target, vec![Boundary(Target)]),
+            backward: Rewrite::cone_over_generator(
+                generator,
+                target,
+                BoundaryPath(Target, 0),
+                0,
+                &[],
+            ),
         };
 
         Ok(Self::new_unsafe(source, vec![cospan]))
