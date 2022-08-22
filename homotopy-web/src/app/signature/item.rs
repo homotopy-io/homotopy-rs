@@ -359,11 +359,11 @@ impl ItemView {
             SignatureItem::Folder(info) => &info.name,
         };
 
-        if self.mode == ItemViewMode::Editing {
+        let text = if self.mode == ItemViewMode::Editing {
             html! {
                 <input
                     type="text"
-                    class="signature__item-name-input"
+                    class="signature__item-name"
                     value={self.name.clone()}
                     oninput={ctx.link().callback(|e: InputEvent| {
                         let input: HtmlInputElement = e.target_unchecked_into();
@@ -381,12 +381,16 @@ impl ItemView {
             }
         } else {
             html! {
-                <div class="signature__item-child signature__item-name">
-                    <span class="signature__item-name">
-                        {name}
-                    </span>
-                </div>
+                <span class="signature__item-name">
+                    {name}
+                </span>
             }
+        };
+
+        html! {
+            <div class="signature__item-child signature__item-name">
+                {text}
+            </div>
         }
     }
 
@@ -734,9 +738,14 @@ impl ItemView {
             let oriented_class =
                 "signature__generator-indicator signature__generator-indicator-oriented";
 
+            let (invertible_text, oriented_text) = match ctx.props().drawer_view_size {
+                DrawerViewSize::Expanded => ("Invertible", "Oriented"),
+                _ => ("I", "O"),
+            };
+
             let invertible = if info.invertible {
                 html! {
-                    <span class={invertible_class}>{"I"}</span>
+                    <span class={invertible_class}>{invertible_text}</span>
                 }
             } else {
                 html! {}
@@ -744,7 +753,7 @@ impl ItemView {
 
             let oriented = if info.oriented {
                 html! {
-                    <span class={oriented_class}>{"O"}</span>
+                    <span class={oriented_class}>{oriented_text}</span>
                 }
             } else {
                 html! {}

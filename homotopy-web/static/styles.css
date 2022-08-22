@@ -510,6 +510,7 @@ button, .button {
 }
 
 .signature__item-info {
+  position: relative;
   display: flex;
   flex-direction: row;
   align-items: stretch;
@@ -598,7 +599,8 @@ div.signature__item-name {
   display: flex;
 }
 
-span.signature__item-name {
+span.signature__item-name,
+input.signature__item-name {
   height: 75%;
   align-self: center;
   text-overflow: ellipsis;
@@ -607,14 +609,15 @@ span.signature__item-name {
   top: -5px;
 }
 
-.drawer-expanded span.signature__item-name {
+.drawer-expanded span.signature__item-name,
+.drawer-expanded input.signature__item-name {
   height: 100%;
   align-self: flex-start;
   font-size: 20px;
 }
 
-.signature__item-name-input {
-  padding: var(--space-1);
+input.signature__item-name {
+  padding: 0;
   border: none;
   background: transparent;
   user-select: text;
@@ -715,6 +718,12 @@ span.signature__item-name {
   margin-right: 2px;
 }
 
+.drawer-expanded .signature__generator-indicators-wrapper {
+  position: absolute;
+  bottom: 0;
+  left: var(--space-0);
+}
+
 .signature__generator-indicator {
   border-radius: var(--space-0);
   width: 18px;
@@ -724,6 +733,7 @@ span.signature__item-name {
   justify-content: center;
   margin-right: 2px;
   font-weight: bold;
+  box-sizing: border-box;
 }
 
 .signature__generator-indicator-invertible {
@@ -732,6 +742,12 @@ span.signature__item-name {
 
 .signature__generator-indicator-oriented {
   background-color: #27ae60;
+}
+
+.drawer-expanded .signature__generator-indicator {
+  width: auto;
+  height: 24px;
+  padding: var(--space-0);
 }
 
 .signature__generator-previews-wrapper {
