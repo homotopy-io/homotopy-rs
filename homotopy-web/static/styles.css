@@ -784,13 +784,13 @@ input.signature__item-name {
 }
 
 .signature__generator-previews-wrapper svg {
-  max-width: 42px;
-  max-height: 30px;
+  width: 42px;
+  height: 30px;
 }
 
 .drawer-expanded .signature__generator-previews-wrapper svg {
-  max-width: 84px;
-  max-height: 60px;
+  width: 84px;
+  height: 60px;
 }
 
 .signature__generator-preview-spacer {
