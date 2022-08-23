@@ -48,62 +48,62 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
             stylesheet,
             "inverse",
             "point",
-            style.color().with_lightness(0.15)
+            style.color().lighten(0.15)
         );
-        write_style_for!(
-            generator,
-            stylesheet,
-            "zero",
-            "point",
-            style.color().with_lightness(0.23)
-        );
-        write_style_for!(
-            generator,
-            stylesheet,
-            "point",
-            style.color().with_lightness(0.31)
-        );
-
         write_style_for!(
             generator,
             stylesheet,
             "inverse",
             "wire",
-            style.color().with_lightness(0.39)
+            style.color().lighten(0.2)
         );
-        write_style_for!(
-            generator,
-            stylesheet,
-            "zero",
-            "wire",
-            style.color().with_lightness(0.47)
-        );
-        write_style_for!(
-            generator,
-            stylesheet,
-            "wire",
-            style.color().with_lightness(0.55)
-        );
-
         write_style_for!(
             generator,
             stylesheet,
             "inverse",
             "surface",
-            style.color().with_lightness(0.63)
+            style.color().lighten(0.25)
+        );
+
+        write_style_for!(
+            generator,
+            stylesheet,
+            "zero",
+            "point",
+            style.color().lighten(-0.15)
+        );
+        write_style_for!(
+            generator,
+            stylesheet,
+            "zero",
+            "wire",
+            style.color().lighten(-0.1)
         );
         write_style_for!(
             generator,
             stylesheet,
             "zero",
             "surface",
-            style.color().with_lightness(0.71)
+            style.color().lighten(-0.05)
+        );
+
+        write_style_for!(
+            generator,
+            stylesheet,
+            "point",
+            style.color().lighten(0.0)
+        );
+        write_style_for!(
+            generator,
+            stylesheet,
+            "wire",
+            style.color().lighten(0.05)
         );
         write_style_for!(
             generator,
             stylesheet,
             "surface",
-            style.color().with_lightness(0.79)
+            style.color().lighten(0.10)
         );
     }
 
