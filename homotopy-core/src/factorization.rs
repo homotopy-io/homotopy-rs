@@ -59,7 +59,13 @@ pub fn factorize(f: Rewrite, g: Rewrite, target: Diagram) -> Factorization {
                             None => ConeFactorization::Unique(
                                 f_cone.map(|c| vec![c]).unwrap_or_default().into(),
                             ),
-                            g_cone if f_cone == g_cone => ConeFactorization::Unique(vec![].into()),
+                            Some(g_cone)
+                                if f_cone
+                                    .as_ref()
+                                    .map_or(false, |c| c.internal == g_cone.internal) =>
+                            {
+                                ConeFactorization::Unique(vec![].into())
+                            }
                             Some(g_cone) => {
                                 let f_cone_len = f_cone.as_ref().map_or(1, Cone::len);
                                 let constraints: Vec<Range<usize>> =
