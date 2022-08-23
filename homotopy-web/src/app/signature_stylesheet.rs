@@ -59,6 +59,17 @@ impl SignatureStylesheet {
         lightness8: u32,
         lightness9: u32,
     ) {
+        log::debug!("lightenings: {} {} {} {} {} {} {} {} {}",
+                     (lightness1 as f32 - 50.) / 100.,
+                     (lightness2 as f32 - 50.) / 100.,
+                     (lightness3 as f32 - 50.) / 100.,
+                     (lightness4 as f32 - 50.) / 100.,
+                     (lightness5 as f32 - 50.) / 100.,
+                     (lightness6 as f32 - 50.) / 100.,
+                     (lightness7 as f32 - 50.) / 100.,
+                     (lightness8 as f32 - 50.) / 100.,
+                     (lightness9 as f32 - 50.) / 100.
+                     );
         // if signature != self.signature {
         self.signature = signature;
         self.element.set_inner_html(&svg::stylesheet(
