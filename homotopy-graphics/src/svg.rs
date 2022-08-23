@@ -65,14 +65,14 @@ pub fn stylesheet(
             generator,
             stylesheet,
             "inverse",
-            "surface",
+            "wire",
             style.color().lighten(lightness2)
         );
         write_style_for!(
             generator,
             stylesheet,
             "inverse",
-            "wire",
+            "surface",
             style.color().lighten(lightness3)
         );
 
