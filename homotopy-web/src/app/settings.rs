@@ -28,6 +28,16 @@ declare_settings! {
         debug_normals: bool = false,
         disable_lighting: bool = false,
         debug_axes: bool = false,
+
+        lightness1: u32 = 50,
+        lightness2: u32 = 50,
+        lightness3: u32 = 50,
+        lightness4: u32 = 50,
+        lightness5: u32 = 50,
+        lightness6: u32 = 50,
+        lightness7: u32 = 50,
+        lightness8: u32 = 50,
+        lightness9: u32 = 50,
     }
 }
 
@@ -201,6 +211,89 @@ impl Component for SettingsView {
                             "Debug axes",
                             |local| *local.get_debug_axes(),
                             AppSettingsDispatch::set_debug_axes,
+                        )
+                    }
+                </div>
+                <div class="settings__segment">
+                    {
+                        self.view_slider(
+                            "Lighten inverse point [0, 1]",
+                            |local| *local.get_lightness1(),
+                            AppSettingsDispatch::set_lightness1,
+                            0,
+                            100,
+                        )
+                    }
+                    {
+                        self.view_slider(
+                            "Lighten inverse wire [0, 1]",
+                            |local| *local.get_lightness2(),
+                            AppSettingsDispatch::set_lightness2,
+                            0,
+                            100,
+                        )
+                    }
+                    {
+                        self.view_slider(
+                            "Lighten inverse surface [0, 1]",
+                            |local| *local.get_lightness3(),
+                            AppSettingsDispatch::set_lightness3,
+                            0,
+                            100,
+                        )
+                    }
+                    {
+                        self.view_slider(
+                            "Lighten zero point [0, 1]",
+                            |local| *local.get_lightness4(),
+                            AppSettingsDispatch::set_lightness4,
+                            0,
+                            100,
+                        )
+                    }
+                    {
+                        self.view_slider(
+                            "Lighten zero wire [0, 1]",
+                            |local| *local.get_lightness5(),
+                            AppSettingsDispatch::set_lightness5,
+                            0,
+                            100,
+                        )
+                    }
+                    {
+                        self.view_slider(
+                            "Lighten zero surface [0, 1]",
+                            |local| *local.get_lightness6(),
+                            AppSettingsDispatch::set_lightness6,
+                            0,
+                            100,
+                        )
+                    }
+                    {
+                        self.view_slider(
+                            "Lighten point [0, 1]",
+                            |local| *local.get_lightness7(),
+                            AppSettingsDispatch::set_lightness7,
+                            0,
+                            100,
+                        )
+                    }
+                    {
+                        self.view_slider(
+                            "Lighten wire [0, 1]",
+                            |local| *local.get_lightness8(),
+                            AppSettingsDispatch::set_lightness8,
+                            0,
+                            100,
+                        )
+                    }
+                    {
+                        self.view_slider(
+                            "Lighten surface [0, 1]",
+                            |local| *local.get_lightness9(),
+                            AppSettingsDispatch::set_lightness9,
+                            0,
+                            100,
                         )
                     }
                 </div>

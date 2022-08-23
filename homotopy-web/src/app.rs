@@ -11,7 +11,7 @@ use crate::{
     components::{
         icon::{Icon, IconSize},
         panzoom::PanZoom,
-        settings::Settings,
+        settings::{KeyStore, Settings, Store},
         toast::{Toast, Toaster, ToasterComponent},
     },
     model,
@@ -37,6 +37,7 @@ pub struct Props {}
 
 pub enum Message {
     Dispatch(model::Action),
+    Setting(<Store<AppSettings> as KeyStore>::Message),
 }
 
 pub struct App {
@@ -46,6 +47,7 @@ pub struct App {
     signature_stylesheet: SignatureStylesheet,
     toaster: Toaster,
     _settings: AppSettings,
+    local: crate::components::settings::Store<AppSettings>,
     before_unload: Option<Closure<dyn FnMut(web_sys::BeforeUnloadEvent)>>,
 }
 
@@ -55,10 +57,24 @@ impl Component for App {
 
     #[allow(unused_variables)]
     fn create(ctx: &Context<Self>) -> Self {
+        let mut settings = AppSettings::connect(ctx.link().callback(Message::Setting));
+        settings.subscribe(AppSettings::ALL);
+
         let state = model::State::default();
         // Install the signature stylesheet
         let mut signature_stylesheet = SignatureStylesheet::new();
-        signature_stylesheet.update(state.with_proof(|p| p.signature().clone()).unwrap());
+        signature_stylesheet.update(
+            state.with_proof(|p| p.signature().clone()).unwrap(),
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        );
         signature_stylesheet.mount();
 
         Self {
@@ -67,13 +83,31 @@ impl Component for App {
             orbit_control: GlViewControl::new(),
             signature_stylesheet,
             toaster: Toaster::new(),
-            _settings: AppSettings::connect(Callback::noop()),
+            _settings: settings,
+            local: Default::default(),
             before_unload: None,
         }
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            Message::Setting(msg) => {
+                self.local.set(&msg);
+                self.signature_stylesheet.update(
+                    self.state.with_proof(|p| p.signature().clone()).unwrap(),
+                    *self.local.get_lightness1(),
+                    *self.local.get_lightness2(),
+                    *self.local.get_lightness3(),
+                    *self.local.get_lightness4(),
+                    *self.local.get_lightness5(),
+                    *self.local.get_lightness6(),
+                    *self.local.get_lightness7(),
+                    *self.local.get_lightness8(),
+                    *self.local.get_lightness9(),
+                );
+
+                true
+            }
             Message::Dispatch(action) => {
                 if !self
                     .state
@@ -134,8 +168,18 @@ impl Component for App {
                     log::error!("Error occured: {}", error);
                 }
 
-                self.signature_stylesheet
-                    .update(self.state.with_proof(|p| p.signature().clone()).unwrap());
+                self.signature_stylesheet.update(
+                    self.state.with_proof(|p| p.signature().clone()).unwrap(),
+                    *self.local.get_lightness1(),
+                    *self.local.get_lightness2(),
+                    *self.local.get_lightness3(),
+                    *self.local.get_lightness4(),
+                    *self.local.get_lightness5(),
+                    *self.local.get_lightness6(),
+                    *self.local.get_lightness7(),
+                    *self.local.get_lightness8(),
+                    *self.local.get_lightness9(),
+                );
 
                 true
             }
