@@ -7,68 +7,122 @@ use crate::style::{GeneratorStyle, SignatureStyleData};
 pub mod render;
 pub mod shape;
 
+macro_rules! write_style_for {
+    (@fmt_str "surface") => {
+        ".{name}{orientation} {{ fill: {color}; stroke: {color}; }}"
+    };
+    (@fmt_str "wire") => {
+        ".{name}{orientation} {{ stroke: {color}; }}"
+    };
+    (@fmt_str "point") => {
+        ".{name}{orientation} {{ fill: {color}; }}"
+    };
+    ($generator:expr, $stylesheet:expr, $orientation:literal, $codimension:tt, $color:expr) => {{
+        writeln!(
+            $stylesheet,
+            write_style_for!(@fmt_str $codimension),
+            name = generator_class($generator, $codimension),
+            orientation = format!(".{}--{}", $orientation, $codimension),
+            color = $color.hex(),
+        )
+        .unwrap()
+    }};
+    ($generator:expr, $stylesheet:expr, $codimension:tt, $color:expr) => {{
+        writeln!(
+            $stylesheet,
+            write_style_for!(@fmt_str $codimension),
+            name = generator_class($generator, $codimension),
+            orientation = "",
+            color = $color.hex(),
+        )
+        .unwrap()
+    }};
+}
+
 pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
     let mut stylesheet = String::new();
 
     for (generator, style) in styles.as_pairs() {
-        writeln!(
+        write_style_for!(
+            generator,
             stylesheet,
-            ".{name} {{ fill: {color}; stroke: {color}; }}",
-            name = generator_class(generator, "surface"),
-            color = &style.color().lighten(0.1).hex()
-        )
-        .unwrap();
-        writeln!(
+            "inverse",
+            "point",
+            style.color().with_lightness(0.15)
+        );
+        write_style_for!(
+            generator,
             stylesheet,
-            ".{name} {{ stroke: {color}; }}",
-            name = generator_class(generator, "wire"),
-            color = &style.color().lighten(0.05).hex()
-        )
-        .unwrap();
-        writeln!(
+            "zero",
+            "point",
+            style.color().with_lightness(0.23)
+        );
+        write_style_for!(
+            generator,
             stylesheet,
-            ".{name} {{ fill: {color}; }}",
-            name = generator_class(generator, "point"),
-            color = &style.color().hex()
-        )
-        .unwrap();
+            "point",
+            style.color().with_lightness(0.31)
+        );
 
-        writeln!(
+        write_style_for!(
+            generator,
             stylesheet,
-            ".{name}.inverse--surface {{ fill: {color}; stroke: {color}; }}",
-            name = generator_class(generator, "surface"),
-            color = &style.color().desaturate_and_lighten(0.3, 0.1).hex()
-        )
-        .unwrap();
-        writeln!(
+            "inverse",
+            "wire",
+            style.color().with_lightness(0.39)
+        );
+        write_style_for!(
+            generator,
             stylesheet,
-            ".{name}.inverse--wire {{ stroke: {color}; }}",
-            name = generator_class(generator, "wire"),
-            color = &style.color().desaturate_and_lighten(0.3, 0.05).hex()
-        )
-        .unwrap();
-        writeln!(
+            "zero",
+            "wire",
+            style.color().with_lightness(0.47)
+        );
+        write_style_for!(
+            generator,
             stylesheet,
-            ".{name}.inverse--point {{ fill: {color}; }}",
-            name = generator_class(generator, "point"),
-            color = &style.color().desaturate_and_lighten(0.3, 0.).hex()
-        )
-        .unwrap();
+            "wire",
+            style.color().with_lightness(0.55)
+        );
+
+        write_style_for!(
+            generator,
+            stylesheet,
+            "inverse",
+            "surface",
+            style.color().with_lightness(0.63)
+        );
+        write_style_for!(
+            generator,
+            stylesheet,
+            "zero",
+            "surface",
+            style.color().with_lightness(0.71)
+        );
+        write_style_for!(
+            generator,
+            stylesheet,
+            "surface",
+            style.color().with_lightness(0.79)
+        );
     }
 
     stylesheet
 }
 
 pub fn generator_class(generator: Generator, suffix: &str) -> String {
-    if generator.orientation == Orientation::Positive {
-        format!(
+    match generator.orientation {
+        Orientation::Positive => format!(
             "generator__{}-{}--{}",
             generator.id, generator.dimension, suffix
-        )
-    } else {
-        format!(
+        ),
+        Orientation::Zero => format!(
+            "generator__{}-{}--{} zero--{}",
+            generator.id, generator.dimension, suffix, suffix
+        ),
+        Orientation::Negative => format!(
             "generator__{}-{}--{} inverse--{}",
             generator.id, generator.dimension, suffix, suffix
-        )
+        ),
     }
 }

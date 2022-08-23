@@ -36,6 +36,15 @@ impl Color {
         Self(palette::Lighten::lighten(self.0.into_linear(), amount).into())
     }
 
+    #[must_use]
+    pub fn with_lightness(&self, lightness: f32) -> Self {
+        let mut hsl: palette::Hsl =
+            palette::convert::FromColor::from_color(self.0.into_format::<f32>());
+        hsl.lightness = lightness;
+        let srgb: palette::Srgb<f32> = palette::convert::FromColor::from_color(hsl);
+        Self(srgb.into_format())
+    }
+
     // we combine saturate and lighten into a single function since we need to convert SRGB into
     // HSL or HSV color space anyway and we save some computation by lightening this directly
     // instead of the resulting SRGB.
