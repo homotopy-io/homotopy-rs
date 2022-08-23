@@ -15,7 +15,7 @@ homotopy-core = { path = "../homotopy-core" }
 # TODO(@doctorn) remove if/when we switch to GL-backed 2D rendering
 euclid = "0.22.7"
 itertools = "0.10.3"
-js-sys = "0.3.58"
+js-sys = "0.3.59"
 log = "0.4.16"
 lyon_algorithms = "1.0.1"
 lyon_geom = "1.0.1"
@@ -27,7 +27,7 @@ serde = { features = ["derive"], version = "1.0.144" }
 serde_json = "1.0.85"
 thiserror = "1.0.32"
 ultraviolet = "0.9.0"
-wasm-bindgen = "0.2.80"
+wasm-bindgen = "0.2.82"
 yew = "0.19.3"
 
 [dependencies.web-sys]

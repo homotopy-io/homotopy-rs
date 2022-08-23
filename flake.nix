@@ -84,7 +84,11 @@
     // inputs.flake-utils.lib.eachDefaultSystem (
       system:
       let
-        overlays = [ (import inputs.rust-overlay) ];
+        # Binaryen's tests are broken
+        binaryen-fix = self: super: {
+          binaryen = super.binaryen.overrideAttrs (old: { doCheck = false; });
+        };
+        overlays = [ (import inputs.rust-overlay) binaryen-fix ];
         pkgs = import inputs.nixpkgs {
           inherit system overlays;
         };
