@@ -517,6 +517,10 @@ button, .button {
   height: 32px;
 }
 
+.drawer-expanded .signature__item.signature__folder-editing {
+  height: calc(2 * var(--signature-height));
+}
+
 .signature__item-info {
   position: relative;
   flex: 0 0 auto;
