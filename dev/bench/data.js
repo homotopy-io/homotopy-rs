@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1661176555606,
+  "lastUpdate": 1661373236418,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -39959,6 +39959,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 26.182,
             "range": "+/- 0.027",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "aj.courtney@icloud.com",
+            "name": "Anastasia Courtney",
+            "username": "anastasia-jc"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9a0198d6bed2a9018f2b8b239c21fc5c28ed0a17",
+          "message": "Add metadata to ProofState and ProjectView (#741)\n\n* Add metadata to ProofState and ProjectView\r\n\r\nChanged ProjectView from Function Component to Component, implemented metadata as state within ProofState.\r\n\r\n* Undo snapshot deletion.\r\n\r\n* Formatted.\r\n\r\n* Fix undo/redo for EditMetadata action\r\n\r\n* Revert change to makefile\r\n\r\n* Fix import\r\n\r\n* Renamed abstract_ to abstr.\r\n\r\nCo-authored-by: regular-citizen <7887982+regular-citizen@users.noreply.github.com>\r\nCo-authored-by: Calin Tataru <calintat@gmail.com>\r\nCo-authored-by: thud <thud@thud.dev>",
+          "timestamp": "2022-08-24T19:23:22Z",
+          "tree_id": "e3e3910b3ba2042e9b2a2ffbc5dc0eb345d6d812",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/9a0198d6bed2a9018f2b8b239c21fc5c28ed0a17"
+        },
+        "date": 1661373215093,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.5349,
+            "range": "+/- 0.044",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 13.594,
+            "range": "+/- 0.208",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 60.791,
+            "range": "+/- 0.697",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 389.87,
+            "range": "+/- 3.210",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 3.2195,
+            "range": "+/- 0.009",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 31.476,
+            "range": "+/- 0.199",
             "unit": "s"
           }
         ]
