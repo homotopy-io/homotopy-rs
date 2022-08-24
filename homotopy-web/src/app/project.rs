@@ -95,8 +95,8 @@ impl Component for ProjectView {
                     class="metadata_abstract"
                     name="Abstract"
                     value = {
-                        let abstract_ = ctx.props().metadata.abstract_.clone();
-                        match abstract_ {
+                        let abstr = ctx.props().metadata.abstr.clone();
+                        match abstr {
                             Some(value) => value,
                             None => "Abstract".to_owned(),
                     }}

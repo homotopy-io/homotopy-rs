@@ -250,7 +250,7 @@ impl From<Tree<SignatureItem>> for Signature {
 pub struct Metadata {
     pub title: Option<String>,
     pub author: Option<String>,
-    pub abstract_: Option<String>,
+    pub abstr: Option<String>,
 }
 
 impl Metadata {
@@ -258,7 +258,7 @@ impl Metadata {
         Self {
             title: None,
             author: None,
-            abstract_: None,
+            abstr: None,
         }
     }
 
@@ -266,7 +266,7 @@ impl Metadata {
         match edit {
             MetadataEdit::Title(title) => self.title = Some(title),
             MetadataEdit::Author(author) => self.author = Some(author),
-            MetadataEdit::Abstract(abstract_) => self.abstract_ = Some(abstract_),
+            MetadataEdit::Abstract(abstr) => self.abstr = Some(abstr),
         }
     }
 }

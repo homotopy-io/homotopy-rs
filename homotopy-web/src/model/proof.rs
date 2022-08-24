@@ -348,7 +348,7 @@ impl ProofState {
         match edit {
             MetadataEdit::Title(title) => self.metadata.title = Some(title.clone()),
             MetadataEdit::Author(author) => self.metadata.author = Some(author.clone()),
-            MetadataEdit::Abstract(abstract_) => self.metadata.abstract_ = Some(abstract_.clone()),
+            MetadataEdit::Abstract(abstr) => self.metadata.abstr = Some(abstr.clone()),
         }
     }
 
