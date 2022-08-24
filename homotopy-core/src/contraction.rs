@@ -790,10 +790,10 @@ fn collapse_recursive<Ix: IndexType>(
                 .ok_or(ContractionError::Invalid)?;
             // throw away extra information used to compute source and target
             let restriction = restriction.filter_map(
-                |_, (d, _, coord)| {
+                |_, (d, bias, coord)| {
                     (
                         d.clone(),
-                        None, // throw away biasing information for subproblems
+                        bias.filter(|bias| *bias == Bias::Same),
                         coord.clone(),
                     )
                         .into()
