@@ -405,6 +405,33 @@ button, .button {
   padding: var(--space-1);
 }
 
+/* Metadata */
+/* TODO: Wraparound */
+
+.metadata_title {
+  inline-size: 150px; 
+  overflow: hidden;
+  font-size: 1.6em;
+  padding: var(--space-1);
+  border: none;
+  background: transparent;
+  user-select: text;
+}
+.metadata_author {
+  font-weight: bold;
+  padding: var(--space-1);
+  border: none;
+  background: transparent;
+  user-select: text;
+}
+.metadata_abstract {
+  font-weight: light;
+  padding: var(--space-1);
+  border: none;
+  background: transparent;
+  user-select: text;
+}
+
 /* Signature */
 
 .signature__item {

@@ -100,8 +100,11 @@ declare_sidebar_drawers! {
         "Project",
         "project",
         "info",
-        |dispatch, _| html! {
-            <ProjectView dispatch={dispatch} />
+        |dispatch, proof: &Proof| html! {
+            <ProjectView
+                dispatch={dispatch}
+                metadata={proof.metadata().clone()}
+            />
         },
     }
 

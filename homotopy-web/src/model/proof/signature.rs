@@ -246,6 +246,45 @@ impl From<Tree<SignatureItem>> for Signature {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize)]
+pub struct Metadata {
+    pub title: Option<String>,
+    pub author: Option<String>,
+    pub abstr: Option<String>,
+}
+
+impl Metadata {
+    pub fn new() -> Self {
+        Self {
+            title: None,
+            author: None,
+            abstr: None,
+        }
+    }
+
+    pub fn edit(&mut self, edit: MetadataEdit) -> () {
+        match edit {
+            MetadataEdit::Title(title) => self.title = Some(title),
+            MetadataEdit::Author(author) => self.author = Some(author),
+            MetadataEdit::Abstract(abstr) => self.abstr = Some(abstr),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum MetadataEdit {
+    Title(String),
+    Author(String),
+    Abstract(String),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MetadataViewMessage {
+    Edit(MetadataEdit),
+    //SwitchView(Mode),
+    Noop,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FolderInfo {
     pub id: usize,

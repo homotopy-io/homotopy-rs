@@ -99,6 +99,7 @@ pub struct SelectedBoundary {
 pub struct ProofState {
     pub(super) signature: Signature,
     pub(super) workspace: Option<Workspace>,
+    pub(super) metadata: Metadata,
     boundary: Option<SelectedBoundary>,
 }
 
@@ -169,6 +170,8 @@ pub enum Action {
     Imported,
 
     EditSignature(SignatureEdit),
+
+    EditMetadata(MetadataEdit),
 
     FlipBoundary,
 
@@ -244,6 +247,7 @@ impl ProofState {
             Action::FlipBoundary => self.flip_boundary(),
             Action::RecoverBoundary => self.recover_boundary(),
             Action::Imported | Action::Nothing => {}
+            Action::EditMetadata(edit) => self.edit_metadata(edit),
         }
 
         Ok(())
@@ -338,6 +342,14 @@ impl ProofState {
         }
 
         self.signature.update(edit);
+    }
+
+    fn edit_metadata(&mut self, edit: &MetadataEdit) {
+        match edit {
+            MetadataEdit::Title(title) => self.metadata.title = Some(title.clone()),
+            MetadataEdit::Author(author) => self.metadata.author = Some(author.clone()),
+            MetadataEdit::Abstract(abstr) => self.metadata.abstr = Some(abstr.clone()),
+        }
     }
 
     /// Handler for [Action::SetBoundary].
@@ -920,6 +932,10 @@ impl ProofState {
 
     pub fn signature(&self) -> &Signature {
         &self.signature
+    }
+
+    pub fn metadata(&self) -> &Metadata {
+        &self.metadata
     }
 
     pub fn attach_options(&self) -> Option<&Vector<AttachOption>> {
