@@ -356,6 +356,12 @@ impl Rewrite {
     }
 
     #[inline]
+    pub fn is_homotopy(&self) -> bool {
+        self.max_generator(Boundary::Target)
+            .map_or(true, |g| g.dimension <= self.dimension())
+    }
+
+    #[inline]
     pub fn compose(&self, g: &Self) -> Result<Self, CompositionError> {
         match (self, g) {
             (Self::Rewrite0(ref f), Self::Rewrite0(ref g)) => Ok(f.compose(g)?.into()),

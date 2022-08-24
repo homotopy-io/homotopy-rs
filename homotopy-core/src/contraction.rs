@@ -181,7 +181,8 @@ fn contract_base(
         Diagram::Diagram0(_) => {
             // Coarse smoothing
             // A cospan is smoothable if the forward and backward rewrites are identical and redundant.
-            let cone = (cospan.forward == cospan.backward && cospan.forward.is_redundant())
+            let cone = cospan
+                .is_redundant()
                 .then(|| Cone::new_0(height, cospan.clone(), cospan.forward));
             RewriteN::new(diagram.dimension(), cone.into_iter().collect())
         }
@@ -876,8 +877,14 @@ fn collapse_recursive<Ix: IndexType>(
     })
 }
 
-impl Rewrite {
+impl Cospan {
     pub fn is_redundant(&self) -> bool {
+        self.forward == self.backward && self.forward.is_redundant()
+    }
+}
+
+impl Rewrite {
+    fn is_redundant(&self) -> bool {
         match self {
             Rewrite::Rewrite0(r) => r
                 .target()
