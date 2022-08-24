@@ -737,6 +737,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3688f13e7735ae5ca93edc490f6c5885b77d473255bc1fed92b9c805f972bf94"
 
 [[package]]
+name = "homotopy-cli"
+version = "0.1.0"
+dependencies = [
+ "homotopy-common",
+ "homotopy-core",
+ "homotopy-model",
+]
+
+[[package]]
 name = "homotopy-common"
 version = "0.1.0"
 dependencies = [
@@ -782,6 +791,7 @@ dependencies = [
  "euclid",
  "homotopy-common",
  "homotopy-core",
+ "homotopy-model",
  "insta",
  "itertools",
  "js-sys",
@@ -802,6 +812,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "homotopy-model"
+version = "0.1.0"
+dependencies = [
+ "homotopy-common",
+ "homotopy-core",
+]
+
+[[package]]
 name = "homotopy-web"
 version = "0.1.2"
 dependencies = [
@@ -818,6 +836,7 @@ dependencies = [
  "homotopy-common",
  "homotopy-core",
  "homotopy-graphics",
+ "homotopy-model",
  "im",
  "instant",
  "js-sys",
