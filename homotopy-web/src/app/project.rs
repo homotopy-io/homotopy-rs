@@ -1,48 +1,55 @@
-use web_sys::HtmlInputElement;
+use closure::closure;
+use web_sys::{File, HtmlInputElement};
 use yew::prelude::*;
 
 use crate::model::{
-    proof::{Metadata, MetadataEdit},
-    Action,
+    self,
+    proof::{self, Metadata, MetadataEdit},
 };
 
-#[derive(Properties, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Msg {
+    ImportProof(File),
+    EditMetadata(MetadataEdit),
+    Noop,
+}
+
+#[derive(Debug, Properties, Clone, PartialEq)]
 pub struct Props {
-    pub dispatch: Callback<Action>,
+    pub dispatch: Callback<model::Action>,
     #[prop_or_default]
     pub metadata: Metadata,
 }
-pub struct ProjectView {}
+
+pub struct ProjectView {
+    reader: Option<gloo::file::callbacks::FileReader>,
+}
 
 impl Component for ProjectView {
-    type Message = crate::model::proof::Action;
+    type Message = Msg;
     type Properties = Props;
 
     fn create(_ctx: &Context<Self>) -> Self {
-        Self {}
+        Self { reader: None }
     }
+
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let export = ctx.props().dispatch.reform(|_| Action::ExportProof);
-        // TODO (@anastaia-jc) broken:
-        // let dispatch = &ctx.props().dispatch;
-        // let reader_task = use_mut_ref(|| None);
-        // let import = Callback::from(closure!(clone dispatch, |evt: Event| {
-        //     let input: HtmlInputElement = evt.target_unchecked_into();
-        //     if let Some(filelist) = input.files() {
-        //         let file = filelist.get(0).unwrap();
-        //         let task = gloo::file::callbacks::read_as_bytes(&file.into(), closure!(clone dispatch, |res| {
-        //             dispatch.emit(Action::ImportProof(res.expect("failed to read file").into()));
-        //         }));
-        //         *reader_task.borrow_mut() = Some(task);
-        //     }
-        // }));
+        let export = ctx.props().dispatch.reform(|_| model::Action::ExportProof);
+        let import = ctx.link().callback(|e: Event| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            if let Some(filelist) = input.files() {
+                Msg::ImportProof(filelist.get(0).unwrap())
+            } else {
+                Msg::Noop
+            }
+        });
         html! {
             <>
                 <button onclick={export}>{"Export"}</button>
                 <label for="import" class="button">
                     {"Import"}
                 </label>
-                // <input type="file" accept="application/msgpack,.hom" class="visually-hidden" id="import" onchange={import}/>
+                <input type="file" accept="application/msgpack,.hom" class="visually-hidden" id="import" onchange={import}/>
                 <input
                     type="text"
                     class="metadata_title"
@@ -55,11 +62,11 @@ impl Component for ProjectView {
                     }}
                     oninput={ctx.link().callback(move |e: InputEvent| {
                         let input: HtmlInputElement = e.target_unchecked_into();
-                        crate::model::proof::Action::EditMetadata(MetadataEdit::Title(input.value()))
+                        Msg::EditMetadata(MetadataEdit::Title(input.value()))
                     })}
                     onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
                         e.stop_propagation();
-                        crate::model::proof::Action::Nothing
+                        Msg::Noop
                     })}
                 />
 
@@ -75,11 +82,11 @@ impl Component for ProjectView {
                     }}
                     oninput={ctx.link().callback(move |e: InputEvent| {
                         let input: HtmlInputElement = e.target_unchecked_into();
-                        crate::model::proof::Action::EditMetadata(MetadataEdit::Author(input.value()))
+                        Msg::EditMetadata(MetadataEdit::Author(input.value()))
                     })}
                     onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
                         e.stop_propagation();
-                        crate::model::proof::Action::Nothing
+                        Msg::Noop
                     })}
                 />
 
@@ -95,24 +102,35 @@ impl Component for ProjectView {
                     }}
                     oninput={ctx.link().callback(move |e: InputEvent| {
                         let input: HtmlInputElement = e.target_unchecked_into();
-                        crate::model::proof::Action::EditMetadata(MetadataEdit::Abstract(input.value()))
+                        Msg::EditMetadata(MetadataEdit::Abstract(input.value()))
                     })}
                     onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
                         e.stop_propagation();
-                        crate::model::proof::Action::Nothing
+                        Msg::Noop
                     })}
                 />
             </>
         }
     }
+
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-        if let crate::model::proof::Action::EditMetadata(edit) = msg {
-            ctx.props()
-                .dispatch
-                .emit(Action::Proof(crate::model::proof::Action::EditMetadata(
-                    edit,
-                )));
+        let dispatch = &ctx.props().dispatch;
+        match msg {
+            Msg::ImportProof(file) => {
+                let task = gloo::file::callbacks::read_as_bytes(
+                    &file.into(),
+                    closure!(clone dispatch, |res| {
+                        dispatch.emit(model::Action::ImportProof(res.expect("failed to read file").into()));
+                    }),
+                );
+                self.reader = Some(task);
+                false
+            }
+            Msg::EditMetadata(edit) => {
+                dispatch.emit(model::Action::Proof(proof::Action::EditMetadata(edit)));
+                true
+            }
+            Msg::Noop => false,
         }
-        true
     }
 }
