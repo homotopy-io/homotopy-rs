@@ -156,11 +156,23 @@ impl Component for Sidebar {
 impl Sidebar {
     fn drawer(&self, ctx: &Context<Self>) -> Html {
         let dispatch = &ctx.props().dispatch;
-        let attach_options = ctx
-            .props()
-            .proof
-            .workspace()
-            .and_then(|workspace| workspace.attach.clone());
+        let proof = &ctx.props().proof;        
+
+        if proof.image_export {
+            return html! {
+                <SidebarDrawer
+                    // Re-using the attach class here, will give a new class later (perhaps)
+                    class="attach"
+                    title="Image export"
+                    dispatch={dispatch}
+                    icon="close"
+                    on_click={model::Action::ExportImage}
+                >
+                </SidebarDrawer>
+            };
+        }
+
+        let attach_options = proof.workspace().and_then(|workspace| workspace.attach.clone());
 
         if let Some(attach_options) = attach_options {
             return html! {

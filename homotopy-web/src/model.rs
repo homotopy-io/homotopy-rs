@@ -220,7 +220,20 @@ impl State {
             }
 
             Action::ExportImage => {
-
+                let mut proof = self.with_proof(Clone::clone);
+                if proof.image_export {
+                   proof.image_export = false;
+                   self.history.add(proof::Action::Nothing, proof);
+                } else{
+                    proof.image_export = true;
+                    
+                    if let Some(attach_options) = proof.workspace().and_then(|workspace| workspace.attach.clone()) {
+                        proof.update(&proof::Action::ClearAttach).map_err(ModelError::from)?;
+                        self.history.add(proof::Action::ClearAttach, proof);
+                    } else {
+                        self.history.add(proof::Action::Nothing, proof);
+                    }
+                }
             }
         }
 
