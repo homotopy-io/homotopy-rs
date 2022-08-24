@@ -14,7 +14,6 @@ use homotopy_core::{
     typecheck::TypeError,
     Diagram, DiagramN,
 };
-
 use im::Vector;
 use serde::{Deserialize, Serialize};
 pub use signature::*;
@@ -247,8 +246,8 @@ impl ProofState {
             Action::EditSignature(edit) => self.edit_signature(edit),
             Action::FlipBoundary => self.flip_boundary(),
             Action::RecoverBoundary => self.recover_boundary(),
-            Action::Imported | Action::Nothing => {},
-            Action::EditMetadata(edit) => self.edit_metadata(edit)
+            Action::Imported | Action::Nothing => {}
+            Action::EditMetadata(edit) => self.edit_metadata(edit),
         }
 
         Ok(())
@@ -350,9 +349,8 @@ impl ProofState {
             MetadataEdit::Title(title) => self.metadata.title = Some(title.clone()),
             MetadataEdit::Author(author) => self.metadata.author = Some(author.clone()),
             MetadataEdit::Abstract(abstract_) => self.metadata.abstract_ = Some(abstract_.clone()),
-        }    
-    } 
-    
+        }
+    }
 
     /// Handler for [Action::SetBoundary].
     fn set_boundary(&mut self, boundary: Boundary) -> Result<(), ModelError> {

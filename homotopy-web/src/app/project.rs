@@ -1,7 +1,10 @@
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-use crate::model::{Action, proof::{Metadata, MetadataEdit}};
+use crate::model::{
+    proof::{Metadata, MetadataEdit},
+    Action,
+};
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct Props {
@@ -16,24 +19,24 @@ impl Component for ProjectView {
     type Properties = Props;
 
     fn create(_ctx: &Context<Self>) -> Self {
-        Self{}
+        Self {}
     }
     fn view(&self, ctx: &Context<Self>) -> Html {
         let export = ctx.props().dispatch.reform(|_| Action::ExportProof);
         // TODO (@anastaia-jc) broken:
-            // let dispatch = &ctx.props().dispatch;
-            // let reader_task = use_mut_ref(|| None);
-            // let import = Callback::from(closure!(clone dispatch, |evt: Event| {
-            //     let input: HtmlInputElement = evt.target_unchecked_into();
-            //     if let Some(filelist) = input.files() {
-            //         let file = filelist.get(0).unwrap();
-            //         let task = gloo::file::callbacks::read_as_bytes(&file.into(), closure!(clone dispatch, |res| {
-            //             dispatch.emit(Action::ImportProof(res.expect("failed to read file").into()));
-            //         }));
-            //         *reader_task.borrow_mut() = Some(task);
-            //     }
-            // }));
-        html! { 
+        // let dispatch = &ctx.props().dispatch;
+        // let reader_task = use_mut_ref(|| None);
+        // let import = Callback::from(closure!(clone dispatch, |evt: Event| {
+        //     let input: HtmlInputElement = evt.target_unchecked_into();
+        //     if let Some(filelist) = input.files() {
+        //         let file = filelist.get(0).unwrap();
+        //         let task = gloo::file::callbacks::read_as_bytes(&file.into(), closure!(clone dispatch, |res| {
+        //             dispatch.emit(Action::ImportProof(res.expect("failed to read file").into()));
+        //         }));
+        //         *reader_task.borrow_mut() = Some(task);
+        //     }
+        // }));
+        html! {
             <>
                 <button onclick={export}>{"Export"}</button>
                 <label for="import" class="button">
@@ -101,12 +104,15 @@ impl Component for ProjectView {
                 />
             </>
         }
-
     }
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         if let crate::model::proof::Action::EditMetadata(edit) = msg {
-                ctx.props().dispatch.emit(Action::Proof(crate::model::proof::Action::EditMetadata(edit)));
-            }
+            ctx.props()
+                .dispatch
+                .emit(Action::Proof(crate::model::proof::Action::EditMetadata(
+                    edit,
+                )));
+        }
         true
     }
 }
