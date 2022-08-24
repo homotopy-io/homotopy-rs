@@ -782,11 +782,6 @@ input.signature__item-name {
   height: 30px;
 }
 
-.drawer-compact .signature__generator-previews-wrapper {
-  display: none;
-  transition: 100ms;
-}
-
 .signature__generator-previews-wrapper svg {
   width: 42px;
   height: 30px;
