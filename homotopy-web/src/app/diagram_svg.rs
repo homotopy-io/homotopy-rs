@@ -487,13 +487,61 @@ impl<const N: usize> DiagramSvg<N> {
         Some(self.prepared.transform.transform_point(point))
     }
 
+    // Here be dragons, the code looks ugly but it's not conceptually hard.
+    // The simplex_at algorithm in most cases simply needs the
+    // first simplex it finds containing a point.
+    // However, sometimes we're working in a diagram with a single regular height
+    // R0, and we will get wires with both [Source, R0] and [Target, R0].
+    // We take both answers to be wrong, as we actually just want [R0,R0].
+    // The below just does the case analysis for this.
     fn simplex_at(&self, point: Point2D<f32>) -> Option<Simplex<N>> {
+        use Simplex::Wire;
+        use SliceIndex::{Boundary, Interior};
         let point = self.transform_screen_to_image().transform_point(point);
-        self.prepared
+
+        //TODO this is only for debug purposes
+        //Remove before merging
+        let cand: Vec<_> = self
+            .prepared
             .actions
             .iter()
-            .find(|(_, shape)| shape.contains_point(point, 0.01))
+            //.filter(|(_, shape)| shape.contains_point(point, 0.01))
+            .map(|(simplex, shape)| (shape.clone().contains_point(point, 0.01), simplex.clone()))
+            .collect();
+        log::warn!("Candidates: {:?}", cand);
+
+        let mut it = self
+            .prepared
+            .actions
+            .iter()
+            .filter(|(_, shape)| shape.contains_point(point, 0.01))
             .map(|(simplex, _)| simplex.clone())
+            .take(2);
+        match (it.next(), it.next()) {
+            (Some(Wire(w0)), Some(Wire(w1))) => {
+                // The condition is:
+                // - First coordinates of first components are distinct boundaries
+                // - First coordinate of second component is interior
+                // - Matching first coordinate of second components
+                // - Matching second components
+                match (
+                    w0[0][0],
+                    w0[1][0],
+                    w1[0][0],
+                    w0[0][1] == w1[0][1],
+                    w0[1] == w1[1],
+                ) {
+                    (Boundary(b1), Interior(_), Boundary(b2), true, true) if b1 != b2 => {
+                        let mut w = w0;
+                        w[0][0] = w[1][0];
+                        Some(Wire(w))
+                    }
+                    (_, _, _, _, _) => Some(Wire(w1)),
+                }
+            }
+            (Some(s), _) => Some(s),
+            (None, _) => None,
+        }
     }
 
     fn pointer_move(&mut self, ctx: &Context<Self>, point: Point2D<f32>) {
