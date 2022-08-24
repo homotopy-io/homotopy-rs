@@ -134,7 +134,7 @@ impl<const N: usize> PreparedDiagram<N> {
             .map(|action| {
                 let shape = action
                     .transformed(&transform)
-                    .to_shape(style.wire_thickness, style.point_radius * 3.0);
+                    .to_shape(style.wire_thickness, style.point_radius * 2.0);
                 ((&action).into(), shape)
             })
             .collect();
