@@ -556,12 +556,12 @@ fn drag_to_homotopy<const N: usize>(
     let abs_radians = angle.radians.abs();
     let horizontal = !(PI / 4.0..(3.0 * PI) / 4.0).contains(&abs_radians);
 
-    let (point, boundary) = match simplex {
-        Simplex::Surface([p0, _, _]) => (p0, false),
-        Simplex::Wire([_, p1]) if matches!(p1[0], Boundary(_)) => (p1, true),
-        Simplex::Wire([p0, _]) => (p0, false),
-        Simplex::Point([p0]) => (p0, false),
+    let point = match simplex {
+        Simplex::Surface([p0, _, _]) => p0,
+        Simplex::Wire([p0, _]) => p0,
+        Simplex::Point([p0]) => p0,
     };
+    log::debug!("Point: {:?}", point);
 
     match N {
         1 => {
@@ -593,12 +593,9 @@ fn drag_to_homotopy<const N: usize>(
             let diagram: DiagramN = diagram.try_into().ok()?;
 
             // Handle horizontal and vertical drags
-            log::debug!("Point: {:?}", point);
-            let (prefix, y, x, diagram) = if horizontal || boundary {
+            let (prefix, y, x, diagram) = if horizontal {
                 let depth = match point[1] {
-                    Interior(Singular(_)) =>
-                    /* TODO: cancellation moves by invertibility */
-                    {
+                    Interior(Singular(_)) => {
                         Height::Singular(depths.node_depth(*point).unwrap_or_default())
                     }
                     _ => return None,
@@ -642,7 +639,7 @@ fn drag_to_homotopy<const N: usize>(
                 }
             };
 
-            let direction = if horizontal || boundary {
+            let direction = if horizontal {
                 if (-0.5 * PI..0.5 * PI).contains(&angle.radians) {
                     Direction::Forward
                 } else {
@@ -664,7 +661,7 @@ fn drag_to_homotopy<const N: usize>(
                     direction,
                 }))
             } else {
-                let bias = if horizontal || boundary || abs_radians >= PI / 2.0 {
+                let bias = if horizontal || abs_radians >= PI / 2.0 {
                     Bias::Lower
                 } else {
                     Bias::Higher
