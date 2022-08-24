@@ -185,7 +185,7 @@ impl Action {
     pub fn relevant(&self) -> bool {
         !matches!(
             self,
-            Action::HighlightSlice(_) | Action::HighlightAttachment(_) | Action::EditMetadata(_)
+            Action::HighlightSlice(_) | Action::HighlightAttachment(_)
         )
     }
 }
