@@ -42,6 +42,7 @@ impl Index<usize> for ElementInternal {
 #[derive(Clone, Debug)]
 pub struct Cube<const N: usize> {
     pub points: Vec<[SliceIndex; N]>,
+    pub visible: bool,
     pub orientation: Vec<Orientation>,
 }
 
@@ -92,7 +93,7 @@ impl<const N: usize> Mesh<N> {
             .map(|(coord, diagram)| (*coord, diagram))
     }
 
-    /// Iterator of all visible cubes in the mesh.
+    /// Iterator of all cubes in the mesh.
     pub fn cubes(&self) -> impl Iterator<Item = Cube<N>> + '_ {
         self.elements.keys().filter_map(move |elem| {
             if self.parent(elem).is_some() {
@@ -104,18 +105,16 @@ impl<const N: usize> Mesh<N> {
 
             let points = self.flatten(elem, &orientation);
 
-            // Check that the element is visible by looking at the coordinates.
+            // Check if the element is visible by looking at the coordinates.
             let visible = points.iter().all(|coord| {
                 coord[dim..]
                     .iter()
                     .all(|si| matches!(si, SliceIndex::Interior(Height::Singular(_))))
             });
-            if !visible {
-                return None;
-            }
 
             Some(Cube {
                 points,
+                visible,
                 orientation,
             })
         })

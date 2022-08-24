@@ -25,7 +25,7 @@ impl<'a, const N: usize> IntoIterator for &'a Simplex<N> {
 }
 
 /// Generate a 2-dimensional simplicial complex for a diagram.
-pub fn make_complex<const N: usize>(diagram: &Diagram) -> Vec<Simplex<N>> {
+pub fn make_complex<const N: usize>(diagram: &Diagram) -> Vec<(Simplex<N>, bool)> {
     const TRI_ASSEMBLY_ORDER: [[usize; 3]; 2] = [[0, 1, 3], [0, 3, 2]];
 
     // Extract cubical mesh.
@@ -35,15 +35,15 @@ pub fn make_complex<const N: usize>(diagram: &Diagram) -> Vec<Simplex<N>> {
     for cube in mesh.cubes() {
         match cube.dimension() {
             0 => {
-                complex.push(Simplex::Point([cube[0]]));
+                complex.push((Simplex::Point([cube[0]]), cube.visible));
             }
             1 => {
-                complex.push(Simplex::Wire([cube[0], cube[1]]));
+                complex.push((Simplex::Wire([cube[0], cube[1]]), cube.visible));
             }
             2 => {
                 complex.extend(TRI_ASSEMBLY_ORDER.into_iter().filter_map(|[i, j, k]| {
                     let tri @ [a, b, c] = [cube[i], cube[j], cube[k]];
-                    (a != b && a != c && b != c).then(|| Simplex::Surface(tri))
+                    (a != b && a != c && b != c).then(|| (Simplex::Surface(tri), cube.visible))
                 }));
             }
             _ => (),

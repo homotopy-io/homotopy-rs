@@ -170,7 +170,7 @@ impl CubicalGeometry {
             coord_to_vert.insert(path, vert);
         }
 
-        for cube in mesh.cubes() {
+        for cube in mesh.cubes().filter(|cube| cube.visible) {
             let dim = cube.dimension();
 
             // We ignore top-dimensional cubes in 3D and 4D.

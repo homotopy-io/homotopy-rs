@@ -52,7 +52,7 @@ impl<const N: usize> ActionRegion<N> {
     /// This function can panic or produce undefined results if the simplicial complex and the
     /// layout have not come from the same diagram.
     pub fn build(
-        complex: &[Simplex<N>],
+        complex: &[(Simplex<N>, bool)],
         layout: &Layout<N>,
         projection: &Projection<N>,
     ) -> Vec<Self> {
@@ -60,7 +60,10 @@ impl<const N: usize> ActionRegion<N> {
         let mut region_wires = Vec::new();
         let mut region_points = Vec::new();
 
-        for simplex in complex {
+        for (simplex, _) in complex
+            .iter()
+            .filter(|(simplex, visible)| *visible || matches!(simplex, Simplex::Point(_)))
+        {
             match simplex {
                 Simplex::Surface(ps) => {
                     let path = build_path(ps, true, layout, projection);
@@ -152,7 +155,7 @@ impl<const N: usize> GraphicElement<N> {
     /// and the projected generators have not come from the same diagram.
     pub fn build(
         diagram: &Diagram,
-        complex: &[Simplex<N>],
+        complex: &[(Simplex<N>, bool)],
         layout: &Layout<N>,
         projection: &Projection<N>,
         depths: &Depths<N>,
@@ -163,7 +166,7 @@ impl<const N: usize> GraphicElement<N> {
 
         let mut grouped_surfaces = FastHashMap::<Generator, Vec<[Coordinate<N>; 3]>>::default();
 
-        for simplex in complex {
+        for (simplex, _) in complex.iter().filter(|(_, visible)| *visible) {
             match simplex {
                 Simplex::Surface(ps) => {
                     let generator = projection.generator(ps[0]);
