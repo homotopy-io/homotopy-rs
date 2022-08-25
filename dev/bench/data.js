@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1661388187058,
+  "lastUpdate": 1661423212618,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -40199,6 +40199,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 26.992,
             "range": "+/- 0.017",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thud@thud.dev",
+            "name": "Jasper Parish",
+            "username": "thud"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3cd82c98b08e07643eec0275e6b5add2cab73b9a",
+          "message": "Metadata UI fixes 1 (#747)\n\n* Add underline for all text inputs in drawer\r\n\r\n* Make metadata inputs use placeholder text",
+          "timestamp": "2022-08-25T10:26:30+01:00",
+          "tree_id": "8d7e093d230d3c8c341d123bbe0736a20a66452a",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/3cd82c98b08e07643eec0275e6b5add2cab73b9a"
+        },
+        "date": 1661423203030,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.8587,
+            "range": "+/- 0.006",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 11.161,
+            "range": "+/- 0.007",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 50.687,
+            "range": "+/- 0.041",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 321.51,
+            "range": "+/- 0.430",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.7109,
+            "range": "+/- 0.001",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 27.12,
+            "range": "+/- 0.032",
             "unit": "s"
           }
         ]
