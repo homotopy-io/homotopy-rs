@@ -1,5 +1,5 @@
 use homotopy_core::migration::OldProof;
-use homotopy_graphics::style::{Color, VertexShape};
+use crate::graphics::style::{Color, VertexShape};
 use serde::Deserialize;
 
 use super::{Signature, Workspace};

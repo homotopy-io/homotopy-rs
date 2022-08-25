@@ -1,8 +1,8 @@
-use std::{collections::VecDeque, str::FromStr};
+use std::collections::VecDeque;
 
 use homotopy_common::tree::{Node, Tree};
 use homotopy_core::{common::Generator, diagram::NewDiagramError, Diagram, DiagramN};
-use homotopy_graphics::style::{Color, VertexShape};
+use crate::graphics::style::{Color, VertexShape};
 use serde::{Deserialize, Serialize};
 
 use crate::model::proof::generators::GeneratorInfo;

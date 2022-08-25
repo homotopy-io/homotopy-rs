@@ -822,6 +822,7 @@ dependencies = [
  "instant",
  "log",
  "obake",
+ "palette",
  "paste",
  "quote",
  "rmp-serde 0.15.5",

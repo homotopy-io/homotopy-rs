@@ -7,7 +7,7 @@ use homotopy_core::{
     serialize::{Key, Store},
     Diagram,
 };
-use homotopy_graphics::style::Color;
+use crate::graphics::style::Color;
 use im::Vector;
 use obake::AnyVersion;
 
