@@ -2,8 +2,11 @@
 members = [
   "homotopy-core",
   "homotopy-common",
-  "homotopy-web",
+  "homotopy-model",
+  "homotopy-gl",
   "homotopy-graphics",
+  "homotopy-web",
+  "homotopy-cli",
 ]
 
 [profile.release]

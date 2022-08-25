@@ -2,14 +2,10 @@ pub use history::Proof;
 use history::{History, UndoState};
 use homotopy_core::common::Mode;
 use homotopy_graphics::{manim, stl, svg, tikz};
-use proof::{Signature, Workspace};
+pub use homotopy_model::model::{history, migration, proof, serialize};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-
-pub mod history;
-pub mod migration;
-pub mod proof;
-pub mod serialize;
+use wasm_bindgen::JsCast;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Action {
@@ -129,7 +125,7 @@ impl State {
                 let diagram = self.with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram());
                 let stylesheet = tikz::stylesheet(&signature);
                 let data = tikz::render(&diagram, &stylesheet, &signature).unwrap();
-                serialize::generate_download("homotopy_io_export", "tikz", data.as_bytes())
+                generate_download("homotopy_io_export", "tikz", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
 
@@ -173,7 +169,7 @@ impl State {
                 data.push_str(&stylesheet);
                 data.push_str(&svg[content_start..]);
 
-                serialize::generate_download("homotopy_io_export", "svg", data.as_bytes())
+                generate_download("homotopy_io_export", "svg", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
 
@@ -182,7 +178,7 @@ impl State {
                 let diagram = self.with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram());
                 let stylesheet = manim::stylesheet(&signature);
                 let data = manim::render(&diagram, &signature, &stylesheet).unwrap();
-                serialize::generate_download("homotopy_io_export", "py", data.as_bytes())
+                generate_download("homotopy_io_export", "py", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
 
@@ -190,7 +186,7 @@ impl State {
                 let signature = self.with_proof(|p| p.signature.clone());
                 let diagram = self.with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram());
                 let data = stl::render(&diagram, &signature).unwrap();
-                serialize::generate_download("homotopy_io_export", "stl", data.as_bytes())
+                generate_download("homotopy_io_export", "stl", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
 
@@ -199,7 +195,7 @@ impl State {
                     self.with_proof(|p| p.signature.clone()),
                     self.with_proof(|p| p.workspace.clone()),
                 );
-                serialize::generate_download("homotopy_io_export", "hom", data.as_slice())
+                generate_download("homotopy_io_export", "hom", data.as_slice())
                     .map_err(ModelError::Export)?;
             }
 
@@ -238,6 +234,8 @@ impl State {
     }
 }
 
+// Clippy will complain about Internal never being constructed.
+#[allow(dead_code)]
 #[derive(Debug, Error)]
 pub enum ModelError {
     #[error("export failed")]
@@ -250,4 +248,28 @@ pub enum ModelError {
     History(#[from] history::HistoryError),
     #[error("internal error")]
     Internal,
+}
+
+pub fn generate_download(name: &str, ext: &str, data: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
+    let val: js_sys::Uint8Array = data.into();
+    let mut options = web_sys::BlobPropertyBag::new();
+    options.type_("application/msgpack");
+    let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(
+        &js_sys::Array::of1(&val.into()).into(),
+        &options,
+    )?;
+    let url = web_sys::Url::create_object_url_with_blob(&blob)?;
+    let window = web_sys::window().ok_or("no window")?;
+    let document = window.document().ok_or("no document")?;
+    let body = document.body().ok_or("no body")?;
+    let e = document.create_element("a")?;
+    let a = e
+        .dyn_ref::<web_sys::HtmlElement>()
+        .ok_or("failed to create anchor")?;
+    a.set_attribute("href", &url)?;
+    a.set_attribute("download", &format!("{}.{}", &name, &ext))?;
+    body.append_child(a)?;
+    a.click();
+    a.remove();
+    web_sys::Url::revoke_object_url(&url)
 }

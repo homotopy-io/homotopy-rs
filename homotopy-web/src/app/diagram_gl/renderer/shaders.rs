@@ -1,7 +1,4 @@
-use homotopy_graphics::{
-    gl::{shader::Program, GlCtx, Result},
-    program,
-};
+use homotopy_gl::{program, shader::Program, GlCtx, Result};
 
 pub struct Shaders {
     pub geometry_3d: Program,

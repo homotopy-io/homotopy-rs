@@ -2,7 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use gloo::render::{request_animation_frame, AnimationFrame};
 use homotopy_core::Diagram;
-use homotopy_graphics::gl::GlCtx;
+use homotopy_gl::GlCtx;
 use ultraviolet::Vec3;
 use yew::prelude::*;
 

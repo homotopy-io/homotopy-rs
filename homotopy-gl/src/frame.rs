@@ -19,7 +19,7 @@ macro_rules! draw {
         $textures:expr,
         {$($uniform:ident : $value:expr),*$(,)*}
     ) => {{
-        $crate::gl::frame::Draw::new($program, $vao, $textures)
+        $crate::frame::Draw::new($program, $vao, $textures)
             $(.uniform(stringify!($uniform), $value))*
     }};
     (
@@ -29,7 +29,7 @@ macro_rules! draw {
         $depth:expr,
         {$($uniform:ident : $value:expr),*$(,)*}
     ) => {{
-        $crate::gl::frame::Draw::new_with_depth($program, $vao, $textures, $depth)
+        $crate::frame::Draw::new_with_depth($program, $vao, $textures, $depth)
             $(.uniform(stringify!($uniform), $value))*
     }};
 }

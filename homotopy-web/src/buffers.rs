@@ -2,16 +2,13 @@ use std::{hash::Hash, mem};
 
 use homotopy_common::{hash::FastHashMap, idx::IdxVec, parity};
 use homotopy_core::Generator;
-use ultraviolet::{Vec3, Vec4};
-
-use crate::{
-    geom::{SimplicialGeometry, Vert},
-    gl::{
-        array::VAO_LIMIT,
-        buffer::{Buffer, ElementBuffer, ElementKind},
-        GlCtx, Result,
-    },
+use homotopy_gl::{
+    array::VAO_LIMIT,
+    buffer::{Buffer, ElementBuffer, ElementKind},
+    GlCtx, Result,
 };
+use homotopy_graphics::geom::{SimplicialGeometry, Vert};
+use ultraviolet::{Vec3, Vec4};
 
 trait BuffererState: Sized {
     type VertexData;
@@ -279,6 +276,7 @@ impl BuffererState for TetraBufferingState {
         }
     }
 
+    #[allow(clippy::many_single_char_names)]
     fn push_vert(&mut self, v: u16, data: Self::VertexData) {
         let i = self.vert_starts.push(data.vert_start);
         let j = self.vert_ends.push(data.vert_end);
@@ -575,24 +573,28 @@ impl Bufferer for CylinderWireBufferer {
     }
 }
 
-impl SimplicialGeometry {
-    #[inline]
-    pub fn buffer_tris(&self, ctx: &GlCtx) -> Result<Vec<TriVertexArrayData>> {
-        BufferingCtx::<TriBufferer>::new(ctx, self).extract_buffers()
-    }
+#[inline]
+pub fn buffer_tris(g: &SimplicialGeometry, ctx: &GlCtx) -> Result<Vec<TriVertexArrayData>> {
+    BufferingCtx::<TriBufferer>::new(ctx, g).extract_buffers()
+}
 
-    #[inline]
-    pub fn buffer_projected_wireframe(&self, ctx: &GlCtx) -> Result<Vec<ProjectedWireArrayData>> {
-        BufferingCtx::<ProjectedWireBufferer>::new(ctx, self).extract_buffers()
-    }
+#[inline]
+pub fn buffer_projected_wireframe(
+    g: &SimplicialGeometry,
+    ctx: &GlCtx,
+) -> Result<Vec<ProjectedWireArrayData>> {
+    BufferingCtx::<ProjectedWireBufferer>::new(ctx, g).extract_buffers()
+}
 
-    #[inline]
-    pub fn buffer_cylinder_wireframe(&self, ctx: &GlCtx) -> Result<Vec<CylinderWireArrayData>> {
-        BufferingCtx::<CylinderWireBufferer>::new(ctx, self).extract_buffers()
-    }
+#[inline]
+pub fn buffer_cylinder_wireframe(
+    g: &SimplicialGeometry,
+    ctx: &GlCtx,
+) -> Result<Vec<CylinderWireArrayData>> {
+    BufferingCtx::<CylinderWireBufferer>::new(ctx, g).extract_buffers()
+}
 
-    #[inline]
-    pub fn buffer_tetras(&self, ctx: &GlCtx) -> Result<Vec<TetraVertexArrayData>> {
-        BufferingCtx::<TetraBufferer>::new(ctx, self).extract_buffers()
-    }
+#[inline]
+pub fn buffer_tetras(g: &SimplicialGeometry, ctx: &GlCtx) -> Result<Vec<TetraVertexArrayData>> {
+    BufferingCtx::<TetraBufferer>::new(ctx, g).extract_buffers()
 }

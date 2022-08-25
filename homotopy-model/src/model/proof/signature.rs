@@ -262,7 +262,7 @@ impl Metadata {
         }
     }
 
-    pub fn edit(&mut self, edit: MetadataEdit) -> () {
+    pub fn edit(&mut self, edit: MetadataEdit) {
         match edit {
             MetadataEdit::Title(title) => self.title = Some(title),
             MetadataEdit::Author(author) => self.author = Some(author),

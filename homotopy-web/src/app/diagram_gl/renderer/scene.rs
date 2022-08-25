@@ -2,15 +2,17 @@ use std::{mem, rc::Rc};
 
 use homotopy_common::idx::IdxVec;
 use homotopy_core::{Diagram, Generator};
+use homotopy_gl::{array::VertexArray, vertex_array, GlCtx, Result};
 use homotopy_graphics::{
     geom::{CubicalGeometry, SimplicialGeometry, VertData},
-    gl::{array::VertexArray, GlCtx, Result},
     style::{GeneratorStyle, SignatureStyleData, VertexShape},
-    vertex_array,
 };
 use ultraviolet::{Vec3, Vec4};
 
-use crate::model::proof::View;
+use crate::{
+    buffers::{buffer_cylinder_wireframe, buffer_projected_wireframe, buffer_tetras, buffer_tris},
+    model::proof::View,
+};
 
 pub struct Scene {
     pub diagram: Diagram,
@@ -125,7 +127,7 @@ impl Scene {
         });
         sphere_mesh.mk_point(p);
         sphere_mesh.inflate_point_3d(p, geometry_samples, &VertexShape::Circle);
-        if let Some(sphere_buffers) = sphere_mesh.buffer_tris(ctx)?.into_iter().next() {
+        if let Some(sphere_buffers) = buffer_tris(&sphere_mesh, ctx)?.into_iter().next() {
             self.sphere = Some(Rc::new(vertex_array!(
                 ctx,
                 &sphere_buffers.element_buffer,
@@ -141,7 +143,7 @@ impl Scene {
         });
         cube_mesh.mk_point(p);
         cube_mesh.inflate_point_3d(p, geometry_samples, &VertexShape::Square);
-        if let Some(cube_buffers) = cube_mesh.buffer_tris(ctx)?.into_iter().next() {
+        if let Some(cube_buffers) = buffer_tris(&cube_mesh, ctx)?.into_iter().next() {
             self.cube = Some(Rc::new(vertex_array!(
                 ctx,
                 &cube_buffers.element_buffer,
@@ -198,7 +200,7 @@ impl Scene {
 
         if view_dimension <= 3 {
             simplicial.inflate_3d(geometry_samples, signature_styles);
-            for tri_buffers in simplicial.buffer_tris(ctx)? {
+            for tri_buffers in buffer_tris(&simplicial, ctx)? {
                 let generator = tri_buffers.generator;
                 self.components.push(Component {
                     generator,
@@ -218,7 +220,7 @@ impl Scene {
                 )?);
             }
         } else {
-            for tetra_buffers in simplicial.buffer_tetras(ctx)? {
+            for tetra_buffers in buffer_tetras(&simplicial, ctx)? {
                 let generator = tetra_buffers.generator;
                 self.components.push(Component {
                     generator,
@@ -237,7 +239,7 @@ impl Scene {
                 });
             }
 
-            for projected_buffers in simplicial.buffer_projected_wireframe(ctx)? {
+            for projected_buffers in buffer_projected_wireframe(&simplicial, ctx)? {
                 self.wireframe_components.push(vertex_array!(
                     ctx,
                     &projected_buffers.element_buffer,
@@ -245,7 +247,7 @@ impl Scene {
                 )?);
             }
 
-            for cylinder_buffers in simplicial.buffer_cylinder_wireframe(ctx)? {
+            for cylinder_buffers in buffer_cylinder_wireframe(&simplicial, ctx)? {
                 let generator = cylinder_buffers.generator;
                 self.cylinder_components.push(Component {
                     generator,

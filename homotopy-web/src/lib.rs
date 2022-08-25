@@ -53,8 +53,9 @@
 use wasm_bindgen::prelude::*;
 
 mod app;
+mod buffers;
 mod components;
-
+// Model has to be public for tests to work
 pub mod model;
 
 // This is like the `main` function, except for JavaScript.

@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 
-use homotopy_graphics::gl::GlCtx;
+use homotopy_gl::GlCtx;
 use ultraviolet::{
     projection::rh_yup::{orthographic_gl, perspective_gl},
     Mat4, Vec2, Vec3,
