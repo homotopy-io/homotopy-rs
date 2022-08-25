@@ -573,24 +573,28 @@ impl Bufferer for CylinderWireBufferer {
     }
 }
 
-impl SimplicialGeometry {
-    #[inline]
-    pub fn buffer_tris(&self, ctx: &GlCtx) -> Result<Vec<TriVertexArrayData>> {
-        BufferingCtx::<TriBufferer>::new(ctx, self).extract_buffers()
-    }
+#[inline]
+pub fn buffer_tris(g: &SimplicialGeometry, ctx: &GlCtx) -> Result<Vec<TriVertexArrayData>> {
+    BufferingCtx::<TriBufferer>::new(ctx, g).extract_buffers()
+}
 
-    #[inline]
-    pub fn buffer_projected_wireframe(&self, ctx: &GlCtx) -> Result<Vec<ProjectedWireArrayData>> {
-        BufferingCtx::<ProjectedWireBufferer>::new(ctx, self).extract_buffers()
-    }
+#[inline]
+pub fn buffer_projected_wireframe(
+    g: &SimplicialGeometry,
+    ctx: &GlCtx,
+) -> Result<Vec<ProjectedWireArrayData>> {
+    BufferingCtx::<ProjectedWireBufferer>::new(ctx, g).extract_buffers()
+}
 
-    #[inline]
-    pub fn buffer_cylinder_wireframe(&self, ctx: &GlCtx) -> Result<Vec<CylinderWireArrayData>> {
-        BufferingCtx::<CylinderWireBufferer>::new(ctx, self).extract_buffers()
-    }
+#[inline]
+pub fn buffer_cylinder_wireframe(
+    g: &SimplicialGeometry,
+    ctx: &GlCtx,
+) -> Result<Vec<CylinderWireArrayData>> {
+    BufferingCtx::<CylinderWireBufferer>::new(ctx, g).extract_buffers()
+}
 
-    #[inline]
-    pub fn buffer_tetras(&self, ctx: &GlCtx) -> Result<Vec<TetraVertexArrayData>> {
-        BufferingCtx::<TetraBufferer>::new(ctx, self).extract_buffers()
-    }
+#[inline]
+pub fn buffer_tetras(g: &SimplicialGeometry, ctx: &GlCtx) -> Result<Vec<TetraVertexArrayData>> {
+    BufferingCtx::<TetraBufferer>::new(ctx, g).extract_buffers()
 }
