@@ -161,8 +161,7 @@ impl Sidebar {
         if proof.show_image_export {
             return html! {
                 <SidebarDrawer
-                    // yh: Re-using the attach style class here
-                    class="attach"
+                    class="dialog"
                     title="Image export"
                     dispatch={dispatch}
                     icon="close"

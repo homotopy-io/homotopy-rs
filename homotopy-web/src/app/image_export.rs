@@ -47,7 +47,7 @@ impl ImageExportView {
         if ctx.props().view_dim == 2 {
             html! {
                 <>
-                    <h3>{"Export to Tikz"}</h3>
+                    <h3>{"Export to TikZ"}</h3>
                     <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportTikz)}>{"Export"}</button>
                 </>
             }
