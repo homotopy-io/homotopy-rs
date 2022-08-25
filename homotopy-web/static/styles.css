@@ -405,6 +405,10 @@ button, .button {
   padding: var(--space-1);
 }
 
+.drawer input[type=text]:focus-within {
+  text-decoration: underline;
+}
+
 /* Metadata */
 /* TODO: Wraparound */
 
@@ -528,10 +532,6 @@ button, .button {
 
 .signature__dropzone.drag-over {
   height: var(--signature-height);
-}
-
-.signature__item input[type=text]:focus-within {
-  text-decoration: underline;
 }
 
 .signature__item-child {
