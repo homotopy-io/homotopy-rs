@@ -1,9 +1,7 @@
 use homotopy_gl::{
     draw,
-    gl::{
-        frame::{DepthTest, Frame},
-        GlCtx, Result,
-    },
+    frame::{DepthTest, Frame},
+    GlCtx, Result,
 };
 use ultraviolet::{Mat4, Vec4};
 

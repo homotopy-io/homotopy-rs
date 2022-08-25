@@ -2,10 +2,7 @@ use std::{mem, rc::Rc};
 
 use homotopy_common::idx::IdxVec;
 use homotopy_core::{Diagram, Generator};
-use homotopy_gl::{
-    gl::{array::VertexArray, GlCtx, Result},
-    vertex_array,
-};
+use homotopy_gl::{array::VertexArray, vertex_array, GlCtx, Result};
 use homotopy_graphics::{
     geom::{CubicalGeometry, SimplicialGeometry, VertData},
     style::{GeneratorStyle, SignatureStyleData, VertexShape},

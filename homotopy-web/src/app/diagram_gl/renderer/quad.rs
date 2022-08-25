@@ -1,7 +1,4 @@
-use homotopy_gl::{
-    gl::{array::VertexArray, buffer::ElementKind, GlCtx, Result},
-    vertex_array,
-};
+use homotopy_gl::{array::VertexArray, buffer::ElementKind, vertex_array, GlCtx, Result};
 use ultraviolet::{Vec2, Vec3};
 
 pub struct Quad {

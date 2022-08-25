@@ -2,7 +2,7 @@ use std::{hash::Hash, mem};
 
 use homotopy_common::{hash::FastHashMap, idx::IdxVec, parity};
 use homotopy_core::Generator;
-use homotopy_gl::gl::{
+use homotopy_gl::{
     array::VAO_LIMIT,
     buffer::{Buffer, ElementBuffer, ElementKind},
     GlCtx, Result,

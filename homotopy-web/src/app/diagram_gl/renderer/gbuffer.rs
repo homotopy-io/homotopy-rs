@@ -1,4 +1,4 @@
-use homotopy_gl::gl::{
+use homotopy_gl::{
     framebuffer::{Attachment, Framebuffer},
     texture::{InternalFormat, Texture, TextureOpts, Type},
     GlCtx, Result,
