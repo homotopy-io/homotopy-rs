@@ -13,12 +13,12 @@ pub const VAO_LIMIT: usize = 0x0001_0000;
 #[macro_export]
 macro_rules! vertex_array {
     ($ctx:expr, [$($value:expr),*$(,)*]) => {{
-        $crate::gl::array::VertexArray::new($ctx)
+        homotopy_gl::gl::array::VertexArray::new($ctx)
             $(.map(|x| x.attribute($value)))*
     }};
 
     ($ctx:expr, $elements:expr, [$($value:expr),*$(,)*]) => {{
-        $crate::gl::array::VertexArray::new_with_elements(
+        homotopy_gl::gl::array::VertexArray::new_with_elements(
             $ctx,
             Some($elements),
         )$(.map(|x| x.attribute($value)))*

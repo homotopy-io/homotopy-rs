@@ -1,4 +1,4 @@
-use homotopy_graphics::{
+use homotopy_gl::{
     gl::{array::VertexArray, buffer::ElementKind, GlCtx, Result},
     vertex_array,
 };

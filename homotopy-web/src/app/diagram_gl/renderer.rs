@@ -1,4 +1,4 @@
-use homotopy_graphics::{
+use homotopy_gl::{
     draw,
     gl::{
         frame::{DepthTest, Frame},

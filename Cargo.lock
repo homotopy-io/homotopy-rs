@@ -813,6 +813,7 @@ name = "homotopy-gl"
 version = "0.1.0"
 dependencies = [
  "homotopy-common",
+ "homotopy-core",
  "js-sys",
  "petgraph",
  "thiserror",

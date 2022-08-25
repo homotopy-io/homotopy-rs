@@ -1,4 +1,4 @@
-use homotopy_graphics::{
+use homotopy_gl::{
     gl::{shader::Program, GlCtx, Result},
     program,
 };

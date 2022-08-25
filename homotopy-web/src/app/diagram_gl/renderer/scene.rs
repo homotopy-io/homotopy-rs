@@ -2,15 +2,17 @@ use std::{mem, rc::Rc};
 
 use homotopy_common::idx::IdxVec;
 use homotopy_core::{Diagram, Generator};
+use homotopy_gl::{
+    gl::{array::VertexArray, GlCtx, Result},
+    vertex_array,
+};
 use homotopy_graphics::{
     geom::{CubicalGeometry, SimplicialGeometry, VertData},
-    gl::{array::VertexArray, GlCtx, Result},
     style::{GeneratorStyle, SignatureStyleData, VertexShape},
-    vertex_array,
 };
 use ultraviolet::{Vec3, Vec4};
 
-use crate::model::proof::View;
+use crate::{buffers::*, model::proof::View};
 
 pub struct Scene {
     pub diagram: Diagram,
