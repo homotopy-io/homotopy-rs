@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1661447656302,
+  "lastUpdate": 1661449302281,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -40319,6 +40319,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 27.682,
             "range": "+/- 0.397",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e7097f265d5671417810c226c4b18edfd02b0c12",
+          "message": "Homotopy-model subcrates (#748)\n\n* Initial commit for homotopy-model/homotopy-cli, created new subcrates.\r\n\r\n* Moved homotopy-web/src/model into homotopy-model/src/model.\r\n\r\n* Fixed low-hanging import errors.\r\n\r\n* Moved generate_download to homotopy-web/src/model.rs.\r\n\r\n* Fixed intra-crate homotopy-model import errors.\r\n\r\n* Moved style.rs from homotopy-graphics into homotopy-model to fix import errors.\r\n\r\n* Fixed last compiler error in homotopy-model, formatted code.\r\n\r\n* Fixed import errors in homotopy-web, everything compiles.\r\n\r\n* Homotopy-cli can load .hom files.\r\n\r\n* Create subcrate homotopy-gl, moved homotopy-graphics/gl to it.\r\n\r\n* Homotopy-gl integration, fixed most compile errors.\r\n\r\n* Undid buffer trait, homotopy-web now compiles on top of homotopy-gl.\r\n\r\n* Removed all web dependencies from homotopy-graphics, moved style.rs back into graphics, made homotopy-model depend on homotopy-graphics.\r\n\r\n* Moved homotopy-gl/gl to crate root.",
+          "timestamp": "2022-08-25T16:25:27Z",
+          "tree_id": "2e78c1dfde3e076d3b9383f5443fc455dfcd013a",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/e7097f265d5671417810c226c4b18edfd02b0c12"
+        },
+        "date": 1661449292323,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.7643,
+            "range": "+/- 0.074",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 14.738,
+            "range": "+/- 0.279",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 65.207,
+            "range": "+/- 1.247",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 413,
+            "range": "+/- 3.150",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 3.446,
+            "range": "+/- 0.015",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 34.545,
+            "range": "+/- 0.068",
             "unit": "s"
           }
         ]
