@@ -54,12 +54,8 @@ impl Component for ProjectView {
                     type="text"
                     class="metadata_title"
                     name="title"
-                    value= {
-                        let title = ctx.props().metadata.title.clone();
-                        match title {
-                            Some(value) => value,
-                            None => "Title".to_owned(),
-                    }}
+                    placeholder="Title"
+                    value= {ctx.props().metadata.title.clone().unwrap_or_default()}
                     oninput={ctx.link().callback(move |e: InputEvent| {
                         let input: HtmlInputElement = e.target_unchecked_into();
                         Msg::EditMetadata(MetadataEdit::Title(input.value()))
@@ -74,12 +70,8 @@ impl Component for ProjectView {
                     type="text"
                     class="metadata_author"
                     name="Author"
-                    value = {
-                        let author = ctx.props().metadata.author.clone();
-                        match author {
-                            Some(value) => value,
-                            None => "Author".to_owned(),
-                    }}
+                    placeholder="Author"
+                    value = {ctx.props().metadata.author.clone().unwrap_or_default()}
                     oninput={ctx.link().callback(move |e: InputEvent| {
                         let input: HtmlInputElement = e.target_unchecked_into();
                         Msg::EditMetadata(MetadataEdit::Author(input.value()))
@@ -94,12 +86,8 @@ impl Component for ProjectView {
                     type="textarea"
                     class="metadata_abstract"
                     name="Abstract"
-                    value = {
-                        let abstr = ctx.props().metadata.abstr.clone();
-                        match abstr {
-                            Some(value) => value,
-                            None => "Abstract".to_owned(),
-                    }}
+                    placeholder="Abstract"
+                    value = {ctx.props().metadata.abstr.clone().unwrap_or_default()}
                     oninput={ctx.link().callback(move |e: InputEvent| {
                         let input: HtmlInputElement = e.target_unchecked_into();
                         Msg::EditMetadata(MetadataEdit::Abstract(input.value()))
