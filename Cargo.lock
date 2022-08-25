@@ -831,10 +831,8 @@ dependencies = [
  "euclid",
  "homotopy-common",
  "homotopy-core",
- "homotopy-model",
  "insta",
  "itertools",
- "js-sys",
  "log",
  "lyon_algorithms",
  "lyon_geom",
@@ -846,9 +844,6 @@ dependencies = [
  "serde_json",
  "thiserror",
  "ultraviolet",
- "wasm-bindgen",
- "web-sys",
- "yew",
 ]
 
 [[package]]
@@ -858,6 +853,7 @@ dependencies = [
  "arrayvec",
  "homotopy-common",
  "homotopy-core",
+ "homotopy-graphics",
  "im",
  "instant",
  "log",

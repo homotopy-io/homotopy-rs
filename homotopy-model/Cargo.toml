@@ -9,6 +9,7 @@ edition = "2021"
 instant = { version = "0.1.12"}
 homotopy-common = { path = "../homotopy-common" }
 homotopy-core = { path = "../homotopy-core" }
+homotopy-graphics = { path = "../homotopy-graphics" }
 quote = "1.0.21"
 serde = { version = "1.0.144", features = ["derive"] }
 syn = "1.0.99"

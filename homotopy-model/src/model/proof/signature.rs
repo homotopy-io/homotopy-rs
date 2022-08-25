@@ -2,12 +2,10 @@ use std::{collections::VecDeque, str::FromStr};
 
 use homotopy_common::tree::{Node, Tree};
 use homotopy_core::{common::Generator, diagram::NewDiagramError, Diagram, DiagramN};
+use homotopy_graphics::style::{Color, VertexShape};
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    graphics::style::{Color, VertexShape},
-    model::proof::generators::GeneratorInfo,
-};
+use crate::model::proof::generators::GeneratorInfo;
 
 pub const COLORS: &[&str] = &[
     "#2980b9", // belize blue
