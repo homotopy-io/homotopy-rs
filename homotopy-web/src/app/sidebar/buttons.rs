@@ -110,27 +110,9 @@ declare_sidebar_tools! {
         model::Action::Proof(model::proof::Action::ClearWorkspace),
     }
 
-    BUTTON_TIKZ {
-        "Export to TikZ",
+    BUTTON_IMGEXPORT {
+        "Image export",
         "download",
-        model::Action::ExportTikz,
-    }
-
-    BUTTON_SVG {
-        "Export to SVG",
-        "download",
-        model::Action::ExportSvg,
-    }
-
-    BUTTON_MANIM {
-        "Export to Manim Python",
-        "download",
-        model::Action::ExportManim,
-    }
-
-    BUTTON_STL {
-        "Export to STL",
-        "download",
-        model::Action::ExportStl,
+        model::Action::ToggleImageExport,
     }
 }

@@ -17,6 +17,7 @@ pub enum Action {
     History(history::Action),
     ImportProof(SerializedData),
     ExportProof,
+    ToggleImageExport,
     ExportTikz,
     ExportSvg,
     ExportManim,
@@ -30,6 +31,9 @@ impl Action {
 
         match self {
             Self::Proof(action) => proof.is_valid(action),
+            Self::ToggleImageExport => proof.workspace.as_ref().map_or(false, |ws| {
+                ws.view.dimension() == 2 || ws.view.dimension() == 3
+            }),
             Self::ExportTikz | Self::ExportSvg | Self::ExportManim => proof
                 .workspace
                 .as_ref()
@@ -100,6 +104,11 @@ impl State {
             Action::Proof(action) => {
                 let mut proof = self.with_proof(Clone::clone);
                 proof.update(&action).map_err(ModelError::from)?;
+                // Hide image export dialog automatically if view dimension is not 2 or 3.
+                proof.show_image_export = proof.show_image_export
+                    && proof.workspace.as_ref().map_or(false, |ws| {
+                        ws.view.dimension() == 2 || ws.view.dimension() == 3
+                    });
                 self.history.add(action, proof);
             }
 
@@ -216,6 +225,12 @@ impl State {
                 proof.signature = signature;
                 proof.workspace = workspace;
                 self.history.add(proof::Action::Imported, proof);
+            }
+
+            Action::ToggleImageExport => {
+                let mut proof = self.with_proof(Clone::clone);
+                proof.show_image_export = !proof.show_image_export;
+                self.history.add(proof::Action::Nothing, proof);
             }
         }
 

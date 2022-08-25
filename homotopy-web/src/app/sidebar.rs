@@ -3,7 +3,7 @@ use yew::prelude::*;
 use yew_macro::function_component;
 
 use crate::{
-    app::{attach::AttachView, keybindings::Keybindings},
+    app::{attach::AttachView, image_export::ImageExportView, keybindings::Keybindings},
     components::{
         icon::{Icon, IconSize},
         Visibility,
@@ -156,9 +156,26 @@ impl Component for Sidebar {
 impl Sidebar {
     fn drawer(&self, ctx: &Context<Self>) -> Html {
         let dispatch = &ctx.props().dispatch;
-        let attach_options = ctx
-            .props()
-            .proof
+        let proof = &ctx.props().proof;
+
+        if proof.show_image_export {
+            return html! {
+                <SidebarDrawer
+                    class="dialog"
+                    title="Image export"
+                    dispatch={dispatch}
+                    icon="close"
+                    on_click={model::Action::ToggleImageExport}
+                >
+                    <ImageExportView
+                        dispatch={dispatch.clone()}
+                        view_dim={proof.workspace().as_ref().unwrap().view.dimension()}
+                    />
+                </SidebarDrawer>
+            };
+        }
+
+        let attach_options = proof
             .workspace()
             .and_then(|workspace| workspace.attach.clone());
 
