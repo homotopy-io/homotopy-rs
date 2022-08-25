@@ -766,6 +766,7 @@ dependencies = [
  "homotopy-core",
  "homotopy-model",
  "serde",
+ "serde_json",
  "structopt",
  "thiserror",
 ]
