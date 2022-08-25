@@ -887,6 +887,7 @@ dependencies = [
  "anyhow",
  "homotopy-common",
  "homotopy-core",
+ "homotopy-graphics",
  "homotopy-model",
  "serde",
  "serde_json",

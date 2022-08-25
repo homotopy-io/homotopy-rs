@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 homotopy-common = { path = "../homotopy-common" }
 homotopy-core = { path = "../homotopy-core" }
+homotopy-graphics = { path = "../homotopy-graphics" }
 homotopy-model = { path = "../homotopy-model" }
 anyhow = "1.0.66"
 serde = { version = "1.0.151" }

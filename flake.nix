@@ -69,6 +69,7 @@
             commands =
               super.commands
               ++ (with self.pkgs; [
+                { package = cargo-fuzz; }
                 { package = cargo-insta; }
                 { package = cargo-make; }
                 { package = cargo-nextest; }
