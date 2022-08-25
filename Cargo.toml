@@ -3,6 +3,7 @@ members = [
   "homotopy-core",
   "homotopy-common",
   "homotopy-model",
+  "homotopy-gl",
   "homotopy-graphics",
   "homotopy-web",
   "homotopy-cli",

@@ -1,0 +1,29 @@
+[package]
+name = "homotopy-gl"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+homotopy-common = { path = "../homotopy-common" }
+js-sys = "0.3.59"
+wasm-bindgen = { version = "0.2.82", features = ["serde-serialize"] }
+petgraph = "0.6.2"
+ultraviolet = "0.9.0"
+thiserror = "1.0.32"
+yew = "0.19.3"
+
+[dependencies.web-sys]
+features = [
+  "HtmlCanvasElement",
+  "WebGlBuffer",
+  "WebGlFramebuffer",
+  "WebGlProgram",
+  "WebGlRenderbuffer",
+  "WebGl2RenderingContext",
+  "WebGlShader",
+  "WebGlTexture",
+  "WebGlUniformLocation",
+  "WebGlVertexArrayObject",
+]

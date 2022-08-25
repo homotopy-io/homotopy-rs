@@ -809,6 +809,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "homotopy-gl"
+version = "0.1.0"
+dependencies = [
+ "homotopy-common",
+ "js-sys",
+ "petgraph",
+ "thiserror",
+ "ultraviolet",
+ "wasm-bindgen",
+ "web-sys",
+ "yew",
+]
+
+[[package]]
 name = "homotopy-graphics"
 version = "0.1.0"
 dependencies = [
@@ -873,6 +887,7 @@ dependencies = [
  "highs",
  "homotopy-common",
  "homotopy-core",
+ "homotopy-gl",
  "homotopy-graphics",
  "homotopy-model",
  "im",
