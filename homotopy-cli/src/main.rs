@@ -58,6 +58,7 @@ fn main() -> Result<(), proof::ModelError> {
     };
 
     for a in actions.iter() {
+        println!("Performing action: {:?}", a);
         proof.update(a)?;
     }
     Ok(())

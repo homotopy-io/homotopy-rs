@@ -13,6 +13,7 @@ pub enum Action {
     History(history::Action),
     ImportProof(SerializedData),
     ExportProof,
+    ExportActions,
     ToggleImageExport,
     ExportTikz,
     ExportSvg,
@@ -228,14 +229,19 @@ impl State {
                 proof.show_image_export = !proof.show_image_export;
                 self.history.add(proof::Action::Nothing, proof);
             }
+
+            Action::ExportActions => {
+                let actions = self.history.get_actions();
+                let data = serde_json::to_string(&actions).map_err(|_e| ModelError::Internal)?;
+                generate_download("homotopy_io_actions", "json", data.as_bytes())
+                    .map_err(ModelError::Export)?;
+            }
         }
 
         Ok(())
     }
 }
 
-// Clippy will complain about Internal never being constructed.
-#[allow(dead_code)]
 #[derive(Debug, Error)]
 pub enum ModelError {
     #[error("export failed")]

@@ -186,4 +186,14 @@ impl History {
         self.current = next;
         Ok(())
     }
+
+    pub fn get_actions(&self) -> Vec<super::proof::Action> {
+        let mut actions: Vec<_> = self
+            .snapshots
+            .ancestors_of(self.current)
+            .filter_map(|n| self.snapshots.with(n, |s| s.action.clone()))
+            .collect();
+        actions.reverse();
+        actions
+    }
 }
