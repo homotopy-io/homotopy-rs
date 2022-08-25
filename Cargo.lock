@@ -815,8 +815,20 @@ dependencies = [
 name = "homotopy-model"
 version = "0.1.0"
 dependencies = [
+ "arrayvec",
  "homotopy-common",
  "homotopy-core",
+ "im",
+ "instant",
+ "log",
+ "obake",
+ "paste",
+ "quote",
+ "rmp-serde 0.15.5",
+ "serde",
+ "serde_json",
+ "syn",
+ "thiserror",
 ]
 
 [[package]]

@@ -55,8 +55,6 @@ use wasm_bindgen::prelude::*;
 mod app;
 mod components;
 
-pub mod model;
-
 // This is like the `main` function, except for JavaScript.
 #[wasm_bindgen(start)]
 #[allow(clippy::unnecessary_wraps)]
