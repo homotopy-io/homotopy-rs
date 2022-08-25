@@ -23,6 +23,7 @@ mod boundary;
 mod debug;
 mod diagram_gl;
 mod diagram_svg;
+mod image_export;
 mod keybindings;
 mod project;
 mod settings;

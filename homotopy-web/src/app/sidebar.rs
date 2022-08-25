@@ -3,7 +3,7 @@ use yew::prelude::*;
 use yew_macro::function_component;
 
 use crate::{
-    app::{attach::AttachView, keybindings::Keybindings},
+    app::{attach::AttachView, keybindings::Keybindings, image_export::ImageExportView},
     components::{
         icon::{Icon, IconSize},
         Visibility,
@@ -156,7 +156,7 @@ impl Component for Sidebar {
 impl Sidebar {
     fn drawer(&self, ctx: &Context<Self>) -> Html {
         let dispatch = &ctx.props().dispatch;
-        let proof = &ctx.props().proof;        
+        let proof = &ctx.props().proof;
 
         if proof.image_export {
             return html! {
@@ -168,11 +168,17 @@ impl Sidebar {
                     icon="close"
                     on_click={model::Action::ExportImage}
                 >
+                    <ImageExportView
+                        dispatch={dispatch.clone()}
+                        view_dim={proof.workspace().as_ref().unwrap().view.dimension()}
+                    />
                 </SidebarDrawer>
             };
         }
 
-        let attach_options = proof.workspace().and_then(|workspace| workspace.attach.clone());
+        let attach_options = proof
+            .workspace()
+            .and_then(|workspace| workspace.attach.clone());
 
         if let Some(attach_options) = attach_options {
             return html! {

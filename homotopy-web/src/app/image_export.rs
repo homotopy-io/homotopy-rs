@@ -1,12 +1,13 @@
 use yew::prelude::*;
 
-use crate::model::proof::{Action, AttachOption, Signature};
+use homotopy_core::Diagram;
+use crate::model;
+
 
 #[derive(Debug, Clone, PartialEq, Properties)]
 pub struct Props {
-    pub dispatch: Callback<Action>,
-    pub options: im::Vector<AttachOption>,
-    pub signature: Signature,
+    pub dispatch: Callback<model::Action>,
+    pub view_dim: u8,
 }
 
 #[derive(Debug, Clone)]
@@ -27,49 +28,72 @@ impl Component for ImageExportView {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let tikz = Self::view_tikz(ctx);
+        let svg = Self::view_svg(ctx);
+        let manim = Self::view_manim(ctx);
+        let stl = Self::view_stl(ctx);
         html! {
-            { for ctx.props().options.iter().map(|option| Self::view_option(ctx, option)) }
+            <>
+                {tikz}
+                {svg}
+                {manim}
+                {stl}
+            </>
+            
         }
     }
 }
 
 impl ImageExportView {
-    pub fn view_option(ctx: &Context<Self>, option: &AttachOption) -> Html {
-        let info = ctx
-            .props()
-            .signature
-            .generator_info(option.generator)
-            .unwrap();
+    fn view_tikz(ctx: &Context<Self>) -> Html {
+        if ctx.props().view_dim == 2 {
+            html! {
+                <>
+                    <h3>{"Export to Tikz"}</h3>
+                    <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportTikz)}>{"Export"}</button>
+                </>
+            }
+        } else {
+            Default::default()
+        }
+    }
 
-        let onclick = ctx.props().dispatch.reform({
-            let option = option.clone();
-            move |_| Action::Attach(option.clone())
-        });
+    fn view_svg(ctx: &Context<Self>) -> Html {
+        if ctx.props().view_dim == 2 {
+            html! {
+                <>
+                    <h3>{"Export to SVG"}</h3>
+                    <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportSvg)}>{"Export"}</button>
+                </>
+            }
+        } else {
+            Default::default()
+        }
+    }
 
-        let onmouseenter = ctx.props().dispatch.reform({
-            let option = option.clone();
-            move |_| Action::HighlightAttachment(Some(option.clone()))
-        });
+    fn view_manim(ctx: &Context<Self>) -> Html {
+        if ctx.props().view_dim == 2 {
+            html! {
+                <>
+                    <h3>{"Export to Manim"}</h3>
+                    <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportManim)}>{"Export"}</button>
+                </>
+            }
+        } else {
+            Default::default()
+        }
+    }
 
-        let onmouseleave = ctx
-            .props()
-            .dispatch
-            .reform(|_| Action::HighlightAttachment(None));
-
-        // TODO: Maybe extract a common component for this and the signature.
-        // TODO: How should highlights work on touch devices?
-        html! {
-            <li
-                class="attach__option"
-                onclick={onclick}
-                onmouseenter={onmouseenter}
-                onmouseleave={onmouseleave}
-            >
-                <span
-                    class="attach__option-color"
-                    style={format!("background: {}", info.color)}
-                />
-            </li>
+    fn view_stl(ctx: &Context<Self>) -> Html {
+        if ctx.props().view_dim == 3 {
+            html! {
+                <>
+                    <h3>{"Export to STL"}</h3>
+                    <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportStl)}>{"Export"}</button>
+                </>
+            }
+        } else {
+            Default::default()
         }
     }
 }
