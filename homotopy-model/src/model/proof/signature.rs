@@ -1,11 +1,13 @@
-use std::collections::VecDeque;
+use std::{collections::VecDeque, str::FromStr};
 
 use homotopy_common::tree::{Node, Tree};
 use homotopy_core::{common::Generator, diagram::NewDiagramError, Diagram, DiagramN};
-use crate::graphics::style::{Color, VertexShape};
 use serde::{Deserialize, Serialize};
 
-use crate::model::proof::generators::GeneratorInfo;
+use crate::{
+    graphics::style::{Color, VertexShape},
+    model::proof::generators::GeneratorInfo,
+};
 
 pub const COLORS: &[&str] = &[
     "#2980b9", // belize blue
@@ -262,7 +264,7 @@ impl Metadata {
         }
     }
 
-    pub fn edit(&mut self, edit: MetadataEdit) -> () {
+    pub fn edit(&mut self, edit: MetadataEdit) {
         match edit {
             MetadataEdit::Title(title) => self.title = Some(title),
             MetadataEdit::Author(author) => self.author = Some(author),

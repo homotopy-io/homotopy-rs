@@ -1,9 +1,11 @@
 use homotopy_core::migration::OldProof;
-use crate::graphics::style::{Color, VertexShape};
 use serde::Deserialize;
 
 use super::{Signature, Workspace};
-use crate::model::proof::{generators::GeneratorInfo, SignatureItem, View};
+use crate::{
+    graphics::style::{Color, VertexShape},
+    model::proof::{generators::GeneratorInfo, SignatureItem, View},
+};
 
 #[derive(Deserialize)]
 struct Export {

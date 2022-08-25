@@ -1,4 +1,2 @@
-
-pub mod model;
 pub mod graphics;
-
+pub mod model;

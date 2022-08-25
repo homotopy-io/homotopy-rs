@@ -1,8 +1,8 @@
 use homotopy_core::{common::Generator, Diagram};
-use crate::graphics::style::{Color, GeneratorStyle, SignatureStyleData, VertexShape};
 use serde::Serialize;
 
 use super::signature::Signature;
+use crate::graphics::style::{Color, GeneratorStyle, SignatureStyleData, VertexShape};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct GeneratorInfo {

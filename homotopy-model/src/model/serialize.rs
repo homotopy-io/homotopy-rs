@@ -7,7 +7,6 @@ use homotopy_core::{
     serialize::{Key, Store},
     Diagram,
 };
-use crate::graphics::style::Color;
 use im::Vector;
 use obake::AnyVersion;
 
@@ -15,6 +14,7 @@ use super::{
     proof::{generators::GeneratorInfo, FolderInfo, SignatureItem, View},
     Signature, Workspace,
 };
+use crate::graphics::style::Color;
 
 #[obake::versioned]
 #[obake(version("0.1.0"))]
