@@ -97,9 +97,9 @@ pub struct SelectedBoundary {
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ProofState {
-    pub(super) signature: Signature,
-    pub(super) workspace: Option<Workspace>,
-    pub(super) metadata: Metadata,
+    pub signature: Signature,
+    pub workspace: Option<Workspace>,
+    pub metadata: Metadata,
     boundary: Option<SelectedBoundary>,
     // If true, signature drawer will draw the image export panel
     pub show_image_export: bool,

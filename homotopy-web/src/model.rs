@@ -2,15 +2,10 @@ pub use history::Proof;
 use history::{History, UndoState};
 use homotopy_core::common::Mode;
 use homotopy_graphics::{manim, stl, svg, tikz};
-use proof::{Signature, Workspace};
+pub use homotopy_model::model::{history, migration, proof, serialize};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use wasm_bindgen::JsCast;
-
-pub mod history;
-pub mod migration;
-pub mod proof;
-pub mod serialize;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Action {
@@ -200,7 +195,7 @@ impl State {
                     self.with_proof(|p| p.signature.clone()),
                     self.with_proof(|p| p.workspace.clone()),
                 );
-                :generate_download("homotopy_io_export", "hom", data.as_slice())
+                generate_download("homotopy_io_export", "hom", data.as_slice())
                     .map_err(ModelError::Export)?;
             }
 
@@ -239,6 +234,8 @@ impl State {
     }
 }
 
+// Clippy will complain about Internal never being constructed.
+#[allow(dead_code)]
 #[derive(Debug, Error)]
 pub enum ModelError {
     #[error("export failed")]
@@ -276,4 +273,3 @@ pub fn generate_download(name: &str, ext: &str, data: &[u8]) -> Result<(), wasm_
     a.remove();
     web_sys::Url::revoke_object_url(&url)
 }
-
