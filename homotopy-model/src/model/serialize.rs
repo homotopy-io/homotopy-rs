@@ -10,36 +10,11 @@ use homotopy_core::{
 use homotopy_graphics::style::Color;
 use im::Vector;
 use obake::AnyVersion;
-use wasm_bindgen::JsCast;
 
 use super::{
     proof::{generators::GeneratorInfo, FolderInfo, SignatureItem, View},
     Signature, Workspace,
 };
-
-pub fn generate_download(name: &str, ext: &str, data: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
-    let val: js_sys::Uint8Array = data.into();
-    let mut options = web_sys::BlobPropertyBag::new();
-    options.type_("application/msgpack");
-    let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(
-        &js_sys::Array::of1(&val.into()).into(),
-        &options,
-    )?;
-    let url = web_sys::Url::create_object_url_with_blob(&blob)?;
-    let window = web_sys::window().ok_or("no window")?;
-    let document = window.document().ok_or("no document")?;
-    let body = document.body().ok_or("no body")?;
-    let e = document.create_element("a")?;
-    let a = e
-        .dyn_ref::<web_sys::HtmlElement>()
-        .ok_or("failed to create anchor")?;
-    a.set_attribute("href", &url)?;
-    a.set_attribute("download", &format!("{}.{}", &name, &ext))?;
-    body.append_child(a)?;
-    a.click();
-    a.remove();
-    web_sys::Url::revoke_object_url(&url)
-}
 
 #[obake::versioned]
 #[obake(version("0.1.0"))]
