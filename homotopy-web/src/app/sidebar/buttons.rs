@@ -113,6 +113,6 @@ declare_sidebar_tools! {
     BUTTON_IMGEXPORT {
         "Image export",
         "download",
-        model::Action::ExportImage,
+        model::Action::ToggleImageExport,
     }
 }

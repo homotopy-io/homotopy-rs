@@ -3,7 +3,7 @@ use yew::prelude::*;
 use yew_macro::function_component;
 
 use crate::{
-    app::{attach::AttachView, keybindings::Keybindings, image_export::ImageExportView},
+    app::{attach::AttachView, image_export::ImageExportView, keybindings::Keybindings},
     components::{
         icon::{Icon, IconSize},
         Visibility,
@@ -158,15 +158,15 @@ impl Sidebar {
         let dispatch = &ctx.props().dispatch;
         let proof = &ctx.props().proof;
 
-        if proof.image_export {
+        if proof.show_image_export {
             return html! {
                 <SidebarDrawer
-                    // Re-using the attach class here, will give a new class later (perhaps)
+                    // yh: Re-using the attach style class here
                     class="attach"
                     title="Image export"
                     dispatch={dispatch}
                     icon="close"
-                    on_click={model::Action::ExportImage}
+                    on_click={model::Action::ToggleImageExport}
                 >
                     <ImageExportView
                         dispatch={dispatch.clone()}

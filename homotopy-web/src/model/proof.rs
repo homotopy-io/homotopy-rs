@@ -102,7 +102,7 @@ pub struct ProofState {
     pub(super) metadata: Metadata,
     boundary: Option<SelectedBoundary>,
     // If true, signature drawer will draw the image export panel
-    pub image_export: bool,
+    pub show_image_export: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

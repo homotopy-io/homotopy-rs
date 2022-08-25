@@ -1,8 +1,6 @@
 use yew::prelude::*;
 
-use homotopy_core::Diagram;
 use crate::model;
-
 
 #[derive(Debug, Clone, PartialEq, Properties)]
 pub struct Props {
@@ -39,7 +37,7 @@ impl Component for ImageExportView {
                 {manim}
                 {stl}
             </>
-            
+
         }
     }
 }

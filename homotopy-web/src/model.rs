@@ -17,7 +17,7 @@ pub enum Action {
     History(history::Action),
     ImportProof(SerializedData),
     ExportProof,
-    ExportImage,
+    ToggleImageExport,
     ExportTikz,
     ExportSvg,
     ExportManim,
@@ -31,7 +31,10 @@ impl Action {
 
         match self {
             Self::Proof(action) => proof.is_valid(action),
-            Self::ExportImage | Self::ExportTikz | Self::ExportSvg | Self::ExportManim => proof
+            Self::ToggleImageExport => proof.workspace.as_ref().map_or(false, |ws| {
+                ws.view.dimension() == 2 || ws.view.dimension() == 3
+            }),
+            Self::ExportTikz | Self::ExportSvg | Self::ExportManim => proof
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.view.dimension() == 2),
@@ -101,6 +104,11 @@ impl State {
             Action::Proof(action) => {
                 let mut proof = self.with_proof(Clone::clone);
                 proof.update(&action).map_err(ModelError::from)?;
+                // Hide image export dialog automatically if view dimension is not 2 or 3.
+                proof.show_image_export = proof.show_image_export
+                    && proof.workspace.as_ref().map_or(false, |ws| {
+                        ws.view.dimension() == 2 || ws.view.dimension() == 3
+                    });
                 self.history.add(action, proof);
             }
 
@@ -219,26 +227,10 @@ impl State {
                 self.history.add(proof::Action::Imported, proof);
             }
 
-            Action::ExportImage => {
+            Action::ToggleImageExport => {
                 let mut proof = self.with_proof(Clone::clone);
-                if proof.image_export {
-                    proof.image_export = false;
-                    self.history.add(proof::Action::Nothing, proof);
-                } else {
-                    proof.image_export = true;
-
-                    if let Some(_attach_options) = proof
-                        .workspace()
-                        .and_then(|workspace| workspace.attach.clone())
-                    {
-                        proof
-                            .update(&proof::Action::ClearAttach)
-                            .map_err(ModelError::from)?;
-                        self.history.add(proof::Action::ClearAttach, proof);
-                    } else {
-                        self.history.add(proof::Action::Nothing, proof);
-                    }
-                }
+                proof.show_image_export = !proof.show_image_export;
+                self.history.add(proof::Action::Nothing, proof);
             }
         }
 
