@@ -119,20 +119,20 @@ pub enum HistoryError {
 
 impl History {
     #[allow(clippy::option_if_let_else)]
-    pub fn with_proof<F, U>(&self, f: F) -> U
+    pub fn with_proof<F, U>(&self, f: F) -> Option<U>
     where
         F: Fn(&Proof) -> U,
     {
         if let Some(ref overlay) = self.overlay {
-            let mut overlayed = self.snapshots.with(self.current, Clone::clone);
+            let mut overlayed = self.snapshots.with(self.current, Clone::clone)?;
             overlayed.inner_mut().proof = overlay.clone();
-            f(&overlayed)
+            Some(f(&overlayed))
         } else {
             self.with_proof_internal(f)
         }
     }
 
-    pub fn with_proof_internal<F, U>(&self, f: F) -> U
+    pub fn with_proof_internal<F, U>(&self, f: F) -> Option<U>
     where
         F: Fn(&Proof) -> U,
     {
@@ -142,26 +142,32 @@ impl History {
     pub fn add(&mut self, action: super::proof::Action, proof: Proof) {
         if action.relevant() {
             // check if this action has been performed at this state previously
-            let existing = self.with_proof_internal(|n| {
-                n.children().find(|id| {
-                    self.snapshots
-                        .with(*id, |n| n.action.as_ref() == Some(&action))
+            let existing = self
+                .with_proof_internal(|n| {
+                    n.children().find(|id| {
+                        self.snapshots
+                            .with(*id, |n| n.action.as_ref() == Some(&action))
+                            .unwrap_or_default()
+                    })
                 })
-            });
+                .flatten();
             if let Some(child) = existing {
                 // update timestamp and ensure the action was deterministic
-                self.snapshots.with_mut(child, |n| {
-                    assert_eq!(proof.proof, n.proof);
-                    n.touch();
-                });
+                self.snapshots
+                    .with_mut(child, |n| {
+                        assert_eq!(proof.proof, n.proof);
+                        n.touch();
+                    })
+                    .expect("This should always succeed.");
                 self.current = child;
             } else {
                 // fresh action
-                let child = self.snapshots.push_onto(
+                if let Some(child) = self.snapshots.push_onto(
                     self.current,
                     Snapshot::new(Some(action), proof.into_inner().proof),
-                );
-                self.current = child;
+                ) {
+                    self.current = child;
+                }
             }
             self.overlay = None;
         } else {
@@ -172,6 +178,7 @@ impl History {
     pub fn undo(&mut self) -> Result<(), HistoryError> {
         let prev = self
             .with_proof_internal(NodeData::parent)
+            .flatten()
             .ok_or(HistoryError::Undo)?;
         self.overlay = None;
         self.current = prev;
@@ -181,6 +188,7 @@ impl History {
     pub fn redo(&mut self) -> Result<(), HistoryError> {
         let next = self
             .with_proof_internal(NodeData::last)
+            .flatten()
             .ok_or(HistoryError::Redo)?;
         self.overlay = None;
         self.current = next;
@@ -191,7 +199,7 @@ impl History {
         let mut actions: Vec<_> = self
             .snapshots
             .ancestors_of(self.current)
-            .filter_map(|n| self.snapshots.with(n, |s| s.action.clone()))
+            .filter_map(|n| self.snapshots.with(n, |s| s.action.clone()).flatten())
             .collect();
         actions.reverse();
         actions

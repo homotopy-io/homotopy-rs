@@ -177,31 +177,34 @@ fn render_item(props: &Props, node: Node) -> Html {
                 }
             }
         })
+        .unwrap_or_default()
 }
 
 fn render_children(props: &Props, node: Node) -> Html {
     let contents = props.signature.as_tree();
-    contents.with(node, move |n| match n.inner() {
-        SignatureItem::Folder(info) if info.open => {
-            let children = n.children().map(|child| render_tree(props, child));
-            let class = format!(
-                "signature__branch {}",
-                if n.is_empty() {
-                    "signature__branch-empty"
-                } else {
-                    ""
-                }
-            );
+    contents
+        .with(node, move |n| match n.inner() {
+            SignatureItem::Folder(info) if info.open => {
+                let children = n.children().map(|child| render_tree(props, child));
+                let class = format!(
+                    "signature__branch {}",
+                    if n.is_empty() {
+                        "signature__branch-empty"
+                    } else {
+                        ""
+                    }
+                );
 
-            html! {
-                <ul class={class}>
-                    {for children}
-                    {render_drop_zone(props, node, DropPosition::After)}
-                </ul>
+                html! {
+                    <ul class={class}>
+                        {for children}
+                        {render_drop_zone(props, node, DropPosition::After)}
+                    </ul>
+                }
             }
-        }
-        _ => html! {},
-    })
+            _ => html! {},
+        })
+        .unwrap_or_default()
 }
 
 fn render_tree(props: &Props, node: Node) -> Html {

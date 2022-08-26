@@ -8,7 +8,7 @@ use thiserror::Error;
 use crate::{
     antipushout::{antipushout, factorize_inc},
     attach::{attach, BoundaryPath},
-    common::{Boundary, Direction, Height, RegularHeight, SingularHeight},
+    common::{Boundary, DimensionError, Direction, Height, RegularHeight, SingularHeight},
     diagram::{Diagram, DiagramN},
     factorization::factorize,
     normalization::normalize_singular,
@@ -39,6 +39,9 @@ pub enum ExpansionError {
 
     #[error("expansion is ill-typed: {0}")]
     IllTyped(#[from] TypeError),
+
+    #[error("invalid boundary path provided to expansion")]
+    Dimension(#[from] DimensionError),
 }
 
 impl DiagramN {

@@ -27,9 +27,15 @@ pub mod generators;
 pub mod homotopy;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub struct View {
     dimension: u8,
+}
+
+#[cfg(feature = "fuzz")]
+impl<'a> arbitrary::Arbitrary<'a> for View {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(Self::new(u.int_in_range(0..=4)?))
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -236,7 +242,7 @@ impl ProofState {
             Action::SwitchSlice(direction) => self.switch_slice(*direction),
             Action::UpdateView(view) => self.update_view(*view),
             Action::SelectPoints(points) => self.select_points(points)?,
-            Action::Attach(option) => self.attach(option),
+            Action::Attach(option) => self.attach(option)?,
             Action::HighlightAttachment(option) => self.highlight_attachment(option.clone()),
             Action::HighlightSlice(slice) => self.highlight_slice(*slice),
             Action::Homotopy(Homotopy::Expand(homotopy)) => self.homotopy_expansion(homotopy)?,
@@ -247,7 +253,7 @@ impl ProofState {
             Action::Befoot => self.befoot()?,
             Action::Restrict => self.restrict()?,
             Action::Theorem => self.theorem()?,
-            Action::EditSignature(edit) => self.edit_signature(edit),
+            Action::EditSignature(edit) => self.edit_signature(edit)?,
             Action::FlipBoundary => self.flip_boundary(),
             Action::RecoverBoundary => self.recover_boundary(),
             Action::Imported | Action::Nothing => {}
@@ -328,7 +334,7 @@ impl ProofState {
     }
 
     /// Handler for [Action::EditSignature].
-    fn edit_signature(&mut self, edit: &SignatureEdit) {
+    fn edit_signature(&mut self, edit: &SignatureEdit) -> Result<(), ModelError> {
         // intercept remove events in order to clean-up workspace and boundaries
         if let SignatureEdit::Remove(node) = edit {
             // remove from the workspace
@@ -345,7 +351,7 @@ impl ProofState {
             }
         }
 
-        self.signature.update(edit);
+        self.signature.update(edit)
     }
 
     fn edit_metadata(&mut self, edit: &MetadataEdit) {
@@ -504,7 +510,7 @@ impl ProofState {
             Some(att) => {
                 // Select an attachment option.
                 let option = att.get(index).ok_or(ModelError::IndexOutOfBounds)?;
-                self.attach(&option.clone());
+                self.attach(&option.clone())?;
             }
         }
 
@@ -619,17 +625,16 @@ impl ProofState {
                 Some(boundary_path) => DiagramN::try_from(workspace.diagram.clone())
                     .ok()
                     .and_then(|diagram| boundary_path.follow(&diagram))
-                    .unwrap(),
+                    .ok_or(ModelError::NoAttachment)?,
             };
 
             let boundary: Boundary = boundary_path.map_or(Boundary::Target, BoundaryPath::boundary);
 
             for info in self.signature.iter() {
                 if info.diagram.dimension() == haystack.dimension() + 1 {
-                    let needle = DiagramN::try_from(info.diagram.clone())
-                        .unwrap()
+                    let needle = DiagramN::try_from(info.diagram.clone())?
                         .slice(boundary.flip())
-                        .unwrap();
+                        .ok_or(ModelError::NoAttachment)?;
 
                     matches.extend(
                         haystack
@@ -651,7 +656,7 @@ impl ProofState {
                 Err(ModelError::NoAttachment)
             }
             1 => {
-                self.attach(&matches.into_iter().next().unwrap());
+                self.attach(&matches.into_iter().next().unwrap())?;
                 Ok(())
             }
             _ => {
@@ -663,29 +668,26 @@ impl ProofState {
         }
     }
 
-    fn attach(&mut self, option: &AttachOption) {
+    fn attach(&mut self, option: &AttachOption) -> Result<(), ModelError> {
         if let Some(workspace) = &mut self.workspace {
-            // TODO: Better error handling, although none of these errors should occur
             let generator: DiagramN = self
                 .signature
                 .generator_info(option.generator)
-                .unwrap()
+                .ok_or(ModelError::InvalidAction)?
                 .diagram
                 .clone()
-                .try_into()
-                .unwrap();
+                .try_into()?;
             let embedding: Vec<_> = option.embedding.iter().copied().collect();
 
             let result = match &option.boundary_path {
-                Some(bp) => <&DiagramN>::try_from(&workspace.diagram)
-                    .unwrap()
+                Some(bp) => <&DiagramN>::try_from(&workspace.diagram)?
                     .attach(&generator, bp.boundary(), &embedding)
-                    .unwrap(),
+                    .or(Err(ModelError::NoAttachment))?,
                 None => workspace
                     .diagram
                     .identity()
                     .attach(&generator, Boundary::Target, &embedding)
-                    .unwrap(),
+                    .or(Err(ModelError::NoAttachment))?,
             };
 
             // TODO: Figure out what should happen with the slice path
@@ -696,6 +698,7 @@ impl ProofState {
         }
 
         self.clear_attach();
+        Ok(())
     }
 
     /// Handler for [Action::HighlightAttachment].
@@ -778,7 +781,7 @@ impl ProofState {
             for height in &ws.path {
                 (matches!(height, SliceIndex::Boundary(_))
                     || matches!(height, SliceIndex::Interior(Height::Regular(_))))
-                .then(|| ())
+                .then_some(())
                 .ok_or(ModelError::InvalidAction)?;
                 diagram = DiagramN::try_from(diagram)
                     .map_err(ModelError::InvalidSlice)?
@@ -827,7 +830,7 @@ impl ProofState {
         });
 
         if let Some(workspace) = &mut self.workspace {
-            let diagram: DiagramN = workspace.diagram.clone().try_into().unwrap();
+            let diagram: DiagramN = workspace.diagram.clone().try_into()?;
 
             let location = {
                 let mut location: Vec<_> = workspace.path.iter().copied().collect();
@@ -876,7 +879,7 @@ impl ProofState {
         });
 
         if let Some(workspace) = &mut self.workspace {
-            let diagram: DiagramN = workspace.diagram.clone().try_into().unwrap();
+            let diagram: DiagramN = workspace.diagram.clone().try_into()?;
             let location = {
                 let mut location: Vec<_> = workspace.path.iter().copied().collect();
                 location.extend(homotopy.location.clone());

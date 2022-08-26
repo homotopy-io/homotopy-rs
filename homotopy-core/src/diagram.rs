@@ -457,7 +457,7 @@ impl DiagramN {
         let depth = self
             .dimension()
             .checked_sub(diagram.dimension())
-            .ok_or_else(|| AttachmentError::Dimension(diagram.dimension(), self.dimension()))?;
+            .ok_or(DimensionError)?;
 
         attach(self, BoundaryPath(boundary, depth), |slice| {
             if slice.embeds(&diagram.slice(boundary.flip()).unwrap(), embedding) {
@@ -667,8 +667,8 @@ pub enum NewDiagramError {
 
 #[derive(Debug, Error)]
 pub enum AttachmentError {
-    #[error("can't attach diagram of dimension {0} to a diagram of dimension {1}")]
-    Dimension(usize, usize),
+    #[error("cannot attach diagram of a higher dimension")]
+    Dimension(#[from] DimensionError),
 
     #[error("failed to attach incompatible diagrams")]
     Incompatible,

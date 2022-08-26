@@ -51,10 +51,18 @@ pub type SingularHeight = usize;
 pub type RegularHeight = usize;
 
 #[derive(PartialEq, Eq, Copy, Clone, Debug, Hash)]
-#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub enum Height {
     Singular(SingularHeight),
     Regular(RegularHeight),
+}
+
+#[cfg(feature = "fuzz")]
+impl<'a> arbitrary::Arbitrary<'a> for Height {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let h = u.int_in_range(0..=1023)?;
+        u.choose(&[Height::Singular(h), Height::Regular(h)])
+            .map(|s| s.clone())
+    }
 }
 
 impl From<Height> for usize {

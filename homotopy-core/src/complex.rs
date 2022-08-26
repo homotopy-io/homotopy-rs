@@ -43,7 +43,7 @@ pub fn make_complex<const N: usize>(diagram: &Diagram) -> Vec<(Simplex<N>, bool)
             2 => {
                 complex.extend(TRI_ASSEMBLY_ORDER.into_iter().filter_map(|[i, j, k]| {
                     let tri @ [a, b, c] = [cube[i], cube[j], cube[k]];
-                    (a != b && a != c && b != c).then(|| (Simplex::Surface(tri), cube.visible))
+                    (a != b && a != c && b != c).then_some((Simplex::Surface(tri), cube.visible))
                 }));
             }
             _ => (),

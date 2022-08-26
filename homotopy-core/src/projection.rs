@@ -69,8 +69,8 @@ impl<const N: usize> Projection<N> {
                         v.push(si);
                         Some(v)
                     },
-                    |_, _, r| (i == 0).then(|| r.direction()),
-                    |_, key, r| (i > 0 && r.is_atomic()).then(|| *key),
+                    |_, _, r| (i == 0).then_some(r.direction()),
+                    |_, key, r| (i > 0 && r.is_atomic()).then_some(*key),
                 )?
                 .output;
         }
@@ -247,7 +247,7 @@ impl<const N: usize> Depths<N> {
                         Some(v)
                     },
                     |_, _, _| Some(()),
-                    |_, _, r| r.is_atomic().then(|| ()),
+                    |_, _, r| r.is_atomic().then_some(()),
                 )?
                 .output;
         }
