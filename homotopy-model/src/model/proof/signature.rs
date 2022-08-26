@@ -151,13 +151,15 @@ impl Signature {
 
     pub fn has_descendents_in(&self, node: Node, diagram: &Diagram) -> bool {
         self.0.descendents_of(node).any(|node| {
-            self.0.with(node, |n| {
-                if let SignatureItem::Item(info) = n.inner() {
-                    diagram.generators().contains(&info.generator)
-                } else {
-                    false
-                }
-            })
+            self.0
+                .with(node, |n| {
+                    if let SignatureItem::Item(info) = n.inner() {
+                        diagram.generators().contains(&info.generator)
+                    } else {
+                        false
+                    }
+                })
+                .unwrap_or_default()
         })
     }
 
