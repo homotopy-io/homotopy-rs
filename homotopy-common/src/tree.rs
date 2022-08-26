@@ -9,7 +9,6 @@ use crate::{declare_idx, idx::IdxVec};
 
 declare_idx! {
     #[derive(serde::Serialize, serde::Deserialize)]
-    #[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
     pub struct Node = usize;
 }
 
