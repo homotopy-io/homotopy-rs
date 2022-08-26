@@ -3,29 +3,26 @@ use homotopy_graphics::style::{Color, VertexShape};
 use serde::Deserialize;
 
 use super::{Signature, Workspace};
-use crate::model::proof::{generators::GeneratorInfo, SignatureItem, View};
+use crate::model::proof::{generators::GeneratorInfo, Metadata, SignatureItem, View};
 
 #[derive(Deserialize)]
 struct Export {
-    #[serde(rename = "metadata")]
-    _metadata: Metadata,
+    metadata: OldMetadata,
     proof: String,
 }
 
 #[derive(Deserialize)]
-struct Metadata {
+struct OldMetadata {
     #[serde(default)]
-    #[serde(rename = "title")]
-    _title: String,
+    title: String,
     #[serde(default)]
-    #[serde(rename = "author")]
-    _author: String,
-    #[serde(default)]
+    author: String,
     #[serde(rename = "abstract")]
-    _user_abstract: String,
+    #[serde(default)]
+    user_abstract: String,
 }
 
-pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
+pub fn deserialize(data: &[u8]) -> Option<((Signature, Option<Workspace>), Metadata)> {
     // Deserialize
     let export: Export = match serde_json::from_slice(data) {
         Err(error) => {
@@ -43,7 +40,8 @@ pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
         Ok(proof) => Some(proof),
     }?;
 
-    load(proof)
+    let sw = load(proof)?;
+    Some((sw, export.metadata.into()))
 }
 
 fn load(proof: OldProof) -> Option<(Signature, Option<Workspace>)> {
@@ -77,4 +75,14 @@ fn load(proof: OldProof) -> Option<(Signature, Option<Workspace>)> {
     };
 
     Some((signature, workspace))
+}
+
+impl Into<Metadata> for OldMetadata {
+    fn into(self) -> Metadata {
+        Metadata {
+            title: (!self.title.is_empty()).then_some(self.title),
+            author: (!self.author.is_empty()).then_some(self.author),
+            abstr: (!self.user_abstract.is_empty()).then_some(self.user_abstract),
+        }
+    }
 }

@@ -22,7 +22,7 @@ struct Opt {
 
 fn import_hom(path: &PathBuf) -> Option<Proof> {
     let data = read(path).ok()?;
-    let (signature, workspace) = match serialize::deserialize(&data) {
+    let ((signature, workspace), metadata) = match serialize::deserialize(&data) {
         Some(res) => res,
         None => migration::deserialize(&data)?,
     };
@@ -36,6 +36,7 @@ fn import_hom(path: &PathBuf) -> Option<Proof> {
     let mut proof: Proof = Default::default();
     proof.signature = signature;
     proof.workspace = workspace;
+    proof.metadata = metadata;
     Some(proof)
 }
 

@@ -19,7 +19,7 @@ wasm-bindgen --out-dir dist --no-typescript --target web target/wasm32-unknown-u
 
 [tasks.build-wasm-watch]
 run_task = { name = ["build-wasm"] }
-watch = { watch = ["homotopy-common/src", "homotopy-core/src", "homotopy-graphics/src", "homotopy-web/src"] }
+watch = { watch = ["homotopy-common/src", "homotopy-core/src", "homotopy-graphics/src", "homotopy-web/src", "homotopy-model/src", "homotopy-gl/src"] }
 
 [tasks.build-highs]
 script = '''

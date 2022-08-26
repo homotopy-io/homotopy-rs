@@ -43,7 +43,7 @@ impl From<WorkspaceData!["0.1.0"]> for WorkspaceData!["0.1.2"] {
 #[obake(version("0.1.0"))]
 #[obake(version("0.1.1"))]
 #[obake(version("0.1.2"))]
-#[obake(version("0.1.3"))]  // with metadata
+#[obake(version("0.1.3"))] // with metadata
 #[obake(derive(serde::Serialize, serde::Deserialize))]
 #[obake(serde(tag = "version"))]
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -122,12 +122,16 @@ struct GeneratorData {
     diagram: Key<Diagram>,
 }
 
-pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> {
+pub fn serialize(
+    signature: Signature,
+    workspace: Option<Workspace>,
+    metadata: Metadata,
+) -> Vec<u8> {
     let mut data = Data {
         store: Default::default(),
         signature: Default::default(),
         workspace: Default::default(),
-        metadata: Default::default(),
+        metadata,
     };
 
     let mut signature = signature.into_tree();
@@ -158,7 +162,7 @@ pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> 
     rmp_serde::encode::to_vec_named(&data).unwrap()
 }
 
-pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
+pub fn deserialize(data: &[u8]) -> Option<((Signature, Option<Workspace>), Metadata)> {
     // Deserialize with version tag
     let data: AnyVersion<Data> = match rmp_serde::decode::from_slice(data) {
         Err(error) => {
@@ -211,6 +215,5 @@ pub fn deserialize(data: &[u8]) -> Option<(Signature, Option<Workspace>)> {
             slice_highlight: Default::default(),
         });
     }
-
-    Some((signature, workspace))
+    Some(((signature, workspace), data.metadata))
 }
