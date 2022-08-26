@@ -1,11 +1,11 @@
 use std::{
     cmp::Ordering,
-    collections::HashMap,
+    collections::{HashMap, VecDeque},
     convert::{Into, TryInto},
     hash::Hash,
 };
 
-use homotopy_common::{declare_idx, idx::IdxVec};
+use homotopy_common::{declare_idx, hash::FastHashMap, idx::IdxVec};
 use itertools::Itertools;
 use petgraph::{
     adj::UnweightedList,
@@ -16,7 +16,7 @@ use petgraph::{
     graph::{DefaultIx, DiGraph, IndexType, NodeIndex},
     graphmap::DiGraphMap,
     unionfind::UnionFind,
-    visit::{EdgeRef, IntoNodeReferences},
+    visit::{EdgeRef, IntoEdgeReferences, IntoNodeReferences},
     EdgeDirection::{Incoming, Outgoing},
 };
 use serde::{Deserialize, Serialize};
@@ -56,6 +56,12 @@ impl Bias {
 
 #[derive(Debug, Error)]
 pub enum ContractionError {
+    #[error("contraction failed: label inconsistency")]
+    LabelInconsistency,
+    #[error("contraction failed: max dimensional generator not unique")]
+    NonUniqueMaxDimensionGenerator,
+    #[error("contraction failed: orientation error")]
+    Orientation,
     #[error("contraction invalid")]
     Invalid,
     #[error("contraction ambiguous")]
@@ -396,6 +402,123 @@ fn collapse_base<'a, Ix: IndexType>(
         r0.label()
     };
 
+    // compute the reachability closure of graph
+    let (topo, revmap): (UnweightedList<NodeIndex<Ix>>, Vec<NodeIndex<Ix>>) =
+        dag_to_toposorted_adjacency_list(&graph, &toposort(&graph, None).unwrap());
+    let (_, closure) = dag_transitive_reduction_closure(&topo);
+
+    declare_idx! {
+        struct SinkIx = DefaultIx;
+        struct ReachabilityIx = DefaultIx;
+    }
+    let mut sink_map: FastHashMap<NodeIndex<Ix>, NodeIndex<SinkIx>> = Default::default();
+    #[allow(clippy::type_complexity)]
+    let labels_by_sink: IdxVec<
+        NodeIndex<SinkIx>,
+        (
+            IdxVec<NodeIndex<ReachabilityIx>, Option<&Label>>,
+            IdxVec<NodeIndex<ReachabilityIx>, NodeIndex<Ix>>,
+        ),
+    > = graph
+        .externals(Outgoing)
+        .enumerate()
+        .map(|(sink_ix, sink)| {
+            sink_map.insert(sink, NodeIndex::new(sink_ix));
+            let mut s = None;
+            let mut reachability_map: IdxVec<NodeIndex<ReachabilityIx>, NodeIndex<Ix>> =
+                IdxVec::new();
+            let reachable: DiGraph<_, _, ReachabilityIx> = graph.filter_map(
+                |i, n| {
+                    (i == sink || closure.contains_edge(revmap[i.index()], revmap[sink.index()]))
+                        .then(|| {
+                            let ix = reachability_map.push(i);
+                            if i == sink {
+                                s = Some(ix);
+                            }
+                            n
+                        })
+                },
+                |_, e| Some(e),
+            );
+            let s = s.unwrap();
+
+            // compute sink equivalence class
+            let mut sink_eq = VecDeque::new();
+            {
+                // DFS identity edges only with reversed edge direction
+                let prev_by_id = |cur| {
+                    reachable
+                        .edges_directed(cur, Incoming)
+                        .filter_map(|e| e.weight().is_identity().then(|| e.source()))
+                        .collect()
+                };
+                sink_eq.push_back(s);
+                let mut stack: Vec<_> = prev_by_id(s);
+                while !stack.is_empty() {
+                    let cur = stack.pop().unwrap();
+                    // TODO: check that this identity is collapsible?
+                    union_find.union(reachability_map[cur], sink);
+                    sink_eq.push_back(cur);
+                    stack.append(&mut prev_by_id(cur));
+                }
+            }
+
+            // compute sets of shortest paths to sink equivalence class and ensure consistency
+            let labels = {
+                let mut frontier: VecDeque<_> = sink_eq.into_iter().map(|n| (n, 0)).collect();
+                let mut visited: IdxVec<
+                    NodeIndex<ReachabilityIx>,
+                    Option<(Option<&Label>, usize)>,
+                > = IdxVec::splat(None, reachable.node_count());
+                for (initial, _) in &frontier {
+                    visited[*initial] = Some((None, 0));
+                }
+
+                while !frontier.is_empty() {
+                    let (cur, rank) = frontier.pop_front().unwrap();
+                    for incoming in reachable.edges_directed(cur, Incoming) {
+                        let r = <&Rewrite0>::try_from(*incoming.weight())
+                            .expect("n-rewrite passed to collapse_base");
+                        match visited[incoming.source()] {
+                            Some((_, d)) if d < rank + 1 => { /* not on shortest path */ }
+                            Some((l, d)) if d == rank + 1 => match (l, r.label()) {
+                                (Some(existing), Some(new))
+                                    if existing != new || visited[cur].unwrap().0.is_some() =>
+                                {
+                                    return Err(ContractionError::LabelInconsistency)
+                                }
+                                (None, new) => {
+                                    visited[incoming.source()] = Some((new, rank + 1));
+                                    frontier.push_back((incoming.source(), rank + 1));
+                                }
+                                _ => {
+                                    // new node does not exhibit inconsistency
+                                    frontier.push_back((incoming.source(), rank + 1));
+                                }
+                            },
+                            None => {
+                                // haven't found this node yet
+                                visited[incoming.source()] = Some((r.label(), rank + 1));
+                                frontier.push_back((incoming.source(), rank + 1));
+                            }
+                            #[allow(clippy::unreachable)]
+                            _ => unreachable!(),
+                        }
+                    }
+                }
+                visited.map(|x| {
+                    x.expect("failed to visit all nodes when determining per-sink label")
+                        .0
+                })
+            };
+
+            Ok((labels, reachability_map))
+        })
+        .fold_ok(IdxVec::new(), |mut acc, x| {
+            acc.push(x);
+            acc
+        })?;
+
     // find collapsible edges
     for (s, t) in graph.edge_references().filter_map(|e| {
         let r: &Rewrite0 = e.weight().try_into().unwrap();
@@ -403,19 +526,41 @@ fn collapse_base<'a, Ix: IndexType>(
             .map_or(true, |(s, t, _)| s.id == t.id)
             .then(|| (e.source(), e.target()))
     }) {
-        if (graph.edges_directed(s, Incoming).all(|p| {
-            if let Some(c) = graph.find_edge(p.source(), t) {
-                label(p.weight()) == label(graph.edge_weight(c).unwrap())
-            } else {
-                true
-            }
-        })) && (graph.edges_directed(t, Outgoing).all(|n| {
-            if let Some(c) = graph.find_edge(s, n.target()) {
-                label(n.weight()) == label(graph.edge_weight(c).unwrap())
-            } else {
-                true
-            }
-        })) {
+        if graph
+            .externals(Outgoing)
+            .filter(|sink| {
+                (s.index() == sink.index()
+                    || closure.contains_edge(revmap[s.index()], revmap[sink.index()]))
+                    && (t.index() == sink.index()
+                        || closure.contains_edge(revmap[t.index()], revmap[sink.index()]))
+            })
+            .all(|sink| {
+                let (labels, reachability_map) = &labels_by_sink[sink_map[&sink]];
+                labels.iter().find_map(|(reachability_ix, &label)| {
+                    (reachability_map[reachability_ix] == s)
+                        .then(|| label)
+                        .flatten()
+                }) == labels.iter().find_map(|(reachability_ix, &label)| {
+                    (reachability_map[reachability_ix] == t)
+                        .then(|| label)
+                        .flatten()
+                })
+            })
+            && (graph.edges_directed(s, Incoming).all(|p| {
+                if let Some(c) = graph.find_edge(p.source(), t) {
+                    label(p.weight()) == label(graph.edge_weight(c).unwrap())
+                } else {
+                    true
+                }
+            }))
+            && (graph.edges_directed(t, Outgoing).all(|n| {
+                if let Some(c) = graph.find_edge(s, n.target()) {
+                    label(n.weight()) == label(graph.edge_weight(c).unwrap())
+                } else {
+                    true
+                }
+            }))
+        {
             // (s, t) collapsible
             union_find.union(s, t);
         }
@@ -429,7 +574,7 @@ fn collapse_base<'a, Ix: IndexType>(
             (i, g)
         })
         .max_by_key(|(_, g)| g.dimension)
-        .ok_or(ContractionError::Invalid)?;
+        .ok_or(ContractionError::NonUniqueMaxDimensionGenerator)?;
 
     let codimension = graph[max_dim_index]
         .2
@@ -444,7 +589,7 @@ fn collapse_base<'a, Ix: IndexType>(
         if g.dimension == max_dim_generator.dimension {
             if g.id != max_dim_generator.id {
                 // found distinct elements of maximal dimension
-                return Err(ContractionError::Invalid);
+                return Err(ContractionError::NonUniqueMaxDimensionGenerator);
             }
             union_find.union(i, max_dim_index);
 
@@ -465,7 +610,7 @@ fn collapse_base<'a, Ix: IndexType>(
             if let Some(old) = quotient.add_edge(s, t, label) {
                 if old != label {
                     // quotient graph not well-defined
-                    return Err(ContractionError::Invalid);
+                    return Err(ContractionError::LabelInconsistency);
                 }
             }
         }
@@ -493,12 +638,12 @@ fn collapse_base<'a, Ix: IndexType>(
                 }
             })
             .collect::<Option<Vec<_>>>()
-            .ok_or(ContractionError::Invalid)?;
+            .ok_or(ContractionError::Orientation)?;
 
         // Check that all subslices yield the same orientation.
         for x in &slice_orientations[1..] {
             if *x != slice_orientations[0] {
-                return Err(ContractionError::Invalid);
+                return Err(ContractionError::Orientation);
             }
         }
         slice_orientations[0]
