@@ -1,30 +1,30 @@
 ---
 source: homotopy-core/tests/contraction.rs
-expression: "e_then_inverse.identity().contract(Boundary::Target.into(), &[], 0, None,\n                                   &sig).unwrap().target()"
+expression: "e_then_inverse.identity().contract(Boundary::Target.into(), &[], 0, None,\n            &sig).unwrap().target()"
 ---
 DiagramN {
     source: DiagramN {
         source: Diagram0(
-            0:0,
+            0:0^+,
         ),
         cospans: [
             Cospan {
                 forward: Rewrite0(
-                    0:0,
-                    1:1,
+                    0:0^+,
+                    1:1^+,
                     Label(
-                        [
-                            (1:1, [Boundary(Source)]),
-                        ],
+                        Some(
+                            (1, BoundaryPath(Source, 0), []),
+                        ),
                     ),
                 ),
                 backward: Rewrite0(
-                    0:0,
-                    1:1,
+                    0:0^+,
+                    1:1^+,
                     Label(
-                        [
-                            (1:1, [Boundary(Target)]),
-                        ],
+                        Some(
+                            (1, BoundaryPath(Target, 0), []),
+                        ),
                     ),
                 ),
             },

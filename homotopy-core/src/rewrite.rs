@@ -838,7 +838,7 @@ impl RewriteN {
             }
         }
 
-        Ok(Self::new(self.dimension(), cones))
+        Ok(Self::new_unsafe(self.dimension(), cones))
     }
 
     pub fn singular_image(&self, index: SingularHeight) -> SingularHeight {
