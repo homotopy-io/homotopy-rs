@@ -5,7 +5,7 @@ use homotopy_core::{common::Generator, diagram::NewDiagramError, Diagram, Diagra
 use homotopy_graphics::style::{Color, VertexShape};
 use serde::{Deserialize, Serialize};
 
-use crate::model::proof::generators::GeneratorInfo;
+use crate::model::proof::{generators::GeneratorInfo, ModelError};
 
 pub const COLORS: &[&str] = &[
     "#2980b9", // belize blue
@@ -133,20 +133,22 @@ impl Signature {
         })
     }
 
-    fn edit(&mut self, node: Node, edit: SignatureItemEdit) {
+    fn edit(&mut self, node: Node, edit: SignatureItemEdit) -> Result<(), ModelError> {
         use SignatureItemEdit::{
             MakeInvertible, MakeOriented, Recolor, Rename, Reshape, ShowSourceTarget,
         };
-        self.0.with_mut(node, move |n| match (n.inner_mut(), edit) {
-            (SignatureItem::Item(info), Rename(name)) => info.name = name,
-            (SignatureItem::Item(info), Recolor(color)) => info.color = color,
-            (SignatureItem::Item(info), Reshape(shape)) => info.shape = shape,
-            (SignatureItem::Item(info), MakeOriented(true)) => info.oriented = true,
-            (SignatureItem::Item(info), MakeInvertible(true)) => info.invertible = true,
-            (SignatureItem::Item(info), ShowSourceTarget(show)) => info.single_preview = !show,
-            (SignatureItem::Folder(info), Rename(name)) => info.name = name,
-            (_, _) => {}
-        });
+        self.0
+            .with_mut(node, move |n| match (n.inner_mut(), edit) {
+                (SignatureItem::Item(info), Rename(name)) => info.name = name,
+                (SignatureItem::Item(info), Recolor(color)) => info.color = color,
+                (SignatureItem::Item(info), Reshape(shape)) => info.shape = shape,
+                (SignatureItem::Item(info), MakeOriented(true)) => info.oriented = true,
+                (SignatureItem::Item(info), MakeInvertible(true)) => info.invertible = true,
+                (SignatureItem::Item(info), ShowSourceTarget(show)) => info.single_preview = !show,
+                (SignatureItem::Folder(info), Rename(name)) => info.name = name,
+                (_, _) => {}
+            })
+            .ok_or(ModelError::InvalidAction)
     }
 
     pub fn has_descendents_in(&self, node: Node, diagram: &Diagram) -> bool {
@@ -188,9 +190,9 @@ impl Signature {
         }
     }
 
-    pub fn update(&mut self, edit: &SignatureEdit) {
+    pub fn update(&mut self, edit: &SignatureEdit) -> Result<(), ModelError> {
         match edit {
-            SignatureEdit::Edit(node, edit) => self.edit(*node, edit.clone()),
+            SignatureEdit::Edit(node, edit) => self.edit(*node, edit.clone())?,
             SignatureEdit::NewFolder(node) => {
                 self.0.push_onto(
                     *node,
@@ -202,12 +204,12 @@ impl Signature {
                 );
             }
             SignatureEdit::MoveBefore(from, to) => {
-                if !self.0.descendents_of(*from).any(|node| node == *to) {
+                if *from != self.0.root() && !self.0.descendents_of(*from).any(|node| node == *to) {
                     self.0.reparent_before(*from, *to);
                 }
             }
             SignatureEdit::MoveInto(from, to) => {
-                if !self.0.descendents_of(*from).any(|node| node == *to) {
+                if *from != self.0.root() && !self.0.descendents_of(*from).any(|node| node == *to) {
                     self.0.reparent_under(*from, *to);
                 }
             }
@@ -245,6 +247,7 @@ impl Signature {
                 }
             }
         }
+        Ok(())
     }
 
     pub fn as_tree(&self) -> Tree<SignatureItem> {

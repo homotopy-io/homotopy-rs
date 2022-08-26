@@ -247,7 +247,7 @@ impl ProofState {
             Action::Befoot => self.befoot()?,
             Action::Restrict => self.restrict()?,
             Action::Theorem => self.theorem()?,
-            Action::EditSignature(edit) => self.edit_signature(edit),
+            Action::EditSignature(edit) => self.edit_signature(edit)?,
             Action::FlipBoundary => self.flip_boundary(),
             Action::RecoverBoundary => self.recover_boundary(),
             Action::Imported | Action::Nothing => {}
@@ -328,7 +328,7 @@ impl ProofState {
     }
 
     /// Handler for [Action::EditSignature].
-    fn edit_signature(&mut self, edit: &SignatureEdit) {
+    fn edit_signature(&mut self, edit: &SignatureEdit) -> Result<(), ModelError> {
         // intercept remove events in order to clean-up workspace and boundaries
         if let SignatureEdit::Remove(node) = edit {
             // remove from the workspace
@@ -345,7 +345,7 @@ impl ProofState {
             }
         }
 
-        self.signature.update(edit);
+        self.signature.update(edit)
     }
 
     fn edit_metadata(&mut self, edit: &MetadataEdit) {
