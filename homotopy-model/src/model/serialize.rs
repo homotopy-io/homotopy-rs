@@ -12,7 +12,7 @@ use im::Vector;
 use obake::AnyVersion;
 
 use super::{
-    proof::{generators::GeneratorInfo, FolderInfo, SignatureItem, View},
+    proof::{generators::GeneratorInfo, FolderInfo, Metadata, SignatureItem, View},
     Signature, Workspace,
 };
 
@@ -43,6 +43,7 @@ impl From<WorkspaceData!["0.1.0"]> for WorkspaceData!["0.1.2"] {
 #[obake(version("0.1.0"))]
 #[obake(version("0.1.1"))]
 #[obake(version("0.1.2"))]
+#[obake(version("0.1.3"))]  // with metadata
 #[obake(derive(serde::Serialize, serde::Deserialize))]
 #[obake(serde(tag = "version"))]
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -56,6 +57,8 @@ struct Data {
     workspace: Option<WorkspaceData!["0.1.0"]>,
     #[obake(cfg(">=0.1.2"))]
     workspace: Option<WorkspaceData!["0.1.2"]>,
+    #[obake(cfg(">=0.1.3"))]
+    metadata: Metadata,
 }
 
 impl From<Data!["0.1.0"]> for Data!["0.1.1"] {
@@ -78,6 +81,17 @@ impl From<Data!["0.1.1"]> for Data!["0.1.2"] {
             store: from.store,
             signature: from.signature,
             workspace: from.workspace.map(Into::into),
+        }
+    }
+}
+
+impl From<Data!["0.1.2"]> for Data!["0.1.3"] {
+    fn from(from: Data!["0.1.2"]) -> Self {
+        Self {
+            store: from.store,
+            signature: from.signature,
+            workspace: from.workspace,
+            metadata: Default::default(),
         }
     }
 }
@@ -113,6 +127,7 @@ pub fn serialize(signature: Signature, workspace: Option<Workspace>) -> Vec<u8> 
         store: Default::default(),
         signature: Default::default(),
         workspace: Default::default(),
+        metadata: Default::default(),
     };
 
     let mut signature = signature.into_tree();

@@ -266,7 +266,7 @@ impl From<Tree<SignatureItem>> for Signature {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Metadata {
     pub title: Option<String>,
     pub author: Option<String>,
