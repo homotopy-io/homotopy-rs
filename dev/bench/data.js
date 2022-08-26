@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1661449302281,
+  "lastUpdate": 1661521703847,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -40379,6 +40379,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 34.545,
             "range": "+/- 0.068",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ab001c9b512c4f5e352b0d72ded368b856954992",
+          "message": "Action replay (#750)\n\n* CLI now accepts list of actions to reply on top of .hom file.\r\n\r\n* Added action dump button to project tab in web (temporary placement).\r\n\r\n* Implemented arbitrary for proof::Actions.\r\n\r\n* Added example of action testing.",
+          "timestamp": "2022-08-26T13:30:27+01:00",
+          "tree_id": "80e94ec1d42cdc4a0c962aff15e0e2abe396254c",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/ab001c9b512c4f5e352b0d72ded368b856954992"
+        },
+        "date": 1661521688946,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.8404,
+            "range": "+/- 0.054",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 14.756,
+            "range": "+/- 0.271",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 67.22,
+            "range": "+/- 1.066",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 426.68,
+            "range": "+/- 4.310",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 3.5149,
+            "range": "+/- 0.012",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 35.135,
+            "range": "+/- 0.076",
             "unit": "s"
           }
         ]
