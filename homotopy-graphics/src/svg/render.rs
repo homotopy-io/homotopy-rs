@@ -241,7 +241,7 @@ fn orient_wire<const N: usize>(wire: &[Coordinate<N>; 2]) -> [Coordinate<N>; 2] 
 fn orient_surface<const N: usize>(surface: &[Coordinate<N>; 3]) -> [Coordinate<N>; 3] {
     fn ordering_to_int(ordering: Ordering) -> isize {
         match ordering {
-            Ordering::Less => (-1),
+            Ordering::Less => -1,
             Ordering::Equal => 0,
             Ordering::Greater => 1,
         }

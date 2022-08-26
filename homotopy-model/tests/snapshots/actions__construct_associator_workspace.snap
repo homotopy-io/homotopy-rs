@@ -1,0 +1,73 @@
+---
+source: homotopy-model/tests/actions.rs
+assertion_line: 32
+expression: proof.workspace
+---
+Some(
+    Workspace {
+        diagram: DiagramN {
+            source: DiagramN {
+                source: DiagramN {
+                    source: Diagram0(
+                        0:0,
+                    ),
+                    cospans: [
+                        Cospan {
+                            forward: Rewrite0(
+                                0:0,
+                                1:1,
+                            ),
+                            backward: Rewrite0(
+                                0:0,
+                                1:1,
+                            ),
+                        },
+                        Cospan {
+                            forward: Rewrite0(
+                                0:0,
+                                1:1,
+                            ),
+                            backward: Rewrite0(
+                                0:0,
+                                1:1,
+                            ),
+                        },
+                        Cospan {
+                            forward: Rewrite0(
+                                0:0,
+                                1:1,
+                            ),
+                            backward: Rewrite0(
+                                0:0,
+                                1:1,
+                            ),
+                        },
+                    ],
+                },
+                cospans: [
+                    Cospan {
+                        forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2), Rewrite0(1:1, 2:2)] } }] },
+                        backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2)] } }] },
+                    },
+                    Cospan {
+                        forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2), Rewrite0(1:1, 2:2)] } }] },
+                        backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2)] } }] },
+                    },
+                ],
+            },
+            cospans: [
+                Cospan {
+                    forward: RewriteN { dimension: 2, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2), Rewrite0(1:1, 2:2)] } }] }, backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2)] } }] } }, Cospan { forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2), Rewrite0(1:1, 2:2)] } }] }, backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2)] } }] } }], target: Cospan { forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 3:3), backward: Rewrite0(0:0, 3:3) }, slices: [Rewrite0(1:1, 3:3), Rewrite0(1:1, 3:3), Rewrite0(1:1, 3:3)] } }] }, backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 3:3), backward: Rewrite0(0:0, 3:3) }, slices: [Rewrite0(1:1, 3:3)] } }] } }, slices: [RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 3:3), backward: Rewrite0(0:0, 3:3) }, slices: [Rewrite0(2:2, 3:3), Rewrite0(1:1, 3:3)] } }] }, RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }], target: Cospan { forward: Rewrite0(0:0, 3:3), backward: Rewrite0(0:0, 3:3) }, slices: [Rewrite0(2:2, 3:3)] } }] }] } }] },
+                    backward: RewriteN { dimension: 2, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: RewriteN { dimension: 1, cones: [Cone { index: 1, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2), Rewrite0(1:1, 2:2)] } }] }, backward: RewriteN { dimension: 1, cones: [Cone { index: 1, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2)] } }] } }, Cospan { forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2), Rewrite0(1:1, 2:2)] } }] }, backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2)] } }] } }], target: Cospan { forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 3:3), backward: Rewrite0(0:0, 3:3) }, slices: [Rewrite0(1:1, 3:3), Rewrite0(1:1, 3:3), Rewrite0(1:1, 3:3)] } }] }, backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 3:3), backward: Rewrite0(0:0, 3:3) }, slices: [Rewrite0(1:1, 3:3)] } }] } }, slices: [RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }], target: Cospan { forward: Rewrite0(0:0, 3:3), backward: Rewrite0(0:0, 3:3) }, slices: [Rewrite0(1:1, 3:3), Rewrite0(2:2, 3:3)] } }] }, RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }], target: Cospan { forward: Rewrite0(0:0, 3:3), backward: Rewrite0(0:0, 3:3) }, slices: [Rewrite0(2:2, 3:3)] } }] }] } }] },
+                },
+            ],
+        },
+        path: [],
+        view: View {
+            dimension: 2,
+        },
+        attach: None,
+        attachment_highlight: None,
+        slice_highlight: None,
+    },
+)

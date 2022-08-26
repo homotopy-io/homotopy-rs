@@ -1,0 +1,254 @@
+---
+source: homotopy-model/tests/actions.rs
+assertion_line: 31
+expression: proof.signature
+---
+Signature(
+    Tree {
+        nodes: [
+            NodeData {
+                data: Folder(
+                    FolderInfo {
+                        id: 0,
+                        name: "",
+                        open: true,
+                    },
+                ),
+                children: [
+                    Node(
+                        1,
+                    ),
+                    Node(
+                        2,
+                    ),
+                    Node(
+                        3,
+                    ),
+                    Node(
+                        4,
+                    ),
+                ],
+                parent: None,
+            },
+            NodeData {
+                data: Item(
+                    GeneratorInfo {
+                        generator: 0:0,
+                        name: "Cell 0",
+                        oriented: false,
+                        invertible: false,
+                        single_preview: true,
+                        color: Color(
+                            Rgb {
+                                red: 41,
+                                green: 128,
+                                blue: 185,
+                                standard: PhantomData,
+                            },
+                        ),
+                        shape: Circle,
+                        diagram: Diagram0(
+                            0:0,
+                        ),
+                    },
+                ),
+                children: [],
+                parent: Some(
+                    Node(
+                        0,
+                    ),
+                ),
+            },
+            NodeData {
+                data: Item(
+                    GeneratorInfo {
+                        generator: 1:1,
+                        name: "Cell 1",
+                        oriented: false,
+                        invertible: false,
+                        single_preview: true,
+                        color: Color(
+                            Rgb {
+                                red: 192,
+                                green: 57,
+                                blue: 43,
+                                standard: PhantomData,
+                            },
+                        ),
+                        shape: Circle,
+                        diagram: DiagramN {
+                            source: Diagram0(
+                                0:0,
+                            ),
+                            cospans: [
+                                Cospan {
+                                    forward: Rewrite0(
+                                        0:0,
+                                        1:1,
+                                    ),
+                                    backward: Rewrite0(
+                                        0:0,
+                                        1:1,
+                                    ),
+                                },
+                            ],
+                        },
+                    },
+                ),
+                children: [],
+                parent: Some(
+                    Node(
+                        0,
+                    ),
+                ),
+            },
+            NodeData {
+                data: Item(
+                    GeneratorInfo {
+                        generator: 2:2,
+                        name: "Cell 2",
+                        oriented: false,
+                        invertible: false,
+                        single_preview: true,
+                        color: Color(
+                            Rgb {
+                                red: 243,
+                                green: 156,
+                                blue: 18,
+                                standard: PhantomData,
+                            },
+                        ),
+                        shape: Circle,
+                        diagram: DiagramN {
+                            source: DiagramN {
+                                source: Diagram0(
+                                    0:0,
+                                ),
+                                cospans: [
+                                    Cospan {
+                                        forward: Rewrite0(
+                                            0:0,
+                                            1:1,
+                                        ),
+                                        backward: Rewrite0(
+                                            0:0,
+                                            1:1,
+                                        ),
+                                    },
+                                    Cospan {
+                                        forward: Rewrite0(
+                                            0:0,
+                                            1:1,
+                                        ),
+                                        backward: Rewrite0(
+                                            0:0,
+                                            1:1,
+                                        ),
+                                    },
+                                ],
+                            },
+                            cospans: [
+                                Cospan {
+                                    forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2), Rewrite0(1:1, 2:2)] } }] },
+                                    backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2)] } }] },
+                                },
+                            ],
+                        },
+                    },
+                ),
+                children: [],
+                parent: Some(
+                    Node(
+                        0,
+                    ),
+                ),
+            },
+            NodeData {
+                data: Item(
+                    GeneratorInfo {
+                        generator: 3:3,
+                        name: "Cell 3",
+                        oriented: false,
+                        invertible: false,
+                        single_preview: true,
+                        color: Color(
+                            Rgb {
+                                red: 142,
+                                green: 68,
+                                blue: 173,
+                                standard: PhantomData,
+                            },
+                        ),
+                        shape: Circle,
+                        diagram: DiagramN {
+                            source: DiagramN {
+                                source: DiagramN {
+                                    source: Diagram0(
+                                        0:0,
+                                    ),
+                                    cospans: [
+                                        Cospan {
+                                            forward: Rewrite0(
+                                                0:0,
+                                                1:1,
+                                            ),
+                                            backward: Rewrite0(
+                                                0:0,
+                                                1:1,
+                                            ),
+                                        },
+                                        Cospan {
+                                            forward: Rewrite0(
+                                                0:0,
+                                                1:1,
+                                            ),
+                                            backward: Rewrite0(
+                                                0:0,
+                                                1:1,
+                                            ),
+                                        },
+                                        Cospan {
+                                            forward: Rewrite0(
+                                                0:0,
+                                                1:1,
+                                            ),
+                                            backward: Rewrite0(
+                                                0:0,
+                                                1:1,
+                                            ),
+                                        },
+                                    ],
+                                },
+                                cospans: [
+                                    Cospan {
+                                        forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2), Rewrite0(1:1, 2:2)] } }] },
+                                        backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2)] } }] },
+                                    },
+                                    Cospan {
+                                        forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2), Rewrite0(1:1, 2:2)] } }] },
+                                        backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2)] } }] },
+                                    },
+                                ],
+                            },
+                            cospans: [
+                                Cospan {
+                                    forward: RewriteN { dimension: 2, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2), Rewrite0(1:1, 2:2)] } }] }, backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2)] } }] } }, Cospan { forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2), Rewrite0(1:1, 2:2)] } }] }, backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2)] } }] } }], target: Cospan { forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 3:3), backward: Rewrite0(0:0, 3:3) }, slices: [Rewrite0(1:1, 3:3), Rewrite0(1:1, 3:3), Rewrite0(1:1, 3:3)] } }] }, backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 3:3), backward: Rewrite0(0:0, 3:3) }, slices: [Rewrite0(1:1, 3:3)] } }] } }, slices: [RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 3:3), backward: Rewrite0(0:0, 3:3) }, slices: [Rewrite0(2:2, 3:3), Rewrite0(1:1, 3:3)] } }] }, RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }], target: Cospan { forward: Rewrite0(0:0, 3:3), backward: Rewrite0(0:0, 3:3) }, slices: [Rewrite0(2:2, 3:3)] } }] }] } }] },
+                                    backward: RewriteN { dimension: 2, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: RewriteN { dimension: 1, cones: [Cone { index: 1, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2), Rewrite0(1:1, 2:2)] } }] }, backward: RewriteN { dimension: 1, cones: [Cone { index: 1, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2)] } }] } }, Cospan { forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2), Rewrite0(1:1, 2:2)] } }] }, backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }, slices: [Rewrite0(1:1, 2:2)] } }] } }], target: Cospan { forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 3:3), backward: Rewrite0(0:0, 3:3) }, slices: [Rewrite0(1:1, 3:3), Rewrite0(1:1, 3:3), Rewrite0(1:1, 3:3)] } }] }, backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }], target: Cospan { forward: Rewrite0(0:0, 3:3), backward: Rewrite0(0:0, 3:3) }, slices: [Rewrite0(1:1, 3:3)] } }] } }, slices: [RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:1), backward: Rewrite0(0:0, 1:1) }, Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }], target: Cospan { forward: Rewrite0(0:0, 3:3), backward: Rewrite0(0:0, 3:3) }, slices: [Rewrite0(1:1, 3:3), Rewrite0(2:2, 3:3)] } }] }, RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 2:2), backward: Rewrite0(0:0, 2:2) }], target: Cospan { forward: Rewrite0(0:0, 3:3), backward: Rewrite0(0:0, 3:3) }, slices: [Rewrite0(2:2, 3:3)] } }] }] } }] },
+                                },
+                            ],
+                        },
+                    },
+                ),
+                children: [],
+                parent: Some(
+                    Node(
+                        0,
+                    ),
+                ),
+            },
+        ],
+        root: Node(
+            0,
+        ),
+    },
+)

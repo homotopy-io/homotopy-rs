@@ -2,7 +2,7 @@ use std::{fs::read, path::PathBuf};
 
 pub use history::Proof;
 use homotopy_core::common::Mode;
-pub use homotopy_model::model::{history, migration, proof, serialize};
+pub use homotopy_model::model::{history, migration, proof, proof::Action, serialize};
 // CLI option parsing
 use structopt::StructOpt;
 
@@ -15,6 +15,9 @@ use structopt::StructOpt;
 struct Opt {
     #[structopt(short, long, parse(from_os_str))]
     input_hom: Option<PathBuf>,
+
+    #[structopt(short = "a", long, parse(from_os_str))]
+    input_actions: Option<PathBuf>,
 }
 
 fn import_hom(path: &PathBuf) -> Option<Proof> {
@@ -36,10 +39,27 @@ fn import_hom(path: &PathBuf) -> Option<Proof> {
     Some(proof)
 }
 
-fn main() {
+fn import_actions(path: &PathBuf) -> Option<Vec<Action>> {
+    let data = read(path).ok()?;
+    serde_json::from_slice(&data).ok()
+}
+
+fn main() -> Result<(), proof::ModelError> {
     // Give me options.
     let opt = Opt::from_args();
-    if let Some(path) = opt.input_hom {
-        let _proof = import_hom(&path).expect("Could not import .hom file.");
+    let mut proof = match opt.input_hom {
+        Some(path) => import_hom(&path).expect("Could not import .hom file."),
+        None => Default::default(),
+    };
+
+    let actions = match opt.input_actions {
+        Some(path) => import_actions(&path).expect("Could not import action file."),
+        None => Default::default(),
+    };
+
+    for a in actions.iter() {
+        println!("Performing action: {:?}", a);
+        proof.update(a)?;
     }
+    Ok(())
 }

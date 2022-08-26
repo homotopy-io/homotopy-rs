@@ -9,6 +9,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use thiserror::Error;
 
 #[derive(PartialEq, Eq, Copy, Clone, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub struct Generator {
     pub dimension: usize,
     pub id: usize,
@@ -27,6 +28,7 @@ impl fmt::Debug for Generator {
 }
 
 #[derive(PartialEq, Eq, Copy, Clone, Debug, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub enum Boundary {
     #[serde(rename = "source")]
     Source,
@@ -49,6 +51,7 @@ pub type SingularHeight = usize;
 pub type RegularHeight = usize;
 
 #[derive(PartialEq, Eq, Copy, Clone, Debug, Hash)]
+#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub enum Height {
     Singular(SingularHeight),
     Regular(RegularHeight),
@@ -105,6 +108,7 @@ impl<'de> Deserialize<'de> for Height {
 
 #[derive(PartialEq, Eq, Copy, Clone, Debug, Hash, Serialize, Deserialize)]
 #[serde(untagged)]
+#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub enum SliceIndex {
     Boundary(Boundary),
     Interior(Height),
@@ -312,6 +316,7 @@ impl<T> IndexMut<SliceIndex> for Vec<T> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub enum Direction {
     Forward,
     Backward,

@@ -46,7 +46,21 @@ pub enum SignatureItemEdit {
     ShowSourceTarget(bool),
 }
 
+#[cfg(feature = "fuzz")]
+impl<'a> arbitrary::Arbitrary<'a> for SignatureItemEdit {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        u.choose(&[
+            SignatureItemEdit::MakeOriented(false),
+            SignatureItemEdit::MakeOriented(true),
+            SignatureItemEdit::MakeInvertible(false),
+            SignatureItemEdit::MakeInvertible(true),
+        ])
+        .map(|s| s.clone())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum SignatureEdit {
     Edit(Node, SignatureItemEdit),
     MoveBefore(Node, Node),
@@ -240,6 +254,12 @@ impl Signature {
     }
 }
 
+impl homotopy_core::signature::Signature for Signature {
+    fn generator(&self, g: Generator) -> std::option::Option<Diagram> {
+        Some(self.generator_info(g)?.diagram.clone())
+    }
+}
+
 impl From<Tree<SignatureItem>> for Signature {
     fn from(tree: Tree<SignatureItem>) -> Self {
         Self(tree)
@@ -272,6 +292,7 @@ impl Metadata {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum MetadataEdit {
     Title(String),
     Author(String),

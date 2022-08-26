@@ -11,4 +11,5 @@ homotopy-core = { path = "../homotopy-core" }
 homotopy-model = { path = "../homotopy-model" }
 thiserror = "1.0.32"
 serde = { version = "1.0.144" }
+serde_json = "1.0.85"
 structopt = "0.3"

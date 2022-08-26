@@ -35,6 +35,10 @@ impl Component for ProjectView {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let export = ctx.props().dispatch.reform(|_| model::Action::ExportProof);
+        let actions = ctx
+            .props()
+            .dispatch
+            .reform(|_| model::Action::ExportActions);
         let import = ctx.link().callback(|e: Event| {
             let input: HtmlInputElement = e.target_unchecked_into();
             if let Some(filelist) = input.files() {
@@ -50,6 +54,7 @@ impl Component for ProjectView {
                     {"Import"}
                 </label>
                 <input type="file" accept="application/msgpack,.hom,.json" class="visually-hidden" id="import" onchange={import}/>
+                <button onclick={actions}>{"Export Actions"}</button>
                 <input
                     type="text"
                     class="metadata_title"
