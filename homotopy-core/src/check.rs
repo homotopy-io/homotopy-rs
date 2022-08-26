@@ -352,6 +352,7 @@ pub enum MalformedCone {
 }
 
 impl Rewrite {
+    #[must_use]
     pub fn strip_labels(&self) -> Self {
         use Rewrite::{Rewrite0, RewriteN};
         match self {
@@ -369,7 +370,7 @@ impl Rewrite0 {
 
 impl RewriteN {
     fn strip_labels(&self) -> Self {
-        RewriteN::new(
+        RewriteN::new_unsafe(
             self.dimension(),
             self.cones()
                 .iter()
