@@ -39,7 +39,7 @@ impl<const N: usize> Layout<N> {
                         Some(key)
                     },
                     |_, _, r| Some((i, r.direction())),
-                    |_, key, r| (r != ExternalRewrite::Flange).then(|| *key),
+                    |_, key, r| (r != ExternalRewrite::Flange).then_some(*key),
                 )?
                 .output;
         }

@@ -9,7 +9,6 @@ use crate::{declare_idx, idx::IdxVec};
 
 declare_idx! {
     #[derive(serde::Serialize, serde::Deserialize)]
-    #[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
     pub struct Node = usize;
 }
 
@@ -120,19 +119,27 @@ impl<T> Tree<T> {
     }
 
     #[inline]
-    pub fn with<F, U>(&self, node: Node, f: F) -> U
+    pub fn with<F, U>(&self, node: Node, f: F) -> Option<U>
     where
         F: FnOnce(&NodeData<T>) -> U,
     {
-        f(&self.nodes[node])
+        if node.0 < self.nodes.len() {
+            Some(f(&self.nodes[node]))
+        } else {
+            None
+        }
     }
 
     #[inline]
-    pub fn with_mut<F, U>(&mut self, node: Node, f: F) -> U
+    pub fn with_mut<F, U>(&mut self, node: Node, f: F) -> Option<U>
     where
         F: FnOnce(&mut NodeData<T>) -> U,
     {
-        f(&mut self.nodes[node])
+        if node.0 < self.nodes.len() {
+            Some(f(&mut self.nodes[node]))
+        } else {
+            None
+        }
     }
 
     /// Removes `node` from the tree. This is done by disconnecting the subtree rooted at `node`
@@ -143,22 +150,27 @@ impl<T> Tree<T> {
     /// Doing so will free the memory associated with all disconnected components.
     #[inline]
     pub fn remove(&mut self, node: Node) {
-        if let Some(parent) = self.nodes[node].parent {
-            self.nodes[parent].children.retain(|child| *child != node);
+        if node.0 < self.nodes.len() {
+            if let Some(parent) = self.nodes[node].parent {
+                self.nodes[parent].children.retain(|child| *child != node);
+            }
+            self.nodes[node].parent = None;
         }
-
-        self.nodes[node].parent = None;
     }
 
     #[inline]
-    pub fn push_onto(&mut self, node: Node, t: T) -> Node {
-        let id = self.nodes.push(NodeData {
-            data: t,
-            children: vec![],
-            parent: Some(node),
-        });
-        self.nodes[node].children.push(id);
-        id
+    pub fn push_onto(&mut self, node: Node, t: T) -> Option<Node> {
+        if node.0 < self.nodes.len() {
+            let id = self.nodes.push(NodeData {
+                data: t,
+                children: vec![],
+                parent: Some(node),
+            });
+            self.nodes[node].children.push(id);
+            Some(id)
+        } else {
+            None
+        }
     }
 
     /// Returns an iterator of the ancestors of `node`.
@@ -214,6 +226,10 @@ impl<T> Tree<T> {
         // Don't introduce a cycle
         assert!(self.ancestors_of(parent).all(|ancestor| ancestor != node));
 
+        if node.0 >= self.nodes.len() || parent.0 >= self.nodes.len() {
+            return;
+        }
+
         if let Some(old_parent) = self.nodes[node].parent {
             self.nodes[old_parent]
                 .children
@@ -239,6 +255,10 @@ impl<T> Tree<T> {
 
         // Fast return when we're trying to reparent a node next to itself
         if node == successor {
+            return;
+        }
+
+        if successor.0 >= self.nodes.len() {
             return;
         }
 
@@ -378,7 +398,7 @@ impl<'a, T> Iterator for AncestorIterator<'a, T> {
     #[inline]
     fn next(&mut self) -> Option<Node> {
         let node = self.current?;
-        self.current = self.tree.with(node, NodeData::parent);
+        self.current = self.tree.with(node, NodeData::parent)?;
         Some(node)
     }
 }

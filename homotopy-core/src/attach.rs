@@ -3,7 +3,7 @@ use std::convert::{From, Into, TryInto};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    common::{Boundary, Height, SliceIndex},
+    common::{Boundary, DimensionError, Height, SliceIndex},
     diagram::{Diagram, DiagramN},
     rewrite::Cospan,
 };
@@ -62,6 +62,7 @@ impl From<Boundary> for BoundaryPath {
 pub fn attach<F, E>(diagram: &DiagramN, path: BoundaryPath, build: F) -> Result<DiagramN, E>
 where
     F: FnOnce(Diagram) -> Result<Vec<Cospan>, E>,
+    E: From<DimensionError>,
 {
     let (diagram, _) = attach_worker(diagram, path, build)?;
     Ok(diagram)
@@ -74,6 +75,7 @@ fn attach_worker<F, E>(
 ) -> Result<(DiagramN, usize), E>
 where
     F: FnOnce(Diagram) -> Result<Vec<Cospan>, E>,
+    E: From<DimensionError>,
 {
     match path {
         BoundaryPath(Boundary::Source, 0) => {
@@ -99,7 +101,7 @@ where
         }
 
         BoundaryPath(boundary, depth) => {
-            let source: DiagramN = diagram.source().try_into().unwrap();
+            let source: DiagramN = diagram.source().try_into()?;
             let (source, offset) =
                 attach_worker(&source, BoundaryPath(boundary, depth - 1), build)?;
 

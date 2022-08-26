@@ -58,7 +58,7 @@ impl Component for App {
         let state = model::State::default();
         // Install the signature stylesheet
         let mut signature_stylesheet = SignatureStylesheet::new();
-        signature_stylesheet.update(state.with_proof(|p| p.signature().clone()));
+        signature_stylesheet.update(state.with_proof(|p| p.signature().clone()).unwrap());
         signature_stylesheet.mount();
 
         Self {
@@ -75,14 +75,22 @@ impl Component for App {
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Message::Dispatch(action) => {
-                if !self.state.with_proof(|proof| action.is_valid(proof)) {
+                if !self
+                    .state
+                    .with_proof(|proof| action.is_valid(proof))
+                    .unwrap_or_default()
+                {
                     return false;
                 }
 
                 log::info!("Received action: {:?}", action);
 
                 if let model::Action::Proof(ref action) = action {
-                    if self.state.with_proof(|p| p.resets_panzoom(action)) {
+                    if self
+                        .state
+                        .with_proof(|p| p.resets_panzoom(action))
+                        .unwrap_or_default()
+                    {
                         self.panzoom.reset();
                         self.orbit_control.reset();
                     }
@@ -127,7 +135,7 @@ impl Component for App {
                 }
 
                 self.signature_stylesheet
-                    .update(self.state.with_proof(|p| p.signature().clone()));
+                    .update(self.state.with_proof(|p| p.signature().clone()).unwrap());
 
                 true
             }
@@ -157,7 +165,9 @@ impl App {
     }
 
     fn render(ctx: &Context<Self>, state: &model::State) -> Html {
-        let proof = state.with_proof(Clone::clone);
+        let proof = state
+            .with_proof(Clone::clone)
+            .expect("This should always succeed.");
         let dispatch = ctx.link().callback(Message::Dispatch);
         let signature = proof.signature();
 
@@ -204,7 +214,7 @@ impl App {
                 </div>
                 <div id="about" class="modal">
                     <div class="modal-dialog">
-                        <a href="#">
+                        <a href="#invisible-button">
                             // Empty div to create an invisible button
                             <div class="modal-close"></div>
                         </a>

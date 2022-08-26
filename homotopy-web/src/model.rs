@@ -88,7 +88,7 @@ pub struct State {
 
 impl State {
     #[inline]
-    pub(super) fn with_proof<F, U>(&self, f: F) -> U
+    pub(super) fn with_proof<F, U>(&self, f: F) -> Option<U>
     where
         F: Fn(&Proof) -> U,
     {
@@ -99,7 +99,7 @@ impl State {
     pub fn update(&mut self, action: Action) -> Result<(), ModelError> {
         match action {
             Action::Proof(action) => {
-                let mut proof = self.with_proof(Clone::clone);
+                let mut proof = self.with_proof(Clone::clone).ok_or(ModelError::Internal)?;
                 proof.update(&action).map_err(ModelError::from)?;
                 // Hide image export dialog automatically if view dimension is not 2 or 3.
                 proof.show_image_export = proof.show_image_export
@@ -122,8 +122,12 @@ impl State {
             }
 
             Action::ExportTikz => {
-                let signature = self.with_proof(|p| p.signature.clone());
-                let diagram = self.with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram());
+                let signature = self
+                    .with_proof(|p| p.signature.clone())
+                    .ok_or(ModelError::Internal)?;
+                let diagram = self
+                    .with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram())
+                    .ok_or(ModelError::Internal)?;
                 let stylesheet = tikz::stylesheet(&signature);
                 let data = tikz::render(&diagram, &stylesheet, &signature).unwrap();
                 generate_download("homotopy_io_export", "tikz", data.as_bytes())
@@ -131,7 +135,9 @@ impl State {
             }
 
             Action::ExportSvg => {
-                let signature = self.with_proof(|p| p.signature.clone());
+                let signature = self
+                    .with_proof(|p| p.signature.clone())
+                    .ok_or(ModelError::Internal)?;
 
                 // First we locate the element containing the SVG rendered the SVG rendering
                 // pipeline. We *could* do this by using a lookup by class name, which would not
@@ -175,8 +181,12 @@ impl State {
             }
 
             Action::ExportManim => {
-                let signature = self.with_proof(|p| p.signature.clone());
-                let diagram = self.with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram());
+                let signature = self
+                    .with_proof(|p| p.signature.clone())
+                    .ok_or(ModelError::Internal)?;
+                let diagram = self
+                    .with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram())
+                    .ok_or(ModelError::Internal)?;
                 let stylesheet = manim::stylesheet(&signature);
                 let data = manim::render(&diagram, &signature, &stylesheet).unwrap();
                 generate_download("homotopy_io_export", "py", data.as_bytes())
@@ -184,8 +194,12 @@ impl State {
             }
 
             Action::ExportStl => {
-                let signature = self.with_proof(|p| p.signature.clone());
-                let diagram = self.with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram());
+                let signature = self
+                    .with_proof(|p| p.signature.clone())
+                    .ok_or(ModelError::Internal)?;
+                let diagram = self
+                    .with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram())
+                    .ok_or(ModelError::Internal)?;
                 let data = stl::render(&diagram, &signature).unwrap();
                 generate_download("homotopy_io_export", "stl", data.as_bytes())
                     .map_err(ModelError::Export)?;
@@ -193,8 +207,10 @@ impl State {
 
             Action::ExportProof => {
                 let data = serialize::serialize(
-                    self.with_proof(|p| p.signature.clone()),
-                    self.with_proof(|p| p.workspace.clone()),
+                    self.with_proof(|p| p.signature.clone())
+                        .ok_or(ModelError::Internal)?,
+                    self.with_proof(|p| p.workspace.clone())
+                        .ok_or(ModelError::Internal)?,
                 );
                 generate_download("homotopy_io_export", "hom", data.as_slice())
                     .map_err(ModelError::Export)?;
@@ -225,7 +241,7 @@ impl State {
             }
 
             Action::ToggleImageExport => {
-                let mut proof = self.with_proof(Clone::clone);
+                let mut proof = self.with_proof(Clone::clone).ok_or(ModelError::Internal)?;
                 proof.show_image_export = !proof.show_image_export;
                 self.history.add(proof::Action::Nothing, proof);
             }
