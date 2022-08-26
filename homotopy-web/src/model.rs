@@ -211,13 +211,15 @@ impl State {
                         .ok_or(ModelError::Internal)?,
                     self.with_proof(|p| p.workspace.clone())
                         .ok_or(ModelError::Internal)?,
+                    self.with_proof(|p| p.metadata.clone())
+                        .ok_or(ModelError::Internal)?,
                 );
                 generate_download("homotopy_io_export", "hom", data.as_slice())
                     .map_err(ModelError::Export)?;
             }
 
             Action::ImportProof(data) => {
-                let (signature, workspace) =
+                let ((signature, workspace), metadata) =
                     match serialize::deserialize(&Vec::<u8>::from(data.clone())) {
                         Some(res) => res,
                         None => migration::deserialize(&Vec::<u8>::from(data))
@@ -237,6 +239,7 @@ impl State {
                 let mut proof: Proof = Default::default();
                 proof.signature = signature;
                 proof.workspace = workspace;
+                proof.metadata = metadata;
                 self.history.add(proof::Action::Imported, proof);
             }
 
