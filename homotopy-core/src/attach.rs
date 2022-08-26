@@ -82,7 +82,7 @@ where
 {
     match path {
         BoundaryPath(Boundary::Source, 0) => {
-            let mut cospans = build(diagram.source()).map_err(|e| Either::Left(e))?;
+            let mut cospans = build(diagram.source()).map_err(Either::Left)?;
             let mut source = diagram.source();
 
             for cospan in cospans.iter().rev() {
@@ -96,7 +96,7 @@ where
         }
 
         BoundaryPath(Boundary::Target, 0) => {
-            let added_cospans = build(diagram.target()).map_err(|e| Either::Left(e))?;
+            let added_cospans = build(diagram.target()).map_err(Either::Left)?;
             let offset = added_cospans.len();
             let mut cospans = diagram.cospans().to_vec();
             cospans.extend(added_cospans);
@@ -104,7 +104,7 @@ where
         }
 
         BoundaryPath(boundary, depth) => {
-            let source: DiagramN = diagram.source().try_into().map_err(|e| Either::Right(e))?;
+            let source: DiagramN = diagram.source().try_into().map_err(Either::Right)?;
             let (source, offset) =
                 attach_worker(&source, BoundaryPath(boundary, depth - 1), build)?;
 

@@ -52,7 +52,7 @@ impl DiagramN {
     where
         S: Signature,
     {
-        attach(self, boundary_path, |slice| {
+        match attach(self, boundary_path, |slice| {
             let expand: Rewrite = expand_in_path(&slice, interior_path, direction)?;
             let identity = Rewrite::identity(slice.dimension());
             let cospan = match boundary_path.boundary() {
@@ -68,9 +68,12 @@ impl DiagramN {
 
             typecheck_cospan(slice, cospan.clone(), boundary_path.boundary(), signature)?;
 
-            Ok::<_, ExpansionError>(vec![cospan])
-        })
-        .or(Err(ExpansionError::NoComponent))
+            Ok(vec![cospan])
+        }) {
+            Ok(d) => Ok(d),
+            Err(either::Either::Left(e)) => Err(e),
+            Err(either::Either::Right(e)) => panic!("Attach in expand failed due to a dimension error. Please open an issue on GitHub with the action dump. Error: {}", e),
+        }
     }
 }
 

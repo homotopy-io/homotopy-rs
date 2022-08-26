@@ -84,7 +84,7 @@ impl DiagramN {
             return Err(ContractionError::Invalid);
         }
 
-        attach(self, boundary_path, |slice| {
+        match attach(self, boundary_path, |slice| {
             let slice = slice.try_into().or(Err(ContractionError::Invalid))?;
             let contract = contract_in_path(&slice, interior_path, height, bias)?;
             let singular = slice.clone().rewrite_forward(&contract).unwrap();
@@ -108,9 +108,12 @@ impl DiagramN {
                 signature,
             )?;
 
-            Ok::<_, ContractionError>(vec![cospan])
-        })
-        .or(Err(ContractionError::Invalid))
+            Ok(vec![cospan])
+        }) {
+            Ok(d) => Ok(d),
+            Err(either::Either::Left(e)) => Err(e),
+            Err(either::Either::Right(e)) => panic!("Attach in contract failed due to a dimension error. Please open an issue on GitHub with the action dump. Error: {}", e),
+        }
     }
 }
 
