@@ -464,9 +464,6 @@ button, .button {
   border: none;
   background: transparent;
   user-select: text;
-
-.drawer-compact .drawer__icon {
-  display: none;
 }
 
 /* Signature */

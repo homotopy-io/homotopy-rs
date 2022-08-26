@@ -368,7 +368,6 @@ impl Sidebar {
                     title="Image export"
                     model_dispatch={model_dispatch}
                     sidebar_dispatch={sidebar_dispatch}
-                    drawer_view_size={self.drawer_view_size}
                     initial_width={self.last_drawer_width}
                     icon="close"
                     on_click={model::Action::ToggleImageExport}
