@@ -879,6 +879,7 @@ dependencies = [
  "homotopy-core",
  "homotopy-graphics",
  "im",
+ "insta",
  "instant",
  "log",
  "obake",

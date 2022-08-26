@@ -254,6 +254,12 @@ impl Signature {
     }
 }
 
+impl homotopy_core::signature::Signature for Signature {
+    fn generator(&self, g: Generator) -> std::option::Option<Diagram> {
+        Some(self.generator_info(g)?.diagram.clone())
+    }
+}
+
 impl From<Tree<SignatureItem>> for Signature {
     fn from(tree: Tree<SignatureItem>) -> Self {
         Self(tree)
