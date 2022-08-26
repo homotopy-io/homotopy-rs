@@ -1,6 +1,5 @@
 use std::convert::{From, Into, TryInto};
 
-use either::Either;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -60,13 +59,10 @@ impl From<Boundary> for BoundaryPath {
     }
 }
 
-pub fn attach<F, E>(
-    diagram: &DiagramN,
-    path: BoundaryPath,
-    build: F,
-) -> Result<DiagramN, Either<E, DimensionError>>
+pub fn attach<F, E>(diagram: &DiagramN, path: BoundaryPath, build: F) -> Result<DiagramN, E>
 where
     F: FnOnce(Diagram) -> Result<Vec<Cospan>, E>,
+    E: From<DimensionError>,
 {
     let (diagram, _) = attach_worker(diagram, path, build)?;
     Ok(diagram)
@@ -76,13 +72,14 @@ fn attach_worker<F, E>(
     diagram: &DiagramN,
     path: BoundaryPath,
     build: F,
-) -> Result<(DiagramN, usize), Either<E, DimensionError>>
+) -> Result<(DiagramN, usize), E>
 where
     F: FnOnce(Diagram) -> Result<Vec<Cospan>, E>,
+    E: From<DimensionError>,
 {
     match path {
         BoundaryPath(Boundary::Source, 0) => {
-            let mut cospans = build(diagram.source()).map_err(Either::Left)?;
+            let mut cospans = build(diagram.source())?;
             let mut source = diagram.source();
 
             for cospan in cospans.iter().rev() {
@@ -96,7 +93,7 @@ where
         }
 
         BoundaryPath(Boundary::Target, 0) => {
-            let added_cospans = build(diagram.target()).map_err(Either::Left)?;
+            let added_cospans = build(diagram.target())?;
             let offset = added_cospans.len();
             let mut cospans = diagram.cospans().to_vec();
             cospans.extend(added_cospans);
@@ -104,7 +101,7 @@ where
         }
 
         BoundaryPath(boundary, depth) => {
-            let source: DiagramN = diagram.source().try_into().map_err(Either::Right)?;
+            let source: DiagramN = diagram.source().try_into()?;
             let (source, offset) =
                 attach_worker(&source, BoundaryPath(boundary, depth - 1), build)?;
 

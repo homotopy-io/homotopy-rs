@@ -8,7 +8,7 @@ use thiserror::Error;
 use crate::{
     antipushout::{antipushout, factorize_inc},
     attach::{attach, BoundaryPath},
-    common::{Boundary, Direction, Height, RegularHeight, SingularHeight},
+    common::{Boundary, DimensionError, Direction, Height, RegularHeight, SingularHeight},
     diagram::{Diagram, DiagramN},
     factorization::factorize,
     normalization::normalize_singular,
@@ -39,6 +39,9 @@ pub enum ExpansionError {
 
     #[error("expansion is ill-typed: {0}")]
     IllTyped(#[from] TypeError),
+
+    #[error("invalid boundary path provided to expansion")]
+    Dimension(#[from] DimensionError),
 }
 
 impl DiagramN {
@@ -52,7 +55,7 @@ impl DiagramN {
     where
         S: Signature,
     {
-        match attach(self, boundary_path, |slice| {
+        attach(self, boundary_path, |slice| {
             let expand: Rewrite = expand_in_path(&slice, interior_path, direction)?;
             let identity = Rewrite::identity(slice.dimension());
             let cospan = match boundary_path.boundary() {
@@ -69,11 +72,7 @@ impl DiagramN {
             typecheck_cospan(slice, cospan.clone(), boundary_path.boundary(), signature)?;
 
             Ok(vec![cospan])
-        }) {
-            Ok(d) => Ok(d),
-            Err(either::Either::Left(e)) => Err(e),
-            Err(either::Either::Right(e)) => panic!("Attach in expand failed due to a dimension error. Please open an issue on GitHub with the action dump. Error: {}", e),
-        }
+        })
     }
 }
 

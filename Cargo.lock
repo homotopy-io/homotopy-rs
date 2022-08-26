@@ -811,7 +811,6 @@ dependencies = [
  "bimap",
  "cargo-husky",
  "criterion",
- "either",
  "flate2",
  "getrandom",
  "hashconsing",

@@ -16,7 +16,7 @@ use thiserror::Error;
 
 use crate::{
     attach::{attach, BoundaryPath},
-    common::{Boundary, Height, SingularHeight},
+    common::{Boundary, DimensionError, Height, SingularHeight},
     diagram::{Diagram, DiagramN},
     normalization,
     rewrite::{Cone, Cospan, Rewrite, Rewrite0, RewriteN},
@@ -66,6 +66,8 @@ pub enum ContractionError {
     Ambiguous,
     #[error("contraction fails to typecheck: {0}")]
     IllTyped(#[from] TypeError),
+    #[error("invalid boundary path provided to contraction")]
+    Dimension(#[from] DimensionError),
 }
 
 impl DiagramN {
@@ -84,7 +86,7 @@ impl DiagramN {
             return Err(ContractionError::Invalid);
         }
 
-        match attach(self, boundary_path, |slice| {
+        attach(self, boundary_path, |slice| {
             let slice = slice.try_into().or(Err(ContractionError::Invalid))?;
             let contract = contract_in_path(&slice, interior_path, height, bias)?;
             let singular = slice.clone().rewrite_forward(&contract).unwrap();
@@ -109,11 +111,7 @@ impl DiagramN {
             )?;
 
             Ok(vec![cospan])
-        }) {
-            Ok(d) => Ok(d),
-            Err(either::Either::Left(e)) => Err(e),
-            Err(either::Either::Right(e)) => panic!("Attach in contract failed due to a dimension error. Please open an issue on GitHub with the action dump. Error: {}", e),
-        }
+        })
     }
 }
 
