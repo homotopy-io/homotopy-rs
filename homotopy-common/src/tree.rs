@@ -226,7 +226,7 @@ impl<T> Tree<T> {
         // Don't introduce a cycle
         assert!(self.ancestors_of(parent).all(|ancestor| ancestor != node));
 
-        if node.0 >= self.nodes.len() {
+        if node.0 >= self.nodes.len() || parent.0 >= self.nodes.len() {
             return;
         }
 
