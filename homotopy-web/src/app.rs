@@ -214,7 +214,7 @@ impl App {
                 </div>
                 <div id="about" class="modal">
                     <div class="modal-dialog">
-                        <a href="#">
+                        <a href="#invisible-button">
                             // Empty div to create an invisible button
                             <div class="modal-close"></div>
                         </a>

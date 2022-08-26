@@ -104,10 +104,7 @@ where
         }
 
         BoundaryPath(boundary, depth) => {
-            let source: DiagramN = diagram
-                .source()
-                .try_into()
-                .map_err(|e| Either::Right(e))?;
+            let source: DiagramN = diagram.source().try_into().map_err(|e| Either::Right(e))?;
             let (source, offset) =
                 attach_worker(&source, BoundaryPath(boundary, depth - 1), build)?;
 

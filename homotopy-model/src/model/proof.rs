@@ -779,7 +779,7 @@ impl ProofState {
             for height in &ws.path {
                 (matches!(height, SliceIndex::Boundary(_))
                     || matches!(height, SliceIndex::Interior(Height::Regular(_))))
-                .then(|| ())
+                .then_some(())
                 .ok_or(ModelError::InvalidAction)?;
                 diagram = DiagramN::try_from(diagram)
                     .map_err(ModelError::InvalidSlice)?

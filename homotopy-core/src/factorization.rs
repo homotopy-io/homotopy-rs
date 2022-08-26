@@ -25,11 +25,11 @@ pub fn factorize(f: Rewrite, g: Rewrite, source: Diagram, target: Diagram) -> Fa
             Diagram::Diagram0(s),
             Diagram::Diagram0(t),
         ) => {
-            assert!(f.source() == None || f.source() == Some(s));
-            assert!(g.source() == None || g.source() == Some(t));
+            assert!(f.source().is_none() || f.source() == Some(s));
+            assert!(g.source().is_none() || g.source() == Some(t));
 
             Factorization::Unique(
-                (s == t || s.dimension < t.dimension).then(|| Rewrite0::new(s, t).into()),
+                (s == t || s.dimension < t.dimension).then_some(Rewrite0::new(s, t).into()),
             )
         }
         (
