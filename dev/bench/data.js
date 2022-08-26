@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1661521703847,
+  "lastUpdate": 1661553540403,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -40439,6 +40439,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 35.135,
             "range": "+/- 0.076",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "df07a76372d3de64a5cb656be767f4aa846d3226",
+          "message": "Panic-proofing the tool (#752)\n\n* Panic proofing, safer trees.\r\n\r\n* Panic-proofing, safer signature moves.\r\n\r\n* Panic-proofing, safer attach.\r\n\r\n* Some linting fixes.\r\n\r\n* Reimplemented Arbitrary for Heights to avoid stupid out-of-bounds false positives.\r\n\r\n* Reimplemented Arbitrary for Nodes as well.\r\n\r\n* More panic-proofing of tree repartenting.\r\n\r\n* Implemented review changes.\r\n\r\n* Remove either dependency\r\n\r\n* Implemented final review change.\r\n\r\nCo-authored-by: Calin Tataru <calintat@gmail.com>",
+          "timestamp": "2022-08-26T21:26:00Z",
+          "tree_id": "e8a8b753a15db990ede99bc7b6023c2d12236d52",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/df07a76372d3de64a5cb656be767f4aa846d3226"
+        },
+        "date": 1661553525738,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.7099,
+            "range": "+/- 0.054",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 13.87,
+            "range": "+/- 0.224",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 63.085,
+            "range": "+/- 1.040",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 388.54,
+            "range": "+/- 5.260",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 3.2611,
+            "range": "+/- 0.026",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 32.698,
+            "range": "+/- 0.276",
             "unit": "s"
           }
         ]
