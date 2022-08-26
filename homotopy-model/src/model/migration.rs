@@ -40,8 +40,14 @@ pub fn deserialize(data: &[u8]) -> Option<((Signature, Option<Workspace>), Metad
         Ok(proof) => Some(proof),
     }?;
 
+    let metadata = Metadata {
+        title: (!export.metadata.title.is_empty()).then_some(export.metadata.title),
+        author: (!export.metadata.author.is_empty()).then_some(export.metadata.author),
+        abstr: (!export.metadata.user_abstract.is_empty()).then_some(export.metadata.user_abstract),
+    };
+
     let sw = load(proof)?;
-    Some((sw, export.metadata.into()))
+    Some((sw, metadata))
 }
 
 fn load(proof: OldProof) -> Option<(Signature, Option<Workspace>)> {
@@ -75,14 +81,4 @@ fn load(proof: OldProof) -> Option<(Signature, Option<Workspace>)> {
     };
 
     Some((signature, workspace))
-}
-
-impl Into<Metadata> for OldMetadata {
-    fn into(self) -> Metadata {
-        Metadata {
-            title: (!self.title.is_empty()).then_some(self.title),
-            author: (!self.author.is_empty()).then_some(self.author),
-            abstr: (!self.user_abstract.is_empty()).then_some(self.user_abstract),
-        }
-    }
 }
