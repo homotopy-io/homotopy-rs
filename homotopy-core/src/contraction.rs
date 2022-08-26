@@ -42,6 +42,7 @@ struct Component(usize);
 type BiasValue = usize;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub enum Bias {
     Higher,
     Lower,

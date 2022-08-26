@@ -27,6 +27,7 @@ pub mod generators;
 pub mod homotopy;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub struct View {
     dimension: u8,
 }
@@ -106,6 +107,7 @@ pub struct ProofState {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub enum Action {
     /// Create a new generator of dimension zero.
     CreateGeneratorZero,
@@ -992,6 +994,17 @@ pub struct AttachOption {
     pub generator: Generator,
     pub boundary_path: Option<BoundaryPath>,
     pub embedding: Vector<usize>,
+}
+
+#[cfg(feature = "fuzz")]
+impl<'a> arbitrary::Arbitrary<'a> for AttachOption {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(AttachOption {
+            generator: u.arbitrary()?,
+            boundary_path: u.arbitrary()?,
+            embedding: Vector::from(u.arbitrary::<Vec<_>>()?),
+        })
+    }
 }
 
 fn contains_point(diagram: Diagram, point: &[Height], embedding: &[RegularHeight]) -> bool {
