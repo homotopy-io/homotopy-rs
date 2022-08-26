@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1661553540403,
+  "lastUpdate": 1661554492033,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -40499,6 +40499,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 32.698,
             "range": "+/- 0.276",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "50454943+H-Yulong@users.noreply.github.com",
+            "name": "Yulong Huang",
+            "username": "H-Yulong"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1ed1a3fa0c65539c2562c0f84723e4ff7bb341ed",
+          "message": "Metadata fix (#754)\n\n* setup version\r\n\r\n* serialize and migrate metadata\r\n\r\n* tweak\r\n\r\n* lint tweak\r\n\r\nCo-authored-by: Yulong Huang <yh419@cam.ac.uk>",
+          "timestamp": "2022-08-27T05:54:29+08:00",
+          "tree_id": "7905cd3581edaa141cf47f205b6a49a606357e69",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/1ed1a3fa0c65539c2562c0f84723e4ff7bb341ed"
+        },
+        "date": 1661554481776,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.8389,
+            "range": "+/- 0.009",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 11.057,
+            "range": "+/- 0.034",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 50.264,
+            "range": "+/- 0.018",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 319.85,
+            "range": "+/- 0.160",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.6993,
+            "range": "+/- 0.001",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 26.986,
+            "range": "+/- 0.035",
             "unit": "s"
           }
         ]
