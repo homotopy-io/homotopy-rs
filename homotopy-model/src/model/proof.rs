@@ -27,9 +27,15 @@ pub mod generators;
 pub mod homotopy;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub struct View {
     dimension: u8,
+}
+
+#[cfg(feature = "fuzz")]
+impl<'a> arbitrary::Arbitrary<'a> for View {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        Ok(Self::new(u.int_in_range(0..=4)?))
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -323,7 +329,6 @@ impl ProofState {
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.visible_dimension() > 0),
-            Action::UpdateView(v) => v.dimension <= 4,
             _ => true,
         }
     }
