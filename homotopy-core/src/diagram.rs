@@ -466,6 +466,7 @@ impl DiagramN {
                 Err(AttachmentError::Incompatible)
             }
         })
+        .or(Err(AttachmentError::Incompatible))
     }
 
     #[must_use]

@@ -1,9 +1,10 @@
 use std::convert::{From, Into, TryInto};
 
+use either::Either;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    common::{Boundary, Height, SliceIndex},
+    common::{Boundary, DimensionError, Height, SliceIndex},
     diagram::{Diagram, DiagramN},
     rewrite::Cospan,
 };
@@ -59,7 +60,11 @@ impl From<Boundary> for BoundaryPath {
     }
 }
 
-pub fn attach<F, E>(diagram: &DiagramN, path: BoundaryPath, build: F) -> Result<DiagramN, E>
+pub fn attach<F, E>(
+    diagram: &DiagramN,
+    path: BoundaryPath,
+    build: F,
+) -> Result<DiagramN, Either<E, DimensionError>>
 where
     F: FnOnce(Diagram) -> Result<Vec<Cospan>, E>,
 {
@@ -71,13 +76,13 @@ fn attach_worker<F, E>(
     diagram: &DiagramN,
     path: BoundaryPath,
     build: F,
-) -> Result<(DiagramN, usize), E>
+) -> Result<(DiagramN, usize), Either<E, DimensionError>>
 where
     F: FnOnce(Diagram) -> Result<Vec<Cospan>, E>,
 {
     match path {
         BoundaryPath(Boundary::Source, 0) => {
-            let mut cospans = build(diagram.source())?;
+            let mut cospans = build(diagram.source()).map_err(|e| Either::Left(e))?;
             let mut source = diagram.source();
 
             for cospan in cospans.iter().rev() {
@@ -91,7 +96,7 @@ where
         }
 
         BoundaryPath(Boundary::Target, 0) => {
-            let added_cospans = build(diagram.target())?;
+            let added_cospans = build(diagram.target()).map_err(|e| Either::Left(e))?;
             let offset = added_cospans.len();
             let mut cospans = diagram.cospans().to_vec();
             cospans.extend(added_cospans);
@@ -99,7 +104,10 @@ where
         }
 
         BoundaryPath(boundary, depth) => {
-            let source: DiagramN = diagram.source().try_into().unwrap();
+            let source: DiagramN = diagram
+                .source()
+                .try_into()
+                .map_err(|e| Either::Right(e))?;
             let (source, offset) =
                 attach_worker(&source, BoundaryPath(boundary, depth - 1), build)?;
 

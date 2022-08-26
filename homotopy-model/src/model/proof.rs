@@ -287,7 +287,11 @@ impl ProofState {
                     selected.boundary == boundary || globularity(&selected.diagram, &ws.diagram)
                 })
             }),
-            Action::TakeIdentityDiagram | Action::ClearWorkspace => self.workspace.is_some(),
+            Action::TakeIdentityDiagram => self
+                .workspace
+                .as_ref()
+                .map_or(false, |w| w.view.dimension < u8::MAX),
+            Action::ClearWorkspace => self.workspace.is_some(),
             Action::Theorem => self
                 .workspace
                 .as_ref()
