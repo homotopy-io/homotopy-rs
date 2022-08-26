@@ -212,7 +212,7 @@ impl State {
                     self.with_proof(|p| p.workspace.clone())
                         .ok_or(ModelError::Internal)?,
                     self.with_proof(|p| p.metadata.clone())
-                        .ok_or(ModelError::Internal)?
+                        .ok_or(ModelError::Internal)?,
                 );
                 generate_download("homotopy_io_export", "hom", data.as_slice())
                     .map_err(ModelError::Export)?;
