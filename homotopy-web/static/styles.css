@@ -76,12 +76,15 @@ button, .button {
 /* Sidebar */
 
 .sidebar {
+  width: var(--sidebar-width);
   background: var(--sidebar-background);
   border: var(--sidebar-border) 1px solid;
   color: var(--sidebar-foreground);
+  overflow: none;
   display: flex;
   flex-direction: column;
   z-index: 1001;
+  box-sizing: border-box;
 }
 
 .sidebar__logo {
