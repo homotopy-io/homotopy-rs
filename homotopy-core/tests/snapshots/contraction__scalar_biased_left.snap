@@ -1,11 +1,11 @@
 ---
 source: homotopy-core/tests/contraction.rs
-expression: "scalar_then_scalar.identity().contract(Boundary::Target.into(), &[], 0,\n                                       Some(Bias::Lower),\n                                       &sig).unwrap().target()"
+expression: "scalar_then_scalar.identity().contract(Boundary::Target.into(), &[], 0,\n            Some(Bias::Lower), &sig).unwrap().target()"
 ---
 DiagramN {
     source: DiagramN {
         source: Diagram0(
-            0:0,
+            0:0^+,
         ),
         cospans: [],
     },
@@ -19,31 +19,31 @@ DiagramN {
                         internal: Cone0 {
                             target: Cospan {
                                 forward: Rewrite0(
-                                    0:0,
-                                    1:2,
+                                    0:0^+,
+                                    1:2^+,
                                     Label(
-                                        [
-                                            (1:2, [Interior(Singular(0)), Boundary(Source)]),
-                                        ],
+                                        Some(
+                                            (1, BoundaryPath(Source, 1), []),
+                                        ),
                                     ),
                                 ),
                                 backward: Rewrite0(
-                                    0:0,
-                                    1:2,
+                                    0:0^+,
+                                    1:2^+,
                                     Label(
-                                        [
-                                            (1:2, [Interior(Singular(0)), Boundary(Target)]),
-                                        ],
+                                        Some(
+                                            (1, BoundaryPath(Target, 1), []),
+                                        ),
                                     ),
                                 ),
                             },
                             regular_slice: Rewrite0(
-                                0:0,
-                                1:2,
+                                0:0^+,
+                                1:2^+,
                                 Label(
-                                    [
-                                        (1:2, [Boundary(Source), Interior(Regular(0))]),
-                                    ],
+                                    Some(
+                                        (1, BoundaryPath(Source, 0), [Regular(0)]),
+                                    ),
                                 ),
                             ),
                         },
@@ -53,31 +53,31 @@ DiagramN {
                         internal: Cone0 {
                             target: Cospan {
                                 forward: Rewrite0(
-                                    0:0,
-                                    1:2,
+                                    0:0^+,
+                                    1:2^+,
                                     Label(
-                                        [
-                                            (1:2, [Interior(Singular(0)), Boundary(Source)]),
-                                        ],
+                                        Some(
+                                            (1, BoundaryPath(Source, 1), []),
+                                        ),
                                     ),
                                 ),
                                 backward: Rewrite0(
-                                    0:0,
-                                    1:2,
+                                    0:0^+,
+                                    1:2^+,
                                     Label(
-                                        [
-                                            (1:2, [Interior(Singular(0)), Boundary(Target)]),
-                                        ],
+                                        Some(
+                                            (1, BoundaryPath(Target, 1), []),
+                                        ),
                                     ),
                                 ),
                             },
                             regular_slice: Rewrite0(
-                                0:0,
-                                1:2,
+                                0:0^+,
+                                1:2^+,
                                 Label(
-                                    [
-                                        (1:2, [Boundary(Source), Interior(Regular(0))]),
-                                    ],
+                                    Some(
+                                        (1, BoundaryPath(Source, 0), [Regular(0)]),
+                                    ),
                                 ),
                             ),
                         },
@@ -92,31 +92,31 @@ DiagramN {
                         internal: Cone0 {
                             target: Cospan {
                                 forward: Rewrite0(
-                                    0:0,
-                                    1:2,
+                                    0:0^+,
+                                    1:2^+,
                                     Label(
-                                        [
-                                            (1:2, [Interior(Singular(0)), Boundary(Source)]),
-                                        ],
+                                        Some(
+                                            (1, BoundaryPath(Source, 1), []),
+                                        ),
                                     ),
                                 ),
                                 backward: Rewrite0(
-                                    0:0,
-                                    1:2,
+                                    0:0^+,
+                                    1:2^+,
                                     Label(
-                                        [
-                                            (1:2, [Interior(Singular(0)), Boundary(Target)]),
-                                        ],
+                                        Some(
+                                            (1, BoundaryPath(Target, 1), []),
+                                        ),
                                     ),
                                 ),
                             },
                             regular_slice: Rewrite0(
-                                0:0,
-                                1:2,
+                                0:0^+,
+                                1:2^+,
                                 Label(
-                                    [
-                                        (1:2, [Boundary(Target), Interior(Regular(0))]),
-                                    ],
+                                    Some(
+                                        (1, BoundaryPath(Target, 0), [Regular(0)]),
+                                    ),
                                 ),
                             ),
                         },
@@ -126,31 +126,31 @@ DiagramN {
                         internal: Cone0 {
                             target: Cospan {
                                 forward: Rewrite0(
-                                    0:0,
-                                    1:2,
+                                    0:0^+,
+                                    1:2^+,
                                     Label(
-                                        [
-                                            (1:2, [Interior(Singular(0)), Boundary(Source)]),
-                                        ],
+                                        Some(
+                                            (1, BoundaryPath(Source, 1), []),
+                                        ),
                                     ),
                                 ),
                                 backward: Rewrite0(
-                                    0:0,
-                                    1:2,
+                                    0:0^+,
+                                    1:2^+,
                                     Label(
-                                        [
-                                            (1:2, [Interior(Singular(0)), Boundary(Target)]),
-                                        ],
+                                        Some(
+                                            (1, BoundaryPath(Target, 1), []),
+                                        ),
                                     ),
                                 ),
                             },
                             regular_slice: Rewrite0(
-                                0:0,
-                                1:2,
+                                0:0^+,
+                                1:2^+,
                                 Label(
-                                    [
-                                        (1:2, [Boundary(Target), Interior(Regular(0))]),
-                                    ],
+                                    Some(
+                                        (1, BoundaryPath(Target, 0), [Regular(0)]),
+                                    ),
                                 ),
                             ),
                         },
