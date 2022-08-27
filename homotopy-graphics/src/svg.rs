@@ -36,18 +36,7 @@ macro_rules! write_styles_for {
     }};
 }
 
-pub fn stylesheet(
-    styles: &impl SignatureStyleData,
-    lightness1: f32,
-    lightness2: f32,
-    lightness3: f32,
-    lightness4: f32,
-    lightness5: f32,
-    lightness6: f32,
-    lightness7: f32,
-    lightness8: f32,
-    lightness9: f32,
-) -> String {
+pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
     let mut stylesheet = String::new();
 
     writeln!(
@@ -56,13 +45,8 @@ pub fn stylesheet(
     )
     .unwrap();
 
-
     for (generator, style) in styles.as_pairs() {
-        write_styles_for!(
-            generator,
-            style,
-            stylesheet,
-        );
+        write_styles_for!(generator, style, stylesheet,);
     }
 
     stylesheet
@@ -75,7 +59,8 @@ pub fn generator_class_from_diagram_dim(generator: Generator, diagram_dimension:
         Orientation::Zero => 1,
         Orientation::Negative => 2,
     };
-    let offset = 3 * orientation + (diagram_dimension - generator.dimension.min(diagram_dimension)).min(2);
+    let offset =
+        3 * orientation + (diagram_dimension - generator.dimension.min(diagram_dimension)).min(2);
 
     let codimension = match diagram_dimension - generator.dimension.min(diagram_dimension) {
         0 => "point",
@@ -83,12 +68,19 @@ pub fn generator_class_from_diagram_dim(generator: Generator, diagram_dimension:
         _ => "",
     };
 
-    format!("{} {}", generator_class_from_offset(generator, offset % 9), codimension)
+    format!(
+        "{} {}",
+        generator_class_from_offset(generator, offset % 9),
+        codimension
+    )
 }
 
 #[inline]
 fn generator_class_from_offset(generator: Generator, offset: usize) -> String {
-    format!("generator__{}-{}--{}", generator.id, generator.dimension, offset)
+    format!(
+        "generator__{}-{}--{}",
+        generator.id, generator.dimension, offset
+    )
 }
 
 pub fn generator_class(generator: Generator, suffix: &str) -> String {

@@ -46,44 +46,11 @@ impl SignatureStylesheet {
         self.element.clone().dyn_into::<Node>().unwrap()
     }
 
-    pub fn update(
-        &mut self,
-        signature: Signature,
-        lightness1: u32,
-        lightness2: u32,
-        lightness3: u32,
-        lightness4: u32,
-        lightness5: u32,
-        lightness6: u32,
-        lightness7: u32,
-        lightness8: u32,
-        lightness9: u32,
-    ) {
-        log::debug!("lightenings: {} {} {} {} {} {} {} {} {}",
-                     (lightness1 as f32 - 50.) / 100.,
-                     (lightness2 as f32 - 50.) / 100.,
-                     (lightness3 as f32 - 50.) / 100.,
-                     (lightness4 as f32 - 50.) / 100.,
-                     (lightness5 as f32 - 50.) / 100.,
-                     (lightness6 as f32 - 50.) / 100.,
-                     (lightness7 as f32 - 50.) / 100.,
-                     (lightness8 as f32 - 50.) / 100.,
-                     (lightness9 as f32 - 50.) / 100.
-                     );
-        // if signature != self.signature {
-        self.signature = signature;
-        self.element.set_inner_html(&svg::stylesheet(
-            &self.signature,
-            (lightness1 as f32 - 50.) / 100.,
-            (lightness2 as f32 - 50.) / 100.,
-            (lightness3 as f32 - 50.) / 100.,
-            (lightness4 as f32 - 50.) / 100.,
-            (lightness5 as f32 - 50.) / 100.,
-            (lightness6 as f32 - 50.) / 100.,
-            (lightness7 as f32 - 50.) / 100.,
-            (lightness8 as f32 - 50.) / 100.,
-            (lightness9 as f32 - 50.) / 100.,
-        ));
-        // }
+    pub fn update(&mut self, signature: Signature) {
+        if signature != self.signature {
+            self.signature = signature;
+            self.element
+                .set_inner_html(&svg::stylesheet(&self.signature));
+        }
     }
 }

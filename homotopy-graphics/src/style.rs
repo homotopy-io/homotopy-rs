@@ -1,8 +1,8 @@
 use std::{fmt, str::FromStr};
 
 use homotopy_core::Generator;
+use palette::{convert::FromColor, Hsl, Lighten, Srgb};
 use serde::{Deserialize, Serialize};
-use palette::{Hsl, Lighten, Srgb, convert::FromColor};
 
 pub trait GeneratorStyle {
     fn color(&self) -> Color;
