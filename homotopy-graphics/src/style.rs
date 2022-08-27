@@ -2,6 +2,7 @@ use std::{fmt, str::FromStr};
 
 use homotopy_core::Generator;
 use serde::{Deserialize, Serialize};
+use palette::{Hsl, Lighten, Srgb, convert::FromColor};
 
 pub trait GeneratorStyle {
     fn color(&self) -> Color;
@@ -17,7 +18,7 @@ pub trait SignatureStyleData {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Color(pub(crate) palette::Srgb<u8>);
+pub struct Color(pub(crate) Srgb<u8>);
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum VertexShape {
@@ -33,36 +34,47 @@ impl Color {
 
     #[must_use]
     pub fn lighten(&self, amount: f32) -> Self {
-        Self(palette::Lighten::lighten(self.0.into_linear(), amount).into())
+        Self(self.0.into_linear().lighten(amount).into())
     }
 
     #[must_use]
     pub fn with_lightness(&self, lightness: f32) -> Self {
-        let mut hsl: palette::Hsl =
-            palette::convert::FromColor::from_color(self.0.into_format::<f32>());
+        let mut hsl: Hsl = FromColor::from_color(self.0.into_format::<f32>());
         hsl.lightness = lightness;
-        let srgb: palette::Srgb<f32> = palette::convert::FromColor::from_color(hsl);
+        let srgb: Srgb<f32> = FromColor::from_color(hsl);
         Self(srgb.into_format())
     }
 
     // we combine saturate and lighten into a single function since we need to convert SRGB into
     // HSL or HSV color space anyway and we save some computation by lightening this directly
     // instead of the resulting SRGB.
-    #[must_use]
-    pub fn desaturate_and_lighten(&self, desaturate: f32, lighten: f32) -> Self {
-        let hsl: palette::Hsl =
-            palette::convert::FromColor::from_color(self.0.into_format::<f32>());
-        let desaturated = palette::Saturate::saturate(hsl, -desaturate);
-        let lightened = palette::Lighten::lighten(desaturated, lighten);
-        let srgb: palette::Srgb<f32> = palette::convert::FromColor::from_color(lightened);
-        Self(srgb.into_format())
-    }
+    // #[must_use]
+    // pub fn desaturate_and_lighten(&self, desaturate: f32, lighten: f32) -> Self {
+    //     let hsl: Hsl = FromColor::from_color(self.0.into_format::<f32>());
+    //     let desaturated = Saturate::saturate(hsl, -desaturate);
+    //     let lightened = lighten(desaturated, lighten);
+    //     let srgb: palette::Srgb<f32> = palette::convert::FromColor::from_color(lightened);
+    //     Self(srgb.into_format())
+    // }
 
     pub fn is_light(&self) -> bool {
         palette::RelativeContrast::get_contrast_ratio(
             palette::Srgb::new(1., 1., 1.),
             self.0.into_format::<f32>(),
         ) < 1.5
+    }
+
+    // Get color in lightened form (based on offset [0, 8]). We wrap colors so that they are
+    // sufficiently different and clearly distinguishable for end users.
+    #[inline]
+    #[must_use]
+    pub fn lighten_from_offset(&self, offset: usize) -> Self {
+        let dir = if self.is_light() { -1. } else { 1. };
+        let o = dir * 0.08 * offset as f32;
+        let mut hsl: Hsl = FromColor::from_color(self.0.into_format::<f32>());
+        hsl.lightness = (hsl.lightness + o) % 1.;
+        let srgb: Srgb<f32> = FromColor::from_color(hsl);
+        Self(srgb.into_format())
     }
 
     pub fn into_components<T>(self) -> (T, T, T)

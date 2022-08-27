@@ -7,35 +7,32 @@ use crate::style::{GeneratorStyle, SignatureStyleData};
 pub mod render;
 pub mod shape;
 
-macro_rules! write_style_for {
-    (@fmt_str "surface") => {
-        ".{name}{orientation} {{ fill: {color}; stroke: {color}; }}"
-    };
-    (@fmt_str "wire") => {
-        ".{name}{orientation} {{ stroke: {color}; }}"
-    };
-    (@fmt_str "point") => {
-        ".{name}{orientation} {{ fill: {color}; }}"
-    };
-    ($generator:expr, $stylesheet:expr, $orientation:literal, $codimension:tt, $color:expr) => {{
+macro_rules! write_styles_for {
+    (
+        @offset_at
+        $offset:expr,
+        $generator:expr,
+        $color:expr,
+        $stylesheet:expr
+     ) => {{
         writeln!(
             $stylesheet,
-            write_style_for!(@fmt_str $codimension),
-            name = generator_class($generator, $codimension),
-            orientation = format!(".{}--{}", $orientation, $codimension),
-            color = $color.hex(),
+            ".{name} {{ fill: {color}; stroke: {color}; }}",
+            name = generator_class_from_offset($generator, $offset),
+            color = $color.lighten_from_offset($offset).hex(),
         )
         .unwrap()
     }};
-    ($generator:expr, $stylesheet:expr, $codimension:tt, $color:expr) => {{
-        writeln!(
-            $stylesheet,
-            write_style_for!(@fmt_str $codimension),
-            name = generator_class($generator, $codimension),
-            orientation = "",
-            color = $color.hex(),
-        )
-        .unwrap()
+    (
+        $generator:expr,
+        $style:expr,
+        $stylesheet:expr,
+    ) => {{
+        let color = $style.color();
+
+        for offset in 0..9 {
+            write_styles_for!(@offset_at offset, $generator, color, $stylesheet);
+        }
     }};
 }
 
@@ -53,72 +50,45 @@ pub fn stylesheet(
 ) -> String {
     let mut stylesheet = String::new();
 
+    writeln!(
+        stylesheet,
+        ".wire {{ fill: none !important; }} .point {{ stroke: none !important; }}",
+    )
+    .unwrap();
+
+
     for (generator, style) in styles.as_pairs() {
-        write_style_for!(
+        write_styles_for!(
             generator,
+            style,
             stylesheet,
-            "inverse",
-            "point",
-            style.color().lighten(lightness1)
-        );
-        write_style_for!(
-            generator,
-            stylesheet,
-            "inverse",
-            "wire",
-            style.color().lighten(lightness2)
-        );
-        write_style_for!(
-            generator,
-            stylesheet,
-            "inverse",
-            "surface",
-            style.color().lighten(lightness3)
-        );
-
-        write_style_for!(
-            generator,
-            stylesheet,
-            "zero",
-            "point",
-            style.color().lighten(lightness4)
-        );
-        write_style_for!(
-            generator,
-            stylesheet,
-            "zero",
-            "wire",
-            style.color().lighten(lightness5)
-        );
-        write_style_for!(
-            generator,
-            stylesheet,
-            "zero",
-            "surface",
-            style.color().lighten(lightness6)
-        );
-
-        write_style_for!(
-            generator,
-            stylesheet,
-            "point",
-            style.color().lighten(lightness7)
-        );
-        write_style_for!(
-            generator,
-            stylesheet,
-            "wire",
-            style.color().lighten(lightness8)
-        );
-        write_style_for!(
-            generator,
-            stylesheet,
-            "surface",
-            style.color().lighten(lightness9)
         );
     }
 
     stylesheet
+}
+
+#[inline]
+pub fn generator_class_from_diagram_dim(generator: Generator, diagram_dimension: usize) -> String {
+    let orientation = match generator.orientation {
+        Orientation::Positive => 0,
+        Orientation::Zero => 1,
+        Orientation::Negative => 2,
+    };
+    let offset = 3 * orientation + (diagram_dimension - generator.dimension.min(diagram_dimension)).min(2);
+
+    let codimension = match diagram_dimension - generator.dimension.min(diagram_dimension) {
+        0 => "point",
+        1 => "wire",
+        _ => "",
+    };
+
+    format!("{} {}", generator_class_from_offset(generator, offset % 9), codimension)
+}
+
+#[inline]
+fn generator_class_from_offset(generator: Generator, offset: usize) -> String {
+    format!("generator__{}-{}--{}", generator.id, generator.dimension, offset)
 }
 
 pub fn generator_class(generator: Generator, suffix: &str) -> String {
