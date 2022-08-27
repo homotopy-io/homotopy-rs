@@ -8,7 +8,7 @@ use std::{
 
 use hashconsing::{HConsed, HConsign, HashConsign};
 // used for debugging only
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{
@@ -20,7 +20,7 @@ use crate::{
     util::first_max_generator,
 };
 
-#[derive(PartialEq, Eq, Hash, Clone, PartialOrd, Ord, Serialize)]
+#[derive(PartialEq, Eq, Hash, Clone, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum Diagram {
     Diagram0(Generator),
     DiagramN(DiagramN),
@@ -181,6 +181,16 @@ impl Serialize for DiagramN {
         S: serde::Serializer,
     {
         serializer.serialize_newtype_struct("DiagramN", self.0.get())
+    }
+}
+
+impl<'de> Deserialize<'de> for DiagramN {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Deserialize::deserialize(deserializer)
+            .map(|d| DiagramN(DIAGRAM_FACTORY.with(|factory| factory.borrow_mut().mk(d))))
     }
 }
 
@@ -553,7 +563,7 @@ impl<'a> TryFrom<&'a Diagram> for Generator {
     }
 }
 
-#[derive(Eq, Clone, Serialize)]
+#[derive(Eq, Clone, Serialize, Deserialize)]
 struct DiagramInternal {
     source: Diagram,
     cospans: Vec<Cospan>,

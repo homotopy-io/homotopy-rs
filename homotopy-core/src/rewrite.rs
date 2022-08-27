@@ -10,7 +10,7 @@ use std::{
 use hashconsing::{HConsed, HConsign, HashConsign};
 use once_cell::unsync::OnceCell;
 // used for debugging only
-use serde::{ser::SerializeStruct, Serialize};
+use serde::{ser::SerializeStruct, Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{
@@ -37,23 +37,23 @@ pub enum CompositionError {
     Incompatible,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord, Serialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Cospan {
     pub forward: Rewrite,
     pub backward: Rewrite,
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct RewriteInternal {
     dimension: usize,
     cones: Vec<Cone>,
-    #[serde(skip_serializing)]
+    #[serde(skip)]
     max_generator_source: OnceCell<Option<Generator>>,
-    #[serde(skip_serializing)]
+    #[serde(skip)]
     max_generator_target: OnceCell<Option<Generator>>,
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord, Serialize)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Rewrite0(pub(crate) Option<(Generator, Generator)>);
 
 #[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
@@ -68,13 +68,23 @@ impl Serialize for RewriteN {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord, Serialize)]
+impl<'de> Deserialize<'de> for RewriteN {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Deserialize::deserialize(deserializer)
+            .map(|r| RewriteN(REWRITE_FACTORY.with(|factory| factory.borrow_mut().mk(r))))
+    }
+}
+
+#[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum Rewrite {
     Rewrite0(Rewrite0),
     RewriteN(RewriteN),
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize, Deserialize)]
 pub struct ConeInternal {
     pub(crate) source: Vec<Cospan>,
     pub(crate) target: Cospan,
@@ -96,6 +106,23 @@ impl Serialize for Cone {
         state.serialize_field("index", &self.index)?;
         state.serialize_field("internal", &self.internal.get())?;
         state.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for Cone {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct ConeUnshared {
+            index: usize,
+            internal: ConeInternal,
+        }
+        Deserialize::deserialize(deserializer).map(|c: ConeUnshared| Cone {
+            index: c.index,
+            internal: CONE_FACTORY.with(|factory| factory.borrow_mut().mk(c.internal)),
+        })
     }
 }
 
