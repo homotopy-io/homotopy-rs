@@ -123,9 +123,12 @@ impl<const N: usize> Mesh<N> {
     fn explode(&self, index: usize) -> Result<Self, DimensionError> {
         let explosion = self.graph.explode(
             |_, coord, si| {
-                let mut coord = *coord;
-                coord[index] = si;
-                Some(coord)
+                // TODO: control this programmatically
+                matches!(si, SliceIndex::Interior(_)).then(|| {
+                    let mut coord = *coord;
+                    coord[index] = si;
+                    coord
+                })
             },
             |_, _, _| Some(()),
             |_, _, r| (r != ExternalRewrite::Flange).then_some(()),

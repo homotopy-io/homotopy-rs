@@ -58,6 +58,8 @@ pub mod check;
 pub mod common;
 pub mod complex;
 pub mod contraction;
+#[cfg(debug_assertions)]
+pub mod debug;
 pub mod diagram;
 pub mod examples;
 pub mod expansion;

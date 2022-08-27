@@ -1,6 +1,10 @@
 use std::{hash::Hash, mem};
 
-use homotopy_common::{hash::FastHashMap, idx::IdxVec, parity};
+use homotopy_common::{
+    hash::FastHashMap,
+    idx::{Idx, IdxVec},
+    parity,
+};
 use homotopy_core::Generator;
 use homotopy_gl::{
     array::VAO_LIMIT,
@@ -60,13 +64,13 @@ where
 
     fn push_vert(&mut self, v: B::Vertex, data: VertexData<B>) -> u16 {
         if let Some(&idx) = self.mapping.get(&v) {
-            return idx;
+            idx
+        } else {
+            let idx = self.mapping.len() as u16;
+            self.mapping.insert(v, idx);
+            self.inner.push_vert(idx, data);
+            idx
         }
-
-        let idx = self.mapping.len() as u16;
-        self.mapping.insert(v, idx);
-        self.inner.push_vert(idx, data);
-        idx
     }
 }
 
@@ -573,6 +577,104 @@ impl Bufferer for CylinderWireBufferer {
     }
 }
 
+struct DebugBufferer;
+
+struct DebugBuffererState {
+    elements: Vec<u16>,
+    verts: IdxVec<u16, Vec3>,
+}
+
+pub struct DebugArrayData {
+    pub element_buffer: ElementBuffer,
+    pub vert_buffer: Buffer<Vec3>,
+}
+
+impl BuffererState for DebugBuffererState {
+    type VertexData = Vec3;
+
+    fn alloc() -> Self {
+        Self {
+            elements: Vec::with_capacity(VAO_LIMIT),
+            verts: IdxVec::with_capacity(VAO_LIMIT),
+        }
+    }
+
+    fn push_vert(&mut self, v: u16, data: Self::VertexData) {
+        let i = self.verts.push(data);
+
+        debug_assert_eq!(i, v);
+    }
+}
+
+impl Bufferer for DebugBufferer {
+    type Vertex = Vert;
+    type Output = DebugArrayData;
+    type State = DebugBuffererState;
+    type Key = ();
+
+    fn new(_geom: &SimplicialGeometry) -> Self {
+        Self
+    }
+
+    fn buffer(ctx: &mut BufferingCtx<Self>) -> Result<()> {
+        for (n, (tri, _)) in ctx.geom.areas.values().copied().enumerate() {
+            let geom = ctx.geom;
+
+            ctx.with_state((), 15, |_, local| {
+                for (k, (p, q)) in [(0, 1), (1, 2), (0, 2)].iter().copied().enumerate() {
+                    let delta = 0.2 * (geom.verts[tri[q]].position - geom.verts[tri[p]].position);
+                    let begin = geom.verts[tri[p]].position + delta;
+                    let end = geom.verts[tri[q]].position - delta;
+                    // as each drawn vertex is offset, relative to this triangle and edge, the
+                    // vertex index is just a counter
+                    let s = local.push_vert(Vert::new(15 * n + 5 * k), begin.xyz());
+                    let t = local.push_vert(Vert::new(15 * n + 5 * k + 1), end.xyz());
+                    local.inner.push_line(s, t);
+                    // draw arrow tip
+                    let head_x = local.push_vert(
+                        Vert::new(15 * n + 5 * k + 2),
+                        (end - delta + Vec4::new(0.1, 0.0, 0.0, 0.0)).xyz(),
+                    );
+                    let head_y = local.push_vert(
+                        Vert::new(15 * n + 5 * k + 3),
+                        (end - delta + Vec4::new(0.0, 0.1, 0.0, 0.0)).xyz(),
+                    );
+                    let head_z = local.push_vert(
+                        Vert::new(15 * n + 5 * k + 4),
+                        (end - delta + Vec4::new(0.0, 0.0, 0.1, 0.0)).xyz(),
+                    );
+                    local.inner.push_line(head_x, t);
+                    local.inner.push_line(head_y, t);
+                    local.inner.push_line(head_z, t);
+                    local.inner.push_line(head_x, head_y);
+                    local.inner.push_line(head_y, head_z);
+                    local.inner.push_line(head_z, head_x);
+                }
+            })?;
+        }
+
+        Ok(())
+    }
+
+    fn commit(ctx: &GlCtx, (): Self::Key, completed: State<Self>) -> Result<Self::Output> {
+        let element_buffer =
+            ctx.mk_element_buffer(&completed.inner.elements, ElementKind::Lines)?;
+        let vert_buffer = ctx.mk_buffer(&completed.inner.verts.into_raw())?;
+
+        Ok(DebugArrayData {
+            element_buffer,
+            vert_buffer,
+        })
+    }
+}
+
+impl DebugBuffererState {
+    fn push_line(&mut self, i: u16, j: u16) {
+        self.elements.push(i);
+        self.elements.push(j);
+    }
+}
+
 #[inline]
 pub fn buffer_tris(g: &SimplicialGeometry, ctx: &GlCtx) -> Result<Vec<TriVertexArrayData>> {
     BufferingCtx::<TriBufferer>::new(ctx, g).extract_buffers()
@@ -597,4 +699,9 @@ pub fn buffer_cylinder_wireframe(
 #[inline]
 pub fn buffer_tetras(g: &SimplicialGeometry, ctx: &GlCtx) -> Result<Vec<TetraVertexArrayData>> {
     BufferingCtx::<TetraBufferer>::new(ctx, g).extract_buffers()
+}
+
+#[inline]
+pub fn buffer_debug(g: &SimplicialGeometry, ctx: &GlCtx) -> Result<Vec<DebugArrayData>> {
+    BufferingCtx::<DebugBufferer>::new(ctx, g).extract_buffers()
 }

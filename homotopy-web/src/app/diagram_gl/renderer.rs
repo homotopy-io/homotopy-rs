@@ -19,7 +19,7 @@ mod axes;
 mod gbuffer;
 mod quad;
 mod scene;
-mod shaders;
+pub(crate) mod shaders;
 
 pub struct Renderer {
     // outside world

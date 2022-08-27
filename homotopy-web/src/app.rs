@@ -6,6 +6,8 @@ use wasm_bindgen::{closure::Closure, JsCast};
 use workspace::WorkspaceView;
 use yew::prelude::*;
 
+#[cfg(debug_assertions)]
+use self::debug_gl::DebugGl;
 use self::diagram_gl::GlViewControl;
 use crate::{
     components::{
@@ -22,6 +24,8 @@ mod attach;
 mod boundary;
 #[cfg(debug_assertions)]
 mod debug;
+#[cfg(debug_assertions)]
+pub(super) mod debug_gl;
 mod diagram_gl;
 mod diagram_svg;
 mod image_export;
@@ -54,6 +58,11 @@ impl Component for App {
     #[allow(unused_variables)]
     fn create(ctx: &Context<Self>) -> Self {
         let state = model::State::default();
+        // Install the debugger
+        #[cfg(debug_assertions)]
+        let debug_state = state.debug.clone();
+        #[cfg(debug_assertions)]
+        homotopy_core::debug::set_debugger(|| Box::new(debug_state));
         // Install the signature stylesheet
         let mut signature_stylesheet = SignatureStylesheet::new();
         signature_stylesheet.update(state.with_proof(|p| p.signature().clone()).unwrap());
@@ -163,6 +172,15 @@ impl App {
     }
 
     fn render(ctx: &Context<Self>, state: &model::State) -> Html {
+        #[cfg(debug_assertions)]
+        if let Some(drawable) = state.debug.0.borrow().as_ref() {
+            return html! {
+                <DebugGl
+                    drawable={drawable.clone()}
+                />
+            };
+        }
+
         let proof = state
             .with_proof(Clone::clone)
             .expect("This should always succeed.");

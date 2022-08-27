@@ -56,6 +56,7 @@ use wasm_bindgen::prelude::*;
 mod app;
 mod buffers;
 mod components;
+mod two_d;
 // Model has to be public for tests to work
 pub mod model;
 

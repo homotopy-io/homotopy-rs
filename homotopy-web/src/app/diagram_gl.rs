@@ -23,7 +23,7 @@ use crate::{
 };
 
 mod orbit_camera;
-mod renderer;
+pub(crate) mod renderer;
 mod scrub_controls;
 
 pub struct GlViewControl {

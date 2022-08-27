@@ -1,6 +1,10 @@
+use std::{cell::RefCell, rc::Rc};
+
 pub use history::Proof;
 use history::{History, UndoState};
 use homotopy_core::common::Mode;
+#[cfg(debug_assertions)]
+use homotopy_core::debug::Drawable;
 use homotopy_graphics::{manim, stl, svg, tikz};
 pub use homotopy_model::{history, migration, proof, serialize};
 use js_sys::JsString;
@@ -19,6 +23,8 @@ pub enum Action {
     ExportSvg,
     ExportManim(bool),
     ExportStl,
+    #[cfg(debug_assertions)]
+    Debug(Drawable),
 }
 
 impl Action {
@@ -78,9 +84,22 @@ impl From<SerializedData> for Vec<u8> {
     }
 }
 
+#[cfg(debug_assertions)]
+#[derive(Debug, Clone, Default)]
+pub struct DebugState(pub Rc<RefCell<Option<Drawable>>>);
+
+#[cfg(debug_assertions)]
+impl homotopy_core::debug::Debugger for DebugState {
+    fn debug(&self, drawable: homotopy_core::debug::Drawable) {
+        self.0.borrow_mut().replace(drawable);
+    }
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct State {
     pub history: History,
+    #[cfg(debug_assertions)]
+    pub debug: DebugState,
 }
 
 impl State {
@@ -265,6 +284,11 @@ impl State {
                         }
                     }
                 };
+            }
+
+            #[cfg(debug_assertions)]
+            Action::Debug(drawable) => {
+                self.debug.0.replace(Some(drawable));
             }
         }
 
