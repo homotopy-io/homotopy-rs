@@ -54,7 +54,7 @@ impl<'a> arbitrary::Arbitrary<'a> for SignatureItemEdit {
         u.choose(&[
             SignatureItemEdit::MakeOriented(g, flag),
             SignatureItemEdit::MakeInvertible(g, flag),
-            SignatureItemEdit::ShowSourceTarget(g, flag)
+            SignatureItemEdit::ShowSourceTarget(g, flag),
         ])
         .map(|s| s.clone())
     }
@@ -139,7 +139,7 @@ impl Signature {
     }
 
     fn edit(&mut self, node: Node, edit: SignatureItemEdit) -> Result<(), ModelError> {
-        use SignatureItemEdit::{MakeInvertible, Recolor, Rename, Reshape, ShowSourceTarget};
+        use SignatureItemEdit::{Recolor, Rename, Reshape, ShowSourceTarget};
         self.0
             .with_mut(node, move |n| match (n.inner_mut(), edit) {
                 (SignatureItem::Item(info), Rename(name)) => info.name = name,

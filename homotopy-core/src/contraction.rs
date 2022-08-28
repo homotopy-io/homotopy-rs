@@ -95,7 +95,8 @@ impl DiagramN {
 
         attach(self, boundary_path, |slice| {
             let slice = slice.try_into().or(Err(ContractionError::Invalid))?;
-            let ContractExpand { contract, expand } = contract_in_path(&slice, interior_path, height, bias)?;
+            let ContractExpand { contract, expand } =
+                contract_in_path(&slice, interior_path, height, bias)?;
             let singular = slice.rewrite_forward(&contract).unwrap();
 
             let cospan = match boundary_path.boundary() {

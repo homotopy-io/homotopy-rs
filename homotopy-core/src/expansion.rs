@@ -8,7 +8,9 @@ use thiserror::Error;
 use crate::{
     antipushout::{antipushout, factorize_inc},
     attach::{attach, BoundaryPath},
-    common::{Boundary, DimensionError, Direction, Height, Orientation, RegularHeight, SingularHeight},
+    common::{
+        Boundary, DimensionError, Direction, Height, Orientation, RegularHeight, SingularHeight,
+    },
     diagram::{Diagram, DiagramN},
     factorization::factorize,
     normalization::normalize_singular,
