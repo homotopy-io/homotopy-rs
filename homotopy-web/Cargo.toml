@@ -73,6 +73,7 @@ features = [
   "Document",
   "HtmlHeadElement",
   "Window",
+  "TextMetrics",
   "TouchEvent",
   "TouchList",
   "Touch",

@@ -127,6 +127,8 @@ pub struct DebugGl {
     camera: OrbitCamera,
     renderer: Rc<RefCell<Option<DebugRenderer>>>,
     text_renderer: Option<CanvasRenderingContext2d>,
+    width: u32,
+    height: u32,
 }
 
 impl Component for DebugGl {
@@ -152,6 +154,8 @@ impl Component for DebugGl {
             camera: Default::default(),
             renderer: Default::default(),
             text_renderer: Default::default(),
+            width: Default::default(),
+            height: Default::default(),
         }
     }
 
@@ -167,6 +171,31 @@ impl Component for DebugGl {
                             text_renderer.canvas().unwrap().width().into(),
                             text_renderer.canvas().unwrap().height().into(),
                         );
+                        // sort by depth
+                        renderer
+                            .scene
+                            .vertex_labels
+                            .sort_unstable_by(|(pos_a, _), (pos_b, _)| {
+                                let clip_a = self
+                                    .camera
+                                    .perspective_transform(&renderer.ctx)
+                                    .transform_point3(
+                                        self.camera
+                                            .view_transform(&renderer.ctx)
+                                            .transform_point3(*pos_a),
+                                    );
+                                let clip_b = self
+                                    .camera
+                                    .perspective_transform(&renderer.ctx)
+                                    .transform_point3(
+                                        self.camera
+                                            .view_transform(&renderer.ctx)
+                                            .transform_point3(*pos_b),
+                                    );
+                                clip_b[2]
+                                    .partial_cmp(&clip_a[2])
+                                    .unwrap_or(std::cmp::Ordering::Equal)
+                            });
                         for (pos, label) in &renderer.scene.vertex_labels {
                             let clip = self
                                 .camera
@@ -176,21 +205,22 @@ impl Component for DebugGl {
                                         .view_transform(&renderer.ctx)
                                         .transform_point3(*pos),
                                 );
-                            let x = f64::from(clip[0] * 0.5 + 0.5)
-                                * f64::from(text_renderer.canvas().unwrap().width());
-                            let y = f64::from(clip[1] * -0.5 + 0.5)
-                                * f64::from(text_renderer.canvas().unwrap().height());
-                            text_renderer
-                                .fill_text_with_max_width(
-                                    label,
-                                    x,
-                                    y,
-                                    // TODO: compute the actual gap available
-                                    f64::from(
-                                        6.0 * OrbitCamera::DEFAULT_DISTANCE / self.camera.distance,
-                                    ),
-                                )
-                                .unwrap();
+                            let x = f64::from(clip[0] * 0.5 + 0.5) * f64::from(self.width);
+                            let y = f64::from(clip[1] * -0.5 + 0.5) * f64::from(self.height);
+                            // draw white background
+                            text_renderer.set_fill_style(&wasm_bindgen::JsValue::from_str("white"));
+                            let text_metrics = text_renderer.measure_text(label).unwrap();
+                            text_renderer.fill_rect(
+                                x - text_metrics.actual_bounding_box_left(),
+                                y - text_metrics.actual_bounding_box_ascent(),
+                                text_metrics.actual_bounding_box_left()
+                                    + text_metrics.actual_bounding_box_right(),
+                                text_metrics.actual_bounding_box_descent()
+                                    + text_metrics.actual_bounding_box_ascent(),
+                            );
+                            // draw label
+                            text_renderer.set_fill_style(&wasm_bindgen::JsValue::from_str("black"));
+                            text_renderer.fill_text(label, x, y).unwrap();
                         }
                     }
                 }
@@ -238,8 +268,12 @@ impl Component for DebugGl {
     }
 
     fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
-        if let Ok(gl_ctx) = GlCtx::attach(&self.canvas) {
+        let pixel_ratio = web_sys::window().unwrap().device_pixel_ratio();
+        if let Ok(mut gl_ctx) = GlCtx::attach(&self.canvas) {
             {
+                gl_ctx
+                    .set_pixel_ratio(pixel_ratio)
+                    .expect("failed to set GL pixel ratio");
                 *self.renderer.borrow_mut() =
                     Some(DebugRenderer::new(gl_ctx, ctx.props()).unwrap());
             }
@@ -251,7 +285,15 @@ impl Component for DebugGl {
             log::error!("Failed to get WebGL 2.0 context");
         }
 
-        if let Ok(two_d_ctx) = TwoDCtx::attach(&self.text) {
+        if let Ok(mut two_d_ctx) = TwoDCtx::attach(&self.text) {
+            // original width and height of the canvas, pre-resizing
+            // usually defaults to 300x150
+            // used to scale from clipspace to screenspace
+            self.width = two_d_ctx.width;
+            self.height = two_d_ctx.height;
+            two_d_ctx
+                .set_pixel_ratio(pixel_ratio)
+                .expect("failed to set 2D pixel ratio");
             two_d_ctx.ctx.set_text_align("center");
             two_d_ctx.ctx.set_text_baseline("middle");
             self.text_renderer = Some(two_d_ctx.ctx);
