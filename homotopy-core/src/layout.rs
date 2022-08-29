@@ -1,11 +1,14 @@
 use std::ops::{Deref, DerefMut};
 
+use good_lp::{
+    default_solver, variable, Constraint, Expression, ProblemVariables, Solution, SolverModel,
+    Variable,
+};
 use homotopy_common::{
     hash::{FastHashMap, FastHashSet},
     idx::IdxVec,
 };
 use itertools::Itertools;
-use minilp::Variable;
 use petgraph::{graph::NodeIndex, visit::EdgeRef, EdgeDirection, Graph};
 
 use crate::{
@@ -267,27 +270,26 @@ fn solve(
     node_to_constraints: &IdxVec<NodeIndex, Vec<ConstraintSet>>,
     colimit: &Graph<Vec<Point>, ()>,
 ) -> (f32, FastHashMap<Point, f32>) {
-    let mut problem = minilp::Problem::new(minilp::OptimizationDirection::Minimize);
+    let mut problem = ProblemVariables::new();
 
     // Variables
     let mut variables: IdxVec<NodeIndex, Variable> = IdxVec::default();
     let mut point_to_variable: FastHashMap<Point, Variable> = FastHashMap::default();
     for ps in colimit.node_weights() {
-        let v = problem.add_var(0.0, (0.0, f64::INFINITY));
+        let v = problem.add(variable().min(0.0));
         variables.push(v);
         point_to_variable.extend(ps.iter().copied().zip(std::iter::repeat(v)));
     }
 
     // Distance constraints.
+    let mut objective: Vec<Expression> = Default::default();
+    let mut constraints: Vec<Constraint> = Default::default();
     for e in colimit.edge_references() {
         let x = variables[e.source()];
         let y = variables[e.target()];
-        let d = problem.add_var(1.0, (1.0, f64::INFINITY));
-        problem.add_constraint(
-            &[(d, 1.0), (x, 1.0), (y, -1.0)],
-            minilp::ComparisonOp::Eq,
-            0.0,
-        );
+        let d = problem.add(variable().min(1.0));
+        objective.push(Expression::from(d));
+        constraints.push((d + x - y).eq(0.0));
     }
 
     // Fair averaging constraints (inc. straight wires).
@@ -308,7 +310,6 @@ fn solve(
                                 .is_none();
                         external.then(|| point_to_variable[&cs[*n]])
                     })
-                    .sorted()
                     .collect_vec();
 
                 let outs = cs
@@ -325,7 +326,6 @@ fn solve(
                                 .is_none();
                         external.then(|| point_to_variable[&cs[*n]])
                     })
-                    .sorted()
                     .collect_vec();
 
                 if ins.is_empty() || outs.is_empty() {
@@ -337,47 +337,56 @@ fn solve(
 
                 if orientation == dim - 1 {
                     // Strict constraint: avg(ins) = avg(outs)
-                    let c = problem.add_var(0.0, (0.0, f64::INFINITY));
-                    problem.add_constraint(
-                        std::iter::once((c, n)).chain(ins.iter().map(|i| (*i, -1.0))),
-                        minilp::ComparisonOp::Eq,
-                        0.0,
+                    let c = problem.add(variable().min(0.0));
+                    constraints.push(
+                        std::iter::once(c * n)
+                            .chain(ins.iter().map(|&i| -1.0 * i))
+                            .sum::<Expression>()
+                            .eq(0.0),
                     );
-                    problem.add_constraint(
-                        std::iter::once((c, m)).chain(outs.iter().map(|o| (*o, -1.0))),
-                        minilp::ComparisonOp::Eq,
-                        0.0,
+                    constraints.push(
+                        std::iter::once(c * m)
+                            .chain(outs.iter().map(|&o| -1.0 * o))
+                            .sum::<Expression>()
+                            .eq(0.0),
                     );
                 } else {
                     // Weak constraints: |avg(ins) - avg(outs)| <= c.
-                    let c = problem.add_var(1.0, (0.0, f64::INFINITY));
-                    problem.add_constraint(
-                        std::iter::once((c, (n * m)))
-                            .chain(ins.iter().map(|i| (*i, m)))
-                            .chain(outs.iter().map(|o| (*o, -n))),
-                        minilp::ComparisonOp::Ge,
-                        0.0,
+                    let c = problem.add(variable().min(0.0));
+                    objective.push(Expression::from(c));
+                    constraints.push(
+                        std::iter::once(c * (n * m))
+                            .chain(ins.iter().map(|&i| i * m))
+                            .chain(outs.iter().map(|&o| o * (-n)))
+                            .sum::<Expression>()
+                            .geq(0.0),
                     );
-                    problem.add_constraint(
-                        std::iter::once((c, (n * m)))
-                            .chain(ins.iter().map(|i| (*i, -m)))
-                            .chain(outs.iter().map(|o| (*o, n))),
-                        minilp::ComparisonOp::Ge,
-                        0.0,
+                    constraints.push(
+                        std::iter::once(c * (n * m))
+                            .chain(ins.iter().map(|&i| i * (-m)))
+                            .chain(outs.iter().map(|&o| o * n))
+                            .sum::<Expression>()
+                            .geq(0.0),
                     );
                 }
             }
         }
     }
 
-    let solution = problem.solve().unwrap();
+    let mut model = problem
+        .minimise(objective.into_iter().sum::<Expression>())
+        .using(default_solver);
+    for c in constraints {
+        model.add_constraint(c);
+    }
+    let solution = model.solve().unwrap();
 
     let mut width = 0.0;
     let mut positions: FastHashMap<Point, f32> = FastHashMap::default();
 
     for n in colimit.node_indices() {
         let v = variables[n];
-        let position = solution[v] as f32;
+        let position = solution.value(v) as f32;
 
         for p in &colimit[n] {
             positions.insert(*p, position);
