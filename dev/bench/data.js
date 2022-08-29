@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1661792020512,
+  "lastUpdate": 1661794189827,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -40619,6 +40619,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 30.799,
             "range": "+/- 0.145",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "committer": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "distinct": true,
+          "id": "92e04f1d58963886d039038b1adc1c5c12acf6a1",
+          "message": "Make Diagram and Rewrite internally deserializable (for debugging)",
+          "timestamp": "2022-08-29T17:21:59+01:00",
+          "tree_id": "e46b166894e3ae660580f6356a0262192205d8a6",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/92e04f1d58963886d039038b1adc1c5c12acf6a1"
+        },
+        "date": 1661794179726,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.8349,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 10.903,
+            "range": "+/- 0.011",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 49.256,
+            "range": "+/- 0.048",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 311.31,
+            "range": "+/- 0.360",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.6186,
+            "range": "+/- 0.001",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 26.48,
+            "range": "+/- 0.007",
             "unit": "s"
           }
         ]
