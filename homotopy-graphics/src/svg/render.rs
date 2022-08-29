@@ -414,7 +414,7 @@ fn make_path_segment<const N: usize>(
                     (layout_start.x, 0.4 * layout_start.y + 0.6 * layout_end.y).into(),
                     (
                         0.6 * layout_start.x + 0.4 * layout_end.x,
-                        0.4 * layout_start.y + 0.6 * layout_end.y,
+                        0.1 * layout_start.y + 0.9 * layout_end.y,
                     )
                         .into(),
                     layout_end,
@@ -442,7 +442,7 @@ fn make_path_segment<const N: usize>(
                 Some(Homotopy::FullBraid) => builder.cubic_bezier_to(
                     (
                         0.6 * layout_end.x + 0.4 * layout_start.x,
-                        0.4 * layout_end.y + 0.6 * layout_start.y,
+                        0.1 * layout_end.y + 0.9 * layout_start.y,
                     )
                         .into(),
                     (layout_end.x, 0.4 * layout_end.y + 0.6 * layout_start.y).into(),
