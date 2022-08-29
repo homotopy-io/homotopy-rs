@@ -720,6 +720,7 @@ checksum = "b51d78cbb7b734379eea7f811ddb33b2b13defefa1dab50068d7bc7f781a3056"
 dependencies = [
  "fnv",
  "highs",
+ "minilp",
 ]
 
 [[package]]
@@ -813,13 +814,13 @@ dependencies = [
  "criterion",
  "flate2",
  "getrandom",
+ "good_lp",
  "hashconsing",
  "highway",
  "homotopy-common",
  "insta",
  "itertools",
  "log",
- "minilp",
  "once_cell",
  "petgraph",
  "proptest",
