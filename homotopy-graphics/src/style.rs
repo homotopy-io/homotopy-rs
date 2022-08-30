@@ -37,26 +37,6 @@ impl Color {
         Self(self.0.into_linear().lighten(amount).into())
     }
 
-    #[must_use]
-    pub fn with_lightness(&self, lightness: f32) -> Self {
-        let mut hsl: Hsl = FromColor::from_color(self.0.into_format::<f32>());
-        hsl.lightness = lightness;
-        let srgb: Srgb<f32> = FromColor::from_color(hsl);
-        Self(srgb.into_format())
-    }
-
-    // we combine saturate and lighten into a single function since we need to convert SRGB into
-    // HSL or HSV color space anyway and we save some computation by lightening this directly
-    // instead of the resulting SRGB.
-    // #[must_use]
-    // pub fn desaturate_and_lighten(&self, desaturate: f32, lighten: f32) -> Self {
-    //     let hsl: Hsl = FromColor::from_color(self.0.into_format::<f32>());
-    //     let desaturated = Saturate::saturate(hsl, -desaturate);
-    //     let lightened = lighten(desaturated, lighten);
-    //     let srgb: palette::Srgb<f32> = palette::convert::FromColor::from_color(lightened);
-    //     Self(srgb.into_format())
-    // }
-
     pub fn is_light(&self) -> bool {
         palette::RelativeContrast::get_contrast_ratio(
             palette::Srgb::new(1., 1., 1.),

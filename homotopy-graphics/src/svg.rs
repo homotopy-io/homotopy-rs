@@ -97,20 +97,3 @@ fn generator_class_from_c_r(generator: Generator, c: isize, r: isize) -> String 
         }
     )
 }
-
-pub fn generator_class(generator: Generator, suffix: &str) -> String {
-    match generator.orientation {
-        Orientation::Positive => format!(
-            "generator__{}-{}--{}",
-            generator.id, generator.dimension, suffix
-        ),
-        Orientation::Zero => format!(
-            "generator__{}-{}--{} zero--{}",
-            generator.id, generator.dimension, suffix, suffix
-        ),
-        Orientation::Negative => format!(
-            "generator__{}-{}--{} inverse--{}",
-            generator.id, generator.dimension, suffix, suffix
-        ),
-    }
-}
