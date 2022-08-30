@@ -71,8 +71,24 @@ impl Color {
         ) < 1.5
     }
 
-    // Get color in lightened form (based on offset [0, 8]). We wrap colors so that they are
-    // sufficiently different and clearly distinguishable for end users.
+    // Get color in lightened form (based on offset [0, 8]). We wrap colors if needed so that they
+    // are sufficiently different and clearly distinguishable for end users.
+    //
+    // Colours are calculated from C and R where:
+    //      C = max(0, D - N - K)
+    //      R = -1 | 0 | 1          // orientation of generator
+    //      D = 0...                // diagram dimension
+    //      N = 0...                // generator dimension
+    //      K = 0 | 1 | 2           // point | wire | surface (in visible diagram)
+    //
+    // See: https://github.com/homotopy-io/homotopy-rs/issues/550
+    //
+    // We treat three different kinds of color differently:
+    //      self.is_light() == true     => darken colours (zero then inverse)
+    //      self.is_dark() == true      => lighten colours (zero then inverse)
+    //      otherwise                   => lighten zero, darken inverse
+    // This avoids unnecessary wrapping of colours as it can be jarring or unclear. The constants
+    // used are fairly arbitrary and subject to tweaking to get diagrams looking good.
     #[inline]
     #[must_use]
     pub fn lighten_from_c_r(&self, c: isize, r: isize) -> Self {
