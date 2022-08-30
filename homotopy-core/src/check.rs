@@ -6,7 +6,7 @@ use thiserror::Error;
 use crate::{
     common::Mode,
     diagram::RewritingError,
-    rewrite::{CompositionError, Cone, ConeInternal, Label},
+    rewrite::{CompositionError, Cone, Label},
     Diagram, DiagramN, Direction, Height, Rewrite, Rewrite0, RewriteN,
 };
 
@@ -227,72 +227,40 @@ impl Cone {
         }
 
         // Check commutativity conditions.
-        match self.internal.get() {
-            ConeInternal::Cone0 {
-                target,
-                regular_slice,
-            } => {
-                if regular_slice.strip_labels() != target.forward.strip_labels() {
-                    errors.push(MalformedCone::NotCommutative0);
-                }
+        if self.regular_slices().first().unwrap().strip_labels()
+            != self.target().forward.strip_labels()
+        {
+            errors.push(MalformedCone::NotCommutative(0));
+        }
 
-                if regular_slice.strip_labels() != target.backward.strip_labels() {
-                    errors.push(MalformedCone::NotCommutative0);
-                }
+        for (i, (cs, singular_slice)) in
+            std::iter::zip(self.source(), self.singular_slices()).enumerate()
+        {
+            match cs
+                .forward
+                .strip_labels()
+                .compose(&singular_slice.strip_labels())
+            {
+                Ok(f) if f == self.regular_slices()[i].strip_labels() => { /* no error */ }
+                Ok(_) => errors.push(MalformedCone::NotCommutative(i)),
+                Err(ce) => errors.push(ce.into()),
             }
-            ConeInternal::ConeN {
-                source,
-                target,
-                regular_slices,
-                singular_slices,
-            } => {
-                match source
-                    .first()
-                    .unwrap()
-                    .forward
-                    .strip_labels()
-                    .compose(&singular_slices.first().unwrap().strip_labels())
-                {
-                    Ok(f) if f == target.forward.strip_labels() => { /* no error */ }
-                    Ok(_) => errors.push(MalformedCone::NotCommutativeN(0)),
-                    Err(ce) => errors.push(ce.into()),
-                };
 
-                for (i, regular_slice) in regular_slices.iter().enumerate() {
-                    let regular_slice = regular_slice.strip_labels();
-                    match source[i]
-                        .backward
-                        .strip_labels()
-                        .compose(&singular_slices[i].strip_labels())
-                    {
-                        Ok(f) if f == regular_slice => { /* no error */ }
-                        Ok(_) => errors.push(MalformedCone::NotCommutativeN(i + 1)),
-                        Err(ce) => errors.push(ce.into()),
-                    }
-
-                    match source[i + 1]
-                        .forward
-                        .strip_labels()
-                        .compose(&singular_slices[i + 1].strip_labels())
-                    {
-                        Ok(f) if f == regular_slice => { /* no error */ }
-                        Ok(_) => errors.push(MalformedCone::NotCommutativeN(i + 1)),
-                        Err(ce) => errors.push(ce.into()),
-                    }
-                }
-
-                match source
-                    .last()
-                    .unwrap()
-                    .backward
-                    .strip_labels()
-                    .compose(&singular_slices.last().unwrap().strip_labels())
-                {
-                    Ok(f) if f == target.backward.strip_labels() => { /* no error */ }
-                    Ok(_) => errors.push(MalformedCone::NotCommutativeN(self.len())),
-                    Err(ce) => errors.push(ce.into()),
-                };
+            match cs
+                .backward
+                .strip_labels()
+                .compose(&singular_slice.strip_labels())
+            {
+                Ok(f) if f == self.regular_slices()[i + 1].strip_labels() => { /* no error */ }
+                Ok(_) => errors.push(MalformedCone::NotCommutative(i + 1)),
+                Err(ce) => errors.push(ce.into()),
             }
+        }
+
+        if self.regular_slices().last().unwrap().strip_labels()
+            != self.target().backward.strip_labels()
+        {
+            errors.push(MalformedCone::NotCommutative(self.len()));
         }
 
         if errors.is_empty() {
@@ -344,11 +312,8 @@ pub enum MalformedCone {
     #[error("singular slice {0} is malformed: {1:?}")]
     SingularSlice(usize, Vec<MalformedRewrite>),
 
-    #[error("unit cone fails to be commutative.")]
-    NotCommutative0,
-
     #[error("cone fails to be commutative at regular height {0}.")]
-    NotCommutativeN(usize),
+    NotCommutative(usize),
 }
 
 impl Rewrite {
@@ -374,23 +339,20 @@ impl RewriteN {
             self.dimension(),
             self.cones()
                 .iter()
-                .map(|c| match c.internal.get() {
-                    ConeInternal::Cone0 {
-                        target,
-                        regular_slice,
-                    } => Cone::new_0(c.index, target.clone(), regular_slice.strip_labels()),
-                    ConeInternal::ConeN {
-                        source,
-                        target,
-                        regular_slices,
-                        singular_slices,
-                    } => Cone::new_n(
+                .map(|c| {
+                    Cone::new(
                         c.index,
-                        source.clone(),
-                        target.clone(),
-                        regular_slices.iter().map(Rewrite::strip_labels).collect(),
-                        singular_slices.iter().map(Rewrite::strip_labels).collect(),
-                    ),
+                        c.source().to_vec(),
+                        c.target().clone(),
+                        c.regular_slices()
+                            .iter()
+                            .map(Rewrite::strip_labels)
+                            .collect(),
+                        c.singular_slices()
+                            .iter()
+                            .map(Rewrite::strip_labels)
+                            .collect(),
+                    )
                 })
                 .collect(),
         )

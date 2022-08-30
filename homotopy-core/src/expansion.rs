@@ -129,7 +129,7 @@ fn expand_base_regular(
     if cs.forward == cs.backward && cs.forward.is_homotopy() {
         Ok(RewriteN::new(
             diagram.dimension(),
-            vec![Cone::new_0(i, cs.clone(), cs.forward.clone())],
+            vec![Cone::new_unit(i, cs.clone(), cs.forward.clone())],
         )
         .into())
     } else {
@@ -160,7 +160,7 @@ fn expand_base_singular(
         Direction::Forward => {
             let expansion = expand_cospan(h1, forward, backward)?;
 
-            let cone = Cone::new_n(
+            let cone = Cone::new(
                 h0,
                 vec![
                     Cospan {
@@ -173,7 +173,11 @@ fn expand_base_singular(
                     },
                 ],
                 cospan.clone(),
-                vec![expansion.regular_slice.into()],
+                vec![
+                    cospan.forward.clone(),
+                    expansion.regular_slice.into(),
+                    cospan.backward.clone(),
+                ],
                 vec![
                     expansion.singular_slices[0].clone().into(),
                     expansion.singular_slices[1].clone().into(),
@@ -185,7 +189,7 @@ fn expand_base_singular(
         Direction::Backward => {
             let expansion = expand_cospan(h1, backward, forward)?;
 
-            let cone = Cone::new_n(
+            let cone = Cone::new(
                 h0,
                 vec![
                     Cospan {
@@ -198,7 +202,11 @@ fn expand_base_singular(
                     },
                 ],
                 cospan.clone(),
-                vec![expansion.regular_slice.into()],
+                vec![
+                    cospan.forward.clone(),
+                    expansion.regular_slice.into(),
+                    cospan.backward.clone(),
+                ],
                 vec![
                     expansion.singular_slices[1].clone().into(),
                     expansion.singular_slices[0].clone().into(),
@@ -376,17 +384,20 @@ pub(crate) fn expand_propagate(
         (Some(forward), Some(backward)) => {
             let source_cospan = Cospan { forward, backward };
             if source_cospan.is_redundant() {
-                Some(Cone::new_0(
+                Some(Cone::new_unit(
                     height,
                     target_cospan.clone(),
                     target_cospan.forward.clone(),
                 ))
             } else {
-                Some(Cone::new_n(
+                Some(Cone::new(
                     height,
                     vec![source_cospan],
                     target_cospan.clone(),
-                    vec![],
+                    vec![
+                        target_cospan.forward.clone(),
+                        target_cospan.backward.clone(),
+                    ],
                     vec![expansion],
                 ))
             }
@@ -409,7 +420,7 @@ pub(crate) fn expand_propagate(
         //     )[0]
         //     .clone();
 
-        //     Some(Cone::new_n(
+        //     Some(Cone::new(
         //         height,
         //         vec![
         //             Cospan {
@@ -444,7 +455,7 @@ pub(crate) fn expand_propagate(
         //     )[0]
         //     .clone();
 
-        //     Some(Cone::new_n(
+        //     Some(Cone::new(
         //         height,
         //         vec![
         //             Cospan {
@@ -477,11 +488,15 @@ pub(crate) fn expand_propagate(
                 None
             } else if target_cospan.forward.is_homotopy() && target_cospan.backward.is_homotopy() {
                 // Insert a bubble
-                Some(Cone::new_n(
+                Some(Cone::new(
                     height,
                     source_cospans,
                     target_cospan.clone(),
-                    vec![expansion],
+                    vec![
+                        target_cospan.forward.clone(),
+                        expansion,
+                        target_cospan.backward.clone(),
+                    ],
                     vec![Rewrite::identity(diagram.dimension() - 1); 2],
                 ))
             } else {
