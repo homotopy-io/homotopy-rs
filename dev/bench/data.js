@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1661855670253,
+  "lastUpdate": 1661883603399,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -40738,6 +40738,66 @@ window.BENCHMARK_DATA = {
           {
             "name": "contract high dimensions/9",
             "value": 26.35,
+            "range": "+/- 0.018",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thud@thud.dev",
+            "name": "Jasper Parish",
+            "username": "thud"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a2bc40a3ceb184fe5452d937be87a71bcdf54ec8",
+          "message": "Resizeable drawer (#678)\n\n* Make drawer resizeable\r\n\r\n* Resize signature previews slightly\r\n\r\n* Add drawer view sizes for differing drawer styles\r\n\r\n(The actual styles are yet to be implemented)\r\n\r\n* Fix sinister signature position\r\n\r\nIt's not clear to me why this patch works but it seems to fix a long\r\nstanding bug (#636) in which the signature panel chooses the wrong the\r\nside of the workspace to display itself (after a toast has appeared).\r\n\r\n* Add drawer view sizes with snapping for compact\r\n\r\n* Overflow auto for signature drawer\r\n\r\n* Prototype expanded view\r\n\r\n* Remove compact mode as not especially useful\r\n\r\n* Fix performance issue when expanding drawer\r\n\r\n* Add property indicators for expanded view\r\n\r\n* Fix edit mode for generators in expanded view\r\n\r\n* Fix saving of widths when collapsing drawer\r\n\r\n* Fix text overflow for item names\r\n\r\n* Set fixed preview size\r\n\r\n* Fix folder editing\r\n\r\n* Remove compact styles\r\n\r\n* Fix sidebar width\r\n\r\n* Fix drawer props\r\n\r\n* Clean up for merge",
+          "timestamp": "2022-08-30T17:24:48Z",
+          "tree_id": "4acd5ac68aa30615b77f7fc4d3d3677fbbee91af",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/a2bc40a3ceb184fe5452d937be87a71bcdf54ec8"
+        },
+        "date": 1661883590340,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.5319,
+            "range": "+/- 0.013",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 9.6928,
+            "range": "+/- 0.037",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 43.643,
+            "range": "+/- 0.109",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 277.01,
+            "range": "+/- 1.070",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.3271,
+            "range": "+/- 0.010",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 23.245,
             "range": "+/- 0.018",
             "unit": "s"
           }
