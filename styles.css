@@ -8,7 +8,7 @@
   --tooltip-background: var(--sidebar-background);
   --tooltip-foreground: var(--sidebar-foreground);
 
-  --drawer-width: 250px;
+  --drawer-resize-bar-width: 5px;
   --drawer-background: #f9f9f9;
   --drawer-background-dimmed: #f1f1f1;
   --drawer-foreground: #575f66;
@@ -76,12 +76,15 @@ button, .button {
 /* Sidebar */
 
 .sidebar {
+  width: var(--sidebar-width);
   background: var(--sidebar-background);
   border: var(--sidebar-border) 1px solid;
   color: var(--sidebar-foreground);
+  overflow: none;
   display: flex;
   flex-direction: column;
   z-index: 1001;
+  box-sizing: border-box;
 }
 
 .sidebar__logo {
@@ -349,21 +352,44 @@ button, .button {
 /* Drawer */
 
 .drawer {
-  min-width: var(--drawer-width);
-  max-width: var(--drawer-width);
+  position: relative;
+  flex: 0 0 auto;
   border-right: 1px solid var(--drawer-border);
   background: var(--drawer-background);
   color: var(--drawer-foreground);
-  display: flex;
-  flex-direction: column;
+  box-sizing: border-box;
   touch-action: none;
   z-index: 1000;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.drawer__resize-bar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: var(--drawer-foreground-dimmed);
+  width: var(--drawer-resize-bar-width);
+  height: 100%;
+  opacity: 0.1;
+  z-index: -1;
+  cursor: col-resize;
+}
+
+.drawer__inner {
+  position: absolute;
+  width: 100%;
+  max-width: calc(100% - var(--drawer-resize-bar-width));
+  height: 100%;
+  overflow: none;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
 .drawer__header {
   height: var(--sidebar-width);
   min-height: var(--sidebar-width);
-
   padding: var(--space-0);
   border-bottom: 1px solid var(--drawer-border);
   display: flex;
@@ -373,8 +399,12 @@ button, .button {
 }
 
 .drawer__title {
+  width: 100%;
   font-size: 1.2em;
   padding: var(--space-0);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .drawer__content {
@@ -413,7 +443,7 @@ button, .button {
 /* TODO: Wraparound */
 
 .metadata_title {
-  inline-size: 150px; 
+  inline-size: 150px;
   overflow: hidden;
   font-size: 1.6em;
   padding: var(--space-1);
@@ -471,15 +501,33 @@ button, .button {
   height: 166px;
 }
 
+.drawer-expanded .signature__item {
+  height: calc(2 * var(--signature-height));
+}
+
+.drawer-expanded .signature__item.signature__generator-editing.signature__generator-0d {
+  height: 200px;
+}
+
+.drawer-expanded .signature__item.signature__generator-editing {
+  height: 295px;
+}
+
 .signature__item.signature__folder-editing {
   height: 32px;
 }
 
+.drawer-expanded .signature__item.signature__folder-editing {
+  height: calc(2 * var(--signature-height));
+}
+
 .signature__item-info {
+  position: relative;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  justify-content: center;
+  justify-content: space-between;
   width: 100%;
   height: var(--signature-height);
   transition: background-color 100ms;
@@ -493,6 +541,13 @@ button, .button {
   }
 }
 
+.signature__item.signature__generator-editing.signature__item-info {
+  height: var(--signature-height);
+}
+
+.drawer-expanded .signature__item-info {
+  height: calc(2 * var(--signature-height));
+}
 
 .signature__branch {
   width: 100%;
@@ -553,20 +608,34 @@ button, .button {
 }
 
 div.signature__item-name {
+  height: var(--signature-height);
   padding-left: 0;
   padding-right: 0;
   border-left: var(--space-1) solid transparent;
   border-right: var(--space-1) solid transparent;
   display: flex;
-  align-items: center;
 }
 
-span.signature__item-name {
+span.signature__item-name,
+input.signature__item-name {
+  height: 75%;
+  align-self: center;
   text-overflow: ellipsis;
+  overflow-y: show;
+  transition: font-size 100ms;
+  position; relative;
+  top: -5px;
 }
 
-.signature__item-name-input {
-  padding: var(--space-1);
+.drawer-expanded span.signature__item-name,
+.drawer-expanded input.signature__item-name {
+  height: 100%;
+  align-self: flex-start;
+  font-size: 20px;
+}
+
+input.signature__item-name {
+  padding: 0;
   border: none;
   background: transparent;
   user-select: text;
@@ -593,6 +662,7 @@ span.signature__item-name {
   wrap: nowrap;
   overflow: hidden;
   color: var(--drawer-background);
+  height: var(--signature-height);
   width: 26px;
   flex: 0 0 auto;
   transition: width 50ms;
@@ -666,6 +736,12 @@ span.signature__item-name {
   margin-right: 2px;
 }
 
+.drawer-expanded .signature__generator-indicators-wrapper {
+  position: absolute;
+  bottom: 0;
+  left: var(--space-0);
+}
+
 .signature__generator-indicator {
   border-radius: var(--space-0);
   width: 18px;
@@ -675,6 +751,7 @@ span.signature__item-name {
   justify-content: center;
   margin-right: 2px;
   font-weight: bold;
+  box-sizing: border-box;
 }
 
 .signature__generator-indicator-invertible {
@@ -683,6 +760,12 @@ span.signature__item-name {
 
 .signature__generator-indicator-oriented {
   background-color: #27ae60;
+}
+
+.drawer-expanded .signature__generator-indicator {
+  width: auto;
+  height: 24px;
+  padding: var(--space-0);
 }
 
 .signature__generator-previews-wrapper {
@@ -697,6 +780,16 @@ span.signature__item-name {
 .signature__generator-previews-wrapper svg {
   width: 42px;
   height: 30px;
+}
+
+.signature__generator-previews-wrapper svg {
+  width: 42px;
+  height: 30px;
+}
+
+.drawer-expanded .signature__generator-previews-wrapper svg {
+  width: 84px;
+  height: 60px;
 }
 
 .signature__generator-preview-spacer {
