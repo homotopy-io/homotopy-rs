@@ -7,7 +7,7 @@ use highway::{HighwayHash, HighwayHasher};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    rewrite::{Cone, ConeInternal, Label, LabelNode},
+    rewrite::{Cone, Label, LabelNode},
     Cospan, Diagram, DiagramN, Generator, Rewrite, Rewrite0, RewriteN,
 };
 
@@ -35,7 +35,7 @@ pub struct Store {
     rewrites: BTreeMap<Key<Rewrite>, RewriteSer>,
 
     #[serde(skip_serializing, skip_deserializing)]
-    cone_keys: BiHashMap<ConeInternal, Key<Cone>>,
+    cone_keys: BiHashMap<Cone, Key<Cone>>,
     cones: BTreeMap<Key<Cone>, ConeSer>,
 
     #[serde(skip_serializing, skip_deserializing)]
@@ -111,7 +111,7 @@ impl Store {
     }
 
     fn pack_cone(&mut self, cone: &Cone) -> ConeWithIndexSer {
-        if let Some(key) = self.cone_keys.get_by_left(&cone.internal) {
+        if let Some(key) = self.cone_keys.get_by_left(cone) {
             return ConeWithIndexSer {
                 index: cone.index as u32,
                 cone: *key,
@@ -140,7 +140,7 @@ impl Store {
         };
 
         let key: Key<Cone> = serialized.key();
-        self.cone_keys.insert(cone.internal.get().clone(), key);
+        self.cone_keys.insert(cone.clone(), key);
         self.cones.insert(key, serialized);
         ConeWithIndexSer {
             index: cone.index as u32,
@@ -232,23 +232,14 @@ impl Store {
         self.cone_keys
             .get_by_right(&key)
             .cloned()
-            .map(|c| match c {
-                ConeInternal::Cone0 {
-                    target,
-                    regular_slice,
-                } => Cone::new_0(cone.index as usize, target, regular_slice),
-                ConeInternal::ConeN {
-                    source,
-                    target,
-                    regular_slices,
-                    singular_slices,
-                } => Cone::new_n(
+            .map(|c| {
+                Cone::new(
                     cone.index as usize,
-                    source,
-                    target,
-                    regular_slices,
-                    singular_slices,
-                ),
+                    c.source().to_vec(),
+                    c.target().clone(),
+                    c.regular_slices().to_vec(),
+                    c.singular_slices().to_vec(),
+                )
             })
             .or_else(|| {
                 let serialized = self.cones.get(&cone.cone)?.clone();
@@ -268,20 +259,16 @@ impl Store {
                     .into_iter()
                     .map(|slice| self.unpack_rewrite(slice))
                     .collect::<Option<Vec<_>>>()?;
-                let cone = Some(if source.is_empty() {
-                    Cone::new_0(cone.index as usize, target, regular_slices[0].clone())
-                } else {
-                    Cone::new_n(
-                        cone.index as usize,
-                        source,
-                        target,
-                        regular_slices,
-                        singular_slices,
-                    )
-                });
+                let cone = Some(Cone::new(
+                    cone.index as usize,
+                    source,
+                    target,
+                    regular_slices,
+                    singular_slices,
+                ));
                 cone.as_ref()
                     .cloned()
-                    .map(|c| self.cone_keys.insert(c.internal.get().clone(), key));
+                    .map(|c| self.cone_keys.insert(c, key));
                 cone
             })
     }

@@ -104,21 +104,25 @@ pub fn touching() -> (impl Signature, DiagramN) {
         forward: fwd,
         backward: bwd,
     };
-    let up_cone = Cone::new_0(0, s_internal.clone(), up.clone());
-    let down_cone = Cone::new_0(0, s_internal.clone(), down);
+    let up_cone = Cone::new_unit(0, s_internal.clone(), up.clone());
+    let down_cone = Cone::new_unit(0, s_internal.clone(), down);
     let s_tensor_s_cospan = Cospan {
         forward: RewriteN::new(1, vec![up_cone.clone(), up_cone.clone()]).into(),
         backward: RewriteN::new(1, vec![down_cone.clone(), down_cone.clone()]).into(),
     };
     let twist: Rewrite = RewriteN::new(
         2,
-        vec![Cone::new_n(
+        vec![Cone::new(
             0,
             s_s.cospans().to_vec(),
-            s_tensor_s_cospan,
-            vec![RewriteN::new(1, vec![down_cone.clone(), up_cone]).into()],
+            s_tensor_s_cospan.clone(),
             vec![
-                RewriteN::new(1, vec![Cone::new_0(1, s_internal, up)]).into(),
+                s_tensor_s_cospan.forward,
+                RewriteN::new(1, vec![down_cone.clone(), up_cone]).into(),
+                s_tensor_s_cospan.backward,
+            ],
+            vec![
+                RewriteN::new(1, vec![Cone::new_unit(1, s_internal, up)]).into(),
                 RewriteN::new(1, vec![down_cone]).into(),
             ],
         )],
@@ -166,21 +170,25 @@ pub fn crossing() -> (impl Signature, DiagramN) {
         forward: fwd,
         backward: bwd,
     };
-    let up_cone = Cone::new_0(0, s_internal.clone(), up.clone());
-    let down_cone = Cone::new_0(0, s_internal.clone(), down.clone());
+    let up_cone = Cone::new_unit(0, s_internal.clone(), up.clone());
+    let down_cone = Cone::new_unit(0, s_internal.clone(), down.clone());
     let s_tensor_s_cospan = Cospan {
         forward: RewriteN::new(1, vec![up_cone.clone(), up_cone.clone()]).into(),
         backward: RewriteN::new(1, vec![down_cone.clone(), down_cone.clone()]).into(),
     };
     let twist: Rewrite = RewriteN::new(
         2,
-        vec![Cone::new_n(
+        vec![Cone::new(
             0,
             s_s.cospans().to_vec(),
             s_tensor_s_cospan.clone(),
-            vec![RewriteN::new(1, vec![down_cone.clone(), up_cone.clone()]).into()],
             vec![
-                RewriteN::new(1, vec![Cone::new_0(1, s_internal.clone(), up)]).into(),
+                s_tensor_s_cospan.forward.clone(),
+                RewriteN::new(1, vec![down_cone.clone(), up_cone.clone()]).into(),
+                s_tensor_s_cospan.backward.clone(),
+            ],
+            vec![
+                RewriteN::new(1, vec![Cone::new_unit(1, s_internal.clone(), up)]).into(),
                 RewriteN::new(1, vec![down_cone.clone()]).into(),
             ],
         )],
@@ -188,14 +196,18 @@ pub fn crossing() -> (impl Signature, DiagramN) {
     .into();
     let untwist: Rewrite = RewriteN::new(
         2,
-        vec![Cone::new_n(
+        vec![Cone::new(
             0,
             s_s.cospans().to_vec(),
-            s_tensor_s_cospan,
-            vec![RewriteN::new(1, vec![up_cone.clone(), down_cone]).into()],
+            s_tensor_s_cospan.clone(),
+            vec![
+                s_tensor_s_cospan.forward,
+                RewriteN::new(1, vec![up_cone.clone(), down_cone]).into(),
+                s_tensor_s_cospan.backward,
+            ],
             vec![
                 RewriteN::new(1, vec![up_cone]).into(),
-                RewriteN::new(1, vec![Cone::new_0(1, s_internal, down)]).into(),
+                RewriteN::new(1, vec![Cone::new_unit(1, s_internal, down)]).into(),
             ],
         )],
     )
