@@ -27,6 +27,9 @@ pub enum VertexShape {
 }
 
 impl Color {
+    const MIN_LIGHTNESS_WRAP: f32 = 0.25;
+    const MAX_LIGHTNESS_WRAP: f32 = 0.90;
+
     pub fn hex(&self) -> String {
         let (r, g, b) = self.clone().into_components::<u8>();
         format!("#{:02x}{:02x}{:02x}", r, g, b)
@@ -37,6 +40,7 @@ impl Color {
         Self(self.0.into_linear().lighten(amount).into())
     }
 
+    // Used for UI to make sure we always maintain sufficient contrast for legibility.
     pub fn is_light(&self) -> bool {
         palette::RelativeContrast::get_contrast_ratio(
             palette::Srgb::new(1., 1., 1.),
@@ -44,17 +48,10 @@ impl Color {
         ) < 1.5
     }
 
-    pub fn is_dark(&self) -> bool {
-        palette::RelativeContrast::get_contrast_ratio(
-            palette::Srgb::new(0., 0., 0.),
-            self.0.into_format::<f32>(),
-        ) < 1.5
-    }
-
-    // Get color in lightened form (based on offset [0, 8]). We wrap colors if needed so that they
-    // are sufficiently different and clearly distinguishable for end users.
+    // Get color in lightened form. We wrap colors if needed so that they are sufficiently
+    // distinguishable for end users.
     //
-    // Colours are calculated from C and R where:
+    // Colors are calculated from C and R where:
     //      C = max(0, D - N - K)
     //      R = -1 | 0 | 1          // orientation of generator
     //      D = 0...                // diagram dimension
@@ -63,25 +60,34 @@ impl Color {
     //
     // See: https://github.com/homotopy-io/homotopy-rs/issues/550
     //
-    // We treat three different kinds of color differently:
-    //      self.is_light() == true     => darken colours (zero then inverse)
-    //      self.is_dark() == true      => lighten colours (zero then inverse)
-    //      otherwise                   => lighten zero, darken inverse
-    // This avoids unnecessary wrapping of colours as it can be jarring or unclear. The constants
-    // used are fairly arbitrary and subject to tweaking to get diagrams looking good.
+    // We treat three kinds of color differently:
+    //      lightness < MIN_LIGHTNESS_WRAP
+    //          => lighten colours (zero then inverse)
+    //      lightness > MAX_LIGHTNESS_WRAP
+    //          => lighten colours (zero then inverse) wrapping such that min lightness is never
+    //             below MIN_LIGHTNESS_WRAP
+    //      otherwise
+    //          => lighten colours (zero then inverse) wrapping before reaching MAX_LIGHTNESS_WRAP
+    //             and respecting MIN_LIGHTNESS_WRAP
+    //
+    // The constants used are fairly arbitrary and subject to tweaking.
     #[inline]
     #[must_use]
     pub fn lighten_from_c_r(&self, c: isize, r: isize) -> Self {
         let mut hsl: Hsl = FromColor::from_color(self.0.into_format::<f32>());
-        let raw_offset = 3 * (1 - r) + c;
-        let offset = if !self.is_light() && !self.is_dark() && raw_offset > 5 {
-            raw_offset - 9
+        let (min_lightness, max_lightness) = if hsl.lightness < Self::MIN_LIGHTNESS_WRAP {
+            (0., 1.)
+        } else if hsl.lightness > Self::MAX_LIGHTNESS_WRAP {
+            (Self::MIN_LIGHTNESS_WRAP, 1.)
         } else {
-            raw_offset
+            (Self::MIN_LIGHTNESS_WRAP, Self::MAX_LIGHTNESS_WRAP)
         };
-        let dir = if self.is_light() { -1. } else { 1. };
-        let o = dir * 0.08 * offset as f32;
-        hsl.lightness = (hsl.lightness + o - 0.01) % 1. + 0.01;
+        let offset = 3 * (1 - r) + c;
+        let o = 0.08 * offset as f32;
+        hsl.lightness = (hsl.lightness + o - min_lightness - 0.01)
+            % (max_lightness - min_lightness)
+            + min_lightness
+            + 0.01;
         let srgb: Srgb<f32> = FromColor::from_color(hsl);
         Self(srgb.into_format())
     }
