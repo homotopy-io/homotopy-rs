@@ -409,16 +409,6 @@ fn make_path_segment<const N: usize>(
                     (layout_end.x, 0.4 * layout_start.y + 0.6 * layout_end.y).into(),
                     layout_end,
                 ),
-                // Nearly-horizontal sloped tangent
-                Some(Homotopy::FullBraid) => builder.cubic_bezier_to(
-                    (layout_start.x, 0.4 * layout_start.y + 0.6 * layout_end.y).into(),
-                    (
-                        0.6 * layout_start.x + 0.4 * layout_end.x,
-                        0.1 * layout_start.y + 0.9 * layout_end.y,
-                    )
-                        .into(),
-                    layout_end,
-                ),
                 // Horizontal tangent
                 _ => builder.cubic_bezier_to(
                     (layout_start.x, 0.2 * layout_start.y + 0.8 * layout_end.y).into(),
@@ -436,16 +426,6 @@ fn make_path_segment<const N: usize>(
                 Some(Homotopy::HalfBraid) => builder.cubic_bezier_to(
                     (layout_start.x, 0.4 * layout_end.y + 0.6 * layout_start.y).into(),
                     (layout_end.x, 0.2 * layout_end.y + 0.8 * layout_start.y).into(),
-                    layout_end,
-                ),
-                // Nearly-horizontal sloped tangent
-                Some(Homotopy::FullBraid) => builder.cubic_bezier_to(
-                    (
-                        0.6 * layout_end.x + 0.4 * layout_start.x,
-                        0.1 * layout_end.y + 0.9 * layout_start.y,
-                    )
-                        .into(),
-                    (layout_end.x, 0.4 * layout_end.y + 0.6 * layout_start.y).into(),
                     layout_end,
                 ),
                 // Horizontal tangent
