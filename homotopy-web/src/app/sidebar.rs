@@ -273,7 +273,6 @@ pub enum SidebarMsg {
     Toggle(Option<drawers::NavDrawer>),
 }
 
-#[derive(Default)]
 pub struct Sidebar {
     last_drawer_width: i32,
     drawer_view_size: DrawerViewSize,
@@ -282,16 +281,23 @@ pub struct Sidebar {
     keybindings: Option<Closure<dyn FnMut(KeyboardEvent)>>,
 }
 
+impl Default for Sidebar {
+    fn default() -> Self {
+        Sidebar {
+            last_drawer_width: SidebarDrawer::DEFAULT_WIDTH,
+            drawer_view_size: DrawerViewSize::from(SidebarDrawer::DEFAULT_WIDTH),
+            open: Default::default(),
+            keybindings: Default::default(),
+        }
+    }
+}
+
 impl Component for Sidebar {
     type Message = SidebarMsg;
     type Properties = SidebarProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let mut sidebar = Sidebar {
-            last_drawer_width: SidebarDrawer::DEFAULT_WIDTH,
-            drawer_view_size: DrawerViewSize::from(SidebarDrawer::DEFAULT_WIDTH),
-            ..Self::default()
-        };
+        let mut sidebar = Sidebar::default();
         sidebar.install_keyboard_shortcuts(ctx);
         sidebar
     }
@@ -304,9 +310,6 @@ impl Component for Sidebar {
                 false
             }
             SidebarMsg::ResizeDrawerView(size) => {
-                if self.drawer_view_size != size {
-                    log::debug!("drawer_view size changed to {:?}", size);
-                }
                 self.drawer_view_size = size;
                 true
             }
