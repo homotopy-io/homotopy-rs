@@ -41,3 +41,14 @@ fn construct_braid_and_contract() {
     assert_debug_snapshot!("construct_braid_contraction_signature", proof.signature);
     assert_debug_snapshot!("construct_braid_contraction_workspace", proof.workspace);
 }
+
+#[test]
+fn construct_interchanges() {
+    let action_dump = include_str!("examples/interchanges.json");
+
+    let proof = actions_test_helper(&action_dump);
+
+    // Snapshot the end result
+    assert_debug_snapshot!("construct_interchanges_signature", proof.signature);
+    assert_debug_snapshot!("construct_interchanges_workspace", proof.workspace);
+}
