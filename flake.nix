@@ -69,6 +69,7 @@
             commands =
               super.commands
               ++ (with self.pkgs; [
+                { package = manim; }
                 { package = cargo-make; }
                 { package = devserver; }
                 { package = gdb; }
