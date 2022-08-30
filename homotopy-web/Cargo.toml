@@ -19,7 +19,7 @@ show_debug_panel = []
 [dependencies]
 instant = { version = "0.1.12", features = ["wasm-bindgen"] }
 homotopy-common = { path = "../homotopy-common" }
-homotopy-core = { path = "../homotopy-core" }
+homotopy-core = { path = "../homotopy-core", features = [ "highs" ]}
 homotopy-model = { path = "../homotopy-model" }
 homotopy-graphics = { path = "../homotopy-graphics" }
 homotopy-gl = { path = "../homotopy-gl" }

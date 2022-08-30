@@ -374,9 +374,13 @@ fn solve(
         }
     }
 
-    let mut model = problem
-        .minimise(objective.into_iter().sum::<Expression>())
-        .using(default_solver);
+    let generic_model = problem.minimise(objective.into_iter().sum::<Expression>());
+
+    #[cfg(all(target_family = "wasm", feature = "highs"))]
+    let mut model = generic_model.using(good_lp::highs);
+    #[cfg(not(all(target_family = "wasm", feature = "highs")))]
+    let mut model = generic_model.using(default_solver);
+
     for c in constraints {
         model.add_constraint(c);
     }
