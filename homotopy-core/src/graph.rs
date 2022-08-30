@@ -249,7 +249,10 @@ where
                                 SliceIndex::Interior(Height::Regular(start)),
                                 ti,
                                 ExternalRewrite::Flange,
-                                target_diagram.cospans()[target_height].forward.clone(),
+                                cone.map_or(
+                                    target_diagram.cospans()[target_height].forward.clone(),
+                                    |c| c.regular_slices()[0].clone(),
+                                ),
                             );
                             // add singular singular slice, then regular slice, …
                             for source_height in start..end {
@@ -268,7 +271,7 @@ where
                                         SliceIndex::Interior(Height::Regular(source_height + 1)),
                                         ti,
                                         ExternalRewrite::RegularSlice(source_height + 1),
-                                        cone.unwrap().regular_slices()[source_height - start]
+                                        cone.unwrap().regular_slices()[source_height - start + 1]
                                             .clone(),
                                     );
                                 }
@@ -278,7 +281,10 @@ where
                                 SliceIndex::Interior(Height::Regular(end)),
                                 ti,
                                 ExternalRewrite::Flange,
-                                target_diagram.cospans()[target_height].backward.clone(),
+                                cone.map_or(
+                                    target_diagram.cospans()[target_height].backward.clone(),
+                                    |c| c.regular_slices()[end - start].clone(),
+                                ),
                             );
                         }
                     }
