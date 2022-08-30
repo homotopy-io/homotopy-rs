@@ -53,25 +53,32 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
 }
 
 #[inline]
-pub fn generator_class_from_diagram_dim(generator: Generator, diagram_dimension: usize) -> String {
-    let orientation = match generator.orientation {
+pub fn generator_class_from_diagram_dim(
+    generator: Generator,
+    k: usize,
+    diagram_dimension: usize,
+) -> String {
+    let r = match generator.orientation {
         Orientation::Positive => 0,
         Orientation::Zero => 1,
         Orientation::Negative => 2,
     };
-    let offset =
-        3 * orientation + (diagram_dimension - generator.dimension.min(diagram_dimension)).min(2);
+    let d = diagram_dimension as isize;
+    let n = generator.dimension as isize;
+    let k = k as isize;
 
-    let codimension = match diagram_dimension - generator.dimension.min(diagram_dimension) {
-        0 => "point",
-        1 => "wire",
-        _ => "",
-    };
+    let offset = (3 * r + (d - n - k).max(0)) as usize;
+
+    log::debug!("d = {}, n = {}, k = {}, offset = {}", d, n, k, offset);
 
     format!(
         "{} {}",
-        generator_class_from_offset(generator, offset % 9),
-        codimension
+        generator_class_from_offset(generator, offset),
+        match k {
+            0 => "point",
+            1 => "wire",
+            _ => "",
+        },
     )
 }
 

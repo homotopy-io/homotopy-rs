@@ -347,7 +347,12 @@ impl<const N: usize> DiagramSvg<N> {
     /// Creates the SVG elements for the diagram.
     fn view_element(&self, ctx: &Context<Self>, index: usize, element: &GraphicElement<N>) -> Html {
         let generator = element.generator();
-        let class = generator_class_from_diagram_dim(generator, ctx.props().diagram.dimension());
+        let k = match element {
+            GraphicElement::Point(_, _) => 0,
+            GraphicElement::Wire(_, _, _, _) => 1,
+            GraphicElement::Surface(_, _) => 2,
+        };
+        let class = generator_class_from_diagram_dim(generator, k, ctx.props().diagram.dimension());
 
         match element {
             GraphicElement::Surface(_, path) => {
