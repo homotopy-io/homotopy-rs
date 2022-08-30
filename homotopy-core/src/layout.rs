@@ -272,6 +272,8 @@ fn solve(
     colimit: &Graph<Vec<Point>, ()>,
 ) -> (f32, FastHashMap<Point, f32>) {
     let mut problem = ProblemVariables::new();
+    let mut objective: Vec<Expression> = Default::default();
+    let mut constraints: Vec<Constraint> = Default::default();
 
     // Variables
     let mut variables: IdxVec<NodeIndex, Variable> = IdxVec::default();
@@ -279,18 +281,15 @@ fn solve(
     for ps in colimit.node_weights() {
         let v = problem.add(variable().min(0.0));
         variables.push(v);
+        //objective.push(0.0001*v);
         point_to_variable.extend(ps.iter().copied().zip(std::iter::repeat(v)));
     }
 
     // Distance constraints.
-    let mut objective: Vec<Expression> = Default::default();
-    let mut constraints: Vec<Constraint> = Default::default();
     for e in colimit.edge_references() {
         let x = variables[e.source()];
         let y = variables[e.target()];
-        let d = problem.add(variable().min(1.0));
-        objective.push(Expression::from(d));
-        constraints.push((d + x - y).eq(0.0));
+        constraints.push((y - x).geq(1.0));
     }
 
     // Fair averaging constraints (inc. straight wires).
@@ -338,16 +337,10 @@ fn solve(
 
                 if orientation == dim - 1 {
                     // Strict constraint: avg(ins) = avg(outs)
-                    let c = problem.add(variable().min(0.0));
                     constraints.push(
-                        std::iter::once(c * n)
-                            .chain(ins.iter().map(|&i| -1.0 * i))
-                            .sum::<Expression>()
-                            .eq(0.0),
-                    );
-                    constraints.push(
-                        std::iter::once(c * m)
-                            .chain(outs.iter().map(|&o| -1.0 * o))
+                        ins.iter()
+                            .map(|&i| m * i)
+                            .chain(outs.iter().map(|&o| -n * o))
                             .sum::<Expression>()
                             .eq(0.0),
                     );
@@ -384,20 +377,26 @@ fn solve(
     for c in constraints {
         model.add_constraint(c);
     }
-    let solution = model.solve().unwrap();
-
     let mut width = 0.0;
     let mut positions: FastHashMap<Point, f32> = FastHashMap::default();
 
-    for n in colimit.node_indices() {
-        let v = variables[n];
-        let position = solution.value(v) as f32;
+    if let Ok(solution) = model.solve() {
+        for n in colimit.node_indices() {
+            let v = variables[n];
+            let position = solution.value(v) as f32;
 
-        for p in &colimit[n] {
-            positions.insert(*p, position);
+            for p in &colimit[n] {
+                positions.insert(*p, position);
+            }
+
+            width = std::cmp::max_by(width, position + 1.0, |x, y| x.partial_cmp(y).unwrap());
         }
-
-        width = std::cmp::max_by(width, position + 1.0, |x, y| x.partial_cmp(y).unwrap());
+    } else {
+        debug_assert_eq!(
+            colimit.node_indices().len(),
+            0,
+            "Model is empty but we need variables."
+        );
     }
 
     (width, positions)
