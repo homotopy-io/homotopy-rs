@@ -9,8 +9,9 @@ pub mod shape;
 
 macro_rules! write_styles_for {
     (
-        @offset_at
-        $offset:expr,
+        @c_r
+        $c:expr,
+        $r:expr,
         $generator:expr,
         $color:expr,
         $stylesheet:expr
@@ -18,8 +19,8 @@ macro_rules! write_styles_for {
         writeln!(
             $stylesheet,
             ".{name} {{ fill: {color}; stroke: {color}; }}",
-            name = generator_class_from_offset($generator, $offset),
-            color = $color.lighten_from_offset($offset).hex(),
+            name = generator_class_from_c_r($generator, $c, $r),
+            color = $color.lighten_from_c_r($c, $r).hex(),
         )
         .unwrap()
     }};
@@ -30,8 +31,10 @@ macro_rules! write_styles_for {
     ) => {{
         let color = $style.color();
 
-        for offset in 0..9 {
-            write_styles_for!(@offset_at offset, $generator, color, $stylesheet);
+        for c in 0..3 {
+            for r in -1..=1 {
+                write_styles_for!(@c_r c, r, $generator, color, $stylesheet);
+            }
         }
     }};
 }
@@ -59,21 +62,19 @@ pub fn generator_class_from_diagram_dim(
     diagram_dimension: usize,
 ) -> String {
     let r = match generator.orientation {
-        Orientation::Positive => 0,
-        Orientation::Zero => 1,
-        Orientation::Negative => 2,
+        Orientation::Positive => 1,
+        Orientation::Zero => 0,
+        Orientation::Negative => -1,
     };
     let d = diagram_dimension as isize;
     let n = generator.dimension as isize;
     let k = k as isize;
 
-    let offset = (3 * r + (d - n - k).max(0)) as usize;
-
-    log::debug!("d = {}, n = {}, k = {}, offset = {}", d, n, k, offset);
+    let c = (d - n - k).max(0);
 
     format!(
         "{} {}",
-        generator_class_from_offset(generator, offset),
+        generator_class_from_c_r(generator, c, r),
         match k {
             0 => "point",
             1 => "wire",
@@ -83,10 +84,17 @@ pub fn generator_class_from_diagram_dim(
 }
 
 #[inline]
-fn generator_class_from_offset(generator: Generator, offset: usize) -> String {
+fn generator_class_from_c_r(generator: Generator, c: isize, r: isize) -> String {
     format!(
-        "generator__{}-{}--{}",
-        generator.id, generator.dimension, offset
+        "generator__{}-{}--{}-{}",
+        generator.id,
+        generator.dimension,
+        c,
+        match r {
+            1 => "pos",
+            -1 => "neg",
+            _ => "zer",
+        }
     )
 }
 

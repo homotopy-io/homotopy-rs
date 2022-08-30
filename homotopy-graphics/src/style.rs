@@ -64,15 +64,28 @@ impl Color {
         ) < 1.5
     }
 
+    pub fn is_dark(&self) -> bool {
+        palette::RelativeContrast::get_contrast_ratio(
+            palette::Srgb::new(0., 0., 0.),
+            self.0.into_format::<f32>(),
+        ) < 1.5
+    }
+
     // Get color in lightened form (based on offset [0, 8]). We wrap colors so that they are
     // sufficiently different and clearly distinguishable for end users.
     #[inline]
     #[must_use]
-    pub fn lighten_from_offset(&self, offset: usize) -> Self {
+    pub fn lighten_from_c_r(&self, c: isize, r: isize) -> Self {
+        let mut hsl: Hsl = FromColor::from_color(self.0.into_format::<f32>());
+        let raw_offset = 3 * (1 - r) + c;
+        let offset = if !self.is_light() && !self.is_dark() && raw_offset > 5 {
+            raw_offset - 9
+        } else {
+            raw_offset
+        };
         let dir = if self.is_light() { -1. } else { 1. };
         let o = dir * 0.08 * offset as f32;
-        let mut hsl: Hsl = FromColor::from_color(self.0.into_format::<f32>());
-        hsl.lightness = (hsl.lightness + o) % 1.;
+        hsl.lightness = (hsl.lightness + o - 0.01) % 1. + 0.01;
         let srgb: Srgb<f32> = FromColor::from_color(hsl);
         Self(srgb.into_format())
     }
