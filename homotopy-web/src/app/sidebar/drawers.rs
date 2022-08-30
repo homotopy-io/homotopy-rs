@@ -1,6 +1,6 @@
 use yew::{callback::Callback, prelude::*};
 
-use super::{Sidebar, SidebarButton, SidebarDrawer, SidebarMsg};
+use super::{DrawerViewSize, Sidebar, SidebarButton, SidebarDrawer, SidebarMsg};
 #[cfg(debug_assertions)]
 use crate::app::debug::DebugView;
 use crate::{
@@ -21,8 +21,9 @@ macro_rules! declare_sidebar_drawers {
             $class:literal,
             $icon:literal,
             $body:expr,
-            $($top_icon:literal,
-              $action:expr,)?
+            $(min_width: $min_width:expr,)?
+            $(top_icon: $top_icon:literal,
+              top_icon_action: $action:expr,)?
         }
     )*) => {
         #[allow(unused)]
@@ -38,8 +39,11 @@ macro_rules! declare_sidebar_drawers {
         impl NavDrawer {
             pub(super) fn view(
                 self,
-                dispatch: &Callback<model::Action>,
+                model_dispatch: &Callback<model::Action>,
+                sidebar_dispatch: &Callback<SidebarMsg>,
                 proof: &Proof,
+                initial_width: i32,
+                drawer_view_size: DrawerViewSize,
             ) -> Html {
                 match self {
                     $(
@@ -50,14 +54,17 @@ macro_rules! declare_sidebar_drawers {
                                 <SidebarDrawer
                                     title={$title}
                                     class={$class}
-                                    dispatch={dispatch}
+                                    initial_width={initial_width}
+                                    $(min_width={$min_width})?
+                                    model_dispatch={model_dispatch}
+                                    sidebar_dispatch={sidebar_dispatch}
                                     $(icon={$top_icon})?
                                     $(on_click={
                                         let action = $action;
                                         action(proof)
                                     })?
                                 >
-                                    {body(dispatch, proof)}
+                                    {body(model_dispatch, proof, drawer_view_size)}
                                 </SidebarDrawer>
                             }
                         }
@@ -76,7 +83,7 @@ macro_rules! declare_sidebar_drawers {
                             <SidebarButton
                                 label={$title}
                                 icon={$icon}
-                                action={SidebarMsg::Toggle(NavDrawer::$name)}
+                                action={SidebarMsg::Toggle(Some(NavDrawer::$name))}
                                 shortcut={None}
                                 dispatch={ctx.link().callback(|x| x)}
                                 visibility={Visible}
@@ -100,35 +107,39 @@ declare_sidebar_drawers! {
         "Project",
         "project",
         "info",
-        |dispatch, proof: &Proof| html! {
+        |dispatch, proof: &Proof, _| html! {
             <ProjectView
                 dispatch={dispatch}
                 metadata={proof.metadata().clone()}
             />
         },
+        min_width: 250,
     }
 
     DRAWER_SETTINGS {
         "Settings",
         "settings",
         "settings",
-        |_, _| html! {
+        |_, _, _| html! {
             <SettingsView />
         },
+        min_width: 250,
     }
 
     DRAWER_SIGNATURE {
         "Signature",
         "signature",
         "list",
-        |dispatch: &Callback<model::Action>, proof: &Proof| html! {
+        |dispatch: &Callback<model::Action>, proof: &Proof, drawer_view_size: DrawerViewSize| html! {
             <SignatureView
                 signature={proof.signature().clone()}
                 dispatch={dispatch.reform(model::Action::Proof)}
+                drawer_view_size={drawer_view_size}
             />
         },
-        "create_new_folder",
-        |proof: &Proof| model::Action::Proof(Action::EditSignature(SignatureEdit::NewFolder(proof.signature().as_tree().root()))),
+        min_width: 250,
+        top_icon: "create_new_folder",
+        top_icon_action: |proof: &Proof| model::Action::Proof(Action::EditSignature(SignatureEdit::NewFolder(proof.signature().as_tree().root()))),
     }
 
     #[cfg(debug_assertions)]
@@ -136,8 +147,9 @@ declare_sidebar_drawers! {
         "Debug",
         "debug",
         "bug_report",
-        |_, proof: &Proof| html! {
+        |_, proof: &Proof, _| html! {
             <DebugView proof={proof.clone()} />
         },
+        min_width: 250,
     }
 }

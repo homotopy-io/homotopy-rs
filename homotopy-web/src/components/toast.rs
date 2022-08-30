@@ -115,8 +115,7 @@ impl Component for ToasterComponent {
     }
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
-        let toasts: Html = self
-            .state
+        self.state
             .toasts
             .iter()
             .map(|props| {
@@ -129,11 +128,7 @@ impl Component for ToasterComponent {
                     </div>
                 }
             })
-            .collect();
-
-        html! {
-            <div class="toaster">{toasts}</div>
-        }
+            .collect()
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {

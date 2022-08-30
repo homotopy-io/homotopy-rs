@@ -9,7 +9,7 @@ use yew::prelude::*;
 use yew_macro::function_component;
 
 use crate::{
-    app::{diagram_svg::DiagramSvg, AppSettings, AppSettingsKey},
+    app::{diagram_svg::DiagramSvg, sidebar::DrawerViewSize, AppSettings, AppSettingsKey},
     components::{
         icon::{Icon, IconSize},
         settings::{KeyStore, Settings, Store},
@@ -108,6 +108,7 @@ pub struct ItemViewProps {
     pub node: Node,
     pub item: SignatureItem,
     pub signature: Signature,
+    pub drawer_view_size: DrawerViewSize,
 
     #[prop_or_default]
     pub on_drag_over: Callback<DragEvent>,
@@ -142,7 +143,7 @@ pub struct Preview {
 pub enum ItemViewMessage {
     SwitchTo(ItemViewMode),
     Edit(SignatureItemEdit),
-    CachePreview(Preview),
+    CachePreview(bool, Diagram),
     Setting(<Store<AppSettings> as KeyStore>::Message),
     Noop,
 }
@@ -231,8 +232,9 @@ impl Component for ItemView {
 
                 return apply_edit(&ctx.props().dispatch, ctx.props().node, edit);
             }
-            ItemViewMessage::CachePreview(preview) => {
-                self.preview_cache = Some(preview);
+            ItemViewMessage::CachePreview(show_single_preview, diagram) => {
+                self.cache_preview(ctx, show_single_preview, &diagram);
+                return true;
             }
             ItemViewMessage::Setting(msg) => {
                 self.local.set(&msg);
@@ -357,11 +359,11 @@ impl ItemView {
             SignatureItem::Folder(info) => &info.name,
         };
 
-        if self.mode == ItemViewMode::Editing {
+        let text = if self.mode == ItemViewMode::Editing {
             html! {
                 <input
                     type="text"
-                    class="signature__item-name-input"
+                    class="signature__item-name"
                     value={self.name.clone()}
                     oninput={ctx.link().callback(|e: InputEvent| {
                         let input: HtmlInputElement = e.target_unchecked_into();
@@ -379,12 +381,16 @@ impl ItemView {
             }
         } else {
             html! {
-                <div class="signature__item-child signature__item-name">
-                    <span class="signature__item-name">
-                        {name}
-                    </span>
-                </div>
+                <span class="signature__item-name">
+                    {name}
+                </span>
             }
+        };
+
+        html! {
+            <div class="signature__item-child signature__item-name">
+                {text}
+            </div>
         }
     }
 
@@ -408,6 +414,44 @@ impl ItemView {
         }
     }
 
+    fn cache_preview(&mut self, ctx: &Context<Self>, single_preview: bool, diagram: &Diagram) {
+        let svg_of = |diagram: Diagram, id: String| match diagram.dimension() {
+            0 => Self::view_diagram_svg::<0>(ctx, diagram, id),
+            1 => Self::view_diagram_svg::<1>(ctx, diagram, id),
+            _ => Self::view_diagram_svg::<2>(ctx, diagram, id),
+        };
+
+        let diagrams = match &diagram {
+            Diagram::Diagram0(_) => {
+                svg_of(diagram.clone(), "signature__generator-preview".to_owned())
+            }
+            Diagram::DiagramN(diagram_n) => {
+                if single_preview {
+                    svg_of(diagram.clone(), "signature__generator-preview".to_owned())
+                } else {
+                    html! {
+                        <>
+                        {svg_of(diagram_n.source(), "signature__generator-preview-source".to_owned())}
+                        <div class="signature__generator-preview-spacer" />
+                        {svg_of(diagram_n.target(), "signature__generator-preview-source".to_owned())}
+                        </>
+                    }
+                }
+            }
+        };
+
+        let preview_html = html! {
+            <div class="signature__generator-previews-wrapper">
+            {diagrams}
+            </div>
+        };
+
+        self.preview_cache = Some(Preview {
+            signature: ctx.props().signature.clone(),
+            html: preview_html,
+        });
+    }
+
     fn view_preview(&self, ctx: &Context<Self>) -> Html {
         if !self.local.get_show_previews() {
             return html! {};
@@ -424,52 +468,13 @@ impl ItemView {
                     return cache.html.clone();
                 }
             }
-
-            let svg_of = |diagram: Diagram, id: String| match diagram.dimension() {
-                0 => Self::view_diagram_svg::<0>(ctx, diagram, id),
-                1 => Self::view_diagram_svg::<1>(ctx, diagram, id),
-                _ => Self::view_diagram_svg::<2>(ctx, diagram, id),
-            };
-
-            let diagrams = match &info.diagram {
-                Diagram::Diagram0(_) => svg_of(
-                    info.diagram.clone(),
-                    "signature__generator-preview".to_owned(),
-                ),
-                Diagram::DiagramN(diagram_n) => {
-                    if info.single_preview {
-                        svg_of(
-                            info.diagram.clone(),
-                            "signature__generator-preview".to_owned(),
-                        )
-                    } else {
-                        html! {
-                            <>
-                                {svg_of(diagram_n.source(), "signature__generator-preview-source".to_owned())}
-                                <div class="signature__generator-preview-spacer" />
-                                {svg_of(diagram_n.target(), "signature__generator-preview-source".to_owned())}
-                            </>
-                        }
-                    }
-                }
-            };
-
-            let preview_html = html! {
-                <div class="signature__generator-previews-wrapper">
-                    {diagrams}
-                </div>
-            };
-
-            ctx.link()
-                .send_message(ItemViewMessage::CachePreview(Preview {
-                    signature: ctx.props().signature.clone(),
-                    html: preview_html.clone(),
-                }));
-
-            preview_html
-        } else {
-            html! {}
+            ctx.link().send_message(ItemViewMessage::CachePreview(
+                info.single_preview,
+                info.diagram.clone(),
+            ));
         }
+
+        html! {}
     }
 
     fn view_diagram_svg<const N: usize>(ctx: &Context<Self>, diagram: Diagram, id: String) -> Html {
@@ -478,8 +483,8 @@ impl ItemView {
                     diagram={diagram}
                     id={id}
                     signature={ctx.props().signature.clone()}
-                    max_width={Some(42.0)}
-                    max_height={Some(32.0)}
+                    max_width={Some(84.)}
+                    max_height={Some(60.)}
             />
         }
     }
@@ -722,7 +727,9 @@ impl ItemView {
     }
 
     fn view_property_indicators(&self, ctx: &Context<Self>) -> Html {
-        if self.mode == ItemViewMode::Editing {
+        if ctx.props().drawer_view_size != DrawerViewSize::Expanded
+            && self.mode == ItemViewMode::Editing
+        {
             return html! {};
         }
 
@@ -733,9 +740,14 @@ impl ItemView {
             let oriented_class =
                 "signature__generator-indicator signature__generator-indicator-oriented";
 
+            let (invertible_text, oriented_text) = match ctx.props().drawer_view_size {
+                DrawerViewSize::Expanded => ("Invertible", "Oriented"),
+                _ => ("I", "O"),
+            };
+
             let invertible = if info.invertible {
                 html! {
-                    <span class={invertible_class}>{"I"}</span>
+                    <span class={invertible_class}>{invertible_text}</span>
                 }
             } else {
                 html! {}
@@ -743,7 +755,7 @@ impl ItemView {
 
             let oriented = if info.oriented {
                 html! {
-                    <span class={oriented_class}>{"O"}</span>
+                    <span class={oriented_class}>{oriented_text}</span>
                 }
             } else {
                 html! {}
