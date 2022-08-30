@@ -85,5 +85,5 @@ features = [
 [dev-dependencies]
 cargo-husky = { features = ["precommit-hook", "run-cargo-check", "run-cargo-test", "run-cargo-fmt", "run-cargo-clippy"], version = "1.5.0" }
 wasm-bindgen-test = "0.3.31"
-futures = "0.3.23"
+futures = "0.3.24"
 wasm-bindgen-futures = "0.4.31"
