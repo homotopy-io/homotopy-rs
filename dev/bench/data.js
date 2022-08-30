@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1661794189827,
+  "lastUpdate": 1661855670253,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -40679,6 +40679,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 26.48,
             "range": "+/- 0.007",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1d973f53d1aff533631ade00f2d8cf977e5367b1",
+          "message": "New controls for full braid Beziers (#758)\n\n* Added example of braid contraction.\r\n\r\n* Changed controls for full braids (#473).\r\n\r\n* New full braid controls.\r\n\r\n* Revert commit 7a23cbab504d3552acc6bd2f6e626d5d30ba3707.",
+          "timestamp": "2022-08-30T09:35:41Z",
+          "tree_id": "ae30c1042bc12457264673be597193f7cd044bd2",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/1d973f53d1aff533631ade00f2d8cf977e5367b1"
+        },
+        "date": 1661855660362,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.8218,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 10.856,
+            "range": "+/- 0.003",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 49.059,
+            "range": "+/- 0.016",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 311.49,
+            "range": "+/- 0.370",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.6306,
+            "range": "+/- 0.001",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 26.35,
+            "range": "+/- 0.018",
             "unit": "s"
           }
         ]
