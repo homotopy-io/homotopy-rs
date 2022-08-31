@@ -1,7 +1,7 @@
 use wasm_bindgen::JsValue;
 use yew::prelude::*;
 
-use crate::model::Proof;
+use crate::model::{dump_actions, Proof};
 
 #[derive(Properties, Clone, PartialEq, Eq)]
 pub struct Props {
@@ -21,6 +21,8 @@ pub fn debug_view(props: &Props) -> Html {
             <button onclick={Callback::from(move |_| web_sys::console::dir_2(&"Workspace diagram:".into(), &JsValue::from_serde(&diagram).unwrap()))}>{"Dump workspace diagram"}</button>
             <br />
             <button onclick={Callback::from(move |_| web_sys::console::dir_2(&"Signature:".into(), &JsValue::from_serde(&signature).unwrap()))}>{"Dump signature"}</button>
+            <br />
+            <button onclick={Callback::from(move |_| web_sys::console::dir_2(&"Actions:".into(), &dump_actions()))}>{"Dump actions"}</button>
         </>
     }
 }

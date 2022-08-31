@@ -1,0 +1,4583 @@
+[
+  "CreateGeneratorZero",
+  {
+    "SelectGenerator": {
+      "dimension": 0,
+      "id": 0,
+      "orientation": "Positive"
+    }
+  },
+  {
+    "SetBoundary": "source"
+  },
+  {
+    "SelectGenerator": {
+      "dimension": 0,
+      "id": 0,
+      "orientation": "Positive"
+    }
+  },
+  {
+    "SetBoundary": "target"
+  },
+  {
+    "SelectGenerator": {
+      "dimension": 1,
+      "id": 1,
+      "orientation": "Positive"
+    }
+  },
+  "TakeIdentityDiagram",
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "MakeInvertible": [
+            {
+              "dimension": 1,
+              "id": 1,
+              "orientation": "Positive"
+            },
+            true
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "SelectPoints": [
+      [
+        "target",
+        "target"
+      ],
+      [
+        0,
+        2
+      ],
+      [
+        0,
+        "target"
+      ]
+    ]
+  },
+  {
+    "Select": 1
+  },
+  {
+    "SelectPoints": [
+      [
+        "target",
+        "target"
+      ],
+      [
+        0,
+        4
+      ],
+      [
+        0,
+        "target"
+      ]
+    ]
+  },
+  {
+    "Select": 0
+  },
+  {
+    "Homotopy": {
+      "Contract": {
+        "bias": "Lower",
+        "location": [
+          "target"
+        ],
+        "height": 0,
+        "direction": "Forward"
+      }
+    }
+  },
+  {
+    "Homotopy": {
+      "Contract": {
+        "bias": "Lower",
+        "location": [
+          "source"
+        ],
+        "height": 1,
+        "direction": "Forward"
+      }
+    }
+  },
+  {
+    "DescendSlice": 2
+  },
+  {
+    "AscendSlice": 1
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 192,
+            "green": 57,
+            "blue": 43
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 243,
+            "green": 156,
+            "blue": 18
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 142,
+            "green": 68,
+            "blue": 173
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 39,
+            "green": 174,
+            "blue": 96
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 241,
+            "green": 196,
+            "blue": 15
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 243,
+            "green": 156,
+            "blue": 18
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 142,
+            "green": 68,
+            "blue": 173
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 41,
+            "green": 128,
+            "blue": 185
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 0,
+            "green": 0,
+            "blue": 0
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 246,
+            "green": 245,
+            "blue": 244
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 241,
+            "green": 196,
+            "blue": 15
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 246,
+            "green": 245,
+            "blue": 244
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 0,
+            "green": 0,
+            "blue": 0
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 246,
+            "green": 245,
+            "blue": 244
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 0,
+            "green": 0,
+            "blue": 0
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 246,
+            "green": 245,
+            "blue": 244
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 0,
+            "green": 0,
+            "blue": 0
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 246,
+            "green": 245,
+            "blue": 244
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 255,
+            "green": 255,
+            "blue": 255
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 0,
+            "green": 0,
+            "blue": 0
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 246,
+            "green": 245,
+            "blue": 244
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 0,
+            "green": 0,
+            "blue": 0
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 246,
+            "green": 245,
+            "blue": 244
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 241,
+            "green": 196,
+            "blue": 15
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 243,
+            "green": 156,
+            "blue": 18
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 192,
+            "green": 57,
+            "blue": 43
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 41,
+            "green": 128,
+            "blue": 185
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 246,
+            "green": 245,
+            "blue": 244
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 241,
+            "green": 196,
+            "blue": 15
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 41,
+            "green": 128,
+            "blue": 185
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 192,
+            "green": 57,
+            "blue": 43
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 243,
+            "green": 156,
+            "blue": 18
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 142,
+            "green": 68,
+            "blue": 173
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 39,
+            "green": 174,
+            "blue": 96
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 241,
+            "green": 196,
+            "blue": 15
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 246,
+            "green": 245,
+            "blue": 244
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 0,
+            "green": 0,
+            "blue": 0
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 41,
+            "green": 128,
+            "blue": 185
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 246,
+            "green": 245,
+            "blue": 244
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 192,
+            "green": 57,
+            "blue": 43
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 41,
+            "green": 128,
+            "blue": 185
+          }
+        }
+      ]
+    }
+  },
+  "Imported",
+  {
+    "SelectGenerator": {
+      "dimension": 4,
+      "id": 7,
+      "orientation": "Positive"
+    }
+  },
+  {
+    "SelectGenerator": {
+      "dimension": 3,
+      "id": 6,
+      "orientation": "Positive"
+    }
+  },
+  {
+    "SelectGenerator": {
+      "dimension": 4,
+      "id": 7,
+      "orientation": "Positive"
+    }
+  },
+  {
+    "SelectGenerator": {
+      "dimension": 4,
+      "id": 8,
+      "orientation": "Positive"
+    }
+  },
+  {
+    "SelectGenerator": {
+      "dimension": 3,
+      "id": 5,
+      "orientation": "Positive"
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        3,
+        {
+          "Recolor": {
+            "red": 192,
+            "green": 57,
+            "blue": 43
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        4,
+        {
+          "Recolor": {
+            "red": 192,
+            "green": 57,
+            "blue": 43
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        5,
+        {
+          "Recolor": {
+            "red": 192,
+            "green": 57,
+            "blue": 43
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        6,
+        {
+          "Recolor": {
+            "red": 192,
+            "green": 57,
+            "blue": 43
+          }
+        }
+      ]
+    }
+  },
+  {
+    "EditSignature": {
+      "Edit": [
+        2,
+        {
+          "Recolor": {
+            "red": 243,
+            "green": 156,
+            "blue": 18
+          }
+        }
+      ]
+    }
+  },
+  {
+    "SelectGenerator": {
+      "dimension": 4,
+      "id": 7,
+      "orientation": "Positive"
+    }
+  },
+  {
+    "SelectGenerator": {
+      "dimension": 4,
+      "id": 8,
+      "orientation": "Positive"
+    }
+  },
+  "ClearWorkspace",
+  {
+    "SelectGenerator": {
+      "dimension": 3,
+      "id": 2,
+      "orientation": "Positive"
+    }
+  },
+  {
+    "SelectPoints": [
+      [
+        2,
+        "source"
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        1,
+        "source"
+      ]
+    ]
+  },
+  {
+    "SelectPoints": [
+      [
+        2,
+        "source"
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        1,
+        "source"
+      ]
+    ]
+  },
+  {
+    "SelectPoints": [
+      [
+        "target",
+        3
+      ],
+      [
+        2,
+        3
+      ]
+    ]
+  },
+  {
+    "Attach": {
+      "generator": {
+        "dimension": 3,
+        "id": 2,
+        "orientation": "Positive"
+      },
+      "diagram": {
+        "source": {
+          "DiagramN": {
+            "source": {
+              "DiagramN": {
+                "source": {
+                  "Diagram0": {
+                    "dimension": 0,
+                    "id": 0,
+                    "orientation": "Positive"
+                  }
+                },
+                "cospans": []
+              }
+            },
+            "cospans": [
+              {
+                "forward": {
+                  "RewriteN": {
+                    "dimension": 1,
+                    "cones": [
+                      {
+                        "index": 0,
+                        "internal": {
+                          "Cone0": {
+                            "target": {
+                              "forward": {
+                                "Rewrite0": {
+                                  "source": {
+                                    "dimension": 0,
+                                    "id": 0,
+                                    "orientation": "Positive"
+                                  },
+                                  "target": {
+                                    "dimension": 2,
+                                    "id": 1,
+                                    "orientation": "Positive"
+                                  },
+                                  "label": {
+                                    "generator": 1,
+                                    "boundary_path": [
+                                      "source",
+                                      1
+                                    ],
+                                    "coordinate": []
+                                  }
+                                }
+                              },
+                              "backward": {
+                                "Rewrite0": {
+                                  "source": {
+                                    "dimension": 0,
+                                    "id": 0,
+                                    "orientation": "Positive"
+                                  },
+                                  "target": {
+                                    "dimension": 2,
+                                    "id": 1,
+                                    "orientation": "Positive"
+                                  },
+                                  "label": {
+                                    "generator": 1,
+                                    "boundary_path": [
+                                      "target",
+                                      1
+                                    ],
+                                    "coordinate": []
+                                  }
+                                }
+                              }
+                            },
+                            "regular_slice": {
+                              "Rewrite0": {
+                                "source": {
+                                  "dimension": 0,
+                                  "id": 0,
+                                  "orientation": "Positive"
+                                },
+                                "target": {
+                                  "dimension": 2,
+                                  "id": 1,
+                                  "orientation": "Positive"
+                                },
+                                "label": {
+                                  "generator": 1,
+                                  "boundary_path": [
+                                    "source",
+                                    0
+                                  ],
+                                  "coordinate": [
+                                    "R0"
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                "backward": {
+                  "RewriteN": {
+                    "dimension": 1,
+                    "cones": [
+                      {
+                        "index": 0,
+                        "internal": {
+                          "Cone0": {
+                            "target": {
+                              "forward": {
+                                "Rewrite0": {
+                                  "source": {
+                                    "dimension": 0,
+                                    "id": 0,
+                                    "orientation": "Positive"
+                                  },
+                                  "target": {
+                                    "dimension": 2,
+                                    "id": 1,
+                                    "orientation": "Positive"
+                                  },
+                                  "label": {
+                                    "generator": 1,
+                                    "boundary_path": [
+                                      "source",
+                                      1
+                                    ],
+                                    "coordinate": []
+                                  }
+                                }
+                              },
+                              "backward": {
+                                "Rewrite0": {
+                                  "source": {
+                                    "dimension": 0,
+                                    "id": 0,
+                                    "orientation": "Positive"
+                                  },
+                                  "target": {
+                                    "dimension": 2,
+                                    "id": 1,
+                                    "orientation": "Positive"
+                                  },
+                                  "label": {
+                                    "generator": 1,
+                                    "boundary_path": [
+                                      "target",
+                                      1
+                                    ],
+                                    "coordinate": []
+                                  }
+                                }
+                              }
+                            },
+                            "regular_slice": {
+                              "Rewrite0": {
+                                "source": {
+                                  "dimension": 0,
+                                  "id": 0,
+                                  "orientation": "Positive"
+                                },
+                                "target": {
+                                  "dimension": 2,
+                                  "id": 1,
+                                  "orientation": "Positive"
+                                },
+                                "label": {
+                                  "generator": 1,
+                                  "boundary_path": [
+                                    "target",
+                                    0
+                                  ],
+                                  "coordinate": [
+                                    "R0"
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "cospans": [
+          {
+            "forward": {
+              "RewriteN": {
+                "dimension": 2,
+                "cones": [
+                  {
+                    "index": 0,
+                    "internal": {
+                      "ConeN": {
+                        "source": [
+                          {
+                            "forward": {
+                              "RewriteN": {
+                                "dimension": 1,
+                                "cones": [
+                                  {
+                                    "index": 0,
+                                    "internal": {
+                                      "Cone0": {
+                                        "target": {
+                                          "forward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "source",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          },
+                                          "backward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "target",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "regular_slice": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 2,
+                                              "id": 1,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 1,
+                                              "boundary_path": [
+                                                "source",
+                                                0
+                                              ],
+                                              "coordinate": [
+                                                "R0"
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            },
+                            "backward": {
+                              "RewriteN": {
+                                "dimension": 1,
+                                "cones": [
+                                  {
+                                    "index": 0,
+                                    "internal": {
+                                      "Cone0": {
+                                        "target": {
+                                          "forward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "source",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          },
+                                          "backward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "target",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "regular_slice": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 2,
+                                              "id": 1,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 1,
+                                              "boundary_path": [
+                                                "target",
+                                                0
+                                              ],
+                                              "coordinate": [
+                                                "R0"
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        ],
+                        "target": {
+                          "forward": {
+                            "RewriteN": {
+                              "dimension": 1,
+                              "cones": [
+                                {
+                                  "index": 0,
+                                  "internal": {
+                                    "Cone0": {
+                                      "target": {
+                                        "forward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "source",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        },
+                                        "backward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "target",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "regular_slice": {
+                                        "Rewrite0": {
+                                          "source": {
+                                            "dimension": 0,
+                                            "id": 0,
+                                            "orientation": "Positive"
+                                          },
+                                          "target": {
+                                            "dimension": 3,
+                                            "id": 2,
+                                            "orientation": "Positive"
+                                          },
+                                          "label": {
+                                            "generator": 2,
+                                            "boundary_path": [
+                                              "source",
+                                              1
+                                            ],
+                                            "coordinate": [
+                                              "R0"
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "backward": {
+                            "RewriteN": {
+                              "dimension": 1,
+                              "cones": [
+                                {
+                                  "index": 0,
+                                  "internal": {
+                                    "Cone0": {
+                                      "target": {
+                                        "forward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "source",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        },
+                                        "backward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "target",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "regular_slice": {
+                                        "Rewrite0": {
+                                          "source": {
+                                            "dimension": 0,
+                                            "id": 0,
+                                            "orientation": "Positive"
+                                          },
+                                          "target": {
+                                            "dimension": 3,
+                                            "id": 2,
+                                            "orientation": "Positive"
+                                          },
+                                          "label": {
+                                            "generator": 2,
+                                            "boundary_path": [
+                                              "target",
+                                              1
+                                            ],
+                                            "coordinate": [
+                                              "R0"
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "regular_slices": [],
+                        "singular_slices": [
+                          {
+                            "RewriteN": {
+                              "dimension": 1,
+                              "cones": [
+                                {
+                                  "index": 0,
+                                  "internal": {
+                                    "ConeN": {
+                                      "source": [
+                                        {
+                                          "forward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "source",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          },
+                                          "backward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "target",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ],
+                                      "target": {
+                                        "forward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "source",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        },
+                                        "backward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "target",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "regular_slices": [],
+                                      "singular_slices": [
+                                        {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 2,
+                                              "id": 1,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "source",
+                                                0
+                                              ],
+                                              "coordinate": [
+                                                "S0",
+                                                "S0"
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "backward": {
+              "RewriteN": {
+                "dimension": 2,
+                "cones": [
+                  {
+                    "index": 0,
+                    "internal": {
+                      "ConeN": {
+                        "source": [
+                          {
+                            "forward": {
+                              "RewriteN": {
+                                "dimension": 1,
+                                "cones": [
+                                  {
+                                    "index": 0,
+                                    "internal": {
+                                      "Cone0": {
+                                        "target": {
+                                          "forward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "source",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          },
+                                          "backward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "target",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "regular_slice": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 2,
+                                              "id": 1,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 1,
+                                              "boundary_path": [
+                                                "source",
+                                                0
+                                              ],
+                                              "coordinate": [
+                                                "R0"
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            },
+                            "backward": {
+                              "RewriteN": {
+                                "dimension": 1,
+                                "cones": [
+                                  {
+                                    "index": 0,
+                                    "internal": {
+                                      "Cone0": {
+                                        "target": {
+                                          "forward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "source",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          },
+                                          "backward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "target",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "regular_slice": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 2,
+                                              "id": 1,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 1,
+                                              "boundary_path": [
+                                                "target",
+                                                0
+                                              ],
+                                              "coordinate": [
+                                                "R0"
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        ],
+                        "target": {
+                          "forward": {
+                            "RewriteN": {
+                              "dimension": 1,
+                              "cones": [
+                                {
+                                  "index": 0,
+                                  "internal": {
+                                    "Cone0": {
+                                      "target": {
+                                        "forward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "source",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        },
+                                        "backward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "target",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "regular_slice": {
+                                        "Rewrite0": {
+                                          "source": {
+                                            "dimension": 0,
+                                            "id": 0,
+                                            "orientation": "Positive"
+                                          },
+                                          "target": {
+                                            "dimension": 3,
+                                            "id": 2,
+                                            "orientation": "Positive"
+                                          },
+                                          "label": {
+                                            "generator": 2,
+                                            "boundary_path": [
+                                              "source",
+                                              1
+                                            ],
+                                            "coordinate": [
+                                              "R0"
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "backward": {
+                            "RewriteN": {
+                              "dimension": 1,
+                              "cones": [
+                                {
+                                  "index": 0,
+                                  "internal": {
+                                    "Cone0": {
+                                      "target": {
+                                        "forward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "source",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        },
+                                        "backward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "target",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "regular_slice": {
+                                        "Rewrite0": {
+                                          "source": {
+                                            "dimension": 0,
+                                            "id": 0,
+                                            "orientation": "Positive"
+                                          },
+                                          "target": {
+                                            "dimension": 3,
+                                            "id": 2,
+                                            "orientation": "Positive"
+                                          },
+                                          "label": {
+                                            "generator": 2,
+                                            "boundary_path": [
+                                              "target",
+                                              1
+                                            ],
+                                            "coordinate": [
+                                              "R0"
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "regular_slices": [],
+                        "singular_slices": [
+                          {
+                            "RewriteN": {
+                              "dimension": 1,
+                              "cones": [
+                                {
+                                  "index": 0,
+                                  "internal": {
+                                    "ConeN": {
+                                      "source": [
+                                        {
+                                          "forward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "source",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          },
+                                          "backward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "target",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ],
+                                      "target": {
+                                        "forward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "source",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        },
+                                        "backward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "target",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "regular_slices": [],
+                                      "singular_slices": [
+                                        {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 2,
+                                              "id": 1,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "target",
+                                                0
+                                              ],
+                                              "coordinate": [
+                                                "S0",
+                                                "S0"
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "tag": null,
+      "boundary_path": [
+        "target",
+        0
+      ],
+      "embedding": [
+        1,
+        0
+      ]
+    }
+  },
+  {
+    "SelectPoints": [
+      [
+        "target",
+        1
+      ]
+    ]
+  },
+  {
+    "Attach": {
+      "generator": {
+        "dimension": 3,
+        "id": 2,
+        "orientation": "Positive"
+      },
+      "diagram": {
+        "source": {
+          "DiagramN": {
+            "source": {
+              "DiagramN": {
+                "source": {
+                  "Diagram0": {
+                    "dimension": 0,
+                    "id": 0,
+                    "orientation": "Positive"
+                  }
+                },
+                "cospans": []
+              }
+            },
+            "cospans": [
+              {
+                "forward": {
+                  "RewriteN": {
+                    "dimension": 1,
+                    "cones": [
+                      {
+                        "index": 0,
+                        "internal": {
+                          "Cone0": {
+                            "target": {
+                              "forward": {
+                                "Rewrite0": {
+                                  "source": {
+                                    "dimension": 0,
+                                    "id": 0,
+                                    "orientation": "Positive"
+                                  },
+                                  "target": {
+                                    "dimension": 2,
+                                    "id": 1,
+                                    "orientation": "Positive"
+                                  },
+                                  "label": {
+                                    "generator": 1,
+                                    "boundary_path": [
+                                      "source",
+                                      1
+                                    ],
+                                    "coordinate": []
+                                  }
+                                }
+                              },
+                              "backward": {
+                                "Rewrite0": {
+                                  "source": {
+                                    "dimension": 0,
+                                    "id": 0,
+                                    "orientation": "Positive"
+                                  },
+                                  "target": {
+                                    "dimension": 2,
+                                    "id": 1,
+                                    "orientation": "Positive"
+                                  },
+                                  "label": {
+                                    "generator": 1,
+                                    "boundary_path": [
+                                      "target",
+                                      1
+                                    ],
+                                    "coordinate": []
+                                  }
+                                }
+                              }
+                            },
+                            "regular_slice": {
+                              "Rewrite0": {
+                                "source": {
+                                  "dimension": 0,
+                                  "id": 0,
+                                  "orientation": "Positive"
+                                },
+                                "target": {
+                                  "dimension": 2,
+                                  "id": 1,
+                                  "orientation": "Positive"
+                                },
+                                "label": {
+                                  "generator": 1,
+                                  "boundary_path": [
+                                    "source",
+                                    0
+                                  ],
+                                  "coordinate": [
+                                    "R0"
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                "backward": {
+                  "RewriteN": {
+                    "dimension": 1,
+                    "cones": [
+                      {
+                        "index": 0,
+                        "internal": {
+                          "Cone0": {
+                            "target": {
+                              "forward": {
+                                "Rewrite0": {
+                                  "source": {
+                                    "dimension": 0,
+                                    "id": 0,
+                                    "orientation": "Positive"
+                                  },
+                                  "target": {
+                                    "dimension": 2,
+                                    "id": 1,
+                                    "orientation": "Positive"
+                                  },
+                                  "label": {
+                                    "generator": 1,
+                                    "boundary_path": [
+                                      "source",
+                                      1
+                                    ],
+                                    "coordinate": []
+                                  }
+                                }
+                              },
+                              "backward": {
+                                "Rewrite0": {
+                                  "source": {
+                                    "dimension": 0,
+                                    "id": 0,
+                                    "orientation": "Positive"
+                                  },
+                                  "target": {
+                                    "dimension": 2,
+                                    "id": 1,
+                                    "orientation": "Positive"
+                                  },
+                                  "label": {
+                                    "generator": 1,
+                                    "boundary_path": [
+                                      "target",
+                                      1
+                                    ],
+                                    "coordinate": []
+                                  }
+                                }
+                              }
+                            },
+                            "regular_slice": {
+                              "Rewrite0": {
+                                "source": {
+                                  "dimension": 0,
+                                  "id": 0,
+                                  "orientation": "Positive"
+                                },
+                                "target": {
+                                  "dimension": 2,
+                                  "id": 1,
+                                  "orientation": "Positive"
+                                },
+                                "label": {
+                                  "generator": 1,
+                                  "boundary_path": [
+                                    "target",
+                                    0
+                                  ],
+                                  "coordinate": [
+                                    "R0"
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "cospans": [
+          {
+            "forward": {
+              "RewriteN": {
+                "dimension": 2,
+                "cones": [
+                  {
+                    "index": 0,
+                    "internal": {
+                      "ConeN": {
+                        "source": [
+                          {
+                            "forward": {
+                              "RewriteN": {
+                                "dimension": 1,
+                                "cones": [
+                                  {
+                                    "index": 0,
+                                    "internal": {
+                                      "Cone0": {
+                                        "target": {
+                                          "forward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "source",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          },
+                                          "backward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "target",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "regular_slice": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 2,
+                                              "id": 1,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 1,
+                                              "boundary_path": [
+                                                "source",
+                                                0
+                                              ],
+                                              "coordinate": [
+                                                "R0"
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            },
+                            "backward": {
+                              "RewriteN": {
+                                "dimension": 1,
+                                "cones": [
+                                  {
+                                    "index": 0,
+                                    "internal": {
+                                      "Cone0": {
+                                        "target": {
+                                          "forward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "source",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          },
+                                          "backward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "target",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "regular_slice": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 2,
+                                              "id": 1,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 1,
+                                              "boundary_path": [
+                                                "target",
+                                                0
+                                              ],
+                                              "coordinate": [
+                                                "R0"
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        ],
+                        "target": {
+                          "forward": {
+                            "RewriteN": {
+                              "dimension": 1,
+                              "cones": [
+                                {
+                                  "index": 0,
+                                  "internal": {
+                                    "Cone0": {
+                                      "target": {
+                                        "forward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "source",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        },
+                                        "backward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "target",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "regular_slice": {
+                                        "Rewrite0": {
+                                          "source": {
+                                            "dimension": 0,
+                                            "id": 0,
+                                            "orientation": "Positive"
+                                          },
+                                          "target": {
+                                            "dimension": 3,
+                                            "id": 2,
+                                            "orientation": "Positive"
+                                          },
+                                          "label": {
+                                            "generator": 2,
+                                            "boundary_path": [
+                                              "source",
+                                              1
+                                            ],
+                                            "coordinate": [
+                                              "R0"
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "backward": {
+                            "RewriteN": {
+                              "dimension": 1,
+                              "cones": [
+                                {
+                                  "index": 0,
+                                  "internal": {
+                                    "Cone0": {
+                                      "target": {
+                                        "forward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "source",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        },
+                                        "backward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "target",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "regular_slice": {
+                                        "Rewrite0": {
+                                          "source": {
+                                            "dimension": 0,
+                                            "id": 0,
+                                            "orientation": "Positive"
+                                          },
+                                          "target": {
+                                            "dimension": 3,
+                                            "id": 2,
+                                            "orientation": "Positive"
+                                          },
+                                          "label": {
+                                            "generator": 2,
+                                            "boundary_path": [
+                                              "target",
+                                              1
+                                            ],
+                                            "coordinate": [
+                                              "R0"
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "regular_slices": [],
+                        "singular_slices": [
+                          {
+                            "RewriteN": {
+                              "dimension": 1,
+                              "cones": [
+                                {
+                                  "index": 0,
+                                  "internal": {
+                                    "ConeN": {
+                                      "source": [
+                                        {
+                                          "forward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "source",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          },
+                                          "backward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "target",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ],
+                                      "target": {
+                                        "forward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "source",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        },
+                                        "backward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "target",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "regular_slices": [],
+                                      "singular_slices": [
+                                        {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 2,
+                                              "id": 1,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "source",
+                                                0
+                                              ],
+                                              "coordinate": [
+                                                "S0",
+                                                "S0"
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "backward": {
+              "RewriteN": {
+                "dimension": 2,
+                "cones": [
+                  {
+                    "index": 0,
+                    "internal": {
+                      "ConeN": {
+                        "source": [
+                          {
+                            "forward": {
+                              "RewriteN": {
+                                "dimension": 1,
+                                "cones": [
+                                  {
+                                    "index": 0,
+                                    "internal": {
+                                      "Cone0": {
+                                        "target": {
+                                          "forward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "source",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          },
+                                          "backward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "target",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "regular_slice": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 2,
+                                              "id": 1,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 1,
+                                              "boundary_path": [
+                                                "source",
+                                                0
+                                              ],
+                                              "coordinate": [
+                                                "R0"
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            },
+                            "backward": {
+                              "RewriteN": {
+                                "dimension": 1,
+                                "cones": [
+                                  {
+                                    "index": 0,
+                                    "internal": {
+                                      "Cone0": {
+                                        "target": {
+                                          "forward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "source",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          },
+                                          "backward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "target",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "regular_slice": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 2,
+                                              "id": 1,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 1,
+                                              "boundary_path": [
+                                                "target",
+                                                0
+                                              ],
+                                              "coordinate": [
+                                                "R0"
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        ],
+                        "target": {
+                          "forward": {
+                            "RewriteN": {
+                              "dimension": 1,
+                              "cones": [
+                                {
+                                  "index": 0,
+                                  "internal": {
+                                    "Cone0": {
+                                      "target": {
+                                        "forward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "source",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        },
+                                        "backward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "target",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "regular_slice": {
+                                        "Rewrite0": {
+                                          "source": {
+                                            "dimension": 0,
+                                            "id": 0,
+                                            "orientation": "Positive"
+                                          },
+                                          "target": {
+                                            "dimension": 3,
+                                            "id": 2,
+                                            "orientation": "Positive"
+                                          },
+                                          "label": {
+                                            "generator": 2,
+                                            "boundary_path": [
+                                              "source",
+                                              1
+                                            ],
+                                            "coordinate": [
+                                              "R0"
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "backward": {
+                            "RewriteN": {
+                              "dimension": 1,
+                              "cones": [
+                                {
+                                  "index": 0,
+                                  "internal": {
+                                    "Cone0": {
+                                      "target": {
+                                        "forward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "source",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        },
+                                        "backward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "target",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "regular_slice": {
+                                        "Rewrite0": {
+                                          "source": {
+                                            "dimension": 0,
+                                            "id": 0,
+                                            "orientation": "Positive"
+                                          },
+                                          "target": {
+                                            "dimension": 3,
+                                            "id": 2,
+                                            "orientation": "Positive"
+                                          },
+                                          "label": {
+                                            "generator": 2,
+                                            "boundary_path": [
+                                              "target",
+                                              1
+                                            ],
+                                            "coordinate": [
+                                              "R0"
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "regular_slices": [],
+                        "singular_slices": [
+                          {
+                            "RewriteN": {
+                              "dimension": 1,
+                              "cones": [
+                                {
+                                  "index": 0,
+                                  "internal": {
+                                    "ConeN": {
+                                      "source": [
+                                        {
+                                          "forward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "source",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          },
+                                          "backward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "target",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ],
+                                      "target": {
+                                        "forward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "source",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        },
+                                        "backward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "target",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "regular_slices": [],
+                                      "singular_slices": [
+                                        {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 2,
+                                              "id": 1,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "target",
+                                                0
+                                              ],
+                                              "coordinate": [
+                                                "S0",
+                                                "S0"
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "tag": null,
+      "boundary_path": [
+        "target",
+        0
+      ],
+      "embedding": [
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "SelectPoints": [
+      [
+        5,
+        "source"
+      ]
+    ]
+  },
+  {
+    "SelectPoints": [
+      [
+        "target",
+        1
+      ]
+    ]
+  },
+  {
+    "Attach": {
+      "generator": {
+        "dimension": 3,
+        "id": 2,
+        "orientation": "Positive"
+      },
+      "diagram": {
+        "source": {
+          "DiagramN": {
+            "source": {
+              "DiagramN": {
+                "source": {
+                  "Diagram0": {
+                    "dimension": 0,
+                    "id": 0,
+                    "orientation": "Positive"
+                  }
+                },
+                "cospans": []
+              }
+            },
+            "cospans": [
+              {
+                "forward": {
+                  "RewriteN": {
+                    "dimension": 1,
+                    "cones": [
+                      {
+                        "index": 0,
+                        "internal": {
+                          "Cone0": {
+                            "target": {
+                              "forward": {
+                                "Rewrite0": {
+                                  "source": {
+                                    "dimension": 0,
+                                    "id": 0,
+                                    "orientation": "Positive"
+                                  },
+                                  "target": {
+                                    "dimension": 2,
+                                    "id": 1,
+                                    "orientation": "Positive"
+                                  },
+                                  "label": {
+                                    "generator": 1,
+                                    "boundary_path": [
+                                      "source",
+                                      1
+                                    ],
+                                    "coordinate": []
+                                  }
+                                }
+                              },
+                              "backward": {
+                                "Rewrite0": {
+                                  "source": {
+                                    "dimension": 0,
+                                    "id": 0,
+                                    "orientation": "Positive"
+                                  },
+                                  "target": {
+                                    "dimension": 2,
+                                    "id": 1,
+                                    "orientation": "Positive"
+                                  },
+                                  "label": {
+                                    "generator": 1,
+                                    "boundary_path": [
+                                      "target",
+                                      1
+                                    ],
+                                    "coordinate": []
+                                  }
+                                }
+                              }
+                            },
+                            "regular_slice": {
+                              "Rewrite0": {
+                                "source": {
+                                  "dimension": 0,
+                                  "id": 0,
+                                  "orientation": "Positive"
+                                },
+                                "target": {
+                                  "dimension": 2,
+                                  "id": 1,
+                                  "orientation": "Positive"
+                                },
+                                "label": {
+                                  "generator": 1,
+                                  "boundary_path": [
+                                    "source",
+                                    0
+                                  ],
+                                  "coordinate": [
+                                    "R0"
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                "backward": {
+                  "RewriteN": {
+                    "dimension": 1,
+                    "cones": [
+                      {
+                        "index": 0,
+                        "internal": {
+                          "Cone0": {
+                            "target": {
+                              "forward": {
+                                "Rewrite0": {
+                                  "source": {
+                                    "dimension": 0,
+                                    "id": 0,
+                                    "orientation": "Positive"
+                                  },
+                                  "target": {
+                                    "dimension": 2,
+                                    "id": 1,
+                                    "orientation": "Positive"
+                                  },
+                                  "label": {
+                                    "generator": 1,
+                                    "boundary_path": [
+                                      "source",
+                                      1
+                                    ],
+                                    "coordinate": []
+                                  }
+                                }
+                              },
+                              "backward": {
+                                "Rewrite0": {
+                                  "source": {
+                                    "dimension": 0,
+                                    "id": 0,
+                                    "orientation": "Positive"
+                                  },
+                                  "target": {
+                                    "dimension": 2,
+                                    "id": 1,
+                                    "orientation": "Positive"
+                                  },
+                                  "label": {
+                                    "generator": 1,
+                                    "boundary_path": [
+                                      "target",
+                                      1
+                                    ],
+                                    "coordinate": []
+                                  }
+                                }
+                              }
+                            },
+                            "regular_slice": {
+                              "Rewrite0": {
+                                "source": {
+                                  "dimension": 0,
+                                  "id": 0,
+                                  "orientation": "Positive"
+                                },
+                                "target": {
+                                  "dimension": 2,
+                                  "id": 1,
+                                  "orientation": "Positive"
+                                },
+                                "label": {
+                                  "generator": 1,
+                                  "boundary_path": [
+                                    "target",
+                                    0
+                                  ],
+                                  "coordinate": [
+                                    "R0"
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "cospans": [
+          {
+            "forward": {
+              "RewriteN": {
+                "dimension": 2,
+                "cones": [
+                  {
+                    "index": 0,
+                    "internal": {
+                      "ConeN": {
+                        "source": [
+                          {
+                            "forward": {
+                              "RewriteN": {
+                                "dimension": 1,
+                                "cones": [
+                                  {
+                                    "index": 0,
+                                    "internal": {
+                                      "Cone0": {
+                                        "target": {
+                                          "forward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "source",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          },
+                                          "backward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "target",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "regular_slice": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 2,
+                                              "id": 1,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 1,
+                                              "boundary_path": [
+                                                "source",
+                                                0
+                                              ],
+                                              "coordinate": [
+                                                "R0"
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            },
+                            "backward": {
+                              "RewriteN": {
+                                "dimension": 1,
+                                "cones": [
+                                  {
+                                    "index": 0,
+                                    "internal": {
+                                      "Cone0": {
+                                        "target": {
+                                          "forward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "source",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          },
+                                          "backward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "target",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "regular_slice": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 2,
+                                              "id": 1,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 1,
+                                              "boundary_path": [
+                                                "target",
+                                                0
+                                              ],
+                                              "coordinate": [
+                                                "R0"
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        ],
+                        "target": {
+                          "forward": {
+                            "RewriteN": {
+                              "dimension": 1,
+                              "cones": [
+                                {
+                                  "index": 0,
+                                  "internal": {
+                                    "Cone0": {
+                                      "target": {
+                                        "forward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "source",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        },
+                                        "backward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "target",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "regular_slice": {
+                                        "Rewrite0": {
+                                          "source": {
+                                            "dimension": 0,
+                                            "id": 0,
+                                            "orientation": "Positive"
+                                          },
+                                          "target": {
+                                            "dimension": 3,
+                                            "id": 2,
+                                            "orientation": "Positive"
+                                          },
+                                          "label": {
+                                            "generator": 2,
+                                            "boundary_path": [
+                                              "source",
+                                              1
+                                            ],
+                                            "coordinate": [
+                                              "R0"
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "backward": {
+                            "RewriteN": {
+                              "dimension": 1,
+                              "cones": [
+                                {
+                                  "index": 0,
+                                  "internal": {
+                                    "Cone0": {
+                                      "target": {
+                                        "forward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "source",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        },
+                                        "backward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "target",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "regular_slice": {
+                                        "Rewrite0": {
+                                          "source": {
+                                            "dimension": 0,
+                                            "id": 0,
+                                            "orientation": "Positive"
+                                          },
+                                          "target": {
+                                            "dimension": 3,
+                                            "id": 2,
+                                            "orientation": "Positive"
+                                          },
+                                          "label": {
+                                            "generator": 2,
+                                            "boundary_path": [
+                                              "target",
+                                              1
+                                            ],
+                                            "coordinate": [
+                                              "R0"
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "regular_slices": [],
+                        "singular_slices": [
+                          {
+                            "RewriteN": {
+                              "dimension": 1,
+                              "cones": [
+                                {
+                                  "index": 0,
+                                  "internal": {
+                                    "ConeN": {
+                                      "source": [
+                                        {
+                                          "forward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "source",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          },
+                                          "backward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "target",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ],
+                                      "target": {
+                                        "forward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "source",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        },
+                                        "backward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "target",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "regular_slices": [],
+                                      "singular_slices": [
+                                        {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 2,
+                                              "id": 1,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "source",
+                                                0
+                                              ],
+                                              "coordinate": [
+                                                "S0",
+                                                "S0"
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "backward": {
+              "RewriteN": {
+                "dimension": 2,
+                "cones": [
+                  {
+                    "index": 0,
+                    "internal": {
+                      "ConeN": {
+                        "source": [
+                          {
+                            "forward": {
+                              "RewriteN": {
+                                "dimension": 1,
+                                "cones": [
+                                  {
+                                    "index": 0,
+                                    "internal": {
+                                      "Cone0": {
+                                        "target": {
+                                          "forward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "source",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          },
+                                          "backward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "target",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "regular_slice": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 2,
+                                              "id": 1,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 1,
+                                              "boundary_path": [
+                                                "source",
+                                                0
+                                              ],
+                                              "coordinate": [
+                                                "R0"
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            },
+                            "backward": {
+                              "RewriteN": {
+                                "dimension": 1,
+                                "cones": [
+                                  {
+                                    "index": 0,
+                                    "internal": {
+                                      "Cone0": {
+                                        "target": {
+                                          "forward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "source",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          },
+                                          "backward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "target",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "regular_slice": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 2,
+                                              "id": 1,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 1,
+                                              "boundary_path": [
+                                                "target",
+                                                0
+                                              ],
+                                              "coordinate": [
+                                                "R0"
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        ],
+                        "target": {
+                          "forward": {
+                            "RewriteN": {
+                              "dimension": 1,
+                              "cones": [
+                                {
+                                  "index": 0,
+                                  "internal": {
+                                    "Cone0": {
+                                      "target": {
+                                        "forward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "source",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        },
+                                        "backward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "target",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "regular_slice": {
+                                        "Rewrite0": {
+                                          "source": {
+                                            "dimension": 0,
+                                            "id": 0,
+                                            "orientation": "Positive"
+                                          },
+                                          "target": {
+                                            "dimension": 3,
+                                            "id": 2,
+                                            "orientation": "Positive"
+                                          },
+                                          "label": {
+                                            "generator": 2,
+                                            "boundary_path": [
+                                              "source",
+                                              1
+                                            ],
+                                            "coordinate": [
+                                              "R0"
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "backward": {
+                            "RewriteN": {
+                              "dimension": 1,
+                              "cones": [
+                                {
+                                  "index": 0,
+                                  "internal": {
+                                    "Cone0": {
+                                      "target": {
+                                        "forward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "source",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        },
+                                        "backward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "target",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "regular_slice": {
+                                        "Rewrite0": {
+                                          "source": {
+                                            "dimension": 0,
+                                            "id": 0,
+                                            "orientation": "Positive"
+                                          },
+                                          "target": {
+                                            "dimension": 3,
+                                            "id": 2,
+                                            "orientation": "Positive"
+                                          },
+                                          "label": {
+                                            "generator": 2,
+                                            "boundary_path": [
+                                              "target",
+                                              1
+                                            ],
+                                            "coordinate": [
+                                              "R0"
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "regular_slices": [],
+                        "singular_slices": [
+                          {
+                            "RewriteN": {
+                              "dimension": 1,
+                              "cones": [
+                                {
+                                  "index": 0,
+                                  "internal": {
+                                    "ConeN": {
+                                      "source": [
+                                        {
+                                          "forward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "source",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          },
+                                          "backward": {
+                                            "Rewrite0": {
+                                              "source": {
+                                                "dimension": 0,
+                                                "id": 0,
+                                                "orientation": "Positive"
+                                              },
+                                              "target": {
+                                                "dimension": 2,
+                                                "id": 1,
+                                                "orientation": "Positive"
+                                              },
+                                              "label": {
+                                                "generator": 1,
+                                                "boundary_path": [
+                                                  "target",
+                                                  1
+                                                ],
+                                                "coordinate": []
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ],
+                                      "target": {
+                                        "forward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "source",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        },
+                                        "backward": {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 0,
+                                              "id": 0,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "target",
+                                                2
+                                              ],
+                                              "coordinate": []
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "regular_slices": [],
+                                      "singular_slices": [
+                                        {
+                                          "Rewrite0": {
+                                            "source": {
+                                              "dimension": 2,
+                                              "id": 1,
+                                              "orientation": "Positive"
+                                            },
+                                            "target": {
+                                              "dimension": 3,
+                                              "id": 2,
+                                              "orientation": "Positive"
+                                            },
+                                            "label": {
+                                              "generator": 2,
+                                              "boundary_path": [
+                                                "target",
+                                                0
+                                              ],
+                                              "coordinate": [
+                                                "S0",
+                                                "S0"
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "tag": null,
+      "boundary_path": [
+        "target",
+        0
+      ],
+      "embedding": [
+        0,
+        0
+      ]
+    }
+  },
+  "TakeIdentityDiagram",
+  {
+    "Homotopy": {
+      "Contract": {
+        "bias": "Same",
+        "location": [],
+        "height": 3,
+        "direction": "Backward"
+      }
+    }
+  },
+  {
+    "Homotopy": {
+      "Expand": {
+        "location": [
+          5,
+          3
+        ],
+        "direction": "Forward"
+      }
+    }
+  },
+  {
+    "Homotopy": {
+      "Contract": {
+        "bias": "Same",
+        "location": [],
+        "height": 1,
+        "direction": "Backward"
+      }
+    }
+  },
+  {
+    "Homotopy": {
+      "Expand": {
+        "location": [
+          1,
+          7
+        ],
+        "direction": "Forward"
+      }
+    }
+  },
+  {
+    "AscendSlice": 1
+  },
+  "TakeIdentityDiagram",
+  {
+    "Homotopy": {
+      "Contract": {
+        "bias": "Same",
+        "location": [],
+        "height": 3,
+        "direction": "Backward"
+      }
+    }
+  },
+  {
+    "Homotopy": {
+      "Contract": {
+        "bias": "Same",
+        "location": [],
+        "height": 0,
+        "direction": "Forward"
+      }
+    }
+  },
+  {
+    "Homotopy": {
+      "Contract": {
+        "bias": "Same",
+        "location": [],
+        "height": 1,
+        "direction": "Backward"
+      }
+    }
+  },
+  {
+    "Homotopy": {
+      "Expand": {
+        "location": [
+          1,
+          1
+        ],
+        "direction": "Backward"
+      }
+    }
+  },
+  {
+    "AscendSlice": 1
+  }
+]

@@ -44,6 +44,7 @@ pub fn render(
     diagram: &Diagram,
     signature_styles: &impl SignatureStyleData,
     stylesheet: &str,
+    use_opengl: bool,
 ) -> Result<String, DimensionError> {
     let layout = Layout::<2>::new(diagram)?;
     let complex = make_complex(diagram);
@@ -81,9 +82,22 @@ pub fn render(
     }
 
     let mut manim = String::new();
-    manim.push_str("# Uncomment line below if needed\n");
-    manim.push_str("#from manim import *\n");
-    manim.push_str("#import numpy as np\n");
+    if use_opengl {
+        manim.push_str(
+            "# Render with 'manim --format mp4 --renderer=opengl homotopy_io_export.py'\n",
+        );
+    } else {
+        manim.push_str(
+            "# Render with 'manim --format mp4 --renderer=cairo homotopy_io_export.py'\n",
+        );
+    }
+    manim.push_str("import numpy as np\n");
+    manim.push_str("from manim import *\n");
+    if use_opengl {
+        manim.push_str(
+            "from manim.mobject.opengl.opengl_vectorized_mobject import OpenGLVMobject\n",
+        );
+    }
 
     writeln!(
         manim,
@@ -97,6 +111,33 @@ pub fn render(
         ),
         ind = INDENT,
         stylesheet = stylesheet
+    )
+    .unwrap();
+
+    let vmobj = if use_opengl {
+        "OpenGLVMobject"
+    } else {
+        "VMobject"
+    };
+    writeln!(
+        manim,
+        concat!(
+            "{ind}def build_path(self, geom, **kwargs):\n",
+            "{ind}{ind}obj = {vmobj}()\n",
+            "{ind}{ind}obj.set_stroke(**kwargs)\n",
+            "{ind}{ind}for c in geom:\n",
+            "{ind}{ind}{ind}if c[0] == 0:\n",
+            "{ind}{ind}{ind}{ind}obj.start_new_path(c[1])\n",
+            "{ind}{ind}{ind}elif c[0] == 1:\n",
+            "{ind}{ind}{ind}{ind}obj.add_line_to(c[1])\n",
+            "{ind}{ind}{ind}elif c[0] == 2:\n",
+            "{ind}{ind}{ind}{ind}obj.add_quadratic_bezier_curve_to(c[1],c[2])\n",
+            "{ind}{ind}{ind}else:\n",
+            "{ind}{ind}{ind}{ind}obj.add_cubic_bezier_curve_to(c[1],c[2],c[3])\n",
+            "{ind}{ind}return obj\n",
+        ),
+        ind = INDENT,
+        vmobj = vmobj,
     )
     .unwrap();
 
@@ -115,7 +156,7 @@ pub fn render(
     for (g, path) in surfaces {
         writeln!(
             manim,
-            "{ind}{ind}surfaces.add(VMobject(){path}.set_stroke(width=1).set_fill(C[\"{color}\"],0.75)) # path_{id}_{dim}",
+            "{ind}{ind}surfaces.add(self.build_path({path},width=1).set_fill(C[\"{color}\"],0.75)) # path_{id}_{dim}",
             ind=INDENT,
             color=name(g),
             id=g.id,
@@ -148,8 +189,7 @@ pub fn render(
         if i > 0 {
             writeln!(manim, "{ind}{ind}# Begin scope", ind = INDENT).unwrap();
             for (g, path) in &layer {
-                writeln!(manim, concat!("{ind}{ind}wires.add(Intersection(surfaces,",
-                         "VMobject(){path}.set_stroke(width=10),color=C[\"generator_{id}_{dim}\"],fill_opacity=0.8)) # path_{id}_{dim}"),
+                writeln!(manim, "{ind}{ind}wires.add(Intersection(surfaces,self.build_path({path},width=20),color=C[\"generator_{id}_{dim}\"],fill_opacity=0.8))",
                          ind=INDENT,
                          id=g.id,
                          dim=g.dimension,
@@ -160,7 +200,7 @@ pub fn render(
         }
 
         for (g, path) in &layer {
-            writeln!(manim, "{ind}{ind}wires.add(VMobject(){path}.set_stroke(color=C[\"{color}\"],width=5)) # path_{id}_{dim}",
+            writeln!(manim, "{ind}{ind}wires.add(self.build_path({path},width=20,color=C[\"{color}\"])) # path_{id}_{dim}",
                 ind=INDENT,
                 color=name(*g),
                 id=g.id,
@@ -189,12 +229,13 @@ pub fn render(
         let vertex = render_vertex(signature_styles.generator_style(g).unwrap(), &name(g));
         writeln!(
             manim,
-            "{ind}{ind}points.add({vertex}.move_to({pt})) # circle_{id}_{dim}",
+            "{ind}{ind}points.add({vertex}.move_to(np.array([{ptx},{pty},1])) # circle_{id}_{dim}",
             ind = INDENT,
             id = g.id,
             dim = g.dimension,
             vertex = vertex,
-            pt = &render_point(point)
+            ptx = point.x,
+            pty = point.y
         )
         .unwrap();
     }
@@ -216,7 +257,6 @@ pub fn render(
             "{ind}{ind}# Static output (low rendering times)\n",
             "{ind}{ind}#self.add(root)\n",
             "{ind}{ind}# Animated output\n",
-            "{ind}{ind}self.play(DrawBorderThenFill(VGroup(bg,surfaces)))\n",
             "{ind}{ind}self.play(Create(root))\n",
             "{ind}{ind}text = MarkupText(\"Homotopy.io\", color=BLUE).next_to(root, 2*DOWN)\n",
             "{ind}{ind}self.play(Write(text))\n",
@@ -252,7 +292,7 @@ fn max_point_path(path: &Path) -> Point2D<f32> {
 
 fn render_vertex(generator_style: &impl GeneratorStyle, color: &str) -> String {
     use VertexShape::{Circle, Square};
-    const CIRCLE_RADIUS: f32 = 0.125;
+    const CIRCLE_RADIUS: f32 = 0.125 / 2.0;
     const SQUARE_SIDELENGTH: f32 = 0.125 / 2.;
 
     match generator_style.shape().unwrap_or_default() {
@@ -271,26 +311,23 @@ fn render_vertex(generator_style: &impl GeneratorStyle, color: &str) -> String {
 
 fn render_path(path: &Path) -> String {
     let mut result = String::new();
+    write!(result, "[").unwrap();
     for event in path {
         match event {
             Event::Begin { at } => {
-                write!(result, ".start_new_path({})", render_point(at)).unwrap();
+                write!(result, "(0,{}),", render_point(at)).unwrap();
             }
             Event::Line { to, .. } => {
-                write!(result, ".add_line_to({})", render_point(to)).unwrap();
+                write!(result, "(1,{}),", render_point(to)).unwrap();
             }
-            Event::Quadratic { ctrl, to, .. } => write!(
-                result,
-                ".add_quadratic_bezier_curve_to({},{})",
-                render_point(ctrl),
-                render_point(to)
-            )
-            .unwrap(),
+            Event::Quadratic { ctrl, to, .. } => {
+                write!(result, "(2,{},{}),", render_point(ctrl), render_point(to)).unwrap();
+            }
             Event::Cubic {
                 ctrl1, ctrl2, to, ..
             } => write!(
                 result,
-                ".add_cubic_bezier_curve_to({},{},{})",
+                "(3,{},{},{}),",
                 render_point(ctrl1),
                 render_point(ctrl2),
                 render_point(to),
@@ -299,5 +336,6 @@ fn render_path(path: &Path) -> String {
             Event::End { .. } => {}
         }
     }
+    write!(result, "]").unwrap();
     result
 }

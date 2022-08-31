@@ -27,6 +27,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.63"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a26fa4d7e3f2eebadf743988fc8aec9fa9a9e82611acafd77c1462ed6262440a"
+
+[[package]]
 name = "anymap2"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -783,13 +789,13 @@ checksum = "3688f13e7735ae5ca93edc490f6c5885b77d473255bc1fed92b9c805f972bf94"
 name = "homotopy-cli"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "homotopy-common",
  "homotopy-core",
  "homotopy-model",
  "serde",
  "serde_json",
  "structopt",
- "thiserror",
 ]
 
 [[package]]

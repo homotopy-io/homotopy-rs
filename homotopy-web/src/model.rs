@@ -3,9 +3,10 @@ use history::{History, UndoState};
 use homotopy_core::common::Mode;
 use homotopy_graphics::{manim, stl, svg, tikz};
 pub use homotopy_model::model::{history, migration, proof, serialize};
+use js_sys::JsString;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{prelude::*, JsCast};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Action {
@@ -97,6 +98,9 @@ impl State {
 
     /// Update the state in response to an [Action].
     pub fn update(&mut self, action: Action) -> Result<(), ModelError> {
+        let data = serde_json::to_string(&action).expect("Failed to serialize action.");
+        save_action(JsString::from(data));
+
         match action {
             Action::Proof(action) => {
                 let mut proof = self.with_proof(Clone::clone).ok_or(ModelError::Internal)?;
@@ -188,7 +192,8 @@ impl State {
                     .with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram())
                     .ok_or(ModelError::Internal)?;
                 let stylesheet = manim::stylesheet(&signature);
-                let data = manim::render(&diagram, &signature, &stylesheet).unwrap();
+                let use_opengl = false;
+                let data = manim::render(&diagram, &signature, &stylesheet, use_opengl).unwrap();
                 generate_download("homotopy_io_export", "py", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
@@ -202,6 +207,13 @@ impl State {
                     .ok_or(ModelError::Internal)?;
                 let data = stl::render(&diagram, &signature).unwrap();
                 generate_download("homotopy_io_export", "stl", data.as_bytes())
+                    .map_err(ModelError::Export)?;
+            }
+
+            Action::ExportActions => {
+                let actions = self.history.get_actions();
+                let data = serde_json::to_string(&actions).map_err(|_e| ModelError::Internal)?;
+                generate_download("homotopy_io_actions", "json", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
 
@@ -248,13 +260,6 @@ impl State {
                 proof.show_image_export = !proof.show_image_export;
                 self.history.add(proof::Action::Nothing, proof);
             }
-
-            Action::ExportActions => {
-                let actions = self.history.get_actions();
-                let data = serde_json::to_string(&actions).map_err(|_e| ModelError::Internal)?;
-                generate_download("homotopy_io_actions", "json", data.as_bytes())
-                    .map_err(ModelError::Export)?;
-            }
         }
 
         Ok(())
@@ -297,4 +302,13 @@ pub fn generate_download(name: &str, ext: &str, data: &[u8]) -> Result<(), wasm_
     a.click();
     a.remove();
     web_sys::Url::revoke_object_url(&url)
+}
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen]
+    pub fn save_action(a: JsString);
+
+    #[wasm_bindgen]
+    pub fn dump_actions() -> JsString;
 }
