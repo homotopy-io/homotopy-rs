@@ -4,7 +4,7 @@ use yew::prelude::*;
 use yew_macro::function_component;
 
 use crate::{
-    app::{attach::AttachView, image_export::ImageExportView, keybindings::Keybindings},
+    app::{attach::AttachView, keybindings::Keybindings},
     components::{
         icon::{Icon, IconSize},
         Visibility,
@@ -363,25 +363,6 @@ impl Sidebar {
         let model_dispatch = &ctx.props().dispatch;
         let sidebar_dispatch = ctx.link().callback(|x| x);
         let proof = &ctx.props().proof;
-
-        if proof.show_image_export {
-            return html! {
-                <SidebarDrawer
-                    class="dialog"
-                    title="Image export"
-                    model_dispatch={model_dispatch}
-                    sidebar_dispatch={sidebar_dispatch}
-                    initial_width={self.last_drawer_width}
-                    icon="close"
-                    on_click={model::Action::ToggleImageExport}
-                >
-                    <ImageExportView
-                        dispatch={model_dispatch.clone()}
-                        view_dim={proof.workspace().as_ref().unwrap().view.dimension()}
-                    />
-                </SidebarDrawer>
-            };
-        }
 
         let attach_options = proof
             .workspace()

@@ -110,9 +110,4 @@ declare_sidebar_tools! {
         model::Action::Proof(model::proof::Action::ClearWorkspace),
     }
 
-    BUTTON_IMGEXPORT {
-        "Image export",
-        "download",
-        model::Action::ToggleImageExport,
-    }
 }

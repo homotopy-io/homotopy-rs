@@ -26,12 +26,24 @@ impl Component for ImageExportView {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let default_text = if ctx.props().view_dim == 2 || ctx.props().view_dim == 3 {
+            Default::default()
+        } else {
+            html! {
+                <p>{
+                    "There is nothing to export. \n
+                    Try creating a 2D/3D diagram or change to 2D/3D view with the view buttons
+                    at the top-right corner."}
+                </p>
+            }
+        };
         let tikz = Self::view_tikz(ctx);
         let svg = Self::view_svg(ctx);
         let manim = Self::view_manim(ctx);
         let stl = Self::view_stl(ctx);
         html! {
             <>
+                {default_text}
                 {tikz}
                 {svg}
                 {manim}
