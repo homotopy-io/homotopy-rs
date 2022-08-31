@@ -316,7 +316,7 @@ fn factorize_inc_helper(
                             source_cospans,
                             middle_cospan.clone(),
                             todo!(),
-                            slices,
+                            &slices,
                         )
                     });
                 }

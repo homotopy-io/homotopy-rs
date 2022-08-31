@@ -16,7 +16,7 @@ use petgraph::{
     graph::{DefaultIx, DiGraph, IndexType, NodeIndex},
     graphmap::DiGraphMap,
     unionfind::UnionFind,
-    visit::{EdgeRef, IntoEdgeReferences, IntoNodeReferences},
+    visit::{EdgeRef, IntoNodeReferences},
     EdgeDirection::{Incoming, Outgoing},
 };
 use serde::{Deserialize, Serialize};
@@ -28,10 +28,8 @@ use crate::{
     diagram::{Diagram, DiagramN},
     expansion::expand_propagate,
     graph::{Explodable, ExplosionOutput, ExternalRewrite, InternalRewrite},
-    normalization,
-    rewrite::{Cone, ConeInternal, Cospan, Label, Rewrite, Rewrite0, RewriteN},
+    rewrite::{Cone, Cospan, Label, Rewrite, Rewrite0, RewriteN},
     signature::Signature,
-    typecheck::{typecheck_cospan, TypeError},
     Direction, Generator, SliceIndex,
 };
 
@@ -66,8 +64,6 @@ pub enum ContractionError {
     Invalid,
     #[error("contraction ambiguous")]
     Ambiguous,
-    #[error("contraction fails to typecheck: {0}")]
-    IllTyped(#[from] TypeError),
     #[error("invalid boundary path provided to contraction")]
     Dimension(#[from] DimensionError),
 }
@@ -109,14 +105,6 @@ impl DiagramN {
                     backward: expand.into(),
                 },
             };
-
-            // TODO: typechecking
-            // typecheck_cospan(
-            //     slice.into(),
-            //     cospan.clone(),
-            //     boundary_path.boundary(),
-            //     signature,
-            // )?;
 
             Ok(vec![cospan])
         })

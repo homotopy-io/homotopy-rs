@@ -19,12 +19,10 @@ pub mod layout;
 pub mod mesh;
 pub mod migration;
 pub mod monotone;
-pub mod normalization;
 pub mod projection;
 pub mod rewrite;
 pub mod serialize;
 pub mod signature;
-pub mod typecheck;
 
 pub fn collect_garbage() {
     DiagramN::collect_garbage();
