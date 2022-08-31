@@ -1031,6 +1031,7 @@ svg {
 .settings__toggle-setting {
   display: flex;
   align-items: left;
+  padding-bottom: var(--space-1);
 }
 
 .settings__toggle-setting input {

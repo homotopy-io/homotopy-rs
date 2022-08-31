@@ -108,8 +108,6 @@ impl ImageExportView {
                             ImageExportSettingsDispatch::set_manim_use_opengl,
                         )
                     }
-                    // For leaving some space between settings and [Export] button
-                    <li class="signature__dropzone"></li>
                     <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportManim)}>{"Export"}</button>
                 </>
             }
