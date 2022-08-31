@@ -44,6 +44,7 @@ pub fn render(
     diagram: &Diagram,
     signature_styles: &impl SignatureStyleData,
     stylesheet: &str,
+    use_opengl: bool,
 ) -> Result<String, DimensionError> {
     let layout = Layout::<2>::new(diagram)?;
     let complex = make_complex(diagram);
@@ -81,10 +82,22 @@ pub fn render(
     }
 
     let mut manim = String::new();
-    manim.push_str("# Render with 'manim --format mp4 --renderer=opengl homotopy_io_export.py'\n");
+    if use_opengl {
+        manim.push_str(
+            "# Render with 'manim --format mp4 --renderer=opengl homotopy_io_export.py'\n",
+        );
+    } else {
+        manim.push_str(
+            "# Render with 'manim --format mp4 --renderer=cairo homotopy_io_export.py'\n",
+        );
+    }
     manim.push_str("import numpy as np\n");
     manim.push_str("from manim import *\n");
-    manim.push_str("from manim.mobject.opengl.opengl_vectorized_mobject import OpenGLVMobject\n");
+    if use_opengl {
+        manim.push_str(
+            "from manim.mobject.opengl.opengl_vectorized_mobject import OpenGLVMobject\n",
+        );
+    }
 
     writeln!(
         manim,
@@ -101,11 +114,16 @@ pub fn render(
     )
     .unwrap();
 
+    let vmobj = if use_opengl {
+        "OpenGLVMobject"
+    } else {
+        "VMobject"
+    };
     writeln!(
         manim,
         concat!(
             "{ind}def build_path(self, geom, **kwargs):\n",
-            "{ind}{ind}obj = OpenGLVMobject()\n",
+            "{ind}{ind}obj = {vmobj}()\n",
             "{ind}{ind}obj.set_stroke(**kwargs)\n",
             "{ind}{ind}for c in geom:\n",
             "{ind}{ind}{ind}if c[0] == 0:\n",
@@ -118,7 +136,8 @@ pub fn render(
             "{ind}{ind}{ind}{ind}obj.add_cubic_bezier_curve_to(c[1],c[2],c[3])\n",
             "{ind}{ind}return obj\n",
         ),
-        ind = INDENT
+        ind = INDENT,
+        vmobj = vmobj,
     )
     .unwrap();
 

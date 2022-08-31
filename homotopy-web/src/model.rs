@@ -188,7 +188,8 @@ impl State {
                     .with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram())
                     .ok_or(ModelError::Internal)?;
                 let stylesheet = manim::stylesheet(&signature);
-                let data = manim::render(&diagram, &signature, &stylesheet).unwrap();
+                let use_opengl = false;
+                let data = manim::render(&diagram, &signature, &stylesheet, use_opengl).unwrap();
                 generate_download("homotopy_io_export", "py", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
