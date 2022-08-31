@@ -158,6 +158,18 @@ declare_sidebar_drawers! {
         min_width: 250,
     }
 
+    DRAWER_IMAGE_EXPORT {
+        "Image export",
+        "ImageExport",
+        "share",
+        |dispatch, proof: &Proof| html! {
+            <ImageExportView
+                dispatch={dispatch}
+                view_dim={proof.workspace().as_ref().map_or(0, |ws| ws.view.dimension())}
+            />
+        },
+    }
+
     #[cfg(debug_assertions)]
     DRAWER_DEBUG {
         "Debug",
