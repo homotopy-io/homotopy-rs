@@ -40,6 +40,7 @@ pub struct DiagramSvg<const N: usize> {
     prepared: PreparedDiagram<N>,
     node_ref: NodeRef,
     drag_start: Option<Point2D<f32>>,
+    title: String,
 }
 
 #[derive(Clone, PartialEq, Properties)]
@@ -183,11 +184,13 @@ impl<const N: usize> Component for DiagramSvg<N> {
         let prepared = PreparedDiagram::new(&props.diagram, props.style);
         let node_ref = NodeRef::default();
         let drag_start = Default::default();
+        let title = String::from("");
         Self {
             props,
             prepared,
             node_ref,
             drag_start,
+            title,
         }
     }
 
@@ -199,7 +202,8 @@ impl<const N: usize> Component for DiagramSvg<N> {
             }
             DiagramSvgMessage::OnMouseMove(point) => {
                 self.pointer_move(ctx, point);
-                false
+                self.title = format!("({}, {})", point.x, point.y);
+                true
             }
             DiagramSvgMessage::OnMouseUp => {
                 self.pointer_stop(ctx);
@@ -318,6 +322,7 @@ impl<const N: usize> Component for DiagramSvg<N> {
                 ontouchcancel={on_touch_update.clone()}
                 ref={self.node_ref.clone()}
             >
+                <title>{&self.title}</title>
                 {self.prepared.graphic.iter().enumerate().map(|(i, e)| self.view_element(ctx, i, e)).collect::<Html>()}
                 {self.view_highlight(ctx)}
             </svg>
