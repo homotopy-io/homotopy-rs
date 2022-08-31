@@ -368,10 +368,9 @@ impl Mul for Orientation {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
-        use Orientation::*;
+        use Orientation::{Negative, Positive, Zero};
         match (self, rhs) {
-            (Zero, _) => Zero,
-            (_, Zero) => Zero,
+            (Zero, _) | (_, Zero) => Zero,
             (Positive, _) => rhs,
             (_, Positive) => self,
             (Negative, Negative) => Positive,

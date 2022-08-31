@@ -3,7 +3,7 @@ use crate::{
     Cospan, Diagram, Orientation, Rewrite, Rewrite0, RewriteN,
 };
 
-pub fn bubble(source: Diagram, cospan: Cospan) -> (Diagram, Cospan) {
+pub fn bubble(source: &Diagram, cospan: Cospan) -> (Diagram, Cospan) {
     use Orientation::Zero;
 
     let f0 = cospan.forward.orientation_transform(Zero);

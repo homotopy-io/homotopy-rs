@@ -3,6 +3,7 @@ use std::ops::Range;
 use itertools::{Itertools, MultiProduct};
 
 use crate::{
+    common::Mode,
     monotone::{MonotoneIterator, Split},
     rewrite::Cone,
     Cospan, Diagram, Height, Rewrite, RewriteN,
@@ -207,15 +208,19 @@ impl Iterator for ConeIterator {
     type Item = Cone;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let slices = self.slices_product.next()?;
-        let cone = Cone::new_with_flanges(
-            self.index,
-            self.source.clone(),
-            self.target.clone(),
-            &slices.iter().step_by(2).cloned().collect_vec(),
-            &slices.into_iter().skip(1).step_by(2).collect_vec(),
-        );
-        Some(cone)
+        loop {
+            let slices = self.slices_product.next()?;
+            let cone = Cone::new_with_flanges(
+                self.index,
+                self.source.clone(),
+                self.target.clone(),
+                slices.iter().step_by(2).cloned().collect_vec(),
+                slices.into_iter().skip(1).step_by(2).collect_vec(),
+            );
+            if cone.check(Mode::Shallow).is_ok() {
+                return Some(cone);
+            }
+        }
     }
 }
 
