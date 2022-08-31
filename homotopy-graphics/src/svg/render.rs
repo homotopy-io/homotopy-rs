@@ -226,6 +226,14 @@ impl<const N: usize> GraphicElement<N> {
         elements.extend(point_elements);
         elements
     }
+
+    pub fn to_shape(&self, wire_thickness: f32, point_radius: f32) -> Shape {
+        match self {
+            GraphicElement::Surface(_, path) => Fill::new(path.clone()).into(),
+            GraphicElement::Wire(_, _, path, _) => Stroke::new(path.clone(), wire_thickness).into(),
+            GraphicElement::Point(_, point) => Circle::new(*point, point_radius).into(),
+        }
+    }
 }
 
 // TODO(@calintat): These functions can be removed if we record the parity of each simplex.
