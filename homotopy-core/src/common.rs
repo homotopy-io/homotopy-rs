@@ -339,3 +339,18 @@ pub enum Mode {
     Deep,
     Shallow,
 }
+
+pub(crate) trait MaxByDimension: Iterator<Item = Generator> {
+    /// Return the maximum generator in the iterator by dimension. If there are
+    /// multiple maximum elements, the first is returned.
+    fn max_by_dimension(self) -> Option<Generator>;
+}
+
+impl<T> MaxByDimension for T
+where
+    T: DoubleEndedIterator<Item = Generator>,
+{
+    fn max_by_dimension(self) -> Option<Generator> {
+        self.rev().max_by_key(|generator| generator.dimension)
+    }
+}

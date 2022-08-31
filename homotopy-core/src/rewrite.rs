@@ -14,9 +14,8 @@ use serde::{ser::SerializeStruct, Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{
-    common::{DimensionError, Generator, Mode, RegularHeight, SingularHeight},
+    common::{DimensionError, Generator, MaxByDimension, Mode, RegularHeight, SingularHeight},
     diagram::Diagram,
-    util::first_max_generator,
     Boundary,
 };
 
@@ -147,7 +146,7 @@ impl Cospan {
             self.backward.max_generator(Boundary::Source),
         ];
 
-        first_max_generator(generators.iter().copied().flatten())
+        generators.iter().copied().flatten().max_by_dimension()
     }
 }
 
@@ -711,19 +710,17 @@ impl RewriteN {
     pub(crate) fn max_generator(&self, boundary: Boundary) -> Option<Generator> {
         match boundary {
             Boundary::Source => *self.0.max_generator_source.get_or_init(|| {
-                first_max_generator(
-                    self.cones()
-                        .iter()
-                        .flat_map(|cone| &cone.internal.source)
-                        .filter_map(Cospan::max_generator),
-                )
+                self.cones()
+                    .iter()
+                    .flat_map(|cone| &cone.internal.source)
+                    .filter_map(Cospan::max_generator)
+                    .max_by_dimension()
             }),
             Boundary::Target => *self.0.max_generator_target.get_or_init(|| {
-                first_max_generator(
-                    self.cones()
-                        .iter()
-                        .filter_map(|cone| cone.internal.target.max_generator()),
-                )
+                self.cones()
+                    .iter()
+                    .filter_map(|cone| cone.internal.target.max_generator())
+                    .max_by_dimension()
             }),
         }
     }

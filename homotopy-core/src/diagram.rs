@@ -14,10 +14,10 @@ use thiserror::Error;
 use crate::{
     attach::{attach, BoundaryPath},
     common::{
-        Boundary, DimensionError, Direction, Generator, Height, Mode, RegularHeight, SliceIndex,
+        Boundary, DimensionError, Direction, Generator, Height, MaxByDimension, Mode,
+        RegularHeight, SliceIndex,
     },
     rewrite::{Cospan, Rewrite, RewriteN},
-    util::first_max_generator,
 };
 
 #[derive(PartialEq, Eq, Hash, Clone, PartialOrd, Ord, Serialize, Deserialize)]
@@ -446,8 +446,7 @@ impl DiagramN {
     pub fn max_generator(&self) -> Generator {
         let source = std::iter::once(self.source().max_generator());
         let cospans = self.cospans().iter().filter_map(Cospan::max_generator);
-        let generators = source.chain(cospans);
-        first_max_generator(generators).unwrap()
+        source.chain(cospans).max_by_dimension().unwrap()
     }
 
     #[must_use]
