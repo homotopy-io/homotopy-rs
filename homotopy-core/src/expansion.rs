@@ -47,7 +47,7 @@ impl DiagramN {
         boundary_path: BoundaryPath,
         interior_path: &[Height],
         direction: Direction,
-        signature: &S,
+        _signature: &S,
     ) -> Result<Self, ExpansionError>
     where
         S: Signature,
@@ -370,12 +370,7 @@ pub(crate) fn expand_propagate(
     )
     .next();
 
-    let backward = factorize(
-        target_cospan.backward.clone(),
-        expansion.clone(),
-        slice.clone(),
-    )
-    .next();
+    let backward = factorize(target_cospan.backward.clone(), expansion.clone(), slice).next();
 
     let cone = match (forward, backward) {
         (Some(forward), Some(backward)) => {

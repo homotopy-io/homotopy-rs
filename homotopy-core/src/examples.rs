@@ -115,7 +115,7 @@ pub fn touching() -> (impl Signature, DiagramN) {
         vec![Cone::new_n(
             0,
             s_s.cospans().to_vec(),
-            s_tensor_s_cospan.clone(),
+            s_tensor_s_cospan,
             vec![RewriteN::new(1, vec![down_cone.clone(), up_cone]).into()],
             vec![
                 RewriteN::new(1, vec![Cone::new_0(1, s_internal, up)]).into(),
@@ -191,7 +191,7 @@ pub fn crossing() -> (impl Signature, DiagramN) {
         vec![Cone::new_n(
             0,
             s_s.cospans().to_vec(),
-            s_tensor_s_cospan.clone(),
+            s_tensor_s_cospan,
             vec![RewriteN::new(1, vec![up_cone.clone(), down_cone]).into()],
             vec![
                 RewriteN::new(1, vec![up_cone]).into(),
