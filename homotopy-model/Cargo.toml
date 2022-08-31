@@ -28,7 +28,7 @@ im = { version = "15.1.0", features = ["serde"] }
 arrayvec = "0.7.2"
 
 [dev-dependencies]
-insta = "1.19.0"
+insta = "1.19.1"
 
 [features]
 fuzz = ["arbitrary", "homotopy-core/fuzz", "homotopy-common/fuzz"]
