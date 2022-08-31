@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1661883603399,
+  "lastUpdate": 1661955498376,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -40799,6 +40799,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 23.245,
             "range": "+/- 0.018",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "04032a178ba861f93bd2d58a0cd8f32dd6bd7c20",
+          "message": "Low hanging changes (#765)\n\n* Ported manim export to OpenGL renderer (#762), masking temporarily broken.\r\n\r\n* Added interchange test.\r\n\r\n* Prefetch wasm blobs.\r\n\r\n* Improved Manim OpenGL export.\r\n\r\n* Added fallback support for cairo manim renderer.\r\n\r\n* Disabled interchanges test, as it depends on labelled features.\r\n\r\n* Improved CLI errors, added option to dump final .hom file.\r\n\r\n* Added support for action exfiltration, moved dump actions button to debug panel.",
+          "timestamp": "2022-08-31T14:13:51+01:00",
+          "tree_id": "4eddaf9cb60ddc2e11df1b23a0a436ec81079a81",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/04032a178ba861f93bd2d58a0cd8f32dd6bd7c20"
+        },
+        "date": 1661955488390,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.13,
+            "range": "+/- 0.059",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 11.872,
+            "range": "+/- 0.198",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 52.945,
+            "range": "+/- 0.905",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 345.5,
+            "range": "+/- 4.030",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.9064,
+            "range": "+/- 0.022",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 29.142,
+            "range": "+/- 0.134",
             "unit": "s"
           }
         ]
