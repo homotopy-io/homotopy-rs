@@ -42,6 +42,8 @@ fn construct_braid_and_contract() {
     assert_debug_snapshot!("construct_braid_contraction_workspace", proof.workspace);
 }
 
+/*
+// Requires labelled
 #[test]
 fn construct_interchanges() {
     let action_dump = include_str!("examples/interchanges.json");
@@ -52,3 +54,4 @@ fn construct_interchanges() {
     assert_debug_snapshot!("construct_interchanges_signature", proof.signature);
     assert_debug_snapshot!("construct_interchanges_workspace", proof.workspace);
 }
+*/
