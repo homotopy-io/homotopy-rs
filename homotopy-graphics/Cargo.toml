@@ -20,7 +20,7 @@ lyon_algorithms = "1.0.1"
 lyon_geom = "1.0.1"
 lyon_path = "1.0.0"
 palette = { git = "https://github.com/Ogeon/palette", features = ["serializing"] }
-paste = "1.0.8"
+paste = "1.0.9"
 petgraph = "0.6.2"
 serde = { features = ["derive"], version = "1.0.144" }
 serde_json = "1.0.85"
