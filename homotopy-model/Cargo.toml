@@ -22,7 +22,7 @@ palette = { git = "https://github.com/Ogeon/palette", features = ["serializing"]
 
 log = "0.4.16"
 
-thiserror = "1.0.32"
+thiserror = "1.0.33"
 obake = { version = "1.0.4", features = ["serde"] }
 im = { version = "15.1.0", features = ["serde"] }
 arrayvec = "0.7.2"
