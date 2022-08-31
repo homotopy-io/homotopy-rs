@@ -1,8 +1,4 @@
-use homotopy_core::{
-    examples,
-    typecheck::{typecheck, Mode},
-    Bias, Boundary, Direction, Height,
-};
+use homotopy_core::{examples, Bias, Boundary, Direction, Height};
 
 #[test]
 fn matchsticks() {
@@ -16,7 +12,7 @@ fn matchsticks() {
         .unwrap()
         .target();
 
-    let expanded = contracted
+    let _expanded = contracted
         .identity()
         .expand(
             Boundary::Target.into(),
@@ -25,6 +21,4 @@ fn matchsticks() {
             &sig,
         )
         .unwrap();
-
-    typecheck(&expanded.into(), &sig, Mode::Deep).unwrap();
 }

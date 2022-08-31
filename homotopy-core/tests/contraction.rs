@@ -42,7 +42,7 @@ fn scalar() {
     );
 
     assert_debug_snapshot!(
-        "scalar_inverse_uniased",
+        "scalar_inverse_unbiased",
         scalar_then_inverse
             .identity()
             .contract(Boundary::Target.into(), &[], 0, Some(Bias::Same), &sig)
@@ -94,7 +94,6 @@ fn beads() {
         .unwrap();
 
     assert_debug_snapshot!("beads", contracted);
-    // typecheck(&contracted.into(), &sig, Mode::Deep).unwrap();
 }
 
 #[test]
@@ -107,7 +106,6 @@ fn stacks() {
         .unwrap();
 
     assert_debug_snapshot!("stacks", contracted);
-    // typecheck(&contracted.into(), &sig, Mode::Deep).unwrap();
 }
 
 #[test]
