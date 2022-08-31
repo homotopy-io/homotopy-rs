@@ -676,12 +676,12 @@ impl ProofState {
                                 let (mut source, mut cospan) =
                                     (diagram.source(), diagram.cospans()[0].clone());
                                 while source.dimension() < haystack.dimension() {
-                                    (source, cospan) = bubble(source, cospan);
+                                    (source, cospan) = bubble(&source, cospan);
                                 }
                                 DiagramN::new(source, vec![cospan])
                             };
 
-                            let original = bubble(&diagram);
+                            let original = bubble(diagram);
                             let needle = original
                                 .slice(boundary.flip())
                                 .ok_or(ModelError::NoAttachment)?;
@@ -789,12 +789,12 @@ impl ProofState {
 
             let result = match &option.boundary_path {
                 Some(bp) => <&DiagramN>::try_from(&workspace.diagram)?
-                    .attach(&attachment, bp.boundary(), &embedding)
+                    .attach(attachment, bp.boundary(), &embedding)
                     .or(Err(ModelError::NoAttachment))?,
                 None => workspace
                     .diagram
                     .identity()
-                    .attach(&attachment, Boundary::Target, &embedding)
+                    .attach(attachment, Boundary::Target, &embedding)
                     .or(Err(ModelError::NoAttachment))?,
             };
 
