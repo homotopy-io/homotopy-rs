@@ -8,12 +8,24 @@ use std::{
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use thiserror::Error;
 
+#[obake::versioned]
+#[obake(version("0.1.3"))]
+#[obake(version("0.2.0"))]
+#[obake(derive(serde::Serialize, serde::Deserialize))]
+#[obake(serde(untagged))]
 #[derive(PartialEq, Eq, Copy, Clone, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub struct Generator {
     pub dimension: usize,
     pub id: usize,
+    #[obake(cfg(">=0.2.0"))]
     pub orientation: Orientation,
+}
+
+impl From<Generator!["0.1.3"]> for Generator!["0.2.0"] {
+    fn from(from: Generator!["0.1.3"]) -> Self {
+        Self::new(from.id, from.dimension)
+    }
 }
 
 impl Generator {

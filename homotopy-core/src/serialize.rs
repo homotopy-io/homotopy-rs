@@ -373,12 +373,42 @@ struct ConeWithIndexSer {
     cone: Key<Cone>,
 }
 
+#[obake::versioned]
+#[obake(version("0.1.3"))]
+#[obake(version("0.2.0"))]
+#[obake(derive(serde::Serialize, serde::Deserialize))]
+#[obake(serde(untagged))]
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 struct ConeSer {
     source: Vec<CospanSer>,
     target: CospanSer,
+    #[obake(cfg("<0.2.0"))]
+    slices: Vec<Key<Rewrite>>,
+    #[obake(cfg(">=0.2.0"))]
     regular_slices: Vec<Key<Rewrite>>,
     singular_slices: Vec<Key<Rewrite>>,
+}
+
+impl From<ConeSer!["0.1.3"]> for ConeSer!["0.2.0"] {
+    fn from(from: ConeSer!["0.1.3"]) -> Self {
+        // Lifted from new_unlabelled
+        let regular_slices = if source.is_empty() {
+            from.target.forward.strip_labels()
+        } else {
+            from.source
+                .iter()
+                .zip(&from.slices)
+                .skip(1)
+                .map(|(cs, slice)| cs.forward.strip_labels().compose(slice).unwrap())
+                .collect()
+        };
+        Self {
+            source: from.source,
+            target: from.target,
+            regular_slices: regular_slices,
+            singular_slices: from.slices,
+        }
+    }
 }
 
 #[allow(clippy::derive_hash_xor_eq)]

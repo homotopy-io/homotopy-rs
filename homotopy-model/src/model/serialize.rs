@@ -44,6 +44,7 @@ impl From<WorkspaceData!["0.1.0"]> for WorkspaceData!["0.1.2"] {
 #[obake(version("0.1.1"))]
 #[obake(version("0.1.2"))]
 #[obake(version("0.1.3"))] // with metadata
+#[obake(version("0.2.0"))] // with labels
 #[obake(derive(serde::Serialize, serde::Deserialize))]
 #[obake(serde(tag = "version"))]
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -96,6 +97,17 @@ impl From<Data!["0.1.2"]> for Data!["0.1.3"] {
     }
 }
 
+impl From<Data!["0.1.3"]> for Data!["0.2.0"] {
+    fn from(from: Data!["0.1.3"]) -> Self {
+        Self {
+            store: from.store,
+            signature: from.signature,
+            workspace: from.workspace,
+            metadata: from.metadata,
+        }
+    }
+}
+
 impl std::fmt::Debug for Data {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Data").finish()
@@ -114,6 +126,11 @@ impl Default for SignatureData {
     }
 }
 
+#[obake::versioned]
+#[obake(version("0.1.3"))]
+#[obake(version("0.2.0"))]
+#[obake(derive(serde::Serialize, serde::Deserialize))]
+#[obake(serde(untagged))]
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 struct GeneratorData {
     generator: Generator,
@@ -122,6 +139,19 @@ struct GeneratorData {
     oriented: bool,
     invertible: bool,
     diagram: Key<Diagram>,
+}
+
+impl From<GeneratorData!["0.1.3"]> for GeneratorData!["0.2.0"] {
+    fn from(from: GeneratorData!["0.1.3"]) -> Self {
+        Self {
+            generator: from.generator,
+            name: from.name,
+            color: from.color,
+            oriented: from.oriented,
+            invertible: from.invertible,
+            diagram: from.diagram,
+        }
+    }
 }
 
 pub fn serialize(
