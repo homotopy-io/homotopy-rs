@@ -4,6 +4,7 @@ use crate::{components::settings::Settings, declare_settings, model};
 
 declare_settings! {
     pub struct ImageExportSettings {
+        tikz_show_braidings: bool = true,
         manim_use_opengl: bool = false,
     }
 }
@@ -52,7 +53,7 @@ impl Component for ImageExportView {
                 </p>
             }
         };
-        let tikz = Self::view_tikz(ctx);
+        let tikz = self.view_tikz(ctx);
         let svg = Self::view_svg(ctx);
         let manim = self.view_manim(ctx);
         let stl = Self::view_stl(ctx);
@@ -70,11 +71,18 @@ impl Component for ImageExportView {
 }
 
 impl ImageExportView {
-    fn view_tikz(ctx: &Context<Self>) -> Html {
+    fn view_tikz(&self, ctx: &Context<Self>) -> Html {
         if ctx.props().view_dim == 2 {
             html! {
                 <>
                     <h3>{"Export to TikZ"}</h3>
+                    {
+                        self.view_checkbox(
+                            "Show braidings",
+                            |local| *local.get_tikz_show_braidings(),
+                            ImageExportSettingsDispatch::set_tikz_show_braidings,
+                        )
+                    }
                     <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportTikz)}>{"Export"}</button>
                 </>
             }
