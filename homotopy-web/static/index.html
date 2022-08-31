@@ -19,6 +19,11 @@
     <script type="module">
         import('./highs.js').then(wasm => wasm.default()).catch(console.log);
     </script>
+	<script>
+		window.action_buffer=[];
+		function save_action(a) {window.action_buffer.push(a);};
+		function dump_actions() {return JSON.parse('['+window.action_buffer.join(',')+']');};
+	</script>
     <script type="module">
       // Import the functions you need from the SDKs you need
       import { initializeApp } from "https://www.gstatic.com/firebasejs/9.7.0/firebase-app.js";
