@@ -6,17 +6,12 @@ use std::{
 use thiserror::Error;
 
 use crate::{
-    antipushout::{antipushout, factorize_inc},
     attach::{attach, BoundaryPath},
-    common::{
-        Boundary, DimensionError, Direction, Height, Orientation, RegularHeight, SingularHeight,
-    },
+    common::{Boundary, DimensionError, Direction, Height, RegularHeight, SingularHeight},
     diagram::{Diagram, DiagramN},
     factorization::factorize,
-    normalization::normalize_singular,
     rewrite::{Cone, Cospan, Rewrite, RewriteN},
     signature::Signature,
-    typecheck::{typecheck_cospan, TypeError},
 };
 
 #[derive(Debug, Error)]
@@ -41,9 +36,6 @@ pub enum ExpansionError {
 
     #[error("expansion failed to propagate")]
     FailedToPropagate,
-
-    #[error("expansion is ill-typed: {0}")]
-    IllTyped(#[from] TypeError),
 
     #[error("invalid boundary path provided to expansion")]
     Dimension(#[from] DimensionError),
@@ -73,9 +65,6 @@ impl DiagramN {
                     backward: expand,
                 },
             };
-
-            // TODO
-            // typecheck_cospan(slice, cospan.clone(), boundary_path.boundary(), signature)?;
 
             Ok(vec![cospan])
         })

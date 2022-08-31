@@ -10,10 +10,7 @@ use std::{
 use hashconsing::{HConsed, HConsign, HashConsign};
 use once_cell::unsync::OnceCell;
 // used for debugging only
-use serde::{
-    ser::{SerializeSeq, SerializeStruct},
-    Deserialize, Serialize,
-};
+use serde::{ser::SerializeStruct, Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{
@@ -359,8 +356,8 @@ impl Rewrite {
                                 &[],
                             ),
                         },
-                        regular_slices,
-                        singular_slices,
+                        &regular_slices,
+                        &singular_slices,
                     )],
                 )
                 .into()
@@ -651,8 +648,8 @@ impl RewriteN {
                 index,
                 source_cospans[index..index + size].to_vec(),
                 target_cospans[target].clone(),
-                rss,
-                sss,
+                &rss,
+                &sss,
             ));
             index += size;
         }
@@ -936,6 +933,7 @@ impl RewriteN {
         }
     }
 
+    #[must_use]
     pub fn remove_framing(&self, generator: Generator) -> Self {
         let cones = self
             .cones()
@@ -1002,8 +1000,8 @@ impl Cone {
         index: usize,
         source: Vec<Cospan>,
         target: Cospan,
-        regular_slices: Vec<Rewrite>,
-        singular_slices: Vec<Rewrite>,
+        regular_slices: &[Rewrite],
+        singular_slices: &[Rewrite],
     ) -> Self {
         debug_assert_eq!(source.len(), singular_slices.len());
         debug_assert_eq!(regular_slices.len(), singular_slices.len() + 1);
@@ -1017,7 +1015,7 @@ impl Cone {
                 source,
                 target,
                 regular_slices[1..regular_slices.len() - 1].to_vec(),
-                singular_slices,
+                singular_slices.to_vec(),
             )
         }
     }
@@ -1233,7 +1231,7 @@ mod test {
             .into()
         };
 
-        let unit_cone = Cone::new_with_flanges(0, vec![], internal(f), vec![up(f, 0)], vec![]);
+        let unit_cone = Cone::new_with_flanges(0, vec![], internal(f), &[up(f, 0)], &[]);
         assert_eq!(unit_cone.is_unit(), true);
 
         let unit_cone_untrimmed = Cone::new_0(0, internal(f), up(f, 0));
@@ -1243,8 +1241,8 @@ mod test {
             0,
             vec![internal(f)],
             internal(f),
-            vec![up(f, 0), up(f, 1)],
-            vec![Rewrite::identity(1)],
+            &[up(f, 0), up(f, 1)],
+            &[Rewrite::identity(1)],
         );
         assert_eq!(cone.is_unit(), false);
 

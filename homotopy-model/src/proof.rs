@@ -14,7 +14,6 @@ use homotopy_core::{
     diagram::{globularity, NewDiagramError},
     expansion::ExpansionError,
     signature::SignatureClosure,
-    typecheck::TypeError,
     Diagram, DiagramN,
 };
 use im::Vector;
@@ -220,8 +219,6 @@ pub enum ModelError {
     ExpansionError(#[from] ExpansionError),
     #[error("error while performing contraction: {0}")]
     ContractionError(#[from] ContractionError),
-    #[error("error while performing typechecking: {0}")]
-    TypecheckingError(#[from] TypeError),
     #[error("import failed")]
     Import,
 }
