@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1661955498376,
+  "lastUpdate": 1661959423789,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -40859,6 +40859,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 29.142,
             "range": "+/- 0.134",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "50454943+H-Yulong@users.noreply.github.com",
+            "name": "Yulong Huang",
+            "username": "H-Yulong"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "88c5d225fcfa69a19cadeb7bef7c01250b7fbf14",
+          "message": "hover function prototype (#771)\n\n* hover function prototype\r\n\r\n* Replace coordinate with generator name\r\n\r\nCo-authored-by: Yulong Huang <yh419@cam.ac.uk>\r\nCo-authored-by: Calin Tataru <calintat@gmail.com>",
+          "timestamp": "2022-08-31T22:26:28+08:00",
+          "tree_id": "19ea8dd8ec203aa73a0204b5274392a58d6eda11",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/88c5d225fcfa69a19cadeb7bef7c01250b7fbf14"
+        },
+        "date": 1661959415111,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.8399,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 10.878,
+            "range": "+/- 0.004",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 49.044,
+            "range": "+/- 0.024",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 310.85,
+            "range": "+/- 0.330",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.6243,
+            "range": "+/- 0.001",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 24.939,
+            "range": "+/- 0.619",
             "unit": "s"
           }
         ]
