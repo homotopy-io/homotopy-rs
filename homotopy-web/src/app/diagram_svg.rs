@@ -202,7 +202,28 @@ impl<const N: usize> Component for DiagramSvg<N> {
             }
             DiagramSvgMessage::OnMouseMove(point) => {
                 self.pointer_move(ctx, point);
-                self.title = format!("({}, {})", point.x, point.y);
+                self.title = {
+                    let point = self.transform_screen_to_image().transform_point(point);
+                    let element = self.prepared.graphic.iter().rev().find(|element| {
+                        element
+                            .transformed(&self.prepared.transform)
+                            .to_shape(
+                                ctx.props().style.wire_thickness,
+                                ctx.props().style.point_radius,
+                            )
+                            .contains_point(point, 0.01)
+                    });
+                    match element {
+                        None => return false,
+                        Some(element) => ctx
+                            .props()
+                            .signature
+                            .generator_info(element.generator())
+                            .unwrap()
+                            .name
+                            .clone(),
+                    }
+                };
                 true
             }
             DiagramSvgMessage::OnMouseUp => {
