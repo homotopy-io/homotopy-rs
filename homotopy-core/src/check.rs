@@ -7,7 +7,7 @@ use crate::{
     common::Mode,
     diagram::RewritingError,
     rewrite::{CompositionError, Cone, ConeInternal, Label},
-    Cospan, Diagram, DiagramN, Direction, Height, Rewrite, Rewrite0, RewriteN,
+    Diagram, DiagramN, Direction, Height, Rewrite, Rewrite0, RewriteN,
 };
 
 thread_local! {

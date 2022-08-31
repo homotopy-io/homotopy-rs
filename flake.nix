@@ -71,6 +71,7 @@
               ++ (with self.pkgs; [
                 { package = manim; }
                 { package = cargo-make; }
+                { package = cargo-insta; }
                 { package = devserver; }
                 { package = gdb; }
                 { package = rust-analyzer; }

@@ -5,7 +5,6 @@ use itertools::{Itertools, MultiProduct};
 use crate::{
     monotone::{MonotoneIterator, Split},
     rewrite::Cone,
-    typecheck::Mode,
     Cospan, Diagram, Height, Rewrite, RewriteN,
 };
 
@@ -208,19 +207,15 @@ impl Iterator for ConeIterator {
     type Item = Cone;
 
     fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            let slices = self.slices_product.next()?;
-            let cone = Cone::new_with_flanges(
-                self.index,
-                self.source.clone(),
-                self.target.clone(),
-                slices.iter().step_by(2).cloned().collect(),
-                slices.into_iter().skip(1).step_by(2).collect(),
-            );
-            if cone.check(Mode::Shallow).is_ok() {
-                return Some(cone);
-            }
-        }
+        let slices = self.slices_product.next()?;
+        let cone = Cone::new_with_flanges(
+            self.index,
+            self.source.clone(),
+            self.target.clone(),
+            &slices.iter().step_by(2).cloned().collect_vec(),
+            &slices.into_iter().skip(1).step_by(2).collect_vec(),
+        );
+        Some(cone)
     }
 }
 
