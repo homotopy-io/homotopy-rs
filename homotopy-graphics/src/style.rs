@@ -1,6 +1,7 @@
 use std::{fmt, str::FromStr};
 
 use homotopy_core::Generator;
+use palette::{convert::FromColor, Hsl, Lighten, Srgb};
 use serde::{Deserialize, Serialize};
 
 pub trait GeneratorStyle {
@@ -17,7 +18,7 @@ pub trait SignatureStyleData {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Color(pub(crate) palette::Srgb<u8>);
+pub struct Color(pub(crate) Srgb<u8>);
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum VertexShape {
@@ -26,6 +27,9 @@ pub enum VertexShape {
 }
 
 impl Color {
+    const MIN_LIGHTNESS_WRAP: f32 = 0.25;
+    const MAX_LIGHTNESS_WRAP: f32 = 0.90;
+
     pub fn hex(&self) -> String {
         let (r, g, b) = self.clone().into_components::<u8>();
         format!("#{:02x}{:02x}{:02x}", r, g, b)
@@ -33,14 +37,59 @@ impl Color {
 
     #[must_use]
     pub fn lighten(&self, amount: f32) -> Self {
-        Self(palette::Lighten::lighten(self.0.into_linear(), amount).into())
+        Self(self.0.into_linear().lighten(amount).into())
     }
 
+    // Used for UI to make sure we always maintain sufficient contrast for legibility.
     pub fn is_light(&self) -> bool {
         palette::RelativeContrast::get_contrast_ratio(
             palette::Srgb::new(1., 1., 1.),
             self.0.into_format::<f32>(),
         ) < 1.5
+    }
+
+    // Get color in lightened form. We wrap colors if needed so that they are sufficiently
+    // distinguishable for end users.
+    //
+    // Colors are calculated from C and R where:
+    //      C = max(0, D - N - K)
+    //      R = -1 | 0 | 1          // orientation of generator
+    //      D = 0...                // diagram dimension
+    //      N = 0...                // generator dimension
+    //      K = 0 | 1 | 2           // point | wire | surface (in visible diagram)
+    //
+    // See: https://github.com/homotopy-io/homotopy-rs/issues/550
+    //
+    // We treat three kinds of color differently:
+    //      lightness < MIN_LIGHTNESS_WRAP
+    //          => lighten colours (zero then inverse)
+    //      lightness > MAX_LIGHTNESS_WRAP
+    //          => lighten colours (zero then inverse) wrapping such that min lightness is never
+    //             below MIN_LIGHTNESS_WRAP
+    //      otherwise
+    //          => lighten colours (zero then inverse) wrapping before reaching MAX_LIGHTNESS_WRAP
+    //             and respecting MIN_LIGHTNESS_WRAP
+    //
+    // The constants used are fairly arbitrary and subject to tweaking.
+    #[inline]
+    #[must_use]
+    pub fn lighten_from_c_r(&self, c: isize, r: isize) -> Self {
+        let mut hsl: Hsl = FromColor::from_color(self.0.into_format::<f32>());
+        let (min_lightness, max_lightness) = if hsl.lightness < Self::MIN_LIGHTNESS_WRAP {
+            (0., 1.)
+        } else if hsl.lightness > Self::MAX_LIGHTNESS_WRAP {
+            (Self::MIN_LIGHTNESS_WRAP, 1.)
+        } else {
+            (Self::MIN_LIGHTNESS_WRAP, Self::MAX_LIGHTNESS_WRAP)
+        };
+        let offset = 3 * (1 - r) + c;
+        let o = 0.08 * offset as f32;
+        hsl.lightness = (hsl.lightness + o - min_lightness - 0.01)
+            % (max_lightness - min_lightness)
+            + min_lightness
+            + 0.01;
+        let srgb: Srgb<f32> = FromColor::from_color(hsl);
+        Self(srgb.into_format())
     }
 
     pub fn into_components<T>(self) -> (T, T, T)
@@ -60,7 +109,9 @@ impl FromStr for Color {
     type Err = palette::rgb::FromHexError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        palette::Srgb::<u8>::from_str(s).map(Self)
+        palette::Srgb::<u8>::from_str(s)
+            .map(palette::Srgb::into_format)
+            .map(Self)
     }
 }
 

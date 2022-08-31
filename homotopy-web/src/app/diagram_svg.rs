@@ -19,7 +19,7 @@ use homotopy_core::{
 use homotopy_graphics::{
     style::VertexShape,
     svg::{
-        generator_class,
+        generator_class_from_diagram_dim,
         render::{ActionRegion, GraphicElement},
         shape::{path_to_svg, project_2d, Point, Shape},
     },
@@ -373,17 +373,21 @@ impl<const N: usize> DiagramSvg<N> {
     /// Creates the SVG elements for the diagram.
     fn view_element(&self, ctx: &Context<Self>, index: usize, element: &GraphicElement<N>) -> Html {
         let generator = element.generator();
+        let k = match element {
+            GraphicElement::Point(_, _) => 0,
+            GraphicElement::Wire(_, _, _, _) => 1,
+            GraphicElement::Surface(_, _) => 2,
+        };
+        let class = generator_class_from_diagram_dim(generator, k, ctx.props().diagram.dimension());
 
         match element {
             GraphicElement::Surface(_, path) => {
-                let class = generator_class(generator, "surface");
                 let path = path_to_svg(&path.clone().transformed(&self.prepared.transform));
                 html! {
                     <path d={path} class={class} stroke-width={1} />
                 }
             }
             GraphicElement::Wire(_, _, path, mask) => {
-                let class = generator_class(generator, "wire");
                 let path = path_to_svg(&path.clone().transformed(&self.prepared.transform));
 
                 if mask.is_empty() {
@@ -434,7 +438,6 @@ impl<const N: usize> DiagramSvg<N> {
             }
             GraphicElement::Point(_, point) => {
                 use VertexShape::{Circle, Square};
-                let class = generator_class(generator, "point");
                 let point = self.prepared.transform.transform_point(*point);
                 let radius = ctx.props().style.point_radius;
                 let shape = if let Some(info) = ctx.props().signature.generator_info(generator) {
