@@ -208,6 +208,7 @@ impl Cospan {
         }
     }
 
+    #[must_use]
     pub fn inverse(&self) -> Self {
         use Orientation::Negative;
         Self {
@@ -356,8 +357,8 @@ impl Rewrite {
                                 &[],
                             ),
                         },
-                        &regular_slices,
-                        &singular_slices,
+                        regular_slices,
+                        singular_slices,
                     )],
                 )
                 .into()
@@ -516,6 +517,7 @@ impl Rewrite0 {
         }
     }
 
+    #[must_use]
     pub fn remove_framing(&self, generator: Generator) -> Self {
         match &self.0 {
             None => Self(None),
@@ -648,8 +650,8 @@ impl RewriteN {
                 index,
                 source_cospans[index..index + size].to_vec(),
                 target_cospans[target].clone(),
-                &rss,
-                &sss,
+                rss,
+                sss,
             ));
             index += size;
         }
@@ -700,7 +702,7 @@ impl RewriteN {
                     singular_slices,
                 } => Cone::new_n(
                     c.index,
-                    source.to_vec(),
+                    source.clone(),
                     target.map(|r| r.orientation_transform(k)),
                     regular_slices
                         .iter()
@@ -1000,8 +1002,8 @@ impl Cone {
         index: usize,
         source: Vec<Cospan>,
         target: Cospan,
-        regular_slices: &[Rewrite],
-        singular_slices: &[Rewrite],
+        regular_slices: Vec<Rewrite>,
+        singular_slices: Vec<Rewrite>,
     ) -> Self {
         debug_assert_eq!(source.len(), singular_slices.len());
         debug_assert_eq!(regular_slices.len(), singular_slices.len() + 1);
@@ -1231,7 +1233,7 @@ mod test {
             .into()
         };
 
-        let unit_cone = Cone::new_with_flanges(0, vec![], internal(f), &[up(f, 0)], &[]);
+        let unit_cone = Cone::new_with_flanges(0, vec![], internal(f), vec![up(f, 0)], vec![]);
         assert_eq!(unit_cone.is_unit(), true);
 
         let unit_cone_untrimmed = Cone::new_0(0, internal(f), up(f, 0));
@@ -1241,8 +1243,8 @@ mod test {
             0,
             vec![internal(f)],
             internal(f),
-            &[up(f, 0), up(f, 1)],
-            &[Rewrite::identity(1)],
+            vec![up(f, 0), up(f, 1)],
+            vec![Rewrite::identity(1)],
         );
         assert_eq!(cone.is_unit(), false);
 

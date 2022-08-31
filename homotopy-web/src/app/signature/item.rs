@@ -775,7 +775,7 @@ impl ItemView {
     fn view_preferences(&self, ctx: &Context<Self>, info: &GeneratorInfo) -> Html {
         let g = match &ctx.props().item {
             SignatureItem::Item(info) => info.generator,
-            _ => unreachable!(),
+            SignatureItem::Folder(_) => unreachable!(),
         };
 
         if self.mode != ItemViewMode::Editing {
