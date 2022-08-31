@@ -104,7 +104,7 @@ pub fn render(
     writeln!(
         manim,
         concat!(
-            "\n{ind}def build_path(self, geom, **kwargs):\n",
+            "{ind}def build_path(self, geom, **kwargs):\n",
             "{ind}{ind}obj = OpenGLVMobject()\n",
             "{ind}{ind}obj.set_stroke(**kwargs)\n",
             "{ind}{ind}for c in geom:\n",
@@ -116,7 +116,7 @@ pub fn render(
             "{ind}{ind}{ind}{ind}obj.add_quadratic_bezier_curve_to(c[1],c[2])\n",
             "{ind}{ind}{ind}else:\n",
             "{ind}{ind}{ind}{ind}obj.add_cubic_bezier_curve_to(c[1],c[2],c[3])\n",
-            "{ind}{ind}return obj\n\n",
+            "{ind}{ind}return obj\n",
         ),
         ind = INDENT
     )
@@ -137,7 +137,7 @@ pub fn render(
     for (g, path) in surfaces {
         writeln!(
             manim,
-            "{ind}{ind}p={path} # path_{id}_{dim}\n{ind}{ind}s=self.build_path(p,width=1); s.set_fill(C[\"{color}\"],0.75); surfaces.add(s)\n",
+            "{ind}{ind}surfaces.add(self.build_path({path},width=1).set_fill(C[\"{color}\"],0.75)) # path_{id}_{dim}",
             ind=INDENT,
             color=name(g),
             id=g.id,
@@ -170,8 +170,7 @@ pub fn render(
         if i > 0 {
             writeln!(manim, "{ind}{ind}# Begin scope", ind = INDENT).unwrap();
             for (g, path) in &layer {
-                writeln!(manim, concat!("{ind}{ind}p={path} # path_{id}_{dim}\n",
-                         "{ind}{ind}w=self.build_path(p,width=20); wires.add(Intersection(surfaces,w,color=C[\"generator_{id}_{dim}\"],fill_opacity=0.8))"),
+                writeln!(manim, "{ind}{ind}wires.add(Intersection(surfaces,self.build_path({path},width=20),color=C[\"generator_{id}_{dim}\"],fill_opacity=0.8))",
                          ind=INDENT,
                          id=g.id,
                          dim=g.dimension,
@@ -182,7 +181,7 @@ pub fn render(
         }
 
         for (g, path) in &layer {
-            writeln!(manim, "{ind}{ind}p={path} # path_{id}_{dim}\n{ind}{ind}w=self.build_path(p,width=10,color=C[\"{color}\"]); wires.add(w)",
+            writeln!(manim, "{ind}{ind}wires.add(self.build_path({path},width=20,color=C[\"{color}\"])) # path_{id}_{dim}",
                 ind=INDENT,
                 color=name(*g),
                 id=g.id,
