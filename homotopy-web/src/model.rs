@@ -98,11 +98,13 @@ impl State {
 
     /// Update the state in response to an [Action].
     pub fn update(&mut self, action: Action) -> Result<(), ModelError> {
-        let data = serde_json::to_string(&action).expect("Failed to serialize action.");
-        save_action(JsString::from(data));
-
         match action {
             Action::Proof(action) => {
+                // Only exfiltrate proof actions, otherwise
+                // we risk funny business with circular action imports.
+                let data = serde_json::to_string(&action).expect("Failed to serialize action.");
+                save_action(JsString::from(data));
+
                 let mut proof = self.with_proof(Clone::clone).ok_or(ModelError::Internal)?;
                 proof.update(&action).map_err(ModelError::from)?;
                 // Hide image export dialog automatically if view dimension is not 2 or 3.
@@ -232,12 +234,21 @@ impl State {
 
             Action::ImportProof(data) => {
                 let ((signature, workspace), metadata) =
-                    match serialize::deserialize(&Vec::<u8>::from(data.clone())) {
-                        Some(res) => res,
-                        None => migration::deserialize(&Vec::<u8>::from(data))
-                            .ok_or(ModelError::Import)?,
+                    if let Some(res) = serialize::deserialize(&data.0) {
+                        res
+                    } else if let Some(res) = migration::deserialize(&data.0) {
+                        res
+                    } else {
+                        // Leave room for a future "replay on top of current workspace".
+                        let mut proof: Proof = Default::default();
+                        let actions: Vec<_> =
+                            serde_json::from_slice(&data.0).or(Err(ModelError::Import))?;
+                        proof.replay(&actions)?;
+                        (
+                            (proof.signature.clone(), proof.workspace.clone()),
+                            proof.metadata.clone(),
+                        )
                     };
-
                 for g in signature.iter() {
                     g.diagram
                         .check(Mode::Deep)

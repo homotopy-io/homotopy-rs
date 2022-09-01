@@ -79,10 +79,7 @@ fn main() -> anyhow::Result<()> {
         None => Default::default(),
     };
 
-    for a in actions.iter() {
-        println!("Performing action: {:?}", a);
-        proof.update(a)?;
-    }
+    proof.replay(&actions)?;
 
     if let Some(path) = opt.output_hom {
         export_hom(&path, &proof)?;
