@@ -212,8 +212,9 @@ impl State {
 
             Action::ExportActions => {
                 let actions = self.history.get_actions();
-                let data = serde_json::to_string(&actions).map_err(|_e| ModelError::Internal)?;
-                generate_download("homotopy_io_actions", "json", data.as_bytes())
+                let data =
+                    serde_json::to_string_pretty(&actions).map_err(|_e| ModelError::Internal)?;
+                generate_download("homotopy_io_actions", "txt", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
 
