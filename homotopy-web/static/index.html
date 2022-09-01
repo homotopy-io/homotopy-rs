@@ -22,7 +22,30 @@
 	<script>
 		window.action_buffer=[];
 		function save_action(a) {window.action_buffer.push(a);};
-		function dump_actions() {return JSON.parse('['+window.action_buffer.join(',')+']');};
+		function dump_action_text() {return '['+window.action_buffer.join(',')+']';};
+		function dump_actions() {return JSON.parse(dump_action_text());};
+		function download_actions() {
+			var link = document.createElement('a');
+			link.setAttribute('download', 'homotopy_io_crash_action_dump.txt');
+			const uri = URL.createObjectURL(new Blob([dump_action_text()]), {type:"application/json"});
+			link.href = uri;
+			document.body.appendChild(link);
+			link.click();
+			link.remove();
+			URL.revokeObjectURL(uri);
+		};
+		function display_panic_message() {
+			var span = document.createElement("span");
+			span.className = "version";
+			span.appendChild(document.createTextNode("Prover panicked! Crash dump for a GitHub issue:"));
+			var button = document.createElement("button");
+			button.appendChild(document.createTextNode("Click me!"));
+			button.onClick = download_actions();
+			var div = document.createElement("div");
+			div.appendChild(span);
+			div.appendChild(button);
+			document.body.children[0].appendChild(div);
+		}
 	</script>
     <script type="module">
       // Import the functions you need from the SDKs you need
@@ -50,5 +73,10 @@
       const analytics = getAnalytics(app);
       const perf = getPerformance(app);
     </script>
+	<div>
+		<span class="version">
+		</span>
+		<button>Download</button>
+	</div>
   </body>
 </html>
