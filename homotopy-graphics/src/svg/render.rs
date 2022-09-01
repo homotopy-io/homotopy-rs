@@ -176,7 +176,7 @@ impl<const N: usize> GraphicElement<N> {
                         .push(orient_surface(ps));
                 }
                 Simplex::Wire(ps) => {
-                    let generator = projection.front_generator(ps[0]);
+                    let (generator, _) = projection.front_generator(ps[0]);
 
                     let (depth, mask) = match depths.edge_depth(ps[0], ps[1]) {
                         Some(depth) => (
@@ -197,10 +197,8 @@ impl<const N: usize> GraphicElement<N> {
                     ));
                 }
                 Simplex::Point([p]) => {
-                    let generator = projection.front_generator(*p);
-                    // In 2D, we ignore points which are labelled by homotopies.
-                    // TODO(@calintat): This should only apply to locally identity-like homotopies.
-                    if N <= 1 || generator.dimension >= diagram.dimension() {
+                    let (generator, is_identity) = projection.front_generator(*p);
+                    if !is_identity {
                         point_elements
                             .push(Self::Point(generator, project_2d(layout.get(*p)).into()));
                     }
