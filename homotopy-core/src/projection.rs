@@ -11,6 +11,7 @@ use homotopy_common::{
     hash::{FastHashMap, FastHasher},
     idx::IdxVec,
 };
+use itertools::Itertools;
 use petgraph::{
     graph::{EdgeIndex, NodeIndex},
     visit::{EdgeRef, IntoNodeReferences, Topo, Walker},
@@ -21,7 +22,7 @@ use crate::{
     common::{DimensionError, Generator, SliceIndex},
     graph::{Explodable, SliceGraph},
     layout::Layout,
-    Diagram, Direction, Height, Rewrite,
+    Diagram, DiagramN, Direction, Height, Rewrite, RewriteN,
 };
 
 type Coordinate<const N: usize> = [SliceIndex; N];
@@ -40,7 +41,7 @@ pub enum Homotopy {
 #[derive(Clone, Debug)]
 pub struct Projection<const N: usize> {
     generators: IdxVec<NodeIndex, Generator>,
-    front_generators: IdxVec<NodeIndex, Generator>,
+    front_generators: IdxVec<NodeIndex, (Generator, bool)>,
     homotopies: IdxVec<NodeIndex, Option<Homotopy>>,
     coord_to_node: FastHashMap<Coordinate<N>, NodeIndex>,
 }
@@ -87,14 +88,52 @@ impl<const N: usize> Projection<N> {
 
         for n in graph.node_indices() {
             let coord = graph[n].0;
+            let diagram = &graph[n].1;
 
-            let g = graph[n].1.max_generator();
-            let front_g = match &graph[n].1 {
-                Diagram::Diagram0(g) => *g,
-                Diagram::DiagramN(d) => match depths.node_depth(coord) {
-                    None => diagram.max_generator(),
-                    Some(i) => d.slice(Height::Singular(i)).unwrap().max_generator(),
-                },
+            let g = diagram.max_generator();
+            let depth = depths.node_depth(coord);
+            let front_g = match depth {
+                None => diagram.max_generator(),
+                Some(i) => {
+                    let diagram: &DiagramN = diagram.try_into()?;
+                    diagram.slice(Height::Singular(i)).unwrap().max_generator()
+                }
+            };
+            let is_identity = {
+                // Find the edges in the front layer.
+                let front_layer = graph
+                    .edges_directed(n, EdgeDirection::Incoming)
+                    .filter(|e| {
+                        depths.edge_depth(graph[e.source()].0, graph[e.target()].0) == depth
+                    })
+                    .map(|e| e.weight())
+                    .collect_vec();
+
+                // Split them into inputs and outputs.
+                let inputs = front_layer
+                    .iter()
+                    .filter(|(dir, _)| *dir == Direction::Forward)
+                    .map(|(_, r)| r)
+                    .collect_vec();
+                let outputs = front_layer
+                    .iter()
+                    .filter(|(dir, _)| *dir == Direction::Backward)
+                    .map(|(_, r)| r)
+                    .collect_vec();
+
+                // The node is an identity if there is one input and one output, and both are (locally) identities.
+                match (inputs.split_first(), outputs.split_first()) {
+                    (Some((&input, &[])), Some((&output, &[]))) => match depth {
+                        None => input.is_identity() && output.is_identity(),
+                        Some(i) => {
+                            let input: &RewriteN = input.try_into()?;
+                            let output: &RewriteN = output.try_into()?;
+                            input.cone_over_target(i).is_none()
+                                && output.cone_over_target(i).is_none()
+                        }
+                    },
+                    _ => false,
+                }
             };
 
             let h = || -> Option<Homotopy> {
@@ -200,7 +239,7 @@ impl<const N: usize> Projection<N> {
             }();
 
             generators.push(g);
-            front_generators.push(front_g);
+            front_generators.push((front_g, is_identity));
             homotopies.push(h);
             coord_to_node.insert(coord, n);
         }
@@ -217,7 +256,7 @@ impl<const N: usize> Projection<N> {
         self.generators[self.coord_to_node[&p]]
     }
 
-    pub fn front_generator(&self, p: Coordinate<N>) -> Generator {
+    pub fn front_generator(&self, p: Coordinate<N>) -> (Generator, bool) {
         self.front_generators[self.coord_to_node[&p]]
     }
 
