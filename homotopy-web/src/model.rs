@@ -322,4 +322,7 @@ extern "C" {
 
     #[wasm_bindgen]
     pub fn dump_actions() -> JsString;
+
+    #[wasm_bindgen]
+    pub fn download_actions();
 }

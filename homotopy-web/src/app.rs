@@ -254,6 +254,34 @@ impl App {
                         </div>
                     </div>
                 </div>
+                <div id="panic" class="modal">
+                    <div class="modal-dialog">
+                        <a href="#invisible-button">
+                            // Empty div to create an invisible button
+                            <div class="modal-close"></div>
+                        </a>
+                        <div class="modal-content">
+                            <header>
+                                <h2>{"Unexpected Crash!"}</h2>
+                            </header>
+                            <p>
+                                {"It appears you have found an unexpected bug in our tool. Many apologies for the poor experience."}
+                            </p>
+                            <p>
+                                {"We would be extremely grateful if you could report this issue."}
+                            </p>
+                            <p>
+                                {"The process is rather straightforward: the button below will download a file containing some debugging information for us, you can attach it in a new issue in our "}
+                                <a href="https://github.com/homotopy-io/homotopy-rs/issues">{"GitHub tracker"}</a>
+                                {", alongside a brief description of what your were doing."}
+                            </p>
+                            <button onclick={move |_| model::download_actions()}>{"Download log."}</button>
+                            <p>
+                                {"We'll fix the problem in no time!"}
+                            </p>
+                        </div>
+                    </div>
+                </div>
                 <span class="version">
                     {format!("Version: {}", option_env!("GIT_DESCRIBE").unwrap_or(env!("CARGO_PKG_VERSION")))}
                 </span>

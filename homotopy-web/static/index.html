@@ -35,16 +35,7 @@
 			URL.revokeObjectURL(uri);
 		};
 		function display_panic_message() {
-			var span = document.createElement("span");
-			span.className = "version";
-			span.appendChild(document.createTextNode("Prover panicked! Crash dump for a GitHub issue:"));
-			var button = document.createElement("button");
-			button.appendChild(document.createTextNode("Click me!"));
-			button.onClick = download_actions();
-			var div = document.createElement("div");
-			div.appendChild(span);
-			div.appendChild(button);
-			document.body.children[0].appendChild(div);
+			// Unhide modal
 		}
 	</script>
     <script type="module">
@@ -73,10 +64,5 @@
       const analytics = getAnalytics(app);
       const perf = getPerformance(app);
     </script>
-	<div>
-		<span class="version">
-		</span>
-		<button>Download</button>
-	</div>
   </body>
 </html>
