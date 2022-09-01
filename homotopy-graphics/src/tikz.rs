@@ -47,6 +47,7 @@ pub fn render(
     diagram: &Diagram,
     stylesheet: &str,
     signature_styles: &impl SignatureStyleData,
+    show_braids: bool,
 ) -> Result<String, DimensionError> {
     let layout = Layout::<2>::new(diagram)?;
     let complex = make_complex(diagram);
@@ -77,7 +78,7 @@ pub fn render(
     writeln!(tikz, "\\begin{{tikzpicture}}").unwrap();
     tikz.push_str(stylesheet);
 
-    tikz.push_str(&render_inner(&surfaces, wires));
+    tikz.push_str(&render_inner(&surfaces, wires, show_braids));
 
     // Points are unchanged
     for (g, point) in points {
@@ -90,9 +91,8 @@ pub fn render(
     Ok(tikz)
 }
 
-// This contains all the "magic" commands we need to inject.
-// No formatting needed, it's the same all the time.
-
+// This contains all the "magic" commands we need to inject
+// in the case we want to show braidings.
 const MAGIC_MACRO: &str = "\n\\newcommand{\\wire}[2]{
   \\ifdefined\\recolor\\draw[color=\\recolor!75, line width=10pt]\\else\\draw[color=#1!80, line width=5pt]\\fi #2;
 }
@@ -107,18 +107,23 @@ const MAGIC_MACRO: &str = "\n\\newcommand{\\wire}[2]{
 fn render_inner(
     surfaces: &[(Generator, Path)],
     wires: FastHashMap<usize, Vec<(Generator, Path)>>,
+    show_braids: bool,
 ) -> String {
     let mut tikz = String::new();
 
-    let needs_masking = wires.len() > 1;
+    let needs_masking = wires.len() > 1 && show_braids;
 
-    tikz.push_str(MAGIC_MACRO);
-    // The transparency group does nothing in terms of our masking strategy,
-    // but it is useful in case users lower the opacity. It changes the
-    // opacity rules to hide our masking shenanigans.
-    // If you want to see it in action, add [opacity=.5] at
-    // at \begin{tikzpicture} and remove [transparency group].
-    tikz.push_str("\\begin{scope}[transparency group]\n");
+    if needs_masking {
+        tikz.push_str(MAGIC_MACRO);
+        // The transparency group does nothing in terms of our masking strategy,
+        // but it is useful in case users lower the opacity. It changes the
+        // opacity rules to hide our masking shenanigans.
+        // If you want to see it in action, add [opacity=.5] at
+        // at \begin{tikzpicture} and remove [transparency group].
+        tikz.push_str("\\begin{scope}[transparency group]\n");
+    } else {
+        tikz.push_str("\\begin{scope}\n");
+    }
 
     tikz.push_str("% Background surfaces\n");
     for (g, path) in surfaces.iter() {
@@ -164,21 +169,31 @@ fn render_inner(
         .rev()
         .enumerate()
     {
-        if i > 0 {
+        if i > 0 && needs_masking {
             tikz.push_str("\\layer{\n");
         }
         for (g, path) in &layer {
-            // We pass the geometry of the wire directly to the current layer.
-            // This is to avoid naming annoyances.
-            writeln!(
-                tikz,
-                "\\wire{{{color}}}{{{path}}};",
-                color = name(*g),
-                path = &render_path(path)
-            )
-            .unwrap();
+            if needs_masking {
+                // We pass the geometry of the wire directly to the current layer.
+                // This is to avoid naming annoyances.
+                writeln!(
+                    tikz,
+                    "\\wire{{{color}}}{{{path}}};",
+                    color = name(*g),
+                    path = &render_path(path)
+                )
+                .unwrap();
+            } else {
+                writeln!(
+                    tikz,
+                    "\\draw[color={color}!80, line width=5pt]{path};",
+                    color = name(*g),
+                    path = &render_path(path)
+                )
+                .unwrap();
+            }
         }
-        if i > 0 {
+        if i > 0 && needs_masking {
             tikz.push_str("}\n");
         }
     }

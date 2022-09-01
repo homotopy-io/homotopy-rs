@@ -134,7 +134,7 @@ impl State {
                     .with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram())
                     .ok_or(ModelError::Internal)?;
                 let stylesheet = tikz::stylesheet(&signature);
-                let data = tikz::render(&diagram, &stylesheet, &signature).unwrap();
+                let data = tikz::render(&diagram, &stylesheet, &signature, true).unwrap();
                 generate_download("homotopy_io_export", "tikz", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
