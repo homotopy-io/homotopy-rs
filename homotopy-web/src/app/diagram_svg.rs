@@ -14,7 +14,7 @@ use homotopy_core::{
     layout::Layout,
     projection::{Depths, Projection},
     rewrite::RewriteN,
-    Boundary, Diagram, DiagramN, Height, SliceIndex,
+    Boundary, Diagram, DiagramN, Height, Orientation, SliceIndex,
 };
 use homotopy_graphics::{
     style::VertexShape,
@@ -213,18 +213,18 @@ impl<const N: usize> Component for DiagramSvg<N> {
                             )
                             .contains_point(point, 0.01)
                     });
-                    match element {
+                    let generator = match element {
                         None => return false,
-                        Some(element) => ctx
-                            .props()
-                            .signature
-                            .generator_info(element.generator())
-                            .unwrap()
-                            .name
-                            .clone(),
+                        Some(element) => element.generator(),
+                    };
+                    let info = ctx.props().signature.generator_info(generator).unwrap();
+                    match generator.orientation {
+                        Orientation::Positive => info.name.clone(),
+                        Orientation::Zero => format!("{} (homotopy)", info.name),
+                        Orientation::Negative => format!("{} (inverse)", info.name),
                     }
                 };
-                false
+                true
             }
             DiagramSvgMessage::OnMouseUp => {
                 self.pointer_stop(ctx);
