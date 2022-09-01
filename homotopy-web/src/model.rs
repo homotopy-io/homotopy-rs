@@ -325,4 +325,7 @@ extern "C" {
 
     #[wasm_bindgen]
     pub fn download_actions();
+
+    #[wasm_bindgen]
+    pub fn display_panic_message();
 }

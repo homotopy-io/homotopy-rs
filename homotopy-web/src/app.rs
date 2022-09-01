@@ -238,7 +238,7 @@ impl App {
                             <p>
                                 {"We'll fix the problem in no time!"}
                             </p>
-                            <button onclick={move |_| model::download_actions()}>{"Download log"}</button>
+                            <button onclick={move |_| model::download_actions()}>{"Download action logs"}</button>
                         </div>
                     </div>
                 </div>
