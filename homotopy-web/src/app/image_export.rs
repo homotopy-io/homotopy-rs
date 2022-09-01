@@ -76,6 +76,7 @@ impl Component for ImageExportView {
 
 impl ImageExportView {
     fn view_tikz(&self, ctx: &Context<Self>) -> Html {
+        let show_braidings = *self.local.get_tikz_show_braidings();
         if ctx.props().view_dim == 2 {
             html! {
                 <>
@@ -88,7 +89,7 @@ impl ImageExportView {
                                 ImageExportSettingsDispatch::set_tikz_show_braidings,
                             )
                         }
-                        <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportTikz)}>{"Export"}</button>
+                        <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportTikz(show_braidings))}>{"Export"}</button>
                     </div>
                 </>
             }
@@ -113,6 +114,7 @@ impl ImageExportView {
     }
 
     fn view_manim(&self, ctx: &Context<Self>) -> Html {
+        let use_opengl = *self.local.get_manim_use_opengl();
         if ctx.props().view_dim == 2 {
             html! {
                 <>
@@ -125,7 +127,7 @@ impl ImageExportView {
                                 ImageExportSettingsDispatch::set_manim_use_opengl,
                             )
                         }
-                        <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportManim)}>{"Export"}</button>
+                        <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportManim(use_opengl))}>{"Export"}</button>
                     </div>
                 </>
             }

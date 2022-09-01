@@ -15,9 +15,9 @@ pub enum Action {
     ImportProof(SerializedData),
     ExportProof,
     ExportActions,
-    ExportTikz,
+    ExportTikz(bool),
     ExportSvg,
-    ExportManim,
+    ExportManim(bool),
     ExportStl,
 }
 
@@ -28,7 +28,7 @@ impl Action {
 
         match self {
             Self::Proof(action) => proof.is_valid(action),
-            Self::ExportTikz | Self::ExportSvg | Self::ExportManim => proof
+            Self::ExportTikz(_) | Self::ExportSvg | Self::ExportManim(_) => proof
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.view.dimension() == 2),
@@ -126,7 +126,7 @@ impl State {
                 };
             }
 
-            Action::ExportTikz => {
+            Action::ExportTikz(_) => {
                 let signature = self
                     .with_proof(|p| p.signature.clone())
                     .ok_or(ModelError::Internal)?;
@@ -185,7 +185,7 @@ impl State {
                     .map_err(ModelError::Export)?;
             }
 
-            Action::ExportManim => {
+            Action::ExportManim(use_opengl) => {
                 let signature = self
                     .with_proof(|p| p.signature.clone())
                     .ok_or(ModelError::Internal)?;
@@ -193,7 +193,6 @@ impl State {
                     .with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram())
                     .ok_or(ModelError::Internal)?;
                 let stylesheet = manim::stylesheet(&signature);
-                let use_opengl = false;
                 let data = manim::render(&diagram, &signature, &stylesheet, use_opengl).unwrap();
                 generate_download("homotopy_io_export", "py", data.as_bytes())
                     .map_err(ModelError::Export)?;
