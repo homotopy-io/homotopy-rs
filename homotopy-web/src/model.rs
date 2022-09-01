@@ -126,7 +126,7 @@ impl State {
                 };
             }
 
-            Action::ExportTikz(_) => {
+            Action::ExportTikz(with_braid) => {
                 let signature = self
                     .with_proof(|p| p.signature.clone())
                     .ok_or(ModelError::Internal)?;
@@ -134,7 +134,7 @@ impl State {
                     .with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram())
                     .ok_or(ModelError::Internal)?;
                 let stylesheet = tikz::stylesheet(&signature);
-                let data = tikz::render(&diagram, &stylesheet, &signature, true).unwrap();
+                let data = tikz::render(&diagram, &stylesheet, &signature, with_braid).unwrap();
                 generate_download("homotopy_io_export", "tikz", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
