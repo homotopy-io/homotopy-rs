@@ -344,7 +344,7 @@ impl Component for Sidebar {
         html! {
             <>
                 <aside class="sidebar">
-                    <a href="#panic">
+                    <a href="#about">
                         <img src="/logo.svg" alt="Homotopy.io logo" class="sidebar__logo" />
                     </a>
                     {self.nav(ctx)}
