@@ -6,7 +6,7 @@ use std::{
 use anyhow::{anyhow, Context};
 pub use history::Proof;
 use homotopy_core::common::Mode;
-pub use homotopy_model::model::{history, migration, proof, proof::Action, serialize};
+pub use homotopy_model::{history, migration, proof, proof::Action, serialize};
 use structopt::StructOpt;
 
 // Struct for CLI options

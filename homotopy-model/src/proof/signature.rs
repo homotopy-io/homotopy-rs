@@ -5,7 +5,7 @@ use homotopy_core::{common::Generator, diagram::NewDiagramError, Diagram, Diagra
 use homotopy_graphics::style::{Color, VertexShape};
 use serde::{Deserialize, Serialize};
 
-use crate::model::proof::{generators::GeneratorInfo, ModelError};
+use crate::proof::{generators::GeneratorInfo, ModelError};
 
 pub const COLORS: &[&str] = &[
     "#2980b9", // belize blue

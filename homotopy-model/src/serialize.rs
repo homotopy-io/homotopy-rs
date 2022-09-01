@@ -11,9 +11,8 @@ use homotopy_graphics::style::Color;
 use im::Vector;
 use obake::AnyVersion;
 
-use super::{
-    proof::{generators::GeneratorInfo, FolderInfo, Metadata, SignatureItem, View},
-    Signature, Workspace,
+use super::proof::{
+    generators::GeneratorInfo, FolderInfo, Metadata, Signature, SignatureItem, View, Workspace,
 };
 
 #[obake::versioned]

@@ -2,7 +2,7 @@ pub use history::Proof;
 use history::{History, UndoState};
 use homotopy_core::common::Mode;
 use homotopy_graphics::{manim, stl, svg, tikz};
-pub use homotopy_model::model::{history, migration, proof, serialize};
+pub use homotopy_model::{history, migration, proof, serialize};
 use js_sys::JsString;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;

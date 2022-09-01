@@ -1,5 +1,5 @@
 use homotopy_core::typecheck::{typecheck, Mode};
-pub use homotopy_model::model::{history::Proof, proof::Action, serialize};
+pub use homotopy_model::{history::Proof, proof::Action, serialize};
 use insta::*;
 
 fn actions_test_helper(json: &str) -> Proof {
