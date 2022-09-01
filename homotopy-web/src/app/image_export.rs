@@ -1,6 +1,9 @@
 use yew::prelude::*;
 
-use crate::{components::settings::Settings, declare_settings, model};
+use crate::{
+    components::settings::{KeyStore, Settings},
+    declare_settings, model,
+};
 
 declare_settings! {
     pub struct ImageExportSettings {
@@ -37,8 +40,9 @@ impl Component for ImageExportView {
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, _msg: Self::Message) -> bool {
-        false
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+        self.local.set(&msg);
+        true
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -58,13 +62,13 @@ impl Component for ImageExportView {
         let manim = self.view_manim(ctx);
         let stl = Self::view_stl(ctx);
         html! {
-            <>
+            <div class="settings">
                 {default_text}
                 {tikz}
                 {svg}
                 {manim}
                 {stl}
-            </>
+            </div>
 
         }
     }
@@ -76,14 +80,16 @@ impl ImageExportView {
             html! {
                 <>
                     <h3>{"Export to TikZ"}</h3>
-                    {
-                        self.view_checkbox(
-                            "Show braidings",
-                            |local| *local.get_tikz_show_braidings(),
-                            ImageExportSettingsDispatch::set_tikz_show_braidings,
-                        )
-                    }
-                    <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportTikz)}>{"Export"}</button>
+                    <div class="settings__segment">
+                        {
+                            self.view_checkbox(
+                                "Show braidings",
+                                |local| *local.get_tikz_show_braidings(),
+                                ImageExportSettingsDispatch::set_tikz_show_braidings,
+                            )
+                        }
+                        <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportTikz)}>{"Export"}</button>
+                    </div>
                 </>
             }
         } else {
@@ -96,7 +102,9 @@ impl ImageExportView {
             html! {
                 <>
                     <h3>{"Export to SVG"}</h3>
-                    <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportSvg)}>{"Export"}</button>
+                    <div class="settings__segment">
+                        <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportSvg)}>{"Export"}</button>
+                    </div>
                 </>
             }
         } else {
@@ -109,14 +117,16 @@ impl ImageExportView {
             html! {
                 <>
                     <h3>{"Export to Manim"}</h3>
-                    {
-                        self.view_checkbox(
-                            "OpenGL renderer",
-                            |local| *local.get_manim_use_opengl(),
-                            ImageExportSettingsDispatch::set_manim_use_opengl,
-                        )
-                    }
-                    <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportManim)}>{"Export"}</button>
+                    <div class="settings__segment">
+                        {
+                            self.view_checkbox(
+                                "OpenGL renderer",
+                                |local| *local.get_manim_use_opengl(),
+                                ImageExportSettingsDispatch::set_manim_use_opengl,
+                            )
+                        }
+                        <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportManim)}>{"Export"}</button>
+                    </div>
                 </>
             }
         } else {
@@ -129,7 +139,9 @@ impl ImageExportView {
             html! {
                 <>
                     <h3>{"Export to STL"}</h3>
-                    <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportStl)}>{"Export"}</button>
+                    <div class="settings__segment">
+                        <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportStl)}>{"Export"}</button>
+                    </div>
                 </>
             }
         } else {
