@@ -103,7 +103,7 @@ impl State {
                 // Only exfiltrate proof actions, otherwise
                 // we risk funny business with circular action imports.
                 let data = serde_json::to_string(&action).expect("Failed to serialize action.");
-                save_action(JsString::from(data));
+                push_action(JsString::from(data));
 
                 let mut proof = self.with_proof(Clone::clone).ok_or(ModelError::Internal)?;
                 proof.update(&action).map_err(ModelError::from)?;
@@ -120,9 +120,17 @@ impl State {
                 match dir {
                     history::Direction::Linear(Forward) => {
                         self.history.redo()?;
+                        // Nuclear way to get the action we just re-did
+                        // but logs must be accurate!
+                        if let Some(action) = self.history.get_actions().last() {
+                            let data = serde_json::to_string(&action)
+                                .expect("Failed to serialize action.");
+                            push_action(JsString::from(data));
+                        }
                     }
                     history::Direction::Linear(Backward) => {
                         self.history.undo()?;
+                        pop_action();
                     }
                 };
             }
@@ -318,7 +326,10 @@ pub fn generate_download(name: &str, ext: &str, data: &[u8]) -> Result<(), wasm_
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen]
-    pub fn save_action(a: JsString);
+    pub fn push_action(a: JsString);
+
+    #[wasm_bindgen]
+    pub fn pop_action();
 
     #[wasm_bindgen]
     pub fn dump_actions() -> JsString;
