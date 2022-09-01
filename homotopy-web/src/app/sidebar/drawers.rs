@@ -119,16 +119,6 @@ declare_sidebar_drawers! {
         min_width: 250,
     }
 
-    DRAWER_SETTINGS {
-        "Settings",
-        "settings",
-        "settings",
-        |_, _, _| html! {
-            <SettingsView />
-        },
-        min_width: 250,
-    }
-
     DRAWER_SIGNATURE {
         "Signature",
         "signature",
@@ -154,6 +144,16 @@ declare_sidebar_drawers! {
                 dispatch={dispatch}
                 view_dim={proof.workspace().as_ref().map_or(0, |ws| ws.view.dimension())}
             />
+        },
+        min_width: 250,
+    }
+
+    DRAWER_SETTINGS {
+        "Settings",
+        "settings",
+        "settings",
+        |_, _, _| html! {
+            <SettingsView />
         },
         min_width: 250,
     }
