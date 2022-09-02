@@ -37,8 +37,14 @@ impl Generator {
 impl fmt::Debug for Generator {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_fmt(format_args!(
-            "{}:{}^{}",
-            self.id, self.dimension, self.orientation
+            "{}:{}{}",
+            self.id,
+            self.dimension,
+            match self.orientation {
+                Orientation::Negative => "⁻",
+                Orientation::Zero => "⁰",
+                Orientation::Positive => "⁺",
+            }
         ))
     }
 }
