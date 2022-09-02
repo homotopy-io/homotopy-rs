@@ -172,3 +172,17 @@ fn inverses_2d() {
             .target()
     );
 }
+
+#[test]
+fn snake() {
+    let (sig, snake) = examples::real_snake();
+
+    assert_eq!(
+        snake
+            .identity()
+            .contract(Boundary::Target.into(), &[], 0, None, &sig)
+            .expect("failed to contract snake")
+            .target(),
+        Diagram::from(snake.source().identity())
+    );
+}
