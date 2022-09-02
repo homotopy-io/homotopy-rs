@@ -9,10 +9,10 @@ use homotopy_graphics::{
 };
 use ultraviolet::{Vec3, Vec4};
 
-use crate::{
-    buffers::{buffer_cylinder_wireframe, buffer_projected_wireframe, buffer_tetras, buffer_tris},
-    model::proof::View,
+use super::buffers::{
+    buffer_cylinder_wireframe, buffer_projected_wireframe, buffer_tetras, buffer_tris,
 };
+use crate::model::proof::View;
 
 pub struct Scene {
     pub diagram: Diagram,
