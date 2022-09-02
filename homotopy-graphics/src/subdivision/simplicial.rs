@@ -52,6 +52,7 @@ impl<'a> Subdivider<'a> {
                 position,
                 boundary,
                 generator,
+                k: v_0.k,
             })
         };
 
