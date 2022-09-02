@@ -5,7 +5,7 @@ use std::{
     hash::Hash,
 };
 
-use homotopy_common::{declare_idx, idx::IdxVec};
+use homotopy_common::{declare_idx, hash::FastHashMap, idx::IdxVec};
 use itertools::Itertools;
 use once_cell::unsync::OnceCell;
 use petgraph::{
@@ -575,7 +575,7 @@ fn collapse_base<Ix: IndexType>(
             .set(nodes)
             .expect("failed to propagate collapse subproblem");
     }
-    // check the tree of subproblems has been completed
+    // check the tree of collapse subproblems has been completed
     debug_assert!(tree[NodeIndex::new(0)].1.get().is_some());
 
     // unify all nodes of maximal dimension
@@ -594,17 +594,19 @@ fn collapse_base<Ix: IndexType>(
         .saturating_sub(max_dim_generator.dimension);
 
     // Collect the orientations of the maximum-dimensional generator by subslice.
-    let mut orientations = HashMap::<&[Height], Vec<Orientation>>::default();
+    let mut orientations = FastHashMap::<&[Height], Vec<Orientation>>::default();
 
     let mut max_dims: Vec<_> = Default::default();
-    for (i, (d, _bias, coord)) in stable.node_references() {
+    for (i, (d, _bias, coord)) in graph.node_references() {
         let g: Generator = d.try_into().unwrap();
         if g.dimension == max_dim_generator.dimension {
             if g.id != max_dim_generator.id {
                 // found distinct elements of maximal dimension
                 return Err(ContractionError::NonUniqueMaxDimensionGenerator);
             }
-            max_dims.push(i);
+            if stable.contains_node(i) {
+                max_dims.push(i);
+            };
 
             orientations
                 .entry(&coord[..codimension])
