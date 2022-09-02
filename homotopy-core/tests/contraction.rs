@@ -86,11 +86,11 @@ fn braids() {
 
 #[test]
 fn beads() {
-    let (sig, diagram) = examples::three_beads();
+    let (sig, diagram) = examples::two_beads();
 
     let contracted = diagram
         .identity()
-        .contract(Boundary::Target.into(), &[], 1, None, &sig)
+        .contract(Boundary::Target.into(), &[], 0, None, &sig)
         .unwrap();
 
     assert_debug_snapshot!("beads", contracted);
