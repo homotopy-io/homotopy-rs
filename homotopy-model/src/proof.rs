@@ -333,18 +333,6 @@ impl ProofState {
         }
     }
 
-    /// Replays a given list of valid [Action] on top of a given [ProofState].
-    pub fn replay(&mut self, actions: &[Action]) -> Result<(), ModelError> {
-        for a in actions {
-            if self.is_valid(a) {
-                self.update(a)?;
-            } else {
-                Err(ModelError::InvalidAction)?;
-            }
-        }
-        Ok(())
-    }
-
     /// Handler for [Action::EditSignature].
     fn edit_signature(&mut self, edit: &SignatureEdit) -> Result<(), ModelError> {
         // intercept remove events in order to clean-up workspace and boundaries

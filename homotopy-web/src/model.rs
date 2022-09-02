@@ -241,37 +241,40 @@ impl State {
             }
 
             Action::ImportProof(data) => {
-                let ((signature, workspace), metadata) =
-                    if let Some(res) = serialize::deserialize(&data.0) {
-                        res
-                    } else if let Some(res) = migration::deserialize(&data.0) {
-                        res
-                    } else {
-                        // Leave room for a future "replay on top of current workspace".
-                        let mut proof: Proof = Default::default();
-                        let actions: Vec<_> =
-                            serde_json::from_slice(&data.0).or(Err(ModelError::Import))?;
-                        proof.replay(&actions)?;
-                        (
-                            (proof.signature.clone(), proof.workspace.clone()),
-                            proof.metadata.clone(),
-                        )
-                    };
-                for g in signature.iter() {
-                    g.diagram
-                        .check(Mode::Deep)
-                        .map_err(|_err| ModelError::Import)?;
-                }
-                if let Some(w) = workspace.as_ref() {
-                    w.diagram
-                        .check(Mode::Deep)
-                        .map_err(|_err| ModelError::Import)?;
-                }
-                let mut proof: Proof = Default::default();
-                proof.signature = signature;
-                proof.workspace = workspace;
-                proof.metadata = metadata;
-                self.history.add(proof::Action::Imported, proof);
+                if let Some(((signature, workspace), metadata)) =
+                    serialize::deserialize(&data.0).or_else(|| migration::deserialize(&data.0))
+                {
+                    for g in signature.iter() {
+                        g.diagram
+                            .check(Mode::Deep)
+                            .map_err(|_err| ModelError::Import)?;
+                    }
+                    if let Some(w) = workspace.as_ref() {
+                        w.diagram
+                            .check(Mode::Deep)
+                            .map_err(|_err| ModelError::Import)?;
+                    }
+                    let mut proof: Proof = Default::default();
+                    proof.signature = signature;
+                    proof.workspace = workspace;
+                    proof.metadata = metadata;
+                    self.history.add(proof::Action::Imported, proof);
+                } else {
+                    // Leave room for a future "replay on top of current workspace".
+                    let mut proof: Proof = Default::default();
+                    // Act as if we imported an empty workspace
+                    self.history.add(proof::Action::Imported, proof.clone());
+                    let actions: Vec<proof::Action> =
+                        serde_json::from_slice(&data.0).or(Err(ModelError::Import))?;
+                    for a in actions {
+                        if proof.is_valid(&a) {
+                            proof.update(&a)?;
+                            self.history.add(a, proof.clone());
+                        } else {
+                            Err(ModelError::Proof(proof::ModelError::InvalidAction))?;
+                        }
+                    }
+                };
             }
 
             Action::ToggleImageExport => {
