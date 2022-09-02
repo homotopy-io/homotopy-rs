@@ -342,8 +342,11 @@ impl RewriteN {
                 .map(|c| {
                     Cone::new(
                         c.index,
-                        c.source().to_vec(),
-                        c.target().clone(),
+                        c.source()
+                            .iter()
+                            .map(|cs| cs.map(Rewrite::strip_labels))
+                            .collect(),
+                        c.target().map(Rewrite::strip_labels),
                         c.regular_slices()
                             .iter()
                             .map(Rewrite::strip_labels)
