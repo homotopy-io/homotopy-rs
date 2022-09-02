@@ -402,6 +402,35 @@ pub fn scalar_and_beads() -> (impl Signature, DiagramN) {
     )
 }
 
+pub fn real_snake() -> (impl Signature, DiagramN) {
+    let mut sig = SignatureBuilder::new();
+
+    // 0-cells
+    let x = sig.add_zero();
+
+    // 1-cells
+    let f = sig.add(x.clone(), x).unwrap();
+    let f_then_inverse = f.attach(&f.inverse(), Target, &[]).unwrap();
+    let inverse_then_f = f.inverse().attach(&f, Target, &[]).unwrap();
+
+    // 2-cells
+    let cap = f_then_inverse
+        .identity()
+        .contract(Boundary::Target.into(), &[], 0, None, &sig)
+        .expect("failed to contract f then inverse");
+    let cup = inverse_then_f
+        .identity()
+        .contract(Boundary::Source.into(), &[], 0, None, &sig)
+        .expect("failed to contract inverse then f");
+    let snake = cap
+        .attach(&f, Target, &[])
+        .unwrap()
+        .attach(&cup, Source, &[1])
+        .unwrap();
+
+    (sig, snake)
+}
+
 pub fn snake() -> (impl Signature, DiagramN) {
     let mut sig = SignatureBuilder::new();
 

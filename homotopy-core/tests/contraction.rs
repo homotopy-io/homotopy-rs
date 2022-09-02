@@ -1,4 +1,4 @@
-use homotopy_core::{examples, signature::SignatureBuilder, Bias, Boundary, DiagramN};
+use homotopy_core::{examples, signature::SignatureBuilder, Bias, Boundary, Diagram, DiagramN};
 use insta::assert_debug_snapshot;
 
 #[test]
@@ -170,5 +170,19 @@ fn inverses_2d() {
             .contract(Boundary::Target.into(), &[], 0, None, &sig)
             .unwrap()
             .target()
+    );
+}
+
+#[test]
+fn snake() {
+    let (sig, snake) = examples::real_snake();
+
+    assert_eq!(
+        snake
+            .identity()
+            .contract(Boundary::Target.into(), &[], 0, None, &sig)
+            .expect("failed to contract snake")
+            .target(),
+        Diagram::from(snake.source().identity())
     );
 }
