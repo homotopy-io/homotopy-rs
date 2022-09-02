@@ -98,11 +98,13 @@ impl State {
 
     /// Update the state in response to an [Action].
     pub fn update(&mut self, action: Action) -> Result<(), ModelError> {
-        let data = serde_json::to_string(&action).expect("Failed to serialize action.");
-        save_action(JsString::from(data));
-
         match action {
             Action::Proof(action) => {
+                // Only exfiltrate proof actions, otherwise
+                // we risk funny business with circular action imports.
+                let data = serde_json::to_string(&action).expect("Failed to serialize action.");
+                push_action(JsString::from(data));
+
                 let mut proof = self.with_proof(Clone::clone).ok_or(ModelError::Internal)?;
                 proof.update(&action).map_err(ModelError::from)?;
                 // Hide image export dialog automatically if view dimension is not 2 or 3.
@@ -118,9 +120,17 @@ impl State {
                 match dir {
                     history::Direction::Linear(Forward) => {
                         self.history.redo()?;
+                        // Nuclear way to get the action we just re-did
+                        // but logs must be accurate!
+                        if let Some(action) = self.history.get_actions().last() {
+                            let data = serde_json::to_string(&action)
+                                .expect("Failed to serialize action.");
+                            push_action(JsString::from(data));
+                        }
                     }
                     history::Direction::Linear(Backward) => {
                         self.history.undo()?;
+                        pop_action();
                     }
                 };
             }
@@ -231,28 +241,40 @@ impl State {
             }
 
             Action::ImportProof(data) => {
-                let ((signature, workspace), metadata) =
-                    match serialize::deserialize(&Vec::<u8>::from(data.clone())) {
-                        Some(res) => res,
-                        None => migration::deserialize(&Vec::<u8>::from(data))
-                            .ok_or(ModelError::Import)?,
-                    };
-
-                for g in signature.iter() {
-                    g.diagram
-                        .check(Mode::Deep)
-                        .map_err(|_err| ModelError::Import)?;
-                }
-                if let Some(w) = workspace.as_ref() {
-                    w.diagram
-                        .check(Mode::Deep)
-                        .map_err(|_err| ModelError::Import)?;
-                }
-                let mut proof: Proof = Default::default();
-                proof.signature = signature;
-                proof.workspace = workspace;
-                proof.metadata = metadata;
-                self.history.add(proof::Action::Imported, proof);
+                if let Some(((signature, workspace), metadata)) =
+                    serialize::deserialize(&data.0).or_else(|| migration::deserialize(&data.0))
+                {
+                    for g in signature.iter() {
+                        g.diagram
+                            .check(Mode::Deep)
+                            .map_err(|_err| ModelError::Import)?;
+                    }
+                    if let Some(w) = workspace.as_ref() {
+                        w.diagram
+                            .check(Mode::Deep)
+                            .map_err(|_err| ModelError::Import)?;
+                    }
+                    let mut proof: Proof = Default::default();
+                    proof.signature = signature;
+                    proof.workspace = workspace;
+                    proof.metadata = metadata;
+                    self.history.add(proof::Action::Imported, proof);
+                } else {
+                    // Leave room for a future "replay on top of current workspace".
+                    let mut proof: Proof = Default::default();
+                    // Act as if we imported an empty workspace
+                    self.history.add(proof::Action::Imported, proof.clone());
+                    let actions: Vec<proof::Action> =
+                        serde_json::from_slice(&data.0).or(Err(ModelError::Import))?;
+                    for a in actions {
+                        if proof.is_valid(&a) {
+                            proof.update(&a)?;
+                            self.history.add(a, proof.clone());
+                        } else {
+                            Err(ModelError::Proof(proof::ModelError::InvalidAction))?;
+                        }
+                    }
+                };
             }
 
             Action::ToggleImageExport => {
@@ -307,8 +329,17 @@ pub fn generate_download(name: &str, ext: &str, data: &[u8]) -> Result<(), wasm_
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen]
-    pub fn save_action(a: JsString);
+    pub fn push_action(a: JsString);
+
+    #[wasm_bindgen]
+    pub fn pop_action();
 
     #[wasm_bindgen]
     pub fn dump_actions() -> JsString;
+
+    #[wasm_bindgen]
+    pub fn download_actions();
+
+    #[wasm_bindgen]
+    pub fn display_panic_message();
 }
