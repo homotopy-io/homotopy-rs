@@ -1009,8 +1009,8 @@ impl Cone {
         singular_slices: Vec<Rewrite>,
     ) -> Self {
         let regular_slices = std::iter::zip(&source, &singular_slices)
-            .map(|(cs, slice)| cs.forward.strip_labels().compose(slice).unwrap())
-            .chain(std::iter::once(target.backward.strip_labels()))
+            .map(|(cs, slice)| cs.forward.compose(slice).unwrap())
+            .chain(std::iter::once(target.backward.clone()))
             .collect();
         Self::new(index, source, target, regular_slices, singular_slices)
     }
@@ -1048,15 +1048,10 @@ impl Cone {
     }
 
     pub(crate) fn is_identity(&self) -> bool {
-        // TODO: this might discard information in side flanges
-        // i.e.   a     b
-        //      x -> f <- x
-        //      ^  / ^ \  ^
-        //      |/c  |s d\|
-        //      x -> f <- x
-        // can be treated as an identity even if a != c or b != d
         self.len() == 1
             && self.source()[0] == *self.target()
+            && self.regular_slices()[0] == self.target().forward
+            && self.regular_slices()[1] == self.target().backward
             && self.singular_slices()[0].is_identity()
     }
 
