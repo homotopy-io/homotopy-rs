@@ -15,7 +15,9 @@ use thiserror::Error;
 
 use crate::{
     attach::BoundaryPath,
-    common::{DimensionError, Generator, MaxByDimension, Mode, Orientation, RegularHeight, SingularHeight},
+    common::{
+        DimensionError, Generator, MaxByDimension, Mode, Orientation, RegularHeight, SingularHeight,
+    },
     diagram::Diagram,
     Boundary, Height,
 };
@@ -1046,10 +1048,15 @@ impl Cone {
     }
 
     pub(crate) fn is_identity(&self) -> bool {
+        // TODO: this might discard information in side flanges
+        // i.e.   a     b
+        //      x -> f <- x
+        //      ^  / ^ \  ^
+        //      |/c  |s d\|
+        //      x -> f <- x
+        // can be treated as an identity even if a != c or b != d
         self.len() == 1
             && self.source()[0] == *self.target()
-            && self.regular_slices()[0] == self.target().forward
-            && self.regular_slices()[1] == self.target().backward
             && self.singular_slices()[0].is_identity()
     }
 
