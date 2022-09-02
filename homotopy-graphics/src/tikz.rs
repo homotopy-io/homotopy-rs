@@ -7,7 +7,7 @@ use homotopy_core::{
     complex::make_complex,
     layout::Layout,
     projection::{Depths, Projection},
-    Diagram, Generator,
+    Diagram, Generator, Orientation,
 };
 use itertools::Itertools;
 use lyon_path::{Event, Path};
@@ -22,20 +22,51 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
     let mut stylesheet = String::new();
 
     for (generator, style) in styles.as_pairs() {
-        writeln!(
-            stylesheet,
-            "\\definecolor{{{generator}}}{color}",
-            generator = name(generator),
-            color = rgb(style.color().clone()),
-        )
-        .unwrap();
+        let color = style.color();
+        for c in 0..3 {
+            for r in -1..=1 {
+                writeln!(
+                    stylesheet,
+                    "\\definecolor{{{generator}}}{color}",
+                    generator = name(generator, c, r),
+                    color = rgb(color.lighten_from_c_r(c, r).clone()),
+                )
+                .unwrap();
+            }
+        }
     }
 
     stylesheet
 }
 
-fn name(generator: Generator) -> String {
-    format!("generator-{}-{}", generator.id, generator.dimension)
+fn name(generator: Generator, c: isize, r: isize) -> String {
+    format!(
+        "generator-{}-{}-{}-{}",
+        generator.id,
+        generator.dimension,
+        c,
+        match r {
+            1 => "pos",
+            -1 => "neg",
+            _ => "zer",
+        }
+    )
+}
+
+#[inline]
+pub fn name_from_diagram_dim(generator: Generator, k: usize, diagram_dimension: usize) -> String {
+    let r = match generator.orientation {
+        Orientation::Positive => 1,
+        Orientation::Zero => 0,
+        Orientation::Negative => -1,
+    };
+    let d = diagram_dimension as isize;
+    let n = generator.dimension as isize;
+    let k = k as isize;
+
+    let c = (d - n - k).max(0);
+
+    name(generator, c, r)
 }
 
 fn rgb(color: Color) -> String {
@@ -78,12 +109,18 @@ pub fn render(
     writeln!(tikz, "\\begin{{tikzpicture}}").unwrap();
     tikz.push_str(stylesheet);
 
-    tikz.push_str(&render_inner(&surfaces, wires, show_braids));
+    tikz.push_str(&render_inner(&surfaces, wires, show_braids, diagram.dimension()));
 
     // Points are unchanged
     for (g, point) in points {
         let vertex = render_vertex(signature_styles.generator_style(g).unwrap(), point);
-        writeln!(tikz, "\\fill[{}] {}", name(g), vertex).unwrap();
+        writeln!(
+            tikz,
+            "\\fill[{}] {}",
+            name_from_diagram_dim(g, 0, diagram.dimension()),
+            vertex
+        )
+        .unwrap();
     }
 
     writeln!(tikz, "\\end{{tikzpicture}}").unwrap();
@@ -108,6 +145,7 @@ fn render_inner(
     surfaces: &[(Generator, Path)],
     wires: FastHashMap<usize, Vec<(Generator, Path)>>,
     show_braids: bool,
+    diagram_dimension: usize,
 ) -> String {
     let mut tikz = String::new();
 
@@ -130,7 +168,7 @@ fn render_inner(
         writeln!(
             tikz,
             "\\fill[{color}!75] {path};",
-            color = name(*g),
+            color = name_from_diagram_dim(*g, 2, diagram_dimension),
             path = &render_path(path)
         )
         .unwrap();
@@ -144,7 +182,7 @@ fn render_inner(
             writeln!(
                 tikz,
                 "  \\clipped{{{color}}}{{#1}}{{{path}}}",
-                color = name(*g),
+                color = name_from_diagram_dim(*g, 1, diagram_dimension),
                 path = &render_path(path)
             )
             .unwrap();
@@ -179,7 +217,7 @@ fn render_inner(
                 writeln!(
                     tikz,
                     "\\wire{{{color}}}{{{path}}};",
-                    color = name(*g),
+                    color = name_from_diagram_dim(*g, 1, diagram_dimension),
                     path = &render_path(path)
                 )
                 .unwrap();
@@ -187,7 +225,7 @@ fn render_inner(
                 writeln!(
                     tikz,
                     "\\draw[color={color}!80, line width=5pt]{path};",
-                    color = name(*g),
+                    color = name_from_diagram_dim(*g, 1, diagram_dimension),
                     path = &render_path(path)
                 )
                 .unwrap();
