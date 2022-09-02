@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1662069088394,
+  "lastUpdate": 1662115524439,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -41099,6 +41099,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 26.246,
             "range": "+/- 0.032",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "31565e6fd5d7b2b0a237a567df7238360fdda57e",
+          "message": "User-friendly panic handling (#778)\n\n* Overloaded import to accept action json files.\r\n\r\n* Added JS function to download action dump and display panic message.\r\n\r\n* Better panic message, hijacked about modal for time being.\r\n\r\n* Panic display panel now hidden, can be summoned from console.\r\n\r\n* Installed custom panic handler.\r\n\r\n* Made action exported consistent with history moves.\r\n\r\n* Refactored ImportProof to be more history-friendly.",
+          "timestamp": "2022-09-02T09:46:42Z",
+          "tree_id": "3a7233e3511d72bdfaf2d07ba110ad39eeaceec5",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/31565e6fd5d7b2b0a237a567df7238360fdda57e"
+        },
+        "date": 1662115514880,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.8349,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 10.836,
+            "range": "+/- 0.004",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 48.914,
+            "range": "+/- 0.013",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 309.74,
+            "range": "+/- 0.150",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.6106,
+            "range": "+/- 0.000",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 26.096,
+            "range": "+/- 0.037",
             "unit": "s"
           }
         ]
