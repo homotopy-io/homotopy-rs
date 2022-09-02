@@ -1,12 +1,11 @@
 ---
 source: homotopy-core/tests/contraction.rs
-assertion_line: 48
 expression: "scalar_then_inverse.identity().contract(Boundary::Target.into(), &[], 0,\n            Some(Bias::Same), &sig).unwrap().target()"
 ---
 DiagramN {
     source: DiagramN {
         source: Diagram0(
-            0:0^+,
+            0:0⁺,
         ),
         cospans: [],
     },

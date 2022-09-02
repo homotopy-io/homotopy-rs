@@ -1,12 +1,13 @@
 use std::{
     cmp::Ordering,
-    collections::{HashMap, VecDeque},
+    collections::HashMap,
     convert::{Into, TryInto},
     hash::Hash,
 };
 
-use homotopy_common::{declare_idx, hash::FastHashMap, idx::IdxVec};
+use homotopy_common::{declare_idx, idx::IdxVec};
 use itertools::Itertools;
+use once_cell::unsync::OnceCell;
 use petgraph::{
     adj::UnweightedList,
     algo::{
@@ -15,8 +16,9 @@ use petgraph::{
     },
     graph::{DefaultIx, DiGraph, IndexType, NodeIndex},
     graphmap::DiGraphMap,
+    stable_graph::{EdgeIndex, StableDiGraph},
     unionfind::UnionFind,
-    visit::{EdgeRef, IntoNodeReferences},
+    visit::{EdgeRef, IntoEdgeReferences, IntoNodeReferences, Topo, Walker},
     EdgeDirection::{Incoming, Outgoing},
 };
 use serde::{Deserialize, Serialize};
@@ -394,195 +396,190 @@ fn collapse<Ix: IndexType>(
     }
 }
 
-fn collapse_base<'a, Ix: IndexType>(
-    graph: &'a DiGraph<(Diagram, Option<Bias>, Vec<Height>), Rewrite, Ix>,
+fn collapse_base<Ix: IndexType>(
+    graph: &DiGraph<(Diagram, Option<Bias>, Vec<Height>), Rewrite, Ix>,
 ) -> Result<Cocone<Ix>, ContractionError> {
-    let mut union_find = UnionFind::new(graph.node_count());
-
-    let label = |r: &'a Rewrite| -> Option<&'a Label> {
-        let r0: &Rewrite0 = r.try_into().unwrap();
-        r0.label()
-    };
-
-    // compute the reachability closure of graph
-    let (topo, revmap): (UnweightedList<NodeIndex<Ix>>, Vec<NodeIndex<Ix>>) =
-        dag_to_toposorted_adjacency_list(&graph, &toposort(&graph, None).unwrap());
-    let (_, closure) = dag_transitive_reduction_closure(&topo);
-
-    declare_idx! {
-        struct SinkIx = DefaultIx;
-        struct ReachabilityIx = DefaultIx;
+    // helper function to unify two nodes within a stable graph
+    fn unify<N, Ix, RN, RE>(
+        graph: &mut StableDiGraph<N, Rewrite, Ix>,
+        p: NodeIndex<Ix>,
+        q: NodeIndex<Ix>,
+        quotient: &mut UnionFind<NodeIndex<Ix>>,
+        mut on_remove_node: RN,
+        mut on_remove_edge: RE,
+    ) -> Result<(), ContractionError>
+    where
+        N: Clone,
+        Ix: IndexType,
+        RE: FnMut(EdgeIndex<Ix>),
+        RN: FnMut(NodeIndex<Ix>),
+    {
+        enum Quotient<Ix> {
+            RetargetSource(NodeIndex<Ix>, NodeIndex<Ix>, EdgeIndex<Ix>),
+            RetargetTarget(NodeIndex<Ix>, NodeIndex<Ix>, EdgeIndex<Ix>),
+            RemoveNode(NodeIndex<Ix>),
+        }
+        if p == q {
+            return Ok(());
+        }
+        let (p, q) = (quotient.find_mut(p), quotient.find_mut(q));
+        quotient.union(p, q);
+        let keep = quotient.find_mut(p);
+        let remove = if keep == p { q } else { p };
+        let mut ops: Vec<Quotient<Ix>> = Default::default();
+        for e in graph
+            .edges_directed(remove, Outgoing)
+            .filter(|e| e.target() != keep)
+        {
+            ops.push(Quotient::RetargetSource(keep, e.target(), e.id()));
+        }
+        for e in graph
+            .edges_directed(remove, Incoming)
+            .filter(|e| e.source() != keep)
+        {
+            ops.push(Quotient::RetargetTarget(keep, e.source(), e.id()));
+        }
+        ops.push(Quotient::RemoveNode(remove));
+        for op in ops {
+            match op {
+                Quotient::RetargetSource(keep, target, e) => {
+                    if let Some(existing) = graph.find_edge(keep, target) {
+                        if <&Rewrite0>::try_from(&graph[existing])
+                            .expect("non 0-rewrite passed to collapse_base unify")
+                            .label()
+                            != <&Rewrite0>::try_from(&graph[e])
+                                .expect("non 0-rewrite passed to collapse_base unify")
+                                .label()
+                        {
+                            return Err(ContractionError::LabelInconsistency);
+                        }
+                    } else {
+                        graph.add_edge(keep, target, graph[e].clone());
+                    }
+                    graph.remove_edge(e);
+                    on_remove_edge(e);
+                }
+                Quotient::RetargetTarget(keep, source, e) => {
+                    if let Some(existing) = graph.find_edge(source, keep) {
+                        if <&Rewrite0>::try_from(&graph[existing])
+                            .expect("non 0-rewrite passed to collapse_base unify")
+                            .label()
+                            != <&Rewrite0>::try_from(&graph[e])
+                                .expect("non 0-rewrite passed to collapse_base unify")
+                                .label()
+                        {
+                            return Err(ContractionError::LabelInconsistency);
+                        }
+                    } else {
+                        graph.add_edge(source, keep, graph[e].clone());
+                    }
+                    graph.remove_edge(e);
+                    on_remove_edge(e);
+                }
+                Quotient::RemoveNode(remove) => {
+                    graph.remove_node(remove);
+                    on_remove_node(remove);
+                }
+            };
+        }
+        Ok(())
     }
-    let mut sink_map: FastHashMap<NodeIndex<Ix>, NodeIndex<SinkIx>> = Default::default();
-    #[allow(clippy::type_complexity)]
-    let labels_by_sink: IdxVec<
-        NodeIndex<SinkIx>,
-        (
-            IdxVec<NodeIndex<ReachabilityIx>, Option<&Label>>,
-            IdxVec<NodeIndex<ReachabilityIx>, NodeIndex<Ix>>,
-        ),
-    > = graph
-        .externals(Outgoing)
-        .enumerate()
-        .map(|(sink_ix, sink)| {
-            sink_map.insert(sink, NodeIndex::new(sink_ix));
-            let mut s = None;
-            let mut reachability_map: IdxVec<NodeIndex<ReachabilityIx>, NodeIndex<Ix>> =
-                IdxVec::new();
-            let reachable: DiGraph<_, _, ReachabilityIx> = graph.filter_map(
-                |i, n| {
-                    (i == sink || closure.contains_edge(revmap[i.index()], revmap[sink.index()]))
-                        .then(|| {
-                            let ix = reachability_map.push(i);
-                            if i == sink {
-                                s = Some(ix);
-                            }
-                            n
-                        })
-                },
-                |_, e| Some(e),
-            );
-            let s = s.unwrap();
-
-            // compute sink equivalence class
-            let mut sink_eq = VecDeque::new();
-            {
-                // DFS identity edges only with reversed edge direction
-                let prev_by_id = |cur| {
-                    reachable
-                        .edges_directed(cur, Incoming)
-                        .filter_map(|e| e.weight().is_identity().then(|| e.source()))
-                        .collect()
-                };
-                sink_eq.push_back(s);
-                let mut stack: Vec<_> = prev_by_id(s);
-                while !stack.is_empty() {
-                    let cur = stack.pop().unwrap();
-                    // TODO: check that this identity is collapsible?
-                    union_find.union(reachability_map[cur], sink);
-                    sink_eq.push_back(cur);
-                    stack.append(&mut prev_by_id(cur));
+    // mutably construct the collapsed graph
+    let mut stable = StableDiGraph::from(graph.clone());
+    // invariant: #nodes of stable = #equivalence classes of union_find
+    let mut union_find = UnionFind::new(stable.node_count());
+    // tree tracks which edges descended from other edges by graph explosion
+    // collapse subproblems need to be solved in topological order, with the root being the final one
+    declare_idx! { struct TreeIx = DefaultIx; }
+    let tree = {
+        let mut tree: DiGraph<_, _, TreeIx> = Default::default();
+        let root = tree.add_node((None, OnceCell::new()));
+        for (ix, (_, _, coord)) in stable.node_references() {
+            let mut cur = root;
+            for c in coord {
+                if let Some(existing) = tree
+                    .neighbors_directed(cur, Incoming)
+                    .find(|n| tree[*n].0 == Some(*c))
+                {
+                    cur = existing;
+                } else {
+                    let next = tree.add_node((Some(*c), OnceCell::new()));
+                    tree.add_edge(next, cur, ());
+                    cur = next;
                 }
             }
-
-            // compute sets of shortest paths to sink equivalence class and ensure consistency
-            let labels = {
-                let mut frontier: VecDeque<_> = sink_eq.into_iter().map(|n| (n, 0)).collect();
-                let mut visited: IdxVec<
-                    NodeIndex<ReachabilityIx>,
-                    Option<(Option<&Label>, usize)>,
-                > = IdxVec::splat(None, reachable.node_count());
-                for (initial, _) in &frontier {
-                    visited[*initial] = Some((None, 0));
-                }
-
-                while !frontier.is_empty() {
-                    let (cur, rank) = frontier.pop_front().unwrap();
-                    for incoming in reachable.edges_directed(cur, Incoming) {
-                        let r = <&Rewrite0>::try_from(*incoming.weight())
-                            .expect("n-rewrite passed to collapse_base");
-                        let previous = visited[cur].expect("target not already visited!").0;
-                        if let (Some(p), Some(c)) = (previous, r.label()) {
-                            if p != c {
-                                return Err(ContractionError::LabelInconsistency);
-                            }
-                        }
-                        let new = previous.or_else(|| r.label());
-                        match visited[incoming.source()] {
-                            Some((_, d)) if d < rank + 1 => { /* not on shortest path */ }
-                            Some((l, d)) if d == rank + 1 => match (l, r.label()) {
-                                (Some(existing), Some(new))
-                                    if existing != new || visited[cur].unwrap().0.is_some() =>
-                                {
-                                    return Err(ContractionError::LabelInconsistency)
-                                }
-                                _ => {
-                                    // new node does not exhibit inconsistency
-                                    frontier.push_back((incoming.source(), rank + 1));
-                                }
-                            },
-                            None => {
-                                // haven't found this node yet
-                                visited[incoming.source()] = Some((new, rank + 1));
-                                frontier.push_back((incoming.source(), rank + 1));
-                            }
-                            #[allow(clippy::unreachable)]
-                            _ => unreachable!(),
-                        }
-                    }
-                }
-                visited.map(|x| {
-                    let (label, rank) =
-                        x.expect("failed to visit all nodes when determining per-sink label");
-                    debug_assert!(if rank == 0 {
-                        label.is_none()
-                    } else {
-                        label.is_some()
-                    });
-                    label
-                })
-            };
-
-            Ok((labels, reachability_map))
-        })
-        .fold_ok(IdxVec::new(), |mut acc, x| {
-            acc.push(x);
-            acc
-        })?;
-
-    // find collapsible edges
-    for (s, t) in graph.edge_references().filter_map(|e| {
-        let r: &Rewrite0 = e.weight().try_into().unwrap();
-        r.0.as_ref()
-            .map_or(true, |(s, t, _)| s.id == t.id)
-            .then(|| (e.source(), e.target()))
-    }) {
-        if graph
-            .externals(Outgoing)
-            .filter(|sink| {
-                (s.index() == sink.index()
-                    || closure.contains_edge(revmap[s.index()], revmap[sink.index()]))
-                    && (t.index() == sink.index()
-                        || closure.contains_edge(revmap[t.index()], revmap[sink.index()]))
-            })
-            .all(|sink| {
-                let (labels, reachability_map) = &labels_by_sink[sink_map[&sink]];
-                let left = labels
-                    .iter()
-                    .find_map(|(reachability_ix, &label)| {
-                        (reachability_map[reachability_ix] == s).then(|| label)
-                    })
-                    .unwrap();
-                let right = labels
-                    .iter()
-                    .find_map(|(reachability_ix, &label)| {
-                        (reachability_map[reachability_ix] == t).then(|| label)
-                    })
-                    .unwrap();
-                left == right
-            })
-            && (graph.edges_directed(s, Incoming).all(|p| {
-                if let Some(c) = graph.find_edge(p.source(), t) {
-                    label(p.weight()) == label(graph.edge_weight(c).unwrap())
-                } else {
-                    true
-                }
-            }))
-            && (graph.edges_directed(t, Outgoing).all(|n| {
-                if let Some(c) = graph.find_edge(s, n.target()) {
-                    label(n.weight()) == label(graph.edge_weight(c).unwrap())
-                } else {
-                    true
-                }
-            }))
-        {
-            // (s, t) collapsible
-            union_find.union(s, t);
+            tree[cur]
+                .1
+                .set(vec![ix])
+                .expect("failed to initialise collapse subproblem tree");
         }
-    }
+        tree
+    };
+    for n in Topo::new(&tree).iter(&tree) {
+        // collapse subproblem
+        let mut children = tree.neighbors_directed(n, Incoming).detach();
+        let mut nodes = vec![];
+        while let Some(child) = children.next_node(&tree) {
+            nodes.extend_from_slice(tree[child].1.get().unwrap());
+        }
+        if nodes.is_empty() {
+            // n is a leaf
+            continue;
+        } else {
+            let mut quotient: Vec<_> = Default::default();
+            // find collapsible edges wrt nodes
+            for e in stable.edge_references().filter(|e| {
+                // e is contained within nodes
+                nodes.contains(&e.source()) && nodes.contains(&e.target()) && {
+                    // e is an identity rewrite
+                    let r: &Rewrite0 = e.weight().try_into().unwrap();
+                    r.0.as_ref().map_or(true, |(s, t, _)| s.id == t.id)
+                }
+            }
+                // check triangles within nodes which might refute collapsibility of e
+            && (stable.edges_directed(e.source(), Incoming).filter(|p| nodes.contains(&p.source())).all(|p| {
+                if let Some(c) = stable.find_edge(p.source(), e.target()) {
+                    <&Rewrite0>::try_from(p.weight()).unwrap().label() == <&Rewrite0>::try_from(stable.edge_weight(c).unwrap()).unwrap().label()
+                } else {
+                    true
+                }
+            }))
+            && (stable.edges_directed(e.target(), Outgoing).filter(|n| nodes.contains(&n.target())).all(|n| {
+                if let Some(c) = stable.find_edge(e.source(), n.target()) {
+                    <&Rewrite0>::try_from(n.weight()).unwrap().label() == <&Rewrite0>::try_from(stable.edge_weight(c).unwrap()).unwrap().label()
+                } else {
+                    true
+                }
+            })))
+             {
+                    // e is collapsible
+                    quotient.push((e.source(), e.target()));
+            }
 
-    // unify all equivalence classes of maximal dimension
-    let (max_dim_index, max_dim_generator) = graph
+            for (s, t) in quotient {
+                unify(
+                    &mut stable,
+                    s,
+                    t,
+                    &mut union_find,
+                    |rn| {
+                        nodes.retain(|&n| n != rn);
+                    },
+                    |_re| (),
+                )
+                .expect("collapsed along non collapsible edge!");
+            }
+        }
+        tree[n]
+            .1
+            .set(nodes)
+            .expect("failed to propagate collapse subproblem");
+    }
+    // check the tree of subproblems has been completed
+    debug_assert!(tree[NodeIndex::new(0)].1.get().is_some());
+
+    // unify all nodes of maximal dimension
+    let (max_dim_index, max_dim_generator) = stable
         .node_references()
         .map(|(i, (d, _bias, _coord))| {
             let g: Generator = d.try_into().unwrap();
@@ -591,7 +588,7 @@ fn collapse_base<'a, Ix: IndexType>(
         .max_by_key(|(_, g)| g.dimension)
         .ok_or(ContractionError::NonUniqueMaxDimensionGenerator)?;
 
-    let codimension = graph[max_dim_index]
+    let codimension = stable[max_dim_index]
         .2
         .len()
         .saturating_sub(max_dim_generator.dimension);
@@ -599,35 +596,20 @@ fn collapse_base<'a, Ix: IndexType>(
     // Collect the orientations of the maximum-dimensional generator by subslice.
     let mut orientations = HashMap::<&[Height], Vec<Orientation>>::default();
 
-    for (i, (d, _bias, coord)) in graph.node_references() {
+    let mut max_dims: Vec<_> = Default::default();
+    for (i, (d, _bias, coord)) in stable.node_references() {
         let g: Generator = d.try_into().unwrap();
         if g.dimension == max_dim_generator.dimension {
             if g.id != max_dim_generator.id {
                 // found distinct elements of maximal dimension
                 return Err(ContractionError::NonUniqueMaxDimensionGenerator);
             }
-            union_find.union(i, max_dim_index);
+            max_dims.push(i);
 
             orientations
                 .entry(&coord[..codimension])
                 .or_default()
                 .push(g.orientation);
-        }
-    }
-
-    // compute quotient graph
-    let mut quotient = DiGraphMap::new();
-    for e in graph.edge_references() {
-        let s = union_find.find_mut(e.source());
-        let t = union_find.find_mut(e.target());
-        if s != t {
-            let label = label(e.weight());
-            if let Some(old) = quotient.add_edge(s, t, label) {
-                if old != label {
-                    // quotient graph not well-defined
-                    return Err(ContractionError::LabelInconsistency);
-                }
-            }
         }
     }
 
@@ -664,6 +646,17 @@ fn collapse_base<'a, Ix: IndexType>(
         slice_orientations[0]
     };
 
+    for i in max_dims {
+        unify(
+            &mut stable,
+            i,
+            max_dim_index,
+            &mut union_find,
+            |_rn| (),
+            |_re| (),
+        )?;
+    }
+
     let colimit = Generator {
         orientation,
         ..max_dim_generator
@@ -680,12 +673,16 @@ fn collapse_base<'a, Ix: IndexType>(
                     debug_assert_eq!(g.id, colimit.id);
                     Rewrite0::new(g, colimit, Label::new(None))
                 } else {
-                    let label = quotient
-                        .edge_weight(p, q)
-                        .copied()
-                        .ok_or(ContractionError::Invalid)?
-                        .unwrap();
-                    Rewrite0::new(g, colimit, label.clone())
+                    let label = <&Rewrite0>::try_from(
+                        &stable[stable
+                            .find_edge(p, q)
+                            .expect("node in collapse base does not connect to max_dim_index")],
+                    )
+                    .expect("non 0-rewrite passed to collapse_base")
+                    .label()
+                    .cloned()
+                    .unwrap();
+                    Rewrite0::new(g, colimit, label)
                 }
             };
             legs.push(r.into());
