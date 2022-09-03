@@ -4,7 +4,10 @@ use super::{DrawerViewSize, Sidebar, SidebarButton, SidebarDrawer, SidebarMsg};
 #[cfg(debug_assertions)]
 use crate::app::debug::DebugView;
 use crate::{
-    app::{project::ProjectView, settings::SettingsView, signature::SignatureView},
+    app::{
+        image_export::ImageExportView, project::ProjectView, settings::SettingsView,
+        signature::SignatureView,
+    },
     components::Visible,
     model::{
         self,
@@ -116,16 +119,6 @@ declare_sidebar_drawers! {
         min_width: 250,
     }
 
-    DRAWER_SETTINGS {
-        "Settings",
-        "settings",
-        "settings",
-        |_, _, _| html! {
-            <SettingsView />
-        },
-        min_width: 250,
-    }
-
     DRAWER_SIGNATURE {
         "Signature",
         "signature",
@@ -140,6 +133,29 @@ declare_sidebar_drawers! {
         min_width: 250,
         top_icon: "create_new_folder",
         top_icon_action: |proof: &Proof| model::Action::Proof(Action::EditSignature(SignatureEdit::NewFolder(proof.signature().as_tree().root()))),
+    }
+
+    DRAWER_IMAGE_EXPORT {
+        "Image export",
+        "ImageExport",
+        "output",
+        |dispatch, proof: &Proof, _| html! {
+            <ImageExportView
+                dispatch={dispatch}
+                view_dim={proof.workspace().as_ref().map_or(0, |ws| ws.view.dimension())}
+            />
+        },
+        min_width: 250,
+    }
+
+    DRAWER_SETTINGS {
+        "Settings",
+        "settings",
+        "settings",
+        |_, _, _| html! {
+            <SettingsView />
+        },
+        min_width: 250,
     }
 
     #[cfg(debug_assertions)]

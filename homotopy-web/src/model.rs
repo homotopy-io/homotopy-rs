@@ -15,10 +15,9 @@ pub enum Action {
     ImportProof(SerializedData),
     ExportProof,
     ExportActions,
-    ToggleImageExport,
-    ExportTikz,
+    ExportTikz(bool),
     ExportSvg,
-    ExportManim,
+    ExportManim(bool),
     ExportStl,
 }
 
@@ -29,10 +28,7 @@ impl Action {
 
         match self {
             Self::Proof(action) => proof.is_valid(action),
-            Self::ToggleImageExport => proof.workspace.as_ref().map_or(false, |ws| {
-                ws.view.dimension() == 2 || ws.view.dimension() == 3
-            }),
-            Self::ExportTikz | Self::ExportSvg | Self::ExportManim => proof
+            Self::ExportTikz(_) | Self::ExportSvg | Self::ExportManim(_) => proof
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.view.dimension() == 2),
@@ -107,11 +103,6 @@ impl State {
 
                 let mut proof = self.with_proof(Clone::clone).ok_or(ModelError::Internal)?;
                 proof.update(&action).map_err(ModelError::from)?;
-                // Hide image export dialog automatically if view dimension is not 2 or 3.
-                proof.show_image_export = proof.show_image_export
-                    && proof.workspace.as_ref().map_or(false, |ws| {
-                        ws.view.dimension() == 2 || ws.view.dimension() == 3
-                    });
                 self.history.add(action, proof);
             }
 
@@ -135,7 +126,7 @@ impl State {
                 };
             }
 
-            Action::ExportTikz => {
+            Action::ExportTikz(with_braid) => {
                 let signature = self
                     .with_proof(|p| p.signature.clone())
                     .ok_or(ModelError::Internal)?;
@@ -143,7 +134,7 @@ impl State {
                     .with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram())
                     .ok_or(ModelError::Internal)?;
                 let stylesheet = tikz::stylesheet(&signature);
-                let data = tikz::render(&diagram, &stylesheet, &signature).unwrap();
+                let data = tikz::render(&diagram, &stylesheet, &signature, with_braid).unwrap();
                 generate_download("homotopy_io_export", "tikz", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
@@ -194,7 +185,7 @@ impl State {
                     .map_err(ModelError::Export)?;
             }
 
-            Action::ExportManim => {
+            Action::ExportManim(use_opengl) => {
                 let signature = self
                     .with_proof(|p| p.signature.clone())
                     .ok_or(ModelError::Internal)?;
@@ -202,7 +193,6 @@ impl State {
                     .with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram())
                     .ok_or(ModelError::Internal)?;
                 let stylesheet = manim::stylesheet(&signature);
-                let use_opengl = false;
                 let data = manim::render(&diagram, &signature, &stylesheet, use_opengl).unwrap();
                 generate_download("homotopy_io_export", "py", data.as_bytes())
                     .map_err(ModelError::Export)?;
@@ -275,12 +265,6 @@ impl State {
                         }
                     }
                 };
-            }
-
-            Action::ToggleImageExport => {
-                let mut proof = self.with_proof(Clone::clone).ok_or(ModelError::Internal)?;
-                proof.show_image_export = !proof.show_image_export;
-                self.history.add(proof::Action::Nothing, proof);
             }
         }
 
