@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1662115524439,
+  "lastUpdate": 1662199112169,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -41159,6 +41159,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 26.096,
             "range": "+/- 0.037",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "50454943+H-Yulong@users.noreply.github.com",
+            "name": "Yulong Huang",
+            "username": "H-Yulong"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "91d2e96ea0f1103fd40f7b384d48112b57bf2acc",
+          "message": "refactor image export button (#772)\n\n* refactor image export button\r\n\r\ntweak\r\n\r\ntweak\r\n\r\n* add opengl option checkbox to manim\r\n\r\n* tweak\r\n\r\n* style tweak\r\n\r\n* add braiding checkbox\r\n\r\n* style tweak\r\n\r\n* link options\r\n\r\n* add Chiara's fix patch\r\n\r\n* link tikz braid option\r\n\r\n* swap sidebar button positions\r\n\r\nCo-authored-by: Yulong Huang <yh419@cam.ac.uk>",
+          "timestamp": "2022-09-03T09:54:16+01:00",
+          "tree_id": "1d689164671024da424b5f86da3fb262d93b65f2",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/91d2e96ea0f1103fd40f7b384d48112b57bf2acc"
+        },
+        "date": 1662199098769,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.1525,
+            "range": "+/- 0.067",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 11.989,
+            "range": "+/- 0.191",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 54.2,
+            "range": "+/- 1.020",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 339.48,
+            "range": "+/- 4.350",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.8538,
+            "range": "+/- 0.025",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 28.536,
+            "range": "+/- 0.101",
             "unit": "s"
           }
         ]
