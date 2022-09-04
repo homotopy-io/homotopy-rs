@@ -14,7 +14,7 @@ use lyon_path::{Event, Path};
 
 use crate::{
     path_util::simplify_graphic,
-    style::{GeneratorStyle, SignatureStyleData, VertexShape},
+    style::{GeneratorRepresentation, GeneratorStyle, SignatureStyleData, VertexShape},
     svg::render::GraphicElement,
 };
 
@@ -26,12 +26,16 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
     for (generator, style) in styles.as_pairs() {
         let color = style.color();
         for c in 0..3 {
-            for r in -1..=1 {
+            for orientation in [
+                Orientation::Positive,
+                Orientation::Zero,
+                Orientation::Negative,
+            ] {
                 writeln!(
                     stylesheet,
                     "            \"{generator}\": \"{color}\",",
-                    generator = name(generator, c, r),
-                    color = color.lighten_from_c_r(c, r).hex()
+                    generator = name(generator, c, orientation),
+                    color = color.lighten(c, orientation).hex()
                 )
                 .unwrap();
             }
@@ -41,34 +45,34 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
     stylesheet
 }
 
-fn name(generator: Generator, c: isize, r: isize) -> String {
+#[inline]
+pub fn name_from_diagram_dim(
+    generator: Generator,
+    diagram_dimension: usize,
+    representation: GeneratorRepresentation,
+) -> String {
+    let d = diagram_dimension;
+    let n = generator.dimension;
+    let k = representation as usize;
+
+    let c = d.saturating_sub(n + k);
+
+    name(generator, c, generator.orientation)
+}
+
+#[inline]
+fn name(generator: Generator, c: usize, orientation: Orientation) -> String {
     format!(
         "generator_{}_{}_{}_{}",
         generator.id,
         generator.dimension,
         c,
-        match r {
-            1 => "pos",
-            -1 => "neg",
-            _ => "zer",
+        match orientation {
+            Orientation::Positive => "pos",
+            Orientation::Negative => "neg",
+            Orientation::Zero => "zer",
         }
     )
-}
-
-#[inline]
-pub fn name_from_diagram_dim(generator: Generator, k: usize, diagram_dimension: usize) -> String {
-    let r = match generator.orientation {
-        Orientation::Positive => 1,
-        Orientation::Zero => 0,
-        Orientation::Negative => -1,
-    };
-    let d = diagram_dimension as isize;
-    let n = generator.dimension as isize;
-    let k = k as isize;
-
-    let c = (d - n - k).max(0);
-
-    name(generator, c, r)
 }
 
 pub fn render(
@@ -82,7 +86,6 @@ pub fn render(
     let depths = Depths::<2>::new(diagram)?;
     let projection = Projection::<2>::new(diagram, &layout, &depths)?;
     let graphic = simplify_graphic(&GraphicElement::build(
-        diagram,
         &complex,
         &layout,
         &projection,
@@ -189,7 +192,7 @@ pub fn render(
             manim,
             "{ind}{ind}surfaces.add(self.build_path({path},width=1).set_fill(C[\"{color}\"],0.75)) # path_{id}_{dim}",
             ind=INDENT,
-            color=name_from_diagram_dim(g, 2, diagram.dimension()),
+            color=name_from_diagram_dim(g, diagram.dimension(), GeneratorRepresentation::Surface),
             id=g.id,
             dim=g.dimension,
             path=&render_path(&path)
@@ -233,7 +236,7 @@ pub fn render(
         for (g, path) in &layer {
             writeln!(manim, "{ind}{ind}wires.add(self.build_path({path},width=20,color=C[\"{color}\"])) # path_{id}_{dim}",
                 ind=INDENT,
-                color=name_from_diagram_dim(*g, 1, diagram.dimension()),
+                color=name_from_diagram_dim(*g, diagram.dimension(), GeneratorRepresentation::Wire),
                 id=g.id,
                 dim=g.dimension,
                 path=&render_path(path)
@@ -259,7 +262,7 @@ pub fn render(
     for (g, point) in points {
         let vertex = render_vertex(
             signature_styles.generator_style(g).unwrap(),
-            &name_from_diagram_dim(g, 0, diagram.dimension()),
+            &name_from_diagram_dim(g, diagram.dimension(), GeneratorRepresentation::Point),
         );
         writeln!(
             manim,

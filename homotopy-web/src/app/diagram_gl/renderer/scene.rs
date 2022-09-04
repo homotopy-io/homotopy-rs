@@ -1,7 +1,7 @@
 use std::{mem, rc::Rc};
 
 use homotopy_common::idx::IdxVec;
-use homotopy_core::{Diagram, Generator, Orientation};
+use homotopy_core::{Diagram, Generator};
 use homotopy_gl::{array::VertexArray, vertex_array, GlCtx, Result};
 use homotopy_graphics::{
     geom::{CubicalGeometry, SimplicialGeometry, VertData},
@@ -173,20 +173,15 @@ impl Scene {
         }
 
         let color_of = |generator: &Generator, k: usize| -> Vec3 {
-            let d = self.diagram.dimension() as isize;
-            let n = generator.dimension as isize;
-            let k = k as isize;
-            let c = (d - n - k).max(0);
-            let r = match generator.orientation {
-                Orientation::Positive => 1,
-                Orientation::Zero => 0,
-                Orientation::Negative => -1,
-            };
+            let d = self.diagram.dimension();
+            let n = generator.dimension;
+            let k = k as usize;
+            let c = d.saturating_sub(n + k);
             signature_styles
                 .generator_style(*generator)
                 .unwrap()
                 .color()
-                .lighten_from_c_r(c, r)
+                .lighten(c, generator.orientation)
                 .into_linear_f32_components()
                 .into()
         };

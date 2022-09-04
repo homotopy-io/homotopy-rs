@@ -14,7 +14,7 @@ use lyon_path::{Event, Path};
 
 use crate::{
     path_util::simplify_graphic,
-    style::{Color, GeneratorStyle, SignatureStyleData, VertexShape},
+    style::{Color, GeneratorRepresentation, GeneratorStyle, SignatureStyleData, VertexShape},
     svg::render::GraphicElement,
 };
 
@@ -24,12 +24,16 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
     for (generator, style) in styles.as_pairs() {
         let color = style.color();
         for c in 0..3 {
-            for r in -1..=1 {
+            for orientation in [
+                Orientation::Positive,
+                Orientation::Zero,
+                Orientation::Negative,
+            ] {
                 writeln!(
                     stylesheet,
                     "\\definecolor{{{generator}}}{color}",
-                    generator = name(generator, c, r),
-                    color = rgb(color.lighten_from_c_r(c, r).clone()),
+                    generator = name(generator, c, orientation),
+                    color = rgb(color.lighten(c, orientation).clone()),
                 )
                 .unwrap();
             }
@@ -39,34 +43,33 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
     stylesheet
 }
 
-fn name(generator: Generator, c: isize, r: isize) -> String {
+#[inline]
+pub fn name_from_diagram_dim(
+    generator: Generator,
+    diagram_dimension: usize,
+    representation: GeneratorRepresentation,
+) -> String {
+    let d = diagram_dimension;
+    let n = generator.dimension;
+    let k = representation as usize;
+
+    let c = d.saturating_sub(n + k);
+
+    name(generator, c, generator.orientation)
+}
+
+fn name(generator: Generator, c: usize, orientation: Orientation) -> String {
     format!(
         "generator-{}-{}-{}-{}",
         generator.id,
         generator.dimension,
         c,
-        match r {
-            1 => "pos",
-            -1 => "neg",
-            _ => "zer",
+        match orientation {
+            Orientation::Positive => "pos",
+            Orientation::Negative => "neg",
+            Orientation::Zero => "zer",
         }
     )
-}
-
-#[inline]
-pub fn name_from_diagram_dim(generator: Generator, k: usize, diagram_dimension: usize) -> String {
-    let r = match generator.orientation {
-        Orientation::Positive => 1,
-        Orientation::Zero => 0,
-        Orientation::Negative => -1,
-    };
-    let d = diagram_dimension as isize;
-    let n = generator.dimension as isize;
-    let k = k as isize;
-
-    let c = (d - n - k).max(0);
-
-    name(generator, c, r)
 }
 
 fn rgb(color: Color) -> String {
@@ -85,7 +88,6 @@ pub fn render(
     let depths = Depths::<2>::new(diagram)?;
     let projection = Projection::<2>::new(diagram, &layout, &depths)?;
     let graphic = simplify_graphic(&GraphicElement::build(
-        diagram,
         &complex,
         &layout,
         &projection,
@@ -117,7 +119,7 @@ pub fn render(
         writeln!(
             tikz,
             "\\fill[{}] {}",
-            name_from_diagram_dim(g, 0, diagram.dimension()),
+            name_from_diagram_dim(g, diagram.dimension(), GeneratorRepresentation::Point),
             vertex
         )
         .unwrap();
@@ -168,7 +170,7 @@ fn render_inner(
         writeln!(
             tikz,
             "\\fill[{color}!75] {path};",
-            color = name_from_diagram_dim(*g, 2, diagram_dimension),
+            color = name_from_diagram_dim(*g, diagram_dimension, GeneratorRepresentation::Surface),
             path = &render_path(path)
         )
         .unwrap();
@@ -182,7 +184,8 @@ fn render_inner(
             writeln!(
                 tikz,
                 "  \\clipped{{{color}}}{{#1}}{{{path}}}",
-                color = name_from_diagram_dim(*g, 1, diagram_dimension),
+                color =
+                    name_from_diagram_dim(*g, diagram_dimension, GeneratorRepresentation::Surface),
                 path = &render_path(path)
             )
             .unwrap();
@@ -217,7 +220,7 @@ fn render_inner(
                 writeln!(
                     tikz,
                     "\\wire{{{color}}}{{{path}}};",
-                    color = name_from_diagram_dim(*g, 1, diagram_dimension),
+                    color = name_from_diagram_dim(*g, diagram_dimension, GeneratorRepresentation::Wire),
                     path = &render_path(path)
                 )
                 .unwrap();
@@ -225,7 +228,7 @@ fn render_inner(
                 writeln!(
                     tikz,
                     "\\draw[color={color}!80, line width=5pt]{path};",
-                    color = name_from_diagram_dim(*g, 1, diagram_dimension),
+                    color = name_from_diagram_dim(*g, diagram_dimension, GeneratorRepresentation::Wire),
                     path = &render_path(path)
                 )
                 .unwrap();
