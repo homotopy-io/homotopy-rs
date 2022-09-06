@@ -5,8 +5,8 @@ use super::{DrawerViewSize, Sidebar, SidebarButton, SidebarDrawer, SidebarMsg};
 use crate::app::debug::DebugView;
 use crate::{
     app::{
-        image_export::ImageExportView, project::ProjectView, settings::SettingsView,
-        signature::SignatureView,
+        account::AccountView, image_export::ImageExportView, project::ProjectView,
+        settings::SettingsView, signature::SignatureView,
     },
     components::Visible,
     model::{
@@ -25,7 +25,7 @@ macro_rules! declare_sidebar_drawers {
             $icon:literal,
             $body:expr,
             $(min_width: $min_width:expr,)?
-            $(top_icon: $top_icon:literal,
+            $(top_icon: $top_icon:expr,
               top_icon_action: $action:expr,)?
         }
     )*) => {
@@ -117,6 +117,22 @@ declare_sidebar_drawers! {
             />
         },
         min_width: 250,
+    }
+
+    DRAWER_LOGIN {
+        "Account",
+        "account",
+        "account_circle",
+        |_, _, _| html! {
+            <AccountView
+            />
+        },
+        min_width: 250,
+        top_icon: "login",
+        top_icon_action: |_: &Proof| model::Action::Proof(Action::Nothing),
+        // TODO(yh): should be able to know the login state
+        // top_icon: if logged in then show logout icon, vise versa
+        // top_icon_action: similar
     }
 
     DRAWER_SIGNATURE {
