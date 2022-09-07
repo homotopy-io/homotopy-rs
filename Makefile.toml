@@ -79,4 +79,4 @@ args = [
 ]
 
 [tasks.serve]
-run_task = { name = ["build-highs", "dist-static-watch", "build-wasm-watch", "devserver"], fork = true, parallel = true }
+run_task = { name = ["dist-static-watch", "build-wasm-watch", "devserver"], fork = true, parallel = true }

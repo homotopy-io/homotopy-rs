@@ -22,7 +22,6 @@ impl Component for AccountView {
         html! {
             <>
                 <h3>{"Username"}</h3>
-                <h4>{"List of projects"}</h4>
             </>
         }
     }

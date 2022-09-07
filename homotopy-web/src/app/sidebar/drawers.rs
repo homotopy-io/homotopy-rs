@@ -129,7 +129,7 @@ declare_sidebar_drawers! {
         },
         min_width: 250,
         top_icon: "login",
-        top_icon_action: |_: &Proof| model::Action::Proof(Action::Nothing),
+        top_icon_action: |_proof: &Proof| model::Action::Proof(Action::Nothing),
         // TODO(yh): should be able to know the login state
         // top_icon: if logged in then show logout icon, vise versa
         // top_icon_action: similar
