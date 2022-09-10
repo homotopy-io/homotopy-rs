@@ -1,6 +1,10 @@
 use homotopy_core::{
-    factorization::factorize, signature::SignatureBuilder, Boundary, DiagramN, Height, Rewrite,
-    RewriteN, SliceIndex,
+    attach::BoundaryPath,
+    factorization::factorize,
+    rewrite::{Cone, Label},
+    signature::SignatureBuilder,
+    Boundary, Cospan, Diagram, DiagramN, Generator, Height, Rewrite, Rewrite0, RewriteN,
+    SliceIndex,
 };
 
 #[test]
@@ -172,4 +176,77 @@ fn bead_rewrite_base() -> Result<(), String> {
     assert_eq!(with_g.next(), Some(h.into()));
 
     Ok(())
+}
+
+#[test]
+fn scalar_braid() {
+    use Boundary::{Source, Target};
+    use Height::Regular;
+
+    let x = Generator::new(0, 0);
+    let f = Generator::new(1, 2);
+    let s = Generator::new(2, 3);
+
+    let f_cospan = Cospan {
+        forward: Rewrite0::new(x, f, Label::new(Some((1, BoundaryPath(Source, 1), vec![])))).into(),
+        backward: Rewrite0::new(x, f, Label::new(Some((1, BoundaryPath(Target, 1), vec![]))))
+            .into(),
+    };
+    let s_cospan = Cospan {
+        forward: Rewrite0::new(x, s, Label::new(Some((2, BoundaryPath(Source, 2), vec![])))).into(),
+        backward: Rewrite0::new(x, s, Label::new(Some((2, BoundaryPath(Target, 2), vec![]))))
+            .into(),
+    };
+
+    let rewrite_f = RewriteN::new(
+        1,
+        vec![
+            Cone::new_unit(
+                0,
+                s_cospan.clone(),
+                Rewrite0::new(
+                    x,
+                    s,
+                    Label::new(Some((
+                        2,
+                        BoundaryPath(Source, 0),
+                        vec![Regular(0), Regular(0)],
+                    ))),
+                )
+                .into(),
+            ),
+            Cone::new_unit(
+                0,
+                f_cospan.clone(),
+                Rewrite0::new(
+                    x,
+                    f,
+                    Label::new(Some((1, BoundaryPath(Source, 0), vec![Regular(0)]))),
+                )
+                .into(),
+            ),
+        ],
+    )
+    .into();
+
+    let rewrite_g = RewriteN::new(
+        1,
+        vec![Cone::new_unit(
+            0,
+            s_cospan.clone(),
+            Rewrite0::new(
+                x,
+                s,
+                Label::new(Some((2, BoundaryPath(Source, 1), vec![Regular(0)]))),
+            )
+            .into(),
+        )],
+    )
+    .into();
+
+    let target = DiagramN::new(Diagram::Diagram0(x), vec![s_cospan, f_cospan]).into();
+
+    let mut fact = factorize(rewrite_f, rewrite_g, target);
+
+    assert!(fact.next().is_some())
 }

@@ -2,6 +2,9 @@ use homotopy_core::monotone::MonotoneIterator;
 
 #[test]
 fn monotone_sequences() {
+    let empty = MonotoneIterator::new(false, &[]);
+    assert_eq!(empty.collect::<Vec<_>>(), [vec![].into()],);
+
     let iterator0_1_2 = MonotoneIterator::new(false, &[0..2, 0..2]);
     assert_eq!(
         iterator0_1_2.collect::<Vec<_>>(),

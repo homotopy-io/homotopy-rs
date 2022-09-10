@@ -561,7 +561,7 @@ impl Hash for RewriteInternal {
 }
 
 impl RewriteN {
-    pub(crate) fn new(dimension: usize, cones: Vec<Cone>) -> Self {
+    pub fn new(dimension: usize, cones: Vec<Cone>) -> Self {
         let rewrite = Self::new_unsafe(dimension, cones);
         if cfg!(feature = "safety-checks") {
             rewrite.check(Mode::Shallow).expect("Rewrite is malformed");
@@ -972,7 +972,7 @@ impl fmt::Debug for Cone {
 
 impl Cone {
     #[inline]
-    pub(crate) fn new(
+    pub fn new(
         index: usize,
         source: Vec<Cospan>,
         target: Cospan,
@@ -996,7 +996,7 @@ impl Cone {
 
     /// Constructs a unit cone with a unique regular slice.
     #[inline]
-    pub(crate) fn new_unit(index: usize, target: Cospan, regular_slice: Rewrite) -> Self {
+    pub fn new_unit(index: usize, target: Cospan, regular_slice: Rewrite) -> Self {
         Self::new(index, vec![], target, vec![regular_slice], vec![])
     }
 
