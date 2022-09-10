@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1662199112169,
+  "lastUpdate": 1662833623266,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -41219,6 +41219,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 28.536,
             "range": "+/- 0.101",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "distinct": true,
+          "id": "76b4ac01f7e0eee417f9ed984cf9da59e7ef87b4",
+          "message": "Added GDB pretty printer.",
+          "timestamp": "2022-09-10T17:53:35+01:00",
+          "tree_id": "d15c3939d405192bbcbe01ad485432c729084621",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/76b4ac01f7e0eee417f9ed984cf9da59e7ef87b4"
+        },
+        "date": 1662833609904,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.7125,
+            "range": "+/- 0.067",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 14.132,
+            "range": "+/- 0.226",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 63.655,
+            "range": "+/- 0.917",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 406.13,
+            "range": "+/- 3.580",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 3.4146,
+            "range": "+/- 0.013",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 34.26,
+            "range": "+/- 0.076",
             "unit": "s"
           }
         ]
