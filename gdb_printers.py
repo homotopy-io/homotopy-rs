@@ -56,6 +56,19 @@ class SignatureItemPrinter:
             return f'{self.val["Folder"]["__0"]["name"]}'
 
 
+class OrientationPrinter:
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        variant = self.val.format_string(raw=True).split("::")[-1]
+        return (
+            variant.replace("Positive", "+")
+            .replace("Negative", "-")
+            .replace("Zero", "0")
+        )
+
+
 class GeneratorInfoPrinter:
     def __init__(self, val):
         self.val = val
@@ -80,7 +93,7 @@ class GeneratorPrinter:
         self.val = val
 
     def to_string(self):
-        return f'({self.val["id"]}:{self.val["dimension"]})'
+        return f'({self.val["id"]}:{self.val["dimension"]}:{self.val["orientation"]})'
 
 
 class CospanPrinter:
@@ -213,6 +226,14 @@ class BoundaryPrinter:
         ]
 
 
+class BoundaryPathPrinter:
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        return f'({self.val["__0"]},{self.val["__1"]})'
+
+
 class HConsedPrinter:
     def __init__(self, val):
         self.val = val
@@ -267,6 +288,9 @@ def build_pretty_printer():
         SignatureItemPrinter,
     )
     pp.add_printer(
+        "Orientation", "^homotopy_core::common::Orientation$", OrientationPrinter
+    )
+    pp.add_printer(
         "GeneratorInfo",
         "^homotopy_model::proof::generators::GeneratorInfo$",
         GeneratorInfoPrinter,
@@ -295,6 +319,9 @@ def build_pretty_printer():
         "SliceIndex", "^homotopy_core::common::SliceIndex$", SliceIndexPrinter
     )
     pp.add_printer("Boundary", "^homotopy_core::common::Boundary$", BoundaryPrinter)
+    pp.add_printer(
+        "BoundaryPath", "^homotopy_core::attach::BoundaryPath$", BoundaryPathPrinter
+    )
     pp.add_printer("HConsed", "^hashconsing::HConsed<.*>$", HConsedPrinter)
     pp.add_printer("Node", "^homotopy_common::tree::Node$", NodePrinter)
     pp.add_printer("NodeData", "^homotopy_common::tree::NodeData<.*>$", NodeDataPrinter)
