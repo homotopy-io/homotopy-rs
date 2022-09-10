@@ -173,13 +173,18 @@ impl App {
 
     fn render(ctx: &Context<Self>, state: &model::State) -> Html {
         #[cfg(debug_assertions)]
-        if let Some(drawable) = state.debug.0.borrow().as_ref() {
-            return html! {
-                <DebugGl
-                    drawable={drawable.clone()}
-                />
-            };
-        }
+        let debug_panel: Html = (*state.debug.1.borrow() < state.debug.0.borrow().len())
+            .then(|| {
+                html! {
+                    <DebugGl
+                        drawable={state.debug.0.borrow()[*state.debug.1.borrow()].clone()}
+                    />
+                }
+            })
+            .unwrap_or_default();
+
+        #[cfg(not(debug_assertions))]
+        let debug_panel: Html = Default::default();
 
         let proof = state
             .with_proof(Clone::clone)
@@ -188,13 +193,27 @@ impl App {
         let signature = proof.signature();
         let metadata = proof.metadata();
 
-        let workspace = html! {
-            <WorkspaceView
-                workspace={proof.workspace().map(Clone::clone)}
-                signature={signature.clone()}
-                metadata={metadata.clone()}
-                dispatch={dispatch.reform(model::Action::Proof)}
-            />
+        let workspace = match proof.workspace() {
+            Some(workspace) => {
+                html! {
+                    <div>
+                        {debug_panel}
+                        <WorkspaceView
+                            workspace={proof.workspace().map(Clone::clone)}
+                            signature={signature.clone()}
+                            metadata={metadata.clone()}
+                            dispatch={dispatch.reform(model::Action::Proof)}
+                        />
+                    </div>
+                }
+            }
+            None => {
+                // TODO: Show onboarding info if workspace and signature is empty
+                html! {
+                    <content class="workspace workspace--empty">
+                    </content>
+                }
+            }
         };
 
         let boundary_preview = match proof.boundary() {

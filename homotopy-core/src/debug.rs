@@ -10,7 +10,7 @@ pub enum Drawable {
 }
 
 pub trait Debugger {
-    fn debug(&self, drawable: Drawable);
+    fn debug(&self, drawables: Vec<Drawable>);
 }
 
 thread_local! {
@@ -27,10 +27,14 @@ where
 }
 
 pub fn debug_diagram(d: Diagram) {
+    debug_diagrams(vec![d]);
+}
+
+pub fn debug_diagrams(ds: Vec<Diagram>) {
     DEBUGGER.with(|debugger| {
         debugger
             .get()
             .expect("no debugger!")
-            .debug(Drawable::Diagram(d));
+            .debug(ds.into_iter().map(Drawable::Diagram).collect());
     });
 }
