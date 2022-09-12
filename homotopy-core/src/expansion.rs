@@ -346,8 +346,16 @@ fn expand_cospan(
 
     let new_regular_slice = {
         let mut cones = new_backward0.cones().to_vec();
-        if let Some(index) = backward_index {
-            cones.insert(index, new_forward1.cones()[0].clone());
+        if let Some(cone) = new_forward1.cones().get(0) {
+            debug_assert!(forward_index.is_some());
+            let index = backward_index.unwrap_or_else(|| {
+                backward_targets
+                    .iter()
+                    .rev()
+                    .position(|t| *t > height)
+                    .unwrap_or(backward_targets.len())
+            });
+            cones.insert(index, cone.clone());
         }
         RewriteN::new(forward.dimension(), cones)
     };
