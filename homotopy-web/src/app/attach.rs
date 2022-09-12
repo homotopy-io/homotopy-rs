@@ -76,7 +76,7 @@ impl AttachView {
                     class="attach__option-name"
                     error_color="#c004"
                     raw_tex={
-                        format!("{}{}", info.name, option.tag.map_or("".to_owned(), |t| format!(" ({t})")))
+                        format!("{}{}", info.name, option.tag.as_ref().map_or("".to_owned(), |t| format!(" ({t})")))
                     }
                 />
             </li>
