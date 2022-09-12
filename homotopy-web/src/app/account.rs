@@ -1,7 +1,11 @@
+use wasm_bindgen::prelude::*;
 use yew::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Msg {}
+pub enum Msg {
+    LogIn,
+    LogOut,
+}
 
 #[derive(Debug, Properties, Clone, PartialEq, Eq)]
 pub struct Props {
@@ -18,15 +22,35 @@ impl Component for AccountView {
         Self {}
     }
 
-    fn view(&self, _ctx: &Context<Self>) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
             <>
-                <h3>{"Username"}</h3>
+                <h3 id="username">{"Guest user"}</h3>
+                // Todo: handle this callback function properly
+                <button onclick={ctx.link().callback(|_| Msg::LogIn)}>
+                    { "Log in" }
+                </button>
+                <button onclick={ctx.link().callback(|_| Msg::LogOut)}>
+                    { "Log out" }
+                </button>
             </>
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, _msg: Self::Message) -> bool {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+        match msg {
+            Msg::LogIn => log_in(),
+            Msg::LogOut => log_out(),
+        };
         false
     }
+}
+
+#[wasm_bindgen(module = "/src/app/account/account_script.js")]
+extern "C" {
+    #[wasm_bindgen(js_name = "logIn")]
+    pub fn log_in();
+
+    #[wasm_bindgen(js_name = "logOut")]
+    pub fn log_out();
 }
