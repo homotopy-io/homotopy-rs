@@ -105,21 +105,18 @@ impl Signature {
             .map_or(0, |id| id + 1)
     }
 
-    fn insert<D>(&mut self, id: usize, generator: Generator, diagram: D, name: &str)
+    fn insert<D>(&mut self, generator: Generator, diagram: D, name: &str, invertible: bool)
     where
         D: Into<Diagram>,
     {
         let diagram: Diagram = diagram.into();
         let info = GeneratorInfo {
             generator,
-            name: format!("{} {}", name, id),
+            name: format!("{} {}", name, generator.id),
             oriented: false,
-            invertible: diagram.generators().iter().any(|g| {
-                self.generator_info(*g)
-                    .map_or(false, |info| info.invertible)
-            }),
+            invertible,
             single_preview: true,
-            color: Color::from_str(COLORS[id % COLORS.len()]).unwrap(),
+            color: Color::from_str(COLORS[generator.id % COLORS.len()]).unwrap(),
             shape: Default::default(),
             diagram,
         };
@@ -171,7 +168,7 @@ impl Signature {
     pub fn create_generator_zero(&mut self, name: &str) {
         let id = self.next_generator_id();
         let generator = Generator::new(id, 0);
-        self.insert(id, generator, generator, name);
+        self.insert(generator, generator, name, false);
     }
 
     pub fn create_generator(
@@ -179,11 +176,21 @@ impl Signature {
         source: Diagram,
         target: Diagram,
         name: &str,
+        invertible: bool,
     ) -> Result<Diagram, NewDiagramError> {
         let id = self.next_generator_id();
         let generator = Generator::new(id, source.dimension() + 1);
+        let invertible = invertible
+            || source
+                .generators()
+                .iter()
+                .chain(target.generators().iter())
+                .any(|g| {
+                    self.generator_info(*g)
+                        .map_or(false, |info| info.invertible)
+                });
         let diagram = DiagramN::from_generator(generator, source, target)?;
-        self.insert(id, generator, diagram.clone(), name);
+        self.insert(generator, diagram.clone(), name, invertible);
         Ok(diagram.into())
     }
 
