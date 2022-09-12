@@ -53,7 +53,7 @@ impl Component for ProjectView {
                 <label for="import" class="button">
                     {"Import"}
                 </label>
-                <input type="file" accept="application/msgpack,.hom,.json" class="visually-hidden" id="import" onchange={import}/>
+                <input type="file" accept="application/msgpack,.hom,.json,.txt" class="visually-hidden" id="import" onchange={import}/>
                <button onclick={actions}>{"Export Actions"}</button>
                 <input
                     type="text"
