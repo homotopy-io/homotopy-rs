@@ -415,7 +415,7 @@ impl ProofState {
                     };
 
                     self.signature
-                        .create_generator(source, target, "Cell")
+                        .create_generator(source, target, "Cell", false)
                         .map_err(ModelError::IncompatibleBoundaries)?;
 
                     self.boundary = None;
@@ -917,13 +917,16 @@ impl ProofState {
             .map_err(|_dimerr| ModelError::InvalidAction)?;
 
         // new generator of singular height 1 from source to target of current diagram
-        let singleton =
-            self.signature
-                .create_generator(diagram.source(), diagram.target(), "Theorem")?;
+        let singleton = self.signature.create_generator(
+            diagram.source(),
+            diagram.target(),
+            "Theorem",
+            false, // TODO(@calintat): if the diagram is invertible, set this to true
+        )?;
 
         // rewrite from singleton to original diagram
         self.signature
-            .create_generator(singleton, diagram.into(), "Proof")?;
+            .create_generator(singleton, diagram.into(), "Proof", true)?;
 
         self.clear_workspace();
 
