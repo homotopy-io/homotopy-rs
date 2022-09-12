@@ -111,7 +111,12 @@ pub fn render(
     writeln!(tikz, "\\begin{{tikzpicture}}").unwrap();
     tikz.push_str(stylesheet);
 
-    tikz.push_str(&render_inner(&surfaces, wires, show_braids, diagram.dimension()));
+    tikz.push_str(&render_inner(
+        &surfaces,
+        wires,
+        show_braids,
+        diagram.dimension(),
+    ));
 
     // Points are unchanged
     for (g, point) in points {
@@ -220,7 +225,8 @@ fn render_inner(
                 writeln!(
                     tikz,
                     "\\wire{{{color}}}{{{path}}};",
-                    color = name_from_diagram_dim(*g, diagram_dimension, GeneratorRepresentation::Wire),
+                    color =
+                        name_from_diagram_dim(*g, diagram_dimension, GeneratorRepresentation::Wire),
                     path = &render_path(path)
                 )
                 .unwrap();
@@ -228,7 +234,8 @@ fn render_inner(
                 writeln!(
                     tikz,
                     "\\draw[color={color}!80, line width=5pt]{path};",
-                    color = name_from_diagram_dim(*g, diagram_dimension, GeneratorRepresentation::Wire),
+                    color =
+                        name_from_diagram_dim(*g, diagram_dimension, GeneratorRepresentation::Wire),
                     path = &render_path(path)
                 )
                 .unwrap();
