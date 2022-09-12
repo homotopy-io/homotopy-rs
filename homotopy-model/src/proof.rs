@@ -695,7 +695,7 @@ impl ProofState {
                                         generator: info.generator,
                                         boundary_path,
                                         diagram: original.clone(),
-                                        tag: Some("bubble"),
+                                        tag: Some("bubble".to_string()),
                                     }),
                             );
 
@@ -715,7 +715,7 @@ impl ProofState {
                                         generator: info.generator,
                                         boundary_path,
                                         diagram: inverse.clone(),
-                                        tag: Some("inverse bubble"),
+                                        tag: Some("inverse bubble".to_string()),
                                     }),
                             );
                         }
@@ -753,7 +753,7 @@ impl ProofState {
                                         boundary_path,
                                         generator: info.generator,
                                         diagram: diagram.inverse(),
-                                        tag: Some("inverse"),
+                                        tag: Some("inverse".to_string()),
                                     }),
                             );
                         }
@@ -1103,36 +1103,26 @@ impl Default for RenderStyle {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct AttachOption {
     pub generator: Generator,
     pub diagram: DiagramN,
-    pub tag: Option<&'static str>,
+    pub tag: Option<String>,
     pub boundary_path: Option<BoundaryPath>,
     pub embedding: Vector<usize>,
 }
 
-// TODO: actually implement this or derive it.
-// Action files involving AttachOption cannot be loaded by homotopy-cli otherwise.
-impl<'de> serde::de::Deserialize<'de> for AttachOption {
-    fn deserialize<D>(_deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::de::Deserializer<'de>,
-    {
-        todo!()
-    }
-}
-
-// TODO: fix this as well
 #[cfg(feature = "fuzz")]
 impl<'a> arbitrary::Arbitrary<'a> for AttachOption {
     fn arbitrary(_u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
         /*
-            Ok(AttachOption {
-                generator: u.arbitrary()?,
-                boundary_path: u.arbitrary()?,
-                embedding: Vector::from(u.arbitrary::<Vec<_>>()?),
-            })
+        Ok(AttachOption {
+            generator: u.arbitrary()?,
+            diagram: u.arbitrary()?,
+            tag: u.arbitrary()?,
+            boundary_path: u.arbitrary()?,
+            embedding: Vector::from(u.arbitrary::<Vec<_>>()?),
+        })
         */
         Err(arbitrary::Error::EmptyChoose)
     }
