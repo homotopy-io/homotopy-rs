@@ -1,6 +1,5 @@
 use std::{
     cmp::Ordering,
-    collections::HashMap,
     convert::{Into, TryInto},
     hash::Hash,
 };
@@ -530,30 +529,27 @@ fn collapse_base<Ix: IndexType>(
             // find collapsible edges wrt nodes
             for e in stable.edge_references().filter(|e| {
                 // e is contained within nodes
-                nodes.contains(&e.source()) && nodes.contains(&e.target()) && {
-                    // e is an identity rewrite
-                    let r: &Rewrite0 = e.weight().try_into().unwrap();
-                    r.0.as_ref().map_or(true, |(s, t, _)| s.id == t.id)
-                }
-            }
+                nodes.contains(&e.source()) && nodes.contains(&e.target())
+                // e is an identity rewrite
+                && <&Rewrite0>::try_from(e.weight()).unwrap().0.as_ref().map_or(true, |(s, t, _)| s.id == t.id)
                 // check triangles within nodes which might refute collapsibility of e
-            && (stable.edges_directed(e.source(), Incoming).filter(|p| nodes.contains(&p.source())).all(|p| {
-                if let Some(c) = stable.find_edge(p.source(), e.target()) {
-                    <&Rewrite0>::try_from(p.weight()).unwrap().label() == <&Rewrite0>::try_from(stable.edge_weight(c).unwrap()).unwrap().label()
-                } else {
-                    true
-                }
-            }))
-            && (stable.edges_directed(e.target(), Outgoing).filter(|n| nodes.contains(&n.target())).all(|n| {
-                if let Some(c) = stable.find_edge(e.source(), n.target()) {
-                    <&Rewrite0>::try_from(n.weight()).unwrap().label() == <&Rewrite0>::try_from(stable.edge_weight(c).unwrap()).unwrap().label()
-                } else {
-                    true
-                }
-            })))
-             {
-                    // e is collapsible
-                    quotient.push((e.source(), e.target()));
+                && stable.edges_directed(e.source(), Incoming).filter(|p| nodes.contains(&p.source())).all(|p| {
+                    if let Some(c) = stable.find_edge(p.source(), e.target()) {
+                        <&Rewrite0>::try_from(p.weight()).unwrap().label() == <&Rewrite0>::try_from(stable.edge_weight(c).unwrap()).unwrap().label()
+                    } else {
+                        true
+                    }
+                })
+                && stable.edges_directed(e.target(), Outgoing).filter(|n| nodes.contains(&n.target())).all(|n| {
+                    if let Some(c) = stable.find_edge(e.source(), n.target()) {
+                        <&Rewrite0>::try_from(n.weight()).unwrap().label() == <&Rewrite0>::try_from(stable.edge_weight(c).unwrap()).unwrap().label()
+                    } else {
+                        true
+                    }
+                })
+            }) {
+                // e is collapsible
+                quotient.push((e.source(), e.target()));
             }
 
             for (s, t) in quotient {
