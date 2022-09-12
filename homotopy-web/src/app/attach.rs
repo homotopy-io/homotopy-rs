@@ -71,7 +71,7 @@ impl AttachView {
                 />
                 <span class="attach__option-name">
                     {
-                        format!("{}{}", info.name, option.tag.map_or("".to_owned(), |t| format!(" ({t})")))
+                        format!("{}{}", info.name, option.tag.as_ref().map_or("".to_owned(), |t| format!(" ({t})")))
                     }
                 </span>
             </li>
