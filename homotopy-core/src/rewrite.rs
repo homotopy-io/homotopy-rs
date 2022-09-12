@@ -711,6 +711,7 @@ impl RewriteN {
         self.0.dimension
     }
 
+    /// For each cone, find its target singular height
     pub fn targets(&self) -> Vec<usize> {
         let mut targets = Vec::new();
         let mut offset: isize = 0;
