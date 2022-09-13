@@ -10,7 +10,7 @@ use crate::model::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Msg {
     ImportProof(File),
-    EditMetadata(MetadataEdit),
+    EditMetadata(MetadataEdit, bool), // (edit, should_dispatch)
     Noop,
 }
 
@@ -58,7 +58,11 @@ impl Component for ProjectView {
                     value= {ctx.props().metadata.title.clone().unwrap_or_default()}
                     oninput={ctx.link().callback(move |e: InputEvent| {
                         let input: HtmlInputElement = e.target_unchecked_into();
-                        Msg::EditMetadata(MetadataEdit::Title(input.value()))
+                        Msg::EditMetadata(MetadataEdit::Title(input.value()), false)
+                    })}
+                    onfocusout={ctx.link().callback(move |e: FocusEvent| {
+                        let input: HtmlInputElement = e.target_unchecked_into();
+                        Msg::EditMetadata(MetadataEdit::Title(input.value()), true)
                     })}
                     onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
                         e.stop_propagation();
@@ -74,7 +78,11 @@ impl Component for ProjectView {
                     value = {ctx.props().metadata.author.clone().unwrap_or_default()}
                     oninput={ctx.link().callback(move |e: InputEvent| {
                         let input: HtmlInputElement = e.target_unchecked_into();
-                        Msg::EditMetadata(MetadataEdit::Author(input.value()))
+                        Msg::EditMetadata(MetadataEdit::Author(input.value()), false)
+                    })}
+                    onfocusout={ctx.link().callback(move |e: FocusEvent| {
+                        let input: HtmlInputElement = e.target_unchecked_into();
+                        Msg::EditMetadata(MetadataEdit::Author(input.value()), true)
                     })}
                     onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
                         e.stop_propagation();
@@ -90,7 +98,11 @@ impl Component for ProjectView {
                     value = {ctx.props().metadata.abstr.clone().unwrap_or_default()}
                     oninput={ctx.link().callback(move |e: InputEvent| {
                         let input: HtmlInputElement = e.target_unchecked_into();
-                        Msg::EditMetadata(MetadataEdit::Abstract(input.value()))
+                        Msg::EditMetadata(MetadataEdit::Abstract(input.value()), false)
+                    })}
+                    onfocusout={ctx.link().callback(move |e: FocusEvent| {
+                        let input: HtmlInputElement = e.target_unchecked_into();
+                        Msg::EditMetadata(MetadataEdit::Abstract(input.value()), true)
                     })}
                     onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
                         e.stop_propagation();
@@ -114,9 +126,13 @@ impl Component for ProjectView {
                 self.reader = Some(task);
                 false
             }
-            Msg::EditMetadata(edit) => {
-                dispatch.emit(model::Action::Proof(proof::Action::EditMetadata(edit)));
-                true
+            Msg::EditMetadata(edit, should_dispatch) => {
+                // In order to avoid generating multiple history events for a single rename, we
+                // don't dispatch renames until the user is done editing.
+                if should_dispatch {
+                    dispatch.emit(model::Action::Proof(proof::Action::EditMetadata(edit)));
+                }
+                should_dispatch
             }
             Msg::Noop => false,
         }
