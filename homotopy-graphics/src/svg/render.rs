@@ -7,13 +7,13 @@ use homotopy_core::{
     complex::Simplex,
     layout::Layout,
     projection::{Depths, Homotopy, Projection},
-    Diagram,
 };
 use lyon_path::{builder::NoAttributes, Path};
 
 use super::shape::project_2d;
 use crate::{
     path_util::simplify_path,
+    style::GeneratorRepresentation,
     svg::shape::{Circle, Fill, Point, Shape, Stroke},
 };
 
@@ -154,7 +154,6 @@ impl<const N: usize> GraphicElement<N> {
     /// This function can panic or produce undefined results if the simplicial complex, the layout
     /// and the projected generators have not come from the same diagram.
     pub fn build(
-        diagram: &Diagram,
         complex: &[(Simplex<N>, bool)],
         layout: &Layout<N>,
         projection: &Projection<N>,
@@ -444,4 +443,14 @@ fn make_path_segment<const N: usize>(
         }
         _ => builder.line_to(layout_end),
     };
+}
+
+impl<const N: usize> From<GraphicElement<N>> for GeneratorRepresentation {
+    fn from(element: GraphicElement<N>) -> Self {
+        match element {
+            GraphicElement::Point(_, _) => Self::Point,
+            GraphicElement::Wire(_, _, _, _) => Self::Wire,
+            GraphicElement::Surface(_, _) => Self::Surface,
+        }
+    }
 }

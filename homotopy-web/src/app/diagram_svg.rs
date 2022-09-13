@@ -118,7 +118,7 @@ impl<const N: usize> PreparedDiagram<N> {
         let complex = make_complex(diagram);
         let depths = Depths::new(diagram).unwrap();
         let projection = Projection::new(diagram, &layout, &depths).unwrap();
-        let graphic = GraphicElement::build(diagram, &complex, &layout, &projection, &depths);
+        let graphic = GraphicElement::build(&complex, &layout, &projection, &depths);
         let actions = ActionRegion::build(&complex, &layout, &projection);
 
         let dimensions = Point::from(project_2d(layout.get([Boundary::Target.into(); N])))
@@ -373,12 +373,11 @@ impl<const N: usize> DiagramSvg<N> {
     /// Creates the SVG elements for the diagram.
     fn view_element(&self, ctx: &Context<Self>, index: usize, element: &GraphicElement<N>) -> Html {
         let generator = element.generator();
-        let k = match element {
-            GraphicElement::Point(_, _) => 0,
-            GraphicElement::Wire(_, _, _, _) => 1,
-            GraphicElement::Surface(_, _) => 2,
-        };
-        let class = generator_class_from_diagram_dim(generator, k, ctx.props().diagram.dimension());
+        let class = generator_class_from_diagram_dim(
+            generator,
+            ctx.props().diagram.dimension(),
+            element.clone().into(),
+        );
 
         match element {
             GraphicElement::Surface(_, path) => {
