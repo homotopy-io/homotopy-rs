@@ -43,6 +43,7 @@ impl Component for ProjectView {
                 Msg::Noop
             }
         });
+
         html! {
             <>
                 <button onclick={export}>{"Export"}</button>
@@ -66,6 +67,11 @@ impl Component for ProjectView {
                     })}
                     onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
                         e.stop_propagation();
+                        let input: HtmlInputElement = e.target_unchecked_into();
+                        if e.key().to_ascii_lowercase() == "enter" {
+                            input.blur().unwrap();
+                            return Msg::EditMetadata(MetadataEdit::Title(input.value()), true);
+                        }
                         Msg::Noop
                     })}
                 />
@@ -86,6 +92,11 @@ impl Component for ProjectView {
                     })}
                     onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
                         e.stop_propagation();
+                        let input: HtmlInputElement = e.target_unchecked_into();
+                        if e.key().to_ascii_lowercase() == "enter" {
+                            input.blur().unwrap();
+                            return Msg::EditMetadata(MetadataEdit::Author(input.value()), true);
+                        }
                         Msg::Noop
                     })}
                 />
