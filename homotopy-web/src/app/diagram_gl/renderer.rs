@@ -12,7 +12,7 @@ use self::{
     scene::{Component, Scene},
     shaders::Shaders,
 };
-use super::{orbit_camera::OrbitCamera, DiagramGlProps};
+use super::{buffers, orbit_camera::OrbitCamera, DiagramGlProps};
 use crate::{app::AppSettings, components::settings::Store, model::proof::Signature};
 
 mod axes;

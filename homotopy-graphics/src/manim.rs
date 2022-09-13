@@ -7,14 +7,14 @@ use homotopy_core::{
     complex::make_complex,
     layout::Layout,
     projection::{Depths, Projection},
-    Diagram, Generator,
+    Diagram, Generator, Orientation,
 };
 use itertools::Itertools;
 use lyon_path::{Event, Path};
 
 use crate::{
     path_util::simplify_graphic,
-    style::{GeneratorStyle, SignatureStyleData, VertexShape},
+    style::{GeneratorRepresentation, GeneratorStyle, SignatureStyleData, VertexShape},
     svg::render::GraphicElement,
 };
 
@@ -24,20 +24,55 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
     let mut stylesheet = String::new();
 
     for (generator, style) in styles.as_pairs() {
-        writeln!(
-            stylesheet,
-            "            \"{generator}\": \"{color}\",",
-            generator = name(generator),
-            color = &style.color().hex()
-        )
-        .unwrap();
+        let color = style.color();
+        for c in 0..3 {
+            for orientation in [
+                Orientation::Positive,
+                Orientation::Zero,
+                Orientation::Negative,
+            ] {
+                writeln!(
+                    stylesheet,
+                    "            \"{generator}\": \"{color}\",",
+                    generator = name(generator, c, orientation),
+                    color = color.lighten(c, orientation).hex()
+                )
+                .unwrap();
+            }
+        }
     }
 
     stylesheet
 }
 
-fn name(generator: Generator) -> String {
-    format!("generator_{}_{}", generator.id, generator.dimension)
+#[inline]
+pub fn name_from_diagram_dim(
+    generator: Generator,
+    diagram_dimension: usize,
+    representation: GeneratorRepresentation,
+) -> String {
+    let d = diagram_dimension;
+    let n = generator.dimension;
+    let k = representation as usize;
+
+    let c = d.saturating_sub(n + k);
+
+    name(generator, c, generator.orientation)
+}
+
+#[inline]
+fn name(generator: Generator, c: usize, orientation: Orientation) -> String {
+    format!(
+        "generator_{}_{}_{}_{}",
+        generator.id,
+        generator.dimension,
+        c,
+        match orientation {
+            Orientation::Positive => "pos",
+            Orientation::Negative => "neg",
+            Orientation::Zero => "zer",
+        }
+    )
 }
 
 pub fn render(
@@ -51,7 +86,6 @@ pub fn render(
     let depths = Depths::<2>::new(diagram)?;
     let projection = Projection::<2>::new(diagram, &layout, &depths)?;
     let graphic = simplify_graphic(&GraphicElement::build(
-        diagram,
         &complex,
         &layout,
         &projection,
@@ -158,7 +192,7 @@ pub fn render(
             manim,
             "{ind}{ind}surfaces.add(self.build_path({path},width=1).set_fill(C[\"{color}\"],0.75)) # path_{id}_{dim}",
             ind=INDENT,
-            color=name(g),
+            color=name_from_diagram_dim(g, diagram.dimension(), GeneratorRepresentation::Surface),
             id=g.id,
             dim=g.dimension,
             path=&render_path(&path)
@@ -202,7 +236,7 @@ pub fn render(
         for (g, path) in &layer {
             writeln!(manim, "{ind}{ind}wires.add(self.build_path({path},width=20,color=C[\"{color}\"])) # path_{id}_{dim}",
                 ind=INDENT,
-                color=name(*g),
+                color=name_from_diagram_dim(*g, diagram.dimension(), GeneratorRepresentation::Wire),
                 id=g.id,
                 dim=g.dimension,
                 path=&render_path(path)
@@ -226,7 +260,10 @@ pub fn render(
 
     //TODO work out right radius for circles to match SVG/tikz export.
     for (g, point) in points {
-        let vertex = render_vertex(signature_styles.generator_style(g).unwrap(), &name(g));
+        let vertex = render_vertex(
+            signature_styles.generator_style(g).unwrap(),
+            &name_from_diagram_dim(g, diagram.dimension(), GeneratorRepresentation::Point),
+        );
         writeln!(
             manim,
             "{ind}{ind}points.add({vertex}.move_to(np.array([{ptx},{pty},1])) # circle_{id}_{dim}",
