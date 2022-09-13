@@ -49,7 +49,7 @@ body, html {
   user-select: none; /* Standard syntax */
 }
 
-input, button {
+input, textarea, button {
   font-family: 'IBM Plex Sans', 'sans';
   color: var(--drawer-foreground);
   font-size: 14px;
@@ -451,30 +451,41 @@ button, .button {
 }
 
 /* Metadata */
-/* TODO: Wraparound */
 
-.metadata_title {
-  inline-size: 150px;
-  overflow: hidden;
+.metadata__details {
+  box-sizing: border-box;
+  margin-top: var(--space-1);
+}
+
+.metadata__details textarea {
+  resize: vertical;
+  padding: var(--space-0);
+  width: 100%;
+  border-radius: var(--space-0);
+  background: transparent;
+  box-sizing: border-box;
+  overflow-wrap: break-word;
+  border: none;
+  user-select: text;
+}
+
+.metadata__details textarea:hover {
+  background-color: #9991;
+}
+
+.metadata__title {
+  min-height: 65px;
   font-size: 1.6em;
-  padding: var(--space-1);
-  border: none;
-  background: transparent;
-  user-select: text;
 }
-.metadata_author {
+
+.metadata__author {
+  min-height: 45px;
   font-weight: bold;
-  padding: var(--space-1);
-  border: none;
-  background: transparent;
-  user-select: text;
 }
-.metadata_abstract {
+
+.metadata__abstract {
+  min-height: 200px;
   font-weight: light;
-  padding: var(--space-1);
-  border: none;
-  background: transparent;
-  user-select: text;
 }
 
 /* Signature */

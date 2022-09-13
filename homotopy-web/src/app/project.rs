@@ -51,75 +51,75 @@ impl Component for ProjectView {
                     {"Import"}
                 </label>
                 <input type="file" accept="application/msgpack,.hom,.json" class="visually-hidden" id="import" onchange={import}/>
-                <input
-                    type="text"
-                    class="metadata_title"
-                    name="title"
-                    placeholder="Title"
-                    value= {ctx.props().metadata.title.clone().unwrap_or_default()}
-                    oninput={ctx.link().callback(move |e: InputEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        Msg::EditMetadata(MetadataEdit::Title(input.value()), false)
-                    })}
-                    onfocusout={ctx.link().callback(move |e: FocusEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        Msg::EditMetadata(MetadataEdit::Title(input.value()), true)
-                    })}
-                    onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
-                        e.stop_propagation();
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        if e.key().to_ascii_lowercase() == "enter" {
-                            input.blur().unwrap();
-                            return Msg::EditMetadata(MetadataEdit::Title(input.value()), true);
-                        }
-                        Msg::Noop
-                    })}
-                />
+                <div class="metadata__details">
+                    <textarea
+                        class="metadata__title"
+                        name="title"
+                        placeholder="Title"
+                        value= {ctx.props().metadata.title.clone().unwrap_or_default()}
+                        oninput={ctx.link().callback(move |e: InputEvent| {
+                            let input: HtmlInputElement = e.target_unchecked_into();
+                            Msg::EditMetadata(MetadataEdit::Title(input.value()), false)
+                        })}
+                        onfocusout={ctx.link().callback(move |e: FocusEvent| {
+                            let input: HtmlInputElement = e.target_unchecked_into();
+                            Msg::EditMetadata(MetadataEdit::Title(input.value()), true)
+                        })}
+                        onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
+                            e.stop_propagation();
+                            let input: HtmlInputElement = e.target_unchecked_into();
+                            if e.key().to_ascii_lowercase() == "enter" {
+                                input.blur().unwrap();
+                                return Msg::EditMetadata(MetadataEdit::Title(input.value()), true);
+                            }
+                            Msg::Noop
+                        })}
+                    />
 
-                <input
-                    type="text"
-                    class="metadata_author"
-                    name="Author"
-                    placeholder="Author"
-                    value = {ctx.props().metadata.author.clone().unwrap_or_default()}
-                    oninput={ctx.link().callback(move |e: InputEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        Msg::EditMetadata(MetadataEdit::Author(input.value()), false)
-                    })}
-                    onfocusout={ctx.link().callback(move |e: FocusEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        Msg::EditMetadata(MetadataEdit::Author(input.value()), true)
-                    })}
-                    onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
-                        e.stop_propagation();
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        if e.key().to_ascii_lowercase() == "enter" {
-                            input.blur().unwrap();
-                            return Msg::EditMetadata(MetadataEdit::Author(input.value()), true);
-                        }
-                        Msg::Noop
-                    })}
-                />
+                    <textarea
+                        class="metadata__author"
+                        name="Author"
+                        placeholder="Author(s)"
+                        spellcheck="false"
+                        value = {ctx.props().metadata.author.clone().unwrap_or_default()}
+                        oninput={ctx.link().callback(move |e: InputEvent| {
+                            let input: HtmlInputElement = e.target_unchecked_into();
+                            Msg::EditMetadata(MetadataEdit::Author(input.value()), false)
+                        })}
+                        onfocusout={ctx.link().callback(move |e: FocusEvent| {
+                            let input: HtmlInputElement = e.target_unchecked_into();
+                            Msg::EditMetadata(MetadataEdit::Author(input.value()), true)
+                        })}
+                        onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
+                            e.stop_propagation();
+                            let input: HtmlInputElement = e.target_unchecked_into();
+                            if e.key().to_ascii_lowercase() == "enter" {
+                                input.blur().unwrap();
+                                return Msg::EditMetadata(MetadataEdit::Author(input.value()), true);
+                            }
+                            Msg::Noop
+                        })}
+                    />
 
-                <input
-                    type="textarea"
-                    class="metadata_abstract"
-                    name="Abstract"
-                    placeholder="Abstract"
-                    value = {ctx.props().metadata.abstr.clone().unwrap_or_default()}
-                    oninput={ctx.link().callback(move |e: InputEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        Msg::EditMetadata(MetadataEdit::Abstract(input.value()), false)
-                    })}
-                    onfocusout={ctx.link().callback(move |e: FocusEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        Msg::EditMetadata(MetadataEdit::Abstract(input.value()), true)
-                    })}
-                    onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
-                        e.stop_propagation();
-                        Msg::Noop
-                    })}
-                />
+                    <textarea
+                        class="metadata__abstract"
+                        name="Abstract"
+                        placeholder="Abstract"
+                        value = {ctx.props().metadata.abstr.clone().unwrap_or_default()}
+                        oninput={ctx.link().callback(move |e: InputEvent| {
+                            let input: HtmlInputElement = e.target_unchecked_into();
+                            Msg::EditMetadata(MetadataEdit::Abstract(input.value()), false)
+                        })}
+                        onfocusout={ctx.link().callback(move |e: FocusEvent| {
+                            let input: HtmlInputElement = e.target_unchecked_into();
+                            Msg::EditMetadata(MetadataEdit::Abstract(input.value()), true)
+                        })}
+                        onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
+                            e.stop_propagation();
+                            Msg::Noop
+                        })}
+                    />
+                </div>
             </>
         }
     }
