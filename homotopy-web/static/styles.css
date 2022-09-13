@@ -136,18 +136,6 @@ button, .button {
   transform-origin: 50% 50%;
 }
 
-/* Project Title */
-
-.project-title {
-    font-size: 28px;
-    color: #2224;
-    position: absolute;
-    top: 18px;
-    left: 20px;
-    white-space: nowrap;
-    user-select: text;
-}
-
 /* Boundary (source/target) Preview */
 
 .boundary__and__workspace {
@@ -212,13 +200,31 @@ button, .button {
   overflow: hidden;
 }
 
-.workspace__toolbar {
-  position: fixed;
+.workspace__overlay-top {
+  position: absolute;
   display: flex;
   z-index: 10;
-  right: 0;
-  top: 10px;
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+  justify-content: space-between;
+}
+
+.workspace__project-title {
+  flex: 0 1 auto;
+  font-size: 28px;
+  color: #2224;
+  padding: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: text;
+}
+
+.workspace__toolbar {
+  flex: 0 0 auto;
   margin: var(--space-0);
+  display: flex;
 }
 
 .workspace__toolbar__segment,

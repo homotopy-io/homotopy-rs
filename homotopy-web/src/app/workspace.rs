@@ -15,7 +15,7 @@ use crate::{
         diagram_svg::{DiagramSvg, HighlightKind, HighlightSvg},
     },
     components::panzoom::PanZoomComponent,
-    model::proof::{homotopy::Homotopy, Action, Signature, Workspace},
+    model::proof::{homotopy::Homotopy, Action, Metadata, Signature, Workspace},
 };
 
 mod path_control;
@@ -29,6 +29,7 @@ pub struct Props {
     pub workspace: Workspace,
     pub dispatch: Callback<Action>,
     pub signature: Signature,
+    pub metadata: Metadata,
 }
 
 pub enum Message {}
@@ -59,6 +60,12 @@ impl Component for WorkspaceView {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let diagram = Self::visible_diagram(ctx);
+        let project_title = match ctx.props().metadata.title {
+            Some(ref title) => html! {
+                <div class="workspace__project-title">{title}</div>
+            },
+            None => Default::default(),
+        };
         let slice_buttons = match ctx.props().workspace.view.dimension() {
             1 | 2 => html! {
                 <SliceControl
@@ -75,15 +82,18 @@ impl Component for WorkspaceView {
             <div class="workspace">
                 {self.view_diagram(ctx)}
                 {slice_buttons}
-                <div class="workspace__toolbar">
-                    <PathControl
-                        path={ctx.props().workspace.path.clone()}
-                        view={ctx.props().workspace.view}
-                        ascend_slice={ctx.props().dispatch.reform(Action::AscendSlice)}
-                        update_view={ctx.props().dispatch.reform(Action::UpdateView)}
-                        dimension={ctx.props().workspace.diagram.dimension()}
-                    />
-                    <ViewControl />
+                <div class="workspace__overlay-top">
+                    {project_title}
+                    <div class="workspace__toolbar">
+                        <PathControl
+                            path={ctx.props().workspace.path.clone()}
+                            view={ctx.props().workspace.view}
+                            ascend_slice={ctx.props().dispatch.reform(Action::AscendSlice)}
+                            update_view={ctx.props().dispatch.reform(Action::UpdateView)}
+                            dimension={ctx.props().workspace.diagram.dimension()}
+                        />
+                        <ViewControl />
+                    </div>
                 </div>
             </div>
         }

@@ -170,6 +170,7 @@ impl App {
             .expect("This should always succeed.");
         let dispatch = ctx.link().callback(Message::Dispatch);
         let signature = proof.signature();
+        let metadata = proof.metadata();
 
         let workspace = match proof.workspace() {
             Some(workspace) => {
@@ -177,6 +178,7 @@ impl App {
                     <WorkspaceView
                         workspace={workspace.clone()}
                         signature={signature.clone()}
+                        metadata={metadata.clone()}
                         dispatch={dispatch.reform(model::Action::Proof)}
                     />
                 }
@@ -188,13 +190,6 @@ impl App {
                     </content>
                 }
             }
-        };
-
-        let project_title = match proof.metadata().title {
-            Some(ref t) => html! {
-                <div class="project-title">{t}</div>
-            },
-            None => Default::default(),
         };
 
         let boundary_preview = match proof.boundary() {
@@ -218,7 +213,6 @@ impl App {
                     <ToasterComponent timeout={3000} />
                 </div>
                 <div class="boundary__and__workspace">
-                    {project_title}
                     {boundary_preview}
                     {workspace}
                 </div>
