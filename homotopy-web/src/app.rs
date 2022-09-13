@@ -190,6 +190,13 @@ impl App {
             }
         };
 
+        let project_title = match proof.metadata().title {
+            Some(ref t) => html! {
+                <div class="project-title">{t}</div>
+            },
+            None => Default::default(),
+        };
+
         let boundary_preview = match proof.boundary() {
             Some(b) => html! {
                 <BoundaryPreview
@@ -211,6 +218,7 @@ impl App {
                     <ToasterComponent timeout={3000} />
                 </div>
                 <div class="boundary__and__workspace">
+                    {project_title}
                     {boundary_preview}
                     {workspace}
                 </div>

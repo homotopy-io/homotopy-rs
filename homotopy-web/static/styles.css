@@ -136,6 +136,17 @@ button, .button {
   transform-origin: 50% 50%;
 }
 
+/* Project Title */
+
+.project-title {
+    font-size: 28px;
+    color: #2224;
+    position: absolute;
+    top: 18px;
+    left: 20px;
+    white-space: nowrap;
+}
+
 /* Boundary (source/target) Preview */
 
 .boundary__and__workspace {
