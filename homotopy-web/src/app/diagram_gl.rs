@@ -22,6 +22,7 @@ use crate::{
     model::proof::{Signature, View},
 };
 
+mod buffers;
 mod orbit_camera;
 mod renderer;
 mod scrub_controls;

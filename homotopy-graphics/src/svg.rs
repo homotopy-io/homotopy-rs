@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use homotopy_core::{Generator, Orientation};
 
-use crate::style::{GeneratorStyle, SignatureStyleData};
+use crate::style::{GeneratorRepresentation, GeneratorStyle, SignatureStyleData};
 
 pub mod render;
 pub mod shape;
@@ -11,7 +11,7 @@ macro_rules! write_styles_for {
     (
         @c_r
         $c:expr,
-        $r:expr,
+        $orientation:expr,
         $generator:expr,
         $color:expr,
         $stylesheet:expr
@@ -19,8 +19,8 @@ macro_rules! write_styles_for {
         writeln!(
             $stylesheet,
             ".{name} {{ fill: {color}; stroke: {color}; }}",
-            name = generator_class_from_c_r($generator, $c, $r),
-            color = $color.lighten_from_c_r($c, $r).hex(),
+            name = generator_class($generator, $c, $orientation),
+            color = $color.lighten($c, $orientation).hex(),
         )
         .unwrap()
     }};
@@ -32,9 +32,9 @@ macro_rules! write_styles_for {
         let color = $style.color();
 
         for c in 0..3 {
-            for r in -1..=1 {
-                write_styles_for!(@c_r c, r, $generator, color, $stylesheet);
-            }
+            write_styles_for!(@c_r c, Orientation::Positive, $generator, color, $stylesheet);
+            write_styles_for!(@c_r c, Orientation::Zero, $generator, color, $stylesheet);
+            write_styles_for!(@c_r c, Orientation::Negative, $generator, color, $stylesheet);
         }
     }};
 }
@@ -58,42 +58,33 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
 #[inline]
 pub fn generator_class_from_diagram_dim(
     generator: Generator,
-    k: usize,
     diagram_dimension: usize,
+    representation: GeneratorRepresentation,
 ) -> String {
-    let r = match generator.orientation {
-        Orientation::Positive => 1,
-        Orientation::Zero => 0,
-        Orientation::Negative => -1,
-    };
-    let d = diagram_dimension as isize;
-    let n = generator.dimension as isize;
-    let k = k as isize;
+    let d = diagram_dimension;
+    let n = generator.dimension;
+    let k = representation as usize;
 
-    let c = (d - n - k).max(0);
+    let c = d.saturating_sub(n + k);
 
     format!(
         "{} {}",
-        generator_class_from_c_r(generator, c, r),
-        match k {
-            0 => "point",
-            1 => "wire",
-            _ => "",
-        },
+        generator_class(generator, c, generator.orientation),
+        representation,
     )
 }
 
 #[inline]
-fn generator_class_from_c_r(generator: Generator, c: isize, r: isize) -> String {
+fn generator_class(generator: Generator, c: usize, orientation: Orientation) -> String {
     format!(
         "generator__{}-{}--{}-{}",
         generator.id,
         generator.dimension,
         c,
-        match r {
-            1 => "pos",
-            -1 => "neg",
-            _ => "zer",
+        match orientation {
+            Orientation::Positive => "pos",
+            Orientation::Negative => "neg",
+            Orientation::Zero => "zer",
         }
     )
 }

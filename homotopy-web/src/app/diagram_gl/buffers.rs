@@ -130,6 +130,7 @@ pub struct TriVertexArrayData {
     pub vertex_buffer: Buffer<Vec3>,
     pub normal_buffer: Buffer<Vec3>,
     pub generator: Generator,
+    pub k: usize,
 }
 
 impl BuffererState for TriBufferingState {
@@ -157,7 +158,7 @@ impl Bufferer for TriBufferer {
     type Vertex = Vert;
     type Output = TriVertexArrayData;
     type State = TriBufferingState;
-    type Key = Generator;
+    type Key = (Generator, usize);
 
     fn new(geom: &SimplicialGeometry) -> Self {
         Self {
@@ -169,8 +170,9 @@ impl Bufferer for TriBufferer {
         for (tri, parity) in ctx.geom.areas.values().copied() {
             let geom = ctx.geom;
             let generator = geom.verts[tri[0]].generator;
+            let k = geom.verts[tri[0]].k;
 
-            ctx.with_state(generator, 3, |global, local| {
+            ctx.with_state((generator, k), 3, |global, local| {
                 let v_0 = local.push_vert(
                     tri[0],
                     (geom.verts[tri[0]].position.xyz(), global.normals[tri[0]]),
@@ -195,7 +197,11 @@ impl Bufferer for TriBufferer {
         Ok(())
     }
 
-    fn commit(ctx: &GlCtx, generator: Self::Key, completed: State<Self>) -> Result<Self::Output> {
+    fn commit(
+        ctx: &GlCtx,
+        (generator, k): Self::Key,
+        completed: State<Self>,
+    ) -> Result<Self::Output> {
         let element_buffer =
             ctx.mk_element_buffer(&completed.inner.elements, ElementKind::Triangles)?;
         let wireframe_element_buffer =
@@ -209,6 +215,7 @@ impl Bufferer for TriBufferer {
             vertex_buffer,
             normal_buffer,
             generator,
+            k,
         })
     }
 }
@@ -248,6 +255,7 @@ struct TetraBufferingState {
 pub struct TetraVertexArrayData {
     pub generator: Generator,
     pub element_buffer: ElementBuffer,
+    pub k: usize,
 
     pub vert_start_buffer: Buffer<Vec4>,
     pub vert_end_buffer: Buffer<Vec4>,
@@ -294,7 +302,7 @@ impl Bufferer for TetraBufferer {
     type Vertex = (Vert, Vert);
     type Output = TetraVertexArrayData;
     type State = TetraBufferingState;
-    type Key = Generator;
+    type Key = (Generator, usize);
 
     fn new(geom: &SimplicialGeometry) -> Self {
         Self {
@@ -306,8 +314,9 @@ impl Bufferer for TetraBufferer {
         for (mut tetra, parity) in ctx.geom.volumes.values().copied() {
             let geom = ctx.geom;
             let generator = geom.verts[tetra[0]].generator;
+            let k = geom.verts[tetra[0]].k;
 
-            ctx.with_state(generator, 6, |global, local| {
+            ctx.with_state((generator, k), 6, |global, local| {
                 let parity =
                     parity * parity::sort_4(&mut tetra, |i, j| geom.time_order(i, j)).into();
                 let [i, j, k, l] = tetra;
@@ -348,7 +357,11 @@ impl Bufferer for TetraBufferer {
         Ok(())
     }
 
-    fn commit(ctx: &GlCtx, generator: Self::Key, completed: State<Self>) -> Result<Self::Output> {
+    fn commit(
+        ctx: &GlCtx,
+        (generator, k): Self::Key,
+        completed: State<Self>,
+    ) -> Result<Self::Output> {
         let element_buffer =
             ctx.mk_element_buffer(&completed.inner.elements, ElementKind::Triangles)?;
         let vert_start_buffer = ctx.mk_buffer(&completed.inner.vert_starts.into_raw())?;
@@ -359,6 +372,7 @@ impl Bufferer for TetraBufferer {
         Ok(TetraVertexArrayData {
             generator,
             element_buffer,
+            k,
             vert_start_buffer,
             vert_end_buffer,
             normal_start_buffer,

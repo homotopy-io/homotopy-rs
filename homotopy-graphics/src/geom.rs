@@ -98,6 +98,7 @@ pub struct VertData {
     pub position: Vec4,
     pub boundary: [bool; 4],
     pub generator: Generator,
+    pub k: usize,
 }
 
 pub fn calculate_boundary(path: &[SliceIndex]) -> Vec<bool> {
@@ -166,6 +167,7 @@ impl CubicalGeometry {
                 position,
                 boundary,
                 generator: diagram.max_generator(),
+                k: usize::MAX,
             });
             coord_to_vert.insert(path, vert);
         }
@@ -191,6 +193,8 @@ impl CubicalGeometry {
             if dim + 1 < N && diagram.dimension().saturating_sub(generator.dimension) != dim {
                 continue;
             }
+
+            verts.iter().for_each(|v| geom.verts[*v].k = dim);
 
             match dim {
                 0 => {
