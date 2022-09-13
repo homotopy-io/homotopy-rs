@@ -21,7 +21,11 @@ pub struct Props {
     pub metadata: Metadata,
 }
 
+#[derive(Debug, Default)]
 pub struct ProjectView {
+    title: String,
+    author: String,
+    abstr: String,
     reader: Option<gloo::file::callbacks::FileReader>,
 }
 
@@ -30,7 +34,7 @@ impl Component for ProjectView {
     type Properties = Props;
 
     fn create(_ctx: &Context<Self>) -> Self {
-        Self { reader: None }
+        Self::default()
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -140,8 +144,19 @@ impl Component for ProjectView {
             Msg::EditMetadata(edit, should_dispatch) => {
                 // In order to avoid generating multiple history events for a single rename, we
                 // don't dispatch renames until the user is done editing.
-                if should_dispatch {
-                    dispatch.emit(model::Action::Proof(proof::Action::EditMetadata(edit)));
+                let changed = matches!(&edit, MetadataEdit::Title(ref title) if title != &self.title)
+                    || matches!(&edit, MetadataEdit::Author(ref author) if author != &self.author)
+                    || matches!(&edit, MetadataEdit::Abstract(ref abstr) if abstr != &self.abstr);
+
+                if should_dispatch && changed {
+                    dispatch.emit(model::Action::Proof(proof::Action::EditMetadata(
+                        edit.clone(),
+                    )));
+                    match edit {
+                        MetadataEdit::Title(title) => self.title = title,
+                        MetadataEdit::Author(author) => self.author = author,
+                        MetadataEdit::Abstract(abstr) => self.abstr = abstr,
+                    }
                 }
                 should_dispatch
             }
