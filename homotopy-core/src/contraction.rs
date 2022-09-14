@@ -57,6 +57,8 @@ impl Bias {
 pub enum ContractionError {
     #[error("contraction failed: label inconsistency")]
     LabelInconsistency,
+    #[error("contraction failed: max dimensional generator not connected to all others")]
+    NonConnectedMaxDimensionGenerator,
     #[error("contraction failed: max dimensional generator not unique")]
     NonUniqueMaxDimensionGenerator,
     #[error("contraction failed: orientation error")]
@@ -674,7 +676,7 @@ fn collapse_base<Ix: IndexType>(
                     let label = <&Rewrite0>::try_from(
                         &stable[stable
                             .find_edge(p, q)
-                            .expect("node in collapse base does not connect to max_dim_index")],
+                            .ok_or(ContractionError::NonConnectedMaxDimensionGenerator)?],
                     )
                     .expect("non 0-rewrite passed to collapse_base")
                     .label()
