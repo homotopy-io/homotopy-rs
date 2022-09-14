@@ -186,3 +186,16 @@ fn snake() {
         Diagram::from(snake.source().identity())
     );
 }
+
+#[test]
+fn bubble() {
+    let (sig, bubble) = examples::bubble();
+    assert_eq!(
+        bubble
+            .identity()
+            .contract(Boundary::Target.into(), &[], 0, None, &sig)
+            .expect("failed to contract bubble")
+            .target(),
+        Diagram::from(bubble.source().identity())
+    );
+}

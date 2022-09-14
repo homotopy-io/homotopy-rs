@@ -431,6 +431,30 @@ pub fn real_snake() -> (impl Signature, DiagramN) {
     (sig, snake)
 }
 
+pub fn bubble() -> (impl Signature, DiagramN) {
+    let mut sig = SignatureBuilder::new();
+
+    // 0-cells
+    let x = sig.add_zero();
+
+    // 1-cells
+    let f = sig.add(x.clone(), x).unwrap();
+    let f_then_inverse = f.attach(&f.inverse(), Target, &[]).unwrap();
+
+    // 2-cells
+    let cap = f_then_inverse
+        .identity()
+        .contract(Boundary::Target.into(), &[], 0, None, &sig)
+        .expect("failed to contract f then inverse");
+    let cup = f_then_inverse
+        .identity()
+        .contract(Boundary::Source.into(), &[], 0, None, &sig)
+        .expect("failed to contract inverse then f");
+    let bubble = cap.attach(&cup, Source, &[]).unwrap();
+
+    (sig, bubble)
+}
+
 pub fn snake() -> (impl Signature, DiagramN) {
     let mut sig = SignatureBuilder::new();
 
