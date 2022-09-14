@@ -170,6 +170,7 @@ impl App {
             .expect("This should always succeed.");
         let dispatch = ctx.link().callback(Message::Dispatch);
         let signature = proof.signature();
+        let metadata = proof.metadata();
 
         let workspace = match proof.workspace() {
             Some(workspace) => {
@@ -177,6 +178,7 @@ impl App {
                     <WorkspaceView
                         workspace={workspace.clone()}
                         signature={signature.clone()}
+                        metadata={metadata.clone()}
                         dispatch={dispatch.reform(model::Action::Proof)}
                     />
                 }

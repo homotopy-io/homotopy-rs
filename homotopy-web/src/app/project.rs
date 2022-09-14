@@ -10,7 +10,7 @@ use crate::model::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Msg {
     ImportProof(File),
-    EditMetadata(MetadataEdit),
+    EditMetadata(MetadataEdit, bool), // (edit, should_dispatch)
     Noop,
 }
 
@@ -21,7 +21,11 @@ pub struct Props {
     pub metadata: Metadata,
 }
 
+#[derive(Debug, Default)]
 pub struct ProjectView {
+    title: String,
+    author: String,
+    abstr: String,
     reader: Option<gloo::file::callbacks::FileReader>,
 }
 
@@ -30,7 +34,7 @@ impl Component for ProjectView {
     type Properties = Props;
 
     fn create(_ctx: &Context<Self>) -> Self {
-        Self { reader: None }
+        Self::default()
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -43,6 +47,7 @@ impl Component for ProjectView {
                 Msg::Noop
             }
         });
+
         html! {
             <>
                 <button onclick={export}>{"Export"}</button>
@@ -50,53 +55,75 @@ impl Component for ProjectView {
                     {"Import"}
                 </label>
                 <input type="file" accept="application/msgpack,.hom,.json" class="visually-hidden" id="import" onchange={import}/>
-                <input
-                    type="text"
-                    class="metadata_title"
-                    name="title"
-                    placeholder="Title"
-                    value= {ctx.props().metadata.title.clone().unwrap_or_default()}
-                    oninput={ctx.link().callback(move |e: InputEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        Msg::EditMetadata(MetadataEdit::Title(input.value()))
-                    })}
-                    onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
-                        e.stop_propagation();
-                        Msg::Noop
-                    })}
-                />
+                <div class="metadata__details">
+                    <textarea
+                        class="metadata__title"
+                        name="title"
+                        placeholder="Title"
+                        value= {ctx.props().metadata.title.clone().unwrap_or_default()}
+                        oninput={ctx.link().callback(move |e: InputEvent| {
+                            let input: HtmlInputElement = e.target_unchecked_into();
+                            Msg::EditMetadata(MetadataEdit::Title(input.value()), false)
+                        })}
+                        onfocusout={ctx.link().callback(move |e: FocusEvent| {
+                            let input: HtmlInputElement = e.target_unchecked_into();
+                            Msg::EditMetadata(MetadataEdit::Title(input.value()), true)
+                        })}
+                        onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
+                            e.stop_propagation();
+                            let input: HtmlInputElement = e.target_unchecked_into();
+                            if e.key().to_ascii_lowercase() == "enter" {
+                                input.blur().unwrap();
+                                return Msg::EditMetadata(MetadataEdit::Title(input.value()), true);
+                            }
+                            Msg::Noop
+                        })}
+                    />
 
-                <input
-                    type="text"
-                    class="metadata_author"
-                    name="Author"
-                    placeholder="Author"
-                    value = {ctx.props().metadata.author.clone().unwrap_or_default()}
-                    oninput={ctx.link().callback(move |e: InputEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        Msg::EditMetadata(MetadataEdit::Author(input.value()))
-                    })}
-                    onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
-                        e.stop_propagation();
-                        Msg::Noop
-                    })}
-                />
+                    <textarea
+                        class="metadata__author"
+                        name="Author"
+                        placeholder="Author(s)"
+                        spellcheck="false"
+                        value = {ctx.props().metadata.author.clone().unwrap_or_default()}
+                        oninput={ctx.link().callback(move |e: InputEvent| {
+                            let input: HtmlInputElement = e.target_unchecked_into();
+                            Msg::EditMetadata(MetadataEdit::Author(input.value()), false)
+                        })}
+                        onfocusout={ctx.link().callback(move |e: FocusEvent| {
+                            let input: HtmlInputElement = e.target_unchecked_into();
+                            Msg::EditMetadata(MetadataEdit::Author(input.value()), true)
+                        })}
+                        onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
+                            e.stop_propagation();
+                            let input: HtmlInputElement = e.target_unchecked_into();
+                            if e.key().to_ascii_lowercase() == "enter" {
+                                input.blur().unwrap();
+                                return Msg::EditMetadata(MetadataEdit::Author(input.value()), true);
+                            }
+                            Msg::Noop
+                        })}
+                    />
 
-                <input
-                    type="textarea"
-                    class="metadata_abstract"
-                    name="Abstract"
-                    placeholder="Abstract"
-                    value = {ctx.props().metadata.abstr.clone().unwrap_or_default()}
-                    oninput={ctx.link().callback(move |e: InputEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        Msg::EditMetadata(MetadataEdit::Abstract(input.value()))
-                    })}
-                    onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
-                        e.stop_propagation();
-                        Msg::Noop
-                    })}
-                />
+                    <textarea
+                        class="metadata__abstract"
+                        name="Abstract"
+                        placeholder="Abstract"
+                        value = {ctx.props().metadata.abstr.clone().unwrap_or_default()}
+                        oninput={ctx.link().callback(move |e: InputEvent| {
+                            let input: HtmlInputElement = e.target_unchecked_into();
+                            Msg::EditMetadata(MetadataEdit::Abstract(input.value()), false)
+                        })}
+                        onfocusout={ctx.link().callback(move |e: FocusEvent| {
+                            let input: HtmlInputElement = e.target_unchecked_into();
+                            Msg::EditMetadata(MetadataEdit::Abstract(input.value()), true)
+                        })}
+                        onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
+                            e.stop_propagation();
+                            Msg::Noop
+                        })}
+                    />
+                </div>
             </>
         }
     }
@@ -114,9 +141,24 @@ impl Component for ProjectView {
                 self.reader = Some(task);
                 false
             }
-            Msg::EditMetadata(edit) => {
-                dispatch.emit(model::Action::Proof(proof::Action::EditMetadata(edit)));
-                true
+            Msg::EditMetadata(edit, should_dispatch) => {
+                // In order to avoid generating multiple history events for a single rename, we
+                // don't dispatch renames until the user is done editing.
+                let changed = matches!(&edit, MetadataEdit::Title(ref title) if title != &self.title)
+                    || matches!(&edit, MetadataEdit::Author(ref author) if author != &self.author)
+                    || matches!(&edit, MetadataEdit::Abstract(ref abstr) if abstr != &self.abstr);
+
+                if should_dispatch && changed {
+                    dispatch.emit(model::Action::Proof(proof::Action::EditMetadata(
+                        edit.clone(),
+                    )));
+                    match edit {
+                        MetadataEdit::Title(title) => self.title = title,
+                        MetadataEdit::Author(author) => self.author = author,
+                        MetadataEdit::Abstract(abstr) => self.abstr = abstr,
+                    }
+                }
+                should_dispatch
             }
             Msg::Noop => false,
         }
