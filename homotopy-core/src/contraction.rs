@@ -529,34 +529,30 @@ fn collapse_base<Ix: IndexType>(
             // n is a leaf
             continue;
         } else {
-            let mut quotient: Vec<_> = Default::default();
             // find collapsible edges wrt nodes
-            for e in stable.edge_references().filter(|e| {
+            while let Some(e) = stable.edge_references().find(|e| {
                 // e is contained within nodes
                 nodes.contains(&e.source()) && nodes.contains(&e.target())
                 // e is an identity rewrite
                 && <&Rewrite0>::try_from(e.weight()).unwrap().0.as_ref().map_or(true, |(s, t, _)| s.id == t.id)
                 // check triangles within nodes which might refute collapsibility of e
-                && stable.edges_directed(e.source(), Incoming).filter(|p| nodes.contains(&p.source())).all(|p| {
+                && stable.edges_directed(e.source(), Incoming).all(|p| {
                     if let Some(c) = stable.find_edge(p.source(), e.target()) {
-                        <&Rewrite0>::try_from(p.weight()).unwrap().label() == <&Rewrite0>::try_from(stable.edge_weight(c).unwrap()).unwrap().label()
+                        <&Rewrite0>::try_from(p.weight()).unwrap().label().and_then(|l| l.0.as_ref()) == <&Rewrite0>::try_from(stable.edge_weight(c).unwrap()).unwrap().label().and_then(|l| l.0.as_ref())
                     } else {
                         true
                     }
                 })
-                && stable.edges_directed(e.target(), Outgoing).filter(|n| nodes.contains(&n.target())).all(|n| {
+                && stable.edges_directed(e.target(), Outgoing).all(|n| {
                     if let Some(c) = stable.find_edge(e.source(), n.target()) {
-                        <&Rewrite0>::try_from(n.weight()).unwrap().label() == <&Rewrite0>::try_from(stable.edge_weight(c).unwrap()).unwrap().label()
+                        <&Rewrite0>::try_from(n.weight()).unwrap().label().and_then(|l| l.0.as_ref()) == <&Rewrite0>::try_from(stable.edge_weight(c).unwrap()).unwrap().label().and_then(|l| l.0.as_ref())
                     } else {
                         true
                     }
                 })
             }) {
                 // e is collapsible
-                quotient.push((e.source(), e.target()));
-            }
-
-            for (s, t) in quotient {
+                let (s, t) = (e.source(), e.target());
                 unify(
                     &mut stable,
                     s,
