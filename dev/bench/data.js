@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1662833623266,
+  "lastUpdate": 1663167324281,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -41279,6 +41279,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 34.26,
             "range": "+/- 0.076",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thud@thud.dev",
+            "name": "Jasper Parish",
+            "username": "thud"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2026b4f06d098f5262ac013e5da6ddf8b590653e",
+          "message": "Add to metadata UI (#808)\n\n* Only dispatch certain metadata edits\r\n\r\n* Add large project title text under workspace\r\n\r\n* Dispatch metadata changes on enter key\r\n\r\n* Fix text wrapping with textareas\r\n\r\n* Ignore dispatching unnecessary edit events\r\n\r\n* Make project title text user-selectable\r\n\r\n* Make project title overflow correctly in workspace\r\n\r\n* Always create title in DOM",
+          "timestamp": "2022-09-14T13:55:16Z",
+          "tree_id": "a487e8c5a7fc52d7f6ebfcb5b9f68ea5a754f1f1",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/2026b4f06d098f5262ac013e5da6ddf8b590653e"
+        },
+        "date": 1663167314378,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.8436,
+            "range": "+/- 0.008",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 11.092,
+            "range": "+/- 0.008",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 50.465,
+            "range": "+/- 0.045",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 320.75,
+            "range": "+/- 0.220",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.6966,
+            "range": "+/- 0.002",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 26.99,
+            "range": "+/- 0.038",
             "unit": "s"
           }
         ]
