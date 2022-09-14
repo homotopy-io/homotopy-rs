@@ -418,10 +418,10 @@ fn collapse_base<Ix: IndexType>(
             RetargetTarget(NodeIndex<Ix>, NodeIndex<Ix>, EdgeIndex<Ix>),
             RemoveNode(NodeIndex<Ix>),
         }
+        let (p, q) = (quotient.find_mut(p), quotient.find_mut(q));
         if p == q {
             return Ok(());
         }
-        let (p, q) = (quotient.find_mut(p), quotient.find_mut(q));
         quotient.union(p, q);
         let keep = quotient.find_mut(p);
         let remove = if keep == p { q } else { p };
