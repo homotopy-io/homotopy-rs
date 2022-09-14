@@ -446,9 +446,11 @@ fn collapse_base<Ix: IndexType>(
                         if <&Rewrite0>::try_from(&graph[existing])
                             .expect("non 0-rewrite passed to collapse_base unify")
                             .label()
+                            .and_then(|l| l.0.as_ref())
                             != <&Rewrite0>::try_from(&graph[e])
                                 .expect("non 0-rewrite passed to collapse_base unify")
                                 .label()
+                                .and_then(|l| l.0.as_ref())
                         {
                             return Err(ContractionError::LabelInconsistency);
                         }
@@ -463,9 +465,11 @@ fn collapse_base<Ix: IndexType>(
                         if <&Rewrite0>::try_from(&graph[existing])
                             .expect("non 0-rewrite passed to collapse_base unify")
                             .label()
+                            .and_then(|l| l.0.as_ref())
                             != <&Rewrite0>::try_from(&graph[e])
                                 .expect("non 0-rewrite passed to collapse_base unify")
                                 .label()
+                                .and_then(|l| l.0.as_ref())
                         {
                             return Err(ContractionError::LabelInconsistency);
                         }
