@@ -60,11 +60,10 @@ impl Component for WorkspaceView {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let diagram = Self::visible_diagram(ctx);
-        let project_title = match ctx.props().metadata.title {
-            Some(ref title) => html! {
-                <div class="workspace__project-title">{title}</div>
-            },
-            None => Default::default(),
+        let project_title = html! {
+            <div class="workspace__project-title">
+                {ctx.props().metadata.title.as_ref().map(Clone::clone).unwrap_or_default()}
+            </div>
         };
         let slice_buttons = match ctx.props().workspace.view.dimension() {
             1 | 2 => html! {
