@@ -92,10 +92,7 @@ pub enum ExternalRewrite {
 
 impl ExternalRewrite {
     pub fn is_atomic(self) -> bool {
-        match self {
-            Self::RegularSlice { .. } => false,
-            _ => true,
-        }
+        !matches!(self, Self::RegularSlice { .. })
     }
 
     pub fn is_flange(self) -> bool {

@@ -13,7 +13,7 @@ use petgraph::{graph::NodeIndex, visit::EdgeRef, EdgeDirection, Graph};
 
 use crate::{
     common::{DimensionError, SingularHeight},
-    graph::{Explodable, ExternalRewrite, SliceGraph},
+    graph::{Explodable, SliceGraph},
     Boundary, Diagram, DiagramN, Direction, Height, RewriteN, SliceIndex,
 };
 

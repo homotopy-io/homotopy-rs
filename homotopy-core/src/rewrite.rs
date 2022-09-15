@@ -562,25 +562,6 @@ impl RewriteN {
         Self::new(dimension, Vec::new())
     }
 
-    pub(crate) fn make_degeneracy(dimension: usize, trivial_heights: &[SingularHeight]) -> Self {
-        let cones = trivial_heights
-            .iter()
-            .enumerate()
-            .map(|(i, height)| {
-                Cone::new_unit(
-                    height - i,
-                    Cospan {
-                        forward: Rewrite::identity(dimension - 1),
-                        backward: Rewrite::identity(dimension - 1),
-                    },
-                    Rewrite::identity(dimension - 1),
-                )
-            })
-            .collect();
-
-        Self::new(dimension, cones)
-    }
-
     #[inline]
     pub fn from_slices(
         dimension: usize,
