@@ -1,6 +1,10 @@
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
 
+use auth_bindings::*;
+
+pub mod auth_bindings;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Msg {
     LogIn,
@@ -23,6 +27,7 @@ impl Component for AccountView {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+
         html! {
             <>
                 <h3 id="username">{"Guest user"}</h3>
@@ -33,24 +38,41 @@ impl Component for AccountView {
                 <button onclick={ctx.link().callback(|_| Msg::LogOut)}>
                     { "Log out" }
                 </button>
+                <div id="firebaseui-auth-container"></div>
             </>
+        }
+    }
+
+    fn rendered(&mut self, _ctx: &Context<Self>, first_render: bool) {
+        if first_render {
+            initialize_ui();
         }
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::LogIn => log_in(),
-            Msg::LogOut => log_out(),
+            Msg::LogIn => {
+                // let auth = get_auth();
+                // let provider = GoogleAuthProvider::new();
+
+                // let result = sign_in_with_popup_google(auth, provider);
+                // if let Some(u) = result {
+                //     log::debug!("{}", "yes yes!");
+                // } else {
+                //     log::debug!("{}", "no no!");
+                // }
+            },
+            Msg::LogOut => {},
         };
         false
     }
 }
 
-#[wasm_bindgen(module = "/src/app/account/account_script.js")]
-extern "C" {
-    #[wasm_bindgen(js_name = "logIn")]
-    pub fn log_in();
+// #[wasm_bindgen(module = "/src/app/account/account_script.js")]
+// extern "C" {
+//     #[wasm_bindgen(js_name = "logIn")]
+//     pub fn log_in();
 
-    #[wasm_bindgen(js_name = "logOut")]
-    pub fn log_out();
-}
+//     #[wasm_bindgen(js_name = "logOut")]
+//     pub fn log_out();
+// }

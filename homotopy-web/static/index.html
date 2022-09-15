@@ -11,6 +11,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=IBM+Plex+Sans">
     <link rel="stylesheet" type="text/css" href="/styles.css">
+    <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.css" />
   </head>
   <body>
     <script type="module">
@@ -38,33 +39,37 @@
 		function display_panic_message() {window.document.getElementById("panic").style.display = "table";};
 		window.help=display_panic_message;
 	</script>
+  <script src="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.9.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.9.4/firebase-auth-compat.js"></script>
     <script type="module">
       // Import the functions you need from the SDKs you need
       import { initializeApp } from "https://www.gstatic.com/firebasejs/9.7.0/firebase-app.js";
       import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.7.0/firebase-analytics.js";
       import { getPerformance } from "https://www.gstatic.com/firebasejs/9.7.0/firebase-performance.js";
       import { getAuth } from "https://www.gstatic.com/firebasejs/9.7.0/firebase-auth.js";
+
       // TODO: Add SDKs for Firebase products that you want to use
       // https://firebase.google.com/docs/web/setup#available-libraries
 
       // Your web app's Firebase configuration
       // For Firebase JS SDK v7.20.0 and later, measurementId is optional
       const firebaseConfig = {
-        apiKey: "AIzaSyBCtkQM2P7eBAFtKWnlGfyTNyTHE8y5wXY",
-        authDomain: "homotopy-io.firebaseapp.com",
-        databaseURL: "https://homotopy-io.firebaseio.com",
-        projectId: "homotopy-io",
-        storageBucket: "homotopy-io.appspot.com",
-        messagingSenderId: "872831343483",
-        appId: "1:872831343483:web:4de585eb01b14a27ad3bde",
-        measurementId: "G-CYGQVSSM6Q"
+        apiKey: "AIzaSyBbn1EZwUrcwptd56iXezcVTnWeu6I6iac",
+        authDomain: "homotopy-test.firebaseapp.com",
+        projectId: "homotopy-test",
+        storageBucket: "homotopy-test.appspot.com",
+        messagingSenderId: "410689461996",
+        appId: "1:410689461996:web:5147f0179f66bf2e5bcfc9",
+        measurementId: "G-KML50ZHFGS"
       };
 
       // Initialize Firebase
-      const app = initializeApp(firebaseConfig);
-      const analytics = getAnalytics(app);
-      const perf = getPerformance(app);
-      const auth = getAuth(app);
+      const app = firebase.initializeApp(firebaseConfig);
+      // const analytics = getAnalytics(app);
+      // const perf = getPerformance(app);
+      const auth = firebase.auth();
+
     </script>
   </body>
 </html>
