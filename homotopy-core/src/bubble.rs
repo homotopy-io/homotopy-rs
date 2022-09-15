@@ -1,7 +1,4 @@
-use crate::{
-    rewrite::{Cone, Label},
-    Cospan, Diagram, Orientation, Rewrite, Rewrite0, RewriteN,
-};
+use crate::{rewrite::Cone, Cospan, Diagram, Orientation, Rewrite, Rewrite0, RewriteN};
 
 pub fn bubble(source: &Diagram, cospan: Cospan) -> (Diagram, Cospan) {
     use Orientation::Zero;
@@ -58,7 +55,7 @@ impl Rewrite {
         match source {
             Diagram::Diagram0(s) => {
                 let t = s.orientation_transform(Zero);
-                Rewrite0::new(*s, t, Label::new(None)).into()
+                Rewrite0::new(*s, t, None).into()
             }
             Diagram::DiagramN(source) => {
                 let singular = source.singular_slices();

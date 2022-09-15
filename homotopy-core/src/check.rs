@@ -6,7 +6,7 @@ use thiserror::Error;
 use crate::{
     common::Mode,
     diagram::RewritingError,
-    rewrite::{CompositionError, Cone, Label},
+    rewrite::{CompositionError, Cone},
     Diagram, DiagramN, Direction, Height, Rewrite, Rewrite0, RewriteN,
 };
 
@@ -329,7 +329,7 @@ impl Rewrite {
 
 impl Rewrite0 {
     fn strip_labels(&self) -> Self {
-        Rewrite0(self.0.as_ref().map(|(s, t, _)| (*s, *t, Label::new(None))))
+        Self(self.0.as_ref().map(|(s, t, _)| (*s, *t, None)))
     }
 }
 

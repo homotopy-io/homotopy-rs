@@ -22,18 +22,28 @@ DiagramN {
                                 forward: Rewrite0(
                                     0:0⁺,
                                     1:2⁺,
-                                    Label(
-                                        Some(
-                                            (1, BoundaryPath(Source, 1), []),
+                                    Some(
+                                        (
+                                            1,
+                                            BoundaryPath(
+                                                Source,
+                                                1,
+                                            ),
+                                            [],
                                         ),
                                     ),
                                 ),
                                 backward: Rewrite0(
                                     0:0⁺,
                                     1:2⁺,
-                                    Label(
-                                        Some(
-                                            (1, BoundaryPath(Target, 1), []),
+                                    Some(
+                                        (
+                                            1,
+                                            BoundaryPath(
+                                                Target,
+                                                1,
+                                            ),
+                                            [],
                                         ),
                                     ),
                                 ),
@@ -42,9 +52,18 @@ DiagramN {
                                 Rewrite0(
                                     0:0⁺,
                                     1:2⁺,
-                                    Label(
-                                        Some(
-                                            (1, BoundaryPath(Source, 0), [Regular(0)]),
+                                    Some(
+                                        (
+                                            1,
+                                            BoundaryPath(
+                                                Source,
+                                                0,
+                                            ),
+                                            [
+                                                Regular(
+                                                    0,
+                                                ),
+                                            ],
                                         ),
                                     ),
                                 ),
@@ -60,18 +79,28 @@ DiagramN {
                                 forward: Rewrite0(
                                     0:0⁺,
                                     1:2⁺,
-                                    Label(
-                                        Some(
-                                            (1, BoundaryPath(Source, 1), []),
+                                    Some(
+                                        (
+                                            1,
+                                            BoundaryPath(
+                                                Source,
+                                                1,
+                                            ),
+                                            [],
                                         ),
                                     ),
                                 ),
                                 backward: Rewrite0(
                                     0:0⁺,
                                     1:2⁺,
-                                    Label(
-                                        Some(
-                                            (1, BoundaryPath(Target, 1), []),
+                                    Some(
+                                        (
+                                            1,
+                                            BoundaryPath(
+                                                Target,
+                                                1,
+                                            ),
+                                            [],
                                         ),
                                     ),
                                 ),
@@ -80,9 +109,18 @@ DiagramN {
                                 Rewrite0(
                                     0:0⁺,
                                     1:2⁺,
-                                    Label(
-                                        Some(
-                                            (1, BoundaryPath(Source, 0), [Regular(0)]),
+                                    Some(
+                                        (
+                                            1,
+                                            BoundaryPath(
+                                                Source,
+                                                0,
+                                            ),
+                                            [
+                                                Regular(
+                                                    0,
+                                                ),
+                                            ],
                                         ),
                                     ),
                                 ),
@@ -103,18 +141,28 @@ DiagramN {
                                 forward: Rewrite0(
                                     0:0⁺,
                                     1:2⁺,
-                                    Label(
-                                        Some(
-                                            (1, BoundaryPath(Source, 1), []),
+                                    Some(
+                                        (
+                                            1,
+                                            BoundaryPath(
+                                                Source,
+                                                1,
+                                            ),
+                                            [],
                                         ),
                                     ),
                                 ),
                                 backward: Rewrite0(
                                     0:0⁺,
                                     1:2⁺,
-                                    Label(
-                                        Some(
-                                            (1, BoundaryPath(Target, 1), []),
+                                    Some(
+                                        (
+                                            1,
+                                            BoundaryPath(
+                                                Target,
+                                                1,
+                                            ),
+                                            [],
                                         ),
                                     ),
                                 ),
@@ -123,9 +171,18 @@ DiagramN {
                                 Rewrite0(
                                     0:0⁺,
                                     1:2⁺,
-                                    Label(
-                                        Some(
-                                            (1, BoundaryPath(Target, 0), [Regular(0)]),
+                                    Some(
+                                        (
+                                            1,
+                                            BoundaryPath(
+                                                Target,
+                                                0,
+                                            ),
+                                            [
+                                                Regular(
+                                                    0,
+                                                ),
+                                            ],
                                         ),
                                     ),
                                 ),
@@ -141,18 +198,28 @@ DiagramN {
                                 forward: Rewrite0(
                                     0:0⁺,
                                     1:2⁺,
-                                    Label(
-                                        Some(
-                                            (1, BoundaryPath(Source, 1), []),
+                                    Some(
+                                        (
+                                            1,
+                                            BoundaryPath(
+                                                Source,
+                                                1,
+                                            ),
+                                            [],
                                         ),
                                     ),
                                 ),
                                 backward: Rewrite0(
                                     0:0⁺,
                                     1:2⁺,
-                                    Label(
-                                        Some(
-                                            (1, BoundaryPath(Target, 1), []),
+                                    Some(
+                                        (
+                                            1,
+                                            BoundaryPath(
+                                                Target,
+                                                1,
+                                            ),
+                                            [],
                                         ),
                                     ),
                                 ),
@@ -161,9 +228,18 @@ DiagramN {
                                 Rewrite0(
                                     0:0⁺,
                                     1:2⁺,
-                                    Label(
-                                        Some(
-                                            (1, BoundaryPath(Target, 0), [Regular(0)]),
+                                    Some(
+                                        (
+                                            1,
+                                            BoundaryPath(
+                                                Target,
+                                                0,
+                                            ),
+                                            [
+                                                Regular(
+                                                    0,
+                                                ),
+                                            ],
                                         ),
                                     ),
                                 ),

@@ -29,7 +29,7 @@ use crate::{
     diagram::{Diagram, DiagramN},
     expansion::expand_propagate,
     graph::{Explodable, ExplosionOutput, ExternalRewrite, InternalRewrite},
-    rewrite::{Cone, Cospan, Label, Rewrite, Rewrite0, RewriteN},
+    rewrite::{Cone, Cospan, Rewrite, Rewrite0, RewriteN},
     signature::Signature,
     Direction, Generator, SliceIndex,
 };
@@ -448,11 +448,9 @@ fn collapse_base<Ix: IndexType>(
                         if <&Rewrite0>::try_from(&graph[existing])
                             .expect("non 0-rewrite passed to collapse_base unify")
                             .label()
-                            .and_then(|l| l.0.as_ref())
                             != <&Rewrite0>::try_from(&graph[e])
                                 .expect("non 0-rewrite passed to collapse_base unify")
                                 .label()
-                                .and_then(|l| l.0.as_ref())
                         {
                             return Err(ContractionError::LabelInconsistency);
                         }
@@ -467,11 +465,9 @@ fn collapse_base<Ix: IndexType>(
                         if <&Rewrite0>::try_from(&graph[existing])
                             .expect("non 0-rewrite passed to collapse_base unify")
                             .label()
-                            .and_then(|l| l.0.as_ref())
                             != <&Rewrite0>::try_from(&graph[e])
                                 .expect("non 0-rewrite passed to collapse_base unify")
                                 .label()
-                                .and_then(|l| l.0.as_ref())
                         {
                             return Err(ContractionError::LabelInconsistency);
                         }
@@ -541,14 +537,14 @@ fn collapse_base<Ix: IndexType>(
                 // check triangles within nodes which might refute collapsibility of e
                 && stable.edges_directed(e.source(), Incoming).all(|p| {
                     if let Some(c) = stable.find_edge(p.source(), e.target()) {
-                        <&Rewrite0>::try_from(p.weight()).unwrap().label().and_then(|l| l.0.as_ref()) == <&Rewrite0>::try_from(stable.edge_weight(c).unwrap()).unwrap().label().and_then(|l| l.0.as_ref())
+                        <&Rewrite0>::try_from(p.weight()).unwrap().label() == <&Rewrite0>::try_from(stable.edge_weight(c).unwrap()).unwrap().label()
                     } else {
                         true
                     }
                 })
                 && stable.edges_directed(e.target(), Outgoing).all(|n| {
                     if let Some(c) = stable.find_edge(e.source(), n.target()) {
-                        <&Rewrite0>::try_from(n.weight()).unwrap().label().and_then(|l| l.0.as_ref()) == <&Rewrite0>::try_from(stable.edge_weight(c).unwrap()).unwrap().label().and_then(|l| l.0.as_ref())
+                        <&Rewrite0>::try_from(n.weight()).unwrap().label() == <&Rewrite0>::try_from(stable.edge_weight(c).unwrap()).unwrap().label()
                     } else {
                         true
                     }
@@ -674,7 +670,7 @@ fn collapse_base<Ix: IndexType>(
                 let (p, q) = (union_find.find_mut(n), union_find.find_mut(max_dim_index));
                 if p == q {
                     debug_assert_eq!(g.id, colimit.id);
-                    Rewrite0::new(g, colimit, Label::new(None))
+                    Rewrite0::new(g, colimit, None)
                 } else {
                     let label = <&Rewrite0>::try_from(
                         &stable[stable
@@ -683,8 +679,7 @@ fn collapse_base<Ix: IndexType>(
                     )
                     .expect("non 0-rewrite passed to collapse_base")
                     .label()
-                    .cloned()
-                    .unwrap();
+                    .clone();
                     Rewrite0::new(g, colimit, label)
                 }
             };

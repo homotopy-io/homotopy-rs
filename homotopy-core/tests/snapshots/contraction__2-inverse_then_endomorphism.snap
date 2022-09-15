@@ -12,18 +12,28 @@ DiagramN {
                 forward: Rewrite0(
                     0:0⁺,
                     1:1⁺,
-                    Label(
-                        Some(
-                            (1, BoundaryPath(Source, 0), []),
+                    Some(
+                        (
+                            1,
+                            BoundaryPath(
+                                Source,
+                                0,
+                            ),
+                            [],
                         ),
                     ),
                 ),
                 backward: Rewrite0(
                     0:0⁺,
                     1:1⁺,
-                    Label(
-                        Some(
-                            (1, BoundaryPath(Target, 0), []),
+                    Some(
+                        (
+                            1,
+                            BoundaryPath(
+                                Target,
+                                0,
+                            ),
+                            [],
                         ),
                     ),
                 ),

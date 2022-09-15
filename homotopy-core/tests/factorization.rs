@@ -1,8 +1,5 @@
 use homotopy_core::{
-    attach::BoundaryPath,
-    factorization::factorize,
-    rewrite::{Cone, Label},
-    signature::SignatureBuilder,
+    attach::BoundaryPath, factorization::factorize, rewrite::Cone, signature::SignatureBuilder,
     Boundary, Cospan, Diagram, DiagramN, Generator, Height, Rewrite, Rewrite0, RewriteN,
     SliceIndex,
 };
@@ -188,14 +185,12 @@ fn scalar_braid() {
     let s = Generator::new(2, 3);
 
     let f_cospan = Cospan {
-        forward: Rewrite0::new(x, f, Label::new(Some((1, BoundaryPath(Source, 1), vec![])))).into(),
-        backward: Rewrite0::new(x, f, Label::new(Some((1, BoundaryPath(Target, 1), vec![]))))
-            .into(),
+        forward: Rewrite0::new(x, f, Some((1, BoundaryPath(Source, 1), vec![]))).into(),
+        backward: Rewrite0::new(x, f, Some((1, BoundaryPath(Target, 1), vec![]))).into(),
     };
     let s_cospan = Cospan {
-        forward: Rewrite0::new(x, s, Label::new(Some((2, BoundaryPath(Source, 2), vec![])))).into(),
-        backward: Rewrite0::new(x, s, Label::new(Some((2, BoundaryPath(Target, 2), vec![]))))
-            .into(),
+        forward: Rewrite0::new(x, s, Some((2, BoundaryPath(Source, 2), vec![]))).into(),
+        backward: Rewrite0::new(x, s, Some((2, BoundaryPath(Target, 2), vec![]))).into(),
     };
 
     let rewrite_f = RewriteN::new(
@@ -207,23 +202,14 @@ fn scalar_braid() {
                 Rewrite0::new(
                     x,
                     s,
-                    Label::new(Some((
-                        2,
-                        BoundaryPath(Source, 0),
-                        vec![Regular(0), Regular(0)],
-                    ))),
+                    Some((2, BoundaryPath(Source, 0), vec![Regular(0), Regular(0)])),
                 )
                 .into(),
             ),
             Cone::new_unit(
                 0,
                 f_cospan.clone(),
-                Rewrite0::new(
-                    x,
-                    f,
-                    Label::new(Some((1, BoundaryPath(Source, 0), vec![Regular(0)]))),
-                )
-                .into(),
+                Rewrite0::new(x, f, Some((1, BoundaryPath(Source, 0), vec![Regular(0)]))).into(),
             ),
         ],
     )
@@ -234,12 +220,7 @@ fn scalar_braid() {
         vec![Cone::new_unit(
             0,
             s_cospan.clone(),
-            Rewrite0::new(
-                x,
-                s,
-                Label::new(Some((2, BoundaryPath(Source, 1), vec![Regular(0)]))),
-            )
-            .into(),
+            Rewrite0::new(x, s, Some((2, BoundaryPath(Source, 1), vec![Regular(0)]))).into(),
         )],
     )
     .into();
