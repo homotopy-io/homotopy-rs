@@ -181,15 +181,13 @@ impl Signature {
         let id = self.next_generator_id();
         let generator = Generator::new(id, source.dimension() + 1);
         // TODO(@calintat): Remove this when we have directed typechecking.
-        let invertible = invertible
-            || source
-                .generators()
-                .iter()
-                .chain(target.generators().iter())
-                .any(|g| {
-                    self.generator_info(*g)
-                        .map_or(false, |info| info.invertible)
-                });
+        let invertible = if invertible {
+            true
+        } else {
+            // Check if either boundary is invertible (but rule out identities).
+            (source.is_invertible(self) && source.size().map_or(true, |size| size > 0))
+                || (target.is_invertible(self) && target.size().map_or(true, |size| size > 0))
+        };
         let diagram = DiagramN::from_generator(generator, source, target)?;
         self.insert(generator, diagram.clone(), name, invertible);
         Ok(diagram.into())
