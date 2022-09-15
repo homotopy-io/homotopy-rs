@@ -172,24 +172,13 @@ impl App {
         let signature = proof.signature();
         let metadata = proof.metadata();
 
-        let workspace = match proof.workspace() {
-            Some(workspace) => {
-                html! {
-                    <WorkspaceView
-                        workspace={workspace.clone()}
-                        signature={signature.clone()}
-                        metadata={metadata.clone()}
-                        dispatch={dispatch.reform(model::Action::Proof)}
-                    />
-                }
-            }
-            None => {
-                // TODO: Show onboarding info if workspace and signature is empty
-                html! {
-                    <content class="workspace workspace--empty">
-                    </content>
-                }
-            }
+        let workspace = html! {
+            <WorkspaceView
+                workspace={proof.workspace().map(Clone::clone)}
+                signature={signature.clone()}
+                metadata={metadata.clone()}
+                dispatch={dispatch.reform(model::Action::Proof)}
+            />
         };
 
         let boundary_preview = match proof.boundary() {
