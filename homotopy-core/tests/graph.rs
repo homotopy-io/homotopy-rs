@@ -1,10 +1,7 @@
-use std::iter::once;
-
 use homotopy_core::{
     graph::{Explodable, ExplosionOutput, ExternalRewrite, InternalRewrite, SliceGraph},
-    Boundary, Cospan, DiagramN, Rewrite, RewriteN, SliceIndex,
+    Cospan, DiagramN, Rewrite, RewriteN, SliceIndex,
 };
-use itertools::Itertools;
 use petgraph::graph::DefaultIx;
 use proptest::prelude::*;
 
@@ -34,12 +31,8 @@ proptest! {
                     InternalRewrite::Interior(_, _) => Some(None),
                 },
                 |_, (), er| match er {
-                    ExternalRewrite::Boundary(_)
-                    | ExternalRewrite::Sparse(_)
-                    | ExternalRewrite::Flange => None,
-                    ExternalRewrite::UnitSlice => Some(ExternalRewrite::UnitSlice.into()),
-                    ExternalRewrite::RegularSlice(h) => Some(ExternalRewrite::RegularSlice(h).into()),
-                    ExternalRewrite::SingularSlice(h) => Some(ExternalRewrite::SingularSlice(h).into()),
+                    ExternalRewrite::Boundary(_) | ExternalRewrite::Sparse(_) => None,
+                    ExternalRewrite::RegularSlice { .. } | ExternalRewrite::SingularSlice { .. } => Some(er.into()),
                 },
             )
             .unwrap();
@@ -77,9 +70,8 @@ proptest! {
         prop_assert_eq!(reconstructed_target, target);
 
         let reconstructed_rewrite = {
-            let mut regular_slices: Vec<Vec<Rewrite>> = vec![vec![]];
-            let mut singular_slices: Vec<Vec<Rewrite>> = vec![vec![]];
-            #[allow(clippy::match_same_arms)]
+            let mut regular_slices: Vec<Vec<Rewrite>> = vec![vec![]; target_cospans.len()];
+            let mut singular_slices: Vec<Vec<Rewrite>> = vec![vec![]; target_cospans.len()];
             edge_to_edges[rwr]
                 .iter()
                 .map(|&e| {
@@ -88,46 +80,9 @@ proptest! {
                         .and_then(|(o, r)| Some(((*o)?, r.clone())))
                         .unwrap()
                 })
-                .chain(once((
-                    ExternalRewrite::Boundary(Boundary::Target),
-                    Rewrite::identity(1),
-                )))
-                .tuple_windows()
-                .for_each(|(cur, next)| match (cur.0, next.0) {
-                    // last slice
-                    (
-                        ExternalRewrite::UnitSlice | ExternalRewrite::RegularSlice(_),
-                        ExternalRewrite::Boundary(_),
-                    ) => {
-                        regular_slices.last_mut().unwrap().push(cur.1);
-                    }
-                    (ExternalRewrite::SingularSlice(_), ExternalRewrite::Boundary(_)) => {
-                        singular_slices.last_mut().unwrap().push(cur.1);
-                    }
-                    // not last slice
-                    (ExternalRewrite::UnitSlice, _)
-                    | (
-                        ExternalRewrite::RegularSlice(_),
-                        ExternalRewrite::UnitSlice | ExternalRewrite::RegularSlice(_),
-                    ) => {
-                        regular_slices.last_mut().unwrap().push(cur.1);
-                        regular_slices.push(vec![]);
-                        singular_slices.push(vec![]);
-                    }
-                    (ExternalRewrite::RegularSlice(_), ExternalRewrite::SingularSlice(_)) => {
-                        regular_slices.last_mut().unwrap().push(cur.1);
-                    }
-                    (ExternalRewrite::SingularSlice(_), ExternalRewrite::RegularSlice(_)) => {
-                        singular_slices.last_mut().unwrap().push(cur.1);
-                    }
-                    (
-                        ExternalRewrite::SingularSlice(_),
-                        ExternalRewrite::UnitSlice | ExternalRewrite::SingularSlice(_),
-                    ) => {
-                        singular_slices.last_mut().unwrap().push(cur.1);
-                        regular_slices.push(vec![]);
-                        singular_slices.push(vec![]);
-                    }
+                .for_each(|(er, r)| match er {
+                    ExternalRewrite::RegularSlice { target_height, .. } => regular_slices[target_height].push(r),
+                    ExternalRewrite::SingularSlice { target_height, .. } => singular_slices[target_height].push(r),
                     _ => unreachable!(),
                 });
             RewriteN::from_slices(
