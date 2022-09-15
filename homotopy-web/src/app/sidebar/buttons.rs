@@ -68,6 +68,12 @@ declare_sidebar_tools! {
         model::Action::Proof(model::proof::Action::Befoot),
     }
 
+    BUTTON_INVERT {
+        "Invert",
+        "swap_calls",
+        model::Action::Proof(model::proof::Action::Invert),
+    }
+
     BUTTON_RESTRICT {
         "Restrict",
         "find_replace",

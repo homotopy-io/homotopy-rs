@@ -33,6 +33,7 @@ declare_keybindings! {
     "u" => Action::History(history::Action::Move(history::Direction::Linear(Direction::Backward)))
     "d" => Action::Proof(proof::Action::Behead)
     "f" => Action::Proof(proof::Action::Befoot)
+    "v" => Action::Proof(proof::Action::Invert)
     "r" => Action::Proof(proof::Action::Restrict)
     "h" => Action::Proof(proof::Action::Theorem)
     "a" => Action::Proof(proof::Action::CreateGeneratorZero)

@@ -174,6 +174,8 @@ pub enum Action {
 
     Befoot,
 
+    Invert,
+
     Restrict,
 
     Theorem,
@@ -215,6 +217,8 @@ pub enum ModelError {
     InvalidSlice(#[from] DimensionError),
     #[error("invalid action")]
     InvalidAction,
+    #[error("the diagram cannot be inverted because not all generators are defined as invertible")]
+    NotInvertible,
     #[error("error while performing expansion: {0}")]
     ExpansionError(#[from] ExpansionError),
     #[error("error while performing contraction: {0}")]
@@ -252,6 +256,7 @@ impl ProofState {
             }
             Action::Behead => self.behead()?,
             Action::Befoot => self.befoot()?,
+            Action::Invert => self.invert()?,
             Action::Restrict => self.restrict()?,
             Action::Theorem => self.theorem()?,
             Action::EditSignature(edit) => self.edit_signature(edit)?,
@@ -322,6 +327,10 @@ impl ProofState {
                         }
                     })
             }
+            Action::Invert => self
+                .workspace
+                .as_ref()
+                .map_or(false, |ws| ws.diagram.dimension() > 0 && ws.path.is_empty()),
             Action::AscendSlice(_) | Action::SwitchSlice(_) => self
                 .workspace
                 .as_ref()
@@ -877,6 +886,22 @@ impl ProofState {
             ws.diagram = befooted_diagram;
             ws.path = Default::default();
             self.clear_attach();
+        }
+
+        Ok(())
+    }
+
+    /// Handler for [Action::Invert].
+    fn invert(&mut self) -> Result<(), ModelError> {
+        if let Some(ws) = &mut self.workspace {
+            if ws.diagram.is_invertible(&self.signature) {
+                let diagram: &DiagramN = (&ws.diagram)
+                    .try_into()
+                    .map_err(|_dimerr| ModelError::InvalidAction)?;
+                ws.diagram = diagram.inverse().into();
+            } else {
+                return Err(ModelError::NotInvertible);
+            }
         }
 
         Ok(())
