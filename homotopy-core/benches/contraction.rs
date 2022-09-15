@@ -1,9 +1,5 @@
 use criterion::{criterion_group, BenchmarkId, Criterion};
-use homotopy_core::{
-    examples,
-    typecheck::{typecheck, Mode},
-    Bias, Boundary,
-};
+use homotopy_core::{examples, Bias, Boundary, Diagram};
 
 fn contract_scalar(crit: &mut Criterion) {
     let mut group = crit.benchmark_group("contract scalar");
@@ -39,14 +35,11 @@ fn contract_beads(crit: &mut Criterion) {
         });
     });
 
-    let contracted = diagram
+    let contracted: Diagram = diagram
         .identity()
         .contract(Boundary::Target.into(), &[], 1, None, &sig)
         .unwrap()
         .into();
-    group.bench_function("typecheck", |b| {
-        b.iter(|| typecheck(&contracted, &sig, Mode::Deep).unwrap());
-    });
 
     group.finish();
 }
@@ -63,14 +56,12 @@ fn contract_stacks(crit: &mut Criterion) {
         });
     });
 
-    let contracted = diagram
+    let contracted: Diagram = diagram
         .identity()
         .contract(Boundary::Target.into(), &[], 0, None, &sig)
         .unwrap()
         .into();
-    group.bench_function("typecheck", |b| {
-        b.iter(|| typecheck(&contracted, &sig, Mode::Deep).unwrap());
-    });
+
     group.finish();
 }
 
