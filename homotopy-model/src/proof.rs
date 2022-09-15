@@ -941,12 +941,13 @@ impl ProofState {
             .try_into()
             .map_err(|_dimerr| ModelError::InvalidAction)?;
 
+        let invertible = Diagram::from(diagram.clone()).is_invertible(self.signature());
         // new generator of singular height 1 from source to target of current diagram
         let singleton = self.signature.create_generator(
             diagram.source(),
             diagram.target(),
             "Theorem",
-            false, // TODO(@calintat): if the diagram is invertible, set this to true
+            invertible,
         )?;
 
         // rewrite from singleton to original diagram
