@@ -75,21 +75,34 @@ impl InternalRewrite {
 pub enum ExternalRewrite {
     /// Padded identity along boundary.
     Boundary(Boundary),
-    /// Sparse identity between regular slices.
+    /// Sparse identity between regular heights.
     Sparse(RegularHeight),
-    /// Side flange.
-    Flange,
-    /// Unique slice of a unit cone.
-    UnitSlice,
-    /// Regular slice of a non-unit cone.
-    RegularSlice(RegularHeight),
-    /// Singular slice of a non-unit cone.
-    SingularSlice(SingularHeight),
+    /// Regular slice going from a regular height to a singular height.
+    RegularSlice {
+        source_height: RegularHeight,
+        target_height: SingularHeight,
+        flange: bool,
+    },
+    /// Singular slice going from a singular height to a singular height.
+    SingularSlice {
+        source_height: SingularHeight,
+        target_height: SingularHeight,
+    },
 }
 
 impl ExternalRewrite {
     pub fn is_atomic(self) -> bool {
-        !matches!(self, Self::Flange | Self::UnitSlice | Self::RegularSlice(_))
+        match self {
+            Self::RegularSlice { .. } => false,
+            _ => true,
+        }
+    }
+
+    pub fn is_flange(self) -> bool {
+        match self {
+            Self::RegularSlice { flange, .. } => flange,
+            _ => false,
+        }
     }
 }
 
@@ -235,11 +248,16 @@ where
                         let preimage = rewrite.singular_preimage(target_height);
 
                         if preimage.is_empty() {
+                            let start = preimage.start;
                             // unit slice
                             add_edge(
-                                SliceIndex::Interior(Height::Regular(preimage.start)),
+                                SliceIndex::Interior(Height::Regular(start)),
                                 ti,
-                                ExternalRewrite::UnitSlice,
+                                ExternalRewrite::RegularSlice {
+                                    source_height: start,
+                                    target_height,
+                                    flange: false,
+                                },
                                 cone.unwrap().regular_slices()[0].clone(),
                             );
                         } else {
@@ -248,7 +266,11 @@ where
                             add_edge(
                                 SliceIndex::Interior(Height::Regular(start)),
                                 ti,
-                                ExternalRewrite::Flange,
+                                ExternalRewrite::RegularSlice {
+                                    source_height: start,
+                                    target_height,
+                                    flange: true,
+                                },
                                 cone.map_or(
                                     target_diagram.cospans()[target_height].forward.clone(),
                                     |c| c.regular_slices()[0].clone(),
@@ -259,18 +281,24 @@ where
                                 add_edge(
                                     SliceIndex::Interior(Height::Singular(source_height)),
                                     ti,
-                                    ExternalRewrite::SingularSlice(source_height),
+                                    ExternalRewrite::SingularSlice {
+                                        source_height,
+                                        target_height,
+                                    },
                                     cone.map_or(Rewrite::identity(rewrite.dimension() - 1), |c| {
                                         c.singular_slices()[source_height - start].clone()
                                     }),
                                 );
                                 if source_height < end - 1 {
-                                    // one regular slice between each adjacent pair of singular
-                                    // slices
+                                    // one regular slice between each adjacent pair of singular slices
                                     add_edge(
                                         SliceIndex::Interior(Height::Regular(source_height + 1)),
                                         ti,
-                                        ExternalRewrite::RegularSlice(source_height + 1),
+                                        ExternalRewrite::RegularSlice {
+                                            source_height: source_height + 1,
+                                            target_height,
+                                            flange: false,
+                                        },
                                         cone.unwrap().regular_slices()[source_height - start + 1]
                                             .clone(),
                                     );
@@ -280,7 +308,11 @@ where
                             add_edge(
                                 SliceIndex::Interior(Height::Regular(end)),
                                 ti,
-                                ExternalRewrite::Flange,
+                                ExternalRewrite::RegularSlice {
+                                    source_height: end,
+                                    target_height,
+                                    flange: true,
+                                },
                                 cone.map_or(
                                     target_diagram.cospans()[target_height].backward.clone(),
                                     |c| c.regular_slices()[end - start].clone(),

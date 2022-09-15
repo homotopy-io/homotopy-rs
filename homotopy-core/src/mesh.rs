@@ -128,7 +128,7 @@ impl<const N: usize> Mesh<N> {
                 Some(coord)
             },
             |_, _, _| Some(()),
-            |_, _, r| (r != ExternalRewrite::Flange).then_some(()),
+            |_, _, r| (!r.is_flange()).then_some(()),
         )?;
 
         let mut mesh = Self {

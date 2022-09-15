@@ -738,7 +738,7 @@ fn collapse_recursive<Ix: IndexType>(
                 InternalRewrite::Interior(i, dir) => Some(Some(DeltaSlice::Internal(i, dir))),
             },
             |_parent_edge, _, external| match external {
-                ExternalRewrite::SingularSlice(_) | ExternalRewrite::Sparse(_) => {
+                ExternalRewrite::SingularSlice { .. } | ExternalRewrite::Sparse(_) => {
                     Some(Some(DeltaSlice::SingularSlice))
                 }
                 _ => Some(None),
