@@ -172,7 +172,7 @@ prop_compose! {
 proptest! {
     #[test]
     fn compose_monotone((source_size, first, second) in arb_rewrites_1d_composable()) {
-        let composed = RewriteN::compose(&first, &second);
+        let composed = RewriteN::compose(&first.strip_labels(), &second.strip_labels());
         prop_assert!(composed.is_ok());
         let actual: Vec<usize> = (0..source_size)
             .map(|i| composed.as_ref().unwrap().singular_image(i))
