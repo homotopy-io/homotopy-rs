@@ -35,7 +35,8 @@
   {
     "SelectGenerator": {
       "dimension": 2,
-      "id": 2
+      "id": 2,
+      "orientation": "Positive"
     }
   },
   {
@@ -52,7 +53,8 @@
   {
     "SelectGenerator": {
       "dimension": 2,
-      "id": 2
+      "id": 2,
+      "orientation": "Positive"
     }
   },
   {
@@ -69,7 +71,8 @@
   {
     "SelectGenerator": {
       "dimension": 3,
-      "id": 3
+      "id": 3,
+      "orientation": "Positive"
     }
   }
 ]]

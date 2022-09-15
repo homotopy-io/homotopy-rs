@@ -328,12 +328,14 @@ impl Rewrite {
 }
 
 impl Rewrite0 {
+    #[must_use]
     pub fn strip_labels(&self) -> Self {
         Self(self.0.as_ref().map(|(s, t, _)| (*s, *t, None)))
     }
 }
 
 impl RewriteN {
+    #[must_use]
     pub fn strip_labels(&self) -> Self {
         RewriteN::new_unsafe(
             self.dimension(),

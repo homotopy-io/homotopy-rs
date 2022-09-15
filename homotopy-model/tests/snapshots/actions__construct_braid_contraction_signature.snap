@@ -1,6 +1,6 @@
 ---
 source: homotopy-model/tests/actions.rs
-assertion_line: 41
+assertion_line: 35
 expression: proof.signature
 ---
 Signature(
@@ -30,7 +30,7 @@ Signature(
             NodeData {
                 data: Item(
                     GeneratorInfo {
-                        generator: 0:0,
+                        generator: 0:0⁺,
                         name: "Cell 0",
                         oriented: false,
                         invertible: false,
@@ -45,7 +45,7 @@ Signature(
                         ),
                         shape: Circle,
                         diagram: Diagram0(
-                            0:0,
+                            0:0⁺,
                         ),
                     },
                 ),
@@ -59,7 +59,7 @@ Signature(
             NodeData {
                 data: Item(
                     GeneratorInfo {
-                        generator: 1:1,
+                        generator: 1:1⁺,
                         name: "Cell 1",
                         oriented: false,
                         invertible: false,
@@ -75,17 +75,37 @@ Signature(
                         shape: Circle,
                         diagram: DiagramN {
                             source: Diagram0(
-                                0:0,
+                                0:0⁺,
                             ),
                             cospans: [
                                 Cospan {
                                     forward: Rewrite0(
-                                        0:0,
-                                        1:1,
+                                        0:0⁺,
+                                        1:1⁺,
+                                        Some(
+                                            (
+                                                1,
+                                                BoundaryPath(
+                                                    Source,
+                                                    0,
+                                                ),
+                                                [],
+                                            ),
+                                        ),
                                     ),
                                     backward: Rewrite0(
-                                        0:0,
-                                        1:1,
+                                        0:0⁺,
+                                        1:1⁺,
+                                        Some(
+                                            (
+                                                1,
+                                                BoundaryPath(
+                                                    Target,
+                                                    0,
+                                                ),
+                                                [],
+                                            ),
+                                        ),
                                     ),
                                 },
                             ],
@@ -98,7 +118,7 @@ Signature(
             NodeData {
                 data: Item(
                     GeneratorInfo {
-                        generator: 1:2,
+                        generator: 1:2⁺,
                         name: "Cell 1",
                         oriented: false,
                         invertible: false,
@@ -115,14 +135,136 @@ Signature(
                         diagram: DiagramN {
                             source: DiagramN {
                                 source: Diagram0(
-                                    0:0,
+                                    0:0⁺,
                                 ),
                                 cospans: [],
                             },
                             cospans: [
                                 Cospan {
-                                    forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [], target: Cospan { forward: Rewrite0(0:0, 1:2), backward: Rewrite0(0:0, 1:2) }, slices: [] } }] },
-                                    backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [], target: Cospan { forward: Rewrite0(0:0, 1:2), backward: Rewrite0(0:0, 1:2) }, slices: [] } }] },
+                                    forward: RewriteN {
+                                        dimension: 1,
+                                        cones: [
+                                            Cone {
+                                                index: 0,
+                                                internal: ConeInternal {
+                                                    source: [],
+                                                    target: Cospan {
+                                                        forward: Rewrite0(
+                                                            0:0⁺,
+                                                            1:2⁺,
+                                                            Some(
+                                                                (
+                                                                    1,
+                                                                    BoundaryPath(
+                                                                        Source,
+                                                                        1,
+                                                                    ),
+                                                                    [],
+                                                                ),
+                                                            ),
+                                                        ),
+                                                        backward: Rewrite0(
+                                                            0:0⁺,
+                                                            1:2⁺,
+                                                            Some(
+                                                                (
+                                                                    1,
+                                                                    BoundaryPath(
+                                                                        Target,
+                                                                        1,
+                                                                    ),
+                                                                    [],
+                                                                ),
+                                                            ),
+                                                        ),
+                                                    },
+                                                    regular_slices: [
+                                                        Rewrite0(
+                                                            0:0⁺,
+                                                            1:2⁺,
+                                                            Some(
+                                                                (
+                                                                    1,
+                                                                    BoundaryPath(
+                                                                        Source,
+                                                                        0,
+                                                                    ),
+                                                                    [
+                                                                        Regular(
+                                                                            0,
+                                                                        ),
+                                                                    ],
+                                                                ),
+                                                            ),
+                                                        ),
+                                                    ],
+                                                    singular_slices: [],
+                                                },
+                                            },
+                                        ],
+                                    },
+                                    backward: RewriteN {
+                                        dimension: 1,
+                                        cones: [
+                                            Cone {
+                                                index: 0,
+                                                internal: ConeInternal {
+                                                    source: [],
+                                                    target: Cospan {
+                                                        forward: Rewrite0(
+                                                            0:0⁺,
+                                                            1:2⁺,
+                                                            Some(
+                                                                (
+                                                                    1,
+                                                                    BoundaryPath(
+                                                                        Source,
+                                                                        1,
+                                                                    ),
+                                                                    [],
+                                                                ),
+                                                            ),
+                                                        ),
+                                                        backward: Rewrite0(
+                                                            0:0⁺,
+                                                            1:2⁺,
+                                                            Some(
+                                                                (
+                                                                    1,
+                                                                    BoundaryPath(
+                                                                        Target,
+                                                                        1,
+                                                                    ),
+                                                                    [],
+                                                                ),
+                                                            ),
+                                                        ),
+                                                    },
+                                                    regular_slices: [
+                                                        Rewrite0(
+                                                            0:0⁺,
+                                                            1:2⁺,
+                                                            Some(
+                                                                (
+                                                                    1,
+                                                                    BoundaryPath(
+                                                                        Target,
+                                                                        0,
+                                                                    ),
+                                                                    [
+                                                                        Regular(
+                                                                            0,
+                                                                        ),
+                                                                    ],
+                                                                ),
+                                                            ),
+                                                        ),
+                                                    ],
+                                                    singular_slices: [],
+                                                },
+                                            },
+                                        ],
+                                    },
                                 },
                             ],
                         },
@@ -138,7 +280,7 @@ Signature(
             NodeData {
                 data: Item(
                     GeneratorInfo {
-                        generator: 2:3,
+                        generator: 2:3⁺,
                         name: "Cell 2",
                         oriented: false,
                         invertible: false,
@@ -156,7 +298,7 @@ Signature(
                             source: DiagramN {
                                 source: DiagramN {
                                     source: Diagram0(
-                                        0:0,
+                                        0:0⁺,
                                     ),
                                     cospans: [],
                                 },
@@ -164,8 +306,728 @@ Signature(
                             },
                             cospans: [
                                 Cospan {
-                                    forward: RewriteN { dimension: 2, cones: [Cone { index: 0, internal: ConeInternal { source: [], target: Cospan { forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [], target: Cospan { forward: Rewrite0(0:0, 2:3), backward: Rewrite0(0:0, 2:3) }, slices: [] } }] }, backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [], target: Cospan { forward: Rewrite0(0:0, 2:3), backward: Rewrite0(0:0, 2:3) }, slices: [] } }] } }, slices: [] } }] },
-                                    backward: RewriteN { dimension: 2, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [], target: Cospan { forward: Rewrite0(0:0, 1:2), backward: Rewrite0(0:0, 1:2) }, slices: [] } }] }, backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [], target: Cospan { forward: Rewrite0(0:0, 1:2), backward: Rewrite0(0:0, 1:2) }, slices: [] } }] } }], target: Cospan { forward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [], target: Cospan { forward: Rewrite0(0:0, 2:3), backward: Rewrite0(0:0, 2:3) }, slices: [] } }] }, backward: RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [], target: Cospan { forward: Rewrite0(0:0, 2:3), backward: Rewrite0(0:0, 2:3) }, slices: [] } }] } }, slices: [RewriteN { dimension: 1, cones: [Cone { index: 0, internal: ConeInternal { source: [Cospan { forward: Rewrite0(0:0, 1:2), backward: Rewrite0(0:0, 1:2) }], target: Cospan { forward: Rewrite0(0:0, 2:3), backward: Rewrite0(0:0, 2:3) }, slices: [Rewrite0(1:2, 2:3)] } }] }] } }] },
+                                    forward: RewriteN {
+                                        dimension: 2,
+                                        cones: [
+                                            Cone {
+                                                index: 0,
+                                                internal: ConeInternal {
+                                                    source: [],
+                                                    target: Cospan {
+                                                        forward: RewriteN {
+                                                            dimension: 1,
+                                                            cones: [
+                                                                Cone {
+                                                                    index: 0,
+                                                                    internal: ConeInternal {
+                                                                        source: [],
+                                                                        target: Cospan {
+                                                                            forward: Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Source,
+                                                                                            2,
+                                                                                        ),
+                                                                                        [],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                            backward: Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Target,
+                                                                                            2,
+                                                                                        ),
+                                                                                        [],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        },
+                                                                        regular_slices: [
+                                                                            Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Source,
+                                                                                            1,
+                                                                                        ),
+                                                                                        [
+                                                                                            Regular(
+                                                                                                0,
+                                                                                            ),
+                                                                                        ],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        ],
+                                                                        singular_slices: [],
+                                                                    },
+                                                                },
+                                                            ],
+                                                        },
+                                                        backward: RewriteN {
+                                                            dimension: 1,
+                                                            cones: [
+                                                                Cone {
+                                                                    index: 0,
+                                                                    internal: ConeInternal {
+                                                                        source: [],
+                                                                        target: Cospan {
+                                                                            forward: Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Source,
+                                                                                            2,
+                                                                                        ),
+                                                                                        [],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                            backward: Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Target,
+                                                                                            2,
+                                                                                        ),
+                                                                                        [],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        },
+                                                                        regular_slices: [
+                                                                            Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Target,
+                                                                                            1,
+                                                                                        ),
+                                                                                        [
+                                                                                            Regular(
+                                                                                                0,
+                                                                                            ),
+                                                                                        ],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        ],
+                                                                        singular_slices: [],
+                                                                    },
+                                                                },
+                                                            ],
+                                                        },
+                                                    },
+                                                    regular_slices: [
+                                                        RewriteN {
+                                                            dimension: 1,
+                                                            cones: [
+                                                                Cone {
+                                                                    index: 0,
+                                                                    internal: ConeInternal {
+                                                                        source: [],
+                                                                        target: Cospan {
+                                                                            forward: Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Source,
+                                                                                            2,
+                                                                                        ),
+                                                                                        [],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                            backward: Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Target,
+                                                                                            2,
+                                                                                        ),
+                                                                                        [],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        },
+                                                                        regular_slices: [
+                                                                            Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Source,
+                                                                                            0,
+                                                                                        ),
+                                                                                        [
+                                                                                            Regular(
+                                                                                                0,
+                                                                                            ),
+                                                                                            Regular(
+                                                                                                0,
+                                                                                            ),
+                                                                                        ],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        ],
+                                                                        singular_slices: [],
+                                                                    },
+                                                                },
+                                                            ],
+                                                        },
+                                                    ],
+                                                    singular_slices: [],
+                                                },
+                                            },
+                                        ],
+                                    },
+                                    backward: RewriteN {
+                                        dimension: 2,
+                                        cones: [
+                                            Cone {
+                                                index: 0,
+                                                internal: ConeInternal {
+                                                    source: [
+                                                        Cospan {
+                                                            forward: RewriteN {
+                                                                dimension: 1,
+                                                                cones: [
+                                                                    Cone {
+                                                                        index: 0,
+                                                                        internal: ConeInternal {
+                                                                            source: [],
+                                                                            target: Cospan {
+                                                                                forward: Rewrite0(
+                                                                                    0:0⁺,
+                                                                                    1:2⁺,
+                                                                                    Some(
+                                                                                        (
+                                                                                            1,
+                                                                                            BoundaryPath(
+                                                                                                Source,
+                                                                                                1,
+                                                                                            ),
+                                                                                            [],
+                                                                                        ),
+                                                                                    ),
+                                                                                ),
+                                                                                backward: Rewrite0(
+                                                                                    0:0⁺,
+                                                                                    1:2⁺,
+                                                                                    Some(
+                                                                                        (
+                                                                                            1,
+                                                                                            BoundaryPath(
+                                                                                                Target,
+                                                                                                1,
+                                                                                            ),
+                                                                                            [],
+                                                                                        ),
+                                                                                    ),
+                                                                                ),
+                                                                            },
+                                                                            regular_slices: [
+                                                                                Rewrite0(
+                                                                                    0:0⁺,
+                                                                                    1:2⁺,
+                                                                                    Some(
+                                                                                        (
+                                                                                            1,
+                                                                                            BoundaryPath(
+                                                                                                Source,
+                                                                                                0,
+                                                                                            ),
+                                                                                            [
+                                                                                                Regular(
+                                                                                                    0,
+                                                                                                ),
+                                                                                            ],
+                                                                                        ),
+                                                                                    ),
+                                                                                ),
+                                                                            ],
+                                                                            singular_slices: [],
+                                                                        },
+                                                                    },
+                                                                ],
+                                                            },
+                                                            backward: RewriteN {
+                                                                dimension: 1,
+                                                                cones: [
+                                                                    Cone {
+                                                                        index: 0,
+                                                                        internal: ConeInternal {
+                                                                            source: [],
+                                                                            target: Cospan {
+                                                                                forward: Rewrite0(
+                                                                                    0:0⁺,
+                                                                                    1:2⁺,
+                                                                                    Some(
+                                                                                        (
+                                                                                            1,
+                                                                                            BoundaryPath(
+                                                                                                Source,
+                                                                                                1,
+                                                                                            ),
+                                                                                            [],
+                                                                                        ),
+                                                                                    ),
+                                                                                ),
+                                                                                backward: Rewrite0(
+                                                                                    0:0⁺,
+                                                                                    1:2⁺,
+                                                                                    Some(
+                                                                                        (
+                                                                                            1,
+                                                                                            BoundaryPath(
+                                                                                                Target,
+                                                                                                1,
+                                                                                            ),
+                                                                                            [],
+                                                                                        ),
+                                                                                    ),
+                                                                                ),
+                                                                            },
+                                                                            regular_slices: [
+                                                                                Rewrite0(
+                                                                                    0:0⁺,
+                                                                                    1:2⁺,
+                                                                                    Some(
+                                                                                        (
+                                                                                            1,
+                                                                                            BoundaryPath(
+                                                                                                Target,
+                                                                                                0,
+                                                                                            ),
+                                                                                            [
+                                                                                                Regular(
+                                                                                                    0,
+                                                                                                ),
+                                                                                            ],
+                                                                                        ),
+                                                                                    ),
+                                                                                ),
+                                                                            ],
+                                                                            singular_slices: [],
+                                                                        },
+                                                                    },
+                                                                ],
+                                                            },
+                                                        },
+                                                    ],
+                                                    target: Cospan {
+                                                        forward: RewriteN {
+                                                            dimension: 1,
+                                                            cones: [
+                                                                Cone {
+                                                                    index: 0,
+                                                                    internal: ConeInternal {
+                                                                        source: [],
+                                                                        target: Cospan {
+                                                                            forward: Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Source,
+                                                                                            2,
+                                                                                        ),
+                                                                                        [],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                            backward: Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Target,
+                                                                                            2,
+                                                                                        ),
+                                                                                        [],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        },
+                                                                        regular_slices: [
+                                                                            Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Source,
+                                                                                            1,
+                                                                                        ),
+                                                                                        [
+                                                                                            Regular(
+                                                                                                0,
+                                                                                            ),
+                                                                                        ],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        ],
+                                                                        singular_slices: [],
+                                                                    },
+                                                                },
+                                                            ],
+                                                        },
+                                                        backward: RewriteN {
+                                                            dimension: 1,
+                                                            cones: [
+                                                                Cone {
+                                                                    index: 0,
+                                                                    internal: ConeInternal {
+                                                                        source: [],
+                                                                        target: Cospan {
+                                                                            forward: Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Source,
+                                                                                            2,
+                                                                                        ),
+                                                                                        [],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                            backward: Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Target,
+                                                                                            2,
+                                                                                        ),
+                                                                                        [],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        },
+                                                                        regular_slices: [
+                                                                            Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Target,
+                                                                                            1,
+                                                                                        ),
+                                                                                        [
+                                                                                            Regular(
+                                                                                                0,
+                                                                                            ),
+                                                                                        ],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        ],
+                                                                        singular_slices: [],
+                                                                    },
+                                                                },
+                                                            ],
+                                                        },
+                                                    },
+                                                    regular_slices: [
+                                                        RewriteN {
+                                                            dimension: 1,
+                                                            cones: [
+                                                                Cone {
+                                                                    index: 0,
+                                                                    internal: ConeInternal {
+                                                                        source: [],
+                                                                        target: Cospan {
+                                                                            forward: Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Source,
+                                                                                            2,
+                                                                                        ),
+                                                                                        [],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                            backward: Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Target,
+                                                                                            2,
+                                                                                        ),
+                                                                                        [],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        },
+                                                                        regular_slices: [
+                                                                            Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Source,
+                                                                                            1,
+                                                                                        ),
+                                                                                        [
+                                                                                            Regular(
+                                                                                                0,
+                                                                                            ),
+                                                                                        ],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        ],
+                                                                        singular_slices: [],
+                                                                    },
+                                                                },
+                                                            ],
+                                                        },
+                                                        RewriteN {
+                                                            dimension: 1,
+                                                            cones: [
+                                                                Cone {
+                                                                    index: 0,
+                                                                    internal: ConeInternal {
+                                                                        source: [],
+                                                                        target: Cospan {
+                                                                            forward: Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Source,
+                                                                                            2,
+                                                                                        ),
+                                                                                        [],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                            backward: Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Target,
+                                                                                            2,
+                                                                                        ),
+                                                                                        [],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        },
+                                                                        regular_slices: [
+                                                                            Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Target,
+                                                                                            1,
+                                                                                        ),
+                                                                                        [
+                                                                                            Regular(
+                                                                                                0,
+                                                                                            ),
+                                                                                        ],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        ],
+                                                                        singular_slices: [],
+                                                                    },
+                                                                },
+                                                            ],
+                                                        },
+                                                    ],
+                                                    singular_slices: [
+                                                        RewriteN {
+                                                            dimension: 1,
+                                                            cones: [
+                                                                Cone {
+                                                                    index: 0,
+                                                                    internal: ConeInternal {
+                                                                        source: [
+                                                                            Cospan {
+                                                                                forward: Rewrite0(
+                                                                                    0:0⁺,
+                                                                                    1:2⁺,
+                                                                                    Some(
+                                                                                        (
+                                                                                            1,
+                                                                                            BoundaryPath(
+                                                                                                Source,
+                                                                                                1,
+                                                                                            ),
+                                                                                            [],
+                                                                                        ),
+                                                                                    ),
+                                                                                ),
+                                                                                backward: Rewrite0(
+                                                                                    0:0⁺,
+                                                                                    1:2⁺,
+                                                                                    Some(
+                                                                                        (
+                                                                                            1,
+                                                                                            BoundaryPath(
+                                                                                                Target,
+                                                                                                1,
+                                                                                            ),
+                                                                                            [],
+                                                                                        ),
+                                                                                    ),
+                                                                                ),
+                                                                            },
+                                                                        ],
+                                                                        target: Cospan {
+                                                                            forward: Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Source,
+                                                                                            2,
+                                                                                        ),
+                                                                                        [],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                            backward: Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Target,
+                                                                                            2,
+                                                                                        ),
+                                                                                        [],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        },
+                                                                        regular_slices: [
+                                                                            Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Source,
+                                                                                            2,
+                                                                                        ),
+                                                                                        [],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                            Rewrite0(
+                                                                                0:0⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Target,
+                                                                                            2,
+                                                                                        ),
+                                                                                        [],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        ],
+                                                                        singular_slices: [
+                                                                            Rewrite0(
+                                                                                1:2⁺,
+                                                                                2:3⁺,
+                                                                                Some(
+                                                                                    (
+                                                                                        2,
+                                                                                        BoundaryPath(
+                                                                                            Target,
+                                                                                            0,
+                                                                                        ),
+                                                                                        [
+                                                                                            Singular(
+                                                                                                0,
+                                                                                            ),
+                                                                                            Singular(
+                                                                                                0,
+                                                                                            ),
+                                                                                        ],
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                        ],
+                                                                    },
+                                                                },
+                                                            ],
+                                                        },
+                                                    ],
+                                                },
+                                            },
+                                        ],
+                                    },
                                 },
                             ],
                         },

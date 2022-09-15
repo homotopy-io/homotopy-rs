@@ -142,8 +142,7 @@ impl WorkspaceView {
 
     fn view_diagram_svg<const N: usize>(&self, ctx: &Context<Self>) -> Html {
         if let Some(ref ws) = ctx.props().workspace {
-            let highlight = highlight_attachment::<N>(ws)
-                .or_else(|| highlight_slice::<N>(ws));
+            let highlight = highlight_attachment::<N>(ws).or_else(|| highlight_slice::<N>(ws));
             html! {
                 <PanZoomComponent on_scroll={ctx.props().dispatch.reform(Action::SwitchSlice)}>
                     <DiagramSvg<N>

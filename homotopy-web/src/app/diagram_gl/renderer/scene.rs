@@ -102,6 +102,7 @@ impl Scene {
         Ok(scene)
     }
 
+    #[allow(clippy::many_single_char_names)]
     pub fn reload_meshes(
         &mut self,
         ctx: &GlCtx,

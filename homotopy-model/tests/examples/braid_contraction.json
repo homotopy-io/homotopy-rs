@@ -4,7 +4,8 @@
   {
     "SelectGenerator": {
       "dimension": 0,
-      "id": 0
+      "id": 0,
+      "orientation": "Positive"
     }
   },
   {
@@ -13,7 +14,8 @@
   {
     "SelectGenerator": {
       "dimension": 0,
-      "id": 0
+      "id": 0,
+      "orientation": "Positive"
     }
   },
   {
@@ -22,7 +24,8 @@
   {
     "SelectGenerator": {
       "dimension": 1,
-      "id": 1
+      "id": 1,
+      "orientation": "Positive"
     }
   },
   {
@@ -33,7 +36,8 @@
   {
     "SelectGenerator": {
       "dimension": 0,
-      "id": 0
+      "id": 0,
+      "orientation": "Positive"
     }
   },
   "TakeIdentityDiagram",
@@ -43,7 +47,8 @@
   {
     "SelectGenerator": {
       "dimension": 0,
-      "id": 0
+      "id": 0,
+      "orientation": "Positive"
     }
   },
   "TakeIdentityDiagram",
@@ -53,7 +58,8 @@
   {
     "SelectGenerator": {
       "dimension": 2,
-      "id": 1
+      "id": 1,
+      "orientation": "Positive"
     }
   },
   {
@@ -62,7 +68,8 @@
   {
     "SelectGenerator": {
       "dimension": 0,
-      "id": 0
+      "id": 0,
+      "orientation": "Positive"
     }
   },
   "TakeIdentityDiagram",
@@ -73,14 +80,16 @@
   {
     "SelectGenerator": {
       "dimension": 3,
-      "id": 2
+      "id": 2,
+      "orientation": "Positive"
     }
   },
   "ClearWorkspace",
   {
     "SelectGenerator": {
       "dimension": 2,
-      "id": 1
+      "id": 1,
+      "orientation": "Positive"
     }
   },
   "TakeIdentityDiagram",
