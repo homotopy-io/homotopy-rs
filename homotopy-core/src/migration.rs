@@ -6,10 +6,7 @@ use serde::Deserialize;
 use serde_json::{from_value, Value};
 use thiserror::Error;
 
-use crate::{
-    rewrite::{Cone, Label},
-    Cospan, Diagram, DiagramN, Generator, Rewrite, Rewrite0, RewriteN,
-};
+use crate::{rewrite::Cone, Cospan, Diagram, DiagramN, Generator, Rewrite, Rewrite0, RewriteN};
 
 #[derive(Deserialize)]
 pub struct OldProof {
@@ -217,7 +214,7 @@ impl OldProof {
                 let target: usize = target.parse().unwrap();
                 let target = self.generators[&target];
 
-                Rewrite0::new(source, target, Label::new(None)).into()
+                Rewrite0::new(source, target, None).into()
             } else {
                 let mut cones: Vec<Cone> = Vec::new();
                 for v in cones_data {
