@@ -16,7 +16,8 @@ use thiserror::Error;
 use crate::{
     attach::BoundaryPath,
     common::{
-        DimensionError, Generator, MaxByDimension, Mode, Orientation, RegularHeight, SingularHeight,
+        DimensionError, Generator, GeneratorTransform, MaxByDimension, Mode, Orientation,
+        RegularHeight, SingularHeight,
     },
     diagram::Diagram,
     Boundary, Height,
@@ -208,8 +209,8 @@ impl Cospan {
     pub fn inverse(&self) -> Self {
         use Orientation::Negative;
         Self {
-            forward: self.backward.clone().orientation_transform(Negative),
-            backward: self.forward.clone().orientation_transform(Negative),
+            forward: self.backward.orientation_transform(Negative),
+            backward: self.forward.orientation_transform(Negative),
         }
     }
 }
@@ -377,10 +378,18 @@ impl Rewrite {
 
     #[must_use]
     pub fn orientation_transform(&self, k: Orientation) -> Self {
+        self.map_targets(GeneratorTransform::Orientation {
+            k,
+            min_dim: self.dimension(),
+        })
+    }
+
+    #[must_use]
+    pub(crate) fn map_targets(&self, f: GeneratorTransform) -> Self {
         use Rewrite::{Rewrite0, RewriteN};
         match self {
-            Rewrite0(r) => Rewrite0(r.orientation_transform(k)),
-            RewriteN(r) => RewriteN(r.orientation_transform(k)),
+            Rewrite0(r) => Rewrite0(r.map_targets(f)),
+            RewriteN(r) => RewriteN(r.map_targets(f)),
         }
     }
 
@@ -471,12 +480,10 @@ impl Rewrite0 {
     }
 
     #[must_use]
-    pub fn orientation_transform(&self, k: Orientation) -> Self {
+    pub(crate) fn map_targets(&self, f: GeneratorTransform) -> Self {
         match &self.0 {
             None => Self(None),
-            Some((source, target, label)) => {
-                Self::new(*source, target.orientation_transform(k), label.clone())
-            }
+            Some((source, target, label)) => Self::new(*source, f.apply(*target), label.clone()),
         }
     }
 
@@ -683,7 +690,7 @@ impl RewriteN {
     }
 
     #[must_use]
-    pub fn orientation_transform(&self, k: Orientation) -> Self {
+    pub(crate) fn map_targets(&self, f: GeneratorTransform) -> Self {
         let cones = self
             .cones()
             .iter()
@@ -691,14 +698,14 @@ impl RewriteN {
                 Cone::new(
                     c.index,
                     c.source().to_vec(),
-                    c.target().map(|r| r.orientation_transform(k)),
+                    c.target().map(|r| r.map_targets(f)),
                     c.regular_slices()
                         .iter()
-                        .map(|r| r.orientation_transform(k))
+                        .map(|r| r.map_targets(f))
                         .collect(),
                     c.singular_slices()
                         .iter()
-                        .map(|r| r.orientation_transform(k))
+                        .map(|r| r.map_targets(f))
                         .collect(),
                 )
             })
