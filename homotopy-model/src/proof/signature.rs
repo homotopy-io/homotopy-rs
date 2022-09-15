@@ -180,6 +180,7 @@ impl Signature {
     ) -> Result<Diagram, NewDiagramError> {
         let id = self.next_generator_id();
         let generator = Generator::new(id, source.dimension() + 1);
+        // TODO(@calintat): Remove this when we have directed typechecking.
         let invertible = invertible
             || source
                 .generators()
