@@ -29,9 +29,6 @@ thread_local! {
 
     static CONE_FACTORY: RefCell<HConsign<ConeInternal>> =
         RefCell::new(HConsign::with_capacity(37));
-
-    static LABEL_FACTORY: RefCell<HConsign<LabelNode>> =
-        RefCell::new(HConsign::with_capacity(37));
 }
 
 #[derive(Clone, Debug, Error)]
@@ -90,42 +87,7 @@ pub enum Rewrite {
     RewriteN(RewriteN),
 }
 
-pub(crate) type LabelNode = (usize, BoundaryPath, Vec<Height>);
-
-#[derive(Debug, PartialEq, Eq, Hash, Clone, PartialOrd, Ord)]
-pub struct Label(pub(crate) Option<HConsed<LabelNode>>);
-
-impl Label {
-    pub fn new(node: Option<LabelNode>) -> Self {
-        Self(node.map(|node| LABEL_FACTORY.with(|factory| factory.borrow_mut().mk(node))))
-    }
-}
-
-impl From<LabelNode> for Label {
-    fn from(node: LabelNode) -> Self {
-        Self::new(Some(node))
-    }
-}
-
-impl Serialize for Label {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let nodes: Option<LabelNode> = self.0.as_ref().map(|node| node.get().clone());
-        nodes.serialize(serializer)
-    }
-}
-
-impl<'de> Deserialize<'de> for Label {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let nodes: Option<LabelNode> = Deserialize::deserialize(deserializer)?;
-        Ok(Label::new(nodes))
-    }
-}
+pub type Label = Option<(usize, BoundaryPath, Vec<Height>)>;
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize, Deserialize)]
 pub(crate) struct ConeInternal {
@@ -308,7 +270,7 @@ impl Rewrite {
             Diagram::Diagram0(base) => Rewrite0::new(
                 base,
                 generator,
-                Label::new(Some((generator.id, boundary_path, prefix.to_vec()))),
+                Some((generator.id, boundary_path, prefix.to_vec())),
             )
             .into(),
             Diagram::DiagramN(base) => {
@@ -494,10 +456,10 @@ impl Rewrite0 {
             (None, None) => Ok(Self::identity()),
             (Some((f_s, f_t, f_l)), Some((g_s, g_t, g_l))) if f_t == g_s => {
                 assert!(
-                    f_l.0.is_none() && g_l.0.is_none(),
+                    f_l.is_none() && g_l.is_none(),
                     "Composition of labelled rewrites is illegal"
                 );
-                Ok(Self::new(*f_s, *g_t, Label::new(None)))
+                Ok(Self::new(*f_s, *g_t, None))
             }
             (f, g) => {
                 log::error!("Failed to compose source: {:?}, target: {:?}", f, g);
@@ -514,8 +476,8 @@ impl Rewrite0 {
         self.0.as_ref().map(|(_, target, _)| *target)
     }
 
-    pub fn label(&self) -> Option<&Label> {
-        self.0.as_ref().map(|(_, _, label)| label)
+    pub fn label(&self) -> Label {
+        self.0.as_ref().and_then(|(_, _, label)| label.clone())
     }
 
     pub(crate) fn max_generator(&self, boundary: Boundary) -> Option<Generator> {
@@ -531,7 +493,7 @@ impl Rewrite0 {
             None => Self(None),
             Some((source, target, label)) => {
                 let new_label = if target.id == generator.id {
-                    Label::new(None)
+                    None
                 } else {
                     label.clone()
                 };
@@ -1119,11 +1081,11 @@ mod test {
         let y = Generator::new(1, 0);
         let z = Generator::new(2, 0);
 
-        let first = Rewrite0::new(x, y, Label::new(None));
-        let second = Rewrite0::new(y, z, Label::new(None));
+        let first = Rewrite0::new(x, y, None);
+        let second = Rewrite0::new(y, z, None);
 
         let actual = first.compose(&second).unwrap();
-        let expected = Rewrite0::new(x, z, Label::new(None));
+        let expected = Rewrite0::new(x, z, None);
         assert_eq!(actual, expected);
     }
 
@@ -1136,11 +1098,11 @@ mod test {
 
         let internal = |gen: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, gen, Label::new(None)).into(),
-                backward: Rewrite0::new(x, gen, Label::new(None)).into(),
+                forward: Rewrite0::new(x, gen, None).into(),
+                backward: Rewrite0::new(x, gen, None).into(),
             }
         };
-        let up = |gen: Generator| -> Rewrite { Rewrite0::new(x, gen, Label::new(None)).into() };
+        let up = |gen: Generator| -> Rewrite { Rewrite0::new(x, gen, None).into() };
 
         let first = RewriteN::from_slices(
             1,
@@ -1157,7 +1119,7 @@ mod test {
             vec![vec![up(f), up(f)], vec![up(h), up(h)]],
             vec![
                 vec![Rewrite0::identity().into()],
-                vec![Rewrite0::new(g, h, Label::new(None)).into()],
+                vec![Rewrite0::new(g, h, None).into()],
             ],
         );
 
@@ -1165,10 +1127,7 @@ mod test {
             1,
             &[],
             &[internal(f), internal(h)],
-            vec![
-                vec![up(f)],
-                vec![Rewrite0::new(x, h, Label::new(None)).into()],
-            ],
+            vec![vec![up(f)], vec![Rewrite0::new(x, h, None).into()]],
             vec![vec![], vec![]],
         );
 
@@ -1186,11 +1145,11 @@ mod test {
 
         let internal = |gen: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, gen, Label::new(None)).into(),
-                backward: Rewrite0::new(x, gen, Label::new(None)).into(),
+                forward: Rewrite0::new(x, gen, None).into(),
+                backward: Rewrite0::new(x, gen, None).into(),
             }
         };
-        let up = |gen: Generator| -> Rewrite { Rewrite0::new(x, gen, Label::new(None)).into() };
+        let up = |gen: Generator| -> Rewrite { Rewrite0::new(x, gen, None).into() };
 
         let first = RewriteN::from_slices(1, &[], &[internal(f)], vec![vec![up(f)]], vec![vec![]]);
 
@@ -1199,17 +1158,14 @@ mod test {
             &[internal(f)],
             &[internal(g), internal(h)],
             vec![vec![up(g), up(g)], vec![up(h)]],
-            vec![vec![Rewrite0::new(f, g, Label::new(None)).into()], vec![]],
+            vec![vec![Rewrite0::new(f, g, None).into()], vec![]],
         );
 
         let expected = RewriteN::from_slices(
             1,
             &[],
             &[internal(g), internal(h)],
-            vec![
-                vec![Rewrite0::new(x, g, Label::new(None)).into()],
-                vec![up(h)],
-            ],
+            vec![vec![Rewrite0::new(x, g, None).into()], vec![up(h)]],
             vec![vec![], vec![]],
         );
 
@@ -1225,13 +1181,13 @@ mod test {
         let g = Generator::new(2, 1);
         let internal = |gen: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, gen, Label::new(None)).into(),
-                backward: Rewrite0::new(x, gen, Label::new(None)).into(),
+                forward: Rewrite0::new(x, gen, None).into(),
+                backward: Rewrite0::new(x, gen, None).into(),
             }
         };
-        let up = |gen: Generator| -> Rewrite { Rewrite0::new(x, gen, Label::new(None)).into() };
-        let f_to_g: Rewrite = Rewrite0::new(f, g, Label::new(None)).into();
-        let g_to_f: Rewrite = Rewrite0::new(g, f, Label::new(None)).into();
+        let up = |gen: Generator| -> Rewrite { Rewrite0::new(x, gen, None).into() };
+        let f_to_g: Rewrite = Rewrite0::new(f, g, None).into();
+        let g_to_f: Rewrite = Rewrite0::new(g, f, None).into();
 
         let first = RewriteN::from_slices(
             1,

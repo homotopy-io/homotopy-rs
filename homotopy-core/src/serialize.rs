@@ -7,7 +7,7 @@ use highway::{HighwayHash, HighwayHasher};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    rewrite::{Cone, Label, LabelNode},
+    rewrite::{Cone, Label},
     Cospan, Diagram, DiagramN, Generator, Rewrite, Rewrite0, RewriteN,
 };
 
@@ -37,10 +37,6 @@ pub struct Store {
     #[serde(skip_serializing, skip_deserializing)]
     cone_keys: BiHashMap<Cone, Key<Cone>>,
     cones: BTreeMap<Key<Cone>, ConeSer>,
-
-    #[serde(skip_serializing, skip_deserializing)]
-    label_keys: BiHashMap<Label, Vec<Key<LabelNode>>>,
-    label_nodes: BTreeMap<Key<LabelNode>, LabelNode>,
 }
 
 impl Store {
@@ -89,7 +85,7 @@ impl Store {
             Rewrite::Rewrite0(r0) => RewriteSer::R0 {
                 source: r0.source(),
                 target: r0.target(),
-                label: r0.label().map(|l| self.pack_label(l)),
+                label: r0.label(),
             },
             Rewrite::RewriteN(rewrite) => {
                 let cones = rewrite
@@ -148,26 +144,6 @@ impl Store {
         }
     }
 
-    pub fn pack_label(&mut self, label: &Label) -> Vec<Key<LabelNode>> {
-        if let Some(key) = self.label_keys.get_by_left(label) {
-            return key.clone();
-        }
-
-        let keys: Vec<Key<LabelNode>> = label
-            .0
-            .iter()
-            .map(|n| {
-                let serialized = n.get().clone();
-
-                let key: Key<LabelNode> = serialized.key();
-                self.label_nodes.insert(key, serialized);
-                key
-            })
-            .collect();
-        self.label_keys.insert(label.clone(), keys.clone());
-        keys
-    }
-
     pub fn unpack_diagram(&mut self, key: Key<Diagram>) -> Option<Diagram> {
         self.diagram_keys.get_by_right(&key).cloned().or_else(|| {
             let diagram = match self.diagrams.get(&key)?.clone() {
@@ -206,8 +182,8 @@ impl Store {
                     label,
                 } => match (source, target, label) {
                     (None, None, None) => Some(Rewrite0(None).into()),
-                    (Some(source), Some(target), Some(label)) => {
-                        Some(Rewrite0(Some((source, target, self.unpack_label(label)?))).into())
+                    (Some(source), Some(target), label) => {
+                        Some(Rewrite0(Some((source, target, label))).into())
                     }
                     _ => None,
                 },
@@ -272,23 +248,6 @@ impl Store {
                 cone
             })
     }
-
-    pub fn unpack_label(&mut self, keys: Vec<Key<LabelNode>>) -> Option<Label> {
-        self.label_keys.get_by_right(&keys).cloned().or_else(|| {
-            let label = Some(Label::new(
-                keys.iter()
-                    .map(|key| self.label_nodes.get(key).cloned())
-                    .collect::<Option<Vec<_>>>()?
-                    .get(0)
-                    .cloned(),
-            ));
-            label
-                .as_ref()
-                .cloned()
-                .map(|l| self.label_keys.insert(l, keys));
-            label
-        })
-    }
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
@@ -316,7 +275,7 @@ enum RewriteSer {
         target: Option<Generator>,
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
-        label: Option<Vec<Key<LabelNode>>>,
+        label: Label,
     },
     Rn {
         dimension: NonZeroU32,
