@@ -303,8 +303,12 @@ impl Signature {
 }
 
 impl homotopy_core::signature::Signature for Signature {
-    fn generator(&self, g: Generator) -> std::option::Option<Diagram> {
+    fn generator(&self, g: Generator) -> Option<Diagram> {
         Some(self.generator_info(g)?.diagram.clone())
+    }
+
+    fn is_invertible(&self, g: Generator) -> Option<bool> {
+        Some(self.generator_info(g)?.invertible)
     }
 }
 
