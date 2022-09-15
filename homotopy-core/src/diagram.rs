@@ -18,6 +18,7 @@ use crate::{
         RegularHeight, SliceIndex,
     },
     rewrite::{Cospan, Rewrite, RewriteN},
+    signature::Signature,
 };
 
 #[derive(PartialEq, Eq, Hash, Clone, PartialOrd, Ord, Serialize, Deserialize)]
@@ -171,6 +172,16 @@ impl Diagram {
                     .collect(),
             )),
         }
+    }
+
+    pub fn is_invertible<S>(&self, signature: &S) -> bool
+    where
+        S: Signature,
+    {
+        self.generators()
+            .iter()
+            .filter(|g| g.dimension >= self.dimension())
+            .all(|g| signature.is_invertible(*g).unwrap())
     }
 }
 
