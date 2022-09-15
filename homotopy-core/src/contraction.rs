@@ -531,8 +531,9 @@ fn collapse_base<Ix: IndexType>(
             // n is a leaf
             continue;
         } else {
+            let mut quotient: Vec<_> = Default::default();
             // find collapsible edges wrt nodes
-            while let Some(e) = stable.edge_references().find(|e| {
+            for e in stable.edge_references().filter(|e| {
                 // e is contained within nodes
                 nodes.contains(&e.source()) && nodes.contains(&e.target())
                 // e is an identity rewrite
@@ -554,7 +555,10 @@ fn collapse_base<Ix: IndexType>(
                 })
             }) {
                 // e is collapsible
-                let (s, t) = (e.source(), e.target());
+                quotient.push((e.source(), e.target()));
+            }
+
+            for (s, t) in quotient {
                 unify(
                     &mut stable,
                     s,
@@ -564,8 +568,7 @@ fn collapse_base<Ix: IndexType>(
                         nodes.retain(|&n| n != rn);
                     },
                     |_re| (),
-                )
-                .expect("collapsed along non collapsible edge!");
+                )?;
             }
         }
         tree[n]
