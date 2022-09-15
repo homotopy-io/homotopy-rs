@@ -388,6 +388,7 @@ pub(crate) fn expand_propagate(
 
     let backward = factorize(target_cospan.backward.clone(), expansion.clone(), slice).next();
 
+    #[allow(clippy::single_match_else)]
     let cone = match (forward, backward) {
         (Some(forward), Some(backward)) => {
             let source_cospan = Cospan { forward, backward };

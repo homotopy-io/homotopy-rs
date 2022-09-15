@@ -6,7 +6,7 @@ use petgraph::graph::NodeIndex;
 
 use crate::{
     common::DimensionError,
-    graph::{Explodable, ExternalRewrite, SliceGraph},
+    graph::{Explodable, SliceGraph},
     Boundary, Diagram, Direction, Height, SliceIndex,
 };
 
