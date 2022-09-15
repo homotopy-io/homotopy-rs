@@ -106,6 +106,17 @@ macro_rules! declare_sidebar_drawers {
 }
 
 declare_sidebar_drawers! {
+    DRAWER_LOGIN {
+        "Account",
+        "account",
+        "account_circle",
+        |_, _, _| html! {
+            <AccountView
+            />
+        },
+        min_width: 250,
+    }
+
     DRAWER_PROJECT {
         "Project",
         "project",
@@ -117,22 +128,6 @@ declare_sidebar_drawers! {
             />
         },
         min_width: 250,
-    }
-
-    DRAWER_LOGIN {
-        "Account",
-        "account",
-        "account_circle",
-        |_, _, _| html! {
-            <AccountView
-            />
-        },
-        min_width: 250,
-        top_icon: "login",
-        top_icon_action: |_proof: &Proof| model::Action::Proof(Action::Nothing),
-        // TODO(yh): should be able to know the login state
-        // top_icon: if logged in then show logout icon, vise versa
-        // top_icon_action: similar
     }
 
     DRAWER_SIGNATURE {
