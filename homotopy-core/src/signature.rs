@@ -3,7 +3,8 @@ use homotopy_common::hash::FastHashMap;
 use crate::{diagram::NewDiagramError, Diagram, DiagramN, Generator};
 
 pub trait Signature {
-    fn generator(&self, id: Generator) -> Option<Diagram>;
+    fn generator(&self, g: Generator) -> Option<Diagram>;
+    fn is_invertible(&self, g: Generator) -> Option<bool>;
 }
 
 #[derive(Clone, Copy)]
@@ -15,8 +16,12 @@ impl<F> Signature for SignatureClosure<F>
 where
     F: Fn(Generator) -> Option<Diagram>,
 {
-    fn generator(&self, id: Generator) -> Option<Diagram> {
-        self.0(id)
+    fn generator(&self, g: Generator) -> Option<Diagram> {
+        self.0(g)
+    }
+
+    fn is_invertible(&self, g: Generator) -> Option<bool> {
+        Some(g.dimension > 0)
     }
 }
 
@@ -55,7 +60,11 @@ impl Default for SignatureBuilder {
 }
 
 impl Signature for SignatureBuilder {
-    fn generator(&self, id: Generator) -> Option<Diagram> {
-        self.0.get(&id).cloned()
+    fn generator(&self, g: Generator) -> Option<Diagram> {
+        self.0.get(&g).cloned()
+    }
+
+    fn is_invertible(&self, g: Generator) -> Option<bool> {
+        Some(g.dimension > 0)
     }
 }
