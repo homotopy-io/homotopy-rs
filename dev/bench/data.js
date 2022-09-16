@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1663259996599,
+  "lastUpdate": 1663337571448,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -41459,6 +41459,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 26.318,
             "range": "+/- 0.019",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "55ee2715023b7942bb0bcef2887770a32f7e16ce",
+          "message": "Revert \"Made action imports in UI safer (#813).\"\n\nThis reverts commit 44e34d4657535e9be35e5f134a5a36fa3587cf52.",
+          "timestamp": "2022-09-16T15:03:27+02:00",
+          "tree_id": "7f7ba9372269dfe8fc8edda6e895a0562a3f893b",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/55ee2715023b7942bb0bcef2887770a32f7e16ce"
+        },
+        "date": 1663337559735,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.3251,
+            "range": "+/- 0.069",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 12.728,
+            "range": "+/- 0.205",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 57.344,
+            "range": "+/- 1.287",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 359.32,
+            "range": "+/- 3.410",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 3.0573,
+            "range": "+/- 0.036",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 30.12,
+            "range": "+/- 0.163",
             "unit": "s"
           }
         ]
