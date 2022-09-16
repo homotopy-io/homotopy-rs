@@ -849,9 +849,11 @@ fn collapse_recursive<Ix: IndexType>(
 
     // determine the dual monotone on regular heights
     // regular_monotone[..][j] is the jth regular monotone from the colimit
-    let regular_monotone: Vec<IdxVec<NodeIndex<Ix>, _>> = {
-        let mut regular_monotone: Vec<IdxVec<NodeIndex<Ix>, _>> =
+    let regular_monotone: Vec<Vec<_>> = {
+        let mut regular_monotone: Vec<Vec<NodeIndex<ExplodedIx>>> =
             Vec::with_capacity(linear_components.len() + 1);
+        let mut parent_by_height: Vec<NodeIndex<Ix>> = Default::default();
+        // invariant: ∀ m ∈ regular_monotone. m.len() == parent_by_height.len()
         regular_monotone.push(
             // all targeting Regular(0)
             exploded
@@ -859,24 +861,33 @@ fn collapse_recursive<Ix: IndexType>(
                 .filter_map(|(i, ((p, h, _coord), _))| {
                     (graph.externals(Outgoing).contains(p) // comes from singular height (i.e. in Δ)
                         && *h == Height::Regular(0))
-                    .then(|| i)
+                    .then(|| {
+                        parent_by_height.push(*p);
+                        i
+                    })
                 })
                 .collect(),
         );
         for scc in &linear_components {
             // get the right-most boundary of this scc
-            regular_monotone.push(
-                scc.iter()
-                    .group_by(|&i| exploded[*i].0 .0)
+            regular_monotone.push({
+                let mut right = regular_monotone.last().unwrap().clone();
+                for (p, next) in scc
+                    .iter()
+                    .group_by(|&i| exploded[*i].0 .0) // group by parent
                     .into_iter()
                     .map(|(p, group)| {
-                        group.max().map_or_else(
-                            || regular_monotone.last().unwrap()[p], // TODO: this is wrong
-                            |i| NodeIndex::new(i.index() + 1),      // next regular level,
-                        )
+                        (p,
+                        group.max() // get right-most
+                            .map(
+                            |i| NodeIndex::<ExplodedIx>::new(i.index() + 1),      // next regular level,
+                        ).expect("scc empty group in Δ"))
                     })
-                    .collect(),
-            );
+                {
+                    right[parent_by_height.iter().position(|&x| x == p).unwrap()] = next;
+                }
+                right
+            });
         }
         regular_monotone
     };
@@ -905,8 +916,8 @@ fn collapse_recursive<Ix: IndexType>(
                 exploded.filter_map(
                     |i, ((_, _, coord), diagram)| {
                         scc.iter()
-                            .chain(adjacent_regulars[0].values())
-                            .chain(adjacent_regulars[1].values())
+                            .chain(&adjacent_regulars[0])
+                            .chain(&adjacent_regulars[1])
                             .any(|&c| {
                                 i == c
                                     || closure.contains_edge(revmap[i.index()], revmap[c.index()])
