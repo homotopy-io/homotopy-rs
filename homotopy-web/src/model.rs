@@ -256,10 +256,10 @@ impl State {
                     self.history.add(proof::Action::Imported, proof.clone());
                     let actions: Vec<proof::Action> =
                         serde_json::from_slice(&data.0).or(Err(ModelError::Import))?;
-                    for a in actions.split_last().map(|a| a.1).unwrap_or_default() {
-                        if proof.is_valid(a) {
-                            proof.update(a)?;
-                            self.history.add(a.clone(), proof.clone());
+                    for a in actions {
+                        if proof.is_valid(&a) {
+                            proof.update(&a)?;
+                            self.history.add(a, proof.clone());
                         } else {
                             Err(ModelError::Proof(proof::ModelError::InvalidAction))?;
                         }
