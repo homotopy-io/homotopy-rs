@@ -61,6 +61,31 @@ fn scalar() {
 }
 
 #[test]
+fn three_scalars() {
+    let (sig, scalar) = examples::scalar();
+    let three = scalar
+        .attach(&scalar, Boundary::Target, &[])
+        .unwrap()
+        .attach(&scalar, Boundary::Target, &[])
+        .unwrap();
+    let l = three
+        .identity()
+        .contract(Boundary::Target.into(), &[], 0, Some(Bias::Higher), &sig)
+        .unwrap()
+        .target();
+    // l is .
+    //      . .
+    let into_middle =
+        l.identity()
+            .contract(Boundary::Target.into(), &[], 0, Some(Bias::Lower), &sig);
+    assert!(into_middle.is_ok());
+    let into_left =
+        l.identity()
+            .contract(Boundary::Target.into(), &[], 0, Some(Bias::Higher), &sig);
+    assert!(into_left.is_ok());
+}
+
+#[test]
 fn braids() {
     // make braids by contraction
     let (sig, crossing) = examples::crossing();
