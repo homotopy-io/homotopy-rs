@@ -193,7 +193,12 @@ impl Action {
     pub fn relevant(&self) -> bool {
         !matches!(
             self,
-            Action::HighlightSlice(_) | Action::HighlightAttachment(_)
+            Action::AscendSlice(_)
+                | Action::DescendSlice(_)
+                | Action::SwitchSlice(_)
+                | Action::UpdateView(_)
+                | Action::HighlightSlice(_)
+                | Action::HighlightAttachment(_)
         )
     }
 }
