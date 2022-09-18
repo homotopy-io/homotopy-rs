@@ -5,10 +5,6 @@ extern "C" {
     #[wasm_bindgen(js_name = "initializeUI")]
     pub fn initialize_ui();
 
-    #[wasm_bindgen(js_name = "loggedIn")]
-    pub fn logged_in() -> bool;
-
     #[wasm_bindgen(js_name = "logOut")]
     pub fn log_out();
 }
-
