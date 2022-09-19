@@ -24,11 +24,16 @@ export function initializeUI() {
   });
 }
 
-export function resgisterAuthCallback(callback) {
-  auth.onAuthStateChanged(function(user) {
+export function resgisterAuthCallback(loginCallback, unsubscribe) {
+
+  if (unsubscribe) {
+    unsubscribe();
+  }
+
+  return auth.onAuthStateChanged(function(user) {
     if (user) {
       // User is signed in.
-      callback(user.displayName);
+      loginCallback(user.displayName);
       // var displayName = user.displayName;
       // var email = user.email;
       // var emailVerified = user.emailVerified;
