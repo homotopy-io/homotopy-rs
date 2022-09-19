@@ -8,7 +8,7 @@ pub enum Msg {
     // Need two message types because logging out takes time
     // It won't complete immediately
     LogOut,
-    LogOutComplete,
+    CompleteLogOut,
 }
 
 #[derive(Debug, Properties, Clone, PartialEq, Eq)]
@@ -68,7 +68,7 @@ impl Component for AccountView {
                 Self::log_out(ctx);
                 false
             }
-            Msg::LogOutComplete => {
+            Msg::CompleteLogOut => {
                 self.user = None;
                 self.unsubscribe = Self::sign_in_callback(ctx, self.unsubscribe.clone());
                 true
@@ -88,7 +88,7 @@ impl AccountView {
     }
 
     fn log_out(ctx: &Context<Self>) {
-        let logout_cb = ctx.link().callback(|_| Msg::LogOutComplete);
+        let logout_cb = ctx.link().callback(|_| Msg::CompleteLogOut);
         let logout_callback = Closure::once_into_js(move |_: JsValue| logout_cb.emit(()));
         log_out(logout_callback);
     }
