@@ -1,15 +1,14 @@
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
 
-//use auth_bindings::*;
-
-//pub mod auth_bindings;
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Msg {
     // Todo: pass an actual data structure
     LogIn(String),
+    // Need two message types because logging out takes time
+    // It won't complete immediately
     LogOut,
+    LogOutComplete,
 }
 
 #[derive(Debug, Properties, Clone, PartialEq, Eq)]
@@ -27,13 +26,9 @@ impl Component for AccountView {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let cb = ctx.link().callback(Msg::LogIn);
-        let callback = Closure::once_into_js(move |username: String| cb.emit(username));
-        let unsubscribe = register_auth_callback(callback, JsValue::NULL);
-
         Self {
-            user: Default::default(),
-            unsubscribe,
+            user: None,
+            unsubscribe: Self::sign_in_callback(ctx, JsValue::NULL),
         }
     }
 
@@ -41,7 +36,7 @@ impl Component for AccountView {
         if let Some(userdata) = &self.user {
             html! {
                 <>
-                    <span>{userdata.display_name.clone()}</span>
+                    <h3>{userdata.display_name.clone()}</h3>
                     //<span>{userdata.username.clone()}</span>
                     <button onclick={ctx.link().callback(|_| Msg::LogOut)}>{"Log out"}</button>
                 </>
@@ -70,11 +65,12 @@ impl Component for AccountView {
                 true
             }
             Msg::LogOut => {
-                // Handle log out info, if sth goes wrong
-                // let result = log_out();
-                log_out();
+                Self::log_out(ctx);
+                false
+            }
+            Msg::LogOutComplete => {
                 self.user = None;
-                self.unsubscribe = Self::register_callback(ctx, self.unsubscribe.clone());
+                self.unsubscribe = Self::sign_in_callback(ctx, self.unsubscribe.clone());
                 true
             }
         }
@@ -82,13 +78,19 @@ impl Component for AccountView {
 }
 
 impl AccountView {
-    fn register_callback(ctx: &Context<Self>, unsubscribe: JsValue) -> JsValue {
-        // register callbacks for onAuthStateChanged
-        // callbacks can only be called once
-        // need to re-register and unsubscribe to keep sanity
-        let cb = ctx.link().callback(Msg::LogIn);
-        let callback = Closure::once_into_js(move |username: String| cb.emit(username));
-        register_auth_callback(callback, unsubscribe)
+    // register callbacks for onAuthStateChanged
+    // callbacks can only be called once
+    // need to re-register and unsubscribe to keep sanity
+    fn sign_in_callback(ctx: &Context<Self>, unsubscribe: JsValue) -> JsValue {
+        let login_cb = ctx.link().callback(Msg::LogIn);
+        let login_callback = Closure::once_into_js(move |username: String| login_cb.emit(username));
+        register_auth_callback(login_callback, unsubscribe)
+    }
+
+    fn log_out(ctx: &Context<Self>) {
+        let logout_cb = ctx.link().callback(|_| Msg::LogOutComplete);
+        let logout_callback = Closure::once_into_js(move |_: JsValue| logout_cb.emit(()));
+        log_out(logout_callback);
     }
 }
 
@@ -103,7 +105,7 @@ extern "C" {
     pub fn initialize_ui();
 
     #[wasm_bindgen(js_name = "logOut")]
-    pub fn log_out();
+    pub fn log_out(callback: JsValue);
 
     #[wasm_bindgen(js_name = "resgisterAuthCallback")]
     pub fn register_auth_callback(logInCallback: JsValue, unsubscribe: JsValue) -> JsValue;

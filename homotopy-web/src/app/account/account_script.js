@@ -16,7 +16,7 @@ export function initializeUI() {
     ],
     signInFlow: "popup",
     callbacks: {
-      signInSuccess: function(currentUser, credential, redirectUrl) {
+      signInSuccessWithAuthResult: function(authResult, redirectUrl) {
         return false;
       },
     }
@@ -24,7 +24,7 @@ export function initializeUI() {
   });
 }
 
-export function resgisterAuthCallback(loginCallback, unsubscribe) {
+export function resgisterAuthCallback(logInCallback, unsubscribe) {
 
   if (unsubscribe) {
     unsubscribe();
@@ -33,7 +33,9 @@ export function resgisterAuthCallback(loginCallback, unsubscribe) {
   return auth.onAuthStateChanged(function(user) {
     if (user) {
       // User is signed in.
-      loginCallback(user.displayName);
+      logInCallback(user.displayName);
+      
+      // Other useful data
       // var displayName = user.displayName;
       // var email = user.email;
       // var emailVerified = user.emailVerified;
@@ -41,25 +43,20 @@ export function resgisterAuthCallback(loginCallback, unsubscribe) {
       // var uid = user.uid;
       // var phoneNumber = user.phoneNumber;
       // var providerData = user.providerData;
-      // user.getIdToken().then(function(accessToken) {
-      //   // document.getElementById('account-details').textContent = JSON.stringify({
-      //   //   displayName: displayName,
-      //   //   email: email,
-      //   //   emailVerified: emailVerified,
-      //   //   phoneNumber: phoneNumber,
-      //   //   photoURL: photoURL,
-      //   //   uid: uid,
-      //   //   accessToken: accessToken,
-      //   //   providerData: providerData
-      //   // }, null, '  ');
-      //   callback(displayName);
-      // });
     } else {
       // User is signed out.
     }
+  }, function(error) {
+      console.log(error);
   });
 }
 
-export function logOut() {
-  auth.signOut();
+export function logOut(logOutCallback) {
+  auth.signOut().then(() => {
+    // Sign-out successful.
+    logOutCallback();
+  }).catch((error) => {
+    // An error happened.
+    console.log(error);
+  });
 }
