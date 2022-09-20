@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1663435804395,
+  "lastUpdate": 1663686418026,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -41579,6 +41579,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 26.164,
             "range": "+/- 0.034",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "50454943+H-Yulong@users.noreply.github.com",
+            "name": "Yulong Huang",
+            "username": "H-Yulong"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a4cfd16d8e70e6382ce5e5c782ee12f975c98af9",
+          "message": "Login UI (#797)\n\n* Setup\r\n\r\n* fix setup\r\n\r\n* prototype log-in\r\n\r\ntweak\r\n\r\n* swap button positions\r\n\r\n* prototype firebase ui\r\n\r\n* more drafts\r\n\r\n* separate script for initialize firebase\r\n\r\n* a sort-of working login page\r\n\r\n* correct unsubscription behaviour\r\n\r\n* delete redundant file\r\n\r\n* fix login/logout behaviour\r\n\r\n* lint fix\r\n\r\n* using compat analytics and perf\r\n\r\n* switch back to homotopy-io config\r\n\r\nCo-authored-by: Yulong Huang <yh419@cam.ac.uk>",
+          "timestamp": "2022-09-20T22:06:53+08:00",
+          "tree_id": "55592311324917ab95880257ae66804e82c7b722",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/a4cfd16d8e70e6382ce5e5c782ee12f975c98af9"
+        },
+        "date": 1663686408947,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.8533,
+            "range": "+/- 0.002",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 11.121,
+            "range": "+/- 0.007",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 50.887,
+            "range": "+/- 0.263",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 321.78,
+            "range": "+/- 0.110",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.7071,
+            "range": "+/- 0.001",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 26.998,
+            "range": "+/- 0.033",
             "unit": "s"
           }
         ]
