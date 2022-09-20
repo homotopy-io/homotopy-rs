@@ -4,12 +4,14 @@ console.log("Loading firebase...");
 
 // Compat modules for firebase ui
 import "https://www.gstatic.com/firebasejs/9.7.0/firebase-app-compat.js";
+import "https://www.gstatic.com/firebasejs/9.7.0/firebase-analytics-compat.js";
+import "https://www.gstatic.com/firebasejs/9.7.0/firebase-performance-compat.js";
 import "https://www.gstatic.com/firebasejs/9.7.0/firebase-auth-compat.js";
 
 // Import the functions you need from the SDKs you need
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.7.0/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.7.0/firebase-analytics.js";
-import { getPerformance } from "https://www.gstatic.com/firebasejs/9.7.0/firebase-performance.js";
+// import { initializeApp } from "https://www.gstatic.com/firebasejs/9.7.0/firebase-app.js";
+// import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.7.0/firebase-analytics.js";
+// import { getPerformance } from "https://www.gstatic.com/firebasejs/9.7.0/firebase-performance.js";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -28,8 +30,6 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = firebase.initializeApp(firebaseConfig);
-// const analytics = getAnalytics(app);
-// const perf = getPerformance(app);
+const analytics = firebase.analytics();
+const perf = firebase.performance();
 const auth = firebase.auth();
-
-
