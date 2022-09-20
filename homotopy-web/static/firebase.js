@@ -19,13 +19,14 @@ import "https://www.gstatic.com/firebasejs/9.7.0/firebase-auth-compat.js";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyBbn1EZwUrcwptd56iXezcVTnWeu6I6iac",
-  authDomain: "homotopy-test.firebaseapp.com",
-  projectId: "homotopy-test",
-  storageBucket: "homotopy-test.appspot.com",
-  messagingSenderId: "410689461996",
-  appId: "1:410689461996:web:5147f0179f66bf2e5bcfc9",
-  measurementId: "G-KML50ZHFGS"
+  apiKey: "AIzaSyBCtkQM2P7eBAFtKWnlGfyTNyTHE8y5wXY",
+  authDomain: "homotopy-io.firebaseapp.com",
+  databaseURL: "https://homotopy-io.firebaseio.com",
+  projectId: "homotopy-io",
+  storageBucket: "homotopy-io.appspot.com",
+  messagingSenderId: "872831343483",
+  appId: "1:872831343483:web:4de585eb01b14a27ad3bde",
+  measurementId: "G-CYGQVSSM6Q"
 };
 
 // Initialize Firebase
