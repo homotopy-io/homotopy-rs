@@ -17,6 +17,7 @@ use crate::{
     model,
 };
 
+mod account;
 mod attach;
 mod boundary;
 #[cfg(debug_assertions)]

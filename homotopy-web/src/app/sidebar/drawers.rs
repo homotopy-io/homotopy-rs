@@ -5,8 +5,8 @@ use super::{DrawerViewSize, Sidebar, SidebarButton, SidebarDrawer, SidebarMsg};
 use crate::app::debug::DebugView;
 use crate::{
     app::{
-        image_export::ImageExportView, project::ProjectView, settings::SettingsView,
-        signature::SignatureView,
+        account::AccountView, image_export::ImageExportView, project::ProjectView,
+        settings::SettingsView, signature::SignatureView,
     },
     components::Visible,
     model::{
@@ -25,7 +25,7 @@ macro_rules! declare_sidebar_drawers {
             $icon:literal,
             $body:expr,
             $(min_width: $min_width:expr,)?
-            $(top_icon: $top_icon:literal,
+            $(top_icon: $top_icon:expr,
               top_icon_action: $action:expr,)?
         }
     )*) => {
@@ -106,6 +106,17 @@ macro_rules! declare_sidebar_drawers {
 }
 
 declare_sidebar_drawers! {
+    DRAWER_LOGIN {
+        "Account",
+        "account",
+        "account_circle",
+        |_, _, _| html! {
+            <AccountView
+            />
+        },
+        min_width: 250,
+    }
+
     DRAWER_PROJECT {
         "Project",
         "project",
