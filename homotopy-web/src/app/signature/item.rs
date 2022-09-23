@@ -9,7 +9,9 @@ use yew::prelude::*;
 use yew_macro::function_component;
 
 use crate::{
-    app::{diagram_svg::DiagramSvg, sidebar::DrawerViewSize, AppSettings, AppSettingsKey},
+    app::{
+        diagram_svg::DiagramSvg, sidebar::DrawerViewSize, tex::TexSpan, AppSettings, AppSettingsKey,
+    },
     components::{
         icon::{Icon, IconSize},
         settings::{KeyStore, Settings, Store},
@@ -381,9 +383,7 @@ impl ItemView {
             }
         } else {
             html! {
-                <span class="signature__item-name">
-                    {name}
-                </span>
+                <TexSpan class="signature__item-name" raw_tex={name.clone()} />
             }
         };
 

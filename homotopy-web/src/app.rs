@@ -31,6 +31,7 @@ mod settings;
 mod sidebar;
 mod signature;
 mod signature_stylesheet;
+mod tex;
 mod workspace;
 
 pub enum Message {

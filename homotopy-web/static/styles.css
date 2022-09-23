@@ -466,7 +466,6 @@ button, .button {
 
 .metadata__details textarea {
   resize: vertical;
-  padding: var(--space-0);
   width: 100%;
   border-radius: var(--space-0);
   background: transparent;
@@ -474,10 +473,6 @@ button, .button {
   overflow-wrap: break-word;
   border: none;
   user-select: text;
-}
-
-.metadata__details textarea:hover {
-  background-color: #9991;
 }
 
 .metadata__title {
@@ -493,6 +488,24 @@ button, .button {
 .metadata__abstract {
   min-height: 200px;
   font-weight: light;
+}
+
+.tex__wrapper {
+  cursor: pointer;
+  padding: 0;
+}
+
+.tex__wrapper:hover {
+  background-color: #9991;
+}
+
+.tex__span {
+  padding: var(--space-0);
+  white-space: pre-wrap;
+}
+
+.tex__span.tex__span-placeholder {
+  color: var(--drawer-foreground-dimmed-text);
 }
 
 /* Signature */
@@ -627,7 +640,6 @@ button, .button {
 .signature__item-name, .signature__item-fill {
   flex: 1 1 auto;
   white-space: nowrap;
-  overflow: hidden;
   box-sizing: border-box;
 }
 
@@ -642,6 +654,7 @@ div.signature__item-name {
   padding-right: 0;
   border-left: var(--space-1) solid transparent;
   border-right: var(--space-1) solid transparent;
+  overflow: hidden;
   display: flex;
 }
 
