@@ -254,12 +254,17 @@ impl State {
                     let mut proof: Proof = Default::default();
                     // Act as if we imported an empty workspace
                     self.history.add(proof::Action::Imported, proof.clone());
-                    let actions: Vec<proof::Action> =
+                    let (safe, actions): (bool, Vec<proof::Action>) =
                         serde_json::from_slice(&data.0).or(Err(ModelError::Import))?;
-                    for a in actions {
-                        if proof.is_valid(&a) {
-                            proof.update(&a)?;
-                            self.history.add(a, proof.clone());
+                    let len = if safe {
+                        actions.len()
+                    } else {
+                        actions.len() - 1
+                    };
+                    for a in &actions[..len] {
+                        if proof.is_valid(a) {
+                            proof.update(a)?;
+                            self.history.add(a.clone(), proof.clone());
                         } else {
                             Err(ModelError::Proof(proof::ModelError::InvalidAction))?;
                         }
