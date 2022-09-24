@@ -6,7 +6,9 @@ use std::{
 use homotopy::Homotopy;
 use homotopy_core::{
     attach::BoundaryPath,
-    common::{Boundary, DimensionError, Direction, Generator, Height, RegularHeight, SliceIndex},
+    common::{
+        Boundary, DimensionError, Direction, Generator, Height, Mode, RegularHeight, SliceIndex,
+    },
     contraction::ContractionError,
     diagram::{globularity, NewDiagramError},
     expansion::ExpansionError,
@@ -20,6 +22,7 @@ pub use signature::*;
 use thiserror::Error;
 
 use self::homotopy::{Contract, Expand};
+use crate::{migration, proof, serialize};
 
 mod signature;
 
@@ -175,7 +178,7 @@ pub enum Action {
 
     Theorem,
 
-    Imported,
+    ImportProof(SerializedData),
 
     EditSignature(SignatureEdit),
 
@@ -218,6 +221,8 @@ pub enum ModelError {
     ContractionError(#[from] ContractionError),
     #[error("error while performing typechecking: {0}")]
     TypecheckingError(#[from] TypeError),
+    #[error("import failed")]
+    Import,
 }
 
 impl ProofState {
@@ -254,8 +259,9 @@ impl ProofState {
             Action::EditSignature(edit) => self.edit_signature(edit)?,
             Action::FlipBoundary => self.flip_boundary(),
             Action::RecoverBoundary => self.recover_boundary(),
-            Action::Imported | Action::Nothing => {}
+            Action::ImportProof(data) => self.import_proof(data)?,
             Action::EditMetadata(edit) => self.edit_metadata(edit),
+            Action::Nothing => {}
         }
 
         Ok(())
@@ -329,6 +335,49 @@ impl ProofState {
                 .map_or(false, |ws| ws.visible_dimension() > 0),
             _ => true,
         }
+    }
+
+    /// Handler for [Action::ImportProof].
+    fn import_proof(&mut self, data: &SerializedData) -> Result<(), ModelError> {
+        if let Some(((signature, workspace), metadata)) =
+            serialize::deserialize(&data.0).or_else(|| migration::deserialize(&data.0))
+        {
+            for g in signature.iter() {
+                g.diagram
+                    .check(Mode::Deep)
+                    .map_err(|_err| ModelError::Import)?;
+            }
+            if let Some(w) = workspace.as_ref() {
+                w.diagram
+                    .check(Mode::Deep)
+                    .map_err(|_err| ModelError::Import)?;
+            }
+            self.signature = signature;
+            self.workspace = workspace;
+            self.metadata = metadata;
+            //self.history.add(proof::Action::Imported, proof);
+        } else {
+            // Leave room for a future "replay on top of current workspace".
+            *self = Default::default();
+            // Act as if we imported an empty workspace
+            //self.history.add(proof::Action::Imported, proof.clone());
+            let (safe, actions): (bool, Vec<proof::Action>) =
+                serde_json::from_slice(&data.0).or(Err(proof::ModelError::Import))?;
+            let len = if safe {
+                actions.len()
+            } else {
+                actions.len() - 1
+            };
+            for a in &actions[..len] {
+                if self.is_valid(a) {
+                    self.update(a)?;
+                    //self.history.add(a.clone(), proof.clone());
+                } else {
+                    Err(ModelError::InvalidAction)?;
+                }
+            }
+        };
+        Ok(())
     }
 
     /// Handler for [Action::EditSignature].
@@ -1029,5 +1078,26 @@ fn contains_point(diagram: Diagram, point: &[Height], embedding: &[RegularHeight
                 None => false,
             }
         }
+    }
+}
+
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SerializedData(Vec<u8>);
+
+impl std::fmt::Debug for SerializedData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SerializedData").finish()
+    }
+}
+
+impl From<Vec<u8>> for SerializedData {
+    fn from(data: Vec<u8>) -> Self {
+        Self(data)
+    }
+}
+
+impl From<SerializedData> for Vec<u8> {
+    fn from(data: SerializedData) -> Self {
+        data.0
     }
 }

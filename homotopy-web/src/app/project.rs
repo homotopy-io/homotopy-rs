@@ -110,7 +110,7 @@ impl Component for ProjectView {
                 let task = gloo::file::callbacks::read_as_bytes(
                     &file.into(),
                     closure!(clone dispatch, |res| {
-                        dispatch.emit(model::Action::ImportProof(res.expect("failed to read file").into()));
+                        dispatch.emit(model::Action::Proof(model::proof::Action::ImportProof(res.expect("failed to read file").into())));
                     }),
                 );
                 self.reader = Some(task);
