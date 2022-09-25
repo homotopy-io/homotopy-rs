@@ -143,9 +143,11 @@ impl Component for TexSpan {
             Html::VRef(self.span.clone().into())
         };
 
+        let editable = if ctx.props().is_editable_as_textarea { "tex__editable" } else { "tex__non-editable" };
+
         html! {
             <div
-                class={format!("tex__wrapper {0} {0}-wrapper", ctx.props().class)}
+                class={format!("tex__wrapper {0} {0}-wrapper {1}", ctx.props().class, editable)}
                 onclick={ctx.link().callback(|_| TexSpanMsg::SwitchMode(TexSpanMode::Editing))}
                 >
                 {inner}

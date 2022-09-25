@@ -481,7 +481,7 @@ button, .button {
 
 .metadata__title {
   min-height: 65px;
-  font-size: 1.6em;
+  font-size: 1.3em;
 }
 
 .metadata__author {
@@ -495,11 +495,11 @@ button, .button {
 }
 
 .tex__wrapper {
-  cursor: pointer;
   padding: 0;
 }
 
-.tex__wrapper:hover {
+.tex__wrapper.tex__editable:hover {
+  cursor: pointer;
   background-color: #9991;
 }
 

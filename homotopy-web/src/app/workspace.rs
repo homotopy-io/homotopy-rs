@@ -11,6 +11,7 @@ use yew::prelude::*;
 
 use crate::{
     app::{
+        tex::TexSpan,
         diagram_gl::DiagramGl,
         diagram_svg::{DiagramSvg, HighlightKind, HighlightSvg},
     },
@@ -70,7 +71,7 @@ impl Component for WorkspaceView {
         };
         let project_title = html! {
             <div class="workspace__project-title">
-                {ctx.props().metadata.title.as_ref().map(Clone::clone).unwrap_or_default()}
+                <TexSpan raw_tex={ctx.props().metadata.title.as_ref().map(Clone::clone).unwrap_or_default()} />
             </div>
         };
         let slice_buttons = match workspace {
