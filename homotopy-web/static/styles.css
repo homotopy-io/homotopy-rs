@@ -475,6 +475,10 @@ button, .button {
   user-select: text;
 }
 
+.metadata__details .tex__span {
+  padding: var(--space-0);
+}
+
 .metadata__title {
   min-height: 65px;
   font-size: 1.6em;
@@ -500,7 +504,6 @@ button, .button {
 }
 
 .tex__span {
-  padding: var(--space-0);
   white-space: pre-wrap;
 }
 
@@ -648,10 +651,9 @@ button, .button {
   height: 100%;
 }
 
-div.signature__item-name {
+div.signature__item-name-wrapper {
   height: var(--signature-height);
-  padding-left: 0;
-  padding-right: 0;
+  padding: var(--space-0) 0;
   border-left: var(--space-1) solid transparent;
   border-right: var(--space-1) solid transparent;
   overflow: hidden;

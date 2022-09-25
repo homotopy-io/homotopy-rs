@@ -361,36 +361,32 @@ impl ItemView {
             SignatureItem::Folder(info) => &info.name,
         };
 
-        let text = if self.mode == ItemViewMode::Editing {
+        if self.mode == ItemViewMode::Editing {
             html! {
-                <input
-                    type="text"
-                    class="signature__item-name"
-                    value={self.name.clone()}
-                    oninput={ctx.link().callback(|e: InputEvent| {
-                        let input: HtmlInputElement = e.target_unchecked_into();
-                        ItemViewMessage::Edit(SignatureItemEdit::Rename(input.value()))
-                    })}
-                    onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
-                        e.stop_propagation();
-                        if e.key().to_ascii_lowercase() == "enter" {
-                            ItemViewMessage::SwitchTo(ItemViewMode::Viewing)
-                        } else {
-                            ItemViewMessage::Noop
-                        }
-                    })}
-                />
+                <div class="signature__item-name signature__item-name-wrapper">
+                    <input
+                        type="text"
+                        class="signature__item-name"
+                        value={self.name.clone()}
+                        oninput={ctx.link().callback(|e: InputEvent| {
+                            let input: HtmlInputElement = e.target_unchecked_into();
+                            ItemViewMessage::Edit(SignatureItemEdit::Rename(input.value()))
+                        })}
+                        onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
+                            e.stop_propagation();
+                            if e.key().to_ascii_lowercase() == "enter" {
+                                ItemViewMessage::SwitchTo(ItemViewMode::Viewing)
+                            } else {
+                                ItemViewMessage::Noop
+                            }
+                        })}
+                    />
+                </div>
             }
         } else {
             html! {
                 <TexSpan class="signature__item-name" raw_tex={name.clone()} />
             }
-        };
-
-        html! {
-            <div class="signature__item-child signature__item-name">
-                {text}
-            </div>
         }
     }
 
