@@ -13,7 +13,7 @@ js-sys = "0.3.59"
 wasm-bindgen = { version = "0.2.82", features = ["serde-serialize"] }
 petgraph = "0.6.2"
 ultraviolet = "0.9.0"
-thiserror = "1.0.35"
+thiserror = "1.0.36"
 yew = "0.19.3"
 
 [dependencies.web-sys]
