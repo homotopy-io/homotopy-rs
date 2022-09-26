@@ -11,6 +11,7 @@ export function initializeUI() {
   ui.start('#firebaseui-auth-container', {
     signInOptions: [
       // List of OAuth providers supported.
+      firebase.auth.EmailAuthProvider.PROVIDER_ID,
       firebase.auth.GoogleAuthProvider.PROVIDER_ID,
       firebase.auth.GithubAuthProvider.PROVIDER_ID
     ],

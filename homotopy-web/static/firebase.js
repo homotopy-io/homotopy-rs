@@ -14,7 +14,6 @@ const firebaseConfig = {
 };
 
 console.log("Loading firebase...");
-window.firebase_working = false;
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -48,4 +47,16 @@ await import("https://www.gstatic.com/firebasejs/9.7.0/firebase-auth-compat.js")
     throw err;
   });
 const auth = firebase.auth();
-window.firebase_working = true;
+
+await import("https://www.gstatic.com/firebasejs/9.7.0/firebase-firestore-compat.js")
+  .catch(err => {
+    console.error("Failed to import firebase-firestore-compat", err);
+    throw err;
+  });
+const firestore = firebase.firestore();
+
+// Connect to Firebase emulator, if applicable
+if (window.location.hostname === "localhost") {
+  auth.useEmulator("http://localhost:9099");
+  firestore.useEmulator("http://localhost:8000");
+}
