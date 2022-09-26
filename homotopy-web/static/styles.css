@@ -208,6 +208,7 @@ button, .button {
   padding: 10px;
   box-sizing: border-box;
   justify-content: space-between;
+  align-items: flex-start;
 }
 
 .workspace__project-title {
