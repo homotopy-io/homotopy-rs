@@ -10,7 +10,7 @@ use crate::model::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Msg {
     ImportProof(File),
-    EditMetadata(MetadataEdit, bool), // (edit, should_dispatch)
+    EditMetadata(MetadataEdit),
     Noop,
 }
 
@@ -23,9 +23,6 @@ pub struct Props {
 
 #[derive(Debug, Default)]
 pub struct ProjectView {
-    title: String,
-    author: String,
-    abstr: String,
     reader: Option<gloo::file::callbacks::FileReader>,
 }
 
@@ -61,21 +58,12 @@ impl Component for ProjectView {
                         name="title"
                         placeholder="Title"
                         value= {ctx.props().metadata.title.clone().unwrap_or_default()}
-                        oninput={ctx.link().callback(move |e: InputEvent| {
-                            let input: HtmlInputElement = e.target_unchecked_into();
-                            Msg::EditMetadata(MetadataEdit::Title(input.value()), false)
-                        })}
                         onfocusout={ctx.link().callback(move |e: FocusEvent| {
                             let input: HtmlInputElement = e.target_unchecked_into();
-                            Msg::EditMetadata(MetadataEdit::Title(input.value()), true)
+                            Msg::EditMetadata(MetadataEdit::Title(input.value()))
                         })}
                         onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
                             e.stop_propagation();
-                            let input: HtmlInputElement = e.target_unchecked_into();
-                            if e.key().to_ascii_lowercase() == "enter" {
-                                input.blur().unwrap();
-                                return Msg::EditMetadata(MetadataEdit::Title(input.value()), true);
-                            }
                             Msg::Noop
                         })}
                     />
@@ -86,21 +74,12 @@ impl Component for ProjectView {
                         placeholder="Author(s)"
                         spellcheck="false"
                         value = {ctx.props().metadata.author.clone().unwrap_or_default()}
-                        oninput={ctx.link().callback(move |e: InputEvent| {
-                            let input: HtmlInputElement = e.target_unchecked_into();
-                            Msg::EditMetadata(MetadataEdit::Author(input.value()), false)
-                        })}
                         onfocusout={ctx.link().callback(move |e: FocusEvent| {
                             let input: HtmlInputElement = e.target_unchecked_into();
-                            Msg::EditMetadata(MetadataEdit::Author(input.value()), true)
+                            Msg::EditMetadata(MetadataEdit::Author(input.value()))
                         })}
                         onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
                             e.stop_propagation();
-                            let input: HtmlInputElement = e.target_unchecked_into();
-                            if e.key().to_ascii_lowercase() == "enter" {
-                                input.blur().unwrap();
-                                return Msg::EditMetadata(MetadataEdit::Author(input.value()), true);
-                            }
                             Msg::Noop
                         })}
                     />
@@ -110,13 +89,9 @@ impl Component for ProjectView {
                         name="Abstract"
                         placeholder="Abstract"
                         value = {ctx.props().metadata.abstr.clone().unwrap_or_default()}
-                        oninput={ctx.link().callback(move |e: InputEvent| {
-                            let input: HtmlInputElement = e.target_unchecked_into();
-                            Msg::EditMetadata(MetadataEdit::Abstract(input.value()), false)
-                        })}
                         onfocusout={ctx.link().callback(move |e: FocusEvent| {
                             let input: HtmlInputElement = e.target_unchecked_into();
-                            Msg::EditMetadata(MetadataEdit::Abstract(input.value()), true)
+                            Msg::EditMetadata(MetadataEdit::Abstract(input.value()))
                         })}
                         onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
                             e.stop_propagation();
@@ -141,24 +116,24 @@ impl Component for ProjectView {
                 self.reader = Some(task);
                 false
             }
-            Msg::EditMetadata(edit, should_dispatch) => {
+            Msg::EditMetadata(edit) => {
                 // In order to avoid generating multiple history events for a single rename, we
                 // don't dispatch renames until the user is done editing.
-                let changed = matches!(&edit, MetadataEdit::Title(ref title) if title != &self.title)
-                    || matches!(&edit, MetadataEdit::Author(ref author) if author != &self.author)
-                    || matches!(&edit, MetadataEdit::Abstract(ref abstr) if abstr != &self.abstr);
-
-                if should_dispatch && changed {
-                    dispatch.emit(model::Action::Proof(proof::Action::EditMetadata(
-                        edit.clone(),
-                    )));
-                    match edit {
-                        MetadataEdit::Title(title) => self.title = title,
-                        MetadataEdit::Author(author) => self.author = author,
-                        MetadataEdit::Abstract(abstr) => self.abstr = abstr,
+                let changed = match &edit {
+                    MetadataEdit::Title(title) => {
+                        *title != ctx.props().metadata.title.clone().unwrap_or_default()
                     }
+                    MetadataEdit::Author(author) => {
+                        *author != ctx.props().metadata.author.clone().unwrap_or_default()
+                    }
+                    MetadataEdit::Abstract(abstr) => {
+                        *abstr != ctx.props().metadata.abstr.clone().unwrap_or_default()
+                    }
+                };
+                if changed {
+                    dispatch.emit(model::Action::Proof(proof::Action::EditMetadata(edit)));
                 }
-                should_dispatch
+                false
             }
             Msg::Noop => false,
         }
