@@ -1,7 +1,7 @@
 # Firebase cloud functions
 
 This folder contains the source code of our Firebase cloud functions. These functions are running on Google's cloud platform as a server-less backend. 
-The cloud functions are sitting in `index.js`. They can be called directly via HTTP requests or triggered by background actions like `onCreate`.
+The cloud functions are sitting in `index.js`. They can be called directly via HTTP requests or triggered by background actions like `onCreate`. Use `cargo make serve-firebase` to serve homotopy.io and run firebase emulator locally on your device.
 
 ## Developing
 
