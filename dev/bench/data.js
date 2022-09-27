@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1664295780211,
+  "lastUpdate": 1664296620505,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -41819,6 +41819,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 31.927,
             "range": "+/- 0.099",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "395d96cd2739bc46240ff492cd119e5c3fad75ef",
+          "message": "Bump serde from 1.0.144 to 1.0.145\n\nBumps [serde](https://github.com/serde-rs/serde) from 1.0.144 to 1.0.145.\n- [Release notes](https://github.com/serde-rs/serde/releases)\n- [Commits](https://github.com/serde-rs/serde/compare/v1.0.144...v1.0.145)\n\n---\nupdated-dependencies:\n- dependency-name: serde\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>",
+          "timestamp": "2022-09-27T16:21:28+01:00",
+          "tree_id": "2992a1996778c3755b8c18a543a7b6eb3858cabe",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/395d96cd2739bc46240ff492cd119e5c3fad75ef"
+        },
+        "date": 1664296608785,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.5069,
+            "range": "+/- 0.054",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 13.257,
+            "range": "+/- 0.195",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 60.794,
+            "range": "+/- 0.964",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 380.02,
+            "range": "+/- 3.530",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 3.1767,
+            "range": "+/- 0.017",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 32.804,
+            "range": "+/- 0.322",
             "unit": "s"
           }
         ]
