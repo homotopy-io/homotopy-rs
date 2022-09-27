@@ -11,7 +11,7 @@ homotopy-common = { path = "../homotopy-common" }
 homotopy-core = { path = "../homotopy-core" }
 homotopy-graphics = { path = "../homotopy-graphics" }
 quote = "1.0.21"
-serde = { version = "1.0.144", features = ["derive"] }
+serde = { version = "1.0.145", features = ["derive"] }
 syn = "1.0.101"
 paste = "1.0.9"
 rmp-serde = "0.15.5"
@@ -22,7 +22,7 @@ palette = { git = "https://github.com/Ogeon/palette", features = ["serializing"]
 
 log = "0.4.16"
 
-thiserror = "1.0.35"
+thiserror = "1.0.36"
 obake = { version = "1.0.4", features = ["serde"] }
 im = { version = "15.1.0", features = ["serde"] }
 arrayvec = "0.7.2"
