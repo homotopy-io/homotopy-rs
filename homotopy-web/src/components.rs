@@ -8,7 +8,6 @@ mod common;
 pub mod delta;
 pub mod icon;
 pub mod panzoom;
-pub mod rawhtml;
 pub mod settings;
 pub mod toast;
 pub mod touch_interface;
