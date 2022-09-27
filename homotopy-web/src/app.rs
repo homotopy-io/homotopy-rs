@@ -33,9 +33,6 @@ mod signature;
 mod signature_stylesheet;
 mod workspace;
 
-#[derive(Default, Clone, Debug, Properties, PartialEq, Eq)]
-pub struct Props {}
-
 pub enum Message {
     Dispatch(model::Action),
 }
@@ -52,7 +49,7 @@ pub struct App {
 
 impl Component for App {
     type Message = Message;
-    type Properties = Props;
+    type Properties = ();
 
     #[allow(unused_variables)]
     fn create(ctx: &Context<Self>) -> Self {

@@ -31,6 +31,7 @@
     clippy::default_trait_access,
     clippy::doc_markdown,
     clippy::expect_used,
+    clippy::let_unit_value,
     clippy::match_same_arms,
     clippy::missing_errors_doc,
     clippy::missing_panics_doc,

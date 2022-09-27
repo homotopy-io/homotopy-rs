@@ -13,7 +13,7 @@ fn actions_test_helper(json: &str) -> Proof {
         // Typecheck as we go along
         if let Some(workspace) = &proof.workspace {
             typecheck(&workspace.diagram, &proof.signature, Mode::Deep)
-                .expect(&format!("Typechecking failure at action: {:?}.", a));
+                .unwrap_or_else(|_| panic!("Typechecking failure at action: {:?}.", a));
         }
     }
 
@@ -24,7 +24,7 @@ fn actions_test_helper(json: &str) -> Proof {
 fn construct_associator() {
     let action_dump = include_str!("examples/associator.json");
 
-    let proof = actions_test_helper(&action_dump);
+    let proof = actions_test_helper(action_dump);
 
     // Snapshot the end result
     assert_debug_snapshot!("construct_associator_signature", proof.signature);
@@ -35,7 +35,7 @@ fn construct_associator() {
 fn construct_braid_and_contract() {
     let action_dump = include_str!("examples/braid_contraction.json");
 
-    let proof = actions_test_helper(&action_dump);
+    let proof = actions_test_helper(action_dump);
 
     // Snapshot the end result
     assert_debug_snapshot!("construct_braid_contraction_signature", proof.signature);

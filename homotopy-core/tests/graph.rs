@@ -84,8 +84,7 @@ proptest! {
                 .map(|&e| {
                     output
                         .edge_weight(e)
-                        .map(|(o, r)| Some(((*o)?, r.clone())))
-                        .flatten()
+                        .and_then(|(o, r)| Some(((*o)?, r.clone())))
                         .unwrap()
                 })
                 .chain(once((

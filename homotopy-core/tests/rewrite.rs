@@ -108,11 +108,11 @@ prop_compose! {
             rewrite,
             DiagramN::new(
                 x.into(),
-                sources.into_iter().map(|source| internal(source)).collect(),
+                sources.into_iter().map(internal).collect(),
             ),
             DiagramN::new(
                 x.into(),
-                targets.into_iter().map(|target| internal(target)).collect(),
+                targets.into_iter().map(internal).collect(),
             ),
         )
     }
