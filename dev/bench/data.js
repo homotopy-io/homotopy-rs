@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1664294969805,
+  "lastUpdate": 1664295780211,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -41759,6 +41759,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 32.745,
             "range": "+/- 0.094",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "github-actions[bot]@users.noreply.github.com",
+            "name": "github-actions[bot]",
+            "username": "github-actions[bot]"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "f4d746cbd66d5684999147102312b03a61d68bf1",
+          "message": "flake.lock: Update\n\nFlake lock file updates:\n\n• Updated input 'nixpkgs':\n    'github:NixOS/nixpkgs/da6a05816e7fa5226c3f61e285ef8d9dfc868f3c' (2022-09-16)\n  → 'github:NixOS/nixpkgs/ae1dc133ea5f1538d035af41e5ddbc2ebcb67b90' (2022-09-22)\n• Updated input 'rust-overlay':\n    'github:oxalica/rust-overlay/e4c6adaa5f9293911de5ad50eaf32dbe36819de3' (2022-09-17)\n  → 'github:oxalica/rust-overlay/6eb90123f46664ffbb550c527f656ba848718af5' (2022-09-24)",
+          "timestamp": "2022-09-27T16:11:57+01:00",
+          "tree_id": "553b2987e8dcf75feac39710e9644765f0508e9a",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/f4d746cbd66d5684999147102312b03a61d68bf1"
+        },
+        "date": 1664295768455,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.5419,
+            "range": "+/- 0.054",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 13.601,
+            "range": "+/- 0.272",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 62.368,
+            "range": "+/- 1.602",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 383.2,
+            "range": "+/- 3.040",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 3.204,
+            "range": "+/- 0.018",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 31.927,
+            "range": "+/- 0.099",
             "unit": "s"
           }
         ]
