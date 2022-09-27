@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1664296620505,
+  "lastUpdate": 1664296723635,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -41879,6 +41879,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 32.804,
             "range": "+/- 0.322",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4bb920af3ca75bb6f462b1f6b1998bb350885985",
+          "message": "Bump syn from 1.0.100 to 1.0.101 (#849)\n\nBumps [syn](https://github.com/dtolnay/syn) from 1.0.100 to 1.0.101.\r\n- [Release notes](https://github.com/dtolnay/syn/releases)\r\n- [Commits](https://github.com/dtolnay/syn/compare/1.0.100...1.0.101)\r\n\r\n---\r\nupdated-dependencies:\r\n- dependency-name: syn\r\n  dependency-type: direct:production\r\n  update-type: version-update:semver-patch\r\n...\r\n\r\nSigned-off-by: dependabot[bot] <support@github.com>\r\n\r\nSigned-off-by: dependabot[bot] <support@github.com>\r\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\r\nCo-authored-by: Calin Tataru <calintat@gmail.com>",
+          "timestamp": "2022-09-27T16:29:44+01:00",
+          "tree_id": "f711a99b58df916ca3454ac2cbb955b4c9ee92d0",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/4bb920af3ca75bb6f462b1f6b1998bb350885985"
+        },
+        "date": 1664296711142,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.3728,
+            "range": "+/- 0.002",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 12.984,
+            "range": "+/- 0.017",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 58.535,
+            "range": "+/- 0.044",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 370.1,
+            "range": "+/- 0.220",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 3.1231,
+            "range": "+/- 0.003",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 31.229,
+            "range": "+/- 0.031",
             "unit": "s"
           }
         ]
