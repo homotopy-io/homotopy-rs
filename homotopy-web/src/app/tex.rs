@@ -10,9 +10,8 @@ pub enum TexSpanMode {
 #[derive(Default, Clone, Debug, Properties, PartialEq)]
 pub struct TexSpanProps {
     pub raw_tex: String,
-
-    #[prop_or_default]
     pub class: &'static str,
+
     #[prop_or(false)]
     pub is_editable_as_textarea: bool,
     #[prop_or_default]
@@ -143,7 +142,11 @@ impl Component for TexSpan {
             Html::VRef(self.span.clone().into())
         };
 
-        let editable = if ctx.props().is_editable_as_textarea { "tex__editable" } else { "tex__non-editable" };
+        let editable = if ctx.props().is_editable_as_textarea {
+            "tex__editable"
+        } else {
+            "tex__non-editable"
+        };
 
         html! {
             <div

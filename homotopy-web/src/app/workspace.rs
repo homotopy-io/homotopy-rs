@@ -11,9 +11,9 @@ use yew::prelude::*;
 
 use crate::{
     app::{
-        tex::TexSpan,
         diagram_gl::DiagramGl,
         diagram_svg::{DiagramSvg, HighlightKind, HighlightSvg},
+        tex::TexSpan,
     },
     components::panzoom::PanZoomComponent,
     model::proof::{homotopy::Homotopy, Action, Metadata, Signature, Workspace},
@@ -70,9 +70,7 @@ impl Component for WorkspaceView {
             }
         };
         let project_title = html! {
-            <div class="workspace__project-title">
-                <TexSpan raw_tex={ctx.props().metadata.title.as_ref().map(Clone::clone).unwrap_or_default()} />
-            </div>
+            <TexSpan class="workspace__project-title" raw_tex={ctx.props().metadata.title.as_ref().map(Clone::clone).unwrap_or_default()} />
         };
         let slice_buttons = match workspace {
             Some(ref ws) if matches!(ws.view.dimension(), 1 | 2) => {
