@@ -16,6 +16,8 @@ pub struct TexSpanProps {
     pub is_editable_as_textarea: bool,
     #[prop_or_default]
     pub placeholder: &'static str,
+    #[prop_or("#cc0000")]
+    pub error_color: &'static str,
     #[prop_or_default]
     pub on_input: Callback<String>,
     #[prop_or_default]
@@ -48,6 +50,8 @@ impl Component for TexSpan {
         let render_opts = katex::Opts::builder()
             .display_mode(false)
             .trust(false)
+            .throw_on_error(false)
+            .error_color(ctx.props().error_color)
             .build()
             .unwrap();
 

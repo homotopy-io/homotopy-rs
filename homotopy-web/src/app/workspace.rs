@@ -70,7 +70,11 @@ impl Component for WorkspaceView {
             }
         };
         let project_title = html! {
-            <TexSpan class="workspace__project-title" raw_tex={ctx.props().metadata.title.as_ref().map(Clone::clone).unwrap_or_default()} />
+            <TexSpan
+                class="workspace__project-title"
+                error_color="#c004"
+                raw_tex={ctx.props().metadata.title.as_ref().map(Clone::clone).unwrap_or_default()}
+            />
         };
         let slice_buttons = match workspace {
             Some(ref ws) if matches!(ws.view.dimension(), 1 | 2) => {
