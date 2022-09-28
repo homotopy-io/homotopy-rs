@@ -190,7 +190,8 @@ impl State {
 
             Action::ExportActions => {
                 let actions = self.history.get_actions();
-                let data = serde_json::to_string(&actions).map_err(|_e| ModelError::Internal)?;
+                let payload: (bool, Vec<proof::Action>) = (true, actions);
+                let data = serde_json::to_string(&payload).map_err(|_e| ModelError::Internal)?;
                 generate_download("homotopy_io_actions", "json", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }

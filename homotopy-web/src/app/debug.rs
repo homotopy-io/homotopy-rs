@@ -3,7 +3,7 @@ use wasm_bindgen::JsValue;
 use web_sys::{File, HtmlInputElement};
 use yew::prelude::*;
 
-use crate::model::{dump_actions, Action, Proof};
+use crate::model::{Action, Proof};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Msg {
@@ -55,11 +55,11 @@ impl Component for DebugView {
                     <button onclick={Callback::from(move |_| web_sys::console::dir_2(&"Signature:".into(), &JsValue::from_serde(&signature).unwrap()))}>{"Dump signature"}</button>
                 </div>
                 <div class="settings__segment">
-                    <button onclick={Callback::from(move |_| web_sys::console::dir_2(&"Actions:".into(), &dump_actions()))}>{"Export actions"}</button>
+                    <button onclick={ctx.props().dispatch.reform(move |_| Action::ExportActions)}>{"Export actions"}</button>
                 </div>
                 <div class="settings__segment">
                     <label for="import" class="button">{"Import actions"}</label>
-                    <input type="file" accept="application/.json,.txt" class="visually-hidden" id="import" onchange={import}/>
+                    <input type="file" accept=".json,.txt" class="visually-hidden" id="import" onchange={import}/>
                 </div>
             </>
         }
