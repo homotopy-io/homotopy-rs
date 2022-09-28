@@ -89,9 +89,7 @@ impl State {
                 match dir {
                     history::Direction::Linear(Forward) => {
                         self.history.redo()?;
-                        // Nuclear way to get the action we just re-did
-                        // but logs must be accurate!
-                        if let Some(action) = self.history.get_actions().last() {
+                        if let Some(action) = self.history.last_action() {
                             let data = serde_json::to_string(&action)
                                 .expect("Failed to serialize action.");
                             push_action(JsString::from(data));
