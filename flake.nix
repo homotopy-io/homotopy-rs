@@ -266,13 +266,14 @@
             inherit (meta.package) name version;
             root = ./.;
             copyLibs = true;
+            release = false;
             cargoBuildOptions = opts: opts ++ [ "-p" "homotopy-web" ];
             CARGO_BUILD_TARGET = "wasm32-unknown-unknown";
             overrideMain = oldAttrs: {
               nativeBuildInputs = oldAttrs.nativeBuildInputs ++ (with pkgs; [ wasm-bindgen-cli ]);
               buildInputs = oldAttrs.buildInputs ++ ([ packages.highs ]);
               postBuild = ''
-                ${pkgs.wasm-bindgen-cli}/bin/wasm-bindgen --out-dir $out --no-typescript --target web target/wasm32-unknown-unknown/release/homotopy_web.wasm
+                ${pkgs.wasm-bindgen-cli}/bin/wasm-bindgen --out-dir $out --no-typescript --target web target/wasm32-unknown-unknown/debug/homotopy_web.wasm
               '';
               installPhase = ''
                 runHook preInstall
