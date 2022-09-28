@@ -11,6 +11,7 @@ use wasm_bindgen::{prelude::*, JsCast};
 pub enum Action {
     Proof(proof::Action),
     History(history::Action),
+    ImportActions(proof::SerializedData),
     ExportProof,
     ExportActions,
     ExportTikz(bool),
@@ -205,6 +206,27 @@ impl State {
                 );
                 generate_download("homotopy_io_export", "hom", data.as_slice())
                     .map_err(ModelError::Export)?;
+            }
+
+            Action::ImportActions(data) => {
+                // Leave room for a future "replay on top of current workspace".
+                let mut proof: Proof = Default::default();
+                let (safe, actions): (bool, Vec<proof::Action>) =
+                    serde_json::from_slice(&data.0)
+                        .or(Err(ModelError::Proof(proof::ModelError::Import)))?;
+                let len = if safe {
+                    actions.len()
+                } else {
+                    actions.len() - 1
+                };
+                for a in &actions[..len] {
+                    if proof.is_valid(a) {
+                        proof.update(a)?;
+                        self.history.add(a.clone(), proof.clone());
+                    } else {
+                        Err(ModelError::Proof(proof::ModelError::InvalidAction))?;
+                    }
+                }
             }
         }
 

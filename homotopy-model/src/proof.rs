@@ -22,7 +22,7 @@ pub use signature::*;
 use thiserror::Error;
 
 use self::homotopy::{Contract, Expand};
-use crate::{migration, proof, serialize};
+use crate::{migration, serialize};
 
 mod signature;
 
@@ -339,44 +339,22 @@ impl ProofState {
 
     /// Handler for [Action::ImportProof].
     fn import_proof(&mut self, data: &SerializedData) -> Result<(), ModelError> {
-        if let Some(((signature, workspace), metadata)) =
-            serialize::deserialize(&data.0).or_else(|| migration::deserialize(&data.0))
-        {
-            for g in signature.iter() {
-                g.diagram
-                    .check(Mode::Deep)
-                    .map_err(|_err| ModelError::Import)?;
-            }
-            if let Some(w) = workspace.as_ref() {
-                w.diagram
-                    .check(Mode::Deep)
-                    .map_err(|_err| ModelError::Import)?;
-            }
-            self.signature = signature;
-            self.workspace = workspace;
-            self.metadata = metadata;
-            //self.history.add(proof::Action::Imported, proof);
-        } else {
-            // Leave room for a future "replay on top of current workspace".
-            *self = Default::default();
-            // Act as if we imported an empty workspace
-            //self.history.add(proof::Action::Imported, proof.clone());
-            let (safe, actions): (bool, Vec<proof::Action>) =
-                serde_json::from_slice(&data.0).or(Err(proof::ModelError::Import))?;
-            let len = if safe {
-                actions.len()
-            } else {
-                actions.len() - 1
-            };
-            for a in &actions[..len] {
-                if self.is_valid(a) {
-                    self.update(a)?;
-                    //self.history.add(a.clone(), proof.clone());
-                } else {
-                    Err(ModelError::InvalidAction)?;
-                }
-            }
-        };
+        let ((signature, workspace), metadata) = serialize::deserialize(&data.0)
+            .or_else(|| migration::deserialize(&data.0))
+            .ok_or(ModelError::Import)?;
+        for g in signature.iter() {
+            g.diagram
+                .check(Mode::Deep)
+                .map_err(|_err| ModelError::Import)?;
+        }
+        if let Some(w) = workspace.as_ref() {
+            w.diagram
+                .check(Mode::Deep)
+                .map_err(|_err| ModelError::Import)?;
+        }
+        self.signature = signature;
+        self.workspace = workspace;
+        self.metadata = metadata;
         Ok(())
     }
 
@@ -1082,7 +1060,7 @@ fn contains_point(diagram: Diagram, point: &[Height], embedding: &[RegularHeight
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct SerializedData(Vec<u8>);
+pub struct SerializedData(pub Vec<u8>);
 
 impl std::fmt::Debug for SerializedData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
