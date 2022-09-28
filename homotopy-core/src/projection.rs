@@ -71,7 +71,7 @@ impl<const N: usize> Projection<N> {
                         Some(v)
                     },
                     |_, _, r| (i == 0).then(|| r.direction()),
-                    |_, key, r| (i > 0 && r.is_atomic()).then(|| *key),
+                    |_, key, r| (i > 0 && r.is_atomic()).then_some(*key),
                 )?
                 .output;
         }
