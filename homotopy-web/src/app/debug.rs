@@ -1,28 +1,84 @@
+use closure::closure;
 use wasm_bindgen::JsValue;
+use web_sys::{File, HtmlInputElement};
 use yew::prelude::*;
 
-use crate::model::{dump_actions, Proof};
+use crate::model::{dump_actions, Action, Proof};
 
-#[derive(Properties, Clone, PartialEq, Eq)]
-pub struct Props {
-    pub proof: Proof,
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Msg {
+    ImportActions(File),
+    Noop,
 }
 
-#[function_component(DebugView)]
-pub fn debug_view(props: &Props) -> Html {
-    let diagram = props
-        .proof
-        .workspace()
-        .cloned()
-        .map(|ws| ws.visible_diagram());
-    let signature = props.proof.signature().clone();
-    html! {
-        <>
-            <button onclick={Callback::from(move |_| web_sys::console::dir_2(&"Workspace diagram:".into(), &JsValue::from_serde(&diagram).unwrap()))}>{"Dump workspace diagram"}</button>
-            <br />
-            <button onclick={Callback::from(move |_| web_sys::console::dir_2(&"Signature:".into(), &JsValue::from_serde(&signature).unwrap()))}>{"Dump signature"}</button>
-            <br />
-            <button onclick={Callback::from(move |_| web_sys::console::dir_2(&"Actions:".into(), &dump_actions()))}>{"Dump actions"}</button>
-        </>
+#[derive(Properties, Clone, PartialEq)]
+pub struct Props {
+    pub proof: Proof,
+    pub dispatch: Callback<Action>,
+}
+
+#[derive(Debug, Default)]
+pub struct DebugView {
+    reader: Option<gloo::file::callbacks::FileReader>,
+}
+
+impl Component for DebugView {
+    type Message = Msg;
+    type Properties = Props;
+
+    fn create(_ctx: &Context<Self>) -> Self {
+        Self::default()
+    }
+
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let import = ctx.link().callback(|e: Event| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            if let Some(filelist) = input.files() {
+                Msg::ImportActions(filelist.get(0).unwrap())
+            } else {
+                Msg::Noop
+            }
+        });
+        let diagram = ctx
+            .props()
+            .proof
+            .workspace()
+            .cloned()
+            .map(|ws| ws.visible_diagram());
+        let signature = ctx.props().proof.signature().clone();
+        html! {
+            <>
+                <div class="settings__segment">
+                    <button onclick={Callback::from(move |_| web_sys::console::dir_2(&"Workspace diagram:".into(), &JsValue::from_serde(&diagram).unwrap()))}>{"Dump workspace diagram"}</button>
+                </div>
+                <div class="settings__segment">
+                    <button onclick={Callback::from(move |_| web_sys::console::dir_2(&"Signature:".into(), &JsValue::from_serde(&signature).unwrap()))}>{"Dump signature"}</button>
+                </div>
+                <div class="settings__segment">
+                    <button onclick={Callback::from(move |_| web_sys::console::dir_2(&"Actions:".into(), &dump_actions()))}>{"Export actions"}</button>
+                </div>
+                <div class="settings__segment">
+                    <label for="import" class="button">{"Import actions"}</label>
+                    <input type="file" accept="application/.json,.txt" class="visually-hidden" id="import" onchange={import}/>
+                </div>
+            </>
+        }
+    }
+
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        let dispatch = &ctx.props().dispatch;
+        match msg {
+            Msg::ImportActions(file) => {
+                let task = gloo::file::callbacks::read_as_bytes(
+                    &file.into(),
+                    closure!(clone dispatch, |res| {
+                        dispatch.emit(Action::ImportActions(res.expect("failed to read file").into()));
+                    }),
+                );
+                self.reader = Some(task);
+                false
+            }
+            Msg::Noop => false,
+        }
     }
 }

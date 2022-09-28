@@ -174,8 +174,8 @@ declare_sidebar_drawers! {
         "Debug",
         "debug",
         "bug_report",
-        |_, proof: &Proof, _| html! {
-            <DebugView proof={proof.clone()} />
+        |dispatch, proof: &Proof, _| html! {
+            <DebugView proof={proof.clone()} dispatch={dispatch} />
         },
         min_width: 250,
     }
