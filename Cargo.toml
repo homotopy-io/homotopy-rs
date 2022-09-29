@@ -18,6 +18,7 @@ lto = true
 
 [workspace.metadata.nix]
 cachix = { name = "homotopy-io", key = "homotopy-io.cachix.org-1:W30ZjMFglzQwLtem4DQXbFqaMqhsee53pGvQPp82kCc=" }
+cCompiler = "clang"
 
 # Patches need to be in workspace root
 [patch.crates-io]
