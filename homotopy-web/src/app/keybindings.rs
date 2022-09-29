@@ -28,6 +28,7 @@ macro_rules! declare_keybindings {
     }
 }
 
+#[cfg(not(debug_assertions))]
 declare_keybindings! {
     "y" => Action::History(history::Action::Move(history::Direction::Linear(Direction::Forward)))
     "u" => Action::History(history::Action::Move(history::Direction::Linear(Direction::Backward)))
@@ -53,4 +54,34 @@ declare_keybindings! {
     "arrowdown" => Action::Proof(proof::Action::SwitchSlice(Direction::Backward))
     "arrowleft" => Action::Proof(proof::Action::AscendSlice(1))
     "arrowright" => Action::Proof(proof::Action::DescendSlice(SliceIndex::Boundary(Boundary::Source)))
+}
+
+#[cfg(debug_assertions)]
+declare_keybindings! {
+    "y" => Action::History(history::Action::Move(history::Direction::Linear(Direction::Forward)))
+    "u" => Action::History(history::Action::Move(history::Direction::Linear(Direction::Backward)))
+    "d" => Action::Proof(proof::Action::Behead)
+    "f" => Action::Proof(proof::Action::Befoot)
+    "r" => Action::Proof(proof::Action::Restrict)
+    "h" => Action::Proof(proof::Action::Theorem)
+    "a" => Action::Proof(proof::Action::CreateGeneratorZero)
+    "s" => Action::Proof(proof::Action::SetBoundary(Boundary::Source))
+    "t" => Action::Proof(proof::Action::SetBoundary(Boundary::Target))
+    "i" => Action::Proof(proof::Action::TakeIdentityDiagram)
+    "c" => Action::Proof(proof::Action::ClearWorkspace)
+    "1" => Action::Proof(proof::Action::Select(0))
+    "2" => Action::Proof(proof::Action::Select(1))
+    "3" => Action::Proof(proof::Action::Select(2))
+    "4" => Action::Proof(proof::Action::Select(3))
+    "5" => Action::Proof(proof::Action::Select(4))
+    "6" => Action::Proof(proof::Action::Select(5))
+    "7" => Action::Proof(proof::Action::Select(6))
+    "8" => Action::Proof(proof::Action::Select(7))
+    "9" => Action::Proof(proof::Action::Select(8))
+    "arrowup" => Action::Proof(proof::Action::SwitchSlice(Direction::Forward))
+    "arrowdown" => Action::Proof(proof::Action::SwitchSlice(Direction::Backward))
+    "arrowleft" => Action::Proof(proof::Action::AscendSlice(1))
+    "arrowright" => Action::Proof(proof::Action::DescendSlice(SliceIndex::Boundary(Boundary::Source)))
+    "j" => Action::DebugPrev
+    "k" => Action::DebugNext
 }

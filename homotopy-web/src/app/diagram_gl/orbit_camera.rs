@@ -19,7 +19,7 @@ pub struct OrbitCamera {
 }
 
 impl OrbitCamera {
-    const DEFAULT_DISTANCE: f32 = 12.;
+    pub(crate) const DEFAULT_DISTANCE: f32 = 12.;
     const DEFAULT_FOV: f32 = 30.0;
     const DEFAULT_PHI: f32 = 0.5 * PI;
     const DEFAULT_THETA: f32 = 0.5 * PI;
