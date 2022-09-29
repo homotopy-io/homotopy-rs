@@ -36,6 +36,7 @@ find dist \
     ! -name highs.wasm \
     ! -name homotopy_web.js \
     ! -name homotopy_web_bg.wasm \
+    ! -name account_script.js \
     -type f -exec rm -f {} +
 cp -r homotopy-web/static/* dist/
 ls dist
@@ -79,8 +80,8 @@ args = [
 ]
 
 [tasks.serve]
-run_task = { name = ["dist-static-watch", "build-wasm-watch", "devserver"], fork = true, parallel = true }
+run_task = { name = ["build-highs", "dist-static-watch", "build-wasm-watch", "devserver"], fork = true, parallel = true }
 
 [tasks.serve-firebase]
-run_task = { name = ["dist-static-watch", "build-wasm-watch", "devserver", "firebase-emulator"], fork = true, parallel = true }
+run_task = { name = ["serve", "firebase-emulator"], fork = true, parallel = true }
 

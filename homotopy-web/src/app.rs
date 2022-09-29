@@ -17,7 +17,7 @@ use crate::{
     model,
 };
 
-mod account;
+pub mod account;
 mod attach;
 mod boundary;
 #[cfg(any(debug_assertions, feature = "show_debug_panel"))]

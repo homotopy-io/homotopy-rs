@@ -7,11 +7,14 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use wasm_bindgen::{prelude::*, JsCast};
 
+use crate::app::account;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Action {
     Proof(proof::Action),
     History(history::Action),
     ImportActions(proof::SerializedData),
+    UploadProject(String, bool),
     ExportProof,
     ExportActions,
     ExportTikz(bool),
@@ -226,6 +229,28 @@ impl State {
                         return Err(ModelError::Proof(proof::ModelError::InvalidAction));
                     }
                 }
+            }
+
+            Action::UploadProject(uid, new) => {
+                let data = serialize::serialize(
+                    self.with_proof(|p| p.signature.clone())
+                        .ok_or(ModelError::Internal)?,
+                    self.with_proof(|p| p.workspace.clone())
+                        .ok_or(ModelError::Internal)?,
+                    self.with_proof(|p| p.metadata.clone())
+                        .ok_or(ModelError::Internal)?,
+                );
+                let metadata = self
+                    .with_proof(|p| p.metadata.clone())
+                    .ok_or(ModelError::Internal)?;
+                account::upload_project(
+                    uid,
+                    new,
+                    account::Project {
+                        id: metadata.title.unwrap_or_else(|| "Untitled".to_owned()),
+                        data: proof::SerializedData(data),
+                    },
+                );
             }
         }
 

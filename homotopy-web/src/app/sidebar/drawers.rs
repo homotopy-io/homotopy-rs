@@ -110,8 +110,9 @@ declare_sidebar_drawers! {
         "Account",
         "account",
         "account_circle",
-        |_, _, _| html! {
+        |dispatch, _, _| html! {
             <AccountView
+                dispatch={dispatch}
             />
         },
         min_width: 250,

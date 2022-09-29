@@ -3,14 +3,14 @@
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyBCtkQM2P7eBAFtKWnlGfyTNyTHE8y5wXY",
-  authDomain: "homotopy-io.firebaseapp.com",
-  databaseURL: "https://homotopy-io.firebaseio.com",
-  projectId: "homotopy-io",
-  storageBucket: "homotopy-io.appspot.com",
-  messagingSenderId: "872831343483",
-  appId: "1:872831343483:web:4de585eb01b14a27ad3bde",
-  measurementId: "G-CYGQVSSM6Q"
+    apiKey: "AIzaSyBCtkQM2P7eBAFtKWnlGfyTNyTHE8y5wXY",
+    authDomain: "homotopy-io.firebaseapp.com",
+    databaseURL: "https://homotopy-io.firebaseio.com",
+    projectId: "homotopy-io",
+    storageBucket: "homotopy-io.appspot.com",
+    messagingSenderId: "872831343483",
+    appId: "1:872831343483:web:4de585eb01b14a27ad3bde",
+    measurementId: "G-CYGQVSSM6Q"
 };
 
 console.log("Loading firebase...");
@@ -59,4 +59,5 @@ const firestore = firebase.firestore();
 if (window.location.hostname === "localhost") {
   auth.useEmulator("http://localhost:9099");
   firestore.useEmulator("http://localhost:8000");
+    functions.useEmulator("localhost", 5001);
 }
