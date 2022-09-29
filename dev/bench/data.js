@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1664296740129,
+  "lastUpdate": 1664451614809,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -41999,6 +41999,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 22.524,
             "range": "+/- 0.029",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bbfd77e3b12275acdc22c79e2e9fbf5b82947b34",
+          "message": "Catch firebase errors (#854)\n\n* some error message\r\n\r\n* update intex.html\r\n\r\n* Handle firebase import errors.\r\n\r\n* defer load firebase.js\r\n\r\nCo-authored-by: Yulong Huang <yh419@cam.ac.uk>",
+          "timestamp": "2022-09-29T10:41:39Z",
+          "tree_id": "1de3e3e85c53256c3bfa5ce7551f5e547a0f7028",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/bbfd77e3b12275acdc22c79e2e9fbf5b82947b34"
+        },
+        "date": 1664451605539,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.8157,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 10.799,
+            "range": "+/- 0.009",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 48.761,
+            "range": "+/- 0.019",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 308.88,
+            "range": "+/- 0.240",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.604,
+            "range": "+/- 0.002",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 26.081,
+            "range": "+/- 0.023",
             "unit": "s"
           }
         ]
