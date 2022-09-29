@@ -15,16 +15,6 @@
     <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.css" />
   </head>
   <body>
-  	<div id="firebase__error" style="visibility: visible;">
-  		<h1> Hold on...</h1>
-  		<h3>homotopy.io is taking some time to load.</h3>
-  		<p>
-  			If you keep seeing this page, some error might have occurred. <br />
-  			Please check your network connection or turn off browser extensions that might block
-  			requests (e.g. UBlock Origin for Firefox users), then refresh the page. <br />
-  			If it does not solve the problem, you can report this bug to us by opening an issue at <a href="https://github.com/homotopy-io/homotopy-rs">github.com/homotopy-io/homotopy-rs</a>
-  		</p>
-  	</div>
     <script type="module">
         import('./homotopy_web.js').then(wasm => wasm.default()).catch(console.log);
     </script>
@@ -50,6 +40,6 @@
 		function display_panic_message() {window.document.getElementById("panic").style.display = "table";};
 		window.help=display_panic_message;
 	</script>
-  <script type="module" src="./firebase.js"></script>
+  <script defer type="module" src="./firebase.js"></script>
   </body>
 </html>
