@@ -1,21 +1,5 @@
 // This script initializes firebase.
-
-console.log("Loading firebase...");
-
-// Compat modules for firebase ui
-import "https://www.gstatic.com/firebasejs/9.7.0/firebase-app-compat.js";
-import "https://www.gstatic.com/firebasejs/9.7.0/firebase-analytics-compat.js";
-import "https://www.gstatic.com/firebasejs/9.7.0/firebase-performance-compat.js";
-import "https://www.gstatic.com/firebasejs/9.7.0/firebase-auth-compat.js";
-
-// Import the functions you need from the SDKs you need
-// import { initializeApp } from "https://www.gstatic.com/firebasejs/9.7.0/firebase-app.js";
-// import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.7.0/firebase-analytics.js";
-// import { getPerformance } from "https://www.gstatic.com/firebasejs/9.7.0/firebase-performance.js";
-
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
+//
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
@@ -29,8 +13,32 @@ const firebaseConfig = {
   measurementId: "G-CYGQVSSM6Q"
 };
 
-// Initialize Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const analytics = firebase.analytics();
-const perf = firebase.performance();
-const auth = firebase.auth();
+console.log("Loading firebase...");
+window.firebase_working = false;
+
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Compat modules for firebase ui
+await import("https://www.gstatic.com/firebasejs/9.7.0/firebase-app-compat.js")
+	.catch(err => console.error("Failed to import firebase-app-compat", err))
+	.then(mod => {
+		// Initialize Firebase
+		const app = firebase.initializeApp(firebaseConfig);
+
+		import("https://www.gstatic.com/firebasejs/9.7.0/firebase-analytics-compat.js")
+		.catch(err => console.error("Failed to import firebase-analytics-compat", err))
+		.then(mod => {
+			const analytics = firebase.analytics();
+
+			import("https://www.gstatic.com/firebasejs/9.7.0/firebase-performance-compat.js")
+			.catch(err => console.error("Failed to import firebase-performance-compat", err))
+			.then(mod => {
+				const perf = firebase.performance();
+
+				import("https://www.gstatic.com/firebasejs/9.7.0/firebase-auth-compat.js")
+				.catch(err => console.error("Failed to import firebase-auth-compat", err))
+				.then(mod => { const auth = firebase.auth(); window.firebase_working = true; })
+			})
+		})
+	});
