@@ -158,12 +158,26 @@ pub fn serialize(
     // Tag data with version
     let data: AnyVersion<Data> = data.into();
     // Serialize
-    rmp_serde::encode::to_vec_named(&data).unwrap()
+    let payload = rmp_serde::encode::to_vec_named(&data).unwrap();
+    let mut compressed = vec![];
+    brotli::enc::BrotliCompress(&mut &payload[..], &mut compressed, &Default::default()).unwrap();
+    compressed
 }
 
 pub fn deserialize(data: &[u8]) -> Option<((Signature, Option<Workspace>), Metadata)> {
     // Deserialize with version tag
-    let data: AnyVersion<Data> = match rmp_serde::decode::from_slice(data) {
+    let mut decompressed = vec![];
+    match brotli::BrotliDecompress(&mut &data.to_vec()[..], &mut decompressed) {
+        Ok(()) => {}
+        Err(error) => {
+            log::error!(
+                "Error while decompressing, attempting to load as uncompressed: {}",
+                error
+            );
+            decompressed = data.to_vec();
+        }
+    };
+    let data: AnyVersion<Data> = match rmp_serde::decode::from_slice(&decompressed) {
         Err(error) => {
             log::error!("Error while deserializing: {}", error);
             None
