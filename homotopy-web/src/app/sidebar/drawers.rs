@@ -1,7 +1,7 @@
 use yew::{callback::Callback, prelude::*};
 
 use super::{DrawerViewSize, Sidebar, SidebarButton, SidebarDrawer, SidebarMsg};
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, feature = "show_debug_panel"))]
 use crate::app::debug::DebugView;
 use crate::{
     app::{
@@ -169,7 +169,7 @@ declare_sidebar_drawers! {
         min_width: 250,
     }
 
-    #[cfg(debug_assertions)]
+    #[cfg(any(debug_assertions, feature = "show_debug_panel"))]
     DRAWER_DEBUG {
         "Debug",
         "debug",
