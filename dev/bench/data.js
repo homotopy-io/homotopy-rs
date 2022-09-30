@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1664458077736,
+  "lastUpdate": 1664537607692,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -42119,6 +42119,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 27.316,
             "range": "+/- 0.079",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "76ea9ed877eec6e2e463ccfc46af00a14188c591",
+          "message": "Action improvements (#846)\n\n* Action dumps flag panics (partial fix #813).\r\n\r\n* Moved ImportProof to homotopy-model proof's Action, broken history (more #813).\r\n\r\n* Fixed flake to always build in debug mode.\r\n\r\n* Moved Action imports back into homotopy-web.\r\n\r\n* Added import button for action dummps to debug panel.\r\n\r\n* Fixed action export in debug panel (#818).\r\n\r\n* Refactored.\r\n\r\n* Changed action export format to .txt.\r\n\r\n* Revert \"Fixed flake to always build in debug mode.\"\r\n\r\n* Added feature flag for debug panel.\r\n\r\n* Implemented requested changes.",
+          "timestamp": "2022-09-30T11:18:36+01:00",
+          "tree_id": "c33a11dfa4d6fccd3e9a004d7018001a2eb7f80b",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/76ea9ed877eec6e2e463ccfc46af00a14188c591"
+        },
+        "date": 1664537595303,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.8147,
+            "range": "+/- 0.068",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 14.684,
+            "range": "+/- 0.442",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 64.731,
+            "range": "+/- 1.214",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 405.99,
+            "range": "+/- 5.020",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 3.3855,
+            "range": "+/- 0.022",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 33.766,
+            "range": "+/- 0.152",
             "unit": "s"
           }
         ]
