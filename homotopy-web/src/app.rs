@@ -20,7 +20,7 @@ use crate::{
 mod account;
 mod attach;
 mod boundary;
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, feature = "show_debug_panel"))]
 mod debug;
 mod diagram_gl;
 mod diagram_svg;

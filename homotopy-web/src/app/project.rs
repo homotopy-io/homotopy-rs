@@ -51,7 +51,7 @@ impl Component for ProjectView {
                 <label for="import" class="button">
                     {"Import"}
                 </label>
-                <input type="file" accept="application/msgpack,.hom,.json,.txt" class="visually-hidden" id="import" onchange={import}/>
+                <input type="file" accept="application/msgpack,.hom,.json" class="visually-hidden" id="import" onchange={import}/>
                 <div class="metadata__details">
                     <textarea
                         class="metadata__title"
@@ -110,7 +110,7 @@ impl Component for ProjectView {
                 let task = gloo::file::callbacks::read_as_bytes(
                     &file.into(),
                     closure!(clone dispatch, |res| {
-                        dispatch.emit(model::Action::ImportProof(res.expect("failed to read file").into()));
+                        dispatch.emit(model::Action::Proof(model::proof::Action::ImportProof(res.expect("failed to read file").into())));
                     }),
                 );
                 self.reader = Some(task);

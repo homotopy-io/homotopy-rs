@@ -24,11 +24,21 @@ struct Opt {
 
     #[structopt(short, long, parse(from_os_str))]
     output_hom: Option<PathBuf>,
+
+    #[structopt(short, long)]
+    no_replay_crash: bool,
 }
 
-fn import_actions(path: &PathBuf) -> anyhow::Result<Vec<Action>> {
+fn import_actions(path: &PathBuf) -> anyhow::Result<(Vec<Action>, Option<Action>)> {
     let data = read(path)?;
-    Ok(serde_json::from_slice(&data)?)
+    let (safe, actions): (bool, Vec<_>) = serde_json::from_slice(&data)?;
+    if safe {
+        Ok((actions, None))
+    } else {
+        let len = actions.len();
+        let last_action = Some(actions[len - 1].clone());
+        Ok((actions[..len - 1].to_vec(), last_action))
+    }
 }
 
 fn import_hom(path: &PathBuf) -> anyhow::Result<Proof> {
@@ -74,7 +84,7 @@ fn main() -> anyhow::Result<()> {
         None => Default::default(),
     };
 
-    let actions = match opt.input_actions {
+    let (actions, last_action) = match opt.input_actions {
         Some(path) => import_actions(&path).context("Could not import action file.")?,
         None => Default::default(),
     };
@@ -82,6 +92,14 @@ fn main() -> anyhow::Result<()> {
     for a in actions.iter() {
         println!("Performing action: {:?}", a);
         proof.update(a)?;
+    }
+
+    if !opt.no_replay_crash {
+        if let Some(a) = last_action {
+            println!("Performing final action: {:?}", a);
+            // When debugging, set a breakpoint here!
+            proof.update(&a)?;
+        }
     }
 
     if let Some(path) = opt.output_hom {

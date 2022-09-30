@@ -1,4 +1,5 @@
-use homotopy_web::model::{Action::*, *};
+use homotopy_model::proof::{Action::ImportProof, SerializedData};
+use homotopy_web::model::{Action::Proof, State};
 
 #[test]
 #[ignore]
@@ -11,6 +12,6 @@ fn action() {
         .unwrap_or_default()
         .into();
     let mut state: State = Default::default();
-    let _ = state.update(ImportProof(data));
+    let _ = state.update(Proof(ImportProof(data)));
     let _ = state.update(unimplemented!("trigger action goes here"));
 }

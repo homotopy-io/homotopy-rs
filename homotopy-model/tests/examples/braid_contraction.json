@@ -1,3 +1,4 @@
+[true,
 [
   "CreateGeneratorZero",
   {
@@ -214,4 +215,5 @@
       }
     }
   }
+]
 ]

@@ -1,6 +1,5 @@
 pub use history::Proof;
 use history::{History, UndoState};
-use homotopy_core::common::Mode;
 use homotopy_graphics::{manim, stl, svg, tikz};
 pub use homotopy_model::{history, migration, proof, serialize};
 use js_sys::JsString;
@@ -12,7 +11,7 @@ use wasm_bindgen::{prelude::*, JsCast};
 pub enum Action {
     Proof(proof::Action),
     History(history::Action),
-    ImportProof(SerializedData),
+    ImportActions(proof::SerializedData),
     ExportProof,
     ExportActions,
     ExportTikz(bool),
@@ -57,27 +56,6 @@ impl From<history::Action> for Action {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct SerializedData(Vec<u8>);
-
-impl std::fmt::Debug for SerializedData {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("SerializedData").finish()
-    }
-}
-
-impl From<Vec<u8>> for SerializedData {
-    fn from(data: Vec<u8>) -> Self {
-        Self(data)
-    }
-}
-
-impl From<SerializedData> for Vec<u8> {
-    fn from(data: SerializedData) -> Self {
-        data.0
-    }
-}
-
 #[derive(Debug, Clone, Default)]
 pub struct State {
     pub history: History,
@@ -111,9 +89,7 @@ impl State {
                 match dir {
                     history::Direction::Linear(Forward) => {
                         self.history.redo()?;
-                        // Nuclear way to get the action we just re-did
-                        // but logs must be accurate!
-                        if let Some(action) = self.history.get_actions().last() {
+                        if let Some(action) = self.history.last_action() {
                             let data = serde_json::to_string(&action)
                                 .expect("Failed to serialize action.");
                             push_action(JsString::from(data));
@@ -212,8 +188,9 @@ impl State {
 
             Action::ExportActions => {
                 let actions = self.history.get_actions();
-                let data = serde_json::to_string(&actions).map_err(|_e| ModelError::Internal)?;
-                generate_download("homotopy_io_actions", "json", data.as_bytes())
+                let payload: (bool, Vec<proof::Action>) = (true, actions);
+                let data = serde_json::to_string(&payload).map_err(|_e| ModelError::Internal)?;
+                generate_download("homotopy_io_actions", "txt", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
 
@@ -230,41 +207,25 @@ impl State {
                     .map_err(ModelError::Export)?;
             }
 
-            Action::ImportProof(data) => {
-                if let Some(((signature, workspace), metadata)) =
-                    serialize::deserialize(&data.0).or_else(|| migration::deserialize(&data.0))
-                {
-                    for g in signature.iter() {
-                        g.diagram
-                            .check(Mode::Deep)
-                            .map_err(|_err| ModelError::Import)?;
-                    }
-                    if let Some(w) = workspace.as_ref() {
-                        w.diagram
-                            .check(Mode::Deep)
-                            .map_err(|_err| ModelError::Import)?;
-                    }
-                    let mut proof: Proof = Default::default();
-                    proof.signature = signature;
-                    proof.workspace = workspace;
-                    proof.metadata = metadata;
-                    self.history.add(proof::Action::Imported, proof);
+            Action::ImportActions(data) => {
+                // Leave room for a future "replay on top of current workspace".
+                let mut proof: Proof = Default::default();
+                let (safe, actions): (bool, Vec<proof::Action>) =
+                    serde_json::from_slice(&data.0)
+                        .or(Err(ModelError::Proof(proof::ModelError::Import)))?;
+                let len = if safe {
+                    actions.len()
                 } else {
-                    // Leave room for a future "replay on top of current workspace".
-                    let mut proof: Proof = Default::default();
-                    // Act as if we imported an empty workspace
-                    self.history.add(proof::Action::Imported, proof.clone());
-                    let actions: Vec<proof::Action> =
-                        serde_json::from_slice(&data.0).or(Err(ModelError::Import))?;
-                    for a in actions {
-                        if proof.is_valid(&a) {
-                            proof.update(&a)?;
-                            self.history.add(a, proof.clone());
-                        } else {
-                            Err(ModelError::Proof(proof::ModelError::InvalidAction))?;
-                        }
-                    }
+                    actions.len() - 1
                 };
+                for a in &actions[..len] {
+                    if proof.is_valid(a) {
+                        proof.update(a)?;
+                        self.history.add(a.clone(), proof.clone());
+                    } else {
+                        Err(ModelError::Proof(proof::ModelError::InvalidAction))?;
+                    }
+                }
             }
         }
 
@@ -276,8 +237,6 @@ impl State {
 pub enum ModelError {
     #[error("export failed")]
     Export(wasm_bindgen::JsValue),
-    #[error("import failed")]
-    Import,
     #[error(transparent)]
     Proof(#[from] proof::ModelError),
     #[error(transparent)]

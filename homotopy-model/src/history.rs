@@ -204,4 +204,10 @@ impl History {
         actions.reverse();
         actions
     }
+
+    pub fn last_action(&self) -> Option<super::proof::Action> {
+        self.snapshots
+            .with(self.current, |s| s.action.clone())
+            .flatten()
+    }
 }

@@ -1,3 +1,4 @@
+[true,
 [
   "CreateGeneratorZero",
   {
@@ -4580,4 +4581,5 @@
   {
     "AscendSlice": 1
   }
+]
 ]
