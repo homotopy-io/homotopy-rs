@@ -73,6 +73,7 @@
                 { package = cargo-insta; }
                 { package = cargo-make; }
                 { package = cargo-rr; }
+                { package = cargo-watch; }
                 { package = devserver; }
                 { package = gdb; }
                 { package = rust-analyzer; }
