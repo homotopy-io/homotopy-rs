@@ -1,5 +1,6 @@
 use homotopy_core::{signature::SignatureBuilder, *};
 use insta::*;
+use pretty_assertions::assert_eq;
 
 #[test]
 fn scalar() {
@@ -223,4 +224,74 @@ fn bubble() {
             .target(),
         Diagram::from(bubble.source().identity())
     );
+}
+
+#[test]
+fn endomorphism_on_weak_unit_composed_with_weak_unit() -> anyhow::Result<()> {
+    let mut sig = SignatureBuilder::new();
+    let x = sig.add_zero();
+    let weak_x = DiagramN::new(
+        x,
+        vec![Cospan {
+            forward: Rewrite::identity(0),
+            backward: Rewrite::identity(0),
+        }],
+    );
+    let f = sig.add(weak_x.clone(), weak_x.clone())?;
+    let weak_weak_x = DiagramN::new(
+        weak_x.into(),
+        vec![Cospan {
+            forward: Rewrite::identity(1),
+            backward: Rewrite::identity(1),
+        }],
+    );
+    let f_then_weak = f.attach(&weak_weak_x, Boundary::Target, &[])?;
+    // f_then_weak looks like
+    // x → x ← x
+    // ↓   ↓   ↓
+    // x → x ← x
+    // ↑   ↑   ↑
+    // x → x ← x
+    // ↓   ↓   ↓
+    // x → f ← x
+    // ↑   ↑   ↑
+    // x → x ← x
+    assert_debug_snapshot!(f_then_weak);
+    let contracted = f_then_weak
+        .identity()
+        .contract(Boundary::Target.into(), &[], 0, None, &sig)?
+        .target();
+    // contracted looks like
+    // x → x ← x
+    // ↓   ↓   ↓
+    // x → f ← x
+    // ↑   ↑   ↑
+    // x → x ← x
+    assert_eq!(
+        contracted,
+        DiagramN::new(f_then_weak.source(), f_then_weak.cospans()[..1].to_vec()).into()
+    );
+    Ok(())
+}
+
+#[test]
+fn three_dimensional_scalar_braid_with_two_dimensional_scalar() -> anyhow::Result<()> {
+    let mut sig = SignatureBuilder::new();
+    let x = sig.add_zero();
+    let two = sig.add(x.identity(), x.identity())?;
+    let three = sig.add(x.identity().identity(), x.identity().identity())?;
+    let three_then_two = three.attach(&two, Boundary::Target, &[0])?;
+    assert_debug_snapshot!(three_then_two);
+    let contracted = three_then_two
+        .identity()
+        .contract(
+            Boundary::Target.into(),
+            &[Height::Singular(0)],
+            0,
+            Some(Bias::Lower),
+            &sig,
+        )?
+        .target();
+    assert_debug_snapshot!(contracted);
+    Ok(())
 }
