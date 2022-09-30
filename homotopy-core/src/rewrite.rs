@@ -187,12 +187,6 @@ impl fmt::Debug for Rewrite {
     }
 }
 
-impl<'a> From<&'a RewriteN> for &'a Rewrite {
-    fn from(r: &'a RewriteN) -> Self {
-        r.into()
-    }
-}
-
 impl From<RewriteN> for Rewrite {
     #[inline]
     fn from(r: RewriteN) -> Self {
@@ -614,7 +608,7 @@ impl RewriteN {
         REWRITE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
     }
 
-    pub(crate) fn cones(&self) -> &[Cone] {
+    pub fn cones(&self) -> &[Cone] {
         &self.0.cones
     }
 
@@ -875,7 +869,7 @@ impl RewriteN {
     }
 
     #[must_use]
-    pub fn remove_framing(&self, generator: Generator) -> Self {
+    pub(crate) fn remove_framing(&self, generator: Generator) -> Self {
         let cones = self
             .cones()
             .iter()
