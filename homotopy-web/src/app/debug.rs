@@ -48,16 +48,14 @@ impl Component for DebugView {
         let signature = ctx.props().proof.signature().clone();
         html! {
             <>
-                <div class="settings__segment">
+                <div>
                     <button onclick={Callback::from(move |_| web_sys::console::dir_2(&"Workspace diagram:".into(), &JsValue::from_serde(&diagram).unwrap()))}>{"Dump workspace diagram"}</button>
                 </div>
-                <div class="settings__segment">
+                <div>
                     <button onclick={Callback::from(move |_| web_sys::console::dir_2(&"Signature:".into(), &JsValue::from_serde(&signature).unwrap()))}>{"Dump signature"}</button>
                 </div>
-                <div class="settings__segment">
+                <div>
                     <button onclick={ctx.props().dispatch.reform(move |_| Action::ExportActions)}>{"Export actions"}</button>
-                </div>
-                <div class="settings__segment">
                     <label for="import" class="button">{"Import actions"}</label>
                     <input type="file" accept=".json,.txt" class="visually-hidden" id="import" onchange={import}/>
                 </div>
