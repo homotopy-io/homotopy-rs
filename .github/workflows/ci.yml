@@ -81,6 +81,26 @@ jobs:
           name: web
           path: ${{ env.UPLOAD_PATH }}
 
+  shelltest:
+    name: Shell Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Install Nix
+        uses: cachix/install-nix-action@v17
+        with:
+          extra_nix_config: |
+            max-jobs = 4
+      - name: Setup cachix
+        uses: cachix/cachix-action@v10
+        with:
+          name: homotopy-io
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+      - name: Test devshell
+        run: |
+          nix-shell --command "exit"
+
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
