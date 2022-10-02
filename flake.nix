@@ -69,7 +69,6 @@
             commands =
               super.commands
               ++ (with self.pkgs; [
-                { package = manim; }
                 { package = cargo-insta; }
                 { package = cargo-make; }
                 { package = cargo-rr; }
