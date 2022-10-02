@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1664537607692,
+  "lastUpdate": 1664728591263,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -42179,6 +42179,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 33.766,
             "range": "+/- 0.152",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "distinct": true,
+          "id": "9462e678579f0a7c27b468c36815c2470b973fea",
+          "message": "Added hook to check devshell works.",
+          "timestamp": "2022-10-02T16:35:56+01:00",
+          "tree_id": "f9a7fe466232b6212b9217ee6f4b5745e3690ac4",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/9462e678579f0a7c27b468c36815c2470b973fea"
+        },
+        "date": 1664728583295,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.9033,
+            "range": "+/- 0.069",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 10.983,
+            "range": "+/- 0.260",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 48.623,
+            "range": "+/- 1.015",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 305.17,
+            "range": "+/- 4.460",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.5778,
+            "range": "+/- 0.023",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 25.729,
+            "range": "+/- 0.136",
             "unit": "s"
           }
         ]
