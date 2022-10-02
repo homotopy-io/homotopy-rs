@@ -2,7 +2,7 @@ pub use history::Proof;
 use history::{History, UndoState};
 use homotopy_graphics::{manim, stl, svg, tikz};
 pub use homotopy_model::{history, migration, proof, serialize};
-use js_sys::JsString;
+use js_sys::{Function, JsString};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use wasm_bindgen::{prelude::*, JsCast};
@@ -269,6 +269,23 @@ pub fn generate_download(name: &str, ext: &str, data: &[u8]) -> Result<(), wasm_
     web_sys::Url::revoke_object_url(&url)
 }
 
+pub fn create_download_closure(name: &str, ext: &str, data: &[u8]) -> Function {
+    let val: js_sys::Uint8Array = data.into();
+    let mut options = web_sys::BlobPropertyBag::new();
+    options.type_("application/msgpack");
+    let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(
+        &js_sys::Array::of1(&val.into()).into(),
+        &options,
+    )
+    .unwrap();
+    gen_download(
+        format!("{}.{}", &name, &ext).into(),
+        blob,
+        ext.into(),
+        ("application/msgpack").into(),
+    )
+}
+
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen]
@@ -285,4 +302,12 @@ extern "C" {
 
     #[wasm_bindgen]
     pub fn display_panic_message();
+
+    #[wasm_bindgen]
+    pub fn gen_download(
+        name: JsString,
+        blob: web_sys::Blob,
+        ext: JsString,
+        mime: JsString,
+    ) -> Function;
 }

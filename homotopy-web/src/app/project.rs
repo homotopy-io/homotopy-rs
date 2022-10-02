@@ -1,4 +1,5 @@
 use closure::closure;
+use wasm_bindgen::prelude::*;
 use web_sys::{File, HtmlInputElement};
 use yew::prelude::*;
 
@@ -47,10 +48,16 @@ impl Component for ProjectView {
                 Msg::Noop
             }
         });
+        let test = |_e: MouseEvent| {
+            crate::model::create_download_closure("test", "json", &[0])
+                .call0(&JsValue::UNDEFINED)
+                .unwrap();
+        };
 
         html! {
             <>
                 <button onclick={export}>{"Export"}</button>
+                <button onclick={test}>{"Test"}</button>
                 <label for="import" class="button">
                     {"Import"}
                 </label>
