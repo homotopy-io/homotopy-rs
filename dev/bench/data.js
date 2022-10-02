@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1664728591263,
+  "lastUpdate": 1664731255566,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -42239,6 +42239,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 25.729,
             "range": "+/- 0.136",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fb2661a468c9dec68678b4cdf739312c620b1d4e",
+          "message": "flake.lock: Update (#859)\n\n* flake.lock: Update (#858)\r\n* Removed manim from devshell.\r\n\r\nCo-authored-by: Nick Hu <me@nickhu.co.uk>\r\nCo-authored-by: github-actions[bot] <github-actions[bot]@users.noreply.github.com>",
+          "timestamp": "2022-10-02T17:13:47+01:00",
+          "tree_id": "23934c823d1ffe6972089eb45692733b2844f18c",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/fb2661a468c9dec68678b4cdf739312c620b1d4e"
+        },
+        "date": 1664731246682,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.2807,
+            "range": "+/- 0.058",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 12.266,
+            "range": "+/- 0.201",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 55.068,
+            "range": "+/- 0.977",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 349.02,
+            "range": "+/- 4.120",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.9607,
+            "range": "+/- 0.024",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 29.778,
+            "range": "+/- 0.112",
             "unit": "s"
           }
         ]
