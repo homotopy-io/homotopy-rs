@@ -5,7 +5,7 @@ pub use homotopy_model::{history, migration, proof, serialize};
 use js_sys::JsString;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use wasm_bindgen::{prelude::*, JsCast};
+use wasm_bindgen::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Action {
@@ -253,20 +253,9 @@ pub fn generate_download(name: &str, ext: &str, data: &[u8]) -> Result<(), wasm_
         &js_sys::Array::of1(&val.into()).into(),
         &options,
     )?;
-    let url = web_sys::Url::create_object_url_with_blob(&blob)?;
-    let window = web_sys::window().ok_or("no window")?;
-    let document = window.document().ok_or("no document")?;
-    let body = document.body().ok_or("no body")?;
-    let e = document.create_element("a")?;
-    let a = e
-        .dyn_ref::<web_sys::HtmlElement>()
-        .ok_or("failed to create anchor")?;
-    a.set_attribute("href", &url)?;
-    a.set_attribute("download", &format!("{}.{}", &name, &ext))?;
-    body.append_child(a)?;
-    a.click();
-    a.remove();
-    web_sys::Url::revoke_object_url(&url)
+    let filename = format!("{name}.{ext}", name = name, ext = ext);
+    saveAs(blob, filename.into());
+    Ok(())
 }
 
 #[wasm_bindgen]
@@ -285,4 +274,7 @@ extern "C" {
 
     #[wasm_bindgen]
     pub fn display_panic_message();
+
+    #[wasm_bindgen]
+    pub fn saveAs(blob: web_sys::Blob, name: JsString);
 }
