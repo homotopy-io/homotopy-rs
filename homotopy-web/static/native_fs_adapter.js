@@ -3,7 +3,7 @@ import { showSaveFilePicker } from 'https://cdn.jsdelivr.net/npm/native-file-sys
 
 window.download = function(name, blob, ext, mime) {
 	new Promise(() => showSaveFilePicker({
-	  _preferPolyfill: false,
+	  _preferPolyfill: true,
 	  suggestedName: name,
 	  types: [
 		{ accept: { mime: [ ext ] } },

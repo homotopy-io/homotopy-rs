@@ -272,7 +272,7 @@ pub fn generate_download(name: &str, ext: &str, data: &[u8]) -> Result<(), wasm_
 pub fn create_download_closure(name: &str, ext: &str, data: &[u8]) -> Function {
     let val: js_sys::Uint8Array = data.into();
     let mut options = web_sys::BlobPropertyBag::new();
-    options.type_("application/msgpack");
+    options.type_("application/json");
     let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(
         &js_sys::Array::of1(&val.into()).into(),
         &options,
@@ -282,7 +282,7 @@ pub fn create_download_closure(name: &str, ext: &str, data: &[u8]) -> Function {
         format!("{}.{}", &name, &ext).into(),
         blob,
         ext.into(),
-        ("application/msgpack").into(),
+        ("application/json").into(),
     )
 }
 
