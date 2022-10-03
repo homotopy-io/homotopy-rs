@@ -40,14 +40,29 @@
       };
       url = "github:oxalica/rust-overlay";
     };
+    npmlock2nix = {
+      url = "github:nix-community/npmlock2nix?rev=10584aabd213ed135184d69f592b66566718d7fc";
+      flake = false;
+    };
   };
 
   outputs = inputs:
     let
+      overlays = [
+        (import inputs.rust-overlay)
+        (self: super: {
+          # Binaryen's tests are broken
+          binaryen = super.binaryen.overrideAttrs (old: { doCheck = false; });
+          npmlock2nix = self.callPackage inputs.npmlock2nix { };
+        })
+      ];
       outputs = inputs.nix-cargo-integration.lib.makeOutputs {
         root = ./.;
         buildPlatform = "crate2nix";
         overrides = {
+          pkgs = self: super: {
+            overlays = super.overlays ++ overlays;
+          };
           build = self: super: {
             # crate2nix insta compatibility fix
             testPreRun = ''
@@ -77,7 +92,21 @@
                 { package = gdb; }
                 { package = rust-analyzer; }
                 { package = wasm-bindgen-cli; }
-                { package = nodePackages.firebase-tools; }
+                { package = nodejs-16_x; }
+                {
+                  package =
+                    let
+                      # shell with firebase functions dependencies
+                      shell = self.pkgs.npmlock2nix.v2.shell {
+                        src = ./homotopy-server/js;
+                        nodejs = self.pkgs.nodejs-16_x;
+                      };
+                    in
+                    writeShellScriptBin "firebase" ''
+                      ${shell.shellHook}
+                      ${nodejs-16_x.pkgs.firebase-tools}/bin/firebase $@
+                    '';
+                }
               ]);
           };
         };
@@ -87,11 +116,6 @@
     // inputs.flake-utils.lib.eachDefaultSystem (
       system:
       let
-        # Binaryen's tests are broken
-        binaryen-fix = self: super: {
-          binaryen = super.binaryen.overrideAttrs (old: { doCheck = false; });
-        };
-        overlays = [ (import inputs.rust-overlay) binaryen-fix ];
         pkgs = import inputs.nixpkgs {
           inherit system overlays;
         };

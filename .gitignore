@@ -7,6 +7,8 @@ target
 result
 # Firebase cache
 .firebase/
+node_modules
+ui-debug.log
 # Compiled site
 dist
 
