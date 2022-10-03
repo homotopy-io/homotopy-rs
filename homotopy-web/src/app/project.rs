@@ -1,5 +1,5 @@
 use closure::closure;
-use web_sys::{File, HtmlInputElement, HtmlTextAreaElement};
+use web_sys::{File, HtmlInputElement};
 use yew::prelude::*;
 
 use crate::{

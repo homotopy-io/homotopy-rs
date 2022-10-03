@@ -165,11 +165,11 @@ impl Component for TexSpan {
 
 fn render_tex(raw_tex: &str, render_opts: &katex::Opts) -> String {
     raw_tex
-        .split("$")
+        .split('$')
         .enumerate()
         .map(|(i, tex)| {
             if i % 2 == 1 {
-                katex::render_with_opts(&tex, render_opts).unwrap()
+                katex::render_with_opts(tex, render_opts).unwrap()
             } else {
                 html_escape::encode_text(&tex).into_owned()
             }
