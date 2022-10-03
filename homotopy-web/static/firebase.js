@@ -21,24 +21,31 @@ window.firebase_working = false;
 
 // Compat modules for firebase ui
 await import("https://www.gstatic.com/firebasejs/9.7.0/firebase-app-compat.js")
-	.catch(err => console.error("Failed to import firebase-app-compat", err))
-	.then(mod => {
-		// Initialize Firebase
-		const app = firebase.initializeApp(firebaseConfig);
+  .catch(err => {
+    console.error("Failed to import firebase-app-compat", err);
+    throw err;
+  });
+// Initialize Firebase
+const app = firebase.initializeApp(firebaseConfig);
 
-		import("https://www.gstatic.com/firebasejs/9.7.0/firebase-analytics-compat.js")
-		.catch(err => console.error("Failed to import firebase-analytics-compat", err))
-		.then(mod => {
-			const analytics = firebase.analytics();
+await import("https://www.gstatic.com/firebasejs/9.7.0/firebase-analytics-compat.js")
+  .catch(err => {
+    console.error("Failed to import firebase-analytics-compat", err);
+    throw err;
+  });
+const analytics = firebase.analytics();
 
-			import("https://www.gstatic.com/firebasejs/9.7.0/firebase-performance-compat.js")
-			.catch(err => console.error("Failed to import firebase-performance-compat", err))
-			.then(mod => {
-				const perf = firebase.performance();
+await import("https://www.gstatic.com/firebasejs/9.7.0/firebase-performance-compat.js")
+  .catch(err => {
+    console.error("Failed to import firebase-performance-compat", err);
+    throw err;
+  });
+const perf = firebase.performance();
 
-				import("https://www.gstatic.com/firebasejs/9.7.0/firebase-auth-compat.js")
-				.catch(err => console.error("Failed to import firebase-auth-compat", err))
-				.then(mod => { const auth = firebase.auth(); window.firebase_working = true; })
-			})
-		})
-	});
+await import("https://www.gstatic.com/firebasejs/9.7.0/firebase-auth-compat.js")
+  .catch(err => {
+    console.error("Failed to import firebase-auth-compat", err);
+    throw err;
+  });
+const auth = firebase.auth();
+window.firebase_working = true;
