@@ -935,11 +935,15 @@ fn collapse_recursive<Ix: IndexType>(
                     .group_by(|&i| exploded[*i].0.parent) // group by parent
                     .into_iter()
                     .map(|(p, group)| {
-                        (p,
-                        group.max() // get right-most
-                            .map(
-                            |i| NodeIndex::<ExplodedIx>::new(i.index() + 1),      // next regular level,
-                        ).expect("scc empty group in Δ"))
+                        (
+                            p,
+                            group
+                                .max() // get right-most
+                                .map(
+                                    |i| NodeIndex::<ExplodedIx>::new(i.index() + 1), // next regular level,
+                                )
+                                .expect("scc empty group in Δ"),
+                        )
                     })
                 {
                     right[parent_by_height.iter().position(|&x| x == p).unwrap()] = next;
