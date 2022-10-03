@@ -3,7 +3,7 @@ use history::{History, UndoState};
 use homotopy_graphics::{manim, stl, svg, tikz};
 pub use homotopy_model::{history, migration, proof, serialize};
 use js_sys::JsString;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use thiserror::Error;
 use wasm_bindgen::{prelude::*, JsCast};
 
