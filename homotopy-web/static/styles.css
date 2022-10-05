@@ -216,8 +216,13 @@ button, .button {
   font-size: 28px;
   color: #2224;
   padding: 6px;
-  overflow: hidden;
   user-select: text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tex__wrapper.workspace__project-title span {
+  white-space: nowrap;
 }
 
 .workspace__toolbar {
