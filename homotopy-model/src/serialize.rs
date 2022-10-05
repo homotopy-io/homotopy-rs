@@ -158,18 +158,30 @@ pub fn serialize(
     // Tag data with version
     let data: AnyVersion<Data> = data.into();
     // Serialize
-    rmp_serde::encode::to_vec_named(&data).unwrap()
+    let mut buf = Vec::with_capacity(128);
+    rmp_serde::encode::write_named(
+        &mut zstd::stream::Encoder::new(&mut buf, 0)
+            .expect("failed to create zstd encoder")
+            .auto_finish(),
+        &data,
+    )
+    .expect("failed to write bytestream in serialize");
+    buf
 }
 
 pub fn deserialize(data: &[u8]) -> Option<((Signature, Option<Workspace>), Metadata)> {
     // Deserialize with version tag
-    let data: AnyVersion<Data> = match rmp_serde::decode::from_slice(data) {
-        Err(error) => {
-            log::error!("Error while deserializing: {}", error);
-            None
-        }
-        Ok(data) => Some(data),
-    }?;
+    let data: AnyVersion<Data> = rmp_serde::decode::from_read(
+        zstd::stream::Decoder::new(data).expect("failed to create zstd decoder"),
+    )
+    .or_else(|e| {
+        log::error!(
+            "Error while deserializing, attempting to load as uncompressed: {}",
+            e
+        );
+        rmp_serde::decode::from_read(data)
+    })
+    .ok()?;
     // Migrate to current version
     let data: Data = data.into();
     let mut store = data.store;
