@@ -64,9 +64,6 @@
               ++ (with self.pkgs; [
                 (lib.hiPrio rust-bin.nightly.latest.rustfmt)
                 (rust-bin.fromRustupToolchainFile ./rust-toolchain.toml)
-                # for compiling zstd
-                clang
-                glibc_multi.dev
                 coreutils
               ]);
             commands =
@@ -260,7 +257,6 @@
               targets = [ "wasm32-unknown-unknown" ];
             };
             naersk = inputs.naersk.lib."${system}".override {
-              stdenv = pkgs.clangStdenv;
               cargo = rust;
               rustc = rust;
             };
@@ -272,7 +268,6 @@
             copyLibs = true;
             cargoBuildOptions = opts: opts ++ [ "-p" "homotopy-web" ];
             CARGO_BUILD_TARGET = "wasm32-unknown-unknown";
-            nativeBuildInputs = [ pkgs.glibc_multi.dev ]; # enable the dependency derivation to build zstd
             overrideMain = oldAttrs: {
               nativeBuildInputs = oldAttrs.nativeBuildInputs ++ (with pkgs; [ wasm-bindgen-cli ]);
               buildInputs = oldAttrs.buildInputs ++ ([ packages.highs ]);
