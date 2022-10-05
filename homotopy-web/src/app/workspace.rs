@@ -13,6 +13,7 @@ use crate::{
     app::{
         diagram_gl::DiagramGl,
         diagram_svg::{DiagramSvg, HighlightKind, HighlightSvg},
+        tex::TexSpan,
     },
     components::panzoom::PanZoomComponent,
     model::proof::{homotopy::Homotopy, Action, Metadata, Signature, Workspace},
@@ -69,9 +70,11 @@ impl Component for WorkspaceView {
             }
         };
         let project_title = html! {
-            <div class="workspace__project-title">
-                {ctx.props().metadata.title.as_ref().map(Clone::clone).unwrap_or_default()}
-            </div>
+            <TexSpan
+                class="workspace__project-title"
+                error_color="#c004"
+                raw_tex={ctx.props().metadata.title.as_ref().map(Clone::clone).unwrap_or_default()}
+            />
         };
         let slice_buttons = match workspace {
             Some(ref ws) if matches!(ws.view.dimension(), 1 | 2) => {

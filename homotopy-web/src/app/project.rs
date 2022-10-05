@@ -2,9 +2,12 @@ use closure::closure;
 use web_sys::{File, HtmlInputElement};
 use yew::prelude::*;
 
-use crate::model::{
-    self,
-    proof::{self, Metadata, MetadataEdit},
+use crate::{
+    app::tex::TexSpan,
+    model::{
+        self,
+        proof::{self, Metadata, MetadataEdit},
+    },
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -53,47 +56,41 @@ impl Component for ProjectView {
                 </label>
                 <input type="file" accept="application/msgpack,.hom,.json" class="visually-hidden" id="import" onchange={import}/>
                 <div class="metadata__details">
-                    <textarea
+                    <TexSpan
                         class="metadata__title"
-                        name="title"
                         placeholder="Title"
-                        value= {ctx.props().metadata.title.clone().unwrap_or_default()}
-                        onfocusout={ctx.link().callback(move |e: FocusEvent| {
-                            let input: HtmlInputElement = e.target_unchecked_into();
-                            Msg::EditMetadata(MetadataEdit::Title(input.value()))
+                        is_editable_as_textarea={true}
+                        raw_tex={ctx.props().metadata.title.clone().unwrap_or_default()}
+                        on_focus_out={ctx.link().callback(move |title: String| {
+                            Msg::EditMetadata(MetadataEdit::Title(title))
                         })}
-                        onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
+                        on_key_down={ctx.link().callback(move |e: KeyboardEvent| {
                             e.stop_propagation();
                             Msg::Noop
                         })}
                     />
-
-                    <textarea
+                    <TexSpan
                         class="metadata__author"
-                        name="Author"
                         placeholder="Author(s)"
-                        spellcheck="false"
-                        value = {ctx.props().metadata.author.clone().unwrap_or_default()}
-                        onfocusout={ctx.link().callback(move |e: FocusEvent| {
-                            let input: HtmlInputElement = e.target_unchecked_into();
-                            Msg::EditMetadata(MetadataEdit::Author(input.value()))
+                        is_editable_as_textarea={true}
+                        raw_tex={ctx.props().metadata.author.clone().unwrap_or_default()}
+                        on_focus_out={ctx.link().callback(move |author: String| {
+                            Msg::EditMetadata(MetadataEdit::Author(author))
                         })}
-                        onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
+                        on_key_down={ctx.link().callback(move |e: KeyboardEvent| {
                             e.stop_propagation();
                             Msg::Noop
                         })}
                     />
-
-                    <textarea
+                    <TexSpan
                         class="metadata__abstract"
-                        name="Abstract"
                         placeholder="Abstract"
-                        value = {ctx.props().metadata.abstr.clone().unwrap_or_default()}
-                        onfocusout={ctx.link().callback(move |e: FocusEvent| {
-                            let input: HtmlInputElement = e.target_unchecked_into();
-                            Msg::EditMetadata(MetadataEdit::Abstract(input.value()))
+                        is_editable_as_textarea={true}
+                        raw_tex={ctx.props().metadata.abstr.clone().unwrap_or_default()}
+                        on_focus_out={ctx.link().callback(move |abstr: String| {
+                            Msg::EditMetadata(MetadataEdit::Abstract(abstr))
                         })}
-                        onkeyup={ctx.link().callback(move |e: KeyboardEvent| {
+                        on_key_down={ctx.link().callback(move |e: KeyboardEvent| {
                             e.stop_propagation();
                             Msg::Noop
                         })}

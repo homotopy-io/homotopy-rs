@@ -208,17 +208,21 @@ button, .button {
   padding: 10px;
   box-sizing: border-box;
   justify-content: space-between;
+  align-items: flex-start;
 }
 
-.workspace__project-title {
+.tex__wrapper.workspace__project-title {
   flex: 0 1 auto;
   font-size: 28px;
   color: #2224;
   padding: 6px;
-  white-space: nowrap;
+  user-select: text;
   overflow: hidden;
   text-overflow: ellipsis;
-  user-select: text;
+}
+
+.tex__wrapper.workspace__project-title span {
+  white-space: nowrap;
 }
 
 .workspace__toolbar {
@@ -466,23 +470,21 @@ button, .button {
 
 .metadata__details textarea {
   resize: vertical;
-  padding: var(--space-0);
   width: 100%;
   border-radius: var(--space-0);
   background: transparent;
   box-sizing: border-box;
-  overflow-wrap: break-word;
   border: none;
   user-select: text;
 }
 
-.metadata__details textarea:hover {
-  background-color: #9991;
+.metadata__details .tex__span {
+  padding: var(--space-0);
 }
 
 .metadata__title {
   min-height: 65px;
-  font-size: 1.6em;
+  font-size: 1.3em;
 }
 
 .metadata__author {
@@ -493,6 +495,30 @@ button, .button {
 .metadata__abstract {
   min-height: 200px;
   font-weight: light;
+}
+
+.katex {
+  font-size: 1em;
+}
+
+.tex__wrapper {
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.tex__wrapper.tex__editable:hover {
+  cursor: pointer;
+  background-color: #9991;
+}
+
+.tex__span {
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+}
+
+.tex__span.tex__span-placeholder {
+  color: var(--drawer-foreground-dimmed-text);
 }
 
 /* Signature */
@@ -627,7 +653,6 @@ button, .button {
 .signature__item-name, .signature__item-fill {
   flex: 1 1 auto;
   white-space: nowrap;
-  overflow: hidden;
   box-sizing: border-box;
 }
 
@@ -636,12 +661,12 @@ button, .button {
   height: 100%;
 }
 
-div.signature__item-name {
+div.signature__item-name-wrapper {
   height: var(--signature-height);
-  padding-left: 0;
-  padding-right: 0;
+  padding: var(--space-0) 0;
   border-left: var(--space-1) solid transparent;
   border-right: var(--space-1) solid transparent;
+  overflow: hidden;
   display: flex;
 }
 
