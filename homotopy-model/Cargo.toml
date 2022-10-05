@@ -16,7 +16,7 @@ syn = "1.0.101"
 paste = "1.0.9"
 rmp-serde = "1.1.1"
 serde_json = "1.0.85"
-arbitrary = { version = "1.1.6", optional = true, features = ["derive"] }
+arbitrary = { version = "1.1.7", optional = true, features = ["derive"] }
 
 palette = { git = "https://github.com/Ogeon/palette", features = ["serializing"] }
 
