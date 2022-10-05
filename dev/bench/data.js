@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1664980483500,
+  "lastUpdate": 1664980505363,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -42479,6 +42479,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 30.817,
             "range": "+/- 0.498",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "distinct": true,
+          "id": "760ebd29c9b820f998337cb20d59bfafbc038de6",
+          "message": "Revert \"Enable compression. (#855)\"\n\nThis reverts commit 329f1e0ff9cc11d880e3f37db487637650726d41.",
+          "timestamp": "2022-10-05T14:35:51+01:00",
+          "tree_id": "7e640f08e42fe818f73a2d2a9dc58e398b3acd3e",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/760ebd29c9b820f998337cb20d59bfafbc038de6"
+        },
+        "date": 1664980496253,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.8202,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 10.899,
+            "range": "+/- 0.004",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 48.995,
+            "range": "+/- 0.017",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 309.81,
+            "range": "+/- 0.240",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.6078,
+            "range": "+/- 0.001",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 26.13,
+            "range": "+/- 0.035",
             "unit": "s"
           }
         ]
