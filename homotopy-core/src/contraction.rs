@@ -564,7 +564,7 @@ fn collapse_base<Ix: IndexType>(
                         nodes.retain(|&n| n != rn);
                     },
                     |_re| (),
-                )?;
+                );
             }
         }
         tree[n]
