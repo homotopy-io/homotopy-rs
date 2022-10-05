@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1664979931008,
+  "lastUpdate": 1664980483500,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -42419,6 +42419,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 31.593,
             "range": "+/- 0.022",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "329f1e0ff9cc11d880e3f37db487637650726d41",
+          "message": "Enable compression. (#855)\n\n* Enable brotli compression.\r\n\r\n* Switch from brotli to zstd\r\n\r\n* examples/associator.hom,examples/braiding.hom,examples/braiding_2.hom,examples/braiding_3.hom,examples/braiding_4.hom,examples/braiding_5.hom,examples/eckmann_hilton.hom,examples/klein_bottle.hom,examples/lips.hom,examples/mobius.hom,examples/mobius_contract.hom,examples/pants_unit.hom,examples/perko_organised.hom,examples/six_associator.hom,examples/sphere_bypass.hom,examples/swallowtail.hom,examples/trefoil.hom,examples/trefoil_isotopy.hom: convert to Git LFS\r\n\r\n* Track .hom files in Git LFS\r\n\r\nCo-authored-by: Nick Hu <me@nickhu.co.uk>",
+          "timestamp": "2022-10-05T13:24:54Z",
+          "tree_id": "159382994555219ba3f629b86655da312b8d5ded",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/329f1e0ff9cc11d880e3f37db487637650726d41"
+        },
+        "date": 1664980470877,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.7192,
+            "range": "+/- 0.120",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 13.79,
+            "range": "+/- 0.215",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 62.1,
+            "range": "+/- 1.322",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 399.33,
+            "range": "+/- 5.910",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 3.2254,
+            "range": "+/- 0.021",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 30.817,
+            "range": "+/- 0.498",
             "unit": "s"
           }
         ]
