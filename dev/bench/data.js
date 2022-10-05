@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1664817377049,
+  "lastUpdate": 1664979931008,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -42359,6 +42359,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 27.254,
             "range": "+/- 0.031",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thud@thud.dev",
+            "name": "Jasper Parish",
+            "username": "thud"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b51f766ee8b445ca04cfc742bad8d481c81fda2d",
+          "message": "Allow Tex input where applicable (#844)\n\n* Add TexSpan component\r\n\r\n* Fix styles for generator names\r\n\r\n* Add tex rendering to project title (top-left)\r\n\r\n* Fix styling of workspace overlay\r\n\r\n* Reduce font-size for tex\r\n\r\n* Fix word wrapping in tex spans\r\n\r\n* Fix katex errors\r\n\r\n* Patched katex-rs.\r\n\r\n* Linting fixes.\r\n\r\n* Added ellipses for long titles.\r\n\r\nCo-authored-by: thud",
+          "timestamp": "2022-10-05T13:15:42Z",
+          "tree_id": "7e640f08e42fe818f73a2d2a9dc58e398b3acd3e",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/b51f766ee8b445ca04cfc742bad8d481c81fda2d"
+        },
+        "date": 1664979917729,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 3.3943,
+            "range": "+/- 0.002",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 13.042,
+            "range": "+/- 0.029",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 58.856,
+            "range": "+/- 0.034",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 371.44,
+            "range": "+/- 0.220",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 3.1443,
+            "range": "+/- 0.002",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 31.593,
+            "range": "+/- 0.022",
             "unit": "s"
           }
         ]
