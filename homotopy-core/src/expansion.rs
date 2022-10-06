@@ -81,7 +81,10 @@ pub fn expand_in_path(
     match location.split_first() {
         _ if diagram.dimension() < location.len() => Err(ExpansionError::OutOfBounds),
         None | Some((Singular(_), &[])) => Err(ExpansionError::LocationTooShort),
-        Some((Regular(h0), &([] | [_]))) => expand_base_regular(diagram, *h0, direction),
+        Some((Regular(h0), &[])) => expand_base_regular(diagram, *h0, None, direction),
+        Some((Regular(h0), &[Regular(h1)])) => {
+            expand_base_regular(diagram, *h0, Some(h1), direction)
+        }
         Some((Singular(h0), &[Singular(h1)])) => expand_base_singular(diagram, *h0, h1, direction),
         Some((Regular(_), _)) => Err(ExpansionError::RegularSlice),
         Some((Singular(height), rest)) => {
@@ -105,6 +108,7 @@ pub fn expand_in_path(
 fn expand_base_regular(
     diagram: &Diagram,
     h0: RegularHeight,
+    h1: Option<RegularHeight>,
     direction: Direction,
 ) -> Result<Rewrite, ExpansionError> {
     let diagram = match diagram {
@@ -126,14 +130,96 @@ fn expand_base_regular(
         }; // cospans[i] needs to be deleted by the smoothing rewrite
 
     let cs = &diagram.cospans()[i];
-    if cs.forward == cs.backward && cs.forward.is_homotopy() {
-        Ok(RewriteN::new(
-            diagram.dimension(),
-            vec![Cone::new_unit(i, cs.clone(), cs.forward.clone())],
-        )
-        .into())
-    } else {
-        Err(ExpansionError::Unsmoothable)
+
+    match h1 {
+        None => {
+            // Coarse smoothing
+            if cs.forward == cs.backward && cs.forward.is_homotopy() {
+                Ok(RewriteN::new(
+                    diagram.dimension(),
+                    vec![Cone::new_unit(i, cs.clone(), cs.forward.clone())],
+                )
+                .into())
+            } else {
+                Err(ExpansionError::Unsmoothable)
+            }
+        }
+        Some(h1) => {
+            // This is the same as `Rewrite::cone_over_target` but returns an index instead of a cone.
+            fn cone_over_target(cones: &[Cone], height: SingularHeight) -> Option<usize> {
+                let mut offset: isize = 0;
+
+                for (i, cone) in cones.iter().enumerate() {
+                    let target = (cone.index as isize + offset) as usize;
+
+                    if target == height {
+                        return Some(i);
+                    }
+
+                    offset += 1 - cone.len() as isize;
+                }
+
+                None
+            }
+
+            // Cone-wise smoothing
+            let forward: &RewriteN = (&cs.forward).try_into().unwrap();
+            let backward: &RewriteN = (&cs.backward).try_into().unwrap();
+
+            let j = {
+                let preimage = match direction {
+                    Direction::Forward => forward.regular_preimage(h1),
+                    Direction::Backward => backward.regular_preimage(h1),
+                };
+                if preimage.is_empty() {
+                    preimage.start
+                } else {
+                    return Err(ExpansionError::Unsmoothable);
+                }
+            };
+
+            let mut s_cones = vec![];
+            let mut f_cones = forward.cones().to_vec();
+            let mut b_cones = backward.cones().to_vec();
+
+            let f_cone_index = cone_over_target(&f_cones, j).ok_or(ExpansionError::Unsmoothable)?;
+            let b_cone_index = cone_over_target(&b_cones, j).ok_or(ExpansionError::Unsmoothable)?;
+
+            if f_cones[f_cone_index].internal == b_cones[b_cone_index].internal
+                && f_cones[f_cone_index].is_homotopy()
+            {
+                let f_cone = f_cones.remove(f_cone_index);
+                b_cones.remove(b_cone_index);
+                s_cones.push(Cone {
+                    index: j,
+                    internal: f_cone.internal,
+                });
+            } else {
+                return Err(ExpansionError::Unsmoothable);
+            }
+
+            let smooth = RewriteN::new(forward.dimension(), s_cones).into();
+            let smooth_cospan = Cospan {
+                forward: RewriteN::new(forward.dimension(), f_cones).into(),
+                backward: RewriteN::new(backward.dimension(), b_cones).into(),
+            };
+
+            let cone = if smooth_cospan.is_identity() {
+                // Decrease diagram height by 1.
+                Cone::new_unit(i, cs.clone(), smooth)
+            } else {
+                // Keep diagram height the same.
+                Cone::new(
+                    i,
+                    vec![smooth_cospan],
+                    cs.clone(),
+                    vec![cs.forward.clone(), cs.backward.clone()],
+                    vec![smooth],
+                )
+            };
+
+            Ok(RewriteN::new(diagram.dimension(), vec![cone]).into())
+        }
     }
 }
 
@@ -518,4 +604,12 @@ pub(crate) fn expand_propagate(
         diagram.dimension(),
         cone.into_iter().collect(),
     ))
+}
+
+impl Cone {
+    fn is_homotopy(&self) -> bool {
+        self.target().max_generator().map_or(true, |g| {
+            g.dimension <= self.target().forward.dimension() + 1
+        })
+    }
 }
