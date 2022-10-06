@@ -265,7 +265,7 @@ impl Component for ItemView {
             generator_dimension = match item {
                 SignatureItem::Item(info) =>
                     format!("signature__generator-{}d", info.generator.dimension),
-                SignatureItem::Folder(_) => "".to_owned(),
+                SignatureItem::Folder(_) => String::new(),
             }
         );
 

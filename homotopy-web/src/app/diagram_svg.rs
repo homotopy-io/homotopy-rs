@@ -184,7 +184,7 @@ impl<const N: usize> Component for DiagramSvg<N> {
         let prepared = PreparedDiagram::new(&props.diagram, props.style);
         let node_ref = NodeRef::default();
         let drag_start = Default::default();
-        let title = String::from("");
+        let title = String::new();
         Self {
             props,
             prepared,
