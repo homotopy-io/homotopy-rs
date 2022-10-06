@@ -906,7 +906,6 @@ dependencies = [
 name = "homotopy-core"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arbitrary",
  "base64",
  "bimap",
