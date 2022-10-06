@@ -104,7 +104,7 @@ pub fn render(
                 max_point = max_point.max(max_point_path(&path));
                 surfaces.push((g, path));
             }
-            GraphicElement::Wire(g, depth, path, _mask) => {
+            GraphicElement::Wire(g, depth, path, _mask, _arrows) => {
                 max_point = max_point.max(max_point_path(&path));
                 wires.entry(depth).or_default().push((g, path));
             }

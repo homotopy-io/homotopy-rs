@@ -18,7 +18,7 @@ pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<Gr
             GraphicElement::Surface(g, path) => {
                 new_graphic.push(GraphicElement::Surface(*g, simplify_path(path)));
             }
-            GraphicElement::Wire(g, depth, path, _) => {
+            GraphicElement::Wire(g, depth, path, _, _) => {
                 let entry = grouped_wires.entry((*depth, *g)).or_default();
 
                 let extremes = path_extremes(path).unwrap();
@@ -81,11 +81,13 @@ pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<Gr
         for (builder, _, _) in wires {
             merged_path.extend_from_paths(&[builder.build().as_slice()]);
         }
+        // TODO(thud): arrows will have to be merged and returned here.
         new_graphic.push(GraphicElement::Wire(
             g,
             depth,
             simplify_path(&merged_path.build()),
             Vec::new(),
+            None,
         ));
     }
     new_graphic.extend(point_elements);

@@ -117,7 +117,7 @@ pub fn render(
                 diagrams.insert((g, GeneratorRepresentation::Surface));
                 surfaces.push((g, path));
             }
-            GraphicElement::Wire(g, depth, path, _) => {
+            GraphicElement::Wire(g, depth, path, _, _) => {
                 diagrams.insert((g, GeneratorRepresentation::Wire));
                 wires.entry(depth).or_default().push((g, path));
             }

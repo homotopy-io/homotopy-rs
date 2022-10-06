@@ -372,6 +372,12 @@ impl<const N: usize> DiagramSvg<N> {
             element.clone().into(),
         );
 
+        let info = ctx
+            .props()
+            .signature
+            .generator_info(element.generator())
+            .unwrap();
+
         match element {
             GraphicElement::Surface(_, path) => {
                 let path = path_to_svg(&path.clone().transformed(&self.prepared.transform));
@@ -379,16 +385,55 @@ impl<const N: usize> DiagramSvg<N> {
                     <path d={path} class={class} />
                 }
             }
-            GraphicElement::Wire(_, _, path, mask) => {
+            GraphicElement::Wire(_, _, path, mask, arrows) => {
                 let path = path_to_svg(&path.clone().transformed(&self.prepared.transform));
+
+                let wire_thickness = ctx.props().style.wire_thickness;
+                let mask_thickness = wire_thickness * 2.0;
+                let arrow_thickness = wire_thickness * 0.75;
+
+                fn arrow_path(center: &Point, forward: bool) -> String {
+                    let dir = if forward { 1. } else { -1. };
+                    format!(
+                        "M {x1} {y1} L {x2} {y2} L {x3} {y3}",
+                        x1 = center.x - 10. * dir,
+                        y1 = center.y + 5. * dir,
+                        x2 = center.x,
+                        y2 = center.y - 10. * dir,
+                        x3 = center.x + 10. * dir,
+                        y3 = center.y + 5. * dir,
+                    )
+                }
+
+                let arrows_svg = if info.invertible && element.orientation() != Orientation::Zero {
+                    arrows
+                        .iter()
+                        .map(|arrow| {
+                            let center = self.prepared.transform.transform_point(*arrow);
+                            html! {
+                                 <path
+                                     class={class.clone()}
+                                     stroke-width={arrow_thickness.to_string()}
+                                     fill="none"
+                                     d={arrow_path(&center, element.orientation() == Orientation::Positive)}
+                                 />
+                            }
+                        })
+                        .collect()
+                } else {
+                    html! {}
+                };
 
                 if mask.is_empty() {
                     html! {
-                        <path
-                            d={path}
-                            class={class}
-                            stroke-width={ctx.props().style.wire_thickness.to_string()}
-                        />
+                        <>
+                            <path
+                                d={path}
+                                class={class.clone()}
+                                stroke-width={wire_thickness.to_string()}
+                            />
+                            {arrows_svg}
+                        </>
                     }
                 } else {
                     let mask_paths: Html = mask
@@ -397,7 +442,7 @@ impl<const N: usize> DiagramSvg<N> {
                             html! {
                                 <path
                                     d={path_to_svg(&mask_path.clone().transformed(&self.prepared.transform))}
-                                    stroke-width={(ctx.props().style.wire_thickness * 2.0).to_string()}
+                                    stroke-width={mask_thickness.to_string()}
                                     fill="none"
                                     stroke="black"
                                     stroke-linecap="round"
@@ -430,27 +475,49 @@ impl<const N: usize> DiagramSvg<N> {
                 use VertexShape::{Circle, Square};
                 let point = self.prepared.transform.transform_point(*point);
                 let radius = ctx.props().style.point_radius;
-                let shape = if let Some(info) = ctx.props().signature.generator_info(d.generator) {
-                    info.shape.clone()
+
+                fn generator_box(center: Point, radius: f32, forward: bool) -> String {
+                    let dir = if forward { 1. } else { -1. };
+                    format!(
+                        "M {x1} {y1} L {x2} {y2} L {x3} {y3} L {x4} {y4} Z",
+                        x1 = center.x - radius,
+                        y1 = center.y - radius,
+                        x2 = center.x - radius,
+                        y2 = center.y + radius,
+                        x3 = center.x + radius * (1.5 + 0.5 * dir),
+                        y3 = center.y + radius,
+                        x4 = center.x + radius * (1.5 - 0.5 * dir),
+                        y4 = center.y - radius,
+                    )
+                }
+
+                // If the generator is invertible, we render it as a box with one corner extended
+                // to encode orientation.
+                if info.invertible {
+                    html! {
+                        <path
+                            class={class}
+                        d={generator_box(point, radius, (d.generator.id % 2) == 0)}
+                        />
+                    }
                 } else {
-                    Default::default()
-                };
-                match shape {
-                    Circle => html! {
-                        <circle
-                            r={radius.to_string()}
+                    match info.shape {
+                        Circle => html! {
+                            <circle
+                                r={radius.to_string()}
                             cx={point.x.to_string()}
                             cy={point.y.to_string()}
                             class={class} />
-                    },
-                    Square => html! {
-                        <rect
-                            x={(point.x - radius).to_string()}
+                        },
+                        Square => html! {
+                            <rect
+                                x={(point.x - radius).to_string()}
                             y={(point.y - radius).to_string()}
                             width={(radius * 2.0).to_string()}
                             height={(radius * 2.0).to_string()}
                             class={class} />
-                    },
+                        },
+                    }
                 }
             }
         }
