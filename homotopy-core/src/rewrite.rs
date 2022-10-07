@@ -311,7 +311,7 @@ impl Rewrite {
                             &[prefix, &[Singular(i)]].concat(),
                         )),
                     });
-                if base.size() > 0 {
+                if prefix.is_empty() && base.size() > 0 {
                     regular_slices[0] = target_cospan.forward.clone();
                     regular_slices[base.size()] = target_cospan.backward.clone();
                 }
