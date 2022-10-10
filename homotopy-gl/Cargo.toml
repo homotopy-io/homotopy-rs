@@ -17,7 +17,7 @@ thiserror = "1.0.37"
 yew = "0.19.3"
 
 [dependencies.web-sys]
-version = "0.3.58"
+version = "0.3.60"
 features = [
   "HtmlCanvasElement",
   "WebGlBuffer",
