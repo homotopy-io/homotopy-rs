@@ -30,7 +30,7 @@ serde = { version = "1.0.145", features = ["derive"] }
 syn = "1.0.102"
 paste = "1.0.9"
 rmp-serde = "1.1.1"
-serde_json = "1.0.85"
+serde_json = "1.0.86"
 
 # The `wasm-bindgen` crate provides the bare minimum functionality needed
 # to interact with JavaScript.
