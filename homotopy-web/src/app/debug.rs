@@ -1,5 +1,4 @@
 use closure::closure;
-use wasm_bindgen::JsValue;
 use web_sys::{File, HtmlInputElement};
 use yew::prelude::*;
 
@@ -49,10 +48,10 @@ impl Component for DebugView {
         html! {
             <>
                 <div>
-                    <button onclick={Callback::from(move |_| web_sys::console::dir_2(&"Workspace diagram:".into(), &JsValue::from_serde(&diagram).unwrap()))}>{"Dump workspace diagram"}</button>
+                    <button onclick={Callback::from(move |_| web_sys::console::dir_2(&"Workspace diagram:".into(), &serde_wasm_bindgen::to_value(&diagram).unwrap()))}>{"Dump workspace diagram"}</button>
                 </div>
                 <div>
-                    <button onclick={Callback::from(move |_| web_sys::console::dir_2(&"Signature:".into(), &JsValue::from_serde(&signature).unwrap()))}>{"Dump signature"}</button>
+                    <button onclick={Callback::from(move |_| web_sys::console::dir_2(&"Signature:".into(), &serde_wasm_bindgen::to_value(&signature).unwrap()))}>{"Dump signature"}</button>
                 </div>
                 <div>
                     <button onclick={ctx.props().dispatch.reform(move |_| Action::ExportActions)}>{"Export actions"}</button>
