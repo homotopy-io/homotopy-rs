@@ -76,7 +76,7 @@ impl<const N: usize> Projection<N> {
                     |_, _, r| (i == 0).then(|| r.direction()),
                     |_, key, r| (i > 0 && r.is_atomic()).then_some(*key),
                 )?
-                .output;
+                .scaffold;
         }
 
         let mut generators = IdxVec::with_capacity(graph.node_count());
@@ -291,7 +291,7 @@ impl<const N: usize> Depths<N> {
                     |_, _, _| Some(()),
                     |_, _, r| r.is_atomic().then_some(()),
                 )?
-                .output;
+                .scaffold;
         }
 
         let mut node_depths = IdxVec::splat(None, graph.node_count());

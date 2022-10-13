@@ -133,7 +133,7 @@ impl<const N: usize> Mesh<N> {
         )?;
 
         let mut mesh = Self {
-            graph: explosion.output,
+            graph: explosion.scaffold,
             elements: IdxVec::default(),
         };
 
