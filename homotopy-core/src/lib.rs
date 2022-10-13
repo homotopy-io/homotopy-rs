@@ -14,13 +14,13 @@ pub mod diagram;
 pub mod examples;
 pub mod expansion;
 pub mod factorization;
-pub mod graph;
 pub mod layout;
 pub mod mesh;
 pub mod migration;
 pub mod monotone;
 pub mod projection;
 pub mod rewrite;
+pub mod scaffold;
 pub mod serialize;
 pub mod signature;
 

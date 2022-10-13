@@ -28,8 +28,10 @@ use crate::{
     common::{Boundary, DimensionError, Height, Orientation, SingularHeight},
     diagram::{Diagram, DiagramN},
     expansion::expand_propagate,
-    graph::{Explodable, ExplosionOutput, ExternalRewrite, InternalRewrite},
     rewrite::{Cone, Cospan, Rewrite, Rewrite0, RewriteN},
+    scaffold::{
+        Explodable, ExplosionOutput, ExternalRewrite, InternalRewrite, ScaffoldEdge, ScaffoldNode,
+    },
     signature::Signature,
     Direction, Generator, SliceIndex,
 };
@@ -716,8 +718,8 @@ fn collapse_recursive<Ix: IndexType>(
         ..
     }: ExplosionOutput<_, _, _, ExplodedIx> = graph
         .map(
-            |_, (d, bias, coord)| ((*bias, coord.clone()), d.clone()),
-            |_, e| ((), e.clone()),
+            |_, (d, bias, coord)| ScaffoldNode::new((*bias, coord.clone()), d.clone()),
+            |_, e| ScaffoldEdge::new((), e.clone()),
         )
         .explode(
             |parent_node, (_bias, coord), si| match si {
@@ -769,7 +771,7 @@ fn collapse_recursive<Ix: IndexType>(
             // R -> S <- ... -> S <- R
             for (&s, &snext) in node_to_slices[singular]
                 .iter()
-                .filter(|&i| matches!(exploded[*i], ((_, Height::Singular(_), _), _)))
+                .filter(|&i| matches!(exploded[*i].key, (_, Height::Singular(_), _)))
                 .tuple_windows::<(_, _)>()
             {
                 // uni-directional edges between singular heights originating from the same diagram
@@ -781,12 +783,11 @@ fn collapse_recursive<Ix: IndexType>(
     // construct each morphism of the Δ diagram
     for r in exploded
         .edge_references()
-        .filter(|e| matches!(e.weight().0, Some(DeltaSlice::SingularSlice)))
+        .filter(|e| matches!(e.weight().key, Some(DeltaSlice::SingularSlice)))
     {
-        for s in exploded
-            .edges_directed(r.source(), Outgoing)
-            .filter(|e| e.id() > r.id() && matches!(e.weight().0, Some(DeltaSlice::SingularSlice)))
-        {
+        for s in exploded.edges_directed(r.source(), Outgoing).filter(|e| {
+            e.id() > r.id() && matches!(e.weight().key, Some(DeltaSlice::SingularSlice))
+        }) {
             // for all slice spans between singular levels
             if delta.contains_node(r.target()) && delta.contains_node(s.target()) {
                 // bidirectional edge
@@ -816,7 +817,7 @@ fn collapse_recursive<Ix: IndexType>(
                 .unwrap_or_default();
             let bias = scc
                 .iter()
-                .map(|&n| graph[exploded[n].0 .0].1)
+                .map(|&n| graph[exploded[n].key.0].1)
                 .min()
                 .flatten();
             scc_to_priority[i] = (priority, bias);
@@ -858,7 +859,8 @@ fn collapse_recursive<Ix: IndexType>(
             // all targeting Regular(0)
             exploded
                 .node_references()
-                .filter_map(|(i, ((p, h, _coord), _))| {
+                .filter_map(|(i, node)| {
+                    let (p, h, _coord) = &node.key;
                     (graph.externals(Outgoing).contains(p) // comes from singular height (i.e. in Δ)
                         && *h == Height::Regular(0))
                     .then(|| {
@@ -874,7 +876,7 @@ fn collapse_recursive<Ix: IndexType>(
                 let mut right = regular_monotone.last().unwrap().clone();
                 for (p, next) in scc
                     .iter()
-                    .group_by(|&i| exploded[*i].0 .0) // group by parent
+                    .group_by(|&i| exploded[*i].key.0) // group by parent
                     .into_iter()
                     .map(|(p, group)| {
                         (
@@ -918,7 +920,7 @@ fn collapse_recursive<Ix: IndexType>(
             let mut restriction_to_exploded = IdxVec::new();
             let restriction: DiGraph<(Diagram, Option<Bias>, Vec<Height>), _, RestrictionIx> =
                 exploded.filter_map(
-                    |i, ((_, _, coord), diagram)| {
+                    |i, node| {
                         scc.iter()
                             .chain(&adjacent_regulars[0])
                             .chain(&adjacent_regulars[1])
@@ -928,10 +930,14 @@ fn collapse_recursive<Ix: IndexType>(
                             })
                             .then(|| {
                                 restriction_to_exploded.push(i);
-                                (diagram.clone(), graph[exploded[i].0 .0].1, coord.clone())
+                                (
+                                    node.diagram.clone(),
+                                    graph[exploded[i].key.0].1,
+                                    node.key.2.clone(),
+                                )
                             })
                     },
-                    |_, (ds, rewrite)| Some((ds, rewrite.clone())),
+                    |_, edge| Some((edge.key, edge.rewrite.clone())),
                 );
             // note: every SCC spans every input diagram, and all sources (resp. targets) of
             // subdiagrams within an SCC are equal by globularity
@@ -1010,13 +1016,13 @@ fn collapse_recursive<Ix: IndexType>(
         for (_, cocone, _, restriction_to_exploded) in cocones {
             for (graph_ix, slices) in &cocone.legs.iter().group_by(|(restriction_ix, _)| {
                 // parent node in graph
-                exploded[restriction_to_exploded[*restriction_ix]].0 .0
+                exploded[restriction_to_exploded[*restriction_ix]].key.0
             }) {
                 // each rewrite that will go into legs[graph_ix] from cocone
                 let mut cone_regular_slices: Vec<Rewrite> = Default::default();
                 let mut cone_singular_slices: Vec<Rewrite> = Default::default();
                 for (restriction_ix, slice) in slices {
-                    match exploded[restriction_to_exploded[restriction_ix]].0 .1 {
+                    match exploded[restriction_to_exploded[restriction_ix]].key.1 {
                         Height::Regular(_) => cone_regular_slices.push(slice.clone()),
                         Height::Singular(_) => cone_singular_slices.push(slice.clone()),
                     }

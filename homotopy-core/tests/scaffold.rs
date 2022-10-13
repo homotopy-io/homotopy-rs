@@ -1,5 +1,8 @@
 use homotopy_core::{
-    graph::{Explodable, ExplosionOutput, ExternalRewrite, InternalRewrite, SliceGraph},
+    scaffold::{
+        Explodable, ExplosionOutput, ExternalRewrite, InternalRewrite, Scaffold, ScaffoldEdge,
+        ScaffoldNode,
+    },
     Cospan, DiagramN, Rewrite, RewriteN, SliceIndex,
 };
 use petgraph::graph::DefaultIx;
@@ -10,10 +13,10 @@ mod rewrite;
 proptest! {
     #[test]
     fn explode_then_reassemble((rewrite, source, target) in rewrite::arb_rewrite_1d_with_source_and_target()) {
-        let mut graph: SliceGraph = Default::default();
-        let src = graph.add_node(((), source.clone().into()));
-        let tgt = graph.add_node(((), target.clone().into()));
-        let rwr = graph.add_edge(src, tgt, ((), rewrite.clone().into()));
+        let mut graph = Scaffold::default();
+        let src = graph.add_node(ScaffoldNode::new((), source.clone()));
+        let tgt = graph.add_node(ScaffoldNode::new((), target.clone()));
+        let rwr = graph.add_edge(src, tgt, ScaffoldEdge::new((), rewrite.clone()));
 
         let ExplosionOutput {
             node_to_nodes,
@@ -38,13 +41,13 @@ proptest! {
             .unwrap();
 
         let (reconstructed_source, source_cospans) = {
-            let source = output[*node_to_nodes[src].first().unwrap()].1.clone();
+            let source = output[*node_to_nodes[src].first().unwrap()].diagram.clone();
             let cospans: Vec<_> = node_to_edges[src]
                 .chunks_exact(2)
                 .map(|chunk| match chunk {
                     [f, b] => Cospan {
-                        forward: output.edge_weight(*f).unwrap().1.clone(),
-                        backward: output.edge_weight(*b).unwrap().1.clone(),
+                        forward: output.edge_weight(*f).unwrap().rewrite.clone(),
+                        backward: output.edge_weight(*b).unwrap().rewrite.clone(),
                     },
                     _ => unreachable!(),
                 })
@@ -54,13 +57,13 @@ proptest! {
         prop_assert_eq!(reconstructed_source, source);
 
         let (reconstructed_target, target_cospans) = {
-            let source = output[*node_to_nodes[tgt].first().unwrap()].1.clone();
+            let source = output[*node_to_nodes[tgt].first().unwrap()].diagram.clone();
             let cospans: Vec<_> = node_to_edges[tgt]
                 .chunks_exact(2)
                 .map(|chunk| match chunk {
                     [f, b] => Cospan {
-                        forward: output.edge_weight(*f).unwrap().1.clone(),
-                        backward: output.edge_weight(*b).unwrap().1.clone(),
+                        forward: output.edge_weight(*f).unwrap().rewrite.clone(),
+                        backward: output.edge_weight(*b).unwrap().rewrite.clone(),
                     },
                     _ => unreachable!(),
                 })
@@ -77,7 +80,7 @@ proptest! {
                 .map(|&e| {
                     output
                         .edge_weight(e)
-                        .and_then(|(o, r)| Some(((*o)?, r.clone())))
+                        .and_then(|edge| Some((edge.key?, edge.rewrite.clone())))
                         .unwrap()
                 })
                 .for_each(|(er, r)| match er {

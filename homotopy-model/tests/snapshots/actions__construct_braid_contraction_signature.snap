@@ -974,10 +974,17 @@ Signature(
                                                                                     (
                                                                                         2,
                                                                                         BoundaryPath(
-                                                                                            Source,
-                                                                                            2,
+                                                                                            Target,
+                                                                                            0,
                                                                                         ),
-                                                                                        [],
+                                                                                        [
+                                                                                            Singular(
+                                                                                                0,
+                                                                                            ),
+                                                                                            Regular(
+                                                                                                0,
+                                                                                            ),
+                                                                                        ],
                                                                                     ),
                                                                                 ),
                                                                             ),
@@ -989,9 +996,16 @@ Signature(
                                                                                         2,
                                                                                         BoundaryPath(
                                                                                             Target,
-                                                                                            2,
+                                                                                            0,
                                                                                         ),
-                                                                                        [],
+                                                                                        [
+                                                                                            Singular(
+                                                                                                0,
+                                                                                            ),
+                                                                                            Regular(
+                                                                                                1,
+                                                                                            ),
+                                                                                        ],
                                                                                     ),
                                                                                 ),
                                                                             ),

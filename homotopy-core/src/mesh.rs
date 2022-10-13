@@ -6,7 +6,7 @@ use petgraph::graph::NodeIndex;
 
 use crate::{
     common::DimensionError,
-    graph::{Explodable, SliceGraph},
+    scaffold::{Explodable, Scaffold, ScaffoldNode},
     Boundary, Diagram, Direction, Height, SliceIndex,
 };
 
@@ -62,7 +62,7 @@ impl<const N: usize> Index<usize> for Cube<N> {
 
 #[derive(Clone, Debug, Default)]
 pub struct Mesh<const N: usize> {
-    graph: SliceGraph<[SliceIndex; N]>,
+    graph: Scaffold<[SliceIndex; N]>,
     elements: IdxVec<Element, ElementData>,
 }
 
@@ -74,10 +74,11 @@ impl<const N: usize> Mesh<N> {
         }
 
         let mut mesh = Self::default();
-        mesh.elements.push(Element0(
-            mesh.graph
-                .add_node(([Boundary::Source.into(); N], diagram.clone())),
-        ));
+        mesh.elements
+            .push(Element0(mesh.graph.add_node(ScaffoldNode::new(
+                [Boundary::Source.into(); N],
+                diagram.clone(),
+            ))));
 
         for i in 0..N {
             mesh = mesh.explode(i)?;
@@ -90,7 +91,7 @@ impl<const N: usize> Mesh<N> {
     pub fn nodes(&self) -> impl Iterator<Item = ([SliceIndex; N], &Diagram)> {
         self.graph
             .node_weights()
-            .map(|(coord, diagram)| (*coord, diagram))
+            .map(|node| (node.key, &node.diagram))
     }
 
     /// Iterator of all cubes in the mesh.
@@ -304,7 +305,7 @@ impl<const N: usize> Mesh<N> {
         let dim = orientation.len() as u32;
         match self.elements[e] {
             Element0(n) => {
-                vec![self.graph[n].0; 2_usize.pow(dim)]
+                vec![self.graph[n].key; 2_usize.pow(dim)]
             }
             ElementN(elem) => {
                 let index = orientation.binary_search(&elem.orientation).unwrap();
