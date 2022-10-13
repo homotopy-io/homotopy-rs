@@ -20,9 +20,9 @@ use petgraph::{
 
 use crate::{
     common::{DimensionError, Generator, SliceIndex},
-    graph::{Explodable, SliceGraph},
     layout::Layout,
-    Diagram, DiagramN, Direction, Height, Rewrite, RewriteN,
+    scaffold::{Explodable, Scaffold, ScaffoldNode},
+    Boundary, Diagram, DiagramN, Direction, Height, Rewrite, RewriteN,
 };
 
 type Coordinate<const N: usize> = [SliceIndex; N];
@@ -60,25 +60,24 @@ impl<const N: usize> Projection<N> {
         }
 
         // Construct the exploded graph.
-        let mut graph: SliceGraph<Vec<SliceIndex>, _> =
-            SliceGraph::singleton(vec![], diagram.clone());
+        let mut graph = Scaffold::default();
+        graph.add_node(ScaffoldNode::new(
+            [Boundary::Source.into(); N],
+            diagram.clone(),
+        ));
         for i in 0..N {
             graph = graph
                 .explode(
                     |_, key, si| {
-                        let mut v = key.clone();
-                        v.push(si);
-                        Some(v)
+                        let mut key = *key;
+                        key[i] = si;
+                        Some(key)
                     },
                     |_, _, r| (i == 0).then(|| r.direction()),
                     |_, key, r| (i > 0 && r.is_atomic()).then_some(*key),
                 )?
                 .output;
         }
-        let graph: SliceGraph<Coordinate<N>, _> = graph.map(
-            |_, (indices, diagram)| (indices.clone().try_into().unwrap(), diagram.clone()),
-            |_, e| e.clone(),
-        );
 
         let mut generators = IdxVec::with_capacity(graph.node_count());
         let mut homotopies = IdxVec::with_capacity(graph.node_count());
@@ -87,8 +86,8 @@ impl<const N: usize> Projection<N> {
             FastHashMap::with_capacity_and_hasher(graph.node_count(), FastHasher::default());
 
         for n in graph.node_indices() {
-            let coord = graph[n].0;
-            let diagram = &graph[n].1;
+            let coord = graph[n].key;
+            let diagram = &graph[n].diagram;
 
             let g = diagram.max_generator();
             let depth = depths.node_depth(coord);
@@ -104,7 +103,7 @@ impl<const N: usize> Projection<N> {
                 let front_layer = graph
                     .edges_directed(n, EdgeDirection::Incoming)
                     .filter(|e| {
-                        depths.edge_depth(graph[e.source()].0, graph[e.target()].0) == depth
+                        depths.edge_depth(graph[e.source()].key, graph[e.target()].key) == depth
                     })
                     .map(|e| e.weight())
                     .collect_vec();
@@ -112,13 +111,13 @@ impl<const N: usize> Projection<N> {
                 // Split them into inputs and outputs.
                 let inputs = front_layer
                     .iter()
-                    .filter(|(dir, _)| *dir == Direction::Forward)
-                    .map(|(_, r)| r)
+                    .filter(|edge| edge.key == Direction::Forward)
+                    .map(|edge| &edge.rewrite)
                     .collect_vec();
                 let outputs = front_layer
                     .iter()
-                    .filter(|(dir, _)| *dir == Direction::Backward)
-                    .map(|(_, r)| r)
+                    .filter(|edge| edge.key == Direction::Backward)
+                    .map(|edge| &edge.rewrite)
                     .collect_vec();
 
                 // The node is an identity if there is one input and one output, and both are (locally) identities.
@@ -151,11 +150,11 @@ impl<const N: usize> Projection<N> {
                 let mut output_rewrites = vec![];
                 let mut output_coords = vec![];
                 for e in graph.edges_directed(n, EdgeDirection::Incoming) {
-                    let rewrite: &Rewrite = &e.weight().1;
-                    let source_coord = graph[e.source()].0;
+                    let rewrite: &Rewrite = &e.weight().rewrite;
+                    let source_coord = graph[e.source()].key;
                     let depth = depths.edge_depth(source_coord, coord);
 
-                    match e.weight().0 {
+                    match e.weight().key {
                         Direction::Forward => {
                             inputs += 1;
                             input_depths.push(depth);
@@ -268,7 +267,7 @@ impl<const N: usize> Projection<N> {
 /// Diagram analysis that finds the depth of cells in the 2-dimensional projection of a diagram.
 #[derive(Debug, Clone)]
 pub struct Depths<const N: usize> {
-    graph: SliceGraph<Coordinate<N>>,
+    graph: Scaffold<Coordinate<N>>,
     node_depths: IdxVec<NodeIndex, Option<usize>>,
     edge_depths: IdxVec<EdgeIndex, Option<usize>>,
     coord_to_node: FastHashMap<Coordinate<N>, NodeIndex>,
@@ -276,36 +275,36 @@ pub struct Depths<const N: usize> {
 
 impl<const N: usize> Depths<N> {
     pub fn new(diagram: &Diagram) -> Result<Self, DimensionError> {
-        let mut graph: SliceGraph<Vec<SliceIndex>> = SliceGraph::singleton(vec![], diagram.clone());
-        for _ in 0..N {
+        let mut graph = Scaffold::default();
+        graph.add_node(ScaffoldNode::new(
+            [Boundary::Source.into(); N],
+            diagram.clone(),
+        ));
+        for i in 0..N {
             graph = graph
                 .explode(
                     |_, key, si| {
-                        let mut v = key.clone();
-                        v.push(si);
-                        Some(v)
+                        let mut key = *key;
+                        key[i] = si;
+                        Some(key)
                     },
                     |_, _, _| Some(()),
                     |_, _, r| r.is_atomic().then_some(()),
                 )?
                 .output;
         }
-        let graph: SliceGraph<Coordinate<N>, _> = graph.map(
-            |_, (indices, diagram)| (indices.clone().try_into().unwrap(), diagram.clone()),
-            |_, e| e.clone(),
-        );
 
         let mut node_depths = IdxVec::splat(None, graph.node_count());
         let mut edge_depths = IdxVec::splat(None, graph.edge_count());
 
         let coord_to_node = graph
             .node_references()
-            .map(|(n, (coord, _))| (*coord, n))
+            .map(|(n, node)| (node.key, n))
             .collect();
 
         for node in Topo::new(&graph).iter(&graph) {
             for edge in graph.edges_directed(node, EdgeDirection::Incoming) {
-                if let ((), Rewrite::RewriteN(r)) = edge.weight() {
+                if let Rewrite::RewriteN(r) = &edge.weight().rewrite {
                     edge_depths[edge.id()] =
                         node_depths[edge.source()].map(|d| r.singular_image(d));
 
@@ -350,7 +349,7 @@ impl<const N: usize> Depths<N> {
         self.graph
             .edges_directed(to, EdgeDirection::Incoming)
             .filter_map(|e| match self.edge_depths[e.id()] {
-                Some(d) if d < depth => self.graph.node_weight(e.source()).map(|(coord, _)| *coord),
+                Some(d) if d < depth => self.graph.node_weight(e.source()).map(|node| node.key),
                 _ => None,
             })
             .collect()

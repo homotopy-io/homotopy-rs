@@ -13,7 +13,7 @@ use petgraph::{graph::NodeIndex, visit::EdgeRef, EdgeDirection, Graph};
 
 use crate::{
     common::{DimensionError, SingularHeight},
-    graph::{Explodable, SliceGraph},
+    scaffold::{Explodable, Scaffold, ScaffoldNode},
     Boundary, Diagram, DiagramN, Direction, Height, RewriteN, SliceIndex,
 };
 
@@ -28,8 +28,11 @@ impl<const N: usize> Layout<N> {
             return Err(DimensionError);
         }
 
-        let mut graph =
-            SliceGraph::singleton(([Boundary::Source.into(); N], [0.0; N]), diagram.clone());
+        let mut graph = Scaffold::default();
+        graph.add_node(ScaffoldNode::new(
+            ([Boundary::Source.into(); N], [0.0; N]),
+            diagram.clone(),
+        ));
 
         for i in 0..N {
             let positions = layout(&graph, i, |key| &key.0[..i], |key| *key)?;
@@ -51,7 +54,7 @@ impl<const N: usize> Layout<N> {
             .into_nodes_edges()
             .0
             .into_iter()
-            .map(|node| node.weight.0)
+            .map(|node| node.weight.key)
             .collect();
 
         Ok(Self { positions })
@@ -145,7 +148,7 @@ fn colimit(constraints: &[ConstraintSet]) -> (ConstraintSet, FastHashMap<Point, 
 }
 
 fn layout<V, E, F, G>(
-    graph: &SliceGraph<V, E>,
+    graph: &Scaffold<V, E>,
     dim: usize,
     coord_map: F,
     direction_map: G,
@@ -156,7 +159,7 @@ where
 {
     // Sort nodes by stratum.
     let nodes = graph.node_indices().sorted_by_cached_key(|&n| {
-        coord_map(&graph[n].0)
+        coord_map(&graph[n].key)
             .iter()
             .map(|&si| match si {
                 SliceIndex::Boundary(_) => -1,
@@ -170,7 +173,7 @@ where
     let mut node_to_constraints: IdxVec<NodeIndex, Vec<ConstraintSet>> =
         IdxVec::splat(vec![], graph.node_count());
     for n in nodes {
-        let diagram: &DiagramN = (&graph[n].1).try_into()?;
+        let diagram: &DiagramN = (&graph[n].diagram).try_into()?;
 
         for target_index in 0..diagram.size() {
             // Collect preimages.
@@ -178,7 +181,7 @@ where
             let mut directions = vec![];
             for e in graph.edges_directed(n, EdgeDirection::Incoming) {
                 let s = e.source();
-                let rewrite: &RewriteN = (&e.weight().1).try_into()?;
+                let rewrite: &RewriteN = (&e.weight().rewrite).try_into()?;
 
                 let preimage = rewrite
                     .singular_preimage(target_index)
@@ -187,7 +190,7 @@ where
 
                 if let Some(preimage) = preimage {
                     preimages.push(preimage);
-                    directions.push(direction_map(&e.weight().0));
+                    directions.push(direction_map(&e.weight().key));
                 }
             }
 

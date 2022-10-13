@@ -20,7 +20,7 @@ where
     Ix1: IndexType,
     Ix2: IndexType,
 {
-    pub output: SliceGraph<V, E, Ix2>,
+    pub output: Scaffold<V, E, Ix2>,
     pub node_to_nodes: IdxVec<NodeIndex<Ix1>, Vec<NodeIndex<Ix2>>>,
     pub node_to_edges: IdxVec<NodeIndex<Ix1>, Vec<EdgeIndex<Ix2>>>,
     pub edge_to_edges: IdxVec<EdgeIndex<Ix1>, Vec<EdgeIndex<Ix2>>>,
@@ -30,10 +30,6 @@ pub trait Explodable<V, E, Ix>
 where
     Ix: IndexType,
 {
-    fn singleton<D>(key: V, diagram: D) -> Self
-    where
-        D: Into<Diagram>;
-
     fn explode<F, G, H, V2, E2, Ix2>(
         &self,
         node_map: F,
@@ -47,8 +43,44 @@ where
         H: FnMut(EdgeIndex<Ix>, &E, ExternalRewrite) -> Option<E2>;
 }
 
+#[derive(Clone, Debug)]
+pub struct ScaffoldNode<V> {
+    pub key: V,
+    pub diagram: Diagram,
+}
+
+impl<V> ScaffoldNode<V> {
+    pub fn new<D>(key: V, diagram: D) -> Self
+    where
+        D: Into<Diagram>,
+    {
+        Self {
+            key,
+            diagram: diagram.into(),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct ScaffoldEdge<E> {
+    pub key: E,
+    pub rewrite: Rewrite,
+}
+
+impl<V> ScaffoldEdge<V> {
+    pub fn new<R>(key: V, rewrite: R) -> Self
+    where
+        R: Into<Rewrite>,
+    {
+        Self {
+            key,
+            rewrite: rewrite.into(),
+        }
+    }
+}
+
 /// A graph of diagrams and rewrites obtained by exploding a diagram.
-pub type SliceGraph<V = (), E = (), Ix = DefaultIx> = DiGraph<(V, Diagram), (E, Rewrite), Ix>;
+pub type Scaffold<V = (), E = (), Ix = DefaultIx> = DiGraph<ScaffoldNode<V>, ScaffoldEdge<E>, Ix>;
 
 /// Describes from where a rewrite in the output of explosion originates.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -103,21 +135,11 @@ impl ExternalRewrite {
     }
 }
 
-impl<V, E, Ix> Explodable<V, E, Ix> for SliceGraph<V, E, Ix>
+impl<V, E, Ix> Explodable<V, E, Ix> for Scaffold<V, E, Ix>
 where
     Ix: IndexType,
 {
-    /// Creates a new 0-dimensional slice graph.
-    fn singleton<D>(key: V, diagram: D) -> Self
-    where
-        D: Into<Diagram>,
-    {
-        let mut graph = Self::default();
-        graph.add_node((key, diagram.into()));
-        graph
-    }
-
-    /// Explodes a slice graph to obtain the slice graph one dimension higher.
+    /// Explodes a scaffold to obtain the scaffold one dimension higher.
     fn explode<F, G, H, V2, E2, Ix2>(
         &self,
         mut node_map: F,
@@ -130,19 +152,20 @@ where
         G: FnMut(NodeIndex<Ix>, &V, InternalRewrite) -> Option<E2>,
         H: FnMut(EdgeIndex<Ix>, &E, ExternalRewrite) -> Option<E2>,
     {
-        let mut graph = SliceGraph::default();
+        let mut graph = Scaffold::default();
 
         let mut nodes = IdxVec::splat(vec![], self.node_count());
         let mut internal_edges = IdxVec::splat(vec![], self.node_count());
         let mut external_edges = IdxVec::splat(vec![], self.edge_count());
 
-        for (n, (key, diagram)) in self.node_references() {
-            let diagram: &DiagramN = diagram.try_into()?;
+        for (n, node) in self.node_references() {
+            let key = &node.key;
+            let diagram: &DiagramN = (&node.diagram).try_into()?;
 
             let mut add_node = |si: SliceIndex, slice: Diagram| {
                 nodes[n].push(|| -> Option<_> {
                     let key = node_map(n, key, si)?;
-                    graph.add_node((key, slice)).into()
+                    graph.add_node(ScaffoldNode::new(key, slice)).into()
                 }());
             };
 
@@ -163,7 +186,7 @@ where
                         let a = nodes[n][si]?;
                         let b = nodes[n][ti]?;
                         let key = internal_edge_map(n, key, r)?;
-                        graph.add_edge(a, b, (key, rewrite)).into()
+                        graph.add_edge(a, b, ScaffoldEdge::new(key, rewrite)).into()
                     }());
                 };
 
@@ -204,9 +227,9 @@ where
             let s = e.source();
             let t = e.target();
 
-            let key = &e.weight().0;
-            let rewrite: &RewriteN = (&e.weight().1).try_into()?;
-            let target_diagram: &DiagramN = (&self[t].1).try_into()?;
+            let key = &e.weight().key;
+            let rewrite: &RewriteN = (&e.weight().rewrite).try_into()?;
+            let target_diagram: &DiagramN = (&self[t].diagram).try_into()?;
 
             let mut add_edge =
                 |si: SliceIndex, ti: SliceIndex, r: ExternalRewrite, rewrite: Rewrite| {
@@ -214,7 +237,7 @@ where
                         let a = nodes[s][si]?;
                         let b = nodes[t][ti]?;
                         let key = external_edge_map(e.id(), key, r)?;
-                        graph.add_edge(a, b, (key, rewrite)).into()
+                        graph.add_edge(a, b, ScaffoldEdge::new(key, rewrite)).into()
                     }());
                 };
 
@@ -335,18 +358,6 @@ where
     Ix1: IndexType,
     Ix2: IndexType,
 {
-    fn singleton<D>(key: V, diagram: D) -> Self
-    where
-        D: Into<Diagram>,
-    {
-        Self {
-            output: SliceGraph::singleton(key, diagram),
-            node_to_nodes: Default::default(),
-            node_to_edges: Default::default(),
-            edge_to_edges: Default::default(),
-        }
-    }
-
     fn explode<F, G, H, V2, E2, Ix3>(
         &self,
         node_map: F,
