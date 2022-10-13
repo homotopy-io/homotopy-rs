@@ -122,7 +122,7 @@ jobs:
       - name: Merge historical benchmarking data
         run: mv old/dev result/dev
       - name: Deploy to GitHub Pages (redundant)
-        uses: JamesIves/github-pages-deploy-action@v4.4.0
+        uses: JamesIves/github-pages-deploy-action@v4.4.1
         with:
           branch: gh-pages
           folder: result
