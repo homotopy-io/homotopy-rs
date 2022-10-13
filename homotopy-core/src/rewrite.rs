@@ -1219,11 +1219,7 @@ mod test {
             &[internal(g), internal(g), internal(f)],
             &[internal(f), internal(f), internal(g)],
             vec![vec![up(f), up(f)], vec![up(f), up(f)], vec![up(g), up(g)]],
-            vec![
-                vec![g_to_f.clone()],
-                vec![g_to_f.clone()],
-                vec![f_to_g.clone()],
-            ],
+            vec![vec![g_to_f.clone()], vec![g_to_f], vec![f_to_g]],
         );
 
         let actual = RewriteN::compose(&first, &second);
