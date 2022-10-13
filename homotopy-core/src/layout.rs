@@ -47,7 +47,7 @@ impl<const N: usize> Layout<N> {
                     |_, _, r| Some((i, r.direction())),
                     |_, key, r| (!r.is_flange()).then_some(*key),
                 )?
-                .output;
+                .scaffold;
         }
 
         let positions = graph

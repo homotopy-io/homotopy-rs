@@ -19,10 +19,10 @@ proptest! {
         let rwr = graph.add_edge(src, tgt, ScaffoldEdge::new((), rewrite.clone()));
 
         let ExplosionOutput {
+            scaffold,
             node_to_nodes,
             node_to_edges,
             edge_to_edges,
-            output,
         }: ExplosionOutput<(), Option<ExternalRewrite>, DefaultIx, DefaultIx> = graph
             .explode(
                 |_, (), si| match si {
@@ -41,13 +41,13 @@ proptest! {
             .unwrap();
 
         let (reconstructed_source, source_cospans) = {
-            let source = output[*node_to_nodes[src].first().unwrap()].diagram.clone();
+            let source = scaffold[*node_to_nodes[src].first().unwrap()].diagram.clone();
             let cospans: Vec<_> = node_to_edges[src]
                 .chunks_exact(2)
                 .map(|chunk| match chunk {
                     [f, b] => Cospan {
-                        forward: output.edge_weight(*f).unwrap().rewrite.clone(),
-                        backward: output.edge_weight(*b).unwrap().rewrite.clone(),
+                        forward: scaffold.edge_weight(*f).unwrap().rewrite.clone(),
+                        backward: scaffold.edge_weight(*b).unwrap().rewrite.clone(),
                     },
                     _ => unreachable!(),
                 })
@@ -57,13 +57,13 @@ proptest! {
         prop_assert_eq!(reconstructed_source, source);
 
         let (reconstructed_target, target_cospans) = {
-            let source = output[*node_to_nodes[tgt].first().unwrap()].diagram.clone();
+            let source = scaffold[*node_to_nodes[tgt].first().unwrap()].diagram.clone();
             let cospans: Vec<_> = node_to_edges[tgt]
                 .chunks_exact(2)
                 .map(|chunk| match chunk {
                     [f, b] => Cospan {
-                        forward: output.edge_weight(*f).unwrap().rewrite.clone(),
-                        backward: output.edge_weight(*b).unwrap().rewrite.clone(),
+                        forward: scaffold.edge_weight(*f).unwrap().rewrite.clone(),
+                        backward: scaffold.edge_weight(*b).unwrap().rewrite.clone(),
                     },
                     _ => unreachable!(),
                 })
@@ -78,7 +78,7 @@ proptest! {
             edge_to_edges[rwr]
                 .iter()
                 .map(|&e| {
-                    output
+                    scaffold
                         .edge_weight(e)
                         .and_then(|edge| Some((edge.key?, edge.rewrite.clone())))
                         .unwrap()

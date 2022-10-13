@@ -20,7 +20,7 @@ where
     Ix1: IndexType,
     Ix2: IndexType,
 {
-    pub output: Scaffold<V, E, Ix2>,
+    pub scaffold: Scaffold<V, E, Ix2>,
     pub node_to_nodes: IdxVec<NodeIndex<Ix1>, Vec<NodeIndex<Ix2>>>,
     pub node_to_edges: IdxVec<NodeIndex<Ix1>, Vec<EdgeIndex<Ix2>>>,
     pub edge_to_edges: IdxVec<EdgeIndex<Ix1>, Vec<EdgeIndex<Ix2>>>,
@@ -49,6 +49,15 @@ pub struct ScaffoldNode<V> {
     pub diagram: Diagram,
 }
 
+impl<T: Default> From<Diagram> for ScaffoldNode<T> {
+    fn from(diagram: Diagram) -> Self {
+        Self {
+            key: Default::default(),
+            diagram,
+        }
+    }
+}
+
 impl<V> ScaffoldNode<V> {
     pub fn new<D>(key: V, diagram: D) -> Self
     where
@@ -75,6 +84,15 @@ impl<V> ScaffoldEdge<V> {
         Self {
             key,
             rewrite: rewrite.into(),
+        }
+    }
+}
+
+impl<T: Default> From<Rewrite> for ScaffoldEdge<T> {
+    fn from(rewrite: Rewrite) -> Self {
+        Self {
+            key: Default::default(),
+            rewrite,
         }
     }
 }
@@ -345,7 +363,7 @@ where
         }
 
         Ok(ExplosionOutput {
-            output: graph,
+            scaffold: graph,
             node_to_nodes: nodes.map(|ns| ns.into_iter().flatten().collect()),
             node_to_edges: internal_edges.map(|es| es.into_iter().flatten().collect()),
             edge_to_edges: external_edges.map(|es| es.into_iter().flatten().collect()),
@@ -370,7 +388,7 @@ where
         G: FnMut(NodeIndex<Ix2>, &V, InternalRewrite) -> Option<E2>,
         H: FnMut(EdgeIndex<Ix2>, &E, ExternalRewrite) -> Option<E2>,
     {
-        self.output
+        self.scaffold
             .explode(node_map, internal_edge_map, external_edge_map)
     }
 }
