@@ -93,6 +93,17 @@ impl Diagram {
         DiagramN::new_unsafe(self.clone(), vec![])
     }
 
+    #[must_use]
+    pub fn weak_identity(&self) -> DiagramN {
+        DiagramN::new_unsafe(
+            self.clone(),
+            vec![Cospan {
+                forward: Rewrite::identity(self.dimension()),
+                backward: Rewrite::identity(self.dimension()),
+            }],
+        )
+    }
+
     pub fn embeds(&self, diagram: &Self, embedding: &[usize]) -> bool {
         use Diagram::{Diagram0, DiagramN};
         match (self, diagram) {
