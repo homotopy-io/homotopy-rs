@@ -1,52 +1,59 @@
-use crate::{rewrite::Cone, Cospan, Diagram, Orientation, Rewrite, Rewrite0, RewriteN};
+use crate::{rewrite::Cone, Cospan, Diagram, DiagramN, Orientation, Rewrite, Rewrite0, RewriteN};
 
-pub fn bubble(source: &Diagram, cospan: Cospan) -> (Diagram, Cospan) {
-    use Orientation::Zero;
+impl DiagramN {
+    #[must_use]
+    pub fn bubble(&self) -> Self {
+        use Orientation::Zero;
 
-    let f0 = cospan.forward.orientation_transform(Zero);
-    let b0 = cospan.backward.orientation_transform(Zero);
+        assert_eq!(self.size(), 1);
+        let source = self.source();
+        let cospan = self.cospans()[0].clone();
 
-    let inverse = cospan.inverse();
+        let f0 = cospan.forward.orientation_transform(Zero);
+        let b0 = cospan.backward.orientation_transform(Zero);
 
-    let singular0 = source.clone().rewrite_forward(&cospan.forward).unwrap();
-    let singular1 = source.clone().rewrite_forward(&inverse.backward).unwrap();
+        let inverse = cospan.inverse();
 
-    let contract = RewriteN::new(
-        source.dimension() + 1,
-        vec![Cone::new(
-            0,
-            vec![cospan, inverse],
-            Cospan {
-                forward: f0.clone(),
-                backward: f0.clone(),
-            },
-            vec![f0.clone(), b0, f0.clone()],
-            vec![
-                Rewrite::directed_identity(&singular0),
-                Rewrite::directed_identity(&singular1),
-            ],
-        )],
-    );
+        let singular0 = source.clone().rewrite_forward(&cospan.forward).unwrap();
+        let singular1 = source.clone().rewrite_forward(&inverse.backward).unwrap();
 
-    let expand = RewriteN::new(
-        source.dimension() + 1,
-        vec![Cone::new_unit(
-            0,
-            Cospan {
-                forward: f0.clone(),
-                backward: f0.clone(),
-            },
-            f0,
-        )],
-    );
+        let contract = RewriteN::new(
+            source.dimension() + 1,
+            vec![Cone::new(
+                0,
+                vec![cospan, inverse],
+                Cospan {
+                    forward: f0.clone(),
+                    backward: f0.clone(),
+                },
+                vec![f0.clone(), b0, f0.clone()],
+                vec![
+                    Rewrite::directed_identity(&singular0),
+                    Rewrite::directed_identity(&singular1),
+                ],
+            )],
+        );
 
-    (
-        source.identity().into(),
-        Cospan {
-            forward: expand.into(),
-            backward: contract.into(),
-        },
-    )
+        let expand = RewriteN::new(
+            source.dimension() + 1,
+            vec![Cone::new_unit(
+                0,
+                Cospan {
+                    forward: f0.clone(),
+                    backward: f0.clone(),
+                },
+                f0,
+            )],
+        );
+
+        Self::new(
+            source.identity().into(),
+            vec![Cospan {
+                forward: expand.into(),
+                backward: contract.into(),
+            }],
+        )
+    }
 }
 
 impl Rewrite {
