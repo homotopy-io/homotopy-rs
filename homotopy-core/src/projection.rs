@@ -66,17 +66,15 @@ impl<const N: usize> Projection<N> {
             diagram.clone(),
         ));
         for i in 0..N {
-            graph = graph
-                .explode(
-                    |_, key, si| {
-                        let mut key = *key;
-                        key[i] = si;
-                        Some(key)
-                    },
-                    |_, _, r| (i == 0).then(|| r.direction()),
-                    |_, key, r| (i > 0 && r.is_atomic()).then_some(*key),
-                )?
-                .scaffold;
+            graph = graph.explode_simple(
+                |_, key, si| {
+                    let mut key = *key;
+                    key[i] = si;
+                    Some(key)
+                },
+                |_, _, r| (i == 0).then(|| r.direction()),
+                |_, key, r| (i > 0 && r.is_atomic()).then_some(*key),
+            )?;
         }
 
         let mut generators = IdxVec::with_capacity(graph.node_count());
@@ -281,17 +279,15 @@ impl<const N: usize> Depths<N> {
             diagram.clone(),
         ));
         for i in 0..N {
-            graph = graph
-                .explode(
-                    |_, key, si| {
-                        let mut key = *key;
-                        key[i] = si;
-                        Some(key)
-                    },
-                    |_, _, _| Some(()),
-                    |_, _, r| r.is_atomic().then_some(()),
-                )?
-                .scaffold;
+            graph = graph.explode_simple(
+                |_, key, si| {
+                    let mut key = *key;
+                    key[i] = si;
+                    Some(key)
+                },
+                |_, _, _| Some(()),
+                |_, _, r| r.is_atomic().then_some(()),
+            )?;
         }
 
         let mut node_depths = IdxVec::splat(None, graph.node_count());
