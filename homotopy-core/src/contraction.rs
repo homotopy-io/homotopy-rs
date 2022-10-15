@@ -34,6 +34,7 @@ use crate::{
         ScaffoldNode,
     },
     signature::Signature,
+    typecheck::{typecheck_cospan, TypeError},
     Direction, Generator, SliceIndex,
 };
 
@@ -70,6 +71,8 @@ pub enum ContractionError {
     Invalid,
     #[error("contraction ambiguous")]
     Ambiguous,
+    #[error("contraction fails to typecheck: {0}")]
+    IllTyped(#[from] TypeError),
     #[error("invalid boundary path provided to contraction")]
     Dimension(#[from] DimensionError),
 }
@@ -86,7 +89,7 @@ impl DiagramN {
         interior_path: &[Height],
         height: SingularHeight,
         bias: Option<Bias>,
-        _signature: &S,
+        signature: &S,
     ) -> Result<Self, ContractionError>
     where
         S: Signature,
@@ -99,7 +102,6 @@ impl DiagramN {
             let slice = slice.try_into().or(Err(ContractionError::Invalid))?;
             let ContractExpand { contract, expand } =
                 contract_in_path(&slice, interior_path, height, bias)?;
-            let _singular = slice.rewrite_forward(&contract).unwrap();
 
             let cospan = match boundary_path.boundary() {
                 Boundary::Source => Cospan {
@@ -111,6 +113,13 @@ impl DiagramN {
                     backward: expand.into(),
                 },
             };
+
+            typecheck_cospan(
+                slice.into(),
+                cospan.clone(),
+                boundary_path.boundary(),
+                signature,
+            )?;
 
             Ok(vec![cospan])
         })

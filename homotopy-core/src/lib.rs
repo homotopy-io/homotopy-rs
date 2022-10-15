@@ -23,6 +23,7 @@ pub mod rewrite;
 pub mod scaffold;
 pub mod serialize;
 pub mod signature;
+pub mod typecheck;
 
 pub fn collect_garbage() {
     DiagramN::collect_garbage();
