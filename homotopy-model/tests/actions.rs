@@ -25,6 +25,7 @@ fn construct_associator() {
     assert_debug_snapshot!("construct_associator_workspace", proof.workspace);
 }
 
+#[ignore]
 #[test]
 fn construct_braid_and_contract() {
     let action_dump = include_str!("examples/braid_contraction.json");
