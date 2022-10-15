@@ -41,6 +41,22 @@ where
         F: FnMut(NodeIndex<Ix>, &V, SliceIndex) -> Option<V2>,
         G: FnMut(NodeIndex<Ix>, &V, InternalRewrite) -> Option<E2>,
         H: FnMut(EdgeIndex<Ix>, &E, ExternalRewrite) -> Option<E2>;
+
+    fn explode_simple<F, G, H, V2, E2, Ix2>(
+        &self,
+        node_map: F,
+        internal_edge_map: G,
+        external_edge_map: H,
+    ) -> Result<Scaffold<V2, E2, Ix2>, DimensionError>
+    where
+        Ix2: IndexType,
+        F: FnMut(NodeIndex<Ix>, &V, SliceIndex) -> Option<V2>,
+        G: FnMut(NodeIndex<Ix>, &V, InternalRewrite) -> Option<E2>,
+        H: FnMut(EdgeIndex<Ix>, &E, ExternalRewrite) -> Option<E2>,
+    {
+        self.explode(node_map, internal_edge_map, external_edge_map)
+            .map(|output| output.scaffold)
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -368,27 +384,5 @@ where
             node_to_edges: internal_edges.map(|es| es.into_iter().flatten().collect()),
             edge_to_edges: external_edges.map(|es| es.into_iter().flatten().collect()),
         })
-    }
-}
-
-impl<V, E, Ix1, Ix2> Explodable<V, E, Ix2> for ExplosionOutput<V, E, Ix1, Ix2>
-where
-    Ix1: IndexType,
-    Ix2: IndexType,
-{
-    fn explode<F, G, H, V2, E2, Ix3>(
-        &self,
-        node_map: F,
-        internal_edge_map: G,
-        external_edge_map: H,
-    ) -> Result<ExplosionOutput<V2, E2, Ix2, Ix3>, DimensionError>
-    where
-        Ix3: IndexType,
-        F: FnMut(NodeIndex<Ix2>, &V, SliceIndex) -> Option<V2>,
-        G: FnMut(NodeIndex<Ix2>, &V, InternalRewrite) -> Option<E2>,
-        H: FnMut(EdgeIndex<Ix2>, &E, ExternalRewrite) -> Option<E2>,
-    {
-        self.scaffold
-            .explode(node_map, internal_edge_map, external_edge_map)
     }
 }

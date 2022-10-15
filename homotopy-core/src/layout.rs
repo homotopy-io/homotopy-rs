@@ -36,18 +36,16 @@ impl<const N: usize> Layout<N> {
 
         for i in 0..N {
             let positions = layout(&graph, i, |key| &key.0[..i], |key| *key)?;
-            graph = graph
-                .explode(
-                    |n, key, si| {
-                        let mut key = *key;
-                        key.0[i] = si;
-                        key.1[i] = positions[n][si];
-                        Some(key)
-                    },
-                    |_, _, r| Some((i, r.direction())),
-                    |_, key, r| (!r.is_flange()).then_some(*key),
-                )?
-                .scaffold;
+            graph = graph.explode_simple(
+                |n, key, si| {
+                    let mut key = *key;
+                    key.0[i] = si;
+                    key.1[i] = positions[n][si];
+                    Some(key)
+                },
+                |_, _, r| Some((i, r.direction())),
+                |_, key, r| (!r.is_flange()).then_some(*key),
+            )?;
         }
 
         let positions = graph
