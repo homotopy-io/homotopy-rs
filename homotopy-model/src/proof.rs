@@ -693,15 +693,15 @@ impl ProofState {
 
                 match info.generator.dimension.cmp(&(haystack.dimension() + 1)) {
                     std::cmp::Ordering::Less => {
-                        let identity = |mut diagram: Diagram| {
-                            while diagram.dimension() < haystack.dimension() + 1 {
-                                diagram = diagram.weak_identity().into();
-                            }
-                            DiagramN::try_from(diagram).unwrap()
-                        };
-
                         #[cfg(feature = "weak-units")]
                         {
+                            let identity = |mut diagram: Diagram| {
+                                while diagram.dimension() < haystack.dimension() + 1 {
+                                    diagram = diagram.weak_identity().into();
+                                }
+                                DiagramN::try_from(diagram).unwrap()
+                            };
+
                             extend!(identity(info.diagram.clone()), Some("identity".to_string()));
                         }
 
