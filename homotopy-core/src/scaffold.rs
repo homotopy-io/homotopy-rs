@@ -3,6 +3,7 @@ use std::ops::Range;
 use homotopy_common::idx::IdxVec;
 use petgraph::{
     graph::{DefaultIx, DiGraph, EdgeIndex, IndexType, NodeIndex},
+    stable_graph::StableDiGraph,
     visit::{EdgeRef, IntoNodeReferences},
 };
 
@@ -115,6 +116,8 @@ impl<T: Default> From<Rewrite> for ScaffoldEdge<T> {
 
 /// A graph of diagrams and rewrites obtained by exploding a diagram.
 pub type Scaffold<V = (), E = (), Ix = DefaultIx> = DiGraph<ScaffoldNode<V>, ScaffoldEdge<E>, Ix>;
+pub(crate) type StableScaffold<V = (), E = (), Ix = DefaultIx> =
+    StableDiGraph<ScaffoldNode<V>, ScaffoldEdge<E>, Ix>;
 
 /// Describes from where a rewrite in the output of explosion originates.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]

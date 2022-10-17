@@ -6,7 +6,6 @@ use std::{
 
 use homotopy_common::{declare_idx, hash::FastHashMap, idx::IdxVec};
 use itertools::Itertools;
-use once_cell::unsync::OnceCell;
 use petgraph::{
     adj::UnweightedList,
     algo::{
@@ -15,9 +14,8 @@ use petgraph::{
     },
     graph::{DefaultIx, DiGraph, IndexType, NodeIndex},
     graphmap::DiGraphMap,
-    stable_graph::{EdgeIndex, StableDiGraph},
-    unionfind::UnionFind,
-    visit::{EdgeRef, IntoEdgeReferences, IntoNodeReferences, Topo, Walker},
+    stable_graph::StableDiGraph,
+    visit::{EdgeRef, IntoNodeReferences},
     EdgeDirection::{Incoming, Outgoing},
 };
 use serde::{Deserialize, Serialize};
@@ -25,6 +23,7 @@ use thiserror::Error;
 
 use crate::{
     attach::{attach, BoundaryPath},
+    collapse::{collapse, unify, Cartesian},
     common::{Boundary, DimensionError, Height, Orientation, SingularHeight},
     diagram::{Diagram, DiagramN},
     expansion::expand_propagate,
@@ -161,35 +160,35 @@ fn contract_base(
 
     let mut graph = DiGraph::new();
     let r0 = graph.add_node(ScaffoldNode {
-        key: CollapseNode {
+        key: ContractNode {
             bias: None,
             coordinate: vec![Height::Regular(0)],
         },
         diagram: regular0.clone(),
     });
     let s0 = graph.add_node(ScaffoldNode {
-        key: CollapseNode {
+        key: ContractNode {
             bias: bias0,
             coordinate: vec![Height::Singular(0)],
         },
         diagram: singular0.clone(),
     });
     let r1 = graph.add_node(ScaffoldNode {
-        key: CollapseNode {
+        key: ContractNode {
             bias: None,
             coordinate: vec![Height::Regular(1)],
         },
         diagram: regular1.clone(),
     });
     let s1 = graph.add_node(ScaffoldNode {
-        key: CollapseNode {
+        key: ContractNode {
             bias: bias1,
             coordinate: vec![Height::Singular(1)],
         },
         diagram: singular1.clone(),
     });
     let r2 = graph.add_node(ScaffoldNode {
-        key: CollapseNode {
+        key: ContractNode {
             bias: None,
             coordinate: vec![Height::Regular(2)],
         },
@@ -199,7 +198,7 @@ fn contract_base(
     graph.add_edge(r1, s0, cospan0.backward.clone().into());
     graph.add_edge(r1, s1, cospan1.forward.clone().into());
     graph.add_edge(r2, s1, cospan1.backward.clone().into());
-    let result = collapse(&graph)?;
+    let result = colimit(&graph)?;
 
     let cospan = Cospan {
         forward: result.legs[r0].clone(),
@@ -335,13 +334,13 @@ fn contract_in_path(
                     let source_cospan = &diagram.cospans()[*i];
                     let contract_base = contract_base.into();
                     let (forward, backward) = {
-                        // compose by collapse
+                        // compose by colimit
                         let mut graph = DiGraph::new();
                         let regular_prev = diagram
                             .slice(SliceIndex::Interior(Height::Regular(*i)))
                             .ok_or(ContractionError::Invalid)?;
                         let r_p = graph.add_node(ScaffoldNode {
-                            key: CollapseNode {
+                            key: ContractNode {
                                 bias: None,
                                 coordinate: vec![Height::Regular(0), Height::Regular(*i)],
                             },
@@ -351,7 +350,7 @@ fn contract_in_path(
                             .rewrite_forward(&source_cospan.forward)
                             .map_err(|_err| ContractionError::Invalid)?;
                         let s = graph.add_node(ScaffoldNode {
-                            key: CollapseNode {
+                            key: ContractNode {
                                 bias: None,
                                 coordinate: vec![Height::Regular(0), Height::Singular(*i)],
                             },
@@ -363,7 +362,7 @@ fn contract_in_path(
                             .rewrite_backward(&source_cospan.backward)
                             .map_err(|_err| ContractionError::Invalid)?;
                         let r_n = graph.add_node(ScaffoldNode {
-                            key: CollapseNode {
+                            key: ContractNode {
                                 bias: None,
                                 coordinate: vec![Height::Regular(0), Height::Regular(*i + 1)],
                             },
@@ -371,7 +370,7 @@ fn contract_in_path(
                         });
                         graph.add_edge(r_n, s, source_cospan.backward.clone().into());
                         let c = graph.add_node(ScaffoldNode {
-                            key: CollapseNode {
+                            key: ContractNode {
                                 bias: None,
                                 coordinate: vec![Height::Singular(0), Height::Singular(*i)],
                             },
@@ -380,7 +379,7 @@ fn contract_in_path(
                                 .map_err(|_err| ContractionError::Invalid)?,
                         });
                         graph.add_edge(s, c, contract_base.clone().into());
-                        let cocone = collapse(&graph)?;
+                        let cocone = colimit(&graph)?;
                         (cocone.legs[r_p].clone(), cocone.legs[r_n].clone())
                     };
                     let contract = RewriteN::new(
@@ -422,13 +421,19 @@ where
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-struct CollapseNode {
+struct ContractNode {
     bias: Option<Bias>,
     coordinate: Vec<Height>,
 }
-type CollapseGraph<Ix> = Scaffold<CollapseNode, (), Ix>;
 
-fn collapse<Ix: IndexType>(graph: &CollapseGraph<Ix>) -> Result<Cocone<Ix>, ContractionError> {
+impl Cartesian<Height> for ContractNode {
+    fn coordinate(&self) -> &[Height] {
+        self.coordinate.as_slice()
+    }
+}
+type ContractGraph<Ix> = Scaffold<ContractNode, (), Ix>;
+
+fn colimit<Ix: IndexType>(graph: &ContractGraph<Ix>) -> Result<Cocone<Ix>, ContractionError> {
     let dimension = graph
         .node_weights()
         .next()
@@ -445,195 +450,16 @@ fn collapse<Ix: IndexType>(graph: &CollapseGraph<Ix>) -> Result<Cocone<Ix>, Cont
     }
 
     if dimension == 0 {
-        collapse_base(graph)
+        colimit_base(graph)
     } else {
-        collapse_recursive(graph)
+        colimit_recursive(graph)
     }
 }
 
-fn collapse_base<Ix: IndexType>(graph: &CollapseGraph<Ix>) -> Result<Cocone<Ix>, ContractionError> {
-    // helper function to unify two nodes within a stable graph
-    fn unify<N, E, Ix, RN, RE>(
-        graph: &mut StableDiGraph<N, ScaffoldEdge<E>, Ix>,
-        p: NodeIndex<Ix>,
-        q: NodeIndex<Ix>,
-        quotient: &mut UnionFind<NodeIndex<Ix>>,
-        mut on_remove_node: RN,
-        mut on_remove_edge: RE,
-    ) -> Result<(), ContractionError>
-    where
-        N: Clone,
-        E: Clone,
-        Ix: IndexType,
-        RE: FnMut(EdgeIndex<Ix>),
-        RN: FnMut(NodeIndex<Ix>),
-    {
-        enum Quotient<Ix> {
-            RetargetSource(NodeIndex<Ix>, NodeIndex<Ix>, EdgeIndex<Ix>),
-            RetargetTarget(NodeIndex<Ix>, NodeIndex<Ix>, EdgeIndex<Ix>),
-            RemoveNode(NodeIndex<Ix>),
-        }
-        let (p, q) = (quotient.find_mut(p), quotient.find_mut(q));
-        if p == q {
-            return Ok(());
-        }
-        quotient.union(p, q);
-        let keep = quotient.find_mut(p);
-        let remove = if keep == p { q } else { p };
-        let mut ops: Vec<Quotient<Ix>> = Default::default();
-        for e in graph
-            .edges_directed(remove, Outgoing)
-            .filter(|e| e.target() != keep)
-        {
-            ops.push(Quotient::RetargetSource(keep, e.target(), e.id()));
-        }
-        for e in graph
-            .edges_directed(remove, Incoming)
-            .filter(|e| e.source() != keep)
-        {
-            ops.push(Quotient::RetargetTarget(keep, e.source(), e.id()));
-        }
-        ops.push(Quotient::RemoveNode(remove));
-        for op in ops {
-            match op {
-                Quotient::RetargetSource(keep, target, e) => {
-                    if let Some(existing) = graph.find_edge(keep, target) {
-                        if <&Rewrite0>::try_from(&graph[existing].rewrite)
-                            .expect("non 0-rewrite passed to collapse_base unify")
-                            .label()
-                            != <&Rewrite0>::try_from(&graph[e].rewrite)
-                                .expect("non 0-rewrite passed to collapse_base unify")
-                                .label()
-                        {
-                            return Err(ContractionError::LabelInconsistency);
-                        }
-                    } else {
-                        graph.add_edge(keep, target, graph[e].clone());
-                    }
-                    graph.remove_edge(e);
-                    on_remove_edge(e);
-                }
-                Quotient::RetargetTarget(keep, source, e) => {
-                    if let Some(existing) = graph.find_edge(source, keep) {
-                        if <&Rewrite0>::try_from(&graph[existing].rewrite)
-                            .expect("non 0-rewrite passed to collapse_base unify")
-                            .label()
-                            != <&Rewrite0>::try_from(&graph[e].rewrite)
-                                .expect("non 0-rewrite passed to collapse_base unify")
-                                .label()
-                        {
-                            return Err(ContractionError::LabelInconsistency);
-                        }
-                    } else {
-                        graph.add_edge(source, keep, graph[e].clone());
-                    }
-                    graph.remove_edge(e);
-                    on_remove_edge(e);
-                }
-                Quotient::RemoveNode(remove) => {
-                    graph.remove_node(remove);
-                    on_remove_node(remove);
-                }
-            };
-        }
-        Ok(())
-    }
+fn colimit_base<Ix: IndexType>(graph: &ContractGraph<Ix>) -> Result<Cocone<Ix>, ContractionError> {
     // mutably construct the collapsed graph
     let mut stable = StableDiGraph::from(graph.clone());
-    // invariant: #nodes of stable = #equivalence classes of union_find
-    let mut union_find = UnionFind::new(stable.node_count());
-    // tree tracks which edges descended from other edges by graph explosion
-    // collapse subproblems need to be solved in topological order, with the root being the final one
-    declare_idx! { struct TreeIx = DefaultIx; }
-    let tree = {
-        let mut tree: DiGraph<_, _, TreeIx> = Default::default();
-        let root = tree.add_node((None, OnceCell::new()));
-        for (
-            ix,
-            ScaffoldNode {
-                key: CollapseNode { coordinate, .. },
-                ..
-            },
-        ) in stable.node_references()
-        {
-            let mut cur = root;
-            for c in coordinate {
-                if let Some(existing) = tree
-                    .neighbors_directed(cur, Incoming)
-                    .find(|n| tree[*n].0 == Some(*c))
-                {
-                    cur = existing;
-                } else {
-                    let next = tree.add_node((Some(*c), OnceCell::new()));
-                    tree.add_edge(next, cur, ());
-                    cur = next;
-                }
-            }
-            tree[cur]
-                .1
-                .set(vec![ix])
-                .expect("failed to initialise collapse subproblem tree");
-        }
-        tree
-    };
-    for n in Topo::new(&tree).iter(&tree) {
-        // collapse subproblem
-        let mut children = tree.neighbors_directed(n, Incoming).detach();
-        let mut nodes = vec![];
-        while let Some(child) = children.next_node(&tree) {
-            nodes.extend_from_slice(tree[child].1.get().unwrap());
-        }
-        if nodes.is_empty() {
-            // n is a leaf
-            continue;
-        } else {
-            let mut quotient: Vec<_> = Default::default();
-            // find collapsible edges wrt nodes
-            for e in stable.edge_references().filter(|e| {
-                // e is contained within nodes
-                nodes.contains(&e.source()) && nodes.contains(&e.target())
-                // e is an identity rewrite
-                && <&Rewrite0>::try_from(&e.weight().rewrite).unwrap().0.as_ref().map_or(true, |(s, t, _)| s.id == t.id)
-                // check triangles within nodes which might refute collapsibility of e
-                && stable.edges_directed(e.source(), Incoming).all(|p| {
-                    if let Some(c) = stable.find_edge(p.source(), e.target()) {
-                        <&Rewrite0>::try_from(&p.weight().rewrite).unwrap().label() == <&Rewrite0>::try_from(&stable.edge_weight(c).unwrap().rewrite).unwrap().label()
-                    } else {
-                        true
-                    }
-                })
-                && stable.edges_directed(e.target(), Outgoing).all(|n| {
-                    if let Some(c) = stable.find_edge(e.source(), n.target()) {
-                        <&Rewrite0>::try_from(&n.weight().rewrite).unwrap().label() == <&Rewrite0>::try_from(&stable.edge_weight(c).unwrap().rewrite).unwrap().label()
-                    } else {
-                        true
-                    }
-                })
-            }) {
-                // e is collapsible
-                quotient.push((e.source(), e.target()));
-            }
-
-            for (s, t) in quotient {
-                unify(
-                    &mut stable,
-                    s,
-                    t,
-                    &mut union_find,
-                    |rn| {
-                        nodes.retain(|&n| n != rn);
-                    },
-                    |_re| (),
-                )?;
-            }
-        }
-        tree[n]
-            .1
-            .set(nodes)
-            .expect("failed to propagate collapse subproblem");
-    }
-    // check the tree of collapse subproblems has been completed
-    debug_assert!(tree[NodeIndex::new(0)].1.get().is_some());
+    let mut union_find = collapse(&mut stable);
 
     // unify all nodes of maximal dimension
     let (max_dim_index, max_dim_generator) = stable
@@ -658,7 +484,7 @@ fn collapse_base<Ix: IndexType>(graph: &CollapseGraph<Ix>) -> Result<Cocone<Ix>,
     for (
         i,
         ScaffoldNode {
-            key: CollapseNode { coordinate, .. },
+            key: ContractNode { coordinate, .. },
             diagram,
         },
     ) in graph.node_references()
@@ -721,7 +547,8 @@ fn collapse_base<Ix: IndexType>(graph: &CollapseGraph<Ix>) -> Result<Cocone<Ix>,
             &mut union_find,
             |_rn| (),
             |_re| (),
-        )?;
+        )
+        .map_err(|_err| ContractionError::LabelInconsistency)?;
     }
 
     let colimit = Generator {
@@ -746,7 +573,7 @@ fn collapse_base<Ix: IndexType>(graph: &CollapseGraph<Ix>) -> Result<Cocone<Ix>,
                             .ok_or(ContractionError::NonConnectedMaxDimensionGenerator)?]
                         .rewrite,
                     )
-                    .expect("non 0-rewrite passed to collapse_base")
+                    .expect("non 0-rewrite passed to colimit_base")
                     .label()
                     .clone();
                     Rewrite0::new(g, colimit, label)
@@ -764,8 +591,8 @@ fn collapse_base<Ix: IndexType>(graph: &CollapseGraph<Ix>) -> Result<Cocone<Ix>,
     Ok(cocone)
 }
 
-fn collapse_recursive<Ix: IndexType>(
-    graph: &CollapseGraph<Ix>,
+fn colimit_recursive<Ix: IndexType>(
+    graph: &ContractGraph<Ix>,
 ) -> Result<Cocone<Ix>, ContractionError> {
     // Input: graph of n-diagrams and n-rewrites
 
@@ -792,7 +619,7 @@ fn collapse_recursive<Ix: IndexType>(
         ..
     }: ExplosionOutput<_, _, _, ExplodedIx> = graph
         .explode(
-            |parent, CollapseNode { coordinate, .. }, si| match si {
+            |parent, ContractNode { coordinate, .. }, si| match si {
                 SliceIndex::Boundary(_) => None,
                 SliceIndex::Interior(height) => {
                     let mut coordinate = coordinate.clone();
@@ -1000,7 +827,7 @@ fn collapse_recursive<Ix: IndexType>(
             // the subproblem for each SCC is the subgraph of the exploded graph containing the SCC
             // and its adjacent regulars closed under reverse-reachability
             let mut restriction_to_exploded = IdxVec::new();
-            let restriction: Scaffold<CollapseNode, _, RestrictionIx> = exploded.filter_map(
+            let restriction: Scaffold<ContractNode, _, RestrictionIx> = exploded.filter_map(
                 |i,
                  ScaffoldNode {
                      key:
@@ -1018,7 +845,7 @@ fn collapse_recursive<Ix: IndexType>(
                         .then(|| {
                             restriction_to_exploded.push(i);
                             ScaffoldNode {
-                                key: CollapseNode {
+                                key: ContractNode {
                                     bias: graph[*parent].key.bias,
                                     coordinate: coordinate.clone(),
                                 },
@@ -1064,11 +891,11 @@ fn collapse_recursive<Ix: IndexType>(
             let restriction = restriction.filter_map(
                 |_,
                  ScaffoldNode {
-                     key: CollapseNode { bias, coordinate },
+                     key: ContractNode { bias, coordinate },
                      diagram,
                  }| {
                     ScaffoldNode {
-                        key: CollapseNode {
+                        key: ContractNode {
                             bias: bias.filter(|bias| *bias == Bias::Same),
                             coordinate: coordinate.clone(),
                         },
@@ -1078,7 +905,7 @@ fn collapse_recursive<Ix: IndexType>(
                 },
                 |_, ScaffoldEdge { rewrite, .. }| Some(rewrite.clone().into()),
             );
-            let cocone: Cocone<RestrictionIx> = collapse(&restriction)?;
+            let cocone: Cocone<RestrictionIx> = colimit(&restriction)?;
             Ok((source, cocone, target, restriction_to_exploded))
         })
         .fold_ok(vec![], |mut acc, x| {
