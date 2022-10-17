@@ -702,7 +702,7 @@ impl ProofState {
                                 DiagramN::try_from(diagram).unwrap()
                             };
 
-                            extend!(identity(info.diagram.clone()), Some("identity".to_string()));
+                            extend!(identity(info.diagram.clone()), Some("identity".to_owned()));
                         }
 
                         if let Diagram::DiagramN(d) = &info.diagram {
@@ -714,8 +714,8 @@ impl ProofState {
                                     diagram
                                 };
 
-                                extend!(bubble(d.clone()), Some("bubble".to_string()));
-                                extend!(bubble(d.inverse()), Some("inverse bubble".to_string()));
+                                extend!(bubble(d.clone()), Some("bubble".to_owned()));
+                                extend!(bubble(d.inverse()), Some("inverse bubble".to_owned()));
                             }
                         }
                     }
@@ -723,7 +723,7 @@ impl ProofState {
                         if let Diagram::DiagramN(d) = &info.diagram {
                             extend!(d.clone(), None);
                             if info.invertible {
-                                extend!(d.inverse(), Some("inverse".to_string()));
+                                extend!(d.inverse(), Some("inverse".to_owned()));
                             }
                         }
                     }

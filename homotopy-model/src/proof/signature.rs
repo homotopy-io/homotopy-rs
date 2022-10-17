@@ -143,7 +143,7 @@ impl Signature {
                 (SignatureItem::Item(info), Recolor(color)) => info.color = color,
                 (SignatureItem::Item(info), Reshape(shape)) => info.shape = shape,
                 (SignatureItem::Item(info), ShowSourceTarget(_, show)) => {
-                    info.single_preview = !show
+                    info.single_preview = !show;
                 }
                 (SignatureItem::Folder(info), Rename(name)) => info.name = name,
                 (_, _) => {}
@@ -217,7 +217,7 @@ impl Signature {
                                 ..info
                             })
                         }
-                        _ => item,
+                        SignatureItem::Folder(_) => item,
                     });
                 }
                 SignatureItemEdit::MakeInvertible(g, true) => {
@@ -230,7 +230,7 @@ impl Signature {
                             };
                             SignatureItem::Item(GeneratorInfo { invertible, ..info })
                         }
-                        _ => item,
+                        SignatureItem::Folder(_) => item,
                     });
                 }
                 _ => self.edit(*node, edit.clone())?,
