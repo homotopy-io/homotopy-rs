@@ -410,8 +410,7 @@ where
     let dimension = diagram.dimension();
 
     // Construct the fully exploded scaffold of the diagram.
-    // Node key = stratum, edge key = whether the edge is an atomic edge.
-    let mut scaffold: Scaffold<usize, bool> = Scaffold::default();
+    let mut scaffold: Scaffold<usize> = Scaffold::default(); // node key = stratum
     scaffold.add_node(ScaffoldNode::new(0, diagram));
     for _ in 0..dimension {
         scaffold = scaffold
@@ -421,8 +420,8 @@ where
                     SliceIndex::Interior(Height::Regular(_)) => Some(*key),
                     SliceIndex::Interior(Height::Singular(_)) => Some(*key + 1),
                 },
-                |_, _, _| Some(true),
-                |_, atomic, r| Some(*atomic && r.is_atomic()),
+                |_, _, _| Some(()),
+                |_, _, _| Some(()),
             )
             .unwrap();
     }
@@ -438,10 +437,7 @@ where
             neighbourhoods[n].push(vec![n]);
         } else {
             let mut neighbourhood = vec![vec![n]];
-            for e in scaffold
-                .edges_directed(n, petgraph::Direction::Incoming)
-                .filter(|e| e.weight().key)
-            {
+            for e in scaffold.edges_directed(n, petgraph::Direction::Incoming) {
                 for simplex in &neighbourhoods[e.source()] {
                     neighbourhood.push([simplex.as_slice(), &[n]].concat());
                 }
