@@ -1,3 +1,4 @@
+use homotopy_core::typecheck::{typecheck, Mode};
 pub use homotopy_model::{history::Proof, proof::Action, serialize};
 use insta::assert_debug_snapshot;
 
@@ -9,6 +10,11 @@ fn actions_test_helper(json: &str) -> Proof {
         proof
             .update(a)
             .expect("Actions should replay without errors.");
+        // Typecheck as we go along
+        if let Some(workspace) = &proof.workspace {
+            typecheck(&workspace.diagram, &proof.signature, Mode::Deep)
+                .unwrap_or_else(|_| panic!("Typechecking failure at action: {:?}.", a));
+        }
     }
 
     proof
