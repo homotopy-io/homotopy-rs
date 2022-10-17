@@ -7,6 +7,7 @@ pub mod antipushout;
 pub mod attach;
 pub mod bubble;
 pub mod check;
+pub mod collapse;
 pub mod common;
 pub mod complex;
 pub mod contraction;
