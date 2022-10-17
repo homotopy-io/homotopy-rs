@@ -66,6 +66,7 @@ impl AnimationCurve {
 }
 
 impl Scene {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         ctx: &GlCtx,
         diagram: &Diagram,

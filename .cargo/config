@@ -1,0 +1,48 @@
+[build]
+rustflags = [
+    "-Wclippy::pedantic",
+    # "-Wclippy::cargo", // turn this on before release
+    "-Wclippy::dbg_macro",
+    "-Wclippy::disallowed_types",
+    "-Wclippy::decimal_literal_representation",
+    "-Wclippy::exit",
+    "-Wclippy::expect_used",
+    "-Wclippy::get_unwrap",
+    "-Wclippy::let_underscore_must_use",
+    "-Wclippy::map_err_ignore",
+    "-Wclippy::mem_forget",
+    "-Wclippy::multiple_inherent_impl",
+    "-Wclippy::print_stderr",
+    "-Wclippy::rc_buffer",
+    "-Wclippy::rest_pat_in_fully_bound_structs",
+    "-Wclippy::semicolon_if_nothing_returned",
+    "-Wclippy::str_to_string",
+    "-Wclippy::string_to_string",
+    "-Wclippy::todo",
+    "-Wclippy::unimplemented",
+    "-Wclippy::unneeded_field_pattern",
+    "-Wclippy::use_debug",
+
+    # pedantic exceptions
+    "-Aclippy::cast_possible_truncation",
+    "-Aclippy::cast_possible_wrap",
+    "-Aclippy::cast_precision_loss",
+    "-Aclippy::cast_sign_loss",
+    "-Aclippy::default_trait_access",
+    "-Aclippy::doc_markdown",
+    "-Aclippy::missing_errors_doc",
+    "-Aclippy::missing_panics_doc",
+    "-Aclippy::module_name_repetitions",
+    "-Aclippy::must_use_candidate",
+    "-Aclippy::needless_continue",
+    "-Aclippy::range_plus_one",
+    "-Aclippy::redundant_else",
+    "-Aclippy::similar_names",
+    "-Aclippy::too_many_lines",
+
+    "-Aclippy::expect_used",
+    "-Aclippy::multiple_inherent_impl",
+    "-Aclippy::shadow_unrelated",
+    "-Aclippy::use_debug",
+    "-Aclippy::use_self", # https://github.com/rust-lang/rust-clippy/issues/6902
+]

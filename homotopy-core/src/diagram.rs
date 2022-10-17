@@ -1,12 +1,12 @@
 use std::{
     cell::RefCell,
-    collections::HashSet,
     convert::{From, Into, TryFrom},
     fmt,
     hash::Hash,
 };
 
 use hashconsing::{HConsed, HConsign, HashConsign};
+use homotopy_common::hash::FastHashSet;
 // used for debugging only
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -51,12 +51,12 @@ impl Diagram {
     }
 
     /// Returns all the generators mentioned by this diagram.
-    pub fn generators(&self) -> HashSet<Generator> {
+    pub fn generators(&self) -> FastHashSet<Generator> {
         use Diagram::{Diagram0, DiagramN};
         fn add_generators(
             diagram: &Diagram,
-            generators: &mut HashSet<Generator>,
-            visited: &mut HashSet<Diagram>,
+            generators: &mut FastHashSet<Generator>,
+            visited: &mut FastHashSet<Diagram>,
         ) {
             match diagram {
                 Diagram0(g) => {
@@ -73,8 +73,8 @@ impl Diagram {
                 }
             }
         }
-        let mut gs: HashSet<Generator> = Default::default();
-        let mut visited: HashSet<Self> = Default::default();
+        let mut gs: FastHashSet<Generator> = Default::default();
+        let mut visited: FastHashSet<Self> = Default::default();
         add_generators(self, &mut gs, &mut visited);
         gs
     }

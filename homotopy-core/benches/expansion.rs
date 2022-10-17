@@ -1,7 +1,8 @@
 use criterion::{criterion_group, Criterion};
 use homotopy_core::{
+    examples,
     typecheck::{typecheck, Mode},
-    *,
+    Bias, Boundary, Direction, Height,
 };
 
 fn expand_matchsticks(crit: &mut Criterion) {
@@ -26,7 +27,7 @@ fn expand_matchsticks(crit: &mut Criterion) {
                     &sig,
                 )
                 .unwrap()
-        })
+        });
     });
 
     let expanded = contracted
@@ -40,7 +41,7 @@ fn expand_matchsticks(crit: &mut Criterion) {
         .unwrap()
         .into();
     group.bench_function("typecheck", |b| {
-        b.iter(|| typecheck(&expanded, &sig, Mode::Deep).unwrap())
+        b.iter(|| typecheck(&expanded, &sig, Mode::Deep).unwrap());
     });
 
     group.finish();

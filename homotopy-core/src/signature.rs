@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use homotopy_common::hash::FastHashMap;
 
 use crate::{diagram::NewDiagramError, Diagram, DiagramN, Generator};
 
@@ -21,11 +21,11 @@ where
 }
 
 /// Helper struct for building signatures in tests and benchmarks.
-pub struct SignatureBuilder(pub HashMap<Generator, Diagram>);
+pub struct SignatureBuilder(pub FastHashMap<Generator, Diagram>);
 
 impl SignatureBuilder {
     pub fn new() -> Self {
-        Self(HashMap::new())
+        Self(Default::default())
     }
 
     pub fn add_zero(&mut self) -> Diagram {

@@ -1,7 +1,8 @@
 use criterion::{criterion_group, BenchmarkId, Criterion};
 use homotopy_core::{
+    examples,
     typecheck::{typecheck, Mode},
-    *,
+    Bias, Boundary,
 };
 
 fn contract_scalar(crit: &mut Criterion) {
@@ -13,14 +14,14 @@ fn contract_scalar(crit: &mut Criterion) {
             diagram
                 .identity()
                 .contract(Boundary::Target.into(), &[], 0, Some(Bias::Lower), &sig)
-        })
+        });
     });
     group.bench_function("right", |b| {
         b.iter(|| {
             diagram
                 .identity()
                 .contract(Boundary::Target.into(), &[], 0, Some(Bias::Higher), &sig)
-        })
+        });
     });
 
     group.finish();
@@ -35,7 +36,7 @@ fn contract_beads(crit: &mut Criterion) {
             diagram
                 .identity()
                 .contract(Boundary::Target.into(), &[], 1, None, &sig)
-        })
+        });
     });
 
     let contracted = diagram
@@ -44,7 +45,7 @@ fn contract_beads(crit: &mut Criterion) {
         .unwrap()
         .into();
     group.bench_function("typecheck", |b| {
-        b.iter(|| typecheck(&contracted, &sig, Mode::Deep).unwrap())
+        b.iter(|| typecheck(&contracted, &sig, Mode::Deep).unwrap());
     });
 
     group.finish();
@@ -59,7 +60,7 @@ fn contract_stacks(crit: &mut Criterion) {
             diagram
                 .identity()
                 .contract(Boundary::Target.into(), &[], 0, None, &sig)
-        })
+        });
     });
 
     let contracted = diagram
@@ -68,7 +69,7 @@ fn contract_stacks(crit: &mut Criterion) {
         .unwrap()
         .into();
     group.bench_function("typecheck", |b| {
-        b.iter(|| typecheck(&contracted, &sig, Mode::Deep).unwrap())
+        b.iter(|| typecheck(&contracted, &sig, Mode::Deep).unwrap());
     });
     group.finish();
 }
@@ -91,7 +92,7 @@ fn contract_high_dimensions(crit: &mut Criterion) {
                                 .unwrap();
                         }
                     }
-                })
+                });
             },
         );
     }

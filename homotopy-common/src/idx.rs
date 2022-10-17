@@ -181,6 +181,7 @@ where
     where
         F: FnMut(T) -> U,
     {
+        #[allow(clippy::redundant_closure)]
         IdxVec {
             raw: self.raw.into_iter().map(|x| f(x)).collect(),
             _phantom: PhantomData::default(),

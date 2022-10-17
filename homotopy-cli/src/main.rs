@@ -89,7 +89,7 @@ fn main() -> anyhow::Result<()> {
         None => Default::default(),
     };
 
-    for a in actions.iter() {
+    for a in &actions {
         println!("Performing action: {:?}", a);
         proof.update(a)?;
     }

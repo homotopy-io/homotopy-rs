@@ -583,9 +583,7 @@ fn drag_to_homotopy<const N: usize>(
     let horizontal = !(PI / 4.0..(3.0 * PI) / 4.0).contains(&abs_radians);
 
     let point = match simplex {
-        Simplex::Surface([p0, _, _]) => p0,
-        Simplex::Wire([p0, _]) => p0,
-        Simplex::Point([p0]) => p0,
+        Simplex::Surface([p0, _, _]) | Simplex::Wire([p0, _]) | Simplex::Point([p0]) => p0,
     };
     log::debug!("Point: {:?}", point);
 

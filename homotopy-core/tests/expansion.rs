@@ -1,11 +1,12 @@
 use homotopy_core::{
+    examples,
     typecheck::{typecheck, Mode},
-    *,
+    Bias, Boundary, Direction, Height,
 };
 
 #[test]
 fn matchsticks() {
-    use Height::*;
+    use Height::Singular;
 
     let (sig, diagram) = examples::matchsticks();
 

@@ -206,6 +206,7 @@ impl<T> Tree<T> {
     where
         F: FnMut(T) -> U,
     {
+        #[allow(clippy::redundant_closure)]
         Tree {
             root: self.root,
             nodes: self.nodes.map(|nd| nd.map(|x| f(x))),

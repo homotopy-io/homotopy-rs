@@ -291,7 +291,6 @@ impl ProofState {
             SliceIndex::{Boundary, Interior},
         };
         match *action {
-            Action::CreateGeneratorZero | Action::Select(_) => true,
             Action::SetBoundary(boundary) => self.workspace.as_ref().map_or(false, |ws| {
                 self.boundary.as_ref().map_or(true, |selected| {
                     selected.boundary == boundary || globularity(&selected.diagram, &ws.diagram)

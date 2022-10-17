@@ -1,5 +1,6 @@
-use std::{collections::HashMap, ops::Deref};
+use std::ops::Deref;
 
+use homotopy_common::hash::FastHashMap;
 use ultraviolet::Vec4;
 use web_sys::WebGl2RenderingContext;
 
@@ -75,7 +76,7 @@ pub struct Draw<'a> {
     program: &'a Program,
     vertex_array: &'a VertexArray,
     depth_test: DepthTest,
-    uniforms: HashMap<&'static str, Box<dyn Uniformable>>,
+    uniforms: FastHashMap<&'static str, Box<dyn Uniformable>>,
     textures: Vec<&'a Texture>,
 }
 

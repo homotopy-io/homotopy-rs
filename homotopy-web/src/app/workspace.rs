@@ -90,6 +90,7 @@ impl Component for WorkspaceView {
             }
             _ => Default::default(),
         };
+        #[allow(clippy::let_unit_value)]
         let toolbar = workspace.as_ref().map_or_else(
             || html! {},
             |ws| {

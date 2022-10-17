@@ -303,6 +303,9 @@ mod test {
 
         // unsatisfiable constraints
         let invalid_ms = MonotoneIterator::new(false, &[1..2, 0..1]);
-        assert!(invalid_ms.collect::<Vec<_>>().is_empty());
+        #[allow(clippy::needless_collect)]
+        {
+            assert!(invalid_ms.collect::<Vec<_>>().is_empty());
+        }
     }
 }

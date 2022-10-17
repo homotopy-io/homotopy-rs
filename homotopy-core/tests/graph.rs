@@ -77,8 +77,9 @@ proptest! {
         prop_assert_eq!(reconstructed_target, target);
 
         let reconstructed_rewrite = {
-            let mut _regular_slices: Vec<Vec<Rewrite>> = vec![vec![]];
+            let mut regular_slices: Vec<Vec<Rewrite>> = vec![vec![]];
             let mut singular_slices: Vec<Vec<Rewrite>> = vec![vec![]];
+            #[allow(clippy::match_same_arms)]
             edge_to_edges[rwr]
                 .iter()
                 .map(|&e| {
@@ -98,7 +99,7 @@ proptest! {
                         ExternalRewrite::UnitSlice | ExternalRewrite::RegularSlice,
                         ExternalRewrite::Boundary(_),
                     ) => {
-                        _regular_slices.last_mut().unwrap().push(cur.1);
+                        regular_slices.last_mut().unwrap().push(cur.1);
                     }
                     (ExternalRewrite::SingularSlice(_), ExternalRewrite::Boundary(_)) => {
                         singular_slices.last_mut().unwrap().push(cur.1);
@@ -109,12 +110,12 @@ proptest! {
                         ExternalRewrite::RegularSlice,
                         ExternalRewrite::UnitSlice | ExternalRewrite::RegularSlice,
                     ) => {
-                        _regular_slices.last_mut().unwrap().push(cur.1);
-                        _regular_slices.push(vec![]);
+                        regular_slices.last_mut().unwrap().push(cur.1);
+                        regular_slices.push(vec![]);
                         singular_slices.push(vec![]);
                     }
                     (ExternalRewrite::RegularSlice, ExternalRewrite::SingularSlice(_)) => {
-                        _regular_slices.last_mut().unwrap().push(cur.1);
+                        regular_slices.last_mut().unwrap().push(cur.1);
                     }
                     (ExternalRewrite::SingularSlice(_), ExternalRewrite::RegularSlice) => {
                         singular_slices.last_mut().unwrap().push(cur.1);
@@ -124,7 +125,7 @@ proptest! {
                         ExternalRewrite::UnitSlice | ExternalRewrite::SingularSlice(_),
                     ) => {
                         singular_slices.last_mut().unwrap().push(cur.1);
-                        _regular_slices.push(vec![]);
+                        regular_slices.push(vec![]);
                         singular_slices.push(vec![]);
                     }
                     _ => unreachable!(),

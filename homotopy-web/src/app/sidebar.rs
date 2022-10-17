@@ -80,8 +80,7 @@ impl DrawerViewSize {
     fn snap_width(self) -> Option<i32> {
         match self {
             Self::TemporarilyHidden => Some(0),
-            Self::Regular => None,
-            Self::Expanded => None,
+            Self::Regular | Self::Expanded => None,
         }
     }
 }

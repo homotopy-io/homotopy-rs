@@ -1,6 +1,5 @@
 use std::{
     cell::RefCell,
-    collections::HashMap,
     convert::{Into, TryInto},
     rc::Rc,
 };
@@ -149,7 +148,7 @@ fn target_points(rewrites: &[Rewrite]) -> Vec<(Point, Generator)> {
         .iter()
         .all(|r| r.dimension() == rewrites[0].dimension()));
 
-    let mut target_rewrites: HashMap<usize, Vec<Rewrite>> = HashMap::new();
+    let mut target_rewrites: FastHashMap<usize, Vec<Rewrite>> = Default::default();
 
     for rewrite in rewrites.iter() {
         let rewrite: RewriteN = rewrite.clone().try_into().unwrap();

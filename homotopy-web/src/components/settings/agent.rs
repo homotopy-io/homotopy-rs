@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-
+use homotopy_common::hash::FastHashMap;
 use yew_agent::{Agent, AgentLink, Context, HandlerId};
 
 use super::KeyStore;
@@ -16,7 +15,7 @@ where
 {
     link: AgentLink<Self>,
     store: S,
-    handlers: HashMap<S::Key, Vec<HandlerId>>,
+    handlers: FastHashMap<S::Key, Vec<HandlerId>>,
 }
 
 impl<S> Agent for SettingsAgent<S>
@@ -32,7 +31,7 @@ where
         Self {
             link,
             store: Default::default(),
-            handlers: HashMap::new(),
+            handlers: Default::default(),
         }
     }
 

@@ -1,8 +1,9 @@
 use homotopy_core::{
+    examples,
     typecheck::{typecheck, Mode},
-    *,
+    Bias, Boundary,
 };
-use insta::*;
+use insta::assert_debug_snapshot;
 
 #[test]
 fn scalar() {

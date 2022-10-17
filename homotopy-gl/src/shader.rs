@@ -1,5 +1,6 @@
-use std::{collections::HashMap, rc::Rc};
+use std::rc::Rc;
 
+use homotopy_common::hash::FastHashMap;
 use ultraviolet::{Mat4, Vec2, Vec3};
 use web_sys::{WebGl2RenderingContext, WebGlProgram, WebGlShader, WebGlUniformLocation};
 
@@ -45,8 +46,8 @@ struct ProgramData {
 
     vertex_shader: VertexShader,
     fragment_shader: FragmentShader,
-    attributes: HashMap<&'static str, u32>,
-    uniforms: HashMap<&'static str, WebGlUniformLocation>,
+    attributes: FastHashMap<&'static str, u32>,
+    uniforms: FastHashMap<&'static str, WebGlUniformLocation>,
 
     webgl_program: WebGlProgram,
 }
@@ -137,7 +138,7 @@ impl Program {
         uniforms: Vec<&'static str>,
     ) -> Result<Self> {
         let attributes = {
-            let mut map = HashMap::new();
+            let mut map: FastHashMap<_, _> = Default::default();
 
             for (i, attribute) in attributes.into_iter().enumerate() {
                 if map.insert(attribute, i as u32).is_some() {
@@ -160,7 +161,7 @@ impl Program {
             vertex_shader: vertex_shader.clone(),
             fragment_shader: fragment_shader.clone(),
             attributes,
-            uniforms: HashMap::new(),
+            uniforms: Default::default(),
             webgl_program: allocated,
         };
 

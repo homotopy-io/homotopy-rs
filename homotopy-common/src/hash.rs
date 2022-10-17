@@ -1,10 +1,7 @@
-use std::{
-    collections::{HashMap, HashSet},
-    hash::BuildHasherDefault,
-};
+use std::hash::BuildHasherDefault;
 
-use rustc_hash::FxHasher;
+use rustc_hash::{FxHashMap, FxHashSet, FxHasher};
 
 pub type FastHasher = BuildHasherDefault<FxHasher>;
-pub type FastHashMap<K, V> = HashMap<K, V, FastHasher>;
-pub type FastHashSet<K> = HashSet<K, FastHasher>;
+pub type FastHashMap<K, V> = FxHashMap<K, V>;
+pub type FastHashSet<K> = FxHashSet<K>;

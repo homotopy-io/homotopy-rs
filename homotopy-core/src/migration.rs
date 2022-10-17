@@ -1,7 +1,8 @@
-use std::{collections::HashMap, io, io::prelude::*};
+use std::{io, io::prelude::*};
 
 use base64::decode;
 use flate2::bufread::ZlibDecoder;
+use homotopy_common::hash::FastHashMap;
 use serde::Deserialize;
 use serde_json::{from_value, Value};
 use thiserror::Error;
@@ -20,13 +21,13 @@ pub struct OldProof {
     #[serde(skip)]
     pub workspace: Option<OldWorkspace>,
     #[serde(skip)]
-    generators: HashMap<usize, Generator>,
+    generators: FastHashMap<usize, Generator>,
     #[serde(skip)]
-    diagrams: HashMap<usize, Diagram>,
+    diagrams: FastHashMap<usize, Diagram>,
     #[serde(skip)]
-    cones: HashMap<usize, Cone>,
+    cones: FastHashMap<usize, Cone>,
     #[serde(skip)]
-    rewrites: HashMap<usize, Rewrite>,
+    rewrites: FastHashMap<usize, Rewrite>,
 }
 
 pub struct OldGeneratorInfo {
@@ -89,7 +90,7 @@ impl OldProof {
 
     // turns an encoded array at [index] to a vec
     fn generate_vec(&mut self, index: usize) -> Result<Vec<Value>> {
-        let map: HashMap<String, Value> = from_value(self.stored[index][1]["f"].clone())?;
+        let map: FastHashMap<String, Value> = from_value(self.stored[index][1]["f"].clone())?;
         let mut v: Vec<(usize, Value)> = map
             .into_iter()
             .map(|x| (x.0.parse().unwrap(), x.1))

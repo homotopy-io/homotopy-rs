@@ -1,5 +1,5 @@
-use homotopy_core::{serialize::*, *};
-use insta::*;
+use homotopy_core::{examples, serialize::Store, Diagram};
+use insta::assert_debug_snapshot;
 
 #[test]
 fn serialize_associator() {
