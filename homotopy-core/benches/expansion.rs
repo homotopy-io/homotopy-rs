@@ -1,5 +1,9 @@
 use criterion::{criterion_group, Criterion};
-use homotopy_core::{examples, Bias, Boundary, Diagram, Direction, Height};
+use homotopy_core::{
+    examples,
+    typecheck::{typecheck, Mode},
+    Bias, Boundary, Direction, Height,
+};
 
 fn expand_matchsticks(crit: &mut Criterion) {
     use Height::Singular;
@@ -26,7 +30,7 @@ fn expand_matchsticks(crit: &mut Criterion) {
         });
     });
 
-    let expanded: Diagram = contracted
+    let expanded = contracted
         .identity()
         .expand(
             Boundary::Target.into(),
@@ -36,6 +40,9 @@ fn expand_matchsticks(crit: &mut Criterion) {
         )
         .unwrap()
         .into();
+    group.bench_function("typecheck", |b| {
+        b.iter(|| typecheck(&expanded, &sig, Mode::Deep).unwrap());
+    });
 
     group.finish();
 }
