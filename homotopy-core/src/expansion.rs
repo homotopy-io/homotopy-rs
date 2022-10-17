@@ -12,6 +12,7 @@ use crate::{
     factorization::factorize,
     rewrite::{Cone, Cospan, Rewrite, RewriteN},
     signature::Signature,
+    typecheck::{typecheck_cospan, TypeError},
 };
 
 #[derive(Debug, Error)]
@@ -37,6 +38,9 @@ pub enum ExpansionError {
     #[error("expansion failed to propagate")]
     FailedToPropagate,
 
+    #[error("expansion is ill-typed: {0}")]
+    IllTyped(#[from] TypeError),
+
     #[error("invalid boundary path provided to expansion")]
     Dimension(#[from] DimensionError),
 }
@@ -47,7 +51,7 @@ impl DiagramN {
         boundary_path: BoundaryPath,
         interior_path: &[Height],
         direction: Direction,
-        _signature: &S,
+        signature: &S,
     ) -> Result<Self, ExpansionError>
     where
         S: Signature,
@@ -65,6 +69,8 @@ impl DiagramN {
                     backward: expand,
                 },
             };
+
+            typecheck_cospan(slice, cospan.clone(), boundary_path.boundary(), signature)?;
 
             Ok(vec![cospan])
         })
