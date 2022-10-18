@@ -3,7 +3,6 @@ use homotopy_web::model::{Action::Proof, State};
 
 #[test]
 #[ignore]
-#[allow(clippy::diverging_sub_expression)]
 fn action() {
     let data: SerializedData = std::env::var("HOMOTOPY_IMPORT")
         .map_or(Err(futures::io::ErrorKind::NotFound.into()), |fp| {

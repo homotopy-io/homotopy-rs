@@ -118,7 +118,6 @@ pub enum HistoryError {
 }
 
 impl History {
-    #[allow(clippy::option_if_let_else)]
     pub fn with_proof<F, U>(&self, f: F) -> Option<U>
     where
         F: Fn(&Proof) -> U,

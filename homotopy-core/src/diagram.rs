@@ -230,7 +230,6 @@ impl DiagramN {
         Ok(Self::new_unsafe(source, vec![cospan]))
     }
 
-    #[allow(clippy::expect_used, clippy::let_and_return)]
     pub fn new(source: Diagram, cospans: Vec<Cospan>) -> Self {
         let diagram = Self::new_unsafe(source, cospans);
         #[cfg(feature = "safety-checks")]

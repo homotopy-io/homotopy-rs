@@ -177,13 +177,12 @@ where
     }
 
     #[inline]
-    pub fn map<F, U>(self, mut f: F) -> IdxVec<I, U>
+    pub fn map<F, U>(self, f: F) -> IdxVec<I, U>
     where
         F: FnMut(T) -> U,
     {
-        #[allow(clippy::redundant_closure)]
         IdxVec {
-            raw: self.raw.into_iter().map(|x| f(x)).collect(),
+            raw: self.raw.into_iter().map(f).collect(),
             _phantom: PhantomData::default(),
         }
     }
