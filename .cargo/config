@@ -1,7 +1,7 @@
 [build]
 rustflags = [
     "-Wclippy::pedantic",
-    # "-Wclippy::cargo", // turn this on before release
+    "-Wclippy::cargo",
 
     # restrictions
     "-Wclippy::dbg_macro",
@@ -24,7 +24,8 @@ rustflags = [
     "-Wclippy::unneeded_field_pattern",
     "-Wclippy::unseparated_literal_suffix",
 
-    # pedantic exceptions
+    # exceptions
+    "-Aclippy::cargo_common_metadata",
     "-Aclippy::cast_possible_truncation",
     "-Aclippy::cast_possible_wrap",
     "-Aclippy::cast_precision_loss",
