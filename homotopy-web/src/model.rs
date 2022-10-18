@@ -223,7 +223,7 @@ impl State {
                         proof.update(a)?;
                         self.history.add(a.clone(), proof.clone());
                     } else {
-                        Err(ModelError::Proof(proof::ModelError::InvalidAction))?;
+                        return Err(ModelError::Proof(proof::ModelError::InvalidAction));
                     }
                 }
             }
