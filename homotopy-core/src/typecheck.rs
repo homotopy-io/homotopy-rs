@@ -17,7 +17,7 @@ use crate::{
     rewrite::{Cone, Cospan, Label, Rewrite, RewriteN},
     scaffold::{Explodable, Scaffold, ScaffoldNode},
     signature::Signature,
-    Boundary, Orientation, Rewrite0, SliceIndex,
+    Boundary, Rewrite0, SliceIndex,
 };
 
 type Point = Vec<SingularHeight>;
@@ -82,13 +82,10 @@ where
             let backward = restrict_rewrite(&cospan.backward, &target_embedding);
             let restricted = DiagramN::new(source, vec![Cospan { forward, backward }]);
             let signature_diagram = signature
-                .generator(Generator {
-                    orientation: Orientation::Positive,
-                    ..generator
-                })
+                .diagram(generator)
                 .ok_or(TypeError::UnknownGenerator(generator))?;
 
-            if collapse_simplicies(restricted) != collapse_simplicies(signature_diagram) {
+            if collapse_simplicies(restricted) != collapse_simplicies(signature_diagram.clone()) {
                 return Err(TypeError::IllTyped);
             }
         }

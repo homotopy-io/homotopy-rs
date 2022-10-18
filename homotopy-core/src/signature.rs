@@ -1,32 +1,12 @@
-use homotopy_common::hash::FastHashMap;
-
 use crate::{diagram::NewDiagramError, Diagram, DiagramN, Generator};
 
 pub trait Signature {
-    fn generator(&self, g: Generator) -> Option<Diagram>;
+    fn diagram(&self, g: Generator) -> Option<&Diagram>;
     fn is_invertible(&self, g: Generator) -> Option<bool>;
 }
 
-#[derive(Clone, Copy)]
-pub struct SignatureClosure<F>(pub F)
-where
-    F: Fn(Generator) -> Option<Diagram>;
-
-impl<F> Signature for SignatureClosure<F>
-where
-    F: Fn(Generator) -> Option<Diagram>,
-{
-    fn generator(&self, g: Generator) -> Option<Diagram> {
-        self.0(g)
-    }
-
-    fn is_invertible(&self, g: Generator) -> Option<bool> {
-        Some(g.dimension > 0)
-    }
-}
-
 /// Helper struct for building signatures in tests and benchmarks.
-pub struct SignatureBuilder(pub FastHashMap<Generator, Diagram>);
+pub struct SignatureBuilder(pub Vec<Diagram>);
 
 impl SignatureBuilder {
     pub fn new() -> Self {
@@ -35,7 +15,7 @@ impl SignatureBuilder {
 
     pub fn add_zero(&mut self) -> Diagram {
         let generator = Generator::new(self.0.len(), 0);
-        self.0.insert(generator, generator.into());
+        self.0.push(generator.into());
         generator.into()
     }
 
@@ -48,7 +28,7 @@ impl SignatureBuilder {
         let target: Diagram = target.into();
         let generator = Generator::new(self.0.len(), source.dimension() + 1);
         let diagram = DiagramN::from_generator(generator, source, target)?;
-        self.0.insert(generator, diagram.clone().into());
+        self.0.push(diagram.clone().into());
         Ok(diagram)
     }
 }
@@ -60,8 +40,8 @@ impl Default for SignatureBuilder {
 }
 
 impl Signature for SignatureBuilder {
-    fn generator(&self, g: Generator) -> Option<Diagram> {
-        self.0.get(&g).cloned()
+    fn diagram(&self, g: Generator) -> Option<&Diagram> {
+        self.0.get(g.id)
     }
 
     fn is_invertible(&self, g: Generator) -> Option<bool> {
