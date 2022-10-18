@@ -168,47 +168,46 @@ pub(crate) fn collapse<V: Clone + Cartesian<Height>, E: Clone, Ix: IndexType>(
         if nodes.is_empty() {
             // n is a leaf
             continue;
-        } else {
-            let mut quotient: Vec<_> = Default::default();
-            // find collapsible edges wrt nodes
-            for e in graph.edge_references().filter(|e| {
-                // e is contained within nodes
-                nodes.contains(&e.source()) && nodes.contains(&e.target())
-                // e is an identity rewrite
-                && <&Rewrite0>::try_from(&e.weight().rewrite).unwrap().0.as_ref().map_or(true, |(s, t, _)| s.id == t.id)
-                // check triangles within nodes which might refute collapsibility of e
-                && graph.edges_directed(e.source(), Incoming).all(|p| {
-                    if let Some(c) = graph.find_edge(p.source(), e.target()) {
-                        <&Rewrite0>::try_from(&p.weight().rewrite).unwrap().label() == <&Rewrite0>::try_from(&graph.edge_weight(c).unwrap().rewrite).unwrap().label()
-                    } else {
-                        true
-                    }
-                })
-                && graph.edges_directed(e.target(), Outgoing).all(|n| {
-                    if let Some(c) = graph.find_edge(e.source(), n.target()) {
-                        <&Rewrite0>::try_from(&n.weight().rewrite).unwrap().label() == <&Rewrite0>::try_from(&graph.edge_weight(c).unwrap().rewrite).unwrap().label()
-                    } else {
-                        true
-                    }
-                })
-            }) {
-                // e is collapsible
-                quotient.push((e.source(), e.target()));
-            }
+        }
+        let mut quotient: Vec<_> = Default::default();
+        // find collapsible edges wrt nodes
+        for e in graph.edge_references().filter(|e| {
+            // e is contained within nodes
+            nodes.contains(&e.source()) && nodes.contains(&e.target())
+            // e is an identity rewrite
+            && <&Rewrite0>::try_from(&e.weight().rewrite).unwrap().0.as_ref().map_or(true, |(s, t, _)| s.id == t.id)
+            // check triangles within nodes which might refute collapsibility of e
+            && graph.edges_directed(e.source(), Incoming).all(|p| {
+                if let Some(c) = graph.find_edge(p.source(), e.target()) {
+                    <&Rewrite0>::try_from(&p.weight().rewrite).unwrap().label() == <&Rewrite0>::try_from(&graph.edge_weight(c).unwrap().rewrite).unwrap().label()
+                } else {
+                    true
+                }
+            })
+            && graph.edges_directed(e.target(), Outgoing).all(|n| {
+                if let Some(c) = graph.find_edge(e.source(), n.target()) {
+                    <&Rewrite0>::try_from(&n.weight().rewrite).unwrap().label() == <&Rewrite0>::try_from(&graph.edge_weight(c).unwrap().rewrite).unwrap().label()
+                } else {
+                    true
+                }
+            })
+        }) {
+            // e is collapsible
+            quotient.push((e.source(), e.target()));
+        }
 
-            for (s, t) in quotient {
-                unify(
-                    graph,
-                    s,
-                    t,
-                    &mut union_find,
-                    |rn| {
-                        nodes.retain(|&n| n != rn);
-                    },
-                    |_re| (),
-                )
-                .expect("non-determinism in collapse; edge ({s}, {t}) has become uncollapsible");
-            }
+        for (s, t) in quotient {
+            unify(
+                graph,
+                s,
+                t,
+                &mut union_find,
+                |rn| {
+                    nodes.retain(|&n| n != rn);
+                },
+                |_re| (),
+            )
+            .expect("non-determinism in collapse; edge ({s}, {t}) has become uncollapsible");
         }
         tree[n]
             .1

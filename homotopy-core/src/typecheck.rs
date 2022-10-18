@@ -299,7 +299,8 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
             for target_height in rewrite.targets() {
                 if target_height < *height {
                     continue;
-                } else if target_height >= height + slices.len() {
+                }
+                if target_height >= height + slices.len() {
                     break;
                 }
 
