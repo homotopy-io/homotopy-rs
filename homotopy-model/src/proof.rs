@@ -12,7 +12,6 @@ use homotopy_core::{
     contraction::ContractionError,
     diagram::{globularity, NewDiagramError},
     expansion::ExpansionError,
-    signature::SignatureClosure,
     Diagram, DiagramN,
 };
 use im::Vector;
@@ -919,13 +918,6 @@ impl ProofState {
     }
 
     fn homotopy_expansion(&mut self, homotopy: &Expand) -> Result<(), ModelError> {
-        let signature = &self.signature;
-        let signature = SignatureClosure(|generator| {
-            signature
-                .generator_info(generator)
-                .map(|gi| gi.diagram.clone())
-        });
-
         if let Some(workspace) = &mut self.workspace {
             let diagram: DiagramN = workspace.diagram.clone().try_into()?;
 
@@ -942,7 +934,7 @@ impl ProofState {
                     boundary_path,
                     &interior_path,
                     homotopy.direction,
-                    &signature,
+                    &self.signature,
                 )?;
                 workspace.diagram = expanded.into();
             } else {
@@ -950,7 +942,7 @@ impl ProofState {
                     Boundary::Target.into(),
                     &interior_path,
                     homotopy.direction,
-                    &signature,
+                    &self.signature,
                 )?;
                 workspace.diagram = expanded.target();
             }
@@ -966,15 +958,6 @@ impl ProofState {
     }
 
     fn homotopy_contraction(&mut self, homotopy: &Contract) -> Result<(), ModelError> {
-        // TODO: Proper errors
-
-        let signature = &self.signature;
-        let signature = SignatureClosure(|generator| {
-            signature
-                .generator_info(generator)
-                .map(|gi| gi.diagram.clone())
-        });
-
         if let Some(workspace) = &mut self.workspace {
             let diagram: DiagramN = workspace.diagram.clone().try_into()?;
             let location = {
@@ -1001,7 +984,7 @@ impl ProofState {
 
             if let Some(boundary_path) = boundary_path {
                 let contractum = diagram
-                    .contract(boundary_path, &interior_path, height, bias, &signature)
+                    .contract(boundary_path, &interior_path, height, bias, &self.signature)
                     .map_err(ModelError::ContractionError)?;
                 workspace.diagram = contractum.into();
             } else {
@@ -1012,7 +995,7 @@ impl ProofState {
                         &interior_path,
                         height,
                         bias,
-                        &signature,
+                        &self.signature,
                     )
                     .map_err(ModelError::ContractionError)?;
                 workspace.diagram = contractum.target();

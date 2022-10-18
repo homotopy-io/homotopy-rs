@@ -302,12 +302,12 @@ impl Signature {
 }
 
 impl homotopy_core::signature::Signature for Signature {
-    fn generator(&self, g: Generator) -> Option<Diagram> {
-        Some(self.generator_info(g)?.diagram.clone())
+    fn diagram(&self, g: Generator) -> Option<&Diagram> {
+        self.generator_info(g).map(|info| &info.diagram)
     }
 
     fn is_invertible(&self, g: Generator) -> Option<bool> {
-        Some(self.generator_info(g)?.invertible)
+        self.generator_info(g).map(|info| info.invertible)
     }
 }
 
