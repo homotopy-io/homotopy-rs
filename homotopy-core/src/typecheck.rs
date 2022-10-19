@@ -12,10 +12,11 @@ use thiserror::Error;
 
 pub use crate::common::Mode;
 use crate::{
+    collapse::collapse,
     common::{Generator, Height, SingularHeight},
     diagram::{Diagram, DiagramN},
     rewrite::{Cone, Cospan, Label, Rewrite, RewriteN},
-    scaffold::{Explodable, Scaffold, ScaffoldNode},
+    scaffold::{Explodable, Scaffold, StableScaffold},
     signature::Signature,
     Boundary, Rewrite0, SliceIndex,
 };
@@ -408,15 +409,14 @@ where
     let dimension = diagram.dimension();
 
     // Construct the fully exploded scaffold of the diagram.
-    let mut scaffold: Scaffold<usize> = Scaffold::default(); // node key = stratum
-    scaffold.add_node(ScaffoldNode::new(0, diagram));
+    let mut scaffold: Scaffold<Vec<Height>> = Scaffold::default();
+    scaffold.add_node(diagram.into());
     for _ in 0..dimension {
         scaffold = scaffold
             .explode_simple(
                 |_, key, si| match si {
                     SliceIndex::Boundary(_) => None,
-                    SliceIndex::Interior(Height::Regular(_)) => Some(*key),
-                    SliceIndex::Interior(Height::Singular(_)) => Some(*key + 1),
+                    SliceIndex::Interior(h) => Some([key.as_slice(), &[h]].concat()),
                 },
                 |_, _, _| Some(()),
                 |_, _, _| Some(()),
@@ -424,30 +424,37 @@ where
             .unwrap();
     }
 
+    let stratum = |coord: &[Height]| {
+        coord.iter().fold(0, |stratum, h| {
+            stratum
+                + match h {
+                    Height::Regular(_) => 0,
+                    Height::Singular(_) => 1,
+                }
+        })
+    };
+
     // Extract the neighbourhoods of each point.
     let mut neighbourhoods: IdxVec<NodeIndex, Vec<Simplex>> =
         IdxVec::splat(vec![], scaffold.node_count());
     for n in scaffold
         .node_indices()
-        .sorted_by_cached_key(|n| scaffold[*n].key)
+        .sorted_by_cached_key(|n| stratum(&scaffold[*n].key))
     {
-        if scaffold[n].key == 0 {
-            neighbourhoods[n].push(vec![n]);
-        } else {
-            let mut neighbourhood = vec![vec![n]];
-            for e in scaffold.edges_directed(n, petgraph::Direction::Incoming) {
-                for simplex in &neighbourhoods[e.source()] {
-                    neighbourhood.push([simplex.as_slice(), &[n]].concat());
-                }
+        let mut neighbourhood = vec![vec![n]];
+        for e in scaffold.edges_directed(n, petgraph::Direction::Incoming) {
+            for simplex in &neighbourhoods[e.source()] {
+                neighbourhood.push([simplex.as_slice(), &[n]].concat());
             }
-            neighbourhoods[n].extend(neighbourhood);
         }
+        neighbourhoods[n].extend(neighbourhood);
     }
 
     // Find the central point.
     let central = scaffold
         .node_indices()
-        .find(|n| scaffold[*n].key == dimension)
+        .filter(|n| stratum(&scaffold[*n].key) == dimension)
+        .exactly_one()
         .unwrap();
 
     let label = |a, b| {
@@ -456,35 +463,20 @@ where
         r.label()
     };
 
+    let union_find = collapse(&mut StableScaffold::from(scaffold.clone()));
     neighbourhoods[central]
         .iter()
         .map(|simplex| {
             // Collapse the simplex.
-            let mut collapsed_simplex = vec![simplex[0]];
-            let n = simplex.len();
-            for i in 0..n - 1 {
-                let a = simplex[i];
-                let b = simplex[i + 1];
-                let collapsible = label(a, b).is_none()
-                    && (0..i).all(|j| {
-                        let s = simplex[j];
-                        label(s, a) == label(s, b)
-                    })
-                    && (i + 2..n).all(|j| {
-                        let t = simplex[j];
-                        label(a, t) == label(b, t)
-                    });
-                if !collapsible {
-                    collapsed_simplex.push(b);
-                }
-            }
+            let mut simplex = simplex.clone();
+            simplex.dedup_by(|x, y| union_find.equiv(*x, *y));
 
             // Collect the labels of the collapsed simplex.
             let mut labels = vec![];
-            let n = collapsed_simplex.len();
+            let n = simplex.len();
             for k in 1..n {
                 for i in 0..n - k {
-                    labels.push(label(collapsed_simplex[i], collapsed_simplex[i + k]));
+                    labels.push(label(simplex[i], simplex[i + k]));
                 }
             }
 
