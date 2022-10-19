@@ -21,6 +21,12 @@ pub(crate) trait Cartesian<C: Copy> {
     fn coordinate(&self) -> &[C];
 }
 
+impl<C: Copy> Cartesian<C> for Vec<C> {
+    fn coordinate(&self) -> &[C] {
+        self.as_slice()
+    }
+}
+
 /// Helper function to unify two nodes within a stable graph.
 ///
 /// # Panics
