@@ -131,26 +131,26 @@ fn contract_base(
     bias: Option<Bias>,
 ) -> Result<ContractExpand, ContractionError> {
     use Height::{Regular, Singular};
-    let slices: Vec<_> = diagram.slices().collect();
+    let slices: IdxVec<Height, Diagram> = diagram.slices().collect();
     let cospans = diagram.cospans();
 
     let cospan0 = cospans.get(height).ok_or(ContractionError::Invalid)?;
     let cospan1 = cospans.get(height + 1).ok_or(ContractionError::Invalid)?;
 
     let regular0: &Diagram = slices
-        .get(usize::from(Regular(height)))
+        .get(Regular(height))
         .ok_or(ContractionError::Invalid)?;
     let singular0: &Diagram = slices
-        .get(usize::from(Singular(height)))
+        .get(Singular(height))
         .ok_or(ContractionError::Invalid)?;
     let regular1: &Diagram = slices
-        .get(usize::from(Regular(height + 1)))
+        .get(Regular(height + 1))
         .ok_or(ContractionError::Invalid)?;
     let singular1: &Diagram = slices
-        .get(usize::from(Singular(height + 1)))
+        .get(Singular(height + 1))
         .ok_or(ContractionError::Invalid)?;
     let regular2: &Diagram = slices
-        .get(usize::from(Regular(height + 2)))
+        .get(Regular(height + 2))
         .ok_or(ContractionError::Invalid)?;
 
     let (bias0, bias1) = match bias {
