@@ -65,7 +65,7 @@ impl Rewrite {
                 Rewrite0::new(*s, t, None).into()
             }
             Diagram::DiagramN(source) => {
-                let singular = source.singular_slices();
+                let singular: Vec<Diagram> = source.singular_slices().collect();
                 let cones = source
                     .cospans()
                     .iter()

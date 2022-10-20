@@ -332,17 +332,12 @@ impl DiagramN {
         Slices::new(self)
     }
 
-    pub(crate) fn singular_slices(&self) -> Vec<Diagram> {
-        let mut regular = self.0.source.clone();
-        let mut slices = Vec::new();
+    pub(crate) fn regular_slices(&self) -> impl Iterator<Item = Diagram> {
+        self.slices().step_by(2)
+    }
 
-        for cospan in &self.0.cospans {
-            let singular = regular.rewrite_forward(&cospan.forward).unwrap();
-            slices.push(singular.clone());
-            regular = singular.rewrite_backward(&cospan.backward).unwrap();
-        }
-
-        slices
+    pub(crate) fn singular_slices(&self) -> impl Iterator<Item = Diagram> {
+        self.slices().skip(1).step_by(2)
     }
 
     /// Access a particular slice.
@@ -474,9 +469,7 @@ impl DiagramN {
     }
 
     fn embeddings_slice(&self, diagram: Diagram) -> impl Iterator<Item = Vec<usize>> {
-        self.clone()
-            .slices()
-            .step_by(2)
+        self.regular_slices()
             .enumerate()
             .flat_map(move |(index, slice)| {
                 slice.embeddings(&diagram).into_iter().map(move |mut emb| {

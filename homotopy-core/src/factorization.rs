@@ -46,7 +46,6 @@ pub fn factorize(f: Rewrite, g: Rewrite, target: Diagram) -> Factorization {
                 let mut offset = 0;
                 target
                     .singular_slices()
-                    .into_iter()
                     .enumerate()
                     .map(|(i, singular)| {
                         let f_cone = f.cone_over_target(i).cloned();
