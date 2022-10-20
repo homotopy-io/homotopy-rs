@@ -16,8 +16,8 @@ use thiserror::Error;
 use crate::{
     attach::BoundaryPath,
     common::{
-        DimensionError, Generator, GeneratorTransform, MaxByDimension, Mode, Orientation,
-        RegularHeight, SingularHeight,
+        DimensionError, Generator, GeneratorTransform, Mode, Orientation, RegularHeight,
+        SingularHeight,
     },
     diagram::Diagram,
     Boundary, Height,
@@ -146,14 +146,16 @@ impl Cospan {
     }
 
     pub(crate) fn max_generator(&self) -> Option<Generator> {
-        let generators = [
+        [
             self.forward.max_generator(Boundary::Source),
             self.forward.max_generator(Boundary::Target),
             self.backward.max_generator(Boundary::Target),
             self.backward.max_generator(Boundary::Source),
-        ];
-
-        generators.iter().copied().flatten().max_by_dimension()
+        ]
+        .into_iter()
+        .flatten()
+        .rev()
+        .max_by_key(|g| g.dimension)
     }
 
     #[must_use]
@@ -863,13 +865,15 @@ impl RewriteN {
                     .iter()
                     .flat_map(Cone::source)
                     .filter_map(Cospan::max_generator)
-                    .max_by_dimension()
+                    .rev()
+                    .max_by_key(|g| g.dimension)
             }),
             Boundary::Target => *self.0.max_generator_target.get_or_init(|| {
                 self.cones()
                     .iter()
                     .filter_map(|cone| cone.target().max_generator())
-                    .max_by_dimension()
+                    .rev()
+                    .max_by_key(|g| g.dimension)
             }),
         }
     }
