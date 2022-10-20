@@ -66,7 +66,7 @@ where
         typecheck_worker(&diagram.source(), signature, mode)?;
     }
 
-    let slices: Vec<_> = diagram.slices().collect();
+    let slices: IdxVec<Height, Diagram> = diagram.slices().collect();
 
     for (i, cospan) in diagram.cospans().iter().enumerate() {
         let target_embeddings = target_points(&[cospan.forward.clone(), cospan.backward.clone()])
@@ -75,7 +75,7 @@ where
 
         for (target_embedding, generator) in target_embeddings {
             let source = restrict_diagram(
-                &slices[usize::from(Height::Regular(i))],
+                &slices[Height::Regular(i)],
                 &target_embedding.preimage(&cospan.forward),
             );
 

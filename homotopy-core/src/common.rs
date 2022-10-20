@@ -5,6 +5,7 @@ use std::{
     ops::{Index, IndexMut, Mul},
 };
 
+use homotopy_common::idx::Idx;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use thiserror::Error;
 
@@ -103,6 +104,16 @@ impl From<usize> for Height {
         } else {
             Self::Singular((h - 1) / 2)
         }
+    }
+}
+
+impl Idx for Height {
+    fn index(&self) -> usize {
+        usize::from(*self)
+    }
+
+    fn new(index: usize) -> Self {
+        Self::from(index)
     }
 }
 
