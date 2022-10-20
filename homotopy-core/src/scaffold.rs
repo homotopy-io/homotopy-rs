@@ -66,15 +66,6 @@ pub struct ScaffoldNode<V> {
     pub diagram: Diagram,
 }
 
-impl<T: Default> From<Diagram> for ScaffoldNode<T> {
-    fn from(diagram: Diagram) -> Self {
-        Self {
-            key: Default::default(),
-            diagram,
-        }
-    }
-}
-
 impl<V> ScaffoldNode<V> {
     pub fn new<D>(key: V, diagram: D) -> Self
     where
@@ -87,14 +78,20 @@ impl<V> ScaffoldNode<V> {
     }
 }
 
+impl<V: Default> From<Diagram> for ScaffoldNode<V> {
+    fn from(diagram: Diagram) -> Self {
+        Self::new(V::default(), diagram)
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct ScaffoldEdge<E> {
     pub key: E,
     pub rewrite: Rewrite,
 }
 
-impl<V> ScaffoldEdge<V> {
-    pub fn new<R>(key: V, rewrite: R) -> Self
+impl<E> ScaffoldEdge<E> {
+    pub fn new<R>(key: E, rewrite: R) -> Self
     where
         R: Into<Rewrite>,
     {
@@ -105,12 +102,9 @@ impl<V> ScaffoldEdge<V> {
     }
 }
 
-impl<T: Default> From<Rewrite> for ScaffoldEdge<T> {
+impl<E: Default> From<Rewrite> for ScaffoldEdge<E> {
     fn from(rewrite: Rewrite) -> Self {
-        Self {
-            key: Default::default(),
-            rewrite,
-        }
+        Self::new(E::default(), rewrite)
     }
 }
 
