@@ -7,6 +7,7 @@ use std::{
 
 use hashconsing::{HConsed, HConsign, HashConsign};
 use homotopy_common::hash::FastHashSet;
+use once_cell::unsync::OnceCell;
 // used for debugging only
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -14,8 +15,7 @@ use thiserror::Error;
 use crate::{
     attach::{attach, BoundaryPath},
     common::{
-        Boundary, DimensionError, Direction, Generator, Height, MaxByDimension, Mode,
-        RegularHeight, SliceIndex,
+        Boundary, DimensionError, Direction, Generator, Height, Mode, RegularHeight, SliceIndex,
     },
     rewrite::{Cospan, Rewrite, RewriteN},
     signature::Signature,
@@ -293,10 +293,13 @@ impl DiagramN {
     /// Unsafe version of `new` which does not check if the diagram is well-formed.
     #[inline]
     pub(crate) fn new_unsafe(source: Diagram, cospans: Vec<Cospan>) -> Self {
-        Self(
-            DIAGRAM_FACTORY
-                .with(|factory| factory.borrow_mut().mk(DiagramInternal { source, cospans })),
-        )
+        Self(DIAGRAM_FACTORY.with(|factory| {
+            factory.borrow_mut().mk(DiagramInternal {
+                source,
+                cospans,
+                max_generator: OnceCell::new(),
+            })
+        }))
     }
 
     pub(crate) fn collect_garbage() {
@@ -487,9 +490,13 @@ impl DiagramN {
 
     /// Determine the first maximum-dimensional generator.
     pub fn max_generator(&self) -> Generator {
-        let source = std::iter::once(self.source().max_generator());
-        let cospans = self.cospans().iter().filter_map(Cospan::max_generator);
-        source.chain(cospans).max_by_dimension().unwrap()
+        *self.0.max_generator.get_or_init(|| {
+            std::iter::once(self.source().max_generator())
+                .chain(self.cospans().iter().filter_map(Cospan::max_generator))
+                .rev()
+                .max_by_key(|g| g.dimension)
+                .unwrap()
+        })
     }
 
     #[must_use]
@@ -623,6 +630,8 @@ impl<'a> TryFrom<&'a Diagram> for Generator {
 struct DiagramInternal {
     source: Diagram,
     cospans: Vec<Cospan>,
+    #[serde(skip)]
+    max_generator: OnceCell<Generator>,
 }
 
 impl PartialEq for DiagramInternal {
