@@ -1,7 +1,4 @@
-use std::{
-    collections::BTreeSet,
-    convert::{Into, TryFrom, TryInto},
-};
+use std::convert::{Into, TryFrom, TryInto};
 
 use homotopy::Homotopy;
 use homotopy_core::{
@@ -639,7 +636,7 @@ impl ProofState {
             None => return Ok(()),
         };
 
-        let mut matches: BTreeSet<AttachOption> = BTreeSet::new();
+        let mut matches: Vector<AttachOption> = Vector::new();
 
         let selected_with_path: Vec<_> = selected
             .iter()
@@ -737,12 +734,12 @@ impl ProofState {
                 Err(ModelError::NoAttachment)
             }
             1 => {
-                self.attach(&matches.into_iter().next().unwrap())?;
+                self.attach(matches.front().unwrap())?;
                 Ok(())
             }
             _ => {
                 let workspace = self.workspace.as_mut().unwrap();
-                workspace.attach = Some(matches.into_iter().collect());
+                workspace.attach = Some(matches);
                 workspace.attachment_highlight = None;
                 Ok(())
             }
@@ -1072,7 +1069,7 @@ impl Default for RenderStyle {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct AttachOption {
     pub generator: Generator,
     pub diagram: DiagramN,
