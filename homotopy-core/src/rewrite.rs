@@ -40,7 +40,7 @@ pub enum CompositionError {
     Incompatible,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize, Deserialize)]
 pub struct Cospan {
     pub forward: Rewrite,
     pub backward: Rewrite,
@@ -56,10 +56,10 @@ pub struct RewriteInternal {
     max_generator_target: OnceCell<Option<Generator>>,
 }
 
-#[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Clone, Hash, Serialize, Deserialize)]
 pub struct Rewrite0(pub(crate) Option<(Generator, Generator, Label)>);
 
-#[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, Clone, Hash)]
 pub struct RewriteN(HConsed<RewriteInternal>);
 
 impl Serialize for RewriteN {
@@ -81,7 +81,7 @@ impl<'de> Deserialize<'de> for RewriteN {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Clone, Hash, Serialize, Deserialize)]
 pub enum Rewrite {
     Rewrite0(Rewrite0),
     RewriteN(RewriteN),

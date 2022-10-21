@@ -9,7 +9,7 @@ use homotopy_common::idx::Idx;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use thiserror::Error;
 
-#[derive(PartialEq, Eq, Copy, Clone, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Copy, Clone, Hash, Serialize, Deserialize)]
 #[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub struct Generator {
     pub dimension: usize,
@@ -367,13 +367,13 @@ pub enum Direction {
 #[error("invalid dimension")]
 pub struct DimensionError;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Mode {
     Deep,
     Shallow,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub enum Orientation {
     Negative,

@@ -21,7 +21,7 @@ use crate::{
     signature::Signature,
 };
 
-#[derive(PartialEq, Eq, Hash, Clone, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 pub enum Diagram {
     Diagram0(Generator),
     DiagramN(DiagramN),
@@ -209,7 +209,7 @@ pub fn globularity(s: &Diagram, t: &Diagram) -> bool {
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, Hash, Clone)]
 pub struct DiagramN(HConsed<DiagramInternal>);
 
 impl Serialize for DiagramN {
