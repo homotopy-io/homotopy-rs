@@ -1,7 +1,6 @@
 use std::{
     cmp::Ordering,
     fmt,
-    iter::FusedIterator,
     ops::{Index, IndexMut, Mul},
 };
 
@@ -77,6 +76,13 @@ pub type RegularHeight = usize;
 pub enum Height {
     Singular(SingularHeight),
     Regular(RegularHeight),
+}
+
+impl Height {
+    /// Create an iterator over all heights in a diagram of a specified size.
+    pub fn for_size(size: usize) -> impl DoubleEndedIterator<Item = Height> {
+        (0..2 * size + 1).map(Height::from)
+    }
 }
 
 #[cfg(feature = "fuzz")]
@@ -157,26 +163,11 @@ pub enum SliceIndex {
 
 impl SliceIndex {
     /// Create an iterator over all slice indices in a diagram of a specified size.
-    pub fn for_size(size: usize) -> SliceIndexIterator {
-        SliceIndexIterator::new(size)
-    }
-
-    pub fn to_int(self, size: usize) -> isize {
-        match self {
-            Self::Boundary(Boundary::Source) => -1,
-            Self::Boundary(Boundary::Target) => size as isize * 2 + 1,
-            Self::Interior(height) => usize::from(height) as isize,
-        }
-    }
-
-    pub fn from_int(h: isize, size: usize) -> Self {
-        if h < 0 {
-            Boundary::Source.into()
-        } else if h > 2 * size as isize {
-            Boundary::Target.into()
-        } else {
-            Height::from(h as usize).into()
-        }
+    pub fn for_size(size: usize) -> impl DoubleEndedIterator<Item = SliceIndex> {
+        use std::iter::once;
+        once(Boundary::Source.into())
+            .chain(Height::for_size(size).map(SliceIndex::Interior))
+            .chain(once(Boundary::Target.into()))
     }
 
     /// The next slice in a diagram of a given size.
@@ -279,58 +270,6 @@ impl From<Boundary> for SliceIndex {
         Self::Boundary(boundary)
     }
 }
-
-pub struct SliceIndexIterator {
-    size: usize,
-    start: SliceIndex,
-    stop: SliceIndex,
-    done: bool,
-}
-
-impl SliceIndexIterator {
-    pub fn new(size: usize) -> Self {
-        Self {
-            size,
-            start: Boundary::Source.into(),
-            stop: Boundary::Target.into(),
-            done: false,
-        }
-    }
-}
-
-impl Iterator for SliceIndexIterator {
-    type Item = SliceIndex;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.done {
-            None
-        } else {
-            self.done = self.start == self.stop;
-            let next = self
-                .start
-                .next(self.size)
-                .unwrap_or(SliceIndex::Boundary(Boundary::Target));
-            Some(std::mem::replace(&mut self.start, next))
-        }
-    }
-}
-
-impl DoubleEndedIterator for SliceIndexIterator {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        if self.done {
-            None
-        } else {
-            self.done = self.start == self.stop;
-            let next = self
-                .stop
-                .prev(self.size)
-                .unwrap_or(SliceIndex::Boundary(Boundary::Source));
-            Some(std::mem::replace(&mut self.stop, next))
-        }
-    }
-}
-
-impl FusedIterator for SliceIndexIterator {}
 
 impl<T> Index<SliceIndex> for Vec<T> {
     type Output = T;
