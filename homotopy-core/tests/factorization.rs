@@ -1,5 +1,5 @@
 use homotopy_core::{
-    attach::BoundaryPath, factorization::factorize, rewrite::Cone, signature::SignatureBuilder,
+    common::BoundaryPath, factorization::factorize, rewrite::Cone, signature::SignatureBuilder,
     Boundary, Cospan, Diagram, DiagramN, Generator, Height, Rewrite, Rewrite0, RewriteN,
     SliceIndex,
 };

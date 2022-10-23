@@ -1,63 +1,10 @@
 use std::convert::{From, Into, TryInto};
 
-use serde::{Deserialize, Serialize};
-
 use crate::{
-    common::{Boundary, DimensionError, Height, SliceIndex},
+    common::{Boundary, BoundaryPath, DimensionError},
     diagram::{Diagram, DiagramN},
     rewrite::Cospan,
 };
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
-pub struct BoundaryPath(pub Boundary, pub usize);
-
-impl BoundaryPath {
-    pub fn split(path: &[SliceIndex]) -> (Option<Self>, Vec<Height>) {
-        use SliceIndex::{Boundary, Interior};
-
-        let mut boundary_path: Option<Self> = None;
-        let mut interior = Vec::new();
-
-        for height in path.iter().rev() {
-            match (&mut boundary_path, height) {
-                (Some(bp), _) => bp.1 += 1,
-                (None, Boundary(b)) => boundary_path = Some(Self(*b, 0)),
-                (None, Interior(h)) => interior.insert(0, *h),
-            }
-        }
-
-        (boundary_path, interior)
-    }
-
-    pub fn follow(self, diagram: &DiagramN) -> Option<Diagram> {
-        let mut diagram = diagram.clone();
-
-        for _ in 0..self.1 {
-            diagram = diagram.source().try_into().ok()?;
-        }
-
-        diagram.slice(self.0)
-    }
-
-    #[allow(clippy::inline_always)]
-    #[inline(always)]
-    pub fn boundary(self) -> Boundary {
-        self.0
-    }
-
-    #[allow(clippy::inline_always)]
-    #[inline(always)]
-    pub fn depth(self) -> usize {
-        self.1
-    }
-}
-
-impl From<Boundary> for BoundaryPath {
-    fn from(boundary: Boundary) -> Self {
-        Self(boundary, 0)
-    }
-}
 
 pub fn attach<F, E>(diagram: &DiagramN, path: BoundaryPath, build: F) -> Result<DiagramN, E>
 where

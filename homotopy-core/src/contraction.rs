@@ -22,9 +22,9 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{
-    attach::{attach, BoundaryPath},
+    attach::attach,
     collapse::{collapse, unify, Cartesian},
-    common::{Boundary, DimensionError, Height, Orientation, SingularHeight},
+    common::{Boundary, BoundaryPath, DimensionError, Height, Orientation, SingularHeight},
     diagram::{Diagram, DiagramN},
     expansion::expand_propagate,
     rewrite::{Cone, Cospan, Rewrite, Rewrite0, RewriteN},

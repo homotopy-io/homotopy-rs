@@ -6,8 +6,10 @@ use std::{
 use thiserror::Error;
 
 use crate::{
-    attach::{attach, BoundaryPath},
-    common::{Boundary, DimensionError, Direction, Height, RegularHeight, SingularHeight},
+    attach::attach,
+    common::{
+        Boundary, BoundaryPath, DimensionError, Direction, Height, RegularHeight, SingularHeight,
+    },
     diagram::{Diagram, DiagramN},
     factorization::factorize,
     rewrite::{Cone, Cospan, Rewrite, RewriteN},

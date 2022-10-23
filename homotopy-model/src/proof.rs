@@ -2,9 +2,9 @@ use std::convert::{Into, TryFrom, TryInto};
 
 use homotopy::Homotopy;
 use homotopy_core::{
-    attach::BoundaryPath,
     common::{
-        Boundary, DimensionError, Direction, Generator, Height, Mode, RegularHeight, SliceIndex,
+        Boundary, BoundaryPath, DimensionError, Direction, Generator, Height, Mode, RegularHeight,
+        SliceIndex,
     },
     contraction::ContractionError,
     diagram::{globularity, NewDiagramError},
@@ -658,11 +658,11 @@ impl ProofState {
                 continue;
             }
 
-            let haystack = match &boundary_path {
+            let haystack = match boundary_path {
                 None => workspace.diagram.clone(),
                 Some(boundary_path) => DiagramN::try_from(workspace.diagram.clone())
                     .ok()
-                    .and_then(|diagram| boundary_path.follow(&diagram))
+                    .and_then(|diagram| diagram.follow(boundary_path))
                     .ok_or(ModelError::NoAttachment)?,
             };
 
