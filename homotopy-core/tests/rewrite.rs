@@ -1,7 +1,7 @@
 use std::ops::Index;
 
 use homotopy_core::{
-    attach::BoundaryPath, Boundary::*, Cospan, DiagramN, Generator, Height::*, Rewrite0, RewriteN,
+    common::BoundaryPath, Boundary::*, Cospan, DiagramN, Generator, Height::*, Rewrite0, RewriteN,
 };
 use proptest::prelude::*;
 

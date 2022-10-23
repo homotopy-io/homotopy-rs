@@ -1,7 +1,7 @@
 #[allow(clippy::wildcard_imports)]
 use crate::*;
 use crate::{
-    attach::BoundaryPath,
+    common::BoundaryPath,
     rewrite::Cone,
     signature::{Signature, SignatureBuilder},
     Boundary::{Source, Target},

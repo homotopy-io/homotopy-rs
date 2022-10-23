@@ -14,10 +14,9 @@ use serde::{ser::SerializeStruct, Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{
-    attach::BoundaryPath,
     common::{
-        DimensionError, Generator, GeneratorTransform, Mode, Orientation, RegularHeight,
-        SingularHeight,
+        BoundaryPath, DimensionError, Generator, GeneratorTransform, Mode, Orientation,
+        RegularHeight, SingularHeight,
     },
     diagram::Diagram,
     Boundary, Height,

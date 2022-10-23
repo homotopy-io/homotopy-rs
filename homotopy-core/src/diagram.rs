@@ -13,9 +13,10 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{
-    attach::{attach, BoundaryPath},
+    attach::attach,
     common::{
-        Boundary, DimensionError, Direction, Generator, Height, Mode, RegularHeight, SliceIndex,
+        Boundary, BoundaryPath, DimensionError, Direction, Generator, Height, Mode, RegularHeight,
+        SliceIndex,
     },
     rewrite::{Cospan, Rewrite, RewriteN},
     signature::Signature,
@@ -546,6 +547,16 @@ impl DiagramN {
             self.slice(Height::Regular(min_height)).unwrap(),
             self.cospans()[min_height..].to_vec(),
         )
+    }
+
+    pub fn follow(&self, boundary_path: BoundaryPath) -> Option<Diagram> {
+        let mut diagram = self.clone();
+
+        for _ in 0..boundary_path.depth() {
+            diagram = diagram.source().try_into().ok()?;
+        }
+
+        diagram.slice(boundary_path.boundary())
     }
 }
 
