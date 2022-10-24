@@ -1,10 +1,13 @@
-use std::ops::Range;
+use std::ops::{Index, Range};
 
-use homotopy_common::idx::IdxVec;
+use homotopy_common::idx::{Idx, IdxVec};
 use petgraph::{
-    graph::{DefaultIx, DiGraph, EdgeIndex, IndexType, NodeIndex},
+    data::Build,
+    graph::{DefaultIx, DiGraph},
     stable_graph::StableDiGraph,
-    visit::{EdgeRef, IntoNodeReferences},
+    visit::{
+        Data, EdgeCount, EdgeRef, GraphBase, IntoEdgeReferences, IntoNodeReferences, NodeCount,
+    },
 };
 
 use crate::{
@@ -14,52 +17,71 @@ use crate::{
     Direction,
 };
 
-/// The output of explosion consists of the exploded graph and some maps from the original graph into the exploded graph.
-#[derive(Clone, Debug)]
-pub struct ExplosionOutput<V, E, Ix1, Ix2>
-where
-    Ix1: IndexType,
-    Ix2: IndexType,
+/// Weighted graph where each node has an associated [`Diagram`] and each edge has an associated
+/// [`Rewrite`].
+pub trait ScaffoldGraph:
+    Data<NodeWeight = ScaffoldNode<Self::NodeKey>, EdgeWeight = ScaffoldEdge<Self::EdgeKey>>
 {
-    pub scaffold: Scaffold<V, E, Ix2>,
-    pub node_to_nodes: IdxVec<NodeIndex<Ix1>, Vec<NodeIndex<Ix2>>>,
-    pub node_to_edges: IdxVec<NodeIndex<Ix1>, Vec<EdgeIndex<Ix2>>>,
-    pub edge_to_edges: IdxVec<EdgeIndex<Ix1>, Vec<EdgeIndex<Ix2>>>,
+    type NodeKey;
+    type EdgeKey;
 }
 
-pub trait Explodable<V, E, Ix>
+impl<G, V, E> ScaffoldGraph for G
 where
-    Ix: IndexType,
+    G: Data<NodeWeight = ScaffoldNode<V>, EdgeWeight = ScaffoldEdge<E>>,
 {
-    fn explode<F, G, H, V2, E2, Ix2>(
-        &self,
-        node_map: F,
-        internal_edge_map: G,
-        external_edge_map: H,
-    ) -> Result<ExplosionOutput<V2, E2, Ix, Ix2>, DimensionError>
-    where
-        Ix2: IndexType,
-        F: FnMut(NodeIndex<Ix>, &V, SliceIndex) -> Option<V2>,
-        G: FnMut(NodeIndex<Ix>, &V, InternalRewrite) -> Option<E2>,
-        H: FnMut(EdgeIndex<Ix>, &E, ExternalRewrite) -> Option<E2>;
+    type NodeKey = V;
+    type EdgeKey = E;
+}
 
-    fn explode_simple<F, G, H, V2, E2, Ix2>(
-        &self,
-        node_map: F,
-        internal_edge_map: G,
-        external_edge_map: H,
-    ) -> Result<Scaffold<V2, E2, Ix2>, DimensionError>
+/// The output of explosion consists of the exploded graph and some maps from the original graph into the exploded graph.
+#[derive(Clone, Debug)]
+pub struct ExplosionOutput<G, G2>
+where
+    G: GraphBase,
+    G2: GraphBase,
+{
+    pub scaffold: G2,
+    pub node_to_nodes: IdxVec<G::NodeId, Vec<G2::NodeId>>,
+    pub node_to_edges: IdxVec<G::NodeId, Vec<G2::EdgeId>>,
+    pub edge_to_edges: IdxVec<G::EdgeId, Vec<G2::EdgeId>>,
+}
+
+pub trait Explodable<'a, G>
+where
+    G: ScaffoldGraph,
+{
+    fn explode<G2, NodeMap, InternalEdgeMap, ExternalEdgeMap>(
+        &'a self,
+        node_map: NodeMap,
+        internal_edge_map: InternalEdgeMap,
+        external_edge_map: ExternalEdgeMap,
+    ) -> Result<ExplosionOutput<G, G2>, DimensionError>
     where
-        Ix2: IndexType,
-        F: FnMut(NodeIndex<Ix>, &V, SliceIndex) -> Option<V2>,
-        G: FnMut(NodeIndex<Ix>, &V, InternalRewrite) -> Option<E2>,
-        H: FnMut(EdgeIndex<Ix>, &E, ExternalRewrite) -> Option<E2>,
+        G2: Default + Build + ScaffoldGraph,
+        NodeMap: FnMut(G::NodeId, &G::NodeKey, SliceIndex) -> Option<G2::NodeKey>,
+        InternalEdgeMap: FnMut(G::NodeId, &G::NodeKey, InternalRewrite) -> Option<G2::EdgeKey>,
+        ExternalEdgeMap: FnMut(G::EdgeId, &G::EdgeKey, ExternalRewrite) -> Option<G2::EdgeKey>;
+
+    #[inline]
+    fn explode_simple<G2, NodeMap, InternalEdgeMap, ExternalEdgeMap>(
+        &'a self,
+        node_map: NodeMap,
+        internal_edge_map: InternalEdgeMap,
+        external_edge_map: ExternalEdgeMap,
+    ) -> Result<G2, DimensionError>
+    where
+        G2: Default + Build + ScaffoldGraph,
+        NodeMap: FnMut(G::NodeId, &G::NodeKey, SliceIndex) -> Option<G2::NodeKey>,
+        InternalEdgeMap: FnMut(G::NodeId, &G::NodeKey, InternalRewrite) -> Option<G2::EdgeKey>,
+        ExternalEdgeMap: FnMut(G::EdgeId, &G::EdgeKey, ExternalRewrite) -> Option<G2::EdgeKey>,
     {
         self.explode(node_map, internal_edge_map, external_edge_map)
-            .map(|output| output.scaffold)
+            .map(|output: ExplosionOutput<G, G2>| output.scaffold)
     }
 }
 
+/// Weighted graph node with associated [`Diagram`].
 #[derive(Clone, Debug)]
 pub struct ScaffoldNode<V> {
     pub key: V,
@@ -84,6 +106,7 @@ impl<V: Default> From<Diagram> for ScaffoldNode<V> {
     }
 }
 
+/// Weighted graph edge with associated [`Rewrite`].
 #[derive(Clone, Debug)]
 pub struct ScaffoldEdge<E> {
     pub key: E,
@@ -166,24 +189,29 @@ impl ExternalRewrite {
     }
 }
 
-impl<V, E, Ix> Explodable<V, E, Ix> for Scaffold<V, E, Ix>
+impl<'a, G> Explodable<'a, G> for G
 where
-    Ix: IndexType,
+    G: 'a + ScaffoldGraph + NodeCount + EdgeCount + Index<G::NodeId, Output = G::NodeWeight>,
+    &'a G: GraphBase<NodeId = G::NodeId, EdgeId = G::EdgeId>
+        + IntoNodeReferences<NodeRef = (G::NodeId, &'a G::NodeWeight)>
+        + IntoEdgeReferences<EdgeWeight = G::EdgeWeight>,
+    G::NodeId: Idx,
+    G::EdgeId: Idx,
 {
     /// Explodes a scaffold to obtain the scaffold one dimension higher.
-    fn explode<F, G, H, V2, E2, Ix2>(
-        &self,
-        mut node_map: F,
-        mut internal_edge_map: G,
-        mut external_edge_map: H,
-    ) -> Result<ExplosionOutput<V2, E2, Ix, Ix2>, DimensionError>
+    fn explode<G2, NodeMap, InternalEdgeMap, ExternalEdgeMap>(
+        &'a self,
+        mut node_map: NodeMap,
+        mut internal_edge_map: InternalEdgeMap,
+        mut external_edge_map: ExternalEdgeMap,
+    ) -> Result<ExplosionOutput<G, G2>, DimensionError>
     where
-        Ix2: IndexType,
-        F: FnMut(NodeIndex<Ix>, &V, SliceIndex) -> Option<V2>,
-        G: FnMut(NodeIndex<Ix>, &V, InternalRewrite) -> Option<E2>,
-        H: FnMut(EdgeIndex<Ix>, &E, ExternalRewrite) -> Option<E2>,
+        G2: Default + Build + ScaffoldGraph,
+        NodeMap: FnMut(G::NodeId, &G::NodeKey, SliceIndex) -> Option<G2::NodeKey>,
+        InternalEdgeMap: FnMut(G::NodeId, &G::NodeKey, InternalRewrite) -> Option<G2::EdgeKey>,
+        ExternalEdgeMap: FnMut(G::EdgeId, &G::EdgeKey, ExternalRewrite) -> Option<G2::EdgeKey>,
     {
-        let mut graph = Scaffold::default();
+        let mut graph: G2 = Default::default();
 
         let mut nodes = IdxVec::splat(vec![], self.node_count());
         let mut internal_edges = IdxVec::splat(vec![], self.node_count());
@@ -217,7 +245,7 @@ where
                         let a = nodes[n][si]?;
                         let b = nodes[n][ti]?;
                         let key = internal_edge_map(n, key, r)?;
-                        graph.add_edge(a, b, ScaffoldEdge::new(key, rewrite)).into()
+                        graph.add_edge(a, b, ScaffoldEdge::new(key, rewrite))
                     }());
                 };
 
@@ -268,7 +296,7 @@ where
                         let a = nodes[s][si]?;
                         let b = nodes[t][ti]?;
                         let key = external_edge_map(e.id(), key, r)?;
-                        graph.add_edge(a, b, ScaffoldEdge::new(key, rewrite)).into()
+                        graph.add_edge(a, b, ScaffoldEdge::new(key, rewrite))
                     }());
                 };
 

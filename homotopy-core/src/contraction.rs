@@ -617,7 +617,7 @@ fn colimit_recursive<Ix: IndexType>(
         scaffold: exploded,
         node_to_nodes: node_to_slices,
         ..
-    }: ExplosionOutput<_, _, _, ExplodedIx> = graph
+    }: ExplosionOutput<_, Scaffold<_, _, ExplodedIx>> = graph
         .explode(
             |parent, ContractNode { coordinate, .. }, si| match si {
                 SliceIndex::Boundary(_) => None,
