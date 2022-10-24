@@ -13,7 +13,7 @@ mod rewrite;
 proptest! {
     #[test]
     fn explode_then_reassemble((rewrite, source, target) in rewrite::arb_rewrite_1d_with_source_and_target()) {
-        let mut graph = Scaffold::default();
+        let mut graph: Scaffold<_, _, DefaultIx> = Scaffold::default();
         let src = graph.add_node(ScaffoldNode::new((), source.clone()));
         let tgt = graph.add_node(ScaffoldNode::new((), target.clone()));
         let rwr = graph.add_edge(src, tgt, ScaffoldEdge::new((), rewrite.clone()));
@@ -23,7 +23,7 @@ proptest! {
             node_to_nodes,
             node_to_edges,
             edge_to_edges,
-        }: ExplosionOutput<(), Option<ExternalRewrite>, DefaultIx, DefaultIx> = graph
+        }: ExplosionOutput<_, Scaffold<_, _, DefaultIx>> = graph
             .explode(
                 |_, (), si| match si {
                     SliceIndex::Boundary(_) => None,
