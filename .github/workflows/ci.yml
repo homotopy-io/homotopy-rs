@@ -25,7 +25,7 @@ jobs:
           extra_nix_config: |
             max-jobs = 4
       - name: Setup cachix
-        uses: cachix/cachix-action@v11
+        uses: cachix/cachix-action@v12
         with:
           name: homotopy-io
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
@@ -48,7 +48,7 @@ jobs:
           extra_nix_config: |
             max-jobs = 4
       - name: Setup cachix
-        uses: cachix/cachix-action@v11
+        uses: cachix/cachix-action@v12
         with:
           name: homotopy-io
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
@@ -66,7 +66,7 @@ jobs:
           extra_nix_config: |
             max-jobs = 4
       - name: Setup cachix
-        uses: cachix/cachix-action@v11
+        uses: cachix/cachix-action@v12
         with:
           name: homotopy-io
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
@@ -93,7 +93,7 @@ jobs:
           extra_nix_config: |
             max-jobs = 4
       - name: Setup cachix
-        uses: cachix/cachix-action@v11
+        uses: cachix/cachix-action@v12
         with:
           name: homotopy-io
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
@@ -148,7 +148,7 @@ jobs:
           extra_nix_config: |
             max-jobs = 4
       - name: Setup cachix
-        uses: cachix/cachix-action@v11
+        uses: cachix/cachix-action@v12
         with:
           name: homotopy-io
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
