@@ -12,6 +12,7 @@ use petgraph::{
 
 use crate::{
     scaffold::{ScaffoldEdge, ScaffoldNode, StableScaffold},
+    signature::Signature,
     Height, Rewrite0,
 };
 
@@ -43,6 +44,7 @@ pub(crate) fn unify<N, E, Ix, RN, RE>(
     quotient: &mut UnionFind<NodeIndex<Ix>>,
     mut on_remove_node: RN,
     mut on_remove_edge: RE,
+    signature: &impl Signature,
 ) -> anyhow::Result<()>
 where
     N: Clone,
@@ -81,13 +83,14 @@ where
         match op {
             Quotient::RetargetSource(keep, target, e) => {
                 if let Some(existing) = graph.find_edge(keep, target) {
-                    if <&Rewrite0>::try_from(&graph[existing].rewrite)
-                        .expect("non 0-rewrite passed to collapse unify")
-                        .label()
-                        != <&Rewrite0>::try_from(&graph[e].rewrite)
+                    if !signature.label_equiv(
+                        <&Rewrite0>::try_from(&graph[existing].rewrite)
                             .expect("non 0-rewrite passed to collapse unify")
-                            .label()
-                    {
+                            .label(),
+                        <&Rewrite0>::try_from(&graph[e].rewrite)
+                            .expect("non 0-rewrite passed to collapse unify")
+                            .label(),
+                    ) {
                         return Err(anyhow!("label inconsistency"));
                     }
                 } else {
@@ -98,13 +101,14 @@ where
             }
             Quotient::RetargetTarget(keep, source, e) => {
                 if let Some(existing) = graph.find_edge(source, keep) {
-                    if <&Rewrite0>::try_from(&graph[existing].rewrite)
-                        .expect("non 0-rewrite passed to collapse unify")
-                        .label()
-                        != <&Rewrite0>::try_from(&graph[e].rewrite)
+                    if !signature.label_equiv(
+                        <&Rewrite0>::try_from(&graph[existing].rewrite)
                             .expect("non 0-rewrite passed to collapse unify")
-                            .label()
-                    {
+                            .label(),
+                        <&Rewrite0>::try_from(&graph[e].rewrite)
+                            .expect("non 0-rewrite passed to collapse unify")
+                            .label(),
+                    ) {
                         return Err(anyhow!("label inconsistency"));
                     }
                 } else {
@@ -134,6 +138,7 @@ where
 /// Panics if `graph` edges are not 0-rewrites.
 pub(crate) fn collapse<V: Clone + Cartesian<Height>, E: Clone, Ix: IndexType>(
     graph: &mut StableScaffold<V, E, Ix>,
+    signature: &impl Signature,
 ) -> UnionFind<NodeIndex<Ix>> {
     // invariant: #nodes of graph = #equivalence classes of union_find
     let mut union_find = UnionFind::new(graph.node_count());
@@ -185,14 +190,20 @@ pub(crate) fn collapse<V: Clone + Cartesian<Height>, E: Clone, Ix: IndexType>(
             // check triangles within nodes which might refute collapsibility of e
             && graph.edges_directed(e.source(), Incoming).all(|p| {
                 if let Some(c) = graph.find_edge(p.source(), e.target()) {
-                    <&Rewrite0>::try_from(&p.weight().rewrite).unwrap().label() == <&Rewrite0>::try_from(&graph.edge_weight(c).unwrap().rewrite).unwrap().label()
+                    signature.label_equiv(
+                        <&Rewrite0>::try_from(&p.weight().rewrite).unwrap().label(),
+                        <&Rewrite0>::try_from(&graph.edge_weight(c).unwrap().rewrite).unwrap().label(),
+                    )
                 } else {
                     true
                 }
             })
             && graph.edges_directed(e.target(), Outgoing).all(|n| {
                 if let Some(c) = graph.find_edge(e.source(), n.target()) {
-                    <&Rewrite0>::try_from(&n.weight().rewrite).unwrap().label() == <&Rewrite0>::try_from(&graph.edge_weight(c).unwrap().rewrite).unwrap().label()
+                    signature.label_equiv(
+                        <&Rewrite0>::try_from(&n.weight().rewrite).unwrap().label(),
+                        <&Rewrite0>::try_from(&graph.edge_weight(c).unwrap().rewrite).unwrap().label(),
+                    )
                 } else {
                     true
                 }
@@ -212,6 +223,7 @@ pub(crate) fn collapse<V: Clone + Cartesian<Height>, E: Clone, Ix: IndexType>(
                     nodes.retain(|&n| n != rn);
                 },
                 |_re| (),
+                signature,
             )
             .expect("non-determinism in collapse; edge ({s}, {t}) has become uncollapsible");
         }

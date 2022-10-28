@@ -1,4 +1,4 @@
-use crate::{diagram::NewDiagramError, Diagram, DiagramN, Generator};
+use crate::{diagram::NewDiagramError, rewrite::Label, Diagram, DiagramN, Generator};
 
 pub trait GeneratorInfo {
     fn diagram(&self) -> &Diagram;
@@ -9,6 +9,10 @@ pub trait Signature {
     type Info: GeneratorInfo;
     fn generators(&self) -> Vec<Generator>;
     fn generator_info(&self, g: Generator) -> Option<&Self::Info>;
+
+    fn label_equiv(&self, x: Label, y: Label) -> bool {
+        x == y
+    }
 }
 
 /// Helper struct for building signatures in tests and benchmarks.
