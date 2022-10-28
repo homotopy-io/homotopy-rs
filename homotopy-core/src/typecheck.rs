@@ -87,7 +87,9 @@ where
                 .ok_or(TypeError::UnknownGenerator(generator))?
                 .diagram();
 
-            if collapse_simplicies(restricted) != collapse_simplicies(signature_diagram.clone()) {
+            if collapse_simplicies(restricted, signature)
+                != collapse_simplicies(signature_diagram.clone(), signature)
+            {
                 return Err(TypeError::IllTyped);
             }
         }
@@ -402,7 +404,7 @@ fn check_dimension(diagram: Diagram) -> bool {
 type Simplex = Vec<NodeIndex>; // An n-simplex is a list of n + 1 vertices.
 type LabelledSimplex = Vec<Label>; // An n-simplex is a list of (n + 1 choose 2) edges.
 
-fn collapse_simplicies<D>(diagram: D) -> BTreeSet<LabelledSimplex>
+fn collapse_simplicies<D>(diagram: D, signature: &impl Signature) -> BTreeSet<LabelledSimplex>
 where
     D: Into<Diagram>,
 {
@@ -464,7 +466,7 @@ where
         r.label()
     };
 
-    let union_find = collapse(&mut StableScaffold::from(scaffold.clone()));
+    let union_find = collapse(&mut StableScaffold::from(scaffold.clone()), signature);
     neighbourhoods[central]
         .iter()
         .map(|simplex| {
