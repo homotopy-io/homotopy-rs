@@ -1059,6 +1059,7 @@ fn contains_point(diagram: Diagram, point: &[Height], embedding: &[RegularHeight
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub struct SerializedData(pub Vec<u8>);
 
 impl std::fmt::Debug for SerializedData {
