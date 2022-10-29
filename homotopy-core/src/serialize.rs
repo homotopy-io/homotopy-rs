@@ -7,8 +7,7 @@ use highway::{HighwayHash, HighwayHasher};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    rewrite::{Cone, Label},
-    Cospan, Diagram, DiagramN, Generator, Rewrite, Rewrite0, RewriteN,
+    label::Label, rewrite::Cone, Cospan, Diagram, DiagramN, Generator, Rewrite, Rewrite0, RewriteN,
 };
 
 /// Similar to `Hash`, except supposed to be deterministic and shouldn't collide

@@ -1,6 +1,7 @@
 use homotopy_common::tree::Tree;
 use homotopy_core::{
     common::{Generator, SliceIndex},
+    label::Neighbourhood,
     serialize::{Key, Store},
     Diagram,
 };
@@ -118,6 +119,7 @@ struct GeneratorData {
     oriented: bool,
     invertible: bool,
     diagram: Key<Diagram>,
+    neighbourhood: Neighbourhood,
 }
 
 pub fn serialize(
@@ -145,6 +147,7 @@ pub fn serialize(
             color: info.color,
             oriented: info.oriented,
             invertible: info.invertible,
+            neighbourhood: info.neighbourhood,
         }),
     });
 
@@ -198,6 +201,7 @@ pub fn deserialize(data: &[u8]) -> Option<((Signature, Option<Workspace>), Metad
                     invertible: gd.invertible,
                     // TODO: `single_preview` should be properly serialized
                     single_preview: true,
+                    neighbourhood: gd.neighbourhood,
                 }),
             })
         })

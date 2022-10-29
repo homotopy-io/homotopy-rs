@@ -18,6 +18,7 @@ use crate::{
         Boundary, BoundaryPath, DimensionError, Direction, Generator, Height, Mode, RegularHeight,
         SliceIndex,
     },
+    label::Neighbourhood,
     rewrite::{Cospan, Rewrite, RewriteN},
     signature::{GeneratorInfo, Signature},
 };
@@ -241,7 +242,8 @@ impl DiagramN {
         generator: Generator,
         source: S,
         target: T,
-    ) -> Result<Self, NewDiagramError>
+        signature: &impl Signature,
+    ) -> Result<(Self, Neighbourhood), NewDiagramError>
     where
         S: Into<Diagram>,
         T: Into<Diagram>,
@@ -262,6 +264,7 @@ impl DiagramN {
             }
         }
 
+        let mut neighbourhood = Neighbourhood::default();
         let cospan = Cospan {
             forward: Rewrite::cone_over_generator(
                 generator,
@@ -269,6 +272,8 @@ impl DiagramN {
                 BoundaryPath(Source, 0),
                 0,
                 &[],
+                signature,
+                &mut neighbourhood,
             ),
             backward: Rewrite::cone_over_generator(
                 generator,
@@ -276,10 +281,12 @@ impl DiagramN {
                 BoundaryPath(Target, 0),
                 0,
                 &[],
+                signature,
+                &mut neighbourhood,
             ),
         };
 
-        Ok(Self::new_unsafe(source, vec![cospan]))
+        Ok((Self::new_unsafe(source, vec![cospan]), neighbourhood))
     }
 
     pub fn new(source: Diagram, cospans: Vec<Cospan>) -> Self {
@@ -774,6 +781,7 @@ mod test {
     use std::{convert::TryInto, error::Error};
 
     use super::*;
+    use crate::signature::SignatureBuilder;
 
     fn assert_point_ids<D>(diagram: &D, points: &[(&[usize], usize)])
     where
@@ -798,10 +806,11 @@ mod test {
     fn associativity_points() -> Result<(), Box<dyn Error>> {
         use Boundary::{Source, Target};
 
-        let x = Diagram::from(Generator::new(0, 0));
-        let f = DiagramN::from_generator(Generator::new(1, 1), x.clone(), x)?;
+        let mut signature = SignatureBuilder::default();
+        let x = signature.add_zero();
+        let f = signature.add(x.clone(), x)?;
         let ff = f.attach(&f, Target, &[])?;
-        let m = DiagramN::from_generator(Generator::new(2, 2), ff, f)?;
+        let m = signature.add(ff, f)?;
         let left = m.attach(&m, Source, &[0])?;
 
         assert_point_ids(
@@ -838,8 +847,9 @@ mod test {
 
     #[test]
     fn scalar() {
-        let x = Diagram::from(Generator::new(0, 0));
-        let f = DiagramN::from_generator(Generator::new(1, 2), x.identity(), x.identity()).unwrap();
+        let mut signature = SignatureBuilder::default();
+        let x = signature.add_zero();
+        let f = signature.add(x.identity(), x.identity()).unwrap();
 
         assert_eq!(f.source(), x.identity().into());
         assert_eq!(f.target(), x.identity().into());
