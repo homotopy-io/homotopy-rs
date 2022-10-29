@@ -19,6 +19,8 @@ use crate::{
         RegularHeight, SingularHeight,
     },
     diagram::Diagram,
+    label::{Label, Neighbourhood},
+    signature::Signature,
     Boundary, Height,
 };
 
@@ -85,8 +87,6 @@ pub enum Rewrite {
     Rewrite0(Rewrite0),
     RewriteN(RewriteN),
 }
-
-pub type Label = Option<(usize, BoundaryPath, Vec<Height>)>;
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize, Deserialize)]
 pub(crate) struct ConeInternal {
@@ -262,10 +262,17 @@ impl Rewrite {
         boundary_path: BoundaryPath,
         depth: usize,
         prefix: &[Height],
+        signature: &impl Signature,
+        neighbourhood: &mut Neighbourhood,
     ) -> Self {
         use Height::{Regular, Singular};
 
         use crate::Boundary::{Source, Target};
+
+        // Collapse the base to identify labels.
+        if prefix.is_empty() {
+            neighbourhood.insert(boundary_path, &base, signature);
+        }
 
         match base {
             Diagram::Diagram0(base) => Rewrite0::new(
@@ -282,6 +289,8 @@ impl Rewrite {
                         BoundaryPath(Source, depth + 1),
                         depth + 1,
                         &[],
+                        signature,
+                        neighbourhood,
                     ),
                     backward: Self::cone_over_generator(
                         generator,
@@ -289,6 +298,8 @@ impl Rewrite {
                         BoundaryPath(Target, depth + 1),
                         depth + 1,
                         &[],
+                        signature,
+                        neighbourhood,
                     ),
                 };
                 let mut regular_slices: Vec<_> = Default::default();
@@ -303,6 +314,8 @@ impl Rewrite {
                             boundary_path,
                             depth + 1,
                             &[prefix, &[Regular(i)]].concat(),
+                            signature,
+                            neighbourhood,
                         )),
                         Singular(i) => singular_slices.push(Self::cone_over_generator(
                             generator,
@@ -310,12 +323,10 @@ impl Rewrite {
                             boundary_path,
                             depth + 1,
                             &[prefix, &[Singular(i)]].concat(),
+                            signature,
+                            neighbourhood,
                         )),
                     });
-                if prefix.is_empty() && base.size() > 0 {
-                    regular_slices[0] = target_cospan.forward.clone();
-                    regular_slices[base.size()] = target_cospan.backward.clone();
-                }
                 RewriteN::new(
                     base.dimension(),
                     vec![Cone::new(

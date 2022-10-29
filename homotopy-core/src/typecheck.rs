@@ -15,7 +15,8 @@ use crate::{
     collapse::collapse,
     common::{Generator, Height, SingularHeight},
     diagram::{Diagram, DiagramN},
-    rewrite::{Cone, Cospan, Label, Rewrite, RewriteN},
+    label::Label,
+    rewrite::{Cone, Cospan, Rewrite, RewriteN},
     scaffold::{Explodable, Scaffold, StableScaffold},
     signature::{GeneratorInfo, Signature},
     Boundary, Rewrite0, SliceIndex,
@@ -463,7 +464,7 @@ where
     let label = |a, b| {
         let e = scaffold.find_edge(a, b).unwrap();
         let r: &Rewrite0 = (&scaffold[e].rewrite).try_into().unwrap();
-        r.label()
+        signature.label_find(r.label())
     };
 
     let union_find = collapse(&mut StableScaffold::from(scaffold.clone()), signature);
