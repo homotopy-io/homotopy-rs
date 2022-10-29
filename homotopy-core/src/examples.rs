@@ -15,7 +15,7 @@ use crate::{
 //  m   |   |   m
 // / \  |   |  / \
 pub fn associator() -> (SignatureBuilder, DiagramN) {
-    let mut sig = SignatureBuilder::new();
+    let mut sig = SignatureBuilder::default();
 
     let x = sig.add_zero();
     let f = sig.add(x.clone(), x).unwrap();
@@ -29,7 +29,7 @@ pub fn associator() -> (SignatureBuilder, DiagramN) {
 
 // x
 pub fn one_zero_cell() -> (impl Signature, Diagram) {
-    let mut sig = SignatureBuilder::new();
+    let mut sig = SignatureBuilder::default();
     let x = sig.add_zero();
     (sig, x)
 }
@@ -38,7 +38,7 @@ pub fn one_zero_cell() -> (impl Signature, Diagram) {
 // e
 // |
 pub fn two_endomorphism() -> (impl Signature, DiagramN) {
-    let mut sig = SignatureBuilder::new();
+    let mut sig = SignatureBuilder::default();
 
     let space = sig.add_zero();
     let wire = sig.add(space.clone(), space).unwrap();
@@ -50,7 +50,7 @@ pub fn two_endomorphism() -> (impl Signature, DiagramN) {
 //  m
 // / \
 pub fn two_monoid() -> (impl Signature, DiagramN) {
-    let mut sig = SignatureBuilder::new();
+    let mut sig = SignatureBuilder::default();
 
     let space = sig.add_zero();
     let wire = sig.add(space.clone(), space).unwrap();
@@ -61,7 +61,7 @@ pub fn two_monoid() -> (impl Signature, DiagramN) {
 
 //  s
 pub fn scalar() -> (impl Signature, DiagramN) {
-    let mut sig = SignatureBuilder::new();
+    let mut sig = SignatureBuilder::default();
 
     let x = sig.add_zero();
     let s = sig.add(x.identity(), x.identity()).unwrap();
@@ -72,7 +72,7 @@ pub fn scalar() -> (impl Signature, DiagramN) {
 //
 //  s
 pub fn two_scalars() -> (impl Signature, DiagramN) {
-    let mut sig = SignatureBuilder::new();
+    let mut sig = SignatureBuilder::default();
 
     let x = sig.add_zero();
     let s = sig.add(x.identity(), x.identity()).unwrap();
@@ -86,7 +86,7 @@ pub fn two_scalars() -> (impl Signature, DiagramN) {
 //   / \
 //  |   |
 pub fn touching() -> (impl Signature, DiagramN) {
-    let mut sig = SignatureBuilder::new();
+    let mut sig = SignatureBuilder::default();
 
     let x = sig.add_zero();
     let x_generator = Generator::new(0, 0);
@@ -152,7 +152,7 @@ pub fn touching() -> (impl Signature, DiagramN) {
 //   / \
 //  |   |
 pub fn crossing() -> (impl Signature, DiagramN) {
-    let mut sig = SignatureBuilder::new();
+    let mut sig = SignatureBuilder::default();
 
     let x = sig.add_zero();
     let x_generator = Generator::new(0, 0);
@@ -235,7 +235,7 @@ pub fn crossing() -> (impl Signature, DiagramN) {
 // a |
 // | |
 pub fn two_beads() -> (impl Signature, DiagramN) {
-    let mut sig = SignatureBuilder::new();
+    let mut sig = SignatureBuilder::default();
 
     let x = sig.add_zero();
     let f = sig.add(x.clone(), x).unwrap();
@@ -257,7 +257,7 @@ pub fn two_beads() -> (impl Signature, DiagramN) {
 // | |
 #[allow(clippy::many_single_char_names)]
 pub fn three_beads() -> (impl Signature, DiagramN) {
-    let mut sig = SignatureBuilder::new();
+    let mut sig = SignatureBuilder::default();
 
     let x = sig.add_zero();
     let f = sig.add(x.clone(), x).unwrap();
@@ -280,7 +280,7 @@ pub fn three_beads() -> (impl Signature, DiagramN) {
 // m |
 // | |
 pub fn stacks() -> (impl Signature, DiagramN) {
-    let mut sig = SignatureBuilder::new();
+    let mut sig = SignatureBuilder::default();
 
     let x = sig.add_zero();
     let f = sig.add(x.clone(), x.clone()).unwrap();
@@ -301,7 +301,7 @@ pub fn stacks() -> (impl Signature, DiagramN) {
 // u
 // |
 pub fn matchsticks() -> (impl Signature, DiagramN) {
-    let mut sig = SignatureBuilder::new();
+    let mut sig = SignatureBuilder::default();
 
     let x = sig.add_zero();
     let f = sig.add(x.clone(), x.clone()).unwrap();
@@ -320,7 +320,7 @@ pub fn matchsticks() -> (impl Signature, DiagramN) {
 // e |    ...    |
 // | |    ...    |
 pub fn bead_series(n: usize) -> (impl Signature, DiagramN) {
-    let mut sig = SignatureBuilder::new();
+    let mut sig = SignatureBuilder::default();
 
     let x = sig.add_zero();
     let f = sig.add(x.clone(), x).unwrap();
@@ -347,7 +347,7 @@ pub fn bead_series(n: usize) -> (impl Signature, DiagramN) {
 //  m
 // / \
 pub fn monoid_unit() -> (impl Signature, DiagramN) {
-    let mut sig = SignatureBuilder::new();
+    let mut sig = SignatureBuilder::default();
 
     // 0-cells
     let x = sig.add_zero();
@@ -376,7 +376,7 @@ pub fn monoid_unit() -> (impl Signature, DiagramN) {
 // |   |
 #[allow(clippy::many_single_char_names)]
 pub fn scalar_and_beads() -> (impl Signature, DiagramN) {
-    let mut sig = SignatureBuilder::new();
+    let mut sig = SignatureBuilder::default();
 
     // 0-cells
     let x = sig.add_zero();
@@ -403,7 +403,7 @@ pub fn scalar_and_beads() -> (impl Signature, DiagramN) {
 }
 
 pub fn real_snake() -> (impl Signature, DiagramN) {
-    let mut sig = SignatureBuilder::new();
+    let mut sig = SignatureBuilder::default();
 
     // 0-cells
     let x = sig.add_zero();
@@ -432,7 +432,7 @@ pub fn real_snake() -> (impl Signature, DiagramN) {
 }
 
 pub fn bubble() -> (impl Signature, DiagramN) {
-    let mut sig = SignatureBuilder::new();
+    let mut sig = SignatureBuilder::default();
 
     // 0-cells
     let x = sig.add_zero();
@@ -456,7 +456,7 @@ pub fn bubble() -> (impl Signature, DiagramN) {
 }
 
 pub fn snake() -> (impl Signature, DiagramN) {
-    let mut sig = SignatureBuilder::new();
+    let mut sig = SignatureBuilder::default();
 
     // 0-cells
     let x = sig.add_zero();
@@ -481,7 +481,7 @@ pub fn snake() -> (impl Signature, DiagramN) {
 }
 
 pub fn lips() -> (impl Signature, DiagramN) {
-    let mut sig = SignatureBuilder::new();
+    let mut sig = SignatureBuilder::default();
 
     // 0-cells
     let x = sig.add_zero();
@@ -515,7 +515,7 @@ pub fn lips() -> (impl Signature, DiagramN) {
 }
 
 pub fn pants_unit() -> (impl Signature, DiagramN) {
-    let mut sig = SignatureBuilder::new();
+    let mut sig = SignatureBuilder::default();
 
     // 0-cells
     let x = sig.add_zero();

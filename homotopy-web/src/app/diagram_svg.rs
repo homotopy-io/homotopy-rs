@@ -14,6 +14,7 @@ use homotopy_core::{
     layout::Layout,
     projection::{Depths, Projection},
     rewrite::RewriteN,
+    signature::Signature as S,
     Boundary, Diagram, DiagramN, Height, Orientation, SliceIndex,
 };
 use homotopy_graphics::{

@@ -23,8 +23,8 @@ const INDENT: &str = "    ";
 pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
     let mut stylesheet = String::new();
 
-    for (generator, style) in styles.as_pairs() {
-        let color = style.color();
+    for generator in styles.generators() {
+        let color = styles.generator_style(generator).unwrap().color();
         for c in 0..3 {
             for orientation in [
                 Orientation::Positive,
@@ -332,7 +332,7 @@ fn render_vertex(generator_style: &impl GeneratorStyle, color: &str) -> String {
     const CIRCLE_RADIUS: f32 = 0.125 / 2.0;
     const SQUARE_SIDELENGTH: f32 = 0.125 / 2.;
 
-    match generator_style.shape().unwrap_or_default() {
+    match generator_style.shape() {
         Circle => format!(
             "Circle(radius={radius},color=C[\"{color}\"],fill_opacity=1)",
             radius = CIRCLE_RADIUS,

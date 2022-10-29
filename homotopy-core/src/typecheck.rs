@@ -17,7 +17,7 @@ use crate::{
     diagram::{Diagram, DiagramN},
     rewrite::{Cone, Cospan, Label, Rewrite, RewriteN},
     scaffold::{Explodable, Scaffold, StableScaffold},
-    signature::Signature,
+    signature::{GeneratorInfo, Signature},
     Boundary, Rewrite0, SliceIndex,
 };
 
@@ -83,8 +83,9 @@ where
             let backward = restrict_rewrite(&cospan.backward, &target_embedding);
             let restricted = DiagramN::new(source, vec![Cospan { forward, backward }]);
             let signature_diagram = signature
-                .diagram(generator)
-                .ok_or(TypeError::UnknownGenerator(generator))?;
+                .generator_info(generator)
+                .ok_or(TypeError::UnknownGenerator(generator))?
+                .diagram();
 
             if collapse_simplicies(restricted) != collapse_simplicies(signature_diagram.clone()) {
                 return Err(TypeError::IllTyped);
@@ -492,7 +493,7 @@ mod test {
 
     #[test]
     fn associativity() {
-        let mut sig = SignatureBuilder::new();
+        let mut sig = SignatureBuilder::default();
 
         let x = sig.add_zero();
         let f = sig.add(x.clone(), x).unwrap();

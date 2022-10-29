@@ -518,7 +518,8 @@ impl SimplicialGeometry {
             let generator = self.verts[self.points[point]].generator;
             let shape = signature_styles
                 .generator_style(generator)
-                .map_or_else(Default::default, |style| style.shape().unwrap_or_default());
+                .map(GeneratorStyle::shape)
+                .unwrap_or_default();
             self.inflate_point_3d(self.points[point], samples, &shape);
         }
 

@@ -21,8 +21,8 @@ use crate::{
 pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
     let mut stylesheet = String::new();
 
-    for (generator, style) in styles.as_pairs() {
-        let color = style.color();
+    for generator in styles.generators() {
+        let color = styles.generator_style(generator).unwrap().color();
         for c in 0..3 {
             for orientation in [
                 Orientation::Positive,
@@ -263,7 +263,7 @@ fn render_vertex(generator_style: &impl GeneratorStyle, point: Point2D<f32>) -> 
     const CIRCLE_RADIUS: f32 = 0.14; // r = 4pt
     const SQUARE_SIDELENGTH: f32 = 0.28; // 8pt x 8pt
 
-    let shape = generator_style.shape().unwrap_or_default();
+    let shape = generator_style.shape();
     let shape_str = match shape {
         Circle => "circle",
         Square => "rectangle",

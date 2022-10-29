@@ -1,8 +1,10 @@
 use std::{collections::VecDeque, str::FromStr};
 
 use homotopy_common::tree::{Node, Tree};
-use homotopy_core::{common::Generator, diagram::NewDiagramError, Diagram, DiagramN};
-use homotopy_graphics::style::{Color, VertexShape};
+use homotopy_core::{
+    common::Generator, diagram::NewDiagramError, signature::Signature as S, Diagram, DiagramN,
+};
+use homotopy_graphics::style::{Color, SignatureStyleData, VertexShape};
 use serde::{Deserialize, Serialize};
 
 use crate::proof::{generators::GeneratorInfo, ModelError};
@@ -80,10 +82,6 @@ impl Signature {
             SignatureItem::Item(info) => Some(info),
             &SignatureItem::Folder(_) => None,
         })
-    }
-
-    pub fn generator_info(&self, generator: Generator) -> Option<&GeneratorInfo> {
-        self.iter().find(|info| info.generator.id == generator.id)
     }
 
     fn next_generator_id(&self) -> usize {
@@ -301,13 +299,23 @@ impl Signature {
     }
 }
 
+impl SignatureStyleData for Signature {
+    type Style = GeneratorInfo;
+
+    fn generator_style(&self, g: Generator) -> Option<&Self::Style> {
+        self.generator_info(g)
+    }
+}
+
 impl homotopy_core::signature::Signature for Signature {
-    fn diagram(&self, g: Generator) -> Option<&Diagram> {
-        self.generator_info(g).map(|info| &info.diagram)
+    type Info = GeneratorInfo;
+
+    fn generators(&self) -> Vec<Generator> {
+        self.iter().map(|info| info.generator).collect()
     }
 
-    fn is_invertible(&self, g: Generator) -> Option<bool> {
-        self.generator_info(g).map(|info| info.invertible)
+    fn generator_info(&self, g: Generator) -> Option<&GeneratorInfo> {
+        self.iter().find(|info| info.generator.id == g.id)
     }
 }
 

@@ -6,7 +6,7 @@ use homotopy_core::{
 
 #[test]
 fn bead_rewrite_base() -> Result<(), String> {
-    let mut builder = SignatureBuilder::new();
+    let mut builder = SignatureBuilder::default();
     let x = builder.add_zero();
     let e = builder
         .add(x.clone(), x.clone())

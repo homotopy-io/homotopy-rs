@@ -19,7 +19,7 @@ use crate::{
         SliceIndex,
     },
     rewrite::{Cospan, Rewrite, RewriteN},
-    signature::Signature,
+    signature::{GeneratorInfo, Signature},
 };
 
 #[derive(PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
@@ -193,7 +193,7 @@ impl Diagram {
         self.generators()
             .iter()
             .filter(|g| g.dimension >= self.dimension())
-            .all(|g| signature.is_invertible(*g).unwrap())
+            .all(|g| signature.generator_info(*g).unwrap().is_invertible())
     }
 }
 

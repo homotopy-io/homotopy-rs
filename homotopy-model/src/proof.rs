@@ -9,6 +9,7 @@ use homotopy_core::{
     contraction::ContractionError,
     diagram::{globularity, NewDiagramError},
     expansion::ExpansionError,
+    signature::Signature as S,
     Diagram, DiagramN,
 };
 use im::Vector;
