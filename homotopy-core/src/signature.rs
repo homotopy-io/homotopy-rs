@@ -1,21 +1,27 @@
 use crate::{diagram::NewDiagramError, Diagram, DiagramN, Generator};
 
+pub trait GeneratorInfo {
+    fn diagram(&self) -> &Diagram;
+    fn is_invertible(&self) -> bool;
+}
+
 pub trait Signature {
-    fn diagram(&self, g: Generator) -> Option<&Diagram>;
-    fn is_invertible(&self, g: Generator) -> Option<bool>;
+    type Info: GeneratorInfo;
+    fn generators(&self) -> Vec<Generator>;
+    fn generator_info(&self, g: Generator) -> Option<&Self::Info>;
 }
 
 /// Helper struct for building signatures in tests and benchmarks.
-pub struct SignatureBuilder(pub Vec<Diagram>);
+#[derive(Clone, Debug, Default)]
+pub struct SignatureBuilder(Vec<GeneratorData>);
+
+#[derive(Clone, Debug)]
+pub struct GeneratorData(Generator, Diagram);
 
 impl SignatureBuilder {
-    pub fn new() -> Self {
-        Self(Default::default())
-    }
-
     pub fn add_zero(&mut self) -> Diagram {
         let generator = Generator::new(self.0.len(), 0);
-        self.0.push(generator.into());
+        self.0.push(GeneratorData(generator, generator.into()));
         generator.into()
     }
 
@@ -28,23 +34,30 @@ impl SignatureBuilder {
         let target: Diagram = target.into();
         let generator = Generator::new(self.0.len(), source.dimension() + 1);
         let diagram = DiagramN::from_generator(generator, source, target)?;
-        self.0.push(diagram.clone().into());
+        self.0
+            .push(GeneratorData(generator, diagram.clone().into()));
         Ok(diagram)
     }
 }
 
-impl Default for SignatureBuilder {
-    fn default() -> Self {
-        Self::new()
+impl GeneratorInfo for GeneratorData {
+    fn diagram(&self) -> &Diagram {
+        &self.1
+    }
+
+    fn is_invertible(&self) -> bool {
+        self.0.dimension > 0
     }
 }
 
 impl Signature for SignatureBuilder {
-    fn diagram(&self, g: Generator) -> Option<&Diagram> {
-        self.0.get(g.id)
+    type Info = GeneratorData;
+
+    fn generators(&self) -> Vec<Generator> {
+        self.0.iter().map(|gd| gd.0).collect()
     }
 
-    fn is_invertible(&self, g: Generator) -> Option<bool> {
-        Some(g.dimension > 0)
+    fn generator_info(&self, g: Generator) -> Option<&GeneratorData> {
+        self.0.get(g.id)
     }
 }

@@ -136,7 +136,7 @@ fn stacks() {
 
 #[test]
 fn inverses_1d() {
-    let mut sig = SignatureBuilder::new();
+    let mut sig = SignatureBuilder::default();
     let x = sig.add_zero();
     let f = sig.add(x.clone(), x).unwrap();
     let f_inverse = f.inverse();

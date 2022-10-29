@@ -1,19 +1,18 @@
 use std::{fmt, str::FromStr};
 
-use homotopy_core::{Generator, Orientation};
+use homotopy_core::{signature::Signature, Generator, Orientation};
 use palette::{convert::FromColor, Hsl, Srgb};
 use serde::{Deserialize, Serialize};
 
 pub trait GeneratorStyle {
     fn color(&self) -> Color;
+    fn shape(&self) -> VertexShape;
     fn label(&self) -> Option<String>;
-    fn shape(&self) -> Option<VertexShape>;
 }
 
-pub trait SignatureStyleData {
+pub trait SignatureStyleData: Signature {
     type Style: GeneratorStyle;
 
-    fn as_pairs(&self) -> Vec<(Generator, &Self::Style)>;
     fn generator_style(&self, g: Generator) -> Option<&Self::Style>;
 }
 

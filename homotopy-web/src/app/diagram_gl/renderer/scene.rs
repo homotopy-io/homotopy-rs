@@ -188,14 +188,14 @@ impl Scene {
                 .into()
         };
         let shape_of = |generator: &Generator| -> Option<Rc<VertexArray>> {
-            signature_styles
+            match signature_styles
                 .generator_style(*generator)
                 .unwrap()
                 .shape()
-                .and_then(|shape| match shape {
-                    VertexShape::Circle => self.sphere.as_ref().map(Rc::clone),
-                    VertexShape::Square => self.cube.as_ref().map(Rc::clone),
-                })
+            {
+                VertexShape::Circle => self.sphere.as_ref().map(Rc::clone),
+                VertexShape::Square => self.cube.as_ref().map(Rc::clone),
+            }
         };
 
         if self.view.dimension() <= 3 {

@@ -26,10 +26,10 @@ macro_rules! write_styles_for {
     }};
     (
         $generator:expr,
-        $style:expr,
-        $stylesheet:expr,
+        $styles:expr,
+        $stylesheet:expr
     ) => {{
-        let color = $style.color();
+        let color = $styles.generator_style($generator).unwrap().color();
 
         for c in 0..3 {
             write_styles_for!(@c_r c, Orientation::Positive, $generator, color, $stylesheet);
@@ -48,8 +48,8 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
     )
     .unwrap();
 
-    for (generator, style) in styles.as_pairs() {
-        write_styles_for!(generator, style, stylesheet,);
+    for generator in styles.generators() {
+        write_styles_for!(generator, styles, stylesheet);
     }
 
     stylesheet
