@@ -360,9 +360,9 @@ dependencies = [
 
 [[package]]
 name = "ctor"
-version = "0.1.23"
+version = "0.1.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cdffe87e1d521a10f9696f833fe502293ea446d7f256c06128293a4119bdf4cb"
+checksum = "6d2301688392eb071b0bf1a37be05c469d3cc4dbbd95df672fe28ab021e6a096"
 dependencies = [
  "quote",
  "syn",
@@ -1397,7 +1397,7 @@ checksum = "478c572c3d73181ff3c2539045f6eb99e5491218eae919370993b890cdbdd98e"
 [[package]]
 name = "petgraph"
 version = "0.6.2"
-source = "git+https://github.com/NickHu/petgraph?branch=filter_map#fd2798f40c24528e08eaa8895207334006ae20bd"
+source = "git+https://github.com/NickHu/petgraph?branch=filter_map#5a10d71722f1fcf07645d49e59f58a174199216d"
 dependencies = [
  "fixedbitset",
  "indexmap",
