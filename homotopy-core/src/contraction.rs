@@ -870,29 +870,21 @@ fn colimit_recursive<Ix: IndexType>(
             // note: every SCC spans every input diagram, and all sources (resp. targets) of
             // subdiagrams within an SCC are equal by globularity
 
-            let source = restriction
-                .edge_references()
-                .sorted_by_key(|e| e.weight().key)
-                .find_map(|e| {
-                    matches!(
-                        e.weight().key,
-                        Some(DeltaSlice::Internal(_, Direction::Forward))
-                    )
-                    .then(|| e.source())
-                })
-                .ok_or(ContractionError::Invalid)?;
-            let target = restriction
-                .edge_references()
-                .sorted_by_key(|e| e.weight().key)
-                .rev() // TODO: need label scheme which identifies certain labels with differing origin coordinates
-                .find_map(|e| {
-                    matches!(
-                        e.weight().key,
-                        Some(DeltaSlice::Internal(_, Direction::Backward))
-                    )
-                    .then(|| e.source())
-                })
-                .ok_or(ContractionError::Invalid)?;
+            let max_ix = restriction
+                .node_indices()
+                .max_by_key(|&ix| restriction[ix].diagram.max_generator().dimension)
+                .expect("recursive colimit subproblem has no max dimensional subdiagram");
+            let (source_ix, target_ix) = restriction
+                .edges_directed(max_ix, Incoming)
+                .fold((None, None), |(s, t), e| match e.weight().key {
+                    Some(DeltaSlice::Internal(_, Direction::Forward)) => {debug_assert_eq!(s, None); (Some(e.source()), t)},
+                    Some(DeltaSlice::Internal(_, Direction::Backward)) => {debug_assert_eq!(t, None); (s, Some(e.source()))},
+                    _ => (s, t),
+                });
+            let source_ix = source_ix
+                .expect("recursive colimit subproblem max dimensional subdiagram index has missing incoming source");
+            let target_ix = target_ix
+                .expect("recursive colimit subproblem max dimensional subdiagram index has missing incoming target");
             // throw away extra information used to compute source and target
             let restriction = restriction.filter_map(
                 |_,
@@ -912,7 +904,7 @@ fn colimit_recursive<Ix: IndexType>(
                 |_, ScaffoldEdge { rewrite, .. }| Some(rewrite.clone().into()),
             );
             let cocone: Cocone<RestrictionIx> = colimit(&restriction, signature)?;
-            Ok((source, cocone, target, restriction_to_exploded))
+            Ok((source_ix, cocone, target_ix, restriction_to_exploded))
         })
         .fold_ok(vec![], |mut acc, x| {
             acc.push(x);
