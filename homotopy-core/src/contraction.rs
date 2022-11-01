@@ -871,7 +871,7 @@ fn colimit_recursive<Ix: IndexType>(
             // subdiagrams within an SCC are equal by globularity
 
             let max_ix = restriction
-                .node_indices()
+                .externals(Outgoing)
                 .max_by_key(|&ix| restriction[ix].diagram.max_generator().dimension)
                 .expect("recursive colimit subproblem has no max dimensional subdiagram");
             let (source_ix, target_ix) = restriction
