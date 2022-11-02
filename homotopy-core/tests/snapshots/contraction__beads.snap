@@ -150,9 +150,13 @@ DiagramN {
                                                 2,
                                                 BoundaryPath(
                                                     Source,
-                                                    1,
+                                                    0,
                                                 ),
-                                                [],
+                                                [
+                                                    Regular(
+                                                        0,
+                                                    ),
+                                                ],
                                             ),
                                         ),
                                     ),
@@ -163,10 +167,14 @@ DiagramN {
                                             (
                                                 2,
                                                 BoundaryPath(
-                                                    Target,
-                                                    1,
+                                                    Source,
+                                                    0,
                                                 ),
-                                                [],
+                                                [
+                                                    Regular(
+                                                        1,
+                                                    ),
+                                                ],
                                             ),
                                         ),
                                     ),
@@ -271,10 +279,14 @@ DiagramN {
                                             (
                                                 2,
                                                 BoundaryPath(
-                                                    Source,
-                                                    1,
+                                                    Target,
+                                                    0,
                                                 ),
-                                                [],
+                                                [
+                                                    Regular(
+                                                        0,
+                                                    ),
+                                                ],
                                             ),
                                         ),
                                     ),
@@ -286,9 +298,13 @@ DiagramN {
                                                 2,
                                                 BoundaryPath(
                                                     Target,
-                                                    1,
+                                                    0,
                                                 ),
-                                                [],
+                                                [
+                                                    Regular(
+                                                        1,
+                                                    ),
+                                                ],
                                             ),
                                         ),
                                     ),
@@ -396,9 +412,13 @@ DiagramN {
                                                 3,
                                                 BoundaryPath(
                                                     Source,
-                                                    1,
+                                                    0,
                                                 ),
-                                                [],
+                                                [
+                                                    Regular(
+                                                        0,
+                                                    ),
+                                                ],
                                             ),
                                         ),
                                     ),
@@ -409,10 +429,14 @@ DiagramN {
                                             (
                                                 3,
                                                 BoundaryPath(
-                                                    Target,
-                                                    1,
+                                                    Source,
+                                                    0,
                                                 ),
-                                                [],
+                                                [
+                                                    Regular(
+                                                        1,
+                                                    ),
+                                                ],
                                             ),
                                         ),
                                     ),
@@ -517,10 +541,14 @@ DiagramN {
                                             (
                                                 3,
                                                 BoundaryPath(
-                                                    Source,
-                                                    1,
+                                                    Target,
+                                                    0,
                                                 ),
-                                                [],
+                                                [
+                                                    Regular(
+                                                        0,
+                                                    ),
+                                                ],
                                             ),
                                         ),
                                     ),
@@ -532,9 +560,13 @@ DiagramN {
                                                 3,
                                                 BoundaryPath(
                                                     Target,
-                                                    1,
+                                                    0,
                                                 ),
-                                                [],
+                                                [
+                                                    Regular(
+                                                        1,
+                                                    ),
+                                                ],
                                             ),
                                         ),
                                     ),
@@ -653,9 +685,13 @@ DiagramN {
                                                                     2,
                                                                     BoundaryPath(
                                                                         Source,
-                                                                        1,
+                                                                        0,
                                                                     ),
-                                                                    [],
+                                                                    [
+                                                                        Regular(
+                                                                            0,
+                                                                        ),
+                                                                    ],
                                                                 ),
                                                             ),
                                                         ),
@@ -666,10 +702,14 @@ DiagramN {
                                                                 (
                                                                     2,
                                                                     BoundaryPath(
-                                                                        Target,
-                                                                        1,
+                                                                        Source,
+                                                                        0,
                                                                     ),
-                                                                    [],
+                                                                    [
+                                                                        Regular(
+                                                                            1,
+                                                                        ),
+                                                                    ],
                                                                 ),
                                                             ),
                                                         ),
@@ -774,10 +814,14 @@ DiagramN {
                                                                 (
                                                                     2,
                                                                     BoundaryPath(
-                                                                        Source,
-                                                                        1,
+                                                                        Target,
+                                                                        0,
                                                                     ),
-                                                                    [],
+                                                                    [
+                                                                        Regular(
+                                                                            0,
+                                                                        ),
+                                                                    ],
                                                                 ),
                                                             ),
                                                         ),
@@ -789,9 +833,13 @@ DiagramN {
                                                                     2,
                                                                     BoundaryPath(
                                                                         Target,
-                                                                        1,
+                                                                        0,
                                                                     ),
-                                                                    [],
+                                                                    [
+                                                                        Regular(
+                                                                            1,
+                                                                        ),
+                                                                    ],
                                                                 ),
                                                             ),
                                                         ),
@@ -899,9 +947,13 @@ DiagramN {
                                                                     3,
                                                                     BoundaryPath(
                                                                         Source,
-                                                                        1,
+                                                                        0,
                                                                     ),
-                                                                    [],
+                                                                    [
+                                                                        Regular(
+                                                                            0,
+                                                                        ),
+                                                                    ],
                                                                 ),
                                                             ),
                                                         ),
@@ -912,10 +964,14 @@ DiagramN {
                                                                 (
                                                                     3,
                                                                     BoundaryPath(
-                                                                        Target,
-                                                                        1,
+                                                                        Source,
+                                                                        0,
                                                                     ),
-                                                                    [],
+                                                                    [
+                                                                        Regular(
+                                                                            1,
+                                                                        ),
+                                                                    ],
                                                                 ),
                                                             ),
                                                         ),
@@ -1020,10 +1076,14 @@ DiagramN {
                                                                 (
                                                                     3,
                                                                     BoundaryPath(
-                                                                        Source,
-                                                                        1,
+                                                                        Target,
+                                                                        0,
                                                                     ),
-                                                                    [],
+                                                                    [
+                                                                        Regular(
+                                                                            0,
+                                                                        ),
+                                                                    ],
                                                                 ),
                                                             ),
                                                         ),
@@ -1035,9 +1095,13 @@ DiagramN {
                                                                     3,
                                                                     BoundaryPath(
                                                                         Target,
-                                                                        1,
+                                                                        0,
                                                                     ),
-                                                                    [],
+                                                                    [
+                                                                        Regular(
+                                                                            1,
+                                                                        ),
+                                                                    ],
                                                                 ),
                                                             ),
                                                         ),
@@ -1146,9 +1210,13 @@ DiagramN {
                                                                 2,
                                                                 BoundaryPath(
                                                                     Source,
-                                                                    1,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        0,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -1159,10 +1227,14 @@ DiagramN {
                                                             (
                                                                 2,
                                                                 BoundaryPath(
-                                                                    Target,
-                                                                    1,
+                                                                    Source,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        1,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -1263,9 +1335,13 @@ DiagramN {
                                                                 3,
                                                                 BoundaryPath(
                                                                     Source,
-                                                                    1,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        0,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -1276,10 +1352,14 @@ DiagramN {
                                                             (
                                                                 3,
                                                                 BoundaryPath(
-                                                                    Target,
-                                                                    1,
+                                                                    Source,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        1,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -1384,10 +1464,14 @@ DiagramN {
                                                             (
                                                                 2,
                                                                 BoundaryPath(
-                                                                    Source,
-                                                                    1,
+                                                                    Target,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        0,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -1399,9 +1483,13 @@ DiagramN {
                                                                 2,
                                                                 BoundaryPath(
                                                                     Target,
-                                                                    1,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        1,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -1501,10 +1589,14 @@ DiagramN {
                                                             (
                                                                 3,
                                                                 BoundaryPath(
-                                                                    Source,
-                                                                    1,
+                                                                    Target,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        0,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -1516,9 +1608,13 @@ DiagramN {
                                                                 3,
                                                                 BoundaryPath(
                                                                     Target,
-                                                                    1,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        1,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -1626,9 +1722,13 @@ DiagramN {
                                                                 2,
                                                                 BoundaryPath(
                                                                     Source,
-                                                                    1,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        0,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -1639,10 +1739,14 @@ DiagramN {
                                                             (
                                                                 2,
                                                                 BoundaryPath(
-                                                                    Target,
-                                                                    1,
+                                                                    Source,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        1,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -1743,9 +1847,13 @@ DiagramN {
                                                                 3,
                                                                 BoundaryPath(
                                                                     Source,
-                                                                    1,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        0,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -1756,10 +1864,14 @@ DiagramN {
                                                             (
                                                                 3,
                                                                 BoundaryPath(
-                                                                    Target,
-                                                                    1,
+                                                                    Source,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        1,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -1864,10 +1976,14 @@ DiagramN {
                                                             (
                                                                 2,
                                                                 BoundaryPath(
-                                                                    Source,
-                                                                    1,
+                                                                    Target,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        0,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -1879,9 +1995,13 @@ DiagramN {
                                                                 2,
                                                                 BoundaryPath(
                                                                     Target,
-                                                                    1,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        1,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -1982,9 +2102,13 @@ DiagramN {
                                                                 3,
                                                                 BoundaryPath(
                                                                     Source,
-                                                                    1,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        0,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -1995,10 +2119,14 @@ DiagramN {
                                                             (
                                                                 3,
                                                                 BoundaryPath(
-                                                                    Target,
-                                                                    1,
+                                                                    Source,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        1,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -2103,10 +2231,14 @@ DiagramN {
                                                             (
                                                                 2,
                                                                 BoundaryPath(
-                                                                    Source,
-                                                                    1,
+                                                                    Target,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        0,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -2118,9 +2250,13 @@ DiagramN {
                                                                 2,
                                                                 BoundaryPath(
                                                                     Target,
-                                                                    1,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        1,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -2220,10 +2356,14 @@ DiagramN {
                                                             (
                                                                 3,
                                                                 BoundaryPath(
-                                                                    Source,
-                                                                    1,
+                                                                    Target,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        0,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -2235,9 +2375,13 @@ DiagramN {
                                                                 3,
                                                                 BoundaryPath(
                                                                     Target,
-                                                                    1,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        1,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -2345,9 +2489,13 @@ DiagramN {
                                                                 3,
                                                                 BoundaryPath(
                                                                     Source,
-                                                                    1,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        0,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -2358,10 +2506,14 @@ DiagramN {
                                                             (
                                                                 3,
                                                                 BoundaryPath(
-                                                                    Target,
-                                                                    1,
+                                                                    Source,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        1,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -2466,10 +2618,14 @@ DiagramN {
                                                             (
                                                                 2,
                                                                 BoundaryPath(
-                                                                    Source,
-                                                                    1,
+                                                                    Target,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        0,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
@@ -2481,9 +2637,13 @@ DiagramN {
                                                                 2,
                                                                 BoundaryPath(
                                                                     Target,
-                                                                    1,
+                                                                    0,
                                                                 ),
-                                                                [],
+                                                                [
+                                                                    Regular(
+                                                                        1,
+                                                                    ),
+                                                                ],
                                                             ),
                                                         ),
                                                     ),
