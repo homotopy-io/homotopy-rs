@@ -15,8 +15,7 @@ use thiserror::Error;
 
 use crate::{
     common::{
-        BoundaryPath, DimensionError, Generator, GeneratorTransform, Mode, Orientation,
-        RegularHeight, SingularHeight,
+        BoundaryPath, DimensionError, Generator, Mode, Orientation, RegularHeight, SingularHeight,
     },
     diagram::Diagram,
     label::{Label, Neighbourhood},
@@ -352,18 +351,15 @@ impl Rewrite {
 
     #[must_use]
     pub fn orientation_transform(&self, k: Orientation) -> Self {
-        self.map_targets(GeneratorTransform::Orientation {
-            k,
-            min_dim: self.dimension(),
-        })
+        self.orientation_transform_above(k, self.dimension())
     }
 
     #[must_use]
-    pub(crate) fn map_targets(&self, f: GeneratorTransform) -> Self {
+    fn orientation_transform_above(&self, k: Orientation, dim: usize) -> Self {
         use Rewrite::{Rewrite0, RewriteN};
         match self {
-            Rewrite0(r) => Rewrite0(r.map_targets(f)),
-            RewriteN(r) => RewriteN(r.map_targets(f)),
+            Rewrite0(r) => Rewrite0(r.orientation_transform_above(k, dim)),
+            RewriteN(r) => RewriteN(r.orientation_transform_above(k, dim)),
         }
     }
 
@@ -454,10 +450,15 @@ impl Rewrite0 {
     }
 
     #[must_use]
-    pub(crate) fn map_targets(&self, f: GeneratorTransform) -> Self {
+    fn orientation_transform_above(&self, k: Orientation, dim: usize) -> Self {
         match &self.0 {
             None => Self(None),
-            Some((source, target, label)) => Self::new(*source, f.apply(*target), label.clone()),
+            Some((source, mut target, label)) => {
+                if dim < target.dimension {
+                    target = target.orientation_transform(k);
+                }
+                Self::new(*source, target, label.clone())
+            }
         }
     }
 
@@ -645,7 +646,7 @@ impl RewriteN {
     }
 
     #[must_use]
-    pub(crate) fn map_targets(&self, f: GeneratorTransform) -> Self {
+    fn orientation_transform_above(&self, k: Orientation, dim: usize) -> Self {
         let cones = self
             .cones()
             .iter()
@@ -653,14 +654,14 @@ impl RewriteN {
                 Cone::new(
                     c.index,
                     c.source().to_vec(),
-                    c.target().map(|r| r.map_targets(f)),
+                    c.target().map(|r| r.orientation_transform_above(k, dim)),
                     c.regular_slices()
                         .iter()
-                        .map(|r| r.map_targets(f))
+                        .map(|r| r.orientation_transform_above(k, dim))
                         .collect(),
                     c.singular_slices()
                         .iter()
-                        .map(|r| r.map_targets(f))
+                        .map(|r| r.orientation_transform_above(k, dim))
                         .collect(),
                 )
             })

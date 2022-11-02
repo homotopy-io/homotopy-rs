@@ -382,22 +382,3 @@ impl fmt::Display for Orientation {
         }
     }
 }
-
-#[derive(Copy, Clone, Debug)]
-pub(crate) enum GeneratorTransform {
-    Orientation { k: Orientation, min_dim: usize },
-}
-
-impl GeneratorTransform {
-    pub(crate) fn apply(self, g: Generator) -> Generator {
-        match self {
-            Self::Orientation { k, min_dim } => {
-                if g.dimension <= min_dim {
-                    g
-                } else {
-                    g.orientation_transform(k)
-                }
-            }
-        }
-    }
-}
