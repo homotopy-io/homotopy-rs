@@ -2,19 +2,31 @@
 [
   "CreateGeneratorZero",
   {
-    "Select": 0
+    "SelectGenerator": {
+      "dimension": 0,
+      "id": 0,
+      "orientation": "Positive"
+    }
   },
   {
     "SetBoundary": "source"
   },
   {
-    "Select": 0
+    "SelectGenerator": {
+      "dimension": 0,
+      "id": 0,
+      "orientation": "Positive"
+    }
   },
   {
     "SetBoundary": "target"
   },
   {
-    "Select": 1
+    "SelectGenerator": {
+      "dimension": 1,
+      "id": 1,
+      "orientation": "Positive"
+    }
   },
   {
     "SelectPoints": [
@@ -27,7 +39,11 @@
     "SetBoundary": "source"
   },
   {
-    "Select": 1
+    "SelectGenerator": {
+      "dimension": 1,
+      "id": 1,
+      "orientation": "Positive"
+    }
   },
   {
     "SetBoundary": "target"

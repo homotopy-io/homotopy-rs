@@ -137,10 +137,6 @@ pub enum Action {
     /// load the generator's diagram into the workspace; else do nothing.
     SelectGenerator(Generator),
 
-    /// Select an item at the given index. This will either be a generator in the signature
-    /// or an attachment option (if the attach state is non-empty).
-    Select(usize),
-
     /// Ascend by a number of slices in the currently selected diagram in the workspace. If there
     /// is no diagram in the workspace or it is already displayed in its original dimension,
     /// nothing happens.
@@ -200,15 +196,13 @@ impl Action {
 }
 
 #[derive(Debug, Error)]
-pub enum ModelError {
+pub enum ProofError {
     #[error("no attachment found")]
     NoAttachment,
     #[error("the boundaries are not compatible")]
     IncompatibleBoundaries(#[from] NewDiagramError),
     #[error("selected a generator that is not in the signature")]
     UnknownGeneratorSelected,
-    #[error("index out of bounds")]
-    IndexOutOfBounds,
     #[error("tried to descend into an invalid diagram slice")]
     InvalidSlice(#[from] DimensionError),
     #[error("invalid action")]
@@ -225,7 +219,7 @@ pub enum ModelError {
 
 impl ProofState {
     /// Update the state in response to an [Action].
-    pub fn update(&mut self, action: &Action) -> Result<(), ModelError> {
+    pub fn update(&mut self, action: &Action) -> Result<(), ProofError> {
         match action {
             Action::CreateGeneratorZero => {
                 self.signature.create_generator_zero("Cell");
@@ -237,7 +231,6 @@ impl ProofState {
             Action::ClearWorkspace => self.clear_workspace(),
             Action::ClearBoundary => self.clear_boundary(),
             Action::SelectGenerator(generator) => self.select_generator(*generator)?,
-            Action::Select(index) => self.select(*index)?,
             Action::AscendSlice(count) => self.ascend_slice(*count),
             Action::DescendSlice(slice) => self.descend_slice(*slice)?,
             Action::SwitchSlice(direction) => self.switch_slice(*direction),
@@ -340,19 +333,19 @@ impl ProofState {
     }
 
     /// Handler for [Action::ImportProof].
-    fn import_proof(&mut self, data: &SerializedData) -> Result<(), ModelError> {
+    fn import_proof(&mut self, data: &SerializedData) -> Result<(), ProofError> {
         let ((signature, workspace), metadata) = serialize::deserialize(&data.0)
             .or_else(|| migration::deserialize(&data.0))
-            .ok_or(ModelError::Import)?;
+            .ok_or(ProofError::Import)?;
         for g in signature.iter() {
             g.diagram
                 .check(Mode::Deep)
-                .map_err(|_err| ModelError::Import)?;
+                .map_err(|_err| ProofError::Import)?;
         }
         if let Some(w) = workspace.as_ref() {
             w.diagram
                 .check(Mode::Deep)
-                .map_err(|_err| ModelError::Import)?;
+                .map_err(|_err| ProofError::Import)?;
         }
         self.signature = signature;
         self.workspace = workspace;
@@ -361,7 +354,7 @@ impl ProofState {
     }
 
     /// Handler for [Action::EditSignature].
-    fn edit_signature(&mut self, edit: &SignatureEdit) -> Result<(), ModelError> {
+    fn edit_signature(&mut self, edit: &SignatureEdit) -> Result<(), ProofError> {
         // intercept remove events in order to clean-up workspace and boundaries
         if let SignatureEdit::Remove(node) = edit {
             // remove from the workspace
@@ -402,7 +395,7 @@ impl ProofState {
     }
 
     /// Handler for [Action::SetBoundary].
-    fn set_boundary(&mut self, boundary: Boundary) -> Result<(), ModelError> {
+    fn set_boundary(&mut self, boundary: Boundary) -> Result<(), ProofError> {
         use Boundary::{Source, Target};
 
         match (&self.workspace, &self.boundary) {
@@ -420,7 +413,7 @@ impl ProofState {
 
                     self.signature
                         .create_generator(source, target, "Cell", false)
-                        .map_err(ModelError::IncompatibleBoundaries)?;
+                        .map_err(ProofError::IncompatibleBoundaries)?;
 
                     self.boundary = None;
                 }
@@ -504,11 +497,11 @@ impl ProofState {
     }
 
     /// Handler for [Action::SelectGenerator].
-    fn select_generator(&mut self, generator: Generator) -> Result<(), ModelError> {
+    fn select_generator(&mut self, generator: Generator) -> Result<(), ProofError> {
         let info = self
             .signature
             .generator_info(generator)
-            .ok_or(ModelError::UnknownGeneratorSelected)?;
+            .ok_or(ProofError::UnknownGeneratorSelected)?;
 
         self.workspace = Some(Workspace {
             diagram: info.diagram.clone(),
@@ -520,38 +513,6 @@ impl ProofState {
             attachment_highlight: Default::default(),
             slice_highlight: Default::default(),
         });
-
-        Ok(())
-    }
-
-    /// Handler for [Action::Select].
-    fn select(&mut self, index: usize) -> Result<(), ModelError> {
-        match self.attach_options() {
-            None => {
-                // Select a generator
-                let info = self
-                    .signature
-                    .iter()
-                    .nth(index)
-                    .ok_or(ModelError::IndexOutOfBounds)?;
-
-                self.workspace = Some(Workspace {
-                    diagram: info.diagram.clone(),
-                    path: Default::default(),
-                    view: View {
-                        dimension: info.generator.dimension.min(2) as u8,
-                    },
-                    attach: Default::default(),
-                    attachment_highlight: Default::default(),
-                    slice_highlight: Default::default(),
-                });
-            }
-            Some(att) => {
-                // Select an attachment option.
-                let option = att.get(index).ok_or(ModelError::IndexOutOfBounds)?;
-                self.attach(&option.clone())?;
-            }
-        }
 
         Ok(())
     }
@@ -574,7 +535,7 @@ impl ProofState {
     }
 
     /// Handler for [Action::DescendSlice].
-    fn descend_slice(&mut self, slice: SliceIndex) -> Result<(), ModelError> {
+    fn descend_slice(&mut self, slice: SliceIndex) -> Result<(), ProofError> {
         if let Some(workspace) = &mut self.workspace {
             let mut path = workspace.path.clone();
             path.push_back(slice);
@@ -583,9 +544,9 @@ impl ProofState {
             let mut part = workspace.diagram.clone();
             for height in &path {
                 part = DiagramN::try_from(part)
-                    .map_err(ModelError::InvalidSlice)?
+                    .map_err(ProofError::InvalidSlice)?
                     .slice(*height)
-                    .ok_or(ModelError::InvalidSlice(DimensionError))?;
+                    .ok_or(ProofError::InvalidSlice(DimensionError))?;
             }
 
             // Update workspace
@@ -627,7 +588,7 @@ impl ProofState {
     }
 
     /// Handler for [Action::SelectPoint].
-    fn select_points(&mut self, selected: &[Vec<SliceIndex>]) -> Result<(), ModelError> {
+    fn select_points(&mut self, selected: &[Vec<SliceIndex>]) -> Result<(), ProofError> {
         if selected.is_empty() {
             return Ok(());
         }
@@ -664,7 +625,7 @@ impl ProofState {
                 Some(boundary_path) => DiagramN::try_from(workspace.diagram.clone())
                     .ok()
                     .and_then(|diagram| diagram.follow(boundary_path))
-                    .ok_or(ModelError::NoAttachment)?,
+                    .ok_or(ProofError::NoAttachment)?,
             };
 
             let boundary: Boundary = boundary_path.map_or(Boundary::Target, BoundaryPath::boundary);
@@ -732,7 +693,7 @@ impl ProofState {
         match matches.len() {
             0 => {
                 self.clear_attach();
-                Err(ModelError::NoAttachment)
+                Err(ProofError::NoAttachment)
             }
             1 => {
                 self.attach(matches.front().unwrap())?;
@@ -747,7 +708,7 @@ impl ProofState {
         }
     }
 
-    fn attach(&mut self, option: &AttachOption) -> Result<(), ModelError> {
+    fn attach(&mut self, option: &AttachOption) -> Result<(), ProofError> {
         if let Some(workspace) = &mut self.workspace {
             // TODO: Better error handling, although none of these errors should occur
             let attachment: &DiagramN = &option.diagram;
@@ -756,12 +717,12 @@ impl ProofState {
             let result = match &option.boundary_path {
                 Some(bp) => <&DiagramN>::try_from(&workspace.diagram)?
                     .attach(attachment, bp.boundary(), &embedding)
-                    .or(Err(ModelError::NoAttachment))?,
+                    .or(Err(ProofError::NoAttachment))?,
                 None => workspace
                     .diagram
                     .identity()
                     .attach(attachment, Boundary::Target, &embedding)
-                    .or(Err(ModelError::NoAttachment))?,
+                    .or(Err(ProofError::NoAttachment))?,
             };
 
             // TODO: Figure out what should happen with the slice path
@@ -790,13 +751,13 @@ impl ProofState {
     }
 
     /// Handler for [Action::Behead].
-    fn behead(&mut self) -> Result<(), ModelError> {
+    fn behead(&mut self) -> Result<(), ProofError> {
         if let Some(ws) = &mut self.workspace {
             let diagram: &DiagramN = (&ws.diagram)
                 .try_into()
-                .map_err(|_dimerr| ModelError::InvalidAction)?;
+                .map_err(|_dimerr| ProofError::InvalidAction)?;
             if diagram.size() == 0 {
-                return Err(ModelError::InvalidAction);
+                return Err(ProofError::InvalidAction);
             }
             let max_height = match ws.path.len() {
                 0 => diagram.size() - 1,
@@ -804,9 +765,9 @@ impl ProofState {
                     SliceIndex::Boundary(Boundary::Source) => 0,
                     SliceIndex::Boundary(Boundary::Target) => diagram.size(),
                     SliceIndex::Interior(Height::Regular(j)) => j,
-                    _ => return Err(ModelError::InvalidAction),
+                    _ => return Err(ProofError::InvalidAction),
                 },
-                _ => return Err(ModelError::InvalidAction),
+                _ => return Err(ProofError::InvalidAction),
             };
             let beheaded_diagram = diagram.behead(max_height).into();
 
@@ -819,13 +780,13 @@ impl ProofState {
     }
 
     /// Handler for [Action::Befoot].
-    fn befoot(&mut self) -> Result<(), ModelError> {
+    fn befoot(&mut self) -> Result<(), ProofError> {
         if let Some(ws) = &mut self.workspace {
             let diagram: &DiagramN = (&ws.diagram)
                 .try_into()
-                .map_err(|_dimerr| ModelError::InvalidAction)?;
+                .map_err(|_dimerr| ProofError::InvalidAction)?;
             if diagram.size() == 0 {
-                return Err(ModelError::InvalidAction);
+                return Err(ProofError::InvalidAction);
             }
 
             let min_height = match ws.path.len() {
@@ -834,9 +795,9 @@ impl ProofState {
                     SliceIndex::Boundary(Boundary::Source) => 0,
                     SliceIndex::Boundary(Boundary::Target) => diagram.size(),
                     SliceIndex::Interior(Height::Regular(j)) => j,
-                    _ => return Err(ModelError::InvalidAction),
+                    _ => return Err(ProofError::InvalidAction),
                 },
-                _ => return Err(ModelError::InvalidAction),
+                _ => return Err(ProofError::InvalidAction),
             };
             let befooted_diagram = diagram.befoot(min_height).into();
 
@@ -849,15 +810,15 @@ impl ProofState {
     }
 
     /// Handler for [Action::Invert].
-    fn invert(&mut self) -> Result<(), ModelError> {
+    fn invert(&mut self) -> Result<(), ProofError> {
         if let Some(ws) = &mut self.workspace {
             if ws.diagram.is_invertible(&self.signature) {
                 let diagram: &DiagramN = (&ws.diagram)
                     .try_into()
-                    .map_err(|_dimerr| ModelError::InvalidAction)?;
+                    .map_err(|_dimerr| ProofError::InvalidAction)?;
                 ws.diagram = diagram.inverse().into();
             } else {
-                return Err(ModelError::NotInvertible);
+                return Err(ProofError::NotInvertible);
             }
         }
 
@@ -865,18 +826,18 @@ impl ProofState {
     }
 
     /// Handler for [Action::Restrict].
-    fn restrict(&mut self) -> Result<(), ModelError> {
+    fn restrict(&mut self) -> Result<(), ProofError> {
         if let Some(ws) = &mut self.workspace {
             let mut diagram = ws.diagram.clone();
             for height in &ws.path {
                 (matches!(height, SliceIndex::Boundary(_))
                     || matches!(height, SliceIndex::Interior(Height::Regular(_))))
                 .then_some(())
-                .ok_or(ModelError::InvalidAction)?;
+                .ok_or(ProofError::InvalidAction)?;
                 diagram = DiagramN::try_from(diagram)
-                    .map_err(ModelError::InvalidSlice)?
+                    .map_err(ProofError::InvalidSlice)?
                     .slice(*height)
-                    .ok_or(ModelError::InvalidSlice(DimensionError))?;
+                    .ok_or(ProofError::InvalidSlice(DimensionError))?;
             }
             ws.diagram = diagram;
             ws.path = Default::default();
@@ -887,15 +848,15 @@ impl ProofState {
     }
 
     /// Handler for [Action::Theorem].
-    fn theorem(&mut self) -> Result<(), ModelError> {
+    fn theorem(&mut self) -> Result<(), ProofError> {
         let diagram: DiagramN = self
             .workspace
             .as_ref()
-            .ok_or(ModelError::InvalidAction)?
+            .ok_or(ProofError::InvalidAction)?
             .diagram
             .clone()
             .try_into()
-            .map_err(|_dimerr| ModelError::InvalidAction)?;
+            .map_err(|_dimerr| ProofError::InvalidAction)?;
 
         let invertible = Diagram::from(diagram.clone()).is_invertible(self.signature());
         // new generator of singular height 1 from source to target of current diagram
@@ -915,7 +876,7 @@ impl ProofState {
         Ok(())
     }
 
-    fn homotopy_expansion(&mut self, homotopy: &Expand) -> Result<(), ModelError> {
+    fn homotopy_expansion(&mut self, homotopy: &Expand) -> Result<(), ProofError> {
         if let Some(workspace) = &mut self.workspace {
             let diagram: DiagramN = workspace.diagram.clone().try_into()?;
 
@@ -955,7 +916,7 @@ impl ProofState {
         Ok(())
     }
 
-    fn homotopy_contraction(&mut self, homotopy: &Contract) -> Result<(), ModelError> {
+    fn homotopy_contraction(&mut self, homotopy: &Contract) -> Result<(), ProofError> {
         if let Some(workspace) = &mut self.workspace {
             let diagram: DiagramN = workspace.diagram.clone().try_into()?;
             let location = {
@@ -983,7 +944,7 @@ impl ProofState {
             if let Some(boundary_path) = boundary_path {
                 let contractum = diagram
                     .contract(boundary_path, &interior_path, height, bias, &self.signature)
-                    .map_err(ModelError::ContractionError)?;
+                    .map_err(ProofError::ContractionError)?;
                 workspace.diagram = contractum.into();
             } else {
                 let contractum = diagram
@@ -995,7 +956,7 @@ impl ProofState {
                         bias,
                         &self.signature,
                     )
-                    .map_err(ModelError::ContractionError)?;
+                    .map_err(ProofError::ContractionError)?;
                 workspace.diagram = contractum.target();
             }
 

@@ -18,6 +18,7 @@ pub enum Action {
     ExportSvg,
     ExportManim(bool),
     ExportStl,
+    Select(usize),
 }
 
 impl Action {
@@ -218,7 +219,7 @@ impl State {
                 let mut proof: Proof = Default::default();
                 let (safe, actions): (bool, Vec<proof::Action>) =
                     serde_json::from_slice(&data.0)
-                        .or(Err(ModelError::Proof(proof::ModelError::Import)))?;
+                        .or(Err(ModelError::Proof(proof::ProofError::Import)))?;
                 let len = if safe {
                     actions.len()
                 } else {
@@ -229,9 +230,29 @@ impl State {
                         proof.update(a)?;
                         self.history.add(a.clone(), proof.clone());
                     } else {
-                        return Err(ModelError::Proof(proof::ModelError::InvalidAction));
+                        return Err(ModelError::Proof(proof::ProofError::InvalidAction));
                     }
                 }
+            }
+
+            Action::Select(index) => {
+                let proof = self.with_proof(Clone::clone).ok_or(ModelError::Internal)?;
+                let action = match proof.attach_options() {
+                    // Select a generator.
+                    None => proof::Action::SelectGenerator(
+                        proof
+                            .signature
+                            .iter()
+                            .nth(index)
+                            .ok_or(ModelError::IndexOutOfBounds)?
+                            .generator,
+                    ),
+                    // Select an attachment option.
+                    Some(att) => proof::Action::Attach(
+                        att.get(index).ok_or(ModelError::IndexOutOfBounds)?.clone(),
+                    ),
+                };
+                self.update(Action::Proof(action))?;
             }
         }
 
@@ -244,11 +265,13 @@ pub enum ModelError {
     #[error("export failed")]
     Export(wasm_bindgen::JsValue),
     #[error(transparent)]
-    Proof(#[from] proof::ModelError),
+    Proof(#[from] proof::ProofError),
     #[error(transparent)]
     History(#[from] history::HistoryError),
     #[error("internal error")]
     Internal,
+    #[error("index out of bounds")]
+    IndexOutOfBounds,
 }
 
 pub fn generate_download(name: &str, ext: &str, data: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
