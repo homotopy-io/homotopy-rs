@@ -1,6 +1,5 @@
 ---
 source: homotopy-model/tests/actions.rs
-assertion_line: 25
 expression: proof.workspace
 ---
 Some(
@@ -213,9 +212,13 @@ Some(
                                                         2,
                                                         BoundaryPath(
                                                             Source,
-                                                            1,
+                                                            0,
                                                         ),
-                                                        [],
+                                                        [
+                                                            Regular(
+                                                                0,
+                                                            ),
+                                                        ],
                                                     ),
                                                 ),
                                             ),
@@ -244,10 +247,14 @@ Some(
                                                     (
                                                         2,
                                                         BoundaryPath(
-                                                            Target,
-                                                            1,
+                                                            Source,
+                                                            0,
                                                         ),
-                                                        [],
+                                                        [
+                                                            Regular(
+                                                                2,
+                                                            ),
+                                                        ],
                                                     ),
                                                 ),
                                             ),
@@ -370,10 +377,14 @@ Some(
                                                     (
                                                         2,
                                                         BoundaryPath(
-                                                            Source,
-                                                            1,
+                                                            Target,
+                                                            0,
                                                         ),
-                                                        [],
+                                                        [
+                                                            Regular(
+                                                                0,
+                                                            ),
+                                                        ],
                                                     ),
                                                 ),
                                             ),
@@ -385,9 +396,13 @@ Some(
                                                         2,
                                                         BoundaryPath(
                                                             Target,
-                                                            1,
+                                                            0,
                                                         ),
-                                                        [],
+                                                        [
+                                                            Regular(
+                                                                1,
+                                                            ),
+                                                        ],
                                                     ),
                                                 ),
                                             ),
@@ -525,9 +540,13 @@ Some(
                                                         2,
                                                         BoundaryPath(
                                                             Source,
-                                                            1,
+                                                            0,
                                                         ),
-                                                        [],
+                                                        [
+                                                            Regular(
+                                                                0,
+                                                            ),
+                                                        ],
                                                     ),
                                                 ),
                                             ),
@@ -556,10 +575,14 @@ Some(
                                                     (
                                                         2,
                                                         BoundaryPath(
-                                                            Target,
-                                                            1,
+                                                            Source,
+                                                            0,
                                                         ),
-                                                        [],
+                                                        [
+                                                            Regular(
+                                                                2,
+                                                            ),
+                                                        ],
                                                     ),
                                                 ),
                                             ),
@@ -682,10 +705,14 @@ Some(
                                                     (
                                                         2,
                                                         BoundaryPath(
-                                                            Source,
-                                                            1,
+                                                            Target,
+                                                            0,
                                                         ),
-                                                        [],
+                                                        [
+                                                            Regular(
+                                                                0,
+                                                            ),
+                                                        ],
                                                     ),
                                                 ),
                                             ),
@@ -697,9 +724,13 @@ Some(
                                                         2,
                                                         BoundaryPath(
                                                             Target,
-                                                            1,
+                                                            0,
                                                         ),
-                                                        [],
+                                                        [
+                                                            Regular(
+                                                                1,
+                                                            ),
+                                                        ],
                                                     ),
                                                 ),
                                             ),
@@ -848,9 +879,13 @@ Some(
                                                                             2,
                                                                             BoundaryPath(
                                                                                 Source,
-                                                                                1,
+                                                                                0,
                                                                             ),
-                                                                            [],
+                                                                            [
+                                                                                Regular(
+                                                                                    0,
+                                                                                ),
+                                                                            ],
                                                                         ),
                                                                     ),
                                                                 ),
@@ -879,10 +914,14 @@ Some(
                                                                         (
                                                                             2,
                                                                             BoundaryPath(
-                                                                                Target,
-                                                                                1,
+                                                                                Source,
+                                                                                0,
                                                                             ),
-                                                                            [],
+                                                                            [
+                                                                                Regular(
+                                                                                    2,
+                                                                                ),
+                                                                            ],
                                                                         ),
                                                                     ),
                                                                 ),
@@ -1005,10 +1044,14 @@ Some(
                                                                         (
                                                                             2,
                                                                             BoundaryPath(
-                                                                                Source,
-                                                                                1,
+                                                                                Target,
+                                                                                0,
                                                                             ),
-                                                                            [],
+                                                                            [
+                                                                                Regular(
+                                                                                    0,
+                                                                                ),
+                                                                            ],
                                                                         ),
                                                                     ),
                                                                 ),
@@ -1020,9 +1063,13 @@ Some(
                                                                             2,
                                                                             BoundaryPath(
                                                                                 Target,
-                                                                                1,
+                                                                                0,
                                                                             ),
-                                                                            [],
+                                                                            [
+                                                                                Regular(
+                                                                                    1,
+                                                                                ),
+                                                                            ],
                                                                         ),
                                                                     ),
                                                                 ),
@@ -1160,9 +1207,13 @@ Some(
                                                                             2,
                                                                             BoundaryPath(
                                                                                 Source,
-                                                                                1,
+                                                                                0,
                                                                             ),
-                                                                            [],
+                                                                            [
+                                                                                Regular(
+                                                                                    0,
+                                                                                ),
+                                                                            ],
                                                                         ),
                                                                     ),
                                                                 ),
@@ -1191,10 +1242,14 @@ Some(
                                                                         (
                                                                             2,
                                                                             BoundaryPath(
-                                                                                Target,
-                                                                                1,
+                                                                                Source,
+                                                                                0,
                                                                             ),
-                                                                            [],
+                                                                            [
+                                                                                Regular(
+                                                                                    2,
+                                                                                ),
+                                                                            ],
                                                                         ),
                                                                     ),
                                                                 ),
@@ -1317,10 +1372,14 @@ Some(
                                                                         (
                                                                             2,
                                                                             BoundaryPath(
-                                                                                Source,
-                                                                                1,
+                                                                                Target,
+                                                                                0,
                                                                             ),
-                                                                            [],
+                                                                            [
+                                                                                Regular(
+                                                                                    0,
+                                                                                ),
+                                                                            ],
                                                                         ),
                                                                     ),
                                                                 ),
@@ -1332,9 +1391,13 @@ Some(
                                                                             2,
                                                                             BoundaryPath(
                                                                                 Target,
-                                                                                1,
+                                                                                0,
                                                                             ),
-                                                                            [],
+                                                                            [
+                                                                                Regular(
+                                                                                    1,
+                                                                                ),
+                                                                            ],
                                                                         ),
                                                                     ),
                                                                 ),
@@ -1503,9 +1566,13 @@ Some(
                                                                         3,
                                                                         BoundaryPath(
                                                                             Source,
-                                                                            2,
+                                                                            1,
                                                                         ),
-                                                                        [],
+                                                                        [
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
+                                                                        ],
                                                                     ),
                                                                 ),
                                                             ),
@@ -1552,10 +1619,14 @@ Some(
                                                                     (
                                                                         3,
                                                                         BoundaryPath(
-                                                                            Target,
-                                                                            2,
+                                                                            Source,
+                                                                            1,
                                                                         ),
-                                                                        [],
+                                                                        [
+                                                                            Regular(
+                                                                                3,
+                                                                            ),
+                                                                        ],
                                                                     ),
                                                                 ),
                                                             ),
@@ -1696,10 +1767,14 @@ Some(
                                                                     (
                                                                         3,
                                                                         BoundaryPath(
-                                                                            Source,
-                                                                            2,
+                                                                            Target,
+                                                                            1,
                                                                         ),
-                                                                        [],
+                                                                        [
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
+                                                                        ],
                                                                     ),
                                                                 ),
                                                             ),
@@ -1711,9 +1786,13 @@ Some(
                                                                         3,
                                                                         BoundaryPath(
                                                                             Target,
-                                                                            2,
+                                                                            1,
                                                                         ),
-                                                                        [],
+                                                                        [
+                                                                            Regular(
+                                                                                1,
+                                                                            ),
+                                                                        ],
                                                                     ),
                                                                 ),
                                                             ),
@@ -1881,9 +1960,16 @@ Some(
                                                                         3,
                                                                         BoundaryPath(
                                                                             Source,
-                                                                            2,
+                                                                            0,
                                                                         ),
-                                                                        [],
+                                                                        [
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
+                                                                        ],
                                                                     ),
                                                                 ),
                                                             ),
@@ -1895,9 +1981,12 @@ Some(
                                                                         3,
                                                                         BoundaryPath(
                                                                             Source,
-                                                                            1,
+                                                                            0,
                                                                         ),
                                                                         [
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
                                                                             Regular(
                                                                                 1,
                                                                             ),
@@ -1913,9 +2002,12 @@ Some(
                                                                         3,
                                                                         BoundaryPath(
                                                                             Source,
-                                                                            1,
+                                                                            0,
                                                                         ),
                                                                         [
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
                                                                             Regular(
                                                                                 2,
                                                                             ),
@@ -1930,10 +2022,17 @@ Some(
                                                                     (
                                                                         3,
                                                                         BoundaryPath(
-                                                                            Target,
-                                                                            2,
+                                                                            Source,
+                                                                            0,
                                                                         ),
-                                                                        [],
+                                                                        [
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
+                                                                            Regular(
+                                                                                3,
+                                                                            ),
+                                                                        ],
                                                                     ),
                                                                 ),
                                                             ),
@@ -1947,9 +2046,12 @@ Some(
                                                                         3,
                                                                         BoundaryPath(
                                                                             Source,
-                                                                            1,
+                                                                            0,
                                                                         ),
                                                                         [
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
                                                                             Singular(
                                                                                 0,
                                                                             ),
@@ -1965,9 +2067,12 @@ Some(
                                                                         3,
                                                                         BoundaryPath(
                                                                             Source,
-                                                                            1,
+                                                                            0,
                                                                         ),
                                                                         [
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
                                                                             Singular(
                                                                                 1,
                                                                             ),
@@ -1983,9 +2088,12 @@ Some(
                                                                         3,
                                                                         BoundaryPath(
                                                                             Source,
-                                                                            1,
+                                                                            0,
                                                                         ),
                                                                         [
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
                                                                             Singular(
                                                                                 2,
                                                                             ),
@@ -2286,9 +2394,16 @@ Some(
                                                                         3,
                                                                         BoundaryPath(
                                                                             Source,
-                                                                            2,
+                                                                            0,
                                                                         ),
-                                                                        [],
+                                                                        [
+                                                                            Regular(
+                                                                                2,
+                                                                            ),
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
+                                                                        ],
                                                                     ),
                                                                 ),
                                                             ),
@@ -2299,10 +2414,17 @@ Some(
                                                                     (
                                                                         3,
                                                                         BoundaryPath(
-                                                                            Target,
-                                                                            2,
+                                                                            Source,
+                                                                            0,
                                                                         ),
-                                                                        [],
+                                                                        [
+                                                                            Regular(
+                                                                                2,
+                                                                            ),
+                                                                            Regular(
+                                                                                1,
+                                                                            ),
+                                                                        ],
                                                                     ),
                                                                 ),
                                                             ),
@@ -2315,10 +2437,13 @@ Some(
                                                                     (
                                                                         3,
                                                                         BoundaryPath(
-                                                                            Target,
-                                                                            1,
+                                                                            Source,
+                                                                            0,
                                                                         ),
                                                                         [
+                                                                            Regular(
+                                                                                2,
+                                                                            ),
                                                                             Singular(
                                                                                 0,
                                                                             ),
@@ -2803,9 +2928,13 @@ Some(
                                                                             2,
                                                                             BoundaryPath(
                                                                                 Source,
-                                                                                1,
+                                                                                0,
                                                                             ),
-                                                                            [],
+                                                                            [
+                                                                                Regular(
+                                                                                    0,
+                                                                                ),
+                                                                            ],
                                                                         ),
                                                                     ),
                                                                 ),
@@ -2834,10 +2963,14 @@ Some(
                                                                         (
                                                                             2,
                                                                             BoundaryPath(
-                                                                                Target,
-                                                                                1,
+                                                                                Source,
+                                                                                0,
                                                                             ),
-                                                                            [],
+                                                                            [
+                                                                                Regular(
+                                                                                    2,
+                                                                                ),
+                                                                            ],
                                                                         ),
                                                                     ),
                                                                 ),
@@ -2960,10 +3093,14 @@ Some(
                                                                         (
                                                                             2,
                                                                             BoundaryPath(
-                                                                                Source,
-                                                                                1,
+                                                                                Target,
+                                                                                0,
                                                                             ),
-                                                                            [],
+                                                                            [
+                                                                                Regular(
+                                                                                    0,
+                                                                                ),
+                                                                            ],
                                                                         ),
                                                                     ),
                                                                 ),
@@ -2975,9 +3112,13 @@ Some(
                                                                             2,
                                                                             BoundaryPath(
                                                                                 Target,
-                                                                                1,
+                                                                                0,
                                                                             ),
-                                                                            [],
+                                                                            [
+                                                                                Regular(
+                                                                                    1,
+                                                                                ),
+                                                                            ],
                                                                         ),
                                                                     ),
                                                                 ),
@@ -3115,9 +3256,13 @@ Some(
                                                                             2,
                                                                             BoundaryPath(
                                                                                 Source,
-                                                                                1,
+                                                                                0,
                                                                             ),
-                                                                            [],
+                                                                            [
+                                                                                Regular(
+                                                                                    0,
+                                                                                ),
+                                                                            ],
                                                                         ),
                                                                     ),
                                                                 ),
@@ -3146,10 +3291,14 @@ Some(
                                                                         (
                                                                             2,
                                                                             BoundaryPath(
-                                                                                Target,
-                                                                                1,
+                                                                                Source,
+                                                                                0,
                                                                             ),
-                                                                            [],
+                                                                            [
+                                                                                Regular(
+                                                                                    2,
+                                                                                ),
+                                                                            ],
                                                                         ),
                                                                     ),
                                                                 ),
@@ -3272,10 +3421,14 @@ Some(
                                                                         (
                                                                             2,
                                                                             BoundaryPath(
-                                                                                Source,
-                                                                                1,
+                                                                                Target,
+                                                                                0,
                                                                             ),
-                                                                            [],
+                                                                            [
+                                                                                Regular(
+                                                                                    0,
+                                                                                ),
+                                                                            ],
                                                                         ),
                                                                     ),
                                                                 ),
@@ -3287,9 +3440,13 @@ Some(
                                                                             2,
                                                                             BoundaryPath(
                                                                                 Target,
-                                                                                1,
+                                                                                0,
                                                                             ),
-                                                                            [],
+                                                                            [
+                                                                                Regular(
+                                                                                    1,
+                                                                                ),
+                                                                            ],
                                                                         ),
                                                                     ),
                                                                 ),
@@ -3458,9 +3615,13 @@ Some(
                                                                         3,
                                                                         BoundaryPath(
                                                                             Source,
-                                                                            2,
+                                                                            1,
                                                                         ),
-                                                                        [],
+                                                                        [
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
+                                                                        ],
                                                                     ),
                                                                 ),
                                                             ),
@@ -3507,10 +3668,14 @@ Some(
                                                                     (
                                                                         3,
                                                                         BoundaryPath(
-                                                                            Target,
-                                                                            2,
+                                                                            Source,
+                                                                            1,
                                                                         ),
-                                                                        [],
+                                                                        [
+                                                                            Regular(
+                                                                                3,
+                                                                            ),
+                                                                        ],
                                                                     ),
                                                                 ),
                                                             ),
@@ -3651,10 +3816,14 @@ Some(
                                                                     (
                                                                         3,
                                                                         BoundaryPath(
-                                                                            Source,
-                                                                            2,
+                                                                            Target,
+                                                                            1,
                                                                         ),
-                                                                        [],
+                                                                        [
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
+                                                                        ],
                                                                     ),
                                                                 ),
                                                             ),
@@ -3666,9 +3835,13 @@ Some(
                                                                         3,
                                                                         BoundaryPath(
                                                                             Target,
-                                                                            2,
+                                                                            1,
                                                                         ),
-                                                                        [],
+                                                                        [
+                                                                            Regular(
+                                                                                1,
+                                                                            ),
+                                                                        ],
                                                                     ),
                                                                 ),
                                                             ),
@@ -3835,10 +4008,17 @@ Some(
                                                                     (
                                                                         3,
                                                                         BoundaryPath(
-                                                                            Source,
-                                                                            2,
+                                                                            Target,
+                                                                            0,
                                                                         ),
-                                                                        [],
+                                                                        [
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
+                                                                        ],
                                                                     ),
                                                                 ),
                                                             ),
@@ -3849,10 +4029,13 @@ Some(
                                                                     (
                                                                         3,
                                                                         BoundaryPath(
-                                                                            Source,
-                                                                            1,
+                                                                            Target,
+                                                                            0,
                                                                         ),
                                                                         [
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
                                                                             Regular(
                                                                                 1,
                                                                             ),
@@ -3867,10 +4050,13 @@ Some(
                                                                     (
                                                                         3,
                                                                         BoundaryPath(
-                                                                            Source,
-                                                                            1,
+                                                                            Target,
+                                                                            0,
                                                                         ),
                                                                         [
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
                                                                             Regular(
                                                                                 2,
                                                                             ),
@@ -3886,9 +4072,16 @@ Some(
                                                                         3,
                                                                         BoundaryPath(
                                                                             Target,
-                                                                            2,
+                                                                            0,
                                                                         ),
-                                                                        [],
+                                                                        [
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
+                                                                            Regular(
+                                                                                3,
+                                                                            ),
+                                                                        ],
                                                                     ),
                                                                 ),
                                                             ),
@@ -3901,10 +4094,13 @@ Some(
                                                                     (
                                                                         3,
                                                                         BoundaryPath(
-                                                                            Source,
-                                                                            1,
+                                                                            Target,
+                                                                            0,
                                                                         ),
                                                                         [
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
                                                                             Singular(
                                                                                 0,
                                                                             ),
@@ -3919,10 +4115,13 @@ Some(
                                                                     (
                                                                         3,
                                                                         BoundaryPath(
-                                                                            Source,
-                                                                            1,
+                                                                            Target,
+                                                                            0,
                                                                         ),
                                                                         [
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
                                                                             Singular(
                                                                                 1,
                                                                             ),
@@ -3937,10 +4136,13 @@ Some(
                                                                     (
                                                                         3,
                                                                         BoundaryPath(
-                                                                            Source,
-                                                                            1,
+                                                                            Target,
+                                                                            0,
                                                                         ),
                                                                         [
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
                                                                             Singular(
                                                                                 2,
                                                                             ),
@@ -4240,10 +4442,17 @@ Some(
                                                                     (
                                                                         3,
                                                                         BoundaryPath(
-                                                                            Source,
-                                                                            2,
+                                                                            Target,
+                                                                            0,
                                                                         ),
-                                                                        [],
+                                                                        [
+                                                                            Regular(
+                                                                                2,
+                                                                            ),
+                                                                            Regular(
+                                                                                0,
+                                                                            ),
+                                                                        ],
                                                                     ),
                                                                 ),
                                                             ),
@@ -4255,9 +4464,16 @@ Some(
                                                                         3,
                                                                         BoundaryPath(
                                                                             Target,
-                                                                            2,
+                                                                            0,
                                                                         ),
-                                                                        [],
+                                                                        [
+                                                                            Regular(
+                                                                                2,
+                                                                            ),
+                                                                            Regular(
+                                                                                1,
+                                                                            ),
+                                                                        ],
                                                                     ),
                                                                 ),
                                                             ),
@@ -4271,9 +4487,12 @@ Some(
                                                                         3,
                                                                         BoundaryPath(
                                                                             Target,
-                                                                            1,
+                                                                            0,
                                                                         ),
                                                                         [
+                                                                            Regular(
+                                                                                2,
+                                                                            ),
                                                                             Singular(
                                                                                 0,
                                                                             ),
