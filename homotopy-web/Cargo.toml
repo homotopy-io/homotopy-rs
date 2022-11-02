@@ -46,7 +46,7 @@ ultraviolet = "0.9.0"
 lyon_path = "1.0.1"
 thiserror = "1.0.37"
 katex = { version = "0.4", features = ["wasm-js"], default-features = false }
-html-escape = "0.2.11"
+html-escape = "0.2.12"
 obake = { version = "1.0.4", features = ["serde"] }
 good_lp = { version = "1.3.2", features = ["highs"], default-features = false}
 highs = "1.2.1"
