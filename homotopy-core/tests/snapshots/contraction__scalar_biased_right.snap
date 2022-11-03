@@ -5,7 +5,8 @@ expression: "scalar_then_scalar.identity().contract(Boundary::Target.into(), &[]
 DiagramN {
     source: DiagramN {
         source: Diagram0(
-            0:0⁺,
+            0:0,
+            +,
         ),
         cospans: [],
     },
@@ -20,11 +21,17 @@ DiagramN {
                             source: [],
                             target: Cospan {
                                 forward: Rewrite0(
-                                    0:0⁺,
-                                    1:2⁺,
+                                    Diagram0(
+                                        0:0,
+                                        +,
+                                    ),
+                                    Diagram0(
+                                        1:2,
+                                        +,
+                                    ),
                                     Some(
                                         (
-                                            1,
+                                            1:2,
                                             BoundaryPath(
                                                 Source,
                                                 1,
@@ -34,11 +41,17 @@ DiagramN {
                                     ),
                                 ),
                                 backward: Rewrite0(
-                                    0:0⁺,
-                                    1:2⁺,
+                                    Diagram0(
+                                        0:0,
+                                        +,
+                                    ),
+                                    Diagram0(
+                                        1:2,
+                                        +,
+                                    ),
                                     Some(
                                         (
-                                            1,
+                                            1:2,
                                             BoundaryPath(
                                                 Target,
                                                 1,
@@ -50,11 +63,17 @@ DiagramN {
                             },
                             regular_slices: [
                                 Rewrite0(
-                                    0:0⁺,
-                                    1:2⁺,
+                                    Diagram0(
+                                        0:0,
+                                        +,
+                                    ),
+                                    Diagram0(
+                                        1:2,
+                                        +,
+                                    ),
                                     Some(
                                         (
-                                            1,
+                                            1:2,
                                             BoundaryPath(
                                                 Source,
                                                 0,
@@ -77,11 +96,17 @@ DiagramN {
                             source: [],
                             target: Cospan {
                                 forward: Rewrite0(
-                                    0:0⁺,
-                                    1:2⁺,
+                                    Diagram0(
+                                        0:0,
+                                        +,
+                                    ),
+                                    Diagram0(
+                                        1:2,
+                                        +,
+                                    ),
                                     Some(
                                         (
-                                            1,
+                                            1:2,
                                             BoundaryPath(
                                                 Source,
                                                 1,
@@ -91,11 +116,17 @@ DiagramN {
                                     ),
                                 ),
                                 backward: Rewrite0(
-                                    0:0⁺,
-                                    1:2⁺,
+                                    Diagram0(
+                                        0:0,
+                                        +,
+                                    ),
+                                    Diagram0(
+                                        1:2,
+                                        +,
+                                    ),
                                     Some(
                                         (
-                                            1,
+                                            1:2,
                                             BoundaryPath(
                                                 Target,
                                                 1,
@@ -107,11 +138,17 @@ DiagramN {
                             },
                             regular_slices: [
                                 Rewrite0(
-                                    0:0⁺,
-                                    1:2⁺,
+                                    Diagram0(
+                                        0:0,
+                                        +,
+                                    ),
+                                    Diagram0(
+                                        1:2,
+                                        +,
+                                    ),
                                     Some(
                                         (
-                                            1,
+                                            1:2,
                                             BoundaryPath(
                                                 Source,
                                                 0,
@@ -139,11 +176,17 @@ DiagramN {
                             source: [],
                             target: Cospan {
                                 forward: Rewrite0(
-                                    0:0⁺,
-                                    1:2⁺,
+                                    Diagram0(
+                                        0:0,
+                                        +,
+                                    ),
+                                    Diagram0(
+                                        1:2,
+                                        +,
+                                    ),
                                     Some(
                                         (
-                                            1,
+                                            1:2,
                                             BoundaryPath(
                                                 Source,
                                                 1,
@@ -153,11 +196,17 @@ DiagramN {
                                     ),
                                 ),
                                 backward: Rewrite0(
-                                    0:0⁺,
-                                    1:2⁺,
+                                    Diagram0(
+                                        0:0,
+                                        +,
+                                    ),
+                                    Diagram0(
+                                        1:2,
+                                        +,
+                                    ),
                                     Some(
                                         (
-                                            1,
+                                            1:2,
                                             BoundaryPath(
                                                 Target,
                                                 1,
@@ -169,11 +218,17 @@ DiagramN {
                             },
                             regular_slices: [
                                 Rewrite0(
-                                    0:0⁺,
-                                    1:2⁺,
+                                    Diagram0(
+                                        0:0,
+                                        +,
+                                    ),
+                                    Diagram0(
+                                        1:2,
+                                        +,
+                                    ),
                                     Some(
                                         (
-                                            1,
+                                            1:2,
                                             BoundaryPath(
                                                 Target,
                                                 0,
@@ -196,11 +251,17 @@ DiagramN {
                             source: [],
                             target: Cospan {
                                 forward: Rewrite0(
-                                    0:0⁺,
-                                    1:2⁺,
+                                    Diagram0(
+                                        0:0,
+                                        +,
+                                    ),
+                                    Diagram0(
+                                        1:2,
+                                        +,
+                                    ),
                                     Some(
                                         (
-                                            1,
+                                            1:2,
                                             BoundaryPath(
                                                 Source,
                                                 1,
@@ -210,11 +271,17 @@ DiagramN {
                                     ),
                                 ),
                                 backward: Rewrite0(
-                                    0:0⁺,
-                                    1:2⁺,
+                                    Diagram0(
+                                        0:0,
+                                        +,
+                                    ),
+                                    Diagram0(
+                                        1:2,
+                                        +,
+                                    ),
                                     Some(
                                         (
-                                            1,
+                                            1:2,
                                             BoundaryPath(
                                                 Target,
                                                 1,
@@ -226,11 +293,17 @@ DiagramN {
                             },
                             regular_slices: [
                                 Rewrite0(
-                                    0:0⁺,
-                                    1:2⁺,
+                                    Diagram0(
+                                        0:0,
+                                        +,
+                                    ),
+                                    Diagram0(
+                                        1:2,
+                                        +,
+                                    ),
                                     Some(
                                         (
-                                            1,
+                                            1:2,
                                             BoundaryPath(
                                                 Target,
                                                 0,

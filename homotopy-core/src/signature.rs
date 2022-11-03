@@ -1,7 +1,7 @@
 use crate::{
     diagram::NewDiagramError,
     label::{Label, Neighbourhood},
-    Diagram, DiagramN, Generator,
+    Diagram, Diagram0, DiagramN, Generator,
 };
 
 pub trait GeneratorInfo {
@@ -23,7 +23,7 @@ pub trait Signature {
                 if g_0 != g_1 || b_0 != b_1 {
                     return false;
                 }
-                self.generator_info(Generator::new(g_0, b_0.depth() + coord_0.len() + 1))
+                self.generator_info(g_0)
                     .unwrap()
                     .neighbourhood()
                     .equiv(b_0, &coord_0, &coord_1)
@@ -36,7 +36,7 @@ pub trait Signature {
             None => None,
             Some((g, b, coord)) => {
                 let coord = self
-                    .generator_info(Generator::new(g, b.depth() + coord.len() + 1))
+                    .generator_info(g)
                     .unwrap()
                     .neighbourhood()
                     .find(b, &coord);
@@ -54,14 +54,15 @@ pub struct SignatureBuilder(Vec<GeneratorData>);
 pub struct GeneratorData(Generator, Diagram, Neighbourhood);
 
 impl SignatureBuilder {
-    pub fn add_zero(&mut self) -> Diagram {
+    pub fn add_zero(&mut self) -> Diagram0 {
         let generator = Generator::new(self.0.len(), 0);
+        let diagram = Diagram0::from(generator);
         self.0.push(GeneratorData(
             generator,
-            generator.into(),
+            diagram.into(),
             Neighbourhood::default(),
         ));
-        generator.into()
+        diagram
     }
 
     pub fn add(

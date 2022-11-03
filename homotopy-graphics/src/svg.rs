@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use homotopy_core::{Generator, Orientation};
+use homotopy_core::{diagram::Diagram0, Generator, Orientation};
 
 use crate::style::{GeneratorRepresentation, GeneratorStyle, SignatureStyleData};
 
@@ -57,19 +57,19 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
 
 #[inline]
 pub fn generator_class_from_diagram_dim(
-    generator: Generator,
+    diagram: Diagram0,
     diagram_dimension: usize,
     representation: GeneratorRepresentation,
 ) -> String {
     let d = diagram_dimension;
-    let n = generator.dimension;
+    let n = diagram.generator.dimension;
     let k = representation as usize;
 
     let c = d.saturating_sub(n + k);
 
     format!(
         "{} {}",
-        generator_class(generator, c, generator.orientation),
+        generator_class(diagram.generator, c, diagram.orientation),
         representation,
     )
 }

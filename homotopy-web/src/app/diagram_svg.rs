@@ -214,12 +214,12 @@ impl<const N: usize> Component for DiagramSvg<N> {
                             )
                             .contains_point(point, 0.01)
                     });
-                    let generator = match element {
+                    let d = match element {
                         None => return false,
                         Some(element) => element.generator(),
                     };
-                    let info = ctx.props().signature.generator_info(generator).unwrap();
-                    match generator.orientation {
+                    let info = ctx.props().signature.generator_info(d.generator).unwrap();
+                    match d.orientation {
                         Orientation::Positive => info.name.clone(),
                         Orientation::Zero => format!("{} (homotopy)", info.name),
                         Orientation::Negative => format!("{} (inverse)", info.name),
@@ -373,9 +373,8 @@ impl<const N: usize> DiagramSvg<N> {
 
     /// Creates the SVG elements for the diagram.
     fn view_element(&self, ctx: &Context<Self>, index: usize, element: &GraphicElement<N>) -> Html {
-        let generator = element.generator();
         let class = generator_class_from_diagram_dim(
-            generator,
+            element.generator(),
             ctx.props().diagram.dimension(),
             element.clone().into(),
         );
@@ -436,11 +435,11 @@ impl<const N: usize> DiagramSvg<N> {
                     }
                 }
             }
-            GraphicElement::Point(_, point) => {
+            GraphicElement::Point(d, point) => {
                 use VertexShape::{Circle, Square};
                 let point = self.prepared.transform.transform_point(*point);
                 let radius = ctx.props().style.point_radius;
-                let shape = if let Some(info) = ctx.props().signature.generator_info(generator) {
+                let shape = if let Some(info) = ctx.props().signature.generator_info(d.generator) {
                     info.shape.clone()
                 } else {
                     Default::default()

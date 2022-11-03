@@ -6,7 +6,7 @@ use std::{
 
 use homotopy_common::{declare_idx, hash::FastHashMap, idx::IdxVec};
 use homotopy_core::{
-    common::DimensionError, layout::Layout, mesh::Mesh, Diagram, Generator, SliceIndex,
+    common::DimensionError, layout::Layout, mesh::Mesh, Diagram, Diagram0, SliceIndex,
 };
 use ultraviolet::{Mat3, Vec3, Vec4};
 
@@ -97,7 +97,7 @@ where
 pub struct VertData {
     pub position: Vec4,
     pub boundary: [bool; 4],
-    pub generator: Generator,
+    pub generator: Diagram0,
     pub k: usize,
 }
 
@@ -114,7 +114,7 @@ pub fn calculate_boundary(path: &[SliceIndex]) -> Vec<bool> {
 pub struct CurveData {
     pub verts: Vec<Vert>,
     pub parities: Vec<Parity>,
-    pub generator: Generator,
+    pub generator: Diagram0,
 }
 
 // Element data
@@ -186,11 +186,11 @@ impl CubicalGeometry {
                 .map(|coord| coord_to_vert[&coord])
                 .collect::<Vec<_>>();
             let parity = Parity::from_orientation(&cube.orientation);
-            let generator = geom.verts[verts[0]].generator;
+            let d = geom.verts[verts[0]].generator;
 
             // We ignore cubes which are homotopies and are of dimension less than N - 1.
             // For example, this will affect points in 2D, points and lines in 3D, and so on.
-            if dim + 1 < N && diagram.dimension().saturating_sub(generator.dimension) != dim {
+            if dim + 1 < N && diagram.dimension().saturating_sub(d.generator.dimension) != dim {
                 continue;
             }
 
@@ -210,14 +210,14 @@ impl CubicalGeometry {
                     }
                     let curve = geom.curves.values_mut().find(|curve| {
                         let &curve_target = curve.verts.last().unwrap();
-                        curve_target == verts[0] && curve.generator == generator
+                        curve_target == verts[0] && curve.generator == d
                     });
                     if let Some(curve) = curve {
                         curve.verts.push(verts[1]);
                         curve.parities.push(parity);
                     } else {
                         geom.curves.push(CurveData {
-                            generator,
+                            generator: d,
                             verts: verts.to_vec(),
                             parities: vec![parity],
                         });
@@ -515,9 +515,9 @@ impl SimplicialGeometry {
 
     pub fn inflate_3d(&mut self, samples: u8, signature_styles: &impl SignatureStyleData) {
         for point in self.points.keys() {
-            let generator = self.verts[self.points[point]].generator;
+            let d = self.verts[self.points[point]].generator;
             let shape = signature_styles
-                .generator_style(generator)
+                .generator_style(d.generator)
                 .map(GeneratorStyle::shape)
                 .unwrap_or_default();
             self.inflate_point_3d(self.points[point], samples, &shape);

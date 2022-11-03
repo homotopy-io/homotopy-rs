@@ -21,11 +21,12 @@ use crate::{
     label::Neighbourhood,
     rewrite::{Cospan, Rewrite, RewriteN},
     signature::{GeneratorInfo, Signature},
+    Orientation,
 };
 
 #[derive(PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 pub enum Diagram {
-    Diagram0(Generator),
+    Diagram0(Diagram0),
     DiagramN(DiagramN),
 }
 
@@ -37,19 +38,10 @@ impl Diagram {
         }
     }
 
-    pub fn to_generator(&self) -> Option<Generator> {
-        use Diagram::{Diagram0, DiagramN};
+    pub fn max_generator(&self) -> Diagram0 {
         match self {
-            Diagram0(g) => Some(*g),
-            DiagramN(_) => None,
-        }
-    }
-
-    pub fn max_generator(&self) -> Generator {
-        use Diagram::{Diagram0, DiagramN};
-        match self {
-            Diagram0(g) => *g,
-            DiagramN(d) => d.max_generator(),
+            Self::Diagram0(d) => *d,
+            Self::DiagramN(d) => d.max_generator(),
         }
     }
 
@@ -62,8 +54,8 @@ impl Diagram {
             visited: &mut FastHashSet<Diagram>,
         ) {
             match diagram {
-                Diagram0(g) => {
-                    generators.insert(*g);
+                Diagram0(d) => {
+                    generators.insert(d.generator);
                     visited.insert(diagram.clone());
                 }
                 DiagramN(d) => {
@@ -208,6 +200,36 @@ pub fn globularity(s: &Diagram, t: &Diagram) -> bool {
                 s.source() == t.source() && s.target() == t.target()
             }
         }
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct Diagram0 {
+    pub generator: Generator,
+    pub orientation: Orientation,
+}
+
+impl Diagram0 {
+    pub fn new(generator: Generator, orientation: Orientation) -> Self {
+        Self {
+            generator,
+            orientation,
+        }
+    }
+
+    pub fn identity(&self) -> DiagramN {
+        Diagram::from(*self).identity()
+    }
+
+    #[must_use]
+    pub fn orientation_transform(self, k: Orientation) -> Self {
+        Self::new(self.generator, self.orientation * k)
+    }
+}
+
+impl From<Generator> for Diagram0 {
+    fn from(generator: Generator) -> Self {
+        Self::new(generator, Orientation::Positive)
     }
 }
 
@@ -497,12 +519,12 @@ impl DiagramN {
     }
 
     /// Determine the first maximum-dimensional generator.
-    pub fn max_generator(&self) -> Generator {
+    pub fn max_generator(&self) -> Diagram0 {
         *self.0.max_generator.get_or_init(|| {
             std::iter::once(self.source().max_generator())
                 .chain(self.cospans().iter().filter_map(Cospan::max_generator))
                 .rev()
-                .max_by_key(|g| g.dimension)
+                .max_by_key(|d| d.generator.dimension)
                 .unwrap()
         })
     }
@@ -567,6 +589,15 @@ impl DiagramN {
     }
 }
 
+impl fmt::Debug for Diagram0 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("Diagram0")
+            .field(&self.generator)
+            .field(&self.orientation)
+            .finish()
+    }
+}
+
 impl fmt::Debug for DiagramN {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.get().fmt(f)
@@ -576,15 +607,15 @@ impl fmt::Debug for DiagramN {
 impl fmt::Debug for Diagram {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Diagram0(generator) => f.debug_tuple("Diagram0").field(generator).finish(),
-            Self::DiagramN(diagram) => diagram.fmt(f),
+            Self::Diagram0(d) => d.fmt(f),
+            Self::DiagramN(d) => d.fmt(f),
         }
     }
 }
 
-impl<'a> From<&'a DiagramN> for &'a Diagram {
-    fn from(d: &'a DiagramN) -> Self {
-        d.into()
+impl From<Diagram0> for Diagram {
+    fn from(diagram: Diagram0) -> Self {
+        Self::Diagram0(diagram)
     }
 }
 
@@ -594,19 +625,35 @@ impl From<DiagramN> for Diagram {
     }
 }
 
-impl From<Generator> for Diagram {
-    fn from(generator: Generator) -> Self {
-        Self::Diagram0(generator)
+impl TryFrom<Diagram> for Diagram0 {
+    type Error = DimensionError;
+
+    fn try_from(diagram: Diagram) -> Result<Self, Self::Error> {
+        match diagram {
+            Diagram::Diagram0(diagram) => Ok(diagram),
+            Diagram::DiagramN(_) => Err(DimensionError),
+        }
+    }
+}
+
+impl<'a> TryFrom<&'a Diagram> for Diagram0 {
+    type Error = DimensionError;
+
+    fn try_from(diagram: &'a Diagram) -> Result<Self, Self::Error> {
+        match diagram {
+            Diagram::Diagram0(diagram) => Ok(*diagram),
+            Diagram::DiagramN(_) => Err(DimensionError),
+        }
     }
 }
 
 impl TryFrom<Diagram> for DiagramN {
     type Error = DimensionError;
 
-    fn try_from(from: Diagram) -> Result<Self, Self::Error> {
-        match from {
-            Diagram::DiagramN(from) => Ok(from),
+    fn try_from(diagram: Diagram) -> Result<Self, Self::Error> {
+        match diagram {
             Diagram::Diagram0(_) => Err(DimensionError),
+            Diagram::DiagramN(diagram) => Ok(diagram),
         }
     }
 }
@@ -614,32 +661,10 @@ impl TryFrom<Diagram> for DiagramN {
 impl<'a> TryFrom<&'a Diagram> for &'a DiagramN {
     type Error = DimensionError;
 
-    fn try_from(from: &'a Diagram) -> Result<Self, Self::Error> {
-        match from {
-            Diagram::DiagramN(from) => Ok(from),
+    fn try_from(diagram: &'a Diagram) -> Result<Self, Self::Error> {
+        match diagram {
             Diagram::Diagram0(_) => Err(DimensionError),
-        }
-    }
-}
-
-impl TryFrom<Diagram> for Generator {
-    type Error = DimensionError;
-
-    fn try_from(from: Diagram) -> Result<Self, Self::Error> {
-        match from {
-            Diagram::DiagramN(_) => Err(DimensionError),
-            Diagram::Diagram0(g) => Ok(g),
-        }
-    }
-}
-
-impl<'a> TryFrom<&'a Diagram> for Generator {
-    type Error = DimensionError;
-
-    fn try_from(from: &'a Diagram) -> Result<Self, Self::Error> {
-        match from {
-            Diagram::DiagramN(_) => Err(DimensionError),
-            Diagram::Diagram0(g) => Ok(*g),
+            Diagram::DiagramN(diagram) => Ok(diagram),
         }
     }
 }
@@ -649,7 +674,7 @@ struct DiagramInternal {
     source: Diagram,
     cospans: Vec<Cospan>,
     #[serde(skip)]
-    max_generator: OnceCell<Generator>,
+    max_generator: OnceCell<Diagram0>,
 }
 
 impl PartialEq for DiagramInternal {
@@ -797,8 +822,8 @@ mod test {
                     .unwrap();
             }
 
-            let generator = slice.to_generator().unwrap();
-            assert_eq!(generator.id, *id);
+            let d: Diagram0 = slice.try_into().unwrap();
+            assert_eq!(d.generator.id, *id);
         }
     }
 

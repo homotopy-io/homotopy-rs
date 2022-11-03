@@ -3,7 +3,7 @@ use std::{collections::VecDeque, str::FromStr};
 use homotopy_common::tree::{Node, Tree};
 use homotopy_core::{
     common::Generator, diagram::NewDiagramError, label::Neighbourhood, signature::Signature as S,
-    Diagram, DiagramN,
+    Diagram, Diagram0, DiagramN,
 };
 use homotopy_graphics::style::{Color, SignatureStyleData, VertexShape};
 use serde::{Deserialize, Serialize};
@@ -174,7 +174,8 @@ impl Signature {
     pub fn create_generator_zero(&mut self, name: &str) {
         let id = self.next_generator_id();
         let generator = Generator::new(id, 0);
-        self.insert(generator, generator, name, false, Neighbourhood::default());
+        let diagram = Diagram0::from(generator);
+        self.insert(generator, diagram, name, false, Neighbourhood::default());
     }
 
     pub fn create_generator(
@@ -323,7 +324,7 @@ impl homotopy_core::signature::Signature for Signature {
     }
 
     fn generator_info(&self, g: Generator) -> Option<&GeneratorInfo> {
-        self.iter().find(|info| info.generator.id == g.id)
+        self.iter().find(|info| info.generator == g)
     }
 }
 

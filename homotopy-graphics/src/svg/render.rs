@@ -3,8 +3,9 @@ use std::{cmp::Ordering, hash::Hash};
 use euclid::default::Transform2D;
 use homotopy_common::hash::FastHashMap;
 use homotopy_core::{
-    common::{Generator, Height, SliceIndex},
+    common::{Height, SliceIndex},
     complex::Simplex,
+    diagram::Diagram0,
     layout::Layout,
     projection::{Depths, Homotopy, Projection},
 };
@@ -113,11 +114,11 @@ impl<const N: usize> From<&ActionRegion<N>> for Simplex<N> {
 #[derive(Debug, Clone)]
 pub enum GraphicElement<const N: usize> {
     /// A surface given by a closed path to be filled.
-    Surface(Generator, Path),
+    Surface(Diagram0, Path),
     /// A wire given by a depth and a path to be stroked.
-    Wire(Generator, usize, Path, Vec<Path>),
+    Wire(Diagram0, usize, Path, Vec<Path>),
     /// A point that is drawn as determined by its vertex_shape
-    Point(Generator, Point),
+    Point(Diagram0, Point),
 }
 
 impl<const N: usize> GraphicElement<N> {
@@ -139,7 +140,7 @@ impl<const N: usize> GraphicElement<N> {
         }
     }
 
-    pub fn generator(&self) -> Generator {
+    pub fn generator(&self) -> Diagram0 {
         use GraphicElement::{Point, Surface, Wire};
         match self {
             Surface(generator, _) | Wire(generator, _, _, _) | Point(generator, _) => *generator,
@@ -163,7 +164,7 @@ impl<const N: usize> GraphicElement<N> {
         let mut surface_elements = Vec::new();
         let mut point_elements = Vec::new();
 
-        let mut grouped_surfaces = FastHashMap::<Generator, Vec<[Coordinate<N>; 3]>>::default();
+        let mut grouped_surfaces = FastHashMap::<Diagram0, Vec<[Coordinate<N>; 3]>>::default();
 
         for (simplex, _) in complex.iter().filter(|(_, visible)| *visible) {
             match simplex {

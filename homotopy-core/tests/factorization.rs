@@ -25,7 +25,7 @@ fn bead_rewrite_base() -> Result<(), String> {
 
     // x -> bead_rewrite <- x -> e <- x
     let target = DiagramN::new(
-        x.clone(),
+        x.into(),
         vec![
             DiagramN::try_from(
                 DiagramN::try_from(
@@ -46,7 +46,7 @@ fn bead_rewrite_base() -> Result<(), String> {
 
     // x -> bead_rewrite <- x -> bead <- x
     let terminal = DiagramN::new(
-        x,
+        x.into(),
         vec![
             target.cospans()[0].clone(),
             DiagramN::try_from(
@@ -185,12 +185,12 @@ fn scalar_braid() {
     let s = Generator::new(2, 3);
 
     let f_cospan = Cospan {
-        forward: Rewrite0::new(x, f, Some((1, BoundaryPath(Source, 1), vec![]))).into(),
-        backward: Rewrite0::new(x, f, Some((1, BoundaryPath(Target, 1), vec![]))).into(),
+        forward: Rewrite0::new(x, f, Some((f, BoundaryPath(Source, 1), vec![]))).into(),
+        backward: Rewrite0::new(x, f, Some((f, BoundaryPath(Target, 1), vec![]))).into(),
     };
     let s_cospan = Cospan {
-        forward: Rewrite0::new(x, s, Some((2, BoundaryPath(Source, 2), vec![]))).into(),
-        backward: Rewrite0::new(x, s, Some((2, BoundaryPath(Target, 2), vec![]))).into(),
+        forward: Rewrite0::new(x, s, Some((s, BoundaryPath(Source, 2), vec![]))).into(),
+        backward: Rewrite0::new(x, s, Some((s, BoundaryPath(Target, 2), vec![]))).into(),
     };
 
     let rewrite_f = RewriteN::new(
@@ -202,14 +202,14 @@ fn scalar_braid() {
                 Rewrite0::new(
                     x,
                     s,
-                    Some((2, BoundaryPath(Source, 0), vec![Regular(0), Regular(0)])),
+                    Some((s, BoundaryPath(Source, 0), vec![Regular(0), Regular(0)])),
                 )
                 .into(),
             ),
             Cone::new_unit(
                 0,
                 f_cospan.clone(),
-                Rewrite0::new(x, f, Some((1, BoundaryPath(Source, 0), vec![Regular(0)]))).into(),
+                Rewrite0::new(x, f, Some((f, BoundaryPath(Source, 0), vec![Regular(0)]))).into(),
             ),
         ],
     )
@@ -220,12 +220,12 @@ fn scalar_braid() {
         vec![Cone::new_unit(
             0,
             s_cospan.clone(),
-            Rewrite0::new(x, s, Some((2, BoundaryPath(Source, 1), vec![Regular(0)]))).into(),
+            Rewrite0::new(x, s, Some((s, BoundaryPath(Source, 1), vec![Regular(0)]))).into(),
         )],
     )
     .into();
 
-    let target = DiagramN::new(Diagram::Diagram0(x), vec![s_cospan, f_cospan]).into();
+    let target = DiagramN::new(Diagram::Diagram0(x.into()), vec![s_cospan, f_cospan]).into();
 
     let mut fact = factorize(rewrite_f, rewrite_g, target);
 

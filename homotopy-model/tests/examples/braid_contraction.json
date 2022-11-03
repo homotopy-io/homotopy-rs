@@ -3,9 +3,8 @@
   "CreateGeneratorZero",
   {
     "SelectGenerator": {
-      "dimension": 0,
       "id": 0,
-      "orientation": "Positive"
+      "dimension": 0
     }
   },
   {
@@ -13,9 +12,8 @@
   },
   {
     "SelectGenerator": {
-      "dimension": 0,
       "id": 0,
-      "orientation": "Positive"
+      "dimension": 0
     }
   },
   {
@@ -23,9 +21,8 @@
   },
   {
     "SelectGenerator": {
-      "dimension": 1,
       "id": 1,
-      "orientation": "Positive"
+      "dimension": 1
     }
   },
   {
@@ -35,9 +32,8 @@
   },
   {
     "SelectGenerator": {
-      "dimension": 0,
       "id": 0,
-      "orientation": "Positive"
+      "dimension": 0
     }
   },
   "TakeIdentityDiagram",
@@ -46,9 +42,8 @@
   },
   {
     "SelectGenerator": {
-      "dimension": 0,
       "id": 0,
-      "orientation": "Positive"
+      "dimension": 0
     }
   },
   "TakeIdentityDiagram",
@@ -57,9 +52,8 @@
   },
   {
     "SelectGenerator": {
-      "dimension": 2,
       "id": 1,
-      "orientation": "Positive"
+      "dimension": 2
     }
   },
   {
@@ -67,9 +61,8 @@
   },
   {
     "SelectGenerator": {
-      "dimension": 0,
       "id": 0,
-      "orientation": "Positive"
+      "dimension": 0
     }
   },
   "TakeIdentityDiagram",
@@ -79,17 +72,15 @@
   },
   {
     "SelectGenerator": {
-      "dimension": 3,
       "id": 2,
-      "orientation": "Positive"
+      "dimension": 3
     }
   },
   "ClearWorkspace",
   {
     "SelectGenerator": {
-      "dimension": 2,
       "id": 1,
-      "orientation": "Positive"
+      "dimension": 2
     }
   },
   "TakeIdentityDiagram",

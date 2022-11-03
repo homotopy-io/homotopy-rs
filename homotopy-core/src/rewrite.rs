@@ -17,7 +17,7 @@ use crate::{
     common::{
         BoundaryPath, DimensionError, Generator, Mode, Orientation, RegularHeight, SingularHeight,
     },
-    diagram::Diagram,
+    diagram::{Diagram, Diagram0},
     label::{Label, Neighbourhood},
     signature::Signature,
     Boundary, Height,
@@ -51,13 +51,13 @@ pub struct RewriteInternal {
     dimension: usize,
     cones: Vec<Cone>,
     #[serde(skip)]
-    max_generator_source: OnceCell<Option<Generator>>,
+    max_generator_source: OnceCell<Option<Diagram0>>,
     #[serde(skip)]
-    max_generator_target: OnceCell<Option<Generator>>,
+    max_generator_target: OnceCell<Option<Diagram0>>,
 }
 
 #[derive(PartialEq, Eq, Clone, Hash, Serialize, Deserialize)]
-pub struct Rewrite0(pub(crate) Option<(Generator, Generator, Label)>);
+pub struct Rewrite0(pub(crate) Option<(Diagram0, Diagram0, Label)>);
 
 #[derive(PartialEq, Eq, Clone, Hash)]
 pub struct RewriteN(HConsed<RewriteInternal>);
@@ -143,7 +143,7 @@ impl Cospan {
         self.forward.is_identity() && self.backward.is_identity()
     }
 
-    pub(crate) fn max_generator(&self) -> Option<Generator> {
+    pub(crate) fn max_generator(&self) -> Option<Diagram0> {
         [
             self.forward.max_generator(Boundary::Source),
             self.forward.max_generator(Boundary::Target),
@@ -153,7 +153,7 @@ impl Cospan {
         .into_iter()
         .flatten()
         .rev()
-        .max_by_key(|g| g.dimension)
+        .max_by_key(|d| d.generator.dimension)
     }
 
     #[must_use]
@@ -277,7 +277,7 @@ impl Rewrite {
             Diagram::Diagram0(base) => Rewrite0::new(
                 base,
                 generator,
-                Some((generator.id, boundary_path, prefix.to_vec())),
+                Some((generator, boundary_path, prefix.to_vec())),
             )
             .into(),
             Diagram::DiagramN(base) => {
@@ -382,7 +382,7 @@ impl Rewrite {
     #[inline]
     pub fn is_homotopy(&self) -> bool {
         self.max_generator(Boundary::Target)
-            .map_or(true, |g| g.dimension <= self.dimension())
+            .map_or(true, |d| d.generator.dimension <= self.dimension())
     }
 
     #[inline]
@@ -394,7 +394,7 @@ impl Rewrite {
         }
     }
 
-    pub(crate) fn max_generator(&self, boundary: Boundary) -> Option<Generator> {
+    pub(crate) fn max_generator(&self, boundary: Boundary) -> Option<Diagram0> {
         match self {
             Self::Rewrite0(r) => r.max_generator(boundary),
             Self::RewriteN(r) => r.max_generator(boundary),
@@ -432,8 +432,10 @@ impl fmt::Debug for Rewrite0 {
 }
 
 impl Rewrite0 {
-    pub fn new(source: Generator, target: Generator, label: Label) -> Self {
-        assert!(source.dimension <= target.dimension);
+    pub fn new(source: impl Into<Diagram0>, target: impl Into<Diagram0>, label: Label) -> Self {
+        let source: Diagram0 = source.into();
+        let target: Diagram0 = target.into();
+        assert!(source.generator.dimension <= target.generator.dimension);
         if source == target {
             Self(None)
         } else {
@@ -454,7 +456,7 @@ impl Rewrite0 {
         match &self.0 {
             None => Self(None),
             Some((source, mut target, label)) => {
-                if dim < target.dimension {
+                if dim < target.generator.dimension {
                     target = target.orientation_transform(k);
                 }
                 Self::new(*source, target, label.clone())
@@ -481,11 +483,11 @@ impl Rewrite0 {
         }
     }
 
-    pub fn source(&self) -> Option<Generator> {
+    pub fn source(&self) -> Option<Diagram0> {
         self.0.as_ref().map(|(source, _, _)| *source)
     }
 
-    pub fn target(&self) -> Option<Generator> {
+    pub fn target(&self) -> Option<Diagram0> {
         self.0.as_ref().map(|(_, target, _)| *target)
     }
 
@@ -493,7 +495,7 @@ impl Rewrite0 {
         self.0.as_ref().and_then(|(_, _, label)| label.clone())
     }
 
-    pub(crate) fn max_generator(&self, boundary: Boundary) -> Option<Generator> {
+    pub(crate) fn max_generator(&self, boundary: Boundary) -> Option<Diagram0> {
         match boundary {
             Boundary::Source => self.source(),
             Boundary::Target => self.target(),
@@ -505,7 +507,7 @@ impl Rewrite0 {
         match &self.0 {
             None => Self(None),
             Some((source, target, label)) => {
-                let new_label = if target.id == generator.id {
+                let new_label = if target.generator == generator {
                     None
                 } else {
                     label.clone()
@@ -869,7 +871,7 @@ impl RewriteN {
         start..(start + 1)
     }
 
-    pub(crate) fn max_generator(&self, boundary: Boundary) -> Option<Generator> {
+    pub(crate) fn max_generator(&self, boundary: Boundary) -> Option<Diagram0> {
         match boundary {
             Boundary::Source => *self.0.max_generator_source.get_or_init(|| {
                 self.cones()
@@ -877,14 +879,14 @@ impl RewriteN {
                     .flat_map(Cone::source)
                     .filter_map(Cospan::max_generator)
                     .rev()
-                    .max_by_key(|g| g.dimension)
+                    .max_by_key(|d| d.generator.dimension)
             }),
             Boundary::Target => *self.0.max_generator_target.get_or_init(|| {
                 self.cones()
                     .iter()
                     .filter_map(|cone| cone.target().max_generator())
                     .rev()
-                    .max_by_key(|g| g.dimension)
+                    .max_by_key(|d| d.generator.dimension)
             }),
         }
     }

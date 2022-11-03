@@ -1,7 +1,7 @@
 use std::{hash::Hash, mem};
 
 use homotopy_common::{hash::FastHashMap, idx::IdxVec, parity};
-use homotopy_core::Generator;
+use homotopy_core::Diagram0;
 use homotopy_gl::{
     array::VAO_LIMIT,
     buffer::{Buffer, ElementBuffer, ElementKind},
@@ -129,7 +129,7 @@ pub struct TriVertexArrayData {
     pub wireframe_element_buffer: ElementBuffer,
     pub vertex_buffer: Buffer<Vec3>,
     pub normal_buffer: Buffer<Vec3>,
-    pub generator: Generator,
+    pub generator: Diagram0,
     pub k: usize,
 }
 
@@ -158,7 +158,7 @@ impl Bufferer for TriBufferer {
     type Vertex = Vert;
     type Output = TriVertexArrayData;
     type State = TriBufferingState;
-    type Key = (Generator, usize);
+    type Key = (Diagram0, usize);
 
     fn new(geom: &SimplicialGeometry) -> Self {
         Self {
@@ -253,7 +253,7 @@ struct TetraBufferingState {
 }
 
 pub struct TetraVertexArrayData {
-    pub generator: Generator,
+    pub generator: Diagram0,
     pub element_buffer: ElementBuffer,
     pub k: usize,
 
@@ -302,7 +302,7 @@ impl Bufferer for TetraBufferer {
     type Vertex = (Vert, Vert);
     type Output = TetraVertexArrayData;
     type State = TetraBufferingState;
-    type Key = (Generator, usize);
+    type Key = (Diagram0, usize);
 
     fn new(geom: &SimplicialGeometry) -> Self {
         Self {
@@ -507,7 +507,7 @@ struct CylinderWireBufferingState {
 }
 
 pub struct CylinderWireArrayData {
-    pub generator: Generator,
+    pub generator: Diagram0,
     pub element_buffer: ElementBuffer,
     pub vert_start_buffer: Buffer<Vec4>,
     pub vert_end_buffer: Buffer<Vec4>,
@@ -537,7 +537,7 @@ impl Bufferer for CylinderWireBufferer {
     type Vertex = (Vert, Vert);
     type Output = CylinderWireArrayData;
     type State = CylinderWireBufferingState;
-    type Key = Generator;
+    type Key = Diagram0;
 
     fn new(_geom: &SimplicialGeometry) -> Self {
         Self

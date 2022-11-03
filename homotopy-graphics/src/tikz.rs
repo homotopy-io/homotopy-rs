@@ -5,6 +5,7 @@ use homotopy_common::hash::FastHashMap;
 use homotopy_core::{
     common::DimensionError,
     complex::make_complex,
+    diagram::Diagram0,
     layout::Layout,
     projection::{Depths, Projection},
     Diagram, Generator, Orientation,
@@ -45,17 +46,17 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
 
 #[inline]
 pub fn name_from_diagram_dim(
-    generator: Generator,
+    diagram: Diagram0,
     diagram_dimension: usize,
     representation: GeneratorRepresentation,
 ) -> String {
     let d = diagram_dimension;
-    let n = generator.dimension;
+    let n = diagram.generator.dimension;
     let k = representation as usize;
 
     let c = d.saturating_sub(n + k);
 
-    name(generator, c, generator.orientation)
+    name(diagram.generator, c, diagram.orientation)
 }
 
 fn name(generator: Generator, c: usize, orientation: Orientation) -> String {
@@ -95,7 +96,7 @@ pub fn render(
     ));
 
     let mut surfaces = Vec::default();
-    let mut wires: FastHashMap<usize, Vec<(Generator, Path)>> = FastHashMap::default();
+    let mut wires: FastHashMap<usize, Vec<(Diagram0, Path)>> = FastHashMap::default();
     let mut points = Vec::default();
     for element in graphic {
         match element {
@@ -119,12 +120,15 @@ pub fn render(
     ));
 
     // Points are unchanged
-    for (g, point) in points {
-        let vertex = render_vertex(signature_styles.generator_style(g).unwrap(), point);
+    for (d, point) in points {
+        let vertex = render_vertex(
+            signature_styles.generator_style(d.generator).unwrap(),
+            point,
+        );
         writeln!(
             tikz,
             "\\fill[{}] {}",
-            name_from_diagram_dim(g, diagram.dimension(), GeneratorRepresentation::Point),
+            name_from_diagram_dim(d, diagram.dimension(), GeneratorRepresentation::Point),
             vertex
         )
         .unwrap();
@@ -149,8 +153,8 @@ const MAGIC_MACRO: &str = "\n\\newcommand{\\wire}[2]{
 }\n\n";
 
 fn render_inner(
-    surfaces: &[(Generator, Path)],
-    wires: FastHashMap<usize, Vec<(Generator, Path)>>,
+    surfaces: &[(Diagram0, Path)],
+    wires: FastHashMap<usize, Vec<(Diagram0, Path)>>,
     show_braids: bool,
     diagram_dimension: usize,
 ) -> String {

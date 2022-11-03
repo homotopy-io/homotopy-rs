@@ -1,7 +1,8 @@
 use std::ops::Index;
 
 use homotopy_core::{
-    common::BoundaryPath, Boundary::*, Cospan, DiagramN, Generator, Height::*, Rewrite0, RewriteN,
+    common::BoundaryPath, Boundary::*, Cospan, Diagram0, DiagramN, Generator, Height::*, Rewrite0,
+    RewriteN,
 };
 use proptest::prelude::*;
 
@@ -64,8 +65,8 @@ prop_compose! {
         let x = Generator::new(0, 0);
         let internal = |g: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, g, (g.id, BoundaryPath(Source, 0), vec![]).into()).into(),
-                backward: Rewrite0::new(x, g, (g.id, BoundaryPath(Target, 0), vec![]).into()).into(),
+                forward: Rewrite0::new(x, g, (g, BoundaryPath(Source, 0), vec![]).into()).into(),
+                backward: Rewrite0::new(x, g, (g, BoundaryPath(Target, 0), vec![]).into()).into(),
             }
         };
 
@@ -89,7 +90,7 @@ prop_compose! {
                             source,
                             target,
                             (
-                                filler_generator.id,
+                                filler_generator,
                                 BoundaryPath(Source, 0),
                                 vec![Singular(i)],
                             )
@@ -107,7 +108,7 @@ prop_compose! {
                             x,
                             target,
                             (
-                                filler_generator.id,
+                                filler_generator,
                                 BoundaryPath(Source, 0),
                                 vec![Regular(r)],
                             )
@@ -151,18 +152,18 @@ prop_compose! {
         let x = Generator::new(0, 0);
         let internal = |g: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, g, (g.id, BoundaryPath(Source, 0), vec![]).into()).into(),
-                backward: Rewrite0::new(x, g, (g.id, BoundaryPath(Target, 0), vec![]).into()).into(),
+                forward: Rewrite0::new(x, g, (g, BoundaryPath(Source, 0), vec![]).into()).into(),
+                backward: Rewrite0::new(x, g, (g, BoundaryPath(Target, 0), vec![]).into()).into(),
             }
         };
         (
             rewrite,
             DiagramN::new(
-                x.into(),
+                Diagram0::from(x).into(),
                 sources.into_iter().map(internal).collect(),
             ),
             DiagramN::new(
-                x.into(),
+                Diagram0::from(x).into(),
                 targets.into_iter().map(internal).collect(),
             ),
         )

@@ -1,6 +1,6 @@
 use euclid::approxeq::ApproxEq;
 use homotopy_common::hash::FastHashMap;
-use homotopy_core::common::Generator;
+use homotopy_core::diagram::Diagram0;
 use lyon_path::{path::Builder, Path};
 
 use crate::svg::{render::GraphicElement, shape::Point};
@@ -11,7 +11,7 @@ pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<Gr
 
     // (depth, gen) -> Vec<(path, start, end)>
     let mut grouped_wires =
-        FastHashMap::<(usize, Generator), Vec<(Builder, Point, Point)>>::default();
+        FastHashMap::<(usize, Diagram0), Vec<(Builder, Point, Point)>>::default();
 
     for element in graphic {
         match element {

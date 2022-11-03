@@ -18,7 +18,7 @@ pub fn associator() -> (SignatureBuilder, DiagramN) {
     let mut sig = SignatureBuilder::default();
 
     let x = sig.add_zero();
-    let f = sig.add(x.clone(), x).unwrap();
+    let f = sig.add(x, x).unwrap();
     let ff = f.attach(&f, Target, &[]).unwrap();
     let m = sig.add(ff, f).unwrap();
     let left = m.attach(&m, Source, &[0]).unwrap();
@@ -28,7 +28,7 @@ pub fn associator() -> (SignatureBuilder, DiagramN) {
 }
 
 // x
-pub fn one_zero_cell() -> (impl Signature, Diagram) {
+pub fn one_zero_cell() -> (impl Signature, Diagram0) {
     let mut sig = SignatureBuilder::default();
     let x = sig.add_zero();
     (sig, x)
@@ -41,7 +41,7 @@ pub fn two_endomorphism() -> (impl Signature, DiagramN) {
     let mut sig = SignatureBuilder::default();
 
     let space = sig.add_zero();
-    let wire = sig.add(space.clone(), space).unwrap();
+    let wire = sig.add(space, space).unwrap();
     let e = sig.add(wire.clone(), wire).unwrap();
     (sig, e)
 }
@@ -53,7 +53,7 @@ pub fn two_monoid() -> (impl Signature, DiagramN) {
     let mut sig = SignatureBuilder::default();
 
     let space = sig.add_zero();
-    let wire = sig.add(space.clone(), space).unwrap();
+    let wire = sig.add(space, space).unwrap();
     let wirewire = wire.attach(&wire, Target, &[]).unwrap();
     let m = sig.add(wirewire, wire).unwrap();
     (sig, m)
@@ -93,9 +93,8 @@ pub fn touching() -> (impl Signature, DiagramN) {
     let s = sig.add(x.identity(), x.identity()).unwrap();
     let s_generator = Generator::new(1, 2);
     let s_s = s.attach(&s, Target, &[]).unwrap();
-    let rewrite = |bp, coord| {
-        Rewrite0::new(x_generator, s_generator, (s_generator.id, bp, coord).into()).into()
-    };
+    let rewrite =
+        |bp, coord| Rewrite0::new(x_generator, s_generator, (s_generator, bp, coord).into()).into();
     let fwd = rewrite(BoundaryPath(Source, 1), vec![]);
     let bwd = rewrite(BoundaryPath(Target, 1), vec![]);
     let up = rewrite(BoundaryPath(Source, 0), vec![Regular(0)]);
@@ -159,9 +158,8 @@ pub fn crossing() -> (impl Signature, DiagramN) {
     let s = sig.add(x.identity(), x.identity()).unwrap();
     let s_generator = Generator::new(1, 2);
     let s_s = s.attach(&s, Target, &[]).unwrap();
-    let rewrite = |bp, coord| {
-        Rewrite0::new(x_generator, s_generator, (s_generator.id, bp, coord).into()).into()
-    };
+    let rewrite =
+        |bp, coord| Rewrite0::new(x_generator, s_generator, (s_generator, bp, coord).into()).into();
     let fwd = rewrite(BoundaryPath(Source, 1), vec![]);
     let bwd = rewrite(BoundaryPath(Target, 1), vec![]);
     let up = rewrite(BoundaryPath(Source, 0), vec![Regular(0)]);
@@ -238,7 +236,7 @@ pub fn two_beads() -> (impl Signature, DiagramN) {
     let mut sig = SignatureBuilder::default();
 
     let x = sig.add_zero();
-    let f = sig.add(x.clone(), x).unwrap();
+    let f = sig.add(x, x).unwrap();
     let a = sig.add(f.clone(), f.clone()).unwrap();
     let b = sig.add(f.clone(), f.clone()).unwrap();
     (
@@ -260,7 +258,7 @@ pub fn three_beads() -> (impl Signature, DiagramN) {
     let mut sig = SignatureBuilder::default();
 
     let x = sig.add_zero();
-    let f = sig.add(x.clone(), x).unwrap();
+    let f = sig.add(x, x).unwrap();
     let a = sig.add(f.clone(), f.clone()).unwrap();
     let b = sig.add(f.clone(), f.clone()).unwrap();
     let c = sig.add(f.clone(), f.clone()).unwrap();
@@ -283,7 +281,7 @@ pub fn stacks() -> (impl Signature, DiagramN) {
     let mut sig = SignatureBuilder::default();
 
     let x = sig.add_zero();
-    let f = sig.add(x.clone(), x.clone()).unwrap();
+    let f = sig.add(x, x).unwrap();
     let m = sig.add(f.clone(), x.identity()).unwrap();
 
     (
@@ -304,7 +302,7 @@ pub fn matchsticks() -> (impl Signature, DiagramN) {
     let mut sig = SignatureBuilder::default();
 
     let x = sig.add_zero();
-    let f = sig.add(x.clone(), x.clone()).unwrap();
+    let f = sig.add(x, x).unwrap();
     let up = sig.add(f.clone(), x.identity()).unwrap();
     let down = sig.add(x.identity(), f).unwrap();
     (sig, up.attach(&down, Target, &[]).unwrap())
@@ -323,7 +321,7 @@ pub fn bead_series(n: usize) -> (impl Signature, DiagramN) {
     let mut sig = SignatureBuilder::default();
 
     let x = sig.add_zero();
-    let f = sig.add(x.clone(), x).unwrap();
+    let f = sig.add(x, x).unwrap();
     let e = sig.add(f.clone(), f.clone()).unwrap();
 
     let mut res = e.clone();
@@ -353,7 +351,7 @@ pub fn monoid_unit() -> (impl Signature, DiagramN) {
     let x = sig.add_zero();
 
     // 1-cells
-    let f = sig.add(x.clone(), x.clone()).unwrap();
+    let f = sig.add(x, x).unwrap();
     let ff = f.attach(&f, Target, &[]).unwrap();
 
     // 2-cells
@@ -382,7 +380,7 @@ pub fn scalar_and_beads() -> (impl Signature, DiagramN) {
     let x = sig.add_zero();
 
     // 1-cells
-    let f = sig.add(x.clone(), x.clone()).unwrap();
+    let f = sig.add(x, x).unwrap();
 
     // 2-cells
     let a = sig.add(f.clone(), f.clone()).unwrap();
@@ -409,7 +407,7 @@ pub fn real_snake() -> (impl Signature, DiagramN) {
     let x = sig.add_zero();
 
     // 1-cells
-    let f = sig.add(x.clone(), x).unwrap();
+    let f = sig.add(x, x).unwrap();
     let f_then_inverse = f.attach(&f.inverse(), Target, &[]).unwrap();
     let inverse_then_f = f.inverse().attach(&f, Target, &[]).unwrap();
 
@@ -438,7 +436,7 @@ pub fn bubble() -> (impl Signature, DiagramN) {
     let x = sig.add_zero();
 
     // 1-cells
-    let f = sig.add(x.clone(), x).unwrap();
+    let f = sig.add(x, x).unwrap();
     let f_then_inverse = f.attach(&f.inverse(), Target, &[]).unwrap();
 
     // 2-cells
@@ -462,7 +460,7 @@ pub fn snake() -> (impl Signature, DiagramN) {
     let x = sig.add_zero();
 
     // 1-cells
-    let f = sig.add(x.clone(), x.clone()).unwrap();
+    let f = sig.add(x, x).unwrap();
     let ff = f.attach(&f, Target, &[]).unwrap();
 
     // 2-cells
@@ -487,7 +485,7 @@ pub fn lips() -> (impl Signature, DiagramN) {
     let x = sig.add_zero();
 
     // 1-cells
-    let f = sig.add(x.clone(), x.clone()).unwrap();
+    let f = sig.add(x, x).unwrap();
     let ff = f.attach(&f, Target, &[]).unwrap();
 
     // 2-cells
@@ -521,7 +519,7 @@ pub fn pants_unit() -> (impl Signature, DiagramN) {
     let x = sig.add_zero();
 
     // 1-cells
-    let f = sig.add(x.clone(), x.clone()).unwrap();
+    let f = sig.add(x, x).unwrap();
     let ff = f.attach(&f, Target, &[]).unwrap();
 
     // 2-cells

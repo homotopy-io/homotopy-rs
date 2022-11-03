@@ -11,41 +11,19 @@ use thiserror::Error;
 #[derive(PartialEq, Eq, Copy, Clone, Hash, Serialize, Deserialize)]
 #[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub struct Generator {
-    pub dimension: usize,
     pub id: usize,
-    pub orientation: Orientation,
+    pub dimension: usize,
 }
 
 impl Generator {
     pub fn new(id: usize, dimension: usize) -> Self {
-        Self {
-            dimension,
-            id,
-            orientation: Orientation::Positive,
-        }
-    }
-
-    #[must_use]
-    pub fn orientation_transform(self, k: Orientation) -> Self {
-        Self {
-            orientation: self.orientation * k,
-            ..self
-        }
+        Self { id, dimension }
     }
 }
 
 impl fmt::Debug for Generator {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_fmt(format_args!(
-            "{}:{}{}",
-            self.id,
-            self.dimension,
-            match self.orientation {
-                Orientation::Negative => "⁻",
-                Orientation::Zero => "⁰",
-                Orientation::Positive => "⁺",
-            }
-        ))
+        f.write_fmt(format_args!("{}:{}", self.id, self.dimension))
     }
 }
 
@@ -351,7 +329,7 @@ pub enum Mode {
     Shallow,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 #[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub enum Orientation {
     Negative,
@@ -373,7 +351,7 @@ impl Mul for Orientation {
     }
 }
 
-impl fmt::Display for Orientation {
+impl fmt::Debug for Orientation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Negative => write!(f, "-"),
