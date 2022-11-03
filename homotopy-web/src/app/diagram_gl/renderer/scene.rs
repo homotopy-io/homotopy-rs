@@ -1,7 +1,7 @@
 use std::{mem, rc::Rc};
 
 use homotopy_common::idx::IdxVec;
-use homotopy_core::{Diagram, Generator};
+use homotopy_core::{Diagram, Diagram0, Generator};
 use homotopy_gl::{array::VertexArray, vertex_array, GlCtx, Result};
 use homotopy_graphics::{
     geom::{CubicalGeometry, SimplicialGeometry, VertData},
@@ -28,14 +28,14 @@ pub struct Scene {
 }
 
 pub struct Component<V> {
-    pub generator: Generator,
+    pub generator: Diagram0,
     pub vertices: V,
     pub albedo: Vec3,
     pub vertex_shape: Option<Rc<VertexArray>>,
 }
 
 pub struct AnimationCurve {
-    pub generator: Generator,
+    pub generator: Diagram0,
     pub begin: f32,
     pub end: f32,
     pub key_frames: Vec<Vec4>,
@@ -125,7 +125,7 @@ impl Scene {
         let p = sphere_mesh.mk_vert(VertData {
             position: Vec4::zero(),
             boundary: [false; 4],
-            generator: Generator::new(0, 0),
+            generator: Generator::new(0, 0).into(),
             k: usize::MAX,
         });
         sphere_mesh.mk_point(p);
@@ -142,7 +142,7 @@ impl Scene {
         let p = cube_mesh.mk_vert(VertData {
             position: Vec4::zero(),
             boundary: [false; 4],
-            generator: Generator::new(0, 0),
+            generator: Generator::new(0, 0).into(),
             k: usize::MAX,
         });
         cube_mesh.mk_point(p);
@@ -174,22 +174,22 @@ impl Scene {
             simplicial.subdivide(smooth_time, subdivision_depth);
         }
 
-        let color_of = |generator: &Generator, k: usize| -> Vec3 {
+        let color_of = |diagram: Diagram0, k: usize| -> Vec3 {
             let d = self.diagram.dimension();
-            let n = generator.dimension;
+            let n = diagram.generator.dimension;
             let k = k as usize;
             let c = d.saturating_sub(n + k);
             signature_styles
-                .generator_style(*generator)
+                .generator_style(diagram.generator)
                 .unwrap()
                 .color()
-                .lighten(c, generator.orientation)
+                .lighten(c, diagram.orientation)
                 .into_linear_f32_components()
                 .into()
         };
-        let shape_of = |generator: &Generator| -> Option<Rc<VertexArray>> {
+        let shape_of = |diagram: Diagram0| -> Option<Rc<VertexArray>> {
             match signature_styles
-                .generator_style(*generator)
+                .generator_style(diagram.generator)
                 .unwrap()
                 .shape()
             {
@@ -209,8 +209,8 @@ impl Scene {
                         &tri_buffers.element_buffer,
                         [&tri_buffers.vertex_buffer, &tri_buffers.normal_buffer]
                     )?,
-                    albedo: color_of(&generator, tri_buffers.k),
-                    vertex_shape: shape_of(&generator),
+                    albedo: color_of(generator, tri_buffers.k),
+                    vertex_shape: shape_of(generator),
                 });
 
                 self.wireframe_components.push(vertex_array!(
@@ -234,8 +234,8 @@ impl Scene {
                             &tetra_buffers.normal_end_buffer,
                         ]
                     )?,
-                    albedo: color_of(&generator, tetra_buffers.k),
-                    vertex_shape: shape_of(&generator),
+                    albedo: color_of(generator, tetra_buffers.k),
+                    vertex_shape: shape_of(generator),
                 });
             }
 
@@ -259,8 +259,8 @@ impl Scene {
                             &cylinder_buffers.vert_end_buffer
                         ]
                     )?,
-                    albedo: color_of(&generator, 1),
-                    vertex_shape: shape_of(&generator),
+                    albedo: color_of(generator, 1),
+                    vertex_shape: shape_of(generator),
                 });
             }
 
@@ -288,8 +288,8 @@ impl Scene {
                         .into_iter()
                         .map(|v| simplicial.verts[v].position)
                         .collect(),
-                    albedo: color_of(&generator, k),
-                    vertex_shape: shape_of(&generator),
+                    albedo: color_of(generator, k),
+                    vertex_shape: shape_of(generator),
                 });
             }
 
@@ -302,8 +302,8 @@ impl Scene {
                 self.animation_singularities.push(Component {
                     generator,
                     vertices: position,
-                    albedo: color_of(&generator, 0),
-                    vertex_shape: shape_of(&generator),
+                    albedo: color_of(generator, 0),
+                    vertex_shape: shape_of(generator),
                 });
             }
         }

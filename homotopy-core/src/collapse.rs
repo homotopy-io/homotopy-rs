@@ -186,7 +186,7 @@ pub(crate) fn collapse<V: Clone + Cartesian<Height>, E: Clone, Ix: IndexType>(
             // e is contained within nodes
             nodes.contains(&e.source()) && nodes.contains(&e.target())
             // e is an identity rewrite
-            && <&Rewrite0>::try_from(&e.weight().rewrite).unwrap().0.as_ref().map_or(true, |(s, t, _)| s.id == t.id)
+            && <&Rewrite0>::try_from(&e.weight().rewrite).unwrap().0.as_ref().map_or(true, |(s, t, _)| s.generator == t.generator)
             // check triangles within nodes which might refute collapsibility of e
             && graph.edges_directed(e.source(), Incoming).all(|p| {
                 if let Some(c) = graph.find_edge(p.source(), e.target()) {

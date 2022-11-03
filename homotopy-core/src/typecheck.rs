@@ -1,11 +1,13 @@
 use std::{
     cell::RefCell,
-    collections::BTreeSet,
     convert::{Into, TryInto},
     rc::Rc,
 };
 
-use homotopy_common::{hash::FastHashMap, idx::IdxVec};
+use homotopy_common::{
+    hash::{FastHashMap, FastHashSet},
+    idx::IdxVec,
+};
 use itertools::Itertools;
 use petgraph::{graph::NodeIndex, visit::EdgeRef};
 use thiserror::Error;
@@ -53,8 +55,8 @@ where
     S: Signature,
 {
     let diagram = match diagram {
-        Diagram::Diagram0(g) => {
-            if g.dimension == 0 {
+        Diagram::Diagram0(d) => {
+            if d.generator.dimension == 0 {
                 return Ok(());
             } else {
                 return Err(TypeError::IllTyped);
@@ -139,7 +141,7 @@ fn target_points(rewrites: &[Rewrite]) -> Vec<(Point, Generator)> {
 
         match target {
             Some(target) => {
-                return vec![(vec![], target)];
+                return vec![(vec![], target.generator)];
             }
             None => return vec![],
         }
@@ -373,7 +375,7 @@ fn check_dimension(diagram: Diagram) -> bool {
         checked: &mut FastHashMap<DiagramN, usize>,
     ) -> bool {
         match diagram {
-            Diagram::Diagram0(generator) => generator.dimension <= max_dimension,
+            Diagram::Diagram0(d) => d.generator.dimension <= max_dimension,
             Diagram::DiagramN(diagram) => {
                 if checked
                     .get(&diagram)
@@ -405,7 +407,7 @@ fn check_dimension(diagram: Diagram) -> bool {
 type Simplex = Vec<NodeIndex>; // An n-simplex is a list of n + 1 vertices.
 type LabelledSimplex = Vec<Label>; // An n-simplex is a list of (n + 1 choose 2) edges.
 
-fn collapse_simplicies<D>(diagram: D, signature: &impl Signature) -> BTreeSet<LabelledSimplex>
+fn collapse_simplicies<D>(diagram: D, signature: &impl Signature) -> FastHashSet<LabelledSimplex>
 where
     D: Into<Diagram>,
 {

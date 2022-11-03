@@ -6,12 +6,12 @@ use crate::{
     common::BoundaryPath,
     scaffold::{Explodable, StableScaffold},
     signature::Signature,
-    Diagram, Height, SliceIndex,
+    Diagram, Generator, Height, SliceIndex,
 };
 
 type Coord = Vec<Height>;
 
-pub type Label = Option<(usize, BoundaryPath, Coord)>;
+pub type Label = Option<(Generator, BoundaryPath, Coord)>;
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Neighbourhood(FastHashMap<BoundaryPath, BoundaryEquivalences>);

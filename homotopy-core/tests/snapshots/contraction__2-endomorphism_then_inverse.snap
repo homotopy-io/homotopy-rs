@@ -5,16 +5,23 @@ expression: "e_then_inverse.identity().contract(Boundary::Target.into(), &[], 0,
 DiagramN {
     source: DiagramN {
         source: Diagram0(
-            0:0⁺,
+            0:0,
+            +,
         ),
         cospans: [
             Cospan {
                 forward: Rewrite0(
-                    0:0⁺,
-                    1:1⁺,
+                    Diagram0(
+                        0:0,
+                        +,
+                    ),
+                    Diagram0(
+                        1:1,
+                        +,
+                    ),
                     Some(
                         (
-                            1,
+                            1:1,
                             BoundaryPath(
                                 Source,
                                 0,
@@ -24,11 +31,17 @@ DiagramN {
                     ),
                 ),
                 backward: Rewrite0(
-                    0:0⁺,
-                    1:1⁺,
+                    Diagram0(
+                        0:0,
+                        +,
+                    ),
+                    Diagram0(
+                        1:1,
+                        +,
+                    ),
                     Some(
                         (
-                            1,
+                            1:1,
                             BoundaryPath(
                                 Target,
                                 0,

@@ -7,7 +7,9 @@ use serde::Deserialize;
 use serde_json::{from_value, Value};
 use thiserror::Error;
 
-use crate::{rewrite::Cone, Cospan, Diagram, DiagramN, Generator, Rewrite, Rewrite0, RewriteN};
+use crate::{
+    rewrite::Cone, Cospan, Diagram, Diagram0, DiagramN, Generator, Rewrite, Rewrite0, RewriteN,
+};
 
 #[derive(Deserialize)]
 pub struct OldProof {
@@ -140,7 +142,7 @@ impl OldProof {
             if dim == 0 {
                 let id: String = from_value(self.stored[index][1]["f"]["id"].clone())?;
                 let id: usize = id.parse().unwrap();
-                self.generators[&id].into()
+                Diagram0::from(self.generators[&id]).into()
             } else {
                 // Load source
                 let source_index: usize =

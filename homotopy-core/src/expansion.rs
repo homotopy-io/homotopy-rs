@@ -616,8 +616,8 @@ pub(crate) fn expand_propagate(
 
 impl Cone {
     fn is_homotopy(&self) -> bool {
-        self.target().max_generator().map_or(true, |g| {
-            g.dimension <= self.target().forward.dimension() + 1
+        self.target().max_generator().map_or(true, |d| {
+            d.generator.dimension <= self.target().forward.dimension() + 1
         })
     }
 }

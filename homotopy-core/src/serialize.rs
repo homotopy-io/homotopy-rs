@@ -7,7 +7,8 @@ use highway::{HighwayHash, HighwayHasher};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    label::Label, rewrite::Cone, Cospan, Diagram, DiagramN, Generator, Rewrite, Rewrite0, RewriteN,
+    label::Label, rewrite::Cone, Cospan, Diagram, Diagram0, DiagramN, Generator, Orientation,
+    Rewrite, Rewrite0, RewriteN,
 };
 
 /// Similar to `Hash`, except supposed to be deterministic and shouldn't collide
@@ -45,8 +46,9 @@ impl Store {
         }
 
         let serialized = match diagram {
-            Diagram::Diagram0(generator) => DiagramSer::D0 {
-                generator: *generator,
+            Diagram::Diagram0(diagram) => DiagramSer::D0 {
+                generator: diagram.generator,
+                orientation: diagram.orientation,
             },
             Diagram::DiagramN(diagram) => {
                 let source = self.pack_diagram(&diagram.source());
@@ -82,8 +84,8 @@ impl Store {
 
         let serialized = match rewrite {
             Rewrite::Rewrite0(r0) => RewriteSer::R0 {
-                source: r0.source(),
-                target: r0.target(),
+                source: r0.source().map(|d| (d.generator, d.orientation)),
+                target: r0.target().map(|d| (d.generator, d.orientation)),
                 label: r0.label(),
             },
             Rewrite::RewriteN(rewrite) => {
@@ -146,7 +148,10 @@ impl Store {
     pub fn unpack_diagram(&mut self, key: Key<Diagram>) -> Option<Diagram> {
         self.diagram_keys.get_by_right(&key).cloned().or_else(|| {
             let diagram = match self.diagrams.get(&key)?.clone() {
-                DiagramSer::D0 { generator, .. } => Some(Diagram::from(generator)),
+                DiagramSer::D0 {
+                    generator,
+                    orientation,
+                } => Some(Diagram0::new(generator, orientation).into()),
                 DiagramSer::Dn {
                     source, cospans, ..
                 } => {
@@ -182,6 +187,8 @@ impl Store {
                 } => match (source, target, label) {
                     (None, None, None) => Some(Rewrite0(None).into()),
                     (Some(source), Some(target), label) => {
+                        let source = Diagram0::new(source.0, source.1);
+                        let target = Diagram0::new(target.0, target.1);
                         Some(Rewrite0(Some((source, target, label))).into())
                     }
                     _ => None,
@@ -254,6 +261,7 @@ impl Store {
 enum DiagramSer {
     D0 {
         generator: Generator,
+        orientation: Orientation,
     },
     Dn {
         dimension: NonZeroU32,
@@ -268,10 +276,10 @@ enum RewriteSer {
     R0 {
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
-        source: Option<Generator>,
+        source: Option<(Generator, Orientation)>,
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
-        target: Option<Generator>,
+        target: Option<(Generator, Orientation)>,
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
         label: Label,

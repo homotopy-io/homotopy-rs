@@ -5,6 +5,7 @@ use homotopy_common::hash::FastHashMap;
 use homotopy_core::{
     common::DimensionError,
     complex::make_complex,
+    diagram::Diagram0,
     layout::Layout,
     projection::{Depths, Projection},
     Diagram, Generator, Orientation,
@@ -47,17 +48,17 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
 
 #[inline]
 pub fn name_from_diagram_dim(
-    generator: Generator,
+    diagram: Diagram0,
     diagram_dimension: usize,
     representation: GeneratorRepresentation,
 ) -> String {
     let d = diagram_dimension;
-    let n = generator.dimension;
+    let n = diagram.generator.dimension;
     let k = representation as usize;
 
     let c = d.saturating_sub(n + k);
 
-    name(generator, c, generator.orientation)
+    name(diagram.generator, c, diagram.orientation)
 }
 
 #[inline]
@@ -93,7 +94,7 @@ pub fn render(
     ));
 
     let mut surfaces = Vec::default();
-    let mut wires: FastHashMap<usize, Vec<(Generator, Path)>> = FastHashMap::default();
+    let mut wires: FastHashMap<usize, Vec<(Diagram0, Path)>> = FastHashMap::default();
     let mut points = Vec::default();
 
     // Needed for working out translations/scalings
@@ -187,14 +188,14 @@ pub fn render(
         ind = INDENT
     )
     .unwrap();
-    for (g, path) in surfaces {
+    for (d, path) in surfaces {
         writeln!(
             manim,
             "{ind}{ind}surfaces.add(self.build_path({path},width=1).set_fill(C[\"{color}\"],0.75)) # path_{id}_{dim}",
             ind=INDENT,
-            color=name_from_diagram_dim(g, diagram.dimension(), GeneratorRepresentation::Surface),
-            id=g.id,
-            dim=g.dimension,
+            color=name_from_diagram_dim(d, diagram.dimension(), GeneratorRepresentation::Surface),
+            id=d.generator.id,
+            dim=d.generator.dimension,
             path=&render_path(&path)
         )
         .unwrap();
@@ -222,23 +223,23 @@ pub fn render(
         // Background
         if i > 0 {
             writeln!(manim, "{ind}{ind}# Begin scope", ind = INDENT).unwrap();
-            for (g, path) in &layer {
+            for (d, path) in &layer {
                 writeln!(manim, "{ind}{ind}wires.add(Intersection(surfaces,self.build_path({path},width=20),color=C[\"generator_{id}_{dim}\"],fill_opacity=0.8))",
                          ind=INDENT,
-                         id=g.id,
-                         dim=g.dimension,
+                         id=d.generator.id,
+                         dim=d.generator.dimension,
                          path=&render_path(path)
                 ).unwrap();
             }
             writeln!(manim, "{ind}{ind}# End scope", ind = INDENT).unwrap();
         }
 
-        for (g, path) in &layer {
+        for (d, path) in &layer {
             writeln!(manim, "{ind}{ind}wires.add(self.build_path({path},width=20,color=C[\"{color}\"])) # path_{id}_{dim}",
                 ind=INDENT,
-                color=name_from_diagram_dim(*g, diagram.dimension(), GeneratorRepresentation::Wire),
-                id=g.id,
-                dim=g.dimension,
+                color=name_from_diagram_dim(*d, diagram.dimension(), GeneratorRepresentation::Wire),
+                id=d.generator.id,
+                dim=d.generator.dimension,
                 path=&render_path(path)
             ).unwrap();
         }
@@ -259,17 +260,17 @@ pub fn render(
     .unwrap();
 
     //TODO work out right radius for circles to match SVG/tikz export.
-    for (g, point) in points {
+    for (d, point) in points {
         let vertex = render_vertex(
-            signature_styles.generator_style(g).unwrap(),
-            &name_from_diagram_dim(g, diagram.dimension(), GeneratorRepresentation::Point),
+            signature_styles.generator_style(d.generator).unwrap(),
+            &name_from_diagram_dim(d, diagram.dimension(), GeneratorRepresentation::Point),
         );
         writeln!(
             manim,
             "{ind}{ind}points.add({vertex}.move_to(np.array([{ptx},{pty},1])) # circle_{id}_{dim}",
             ind = INDENT,
-            id = g.id,
-            dim = g.dimension,
+            id = d.generator.id,
+            dim = d.generator.dimension,
             vertex = vertex,
             ptx = point.x,
             pty = point.y

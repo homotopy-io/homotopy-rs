@@ -25,7 +25,7 @@ use crate::{
     attach::attach,
     collapse::{collapse, unify, Cartesian},
     common::{Boundary, BoundaryPath, DimensionError, Height, Orientation, SingularHeight},
-    diagram::{Diagram, DiagramN},
+    diagram::{Diagram, Diagram0, DiagramN},
     expansion::expand_propagate,
     rewrite::{Cone, Cospan, Rewrite, Rewrite0, RewriteN},
     scaffold::{
@@ -34,7 +34,7 @@ use crate::{
     },
     signature::Signature,
     typecheck::{typecheck_cospan, TypeError},
-    Direction, Generator, SliceIndex,
+    Direction, SliceIndex,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -470,8 +470,8 @@ fn colimit_base<Ix: IndexType>(
     let (max_dim_index, max_dim_generator) = stable
         .node_references()
         .map(|(i, ScaffoldNode { diagram, .. })| {
-            let g: Generator = diagram.try_into().unwrap();
-            (i, g)
+            let d: Diagram0 = diagram.try_into().unwrap();
+            (i, d.generator)
         })
         .max_by_key(|(_, g)| g.dimension)
         .ok_or(ContractionError::NonUniqueMaxDimensionGenerator)?;
@@ -494,9 +494,9 @@ fn colimit_base<Ix: IndexType>(
         },
     ) in graph.node_references()
     {
-        let g: Generator = diagram.try_into().unwrap();
-        if g.dimension == max_dim_generator.dimension {
-            if g.id != max_dim_generator.id {
+        let d: Diagram0 = diagram.try_into().unwrap();
+        if d.generator.dimension == max_dim_generator.dimension {
+            if d.generator != max_dim_generator {
                 // found distinct elements of maximal dimension
                 return Err(ContractionError::NonUniqueMaxDimensionGenerator);
             }
@@ -507,7 +507,7 @@ fn colimit_base<Ix: IndexType>(
             orientations
                 .entry(&coordinate[..codimension])
                 .or_default()
-                .push(g.orientation);
+                .push(d.orientation);
         }
     }
 
@@ -557,21 +557,18 @@ fn colimit_base<Ix: IndexType>(
         .map_err(|_err| ContractionError::LabelInconsistency)?;
     }
 
-    let colimit = Generator {
-        orientation,
-        ..max_dim_generator
-    };
+    let colimit = Diagram0::new(max_dim_generator, orientation);
 
     // construct colimit legs
     let legs = {
         let mut legs = IdxVec::with_capacity(graph.node_count());
         for (n, ScaffoldNode { diagram, .. }) in graph.node_references() {
-            let g: Generator = diagram.try_into().unwrap();
+            let d: Diagram0 = diagram.try_into().unwrap();
             let r = {
                 let (p, q) = (union_find.find_mut(n), union_find.find_mut(max_dim_index));
                 if p == q {
-                    debug_assert_eq!(g.id, colimit.id);
-                    Rewrite0::new(g, colimit, None)
+                    debug_assert_eq!(d.generator, colimit.generator);
+                    Rewrite0::new(d, colimit, None)
                 } else {
                     let label = <&Rewrite0>::try_from(
                         &stable[stable
@@ -582,7 +579,7 @@ fn colimit_base<Ix: IndexType>(
                     .expect("non 0-rewrite passed to colimit_base")
                     .label()
                     .clone();
-                    Rewrite0::new(g, colimit, label)
+                    Rewrite0::new(d, colimit, label)
                 }
             };
             legs.push(r.into());
@@ -872,7 +869,7 @@ fn colimit_recursive<Ix: IndexType>(
 
             let max_ix = restriction
                 .externals(Outgoing)
-                .max_by_key(|&ix| restriction[ix].diagram.max_generator().dimension)
+                .max_by_key(|&ix| restriction[ix].diagram.max_generator().generator.dimension)
                 .expect("recursive colimit subproblem has no max dimensional subdiagram");
             let (source_ix, target_ix) = restriction
                 .edges_directed(max_ix, Incoming)

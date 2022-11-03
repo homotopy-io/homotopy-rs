@@ -19,10 +19,10 @@ use petgraph::{
 };
 
 use crate::{
-    common::{DimensionError, Generator, SliceIndex},
+    common::{DimensionError, SliceIndex},
     layout::Layout,
     scaffold::{Explodable, Scaffold, ScaffoldNode},
-    Boundary, Diagram, DiagramN, Direction, Height, Rewrite, RewriteN,
+    Boundary, Diagram, Diagram0, DiagramN, Direction, Height, Rewrite, RewriteN,
 };
 
 type Coordinate<const N: usize> = [SliceIndex; N];
@@ -40,8 +40,8 @@ pub enum Homotopy {
 /// projection of a diagram, as well as information about homotopies.
 #[derive(Clone, Debug)]
 pub struct Projection<const N: usize> {
-    generators: IdxVec<NodeIndex, Generator>,
-    front_generators: IdxVec<NodeIndex, (Generator, bool)>,
+    generators: IdxVec<NodeIndex, Diagram0>,
+    front_generators: IdxVec<NodeIndex, (Diagram0, bool)>,
     homotopies: IdxVec<NodeIndex, Option<Homotopy>>,
     coord_to_node: FastHashMap<Coordinate<N>, NodeIndex>,
 }
@@ -249,11 +249,11 @@ impl<const N: usize> Projection<N> {
         })
     }
 
-    pub fn generator(&self, p: Coordinate<N>) -> Generator {
+    pub fn generator(&self, p: Coordinate<N>) -> Diagram0 {
         self.generators[self.coord_to_node[&p]]
     }
 
-    pub fn front_generator(&self, p: Coordinate<N>) -> (Generator, bool) {
+    pub fn front_generator(&self, p: Coordinate<N>) -> (Diagram0, bool) {
         self.front_generators[self.coord_to_node[&p]]
     }
 

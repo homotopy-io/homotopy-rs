@@ -4,7 +4,8 @@ expression: "inverse_then_f.identity().contract(Boundary::Target.into(), &[], 0,
 ---
 DiagramN {
     source: Diagram0(
-        0:0⁺,
+        0:0,
+        +,
     ),
     cospans: [],
 }
