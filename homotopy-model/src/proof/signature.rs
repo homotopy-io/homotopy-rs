@@ -187,14 +187,6 @@ impl Signature {
     ) -> Result<Diagram, NewDiagramError> {
         let id = self.next_generator_id();
         let generator = Generator::new(id, source.dimension() + 1);
-        // TODO(@calintat): Remove this when we have directed typechecking.
-        let invertible = if invertible {
-            true
-        } else {
-            // Check if either boundary is invertible (but rule out identities).
-            (source.is_invertible(self) && source.size().map_or(true, |size| size > 0))
-                || (target.is_invertible(self) && target.size().map_or(true, |size| size > 0))
-        };
         let (diagram, neighbourhood) = DiagramN::from_generator(generator, source, target, self)?;
         self.insert(generator, diagram.clone(), name, invertible, neighbourhood);
         Ok(diagram.into())
@@ -208,8 +200,8 @@ impl Signature {
 
     pub fn update(&mut self, edit: &SignatureEdit) -> Result<(), ProofError> {
         match edit {
-            // Intercept `MakeOriented` and `MakeInvertible` edits in order to update the whole signature.
             SignatureEdit::Edit(node, edit) => match edit {
+                // Intercept edit in order to update the whole signature.
                 SignatureItemEdit::MakeOriented(g, true) => {
                     self.0 = self.0.clone().map(|item| match item {
                         SignatureItem::Item(info) => {
@@ -223,19 +215,6 @@ impl Signature {
                                 diagram: info.diagram.remove_framing(*g),
                                 ..info
                             })
-                        }
-                        SignatureItem::Folder(_) => item,
-                    });
-                }
-                SignatureItemEdit::MakeInvertible(g, true) => {
-                    self.0 = self.0.clone().map(|item| match item {
-                        SignatureItem::Item(info) => {
-                            let invertible = if info.diagram.generators().contains(g) {
-                                true
-                            } else {
-                                info.invertible
-                            };
-                            SignatureItem::Item(GeneratorInfo { invertible, ..info })
                         }
                         SignatureItem::Folder(_) => item,
                     });
