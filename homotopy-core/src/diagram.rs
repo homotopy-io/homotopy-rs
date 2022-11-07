@@ -8,7 +8,6 @@ use std::{
 use hashconsing::{HConsed, HConsign, HashConsign};
 use homotopy_common::hash::FastHashSet;
 use once_cell::unsync::OnceCell;
-// used for debugging only
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -24,7 +23,12 @@ use crate::{
     Orientation,
 };
 
-#[derive(PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
+thread_local! {
+    static DIAGRAM_FACTORY: RefCell<HConsign<DiagramInternal>> =
+        RefCell::new(HConsign::with_capacity(37));
+}
+
+#[derive(Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum Diagram {
     Diagram0(Diagram0),
     DiagramN(DiagramN),
@@ -75,10 +79,9 @@ impl Diagram {
     }
 
     pub fn dimension(&self) -> usize {
-        use Diagram::{Diagram0, DiagramN};
         match self {
-            Diagram0(_) => 0,
-            DiagramN(d) => d.dimension(),
+            Self::Diagram0(_) => 0,
+            Self::DiagramN(d) => d.dimension(),
         }
     }
 
@@ -191,15 +194,11 @@ impl Diagram {
 }
 
 pub fn globularity(s: &Diagram, t: &Diagram) -> bool {
-    match (s.dimension(), t.dimension()) {
-        (0, 0) => true,
-        (i, j) => {
-            i == j && {
-                let s: &DiagramN = <&DiagramN>::try_from(s).unwrap();
-                let t: &DiagramN = <&DiagramN>::try_from(t).unwrap();
-                s.source() == t.source() && s.target() == t.target()
-            }
-        }
+    use Diagram::{Diagram0, DiagramN};
+    match (s, t) {
+        (Diagram0(_), Diagram0(_)) => true,
+        (Diagram0(_), DiagramN(_)) | (DiagramN(_), Diagram0(_)) => false,
+        (DiagramN(s), DiagramN(t)) => s.source() == t.source() && s.target() == t.target(),
     }
 }
 
@@ -233,7 +232,7 @@ impl From<Generator> for Diagram0 {
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Clone)]
+#[derive(Clone, Eq, PartialEq, Hash)]
 pub struct DiagramN(HConsed<DiagramInternal>);
 
 impl Serialize for DiagramN {
@@ -255,21 +254,13 @@ impl<'de> Deserialize<'de> for DiagramN {
     }
 }
 
-thread_local! {
-    static DIAGRAM_FACTORY: RefCell<HConsign<DiagramInternal>> = RefCell::new(HConsign::with_capacity(37));
-}
-
 impl DiagramN {
-    pub fn from_generator<S, T>(
+    pub fn from_generator(
         generator: Generator,
-        source: S,
-        target: T,
+        source: impl Into<Diagram>,
+        target: impl Into<Diagram>,
         signature: &impl Signature,
-    ) -> Result<(Self, Neighbourhood), NewDiagramError>
-    where
-        S: Into<Diagram>,
-        T: Into<Diagram>,
-    {
+    ) -> Result<(Self, Neighbourhood), NewDiagramError> {
         use crate::Boundary::{Source, Target};
 
         let source: Diagram = source.into();
@@ -280,10 +271,8 @@ impl DiagramN {
             return Err(NewDiagramError::Dimension);
         }
 
-        if let (Diagram::DiagramN(source), Diagram::DiagramN(target)) = (&source, &target) {
-            if source.source() != target.source() || source.target() != target.target() {
-                return Err(NewDiagramError::NonGlobular);
-            }
+        if !globularity(&source, &target) {
+            return Err(NewDiagramError::NonGlobular);
         }
 
         let mut neighbourhood = Neighbourhood::default();
@@ -313,8 +302,7 @@ impl DiagramN {
 
     pub fn new(source: Diagram, cospans: Vec<Cospan>) -> Self {
         let diagram = Self::new_unsafe(source, cospans);
-        #[cfg(feature = "safety-checks")]
-        {
+        if cfg!(feature = "safety-checks") {
             diagram.check(Mode::Shallow).expect("Diagram is malformed");
         }
         diagram
@@ -578,7 +566,7 @@ impl DiagramN {
         )
     }
 
-    pub fn follow(&self, boundary_path: BoundaryPath) -> Option<Diagram> {
+    pub fn boundary(&self, boundary_path: BoundaryPath) -> Option<Diagram> {
         let mut diagram = self.clone();
 
         for _ in 0..boundary_path.depth() {
@@ -586,6 +574,27 @@ impl DiagramN {
         }
 
         diagram.slice(boundary_path.boundary())
+    }
+}
+
+#[derive(Clone, Eq, Serialize, Deserialize)]
+struct DiagramInternal {
+    source: Diagram,
+    cospans: Vec<Cospan>,
+    #[serde(skip)]
+    max_generator: OnceCell<Diagram0>,
+}
+
+impl PartialEq for DiagramInternal {
+    fn eq(&self, other: &Self) -> bool {
+        self.source == other.source && self.cospans == other.cospans
+    }
+}
+
+impl Hash for DiagramInternal {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.source.hash(state);
+        self.cospans.hash(state);
     }
 }
 
@@ -600,7 +609,10 @@ impl fmt::Debug for Diagram0 {
 
 impl fmt::Debug for DiagramN {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.get().fmt(f)
+        f.debug_struct("DiagramN")
+            .field("source", &self.0.source)
+            .field("cospans", &self.0.cospans)
+            .finish()
     }
 }
 
@@ -666,36 +678,6 @@ impl<'a> TryFrom<&'a Diagram> for &'a DiagramN {
             Diagram::Diagram0(_) => Err(DimensionError),
             Diagram::DiagramN(diagram) => Ok(diagram),
         }
-    }
-}
-
-#[derive(Eq, Clone, Serialize, Deserialize)]
-struct DiagramInternal {
-    source: Diagram,
-    cospans: Vec<Cospan>,
-    #[serde(skip)]
-    max_generator: OnceCell<Diagram0>,
-}
-
-impl PartialEq for DiagramInternal {
-    fn eq(&self, other: &Self) -> bool {
-        self.source == other.source && self.cospans == other.cospans
-    }
-}
-
-impl Hash for DiagramInternal {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.source.hash(state);
-        self.cospans.hash(state);
-    }
-}
-
-impl fmt::Debug for DiagramInternal {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("DiagramN")
-            .field("source", &self.source)
-            .field("cospans", &self.cospans)
-            .finish()
     }
 }
 

@@ -90,7 +90,7 @@ impl DiagramN {
         bias: Option<Bias>,
         signature: &impl Signature,
     ) -> Result<Self, ContractionError> {
-        if boundary_path.1 >= self.dimension() {
+        if boundary_path.depth() >= self.dimension() {
             return Err(ContractionError::Invalid);
         }
 

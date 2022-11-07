@@ -9,7 +9,6 @@ use std::{
 
 use hashconsing::{HConsed, HConsign, HashConsign};
 use once_cell::unsync::OnceCell;
-// used for debugging only
 use serde::{ser::SerializeStruct, Deserialize, Serialize};
 use thiserror::Error;
 
@@ -31,103 +30,10 @@ thread_local! {
         RefCell::new(HConsign::with_capacity(37));
 }
 
-#[derive(Clone, Debug, Error)]
-pub enum CompositionError {
-    #[error("can't compose rewrites of dimensions {0} and {1}")]
-    Dimension(usize, usize),
-
-    #[error("failed to compose incompatible rewrites")]
-    Incompatible,
-}
-
-#[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Cospan {
     pub forward: Rewrite,
     pub backward: Rewrite,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct RewriteInternal {
-    dimension: usize,
-    cones: Vec<Cone>,
-    #[serde(skip)]
-    max_generator_source: OnceCell<Option<Diagram0>>,
-    #[serde(skip)]
-    max_generator_target: OnceCell<Option<Diagram0>>,
-}
-
-#[derive(PartialEq, Eq, Clone, Hash, Serialize, Deserialize)]
-pub struct Rewrite0(pub(crate) Option<(Diagram0, Diagram0, Label)>);
-
-#[derive(PartialEq, Eq, Clone, Hash)]
-pub struct RewriteN(HConsed<RewriteInternal>);
-
-impl Serialize for RewriteN {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_newtype_struct("RewriteN", self.0.get())
-    }
-}
-
-impl<'de> Deserialize<'de> for RewriteN {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        Deserialize::deserialize(deserializer)
-            .map(|r| RewriteN(REWRITE_FACTORY.with(|factory| factory.borrow_mut().mk(r))))
-    }
-}
-
-#[derive(PartialEq, Eq, Clone, Hash, Serialize, Deserialize)]
-pub enum Rewrite {
-    Rewrite0(Rewrite0),
-    RewriteN(RewriteN),
-}
-
-#[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize, Deserialize)]
-pub(crate) struct ConeInternal {
-    source: Vec<Cospan>,
-    target: Cospan,
-    regular_slices: Vec<Rewrite>,
-    singular_slices: Vec<Rewrite>,
-}
-
-#[derive(PartialEq, Eq, Clone, Hash)]
-pub struct Cone {
-    pub(crate) index: usize,
-    pub(crate) internal: HConsed<ConeInternal>,
-}
-
-impl Serialize for Cone {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let mut state = serializer.serialize_struct("Cone", 2)?;
-        state.serialize_field("index", &self.index)?;
-        state.serialize_field("internal", &self.internal.get())?;
-        state.end()
-    }
-}
-
-impl<'de> Deserialize<'de> for Cone {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        #[derive(Deserialize)]
-        struct ConeUnshared {
-            index: usize,
-            internal: ConeInternal,
-        }
-        Deserialize::deserialize(deserializer).map(|c: ConeUnshared| Cone {
-            index: c.index,
-            internal: CONE_FACTORY.with(|factory| factory.borrow_mut().mk(c.internal)),
-        })
-    }
 }
 
 impl Cospan {
@@ -177,81 +83,10 @@ impl Cospan {
     }
 }
 
-impl fmt::Debug for Rewrite {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::RewriteN(r) => r.fmt(f),
-            Self::Rewrite0(r) => r.fmt(f),
-        }
-    }
-}
-
-impl<'a> From<&'a RewriteN> for &'a Rewrite {
-    fn from(r: &'a RewriteN) -> Self {
-        r.into()
-    }
-}
-
-impl From<RewriteN> for Rewrite {
-    #[inline]
-    fn from(r: RewriteN) -> Self {
-        Self::RewriteN(r)
-    }
-}
-
-impl From<Rewrite0> for Rewrite {
-    #[inline]
-    fn from(r: Rewrite0) -> Self {
-        Self::Rewrite0(r)
-    }
-}
-
-impl TryFrom<Rewrite> for RewriteN {
-    type Error = DimensionError;
-
-    #[inline]
-    fn try_from(value: Rewrite) -> Result<Self, Self::Error> {
-        match value {
-            Rewrite::Rewrite0(_) => Err(DimensionError),
-            Rewrite::RewriteN(r) => Ok(r),
-        }
-    }
-}
-
-impl<'a> TryFrom<&'a Rewrite> for &'a RewriteN {
-    type Error = DimensionError;
-
-    #[inline]
-    fn try_from(value: &'a Rewrite) -> Result<Self, Self::Error> {
-        match value {
-            Rewrite::Rewrite0(_) => Err(DimensionError),
-            Rewrite::RewriteN(r) => Ok(r),
-        }
-    }
-}
-
-impl TryFrom<Rewrite> for Rewrite0 {
-    type Error = DimensionError;
-
-    #[inline]
-    fn try_from(value: Rewrite) -> Result<Self, Self::Error> {
-        match value {
-            Rewrite::Rewrite0(r) => Ok(r),
-            Rewrite::RewriteN(_) => Err(DimensionError),
-        }
-    }
-}
-
-impl<'a> TryFrom<&'a Rewrite> for &'a Rewrite0 {
-    type Error = DimensionError;
-
-    fn try_from(value: &'a Rewrite) -> Result<Self, Self::Error> {
-        match value {
-            Rewrite::Rewrite0(r) => Ok(r),
-            Rewrite::RewriteN(_) => Err(DimensionError),
-        }
-    }
+#[derive(Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub enum Rewrite {
+    Rewrite0(Rewrite0),
+    RewriteN(RewriteN),
 }
 
 impl Rewrite {
@@ -417,19 +252,8 @@ impl Rewrite {
     }
 }
 
-impl fmt::Debug for Rewrite0 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self(Some((s, t, l))) => f
-                .debug_tuple("Rewrite0")
-                .field(&s)
-                .field(&t)
-                .field(&l)
-                .finish(),
-            Self(None) => f.debug_struct("Rewrite0").finish(),
-        }
-    }
-}
+#[derive(Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct Rewrite0(pub(crate) Option<(Diagram0, Diagram0, Label)>);
 
 impl Rewrite0 {
     pub fn new(source: impl Into<Diagram0>, target: impl Into<Diagram0>, label: Label) -> Self {
@@ -518,29 +342,25 @@ impl Rewrite0 {
     }
 }
 
-impl fmt::Debug for RewriteN {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0
-            .get() // important for hashcons formatting
-            .fmt(f)
+#[derive(Clone, Eq, PartialEq, Hash)]
+pub struct RewriteN(HConsed<RewriteInternal>);
+
+impl Serialize for RewriteN {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_newtype_struct("RewriteN", self.0.get())
     }
 }
 
-impl PartialEq for RewriteInternal {
-    #[inline]
-    fn eq(&self, other: &Self) -> bool {
-        self.dimension == other.dimension && self.cones == other.cones
-    }
-}
-
-impl Eq for RewriteInternal {}
-
-impl Hash for RewriteInternal {
-    #[inline]
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.dimension.hash(state);
-        self.cones.hash(state);
+impl<'de> Deserialize<'de> for RewriteN {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Deserialize::deserialize(deserializer)
+            .map(|r| RewriteN(REWRITE_FACTORY.with(|factory| factory.borrow_mut().mk(r))))
     }
 }
 
@@ -920,21 +740,157 @@ impl RewriteN {
     }
 }
 
-impl fmt::Debug for RewriteInternal {
+#[derive(Clone, Eq, Serialize, Deserialize)]
+struct RewriteInternal {
+    dimension: usize,
+    cones: Vec<Cone>,
+    #[serde(skip)]
+    max_generator_source: OnceCell<Option<Diagram0>>,
+    #[serde(skip)]
+    max_generator_target: OnceCell<Option<Diagram0>>,
+}
+
+impl PartialEq for RewriteInternal {
+    fn eq(&self, other: &Self) -> bool {
+        self.dimension == other.dimension && self.cones == other.cones
+    }
+}
+
+impl Hash for RewriteInternal {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.dimension.hash(state);
+        self.cones.hash(state);
+    }
+}
+
+impl fmt::Debug for Rewrite0 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self(Some((s, t, l))) => f
+                .debug_tuple("Rewrite0")
+                .field(&s)
+                .field(&t)
+                .field(&l)
+                .finish(),
+            Self(None) => f.debug_struct("Rewrite0").finish(),
+        }
+    }
+}
+
+impl fmt::Debug for RewriteN {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("RewriteN")
-            .field("dimension", &self.dimension)
-            .field("cones", &self.cones)
+            .field("dimension", &self.0.dimension)
+            .field("cones", &self.0.cones)
             .finish()
     }
 }
 
-impl fmt::Debug for Cone {
+impl fmt::Debug for Rewrite {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Cone")
-            .field("index", &self.index)
-            .field("internal", &*self.internal)
-            .finish()
+        match self {
+            Self::Rewrite0(r) => r.fmt(f),
+            Self::RewriteN(r) => r.fmt(f),
+        }
+    }
+}
+
+impl From<Rewrite0> for Rewrite {
+    fn from(rewrite: Rewrite0) -> Self {
+        Self::Rewrite0(rewrite)
+    }
+}
+
+impl From<RewriteN> for Rewrite {
+    fn from(rewrite: RewriteN) -> Self {
+        Self::RewriteN(rewrite)
+    }
+}
+
+impl TryFrom<Rewrite> for Rewrite0 {
+    type Error = DimensionError;
+
+    fn try_from(rewrite: Rewrite) -> Result<Self, Self::Error> {
+        match rewrite {
+            Rewrite::Rewrite0(rewrite) => Ok(rewrite),
+            Rewrite::RewriteN(_) => Err(DimensionError),
+        }
+    }
+}
+
+impl<'a> TryFrom<&'a Rewrite> for &'a Rewrite0 {
+    type Error = DimensionError;
+
+    fn try_from(rewrite: &'a Rewrite) -> Result<Self, Self::Error> {
+        match rewrite {
+            Rewrite::Rewrite0(rewrite) => Ok(rewrite),
+            Rewrite::RewriteN(_) => Err(DimensionError),
+        }
+    }
+}
+
+impl TryFrom<Rewrite> for RewriteN {
+    type Error = DimensionError;
+
+    fn try_from(rewrite: Rewrite) -> Result<Self, Self::Error> {
+        match rewrite {
+            Rewrite::Rewrite0(_) => Err(DimensionError),
+            Rewrite::RewriteN(rewrite) => Ok(rewrite),
+        }
+    }
+}
+
+impl<'a> TryFrom<&'a Rewrite> for &'a RewriteN {
+    type Error = DimensionError;
+
+    fn try_from(rewrite: &'a Rewrite) -> Result<Self, Self::Error> {
+        match rewrite {
+            Rewrite::Rewrite0(_) => Err(DimensionError),
+            Rewrite::RewriteN(rewrite) => Ok(rewrite),
+        }
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+pub(crate) struct ConeInternal {
+    source: Vec<Cospan>,
+    target: Cospan,
+    regular_slices: Vec<Rewrite>,
+    singular_slices: Vec<Rewrite>,
+}
+
+#[derive(Clone, Eq, PartialEq, Hash)]
+pub struct Cone {
+    pub(crate) index: usize,
+    pub(crate) internal: HConsed<ConeInternal>,
+}
+
+impl Serialize for Cone {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut state = serializer.serialize_struct("Cone", 2)?;
+        state.serialize_field("index", &self.index)?;
+        state.serialize_field("internal", &self.internal.get())?;
+        state.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for Cone {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct ConeUnshared {
+            index: usize,
+            internal: ConeInternal,
+        }
+        Deserialize::deserialize(deserializer).map(|c: ConeUnshared| Cone {
+            index: c.index,
+            internal: CONE_FACTORY.with(|factory| factory.borrow_mut().mk(c.internal)),
+        })
     }
 }
 
@@ -1039,6 +995,24 @@ impl Cone {
             None => self.clone(),
         }
     }
+}
+
+impl fmt::Debug for Cone {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Cone")
+            .field("index", &self.index)
+            .field("internal", &*self.internal)
+            .finish()
+    }
+}
+
+#[derive(Clone, Debug, Error)]
+pub enum CompositionError {
+    #[error("can't compose rewrites of dimensions {0} and {1}")]
+    Dimension(usize, usize),
+
+    #[error("failed to compose incompatible rewrites")]
+    Incompatible,
 }
 
 #[cfg(test)]

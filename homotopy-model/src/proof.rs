@@ -624,7 +624,7 @@ impl ProofState {
                 None => workspace.diagram.clone(),
                 Some(boundary_path) => DiagramN::try_from(workspace.diagram.clone())
                     .ok()
-                    .and_then(|diagram| diagram.follow(boundary_path))
+                    .and_then(|diagram| diagram.boundary(boundary_path))
                     .ok_or(ProofError::NoAttachment)?,
             };
 
@@ -651,8 +651,7 @@ impl ProofState {
 
                 match info.generator.dimension.cmp(&(haystack.dimension() + 1)) {
                     std::cmp::Ordering::Less => {
-                        #[cfg(feature = "weak-units")]
-                        {
+                        if cfg!(feature = "weak-units") {
                             let identity = |mut diagram: Diagram| {
                                 while diagram.dimension() < haystack.dimension() + 1 {
                                     diagram = diagram.weak_identity().into();

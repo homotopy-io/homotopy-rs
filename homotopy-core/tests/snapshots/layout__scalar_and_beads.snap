@@ -1,53 +1,9 @@
 ---
 source: homotopy-core/tests/layout.rs
-assertion_line: 10
 expression: layout.positions
 ---
 {
     [
-        Boundary(
-            Source,
-        ),
-        Interior(
-            Regular(
-                2,
-            ),
-        ),
-    ]: [
-        0.0,
-        7.0,
-    ],
-    [
-        Interior(
-            Singular(
-                0,
-            ),
-        ),
-        Interior(
-            Singular(
-                0,
-            ),
-        ),
-    ]: [
-        2.0,
-        2.0,
-    ],
-    [
-        Interior(
-            Regular(
-                2,
-            ),
-        ),
-        Interior(
-            Regular(
-                2,
-            ),
-        ),
-    ]: [
-        5.0,
-        7.0,
-    ],
-    [
         Interior(
             Regular(
                 0,
@@ -55,91 +11,11 @@ expression: layout.positions
         ),
         Interior(
             Regular(
-                2,
+                0,
             ),
         ),
     ]: [
         1.0,
-        7.0,
-    ],
-    [
-        Interior(
-            Regular(
-                2,
-            ),
-        ),
-        Boundary(
-            Target,
-        ),
-    ]: [
-        5.0,
-        8.0,
-    ],
-    [
-        Interior(
-            Regular(
-                3,
-            ),
-        ),
-        Boundary(
-            Target,
-        ),
-    ]: [
-        7.0,
-        8.0,
-    ],
-    [
-        Boundary(
-            Source,
-        ),
-        Boundary(
-            Source,
-        ),
-    ]: [
-        0.0,
-        0.0,
-    ],
-    [
-        Interior(
-            Singular(
-                1,
-            ),
-        ),
-        Interior(
-            Singular(
-                2,
-            ),
-        ),
-    ]: [
-        4.0,
-        6.0,
-    ],
-    [
-        Boundary(
-            Target,
-        ),
-        Interior(
-            Regular(
-                0,
-            ),
-        ),
-    ]: [
-        8.0,
-        1.0,
-    ],
-    [
-        Interior(
-            Singular(
-                1,
-            ),
-        ),
-        Interior(
-            Regular(
-                0,
-            ),
-        ),
-    ]: [
-        4.0,
         1.0,
     ],
     [
@@ -154,185 +30,6 @@ expression: layout.positions
     ]: [
         6.0,
         8.0,
-    ],
-    [
-        Interior(
-            Singular(
-                0,
-            ),
-        ),
-        Interior(
-            Regular(
-                0,
-            ),
-        ),
-    ]: [
-        2.0,
-        1.0,
-    ],
-    [
-        Boundary(
-            Source,
-        ),
-        Interior(
-            Regular(
-                1,
-            ),
-        ),
-    ]: [
-        0.0,
-        4.0,
-    ],
-    [
-        Interior(
-            Regular(
-                2,
-            ),
-        ),
-        Interior(
-            Regular(
-                1,
-            ),
-        ),
-    ]: [
-        5.0,
-        4.0,
-    ],
-    [
-        Interior(
-            Regular(
-                3,
-            ),
-        ),
-        Boundary(
-            Source,
-        ),
-    ]: [
-        7.0,
-        0.0,
-    ],
-    [
-        Interior(
-            Regular(
-                3,
-            ),
-        ),
-        Interior(
-            Regular(
-                1,
-            ),
-        ),
-    ]: [
-        7.0,
-        4.0,
-    ],
-    [
-        Boundary(
-            Source,
-        ),
-        Boundary(
-            Target,
-        ),
-    ]: [
-        0.0,
-        8.0,
-    ],
-    [
-        Interior(
-            Singular(
-                2,
-            ),
-        ),
-        Interior(
-            Singular(
-                0,
-            ),
-        ),
-    ]: [
-        6.0,
-        2.0,
-    ],
-    [
-        Boundary(
-            Target,
-        ),
-        Interior(
-            Regular(
-                1,
-            ),
-        ),
-    ]: [
-        8.0,
-        4.0,
-    ],
-    [
-        Boundary(
-            Target,
-        ),
-        Boundary(
-            Target,
-        ),
-    ]: [
-        8.0,
-        8.0,
-    ],
-    [
-        Interior(
-            Singular(
-                1,
-            ),
-        ),
-        Interior(
-            Regular(
-                1,
-            ),
-        ),
-    ]: [
-        4.0,
-        3.0,
-    ],
-    [
-        Boundary(
-            Source,
-        ),
-        Interior(
-            Singular(
-                1,
-            ),
-        ),
-    ]: [
-        0.0,
-        6.0,
-    ],
-    [
-        Interior(
-            Singular(
-                2,
-            ),
-        ),
-        Interior(
-            Regular(
-                2,
-            ),
-        ),
-    ]: [
-        6.0,
-        7.0,
-    ],
-    [
-        Interior(
-            Regular(
-                2,
-            ),
-        ),
-        Interior(
-            Singular(
-                1,
-            ),
-        ),
-    ]: [
-        5.0,
-        6.0,
     ],
     [
         Interior(
@@ -353,29 +50,12 @@ expression: layout.positions
         Boundary(
             Source,
         ),
-        Interior(
-            Regular(
-                0,
-            ),
+        Boundary(
+            Source,
         ),
     ]: [
         0.0,
-        1.0,
-    ],
-    [
-        Interior(
-            Regular(
-                2,
-            ),
-        ),
-        Interior(
-            Regular(
-                0,
-            ),
-        ),
-    ]: [
-        5.0,
-        1.0,
+        0.0,
     ],
     [
         Interior(
@@ -385,126 +65,16 @@ expression: layout.positions
         ),
         Interior(
             Regular(
-                0,
+                2,
             ),
         ),
     ]: [
         3.0,
-        1.0,
-    ],
-    [
-        Interior(
-            Regular(
-                3,
-            ),
-        ),
-        Interior(
-            Regular(
-                0,
-            ),
-        ),
-    ]: [
-        7.0,
-        1.0,
-    ],
-    [
-        Interior(
-            Singular(
-                0,
-            ),
-        ),
-        Boundary(
-            Target,
-        ),
-    ]: [
-        2.0,
-        8.0,
-    ],
-    [
-        Interior(
-            Singular(
-                2,
-            ),
-        ),
-        Interior(
-            Singular(
-                1,
-            ),
-        ),
-    ]: [
-        6.0,
-        6.0,
-    ],
-    [
-        Boundary(
-            Target,
-        ),
-        Boundary(
-            Source,
-        ),
-    ]: [
-        8.0,
-        0.0,
-    ],
-    [
-        Interior(
-            Regular(
-                0,
-            ),
-        ),
-        Boundary(
-            Source,
-        ),
-    ]: [
-        1.0,
-        0.0,
-    ],
-    [
-        Boundary(
-            Source,
-        ),
-        Interior(
-            Singular(
-                0,
-            ),
-        ),
-    ]: [
-        0.0,
-        2.0,
-    ],
-    [
-        Boundary(
-            Target,
-        ),
-        Interior(
-            Singular(
-                0,
-            ),
-        ),
-    ]: [
-        8.0,
-        2.0,
-    ],
-    [
-        Interior(
-            Singular(
-                0,
-            ),
-        ),
-        Interior(
-            Regular(
-                2,
-            ),
-        ),
-    ]: [
-        2.0,
         7.0,
     ],
     [
-        Interior(
-            Regular(
-                2,
-            ),
+        Boundary(
+            Target,
         ),
         Interior(
             Singular(
@@ -512,7 +82,7 @@ expression: layout.positions
             ),
         ),
     ]: [
-        5.0,
+        8.0,
         2.0,
     ],
     [
@@ -533,7 +103,20 @@ expression: layout.positions
     [
         Interior(
             Regular(
-                3,
+                2,
+            ),
+        ),
+        Boundary(
+            Target,
+        ),
+    ]: [
+        5.0,
+        8.0,
+    ],
+    [
+        Interior(
+            Regular(
+                0,
             ),
         ),
         Interior(
@@ -542,8 +125,118 @@ expression: layout.positions
             ),
         ),
     ]: [
-        7.0,
+        1.0,
         2.0,
+    ],
+    [
+        Interior(
+            Singular(
+                1,
+            ),
+        ),
+        Interior(
+            Regular(
+                2,
+            ),
+        ),
+    ]: [
+        4.0,
+        5.0,
+    ],
+    [
+        Boundary(
+            Source,
+        ),
+        Interior(
+            Singular(
+                1,
+            ),
+        ),
+    ]: [
+        0.0,
+        6.0,
+    ],
+    [
+        Interior(
+            Singular(
+                2,
+            ),
+        ),
+        Interior(
+            Singular(
+                1,
+            ),
+        ),
+    ]: [
+        6.0,
+        6.0,
+    ],
+    [
+        Interior(
+            Regular(
+                3,
+            ),
+        ),
+        Boundary(
+            Source,
+        ),
+    ]: [
+        7.0,
+        0.0,
+    ],
+    [
+        Boundary(
+            Source,
+        ),
+        Boundary(
+            Target,
+        ),
+    ]: [
+        0.0,
+        8.0,
+    ],
+    [
+        Interior(
+            Regular(
+                2,
+            ),
+        ),
+        Interior(
+            Regular(
+                0,
+            ),
+        ),
+    ]: [
+        5.0,
+        1.0,
+    ],
+    [
+        Boundary(
+            Target,
+        ),
+        Interior(
+            Singular(
+                1,
+            ),
+        ),
+    ]: [
+        8.0,
+        6.0,
+    ],
+    [
+        Interior(
+            Regular(
+                3,
+            ),
+        ),
+        Interior(
+            Regular(
+                0,
+            ),
+        ),
+    ]: [
+        7.0,
+        1.0,
     ],
     [
         Interior(
@@ -552,12 +245,176 @@ expression: layout.positions
             ),
         ),
         Interior(
-            Regular(
+            Singular(
                 1,
             ),
         ),
     ]: [
         3.0,
+        6.0,
+    ],
+    [
+        Boundary(
+            Source,
+        ),
+        Interior(
+            Regular(
+                1,
+            ),
+        ),
+    ]: [
+        0.0,
+        4.0,
+    ],
+    [
+        Boundary(
+            Target,
+        ),
+        Boundary(
+            Target,
+        ),
+    ]: [
+        8.0,
+        8.0,
+    ],
+    [
+        Interior(
+            Singular(
+                2,
+            ),
+        ),
+        Interior(
+            Regular(
+                1,
+            ),
+        ),
+    ]: [
+        6.0,
+        4.0,
+    ],
+    [
+        Interior(
+            Singular(
+                1,
+            ),
+        ),
+        Interior(
+            Regular(
+                3,
+            ),
+        ),
+    ]: [
+        4.0,
+        7.0,
+    ],
+    [
+        Boundary(
+            Source,
+        ),
+        Interior(
+            Singular(
+                0,
+            ),
+        ),
+    ]: [
+        0.0,
+        2.0,
+    ],
+    [
+        Interior(
+            Singular(
+                2,
+            ),
+        ),
+        Interior(
+            Singular(
+                0,
+            ),
+        ),
+    ]: [
+        6.0,
+        2.0,
+    ],
+    [
+        Interior(
+            Singular(
+                1,
+            ),
+        ),
+        Interior(
+            Singular(
+                0,
+            ),
+        ),
+    ]: [
+        4.0,
+        2.0,
+    ],
+    [
+        Interior(
+            Regular(
+                0,
+            ),
+        ),
+        Boundary(
+            Target,
+        ),
+    ]: [
+        1.0,
+        8.0,
+    ],
+    [
+        Interior(
+            Regular(
+                3,
+            ),
+        ),
+        Boundary(
+            Target,
+        ),
+    ]: [
+        7.0,
+        8.0,
+    ],
+    [
+        Interior(
+            Regular(
+                2,
+            ),
+        ),
+        Interior(
+            Regular(
+                1,
+            ),
+        ),
+    ]: [
+        5.0,
+        4.0,
+    ],
+    [
+        Boundary(
+            Target,
+        ),
+        Boundary(
+            Source,
+        ),
+    ]: [
+        8.0,
+        0.0,
+    ],
+    [
+        Interior(
+            Regular(
+                3,
+            ),
+        ),
+        Interior(
+            Regular(
+                1,
+            ),
+        ),
+    ]: [
+        7.0,
         4.0,
     ],
     [
@@ -574,17 +431,90 @@ expression: layout.positions
         0.0,
     ],
     [
+        Boundary(
+            Source,
+        ),
+        Interior(
+            Regular(
+                0,
+            ),
+        ),
+    ]: [
+        0.0,
+        1.0,
+    ],
+    [
+        Boundary(
+            Target,
+        ),
+        Interior(
+            Regular(
+                0,
+            ),
+        ),
+    ]: [
+        8.0,
+        1.0,
+    ],
+    [
+        Interior(
+            Singular(
+                2,
+            ),
+        ),
+        Interior(
+            Regular(
+                0,
+            ),
+        ),
+    ]: [
+        6.0,
+        1.0,
+    ],
+    [
         Interior(
             Singular(
                 1,
             ),
         ),
-        Boundary(
-            Target,
+        Interior(
+            Regular(
+                0,
+            ),
         ),
     ]: [
         4.0,
-        8.0,
+        1.0,
+    ],
+    [
+        Interior(
+            Singular(
+                0,
+            ),
+        ),
+        Interior(
+            Regular(
+                2,
+            ),
+        ),
+    ]: [
+        2.0,
+        7.0,
+    ],
+    [
+        Interior(
+            Singular(
+                1,
+            ),
+        ),
+        Interior(
+            Singular(
+                1,
+            ),
+        ),
+    ]: [
+        4.0,
+        4.0,
     ],
     [
         Interior(
@@ -593,74 +523,100 @@ expression: layout.positions
             ),
         ),
         Boundary(
-            Target,
+            Source,
         ),
     ]: [
         1.0,
+        0.0,
+    ],
+    [
+        Interior(
+            Regular(
+                1,
+            ),
+        ),
+        Boundary(
+            Target,
+        ),
+    ]: [
+        3.0,
         8.0,
     ],
     [
         Interior(
-            Singular(
+            Regular(
                 2,
             ),
         ),
         Interior(
             Regular(
+                2,
+            ),
+        ),
+    ]: [
+        5.0,
+        7.0,
+    ],
+    [
+        Interior(
+            Singular(
+                0,
+            ),
+        ),
+        Boundary(
+            Target,
+        ),
+    ]: [
+        2.0,
+        8.0,
+    ],
+    [
+        Interior(
+            Regular(
+                2,
+            ),
+        ),
+        Interior(
+            Singular(
                 0,
             ),
         ),
     ]: [
-        6.0,
-        1.0,
+        5.0,
+        2.0,
     ],
     [
         Boundary(
             Target,
         ),
         Interior(
-            Singular(
+            Regular(
                 1,
             ),
         ),
     ]: [
         8.0,
-        6.0,
+        4.0,
     ],
     [
-        Interior(
-            Regular(
-                1,
-            ),
-        ),
         Interior(
             Singular(
                 1,
             ),
         ),
-    ]: [
-        3.0,
-        6.0,
-    ],
-    [
         Interior(
             Regular(
                 1,
             ),
         ),
-        Interior(
-            Regular(
-                2,
-            ),
-        ),
     ]: [
+        4.0,
         3.0,
-        7.0,
     ],
     [
         Interior(
             Regular(
-                3,
+                0,
             ),
         ),
         Interior(
@@ -669,23 +625,38 @@ expression: layout.positions
             ),
         ),
     ]: [
-        7.0,
+        1.0,
         7.0,
     ],
     [
         Interior(
-            Regular(
+            Singular(
+                1,
+            ),
+        ),
+        Interior(
+            Singular(
+                2,
+            ),
+        ),
+    ]: [
+        4.0,
+        6.0,
+    ],
+    [
+        Interior(
+            Singular(
                 0,
             ),
         ),
         Interior(
-            Regular(
+            Singular(
                 0,
             ),
         ),
     ]: [
-        1.0,
-        1.0,
+        2.0,
+        2.0,
     ],
     [
         Interior(
@@ -715,18 +686,18 @@ expression: layout.positions
     ],
     [
         Interior(
-            Singular(
+            Regular(
                 1,
             ),
         ),
         Interior(
-            Singular(
+            Regular(
                 0,
             ),
         ),
     ]: [
-        4.0,
-        2.0,
+        3.0,
+        1.0,
     ],
     [
         Boundary(
@@ -742,64 +713,62 @@ expression: layout.positions
         7.0,
     ],
     [
-        Interior(
-            Singular(
-                2,
-            ),
+        Boundary(
+            Source,
         ),
         Interior(
             Regular(
-                1,
+                2,
             ),
         ),
     ]: [
-        6.0,
-        4.0,
+        0.0,
+        7.0,
     ],
     [
         Interior(
-            Singular(
-                1,
-            ),
-        ),
-        Interior(
             Regular(
                 2,
             ),
         ),
+        Interior(
+            Singular(
+                1,
+            ),
+        ),
     ]: [
-        4.0,
         5.0,
+        6.0,
     ],
     [
+        Interior(
+            Singular(
+                2,
+            ),
+        ),
+        Interior(
+            Regular(
+                2,
+            ),
+        ),
+    ]: [
+        6.0,
+        7.0,
+    ],
+    [
+        Interior(
+            Singular(
+                0,
+            ),
+        ),
         Interior(
             Regular(
                 0,
             ),
         ),
-        Interior(
-            Singular(
-                0,
-            ),
-        ),
     ]: [
+        2.0,
         1.0,
-        2.0,
-    ],
-    [
-        Interior(
-            Singular(
-                0,
-            ),
-        ),
-        Interior(
-            Singular(
-                1,
-            ),
-        ),
-    ]: [
-        2.0,
-        6.0,
     ],
     [
         Interior(
@@ -818,7 +787,22 @@ expression: layout.positions
     ],
     [
         Interior(
-            Regular(
+            Singular(
+                0,
+            ),
+        ),
+        Interior(
+            Singular(
+                1,
+            ),
+        ),
+    ]: [
+        2.0,
+        6.0,
+    ],
+    [
+        Interior(
+            Singular(
                 1,
             ),
         ),
@@ -826,12 +810,12 @@ expression: layout.positions
             Target,
         ),
     ]: [
-        3.0,
+        4.0,
         8.0,
     ],
     [
         Interior(
-            Regular(
+            Singular(
                 2,
             ),
         ),
@@ -839,56 +823,28 @@ expression: layout.positions
             Source,
         ),
     ]: [
-        5.0,
+        6.0,
         0.0,
     ],
     [
-        Interior(
-            Singular(
-                1,
-            ),
-        ),
-        Interior(
-            Singular(
-                1,
-            ),
-        ),
-    ]: [
-        4.0,
-        4.0,
-    ],
-    [
-        Interior(
-            Singular(
-                1,
-            ),
-        ),
         Interior(
             Regular(
                 3,
             ),
         ),
-    ]: [
-        4.0,
-        7.0,
-    ],
-    [
-        Interior(
-            Singular(
-                2,
-            ),
-        ),
-        Boundary(
-            Source,
-        ),
-    ]: [
-        6.0,
-        0.0,
-    ],
-    [
         Interior(
             Singular(
                 0,
+            ),
+        ),
+    ]: [
+        7.0,
+        2.0,
+    ],
+    [
+        Interior(
+            Regular(
+                1,
             ),
         ),
         Interior(
@@ -897,8 +853,36 @@ expression: layout.positions
             ),
         ),
     ]: [
-        2.0,
+        3.0,
         4.0,
+    ],
+    [
+        Interior(
+            Regular(
+                3,
+            ),
+        ),
+        Interior(
+            Regular(
+                2,
+            ),
+        ),
+    ]: [
+        7.0,
+        7.0,
+    ],
+    [
+        Interior(
+            Regular(
+                2,
+            ),
+        ),
+        Boundary(
+            Source,
+        ),
+    ]: [
+        5.0,
+        0.0,
     ],
     [
         Interior(
@@ -914,5 +898,20 @@ expression: layout.positions
     ]: [
         1.0,
         6.0,
+    ],
+    [
+        Interior(
+            Singular(
+                0,
+            ),
+        ),
+        Interior(
+            Regular(
+                1,
+            ),
+        ),
+    ]: [
+        2.0,
+        4.0,
     ],
 }
