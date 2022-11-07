@@ -371,15 +371,17 @@ impl ProofState {
             }
         }
 
-        if let SignatureEdit::Edit(_, SignatureItemEdit::MakeOriented(g, true)) = edit {
+        if let SignatureEdit::Edit(node, SignatureItemEdit::MakeOriented(true)) = edit {
+            let generator = self.signature.find_generator(*node).unwrap();
+
             // remove framing from the workspace
             if let Some(ws) = &mut self.workspace {
-                ws.diagram = ws.diagram.remove_framing(*g);
+                ws.diagram = ws.diagram.remove_framing(generator);
             }
 
             // remove framing from the boundary
             if let Some(b) = &mut self.boundary {
-                b.diagram = b.diagram.remove_framing(*g);
+                b.diagram = b.diagram.remove_framing(generator);
             }
         }
 
