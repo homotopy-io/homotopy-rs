@@ -44,20 +44,19 @@ pub enum SignatureItemEdit {
     Rename(String),
     Recolor(Color),
     Reshape(VertexShape),
-    MakeOriented(Generator, bool),
-    MakeInvertible(Generator, bool),
-    ShowSourceTarget(Generator, bool),
+    MakeOriented(bool),
+    MakeInvertible(bool),
+    ShowSourceTarget(bool),
 }
 
 #[cfg(feature = "fuzz")]
 impl<'a> arbitrary::Arbitrary<'a> for SignatureItemEdit {
     fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
         let flag: bool = *u.choose(&[false, true])?;
-        let g: Generator = u.arbitrary()?;
         u.choose(&[
-            SignatureItemEdit::MakeOriented(g, flag),
-            SignatureItemEdit::MakeInvertible(g, flag),
-            SignatureItemEdit::ShowSourceTarget(g, flag),
+            SignatureItemEdit::MakeOriented(flag),
+            SignatureItemEdit::MakeInvertible(flag),
+            SignatureItemEdit::ShowSourceTarget(flag),
         ])
         .map(|s| s.clone())
     }
@@ -141,16 +140,27 @@ impl Signature {
         })
     }
 
+    pub(crate) fn find_generator(&self, node: Node) -> Option<Generator> {
+        self.0
+            .with(node, |n| match n.inner() {
+                SignatureItem::Item(info) => Some(info.generator),
+                SignatureItem::Folder(_) => None,
+            })
+            .flatten()
+    }
+
     fn edit(&mut self, node: Node, edit: SignatureItemEdit) -> Result<(), ProofError> {
-        use SignatureItemEdit::{Recolor, Rename, Reshape, ShowSourceTarget};
+        use SignatureItemEdit::{
+            MakeInvertible, MakeOriented, Recolor, Rename, Reshape, ShowSourceTarget,
+        };
         self.0
             .with_mut(node, move |n| match (n.inner_mut(), edit) {
                 (SignatureItem::Item(info), Rename(name)) => info.name = name,
                 (SignatureItem::Item(info), Recolor(color)) => info.color = color,
                 (SignatureItem::Item(info), Reshape(shape)) => info.shape = shape,
-                (SignatureItem::Item(info), ShowSourceTarget(_, show)) => {
-                    info.single_preview = !show;
-                }
+                (SignatureItem::Item(info), MakeOriented(true)) => info.oriented = true,
+                (SignatureItem::Item(info), MakeInvertible(true)) => info.invertible = true,
+                (SignatureItem::Item(info), ShowSourceTarget(show)) => info.single_preview = !show,
                 (SignatureItem::Folder(info), Rename(name)) => info.name = name,
                 (_, _) => {}
             })
@@ -200,27 +210,20 @@ impl Signature {
 
     pub fn update(&mut self, edit: &SignatureEdit) -> Result<(), ProofError> {
         match edit {
-            SignatureEdit::Edit(node, edit) => match edit {
+            SignatureEdit::Edit(node, edit) => {
                 // Intercept edit in order to update the whole signature.
-                SignatureItemEdit::MakeOriented(g, true) => {
+                if let SignatureItemEdit::MakeOriented(true) = edit {
+                    let generator = self.find_generator(*node).unwrap();
                     self.0 = self.0.clone().map(|item| match item {
-                        SignatureItem::Item(info) => {
-                            let oriented = if info.generator == *g {
-                                true
-                            } else {
-                                info.oriented
-                            };
-                            SignatureItem::Item(GeneratorInfo {
-                                oriented,
-                                diagram: info.diagram.remove_framing(*g),
-                                ..info
-                            })
-                        }
+                        SignatureItem::Item(info) => SignatureItem::Item(GeneratorInfo {
+                            diagram: info.diagram.remove_framing(generator),
+                            ..info
+                        }),
                         SignatureItem::Folder(_) => item,
                     });
                 }
-                _ => self.edit(*node, edit.clone())?,
-            },
+                self.edit(*node, edit.clone())?;
+            }
             SignatureEdit::NewFolder(node) => {
                 self.0.push_onto(
                     *node,
