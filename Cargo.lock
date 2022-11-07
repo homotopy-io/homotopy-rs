@@ -1138,6 +1138,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5916d2ae698f6de9bfb891ad7a8d65c09d232dc58cc4ac433c7da3b2fd84bc2b"
 
 [[package]]
+name = "libm"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "292a948cd991e376cf75541fe5b97a1081d713c618b4f1b9500f8844e49eb565"
+
+[[package]]
 name = "linked-hash-map"
 version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1163,9 +1169,9 @@ dependencies = [
 
 [[package]]
 name = "lyon_geom"
-version = "1.0.1"
+version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd652c7370a873d62408f377f10333ff377956e0401759d854643de3af228d4f"
+checksum = "5237e77afe5a112d5ce8060e3473e78b09b5f8cea722a251dcafa1254711f440"
 dependencies = [
  "arrayvec",
  "euclid",
@@ -1279,6 +1285,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "578ede34cf02f8924ab9447f50c28075b4d3e5b269972345e7e0372b38c6cdcd"
 dependencies = [
  "autocfg",
+ "libm",
 ]
 
 [[package]]
