@@ -8,7 +8,7 @@
     }
   },
   {
-    "SetBoundary": "source"
+    "SetBoundary": "Source"
   },
   {
     "SelectGenerator": {
@@ -17,7 +17,7 @@
     }
   },
   {
-    "SetBoundary": "target"
+    "SetBoundary": "Target"
   },
   {
     "SelectGenerator": {
@@ -38,7 +38,7 @@
   },
   "TakeIdentityDiagram",
   {
-    "SetBoundary": "source"
+    "SetBoundary": "Source"
   },
   {
     "SelectGenerator": {
@@ -48,7 +48,7 @@
   },
   "TakeIdentityDiagram",
   {
-    "SetBoundary": "target"
+    "SetBoundary": "Target"
   },
   {
     "SelectGenerator": {
@@ -57,7 +57,7 @@
     }
   },
   {
-    "SetBoundary": "target"
+    "SetBoundary": "Target"
   },
   {
     "SelectGenerator": {
@@ -68,7 +68,7 @@
   "TakeIdentityDiagram",
   "TakeIdentityDiagram",
   {
-    "SetBoundary": "source"
+    "SetBoundary": "Source"
   },
   {
     "SelectGenerator": {
@@ -90,16 +90,22 @@
   {
     "SelectPoints": [
       [
-        "target",
-        "target"
+        "Target",
+        "Target"
       ],
       [
-        0,
-        2
+        {
+          "Regular": 0
+        },
+        {
+          "Regular": 1
+        }
       ],
       [
-        0,
-        "target"
+        {
+          "Regular": 0
+        },
+        "Target"
       ]
     ]
   },
@@ -108,7 +114,7 @@
       "Contract": {
         "bias": "Lower",
         "location": [
-          "target"
+          "Target"
         ],
         "height": 0,
         "direction": "Forward"
@@ -119,9 +125,13 @@
     "Homotopy": {
       "Expand": {
         "location": [
-          "target",
-          1,
-          1
+          "Target",
+          {
+            "Singular": 0
+          },
+          {
+            "Singular": 0
+          }
         ],
         "direction": "Forward"
       }
@@ -140,48 +150,70 @@
   {
     "SelectPoints": [
       [
-        "target",
-        2
+        "Target",
+        {
+          "Regular": 1
+        }
       ]
     ]
   },
   {
     "SelectPoints": [
       [
-        "target",
-        4
+        "Target",
+        {
+          "Regular": 2
+        }
       ],
       [
-        "target",
-        5
+        "Target",
+        {
+          "Singular": 2
+        }
       ],
       [
-        4,
-        5
+        {
+          "Regular": 2
+        },
+        {
+          "Singular": 2
+        }
       ]
     ]
   },
   {
     "SelectPoints": [
       [
-        "target",
-        6
+        "Target",
+        {
+          "Regular": 3
+        }
       ],
       [
-        6,
-        5
+        {
+          "Regular": 3
+        },
+        {
+          "Singular": 2
+        }
       ],
       [
-        6,
-        6
+        {
+          "Regular": 3
+        },
+        {
+          "Regular": 3
+        }
       ]
     ]
   },
   {
     "SelectPoints": [
       [
-        "target",
-        8
+        "Target",
+        {
+          "Regular": 4
+        }
       ]
     ]
   },

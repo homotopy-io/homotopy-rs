@@ -5,10 +5,10 @@ use std::{
 };
 
 use homotopy_common::idx::Idx;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(PartialEq, Eq, Copy, Clone, Hash, Serialize, Deserialize)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 #[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub struct Generator {
     pub id: usize,
@@ -27,12 +27,10 @@ impl fmt::Debug for Generator {
     }
 }
 
-#[derive(PartialEq, Eq, Copy, Clone, Debug, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub enum Boundary {
-    #[serde(rename = "source")]
     Source,
-    #[serde(rename = "target")]
     Target,
 }
 
@@ -46,14 +44,13 @@ impl Boundary {
     }
 }
 
+pub type RegularHeight = usize;
 pub type SingularHeight = usize;
 
-pub type RegularHeight = usize;
-
-#[derive(PartialEq, Eq, Copy, Clone, Debug, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub enum Height {
-    Singular(SingularHeight),
     Regular(RegularHeight),
+    Singular(SingularHeight),
 }
 
 impl Height {
@@ -66,9 +63,7 @@ impl Height {
 #[cfg(feature = "fuzz")]
 impl<'a> arbitrary::Arbitrary<'a> for Height {
     fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-        let h = u.int_in_range(0..=1023)?;
-        u.choose(&[Height::Singular(h), Height::Regular(h)])
-            .map(|s| s.clone())
+        u.int_in_range(0..=2047)?.map(Height::from)
     }
 }
 
@@ -113,25 +108,7 @@ impl Ord for Height {
     }
 }
 
-impl Serialize for Height {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_u32(usize::from(*self) as u32)
-    }
-}
-
-impl<'de> Deserialize<'de> for Height {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        Ok((u32::deserialize(deserializer)? as usize).into())
-    }
-}
-
-#[derive(PartialEq, Eq, Copy, Clone, Debug, Hash, Serialize, Deserialize)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 #[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub enum SliceIndex {
@@ -220,13 +197,12 @@ impl Ord for SliceIndex {
         use SliceIndex::{Boundary, Interior};
 
         use self::Boundary::{Source, Target};
+
         match (self, other) {
-            (Boundary(Source), Boundary(Source)) | (Boundary(Target), Boundary(Target)) => {
-                Ordering::Equal
-            }
-            (Boundary(Source), _) | (Interior(_), Boundary(Target)) => Ordering::Less,
-            (Interior(_), Boundary(Source)) | (Boundary(Target), _) => Ordering::Greater,
+            (Boundary(x), Boundary(y)) => x.cmp(y),
             (Interior(x), Interior(y)) => x.cmp(y),
+            (Boundary(Source), Interior(_)) | (Interior(_), Boundary(Target)) => Ordering::Less,
+            (Boundary(Target), Interior(_)) | (Interior(_), Boundary(Source)) => Ordering::Greater,
         }
     }
 }
@@ -273,7 +249,7 @@ impl<T> IndexMut<SliceIndex> for Vec<T> {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub struct BoundaryPath(pub Boundary, pub usize);
 
@@ -312,7 +288,7 @@ impl From<Boundary> for BoundaryPath {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub enum Direction {
     Forward,
@@ -323,7 +299,7 @@ pub enum Direction {
 #[error("invalid dimension")]
 pub struct DimensionError;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub enum Mode {
     Deep,
     Shallow,
