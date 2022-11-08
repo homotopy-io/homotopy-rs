@@ -1,14 +1,17 @@
 use std::ops::Index;
 
 use homotopy_core::{
-    common::BoundaryPath, Boundary::*, Cospan, Diagram0, DiagramN, Generator, Height::*, Rewrite0,
-    RewriteN,
+    common::BoundaryPath,
+    Boundary::{Source, Target},
+    Cospan, Diagram0, DiagramN, Generator,
+    Height::{Regular, Singular},
+    Rewrite0, RewriteN,
 };
 use proptest::prelude::*;
 
 prop_compose! {
     fn f_or_g()
-        (id in 1..3usize)
+        (id in 1..3_usize)
     -> Generator {
         Generator::new(id, 1)
     }
@@ -32,10 +35,10 @@ fn choose(i: usize) -> usize {
 
 fn arb_cone_sizes_fixed_width(target: usize) -> impl Strategy<Value = Vec<(usize, Generator)>> {
     match target {
-        s if s == 0 => prop::collection::vec((0..2usize, f_or_g()), 0..2).boxed(),
-        s if s == 1 => (0..5usize, f_or_g()).prop_flat_map(move |(i, g)| arb_cone_sizes_fixed_width(target - choose(i)).prop_map(move |mut vec| {vec.push((i, g)); vec })).boxed(),
-        s if s == 2 => (0..6usize, f_or_g()).prop_flat_map(move |(i, g)| arb_cone_sizes_fixed_width(target - choose(i)).prop_map(move |mut vec| {vec.push((i, g)); vec })).boxed(),
-        _ /* pick any size */ => (0..7usize, f_or_g()).prop_flat_map(move |(i, g)| arb_cone_sizes_fixed_width(target - choose(i)).prop_map(move |mut vec| {vec.push((i, g)); vec })).boxed(),
+        s if s == 0 => prop::collection::vec((0..2_usize, f_or_g()), 0..2).boxed(),
+        s if s == 1 => (0..5_usize, f_or_g()).prop_flat_map(move |(i, g)| arb_cone_sizes_fixed_width(target - choose(i)).prop_map(move |mut vec| {vec.push((i, g)); vec })).boxed(),
+        s if s == 2 => (0..6_usize, f_or_g()).prop_flat_map(move |(i, g)| arb_cone_sizes_fixed_width(target - choose(i)).prop_map(move |mut vec| {vec.push((i, g)); vec })).boxed(),
+        _ /* pick any size */ => (0..7_usize, f_or_g()).prop_flat_map(move |(i, g)| arb_cone_sizes_fixed_width(target - choose(i)).prop_map(move |mut vec| {vec.push((i, g)); vec })).boxed(),
     }
 }
 
@@ -65,8 +68,8 @@ prop_compose! {
         let x = Generator::new(0, 0);
         let internal = |g: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, g, (g, BoundaryPath(Source, 0), vec![]).into()).into(),
-                backward: Rewrite0::new(x, g, (g, BoundaryPath(Target, 0), vec![]).into()).into(),
+                forward: Rewrite0::new(x, g, (g, BoundaryPath(Source, 0), std::iter::once(vec![]).collect()).into()).into(),
+                backward: Rewrite0::new(x, g, (g, BoundaryPath(Target, 0), std::iter::once(vec![]).collect()).into()).into(),
             }
         };
 
@@ -92,7 +95,7 @@ prop_compose! {
                             (
                                 filler_generator,
                                 BoundaryPath(Source, 0),
-                                vec![Singular(i)],
+                                std::iter::once(vec![Singular(i)]).collect(),
                             )
                                 .into(),
                         )
@@ -110,7 +113,7 @@ prop_compose! {
                             (
                                 filler_generator,
                                 BoundaryPath(Source, 0),
-                                vec![Regular(r)],
+                                std::iter::once(vec![Regular(r)]).collect(),
                             )
                                 .into(),
                         )
@@ -152,8 +155,8 @@ prop_compose! {
         let x = Generator::new(0, 0);
         let internal = |g: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, g, (g, BoundaryPath(Source, 0), vec![]).into()).into(),
-                backward: Rewrite0::new(x, g, (g, BoundaryPath(Target, 0), vec![]).into()).into(),
+                forward: Rewrite0::new(x, g, (g, BoundaryPath(Source, 0), std::iter::once(vec![]).collect()).into()).into(),
+                backward: Rewrite0::new(x, g, (g, BoundaryPath(Target, 0), std::iter::once(vec![]).collect()).into()).into(),
             }
         };
         (

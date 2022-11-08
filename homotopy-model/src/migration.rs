@@ -1,4 +1,4 @@
-use homotopy_core::{label::Neighbourhood, migration::OldProof};
+use homotopy_core::migration::OldProof;
 use homotopy_graphics::style::{Color, VertexShape};
 use serde::Deserialize;
 
@@ -65,7 +65,6 @@ fn load(proof: OldProof) -> Option<(Signature, Option<Workspace>)> {
             color,
             shape: VertexShape::default(),
             diagram: v.diagram.clone(),
-            neighbourhood: Neighbourhood::default(),
         };
         signature.insert_item(SignatureItem::Item(info));
     }

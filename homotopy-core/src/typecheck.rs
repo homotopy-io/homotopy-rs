@@ -14,12 +14,12 @@ use thiserror::Error;
 
 pub use crate::common::Mode;
 use crate::{
-    collapse::collapse,
+    collapse::{collapse, OneMany},
     common::{Generator, Height, SingularHeight},
     diagram::{Diagram, DiagramN},
     label::Label,
     rewrite::{Cone, Cospan, Rewrite, RewriteN},
-    scaffold::{Explodable, Scaffold, StableScaffold},
+    scaffold::{Explodable, Scaffold, ScaffoldNode, StableScaffold},
     signature::{GeneratorInfo, Signature},
     Boundary, Rewrite0, SliceIndex,
 };
@@ -90,9 +90,7 @@ where
                 .ok_or(TypeError::UnknownGenerator(generator))?
                 .diagram();
 
-            if collapse_simplicies(restricted, signature)
-                != collapse_simplicies(signature_diagram.clone(), signature)
-            {
+            if collapse_simplicies(restricted) != collapse_simplicies(signature_diagram.clone()) {
                 return Err(TypeError::IllTyped);
             }
         }
@@ -407,10 +405,9 @@ fn check_dimension(diagram: Diagram) -> bool {
 type Simplex = Vec<NodeIndex>; // An n-simplex is a list of n + 1 vertices.
 type LabelledSimplex = Vec<Label>; // An n-simplex is a list of (n + 1 choose 2) edges.
 
-fn collapse_simplicies<D>(diagram: D, signature: &impl Signature) -> FastHashSet<LabelledSimplex>
-where
-    D: Into<Diagram>,
-{
+fn collapse_simplicies(diagram: impl Into<Diagram>) -> FastHashSet<LabelledSimplex> {
+    type TypecheckingNodes<'a> = OneMany<&'a Vec<Height>, FastHashSet<&'a Vec<Height>>>;
+
     let diagram: Diagram = diagram.into();
     let dimension = diagram.dimension();
 
@@ -466,10 +463,19 @@ where
     let label = |a, b| {
         let e = scaffold.find_edge(a, b).unwrap();
         let r: &Rewrite0 = (&scaffold[e].rewrite).try_into().unwrap();
-        signature.label_find(r.label())
+        r.label()
     };
 
-    let union_find = collapse(&mut StableScaffold::from(scaffold.clone()), signature);
+    let stable = StableScaffold::from(scaffold.clone());
+    let mut stable = stable.map(
+        |_, node| ScaffoldNode {
+            key: TypecheckingNodes::One(&node.key),
+            diagram: node.diagram.clone(),
+        },
+        |_, edge| edge.clone(),
+    );
+
+    let union_find = collapse(&mut stable);
     neighbourhoods[central]
         .iter()
         .map(|simplex| {
@@ -501,7 +507,7 @@ mod test {
         let mut sig = SignatureBuilder::default();
 
         let x = sig.add_zero();
-        let f = sig.add(x.clone(), x).unwrap();
+        let f = sig.add(x, x).unwrap();
         let ff = f.attach(&f, Boundary::Target, &[]).unwrap();
         let m = sig.add(ff, f).unwrap();
         let left = m.attach(&m, Boundary::Source, &[0]).unwrap();

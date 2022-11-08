@@ -17,7 +17,6 @@ use crate::{
         Boundary, BoundaryPath, DimensionError, Direction, Generator, Height, Mode, RegularHeight,
         SliceIndex,
     },
-    label::Neighbourhood,
     rewrite::{Cospan, Rewrite, RewriteN},
     signature::{GeneratorInfo, Signature},
     Orientation,
@@ -259,8 +258,7 @@ impl DiagramN {
         generator: Generator,
         source: impl Into<Diagram>,
         target: impl Into<Diagram>,
-        signature: &impl Signature,
-    ) -> Result<(Self, Neighbourhood), NewDiagramError> {
+    ) -> Result<Self, NewDiagramError> {
         use crate::Boundary::{Source, Target};
 
         let source: Diagram = source.into();
@@ -275,7 +273,6 @@ impl DiagramN {
             return Err(NewDiagramError::NonGlobular);
         }
 
-        let mut neighbourhood = Neighbourhood::default();
         let cospan = Cospan {
             forward: Rewrite::cone_over_generator(
                 generator,
@@ -283,8 +280,7 @@ impl DiagramN {
                 BoundaryPath(Source, 0),
                 0,
                 &[],
-                signature,
-                &mut neighbourhood,
+                None,
             ),
             backward: Rewrite::cone_over_generator(
                 generator,
@@ -292,12 +288,11 @@ impl DiagramN {
                 BoundaryPath(Target, 0),
                 0,
                 &[],
-                signature,
-                &mut neighbourhood,
+                None,
             ),
         };
 
-        Ok((Self::new_unsafe(source, vec![cospan]), neighbourhood))
+        Ok(Self::new_unsafe(source, vec![cospan]))
     }
 
     pub fn new(source: Diagram, cospans: Vec<Cospan>) -> Self {
@@ -815,7 +810,7 @@ mod test {
 
         let mut signature = SignatureBuilder::default();
         let x = signature.add_zero();
-        let f = signature.add(x.clone(), x)?;
+        let f = signature.add(x, x)?;
         let ff = f.attach(&f, Target, &[])?;
         let m = signature.add(ff, f)?;
         let left = m.attach(&m, Source, &[0])?;

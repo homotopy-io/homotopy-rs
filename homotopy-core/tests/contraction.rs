@@ -138,7 +138,7 @@ fn stacks() {
 fn inverses_1d() {
     let mut sig = SignatureBuilder::default();
     let x = sig.add_zero();
-    let f = sig.add(x.clone(), x).unwrap();
+    let f = sig.add(x, x).unwrap();
     let f_inverse = f.inverse();
     let f_then_inverse = DiagramN::new(f.source(), vec![f.cospans(), f_inverse.cospans()].concat());
     assert_debug_snapshot!(

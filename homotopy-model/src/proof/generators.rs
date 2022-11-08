@@ -1,4 +1,4 @@
-use homotopy_core::{common::Generator, label::Neighbourhood, Diagram};
+use homotopy_core::{common::Generator, Diagram};
 use homotopy_graphics::style::{Color, GeneratorStyle, VertexShape};
 use serde::Serialize;
 
@@ -12,7 +12,6 @@ pub struct GeneratorInfo {
     pub color: Color,
     pub shape: VertexShape,
     pub diagram: Diagram,
-    pub neighbourhood: Neighbourhood,
 }
 
 impl GeneratorStyle for GeneratorInfo {
@@ -38,9 +37,5 @@ impl homotopy_core::signature::GeneratorInfo for GeneratorInfo {
 
     fn is_invertible(&self) -> bool {
         self.invertible
-    }
-
-    fn neighbourhood(&self) -> &Neighbourhood {
-        &self.neighbourhood
     }
 }
