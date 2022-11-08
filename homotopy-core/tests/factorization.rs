@@ -9,7 +9,7 @@ fn bead_rewrite_base() -> Result<(), String> {
     let mut builder = SignatureBuilder::default();
     let x = builder.add_zero();
     let e = builder
-        .add(x.clone(), x.clone())
+        .add(x, x)
         .map_err(|_err| "couldn't make new diagram")?;
     let bead = builder
         .add(e.clone(), e.clone())
@@ -185,12 +185,48 @@ fn scalar_braid() {
     let s = Generator::new(2, 3);
 
     let f_cospan = Cospan {
-        forward: Rewrite0::new(x, f, Some((f, BoundaryPath(Source, 1), vec![]))).into(),
-        backward: Rewrite0::new(x, f, Some((f, BoundaryPath(Target, 1), vec![]))).into(),
+        forward: Rewrite0::new(
+            x,
+            f,
+            Some((
+                f,
+                BoundaryPath(Source, 1),
+                std::iter::once(vec![]).collect(),
+            )),
+        )
+        .into(),
+        backward: Rewrite0::new(
+            x,
+            f,
+            Some((
+                f,
+                BoundaryPath(Target, 1),
+                std::iter::once(vec![]).collect(),
+            )),
+        )
+        .into(),
     };
     let s_cospan = Cospan {
-        forward: Rewrite0::new(x, s, Some((s, BoundaryPath(Source, 2), vec![]))).into(),
-        backward: Rewrite0::new(x, s, Some((s, BoundaryPath(Target, 2), vec![]))).into(),
+        forward: Rewrite0::new(
+            x,
+            s,
+            Some((
+                s,
+                BoundaryPath(Source, 2),
+                std::iter::once(vec![]).collect(),
+            )),
+        )
+        .into(),
+        backward: Rewrite0::new(
+            x,
+            s,
+            Some((
+                s,
+                BoundaryPath(Target, 2),
+                std::iter::once(vec![]).collect(),
+            )),
+        )
+        .into(),
     };
 
     let rewrite_f = RewriteN::new(
@@ -202,14 +238,27 @@ fn scalar_braid() {
                 Rewrite0::new(
                     x,
                     s,
-                    Some((s, BoundaryPath(Source, 0), vec![Regular(0), Regular(0)])),
+                    Some((
+                        s,
+                        BoundaryPath(Source, 0),
+                        std::iter::once(vec![Regular(0), Regular(0)]).collect(),
+                    )),
                 )
                 .into(),
             ),
             Cone::new_unit(
                 0,
                 f_cospan.clone(),
-                Rewrite0::new(x, f, Some((f, BoundaryPath(Source, 0), vec![Regular(0)]))).into(),
+                Rewrite0::new(
+                    x,
+                    f,
+                    Some((
+                        f,
+                        BoundaryPath(Source, 0),
+                        std::iter::once(vec![Regular(0)]).collect(),
+                    )),
+                )
+                .into(),
             ),
         ],
     )
@@ -220,7 +269,16 @@ fn scalar_braid() {
         vec![Cone::new_unit(
             0,
             s_cospan.clone(),
-            Rewrite0::new(x, s, Some((s, BoundaryPath(Source, 1), vec![Regular(0)]))).into(),
+            Rewrite0::new(
+                x,
+                s,
+                Some((
+                    s,
+                    BoundaryPath(Source, 1),
+                    std::iter::once(vec![Regular(0)]).collect(),
+                )),
+            )
+            .into(),
         )],
     )
     .into();
@@ -229,5 +287,5 @@ fn scalar_braid() {
 
     let mut fact = factorize(rewrite_f, rewrite_g, target);
 
-    assert!(fact.next().is_some())
+    assert!(fact.next().is_some());
 }

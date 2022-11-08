@@ -1,6 +1,8 @@
 //! Functions to collapse diagram scaffolds; used in contraction, typechecking etc.
-use anyhow::anyhow;
-use homotopy_common::declare_idx;
+use std::{collections::BTreeSet, rc::Rc};
+
+use homotopy_common::{declare_idx, hash::FastHashMap};
+use itertools::Itertools;
 use once_cell::unsync::OnceCell;
 use petgraph::{
     prelude::DiGraph,
@@ -11,9 +13,9 @@ use petgraph::{
 };
 
 use crate::{
-    scaffold::{ScaffoldEdge, ScaffoldNode, StableScaffold},
-    signature::Signature,
-    Height, Rewrite0,
+    label::Coord,
+    scaffold::{Explodable, ScaffoldEdge, ScaffoldNode, StableScaffold},
+    Diagram, Height, Rewrite0, SliceIndex,
 };
 
 /// Trait for objects which have associated coordinates in `C`.
@@ -22,9 +24,90 @@ pub(crate) trait Cartesian<C: Copy> {
     fn coordinate(&self) -> &[C];
 }
 
+impl<C: Copy, T: Cartesian<C>> Cartesian<C> for &T {
+    fn coordinate(&self) -> &[C] {
+        (*self).coordinate()
+    }
+}
+
 impl<C: Copy> Cartesian<C> for Vec<C> {
     fn coordinate(&self) -> &[C] {
         self.as_slice()
+    }
+}
+
+#[derive(Clone)]
+pub(crate) enum OneMany<T, TS>
+where
+    TS: IntoIterator<Item = T>,
+{
+    One(T),
+    Many(TS),
+}
+
+impl<T, TS> Default for OneMany<T, TS>
+where
+    T: Default,
+    TS: IntoIterator<Item = T>,
+{
+    fn default() -> Self {
+        Self::One(T::default())
+    }
+}
+
+impl<T, TS> IntoIterator for OneMany<T, TS>
+where
+    TS: IntoIterator<Item = T> + FromIterator<T>,
+{
+    type Item = T;
+
+    type IntoIter = <TS as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        match self {
+            OneMany::One(x) => std::iter::once(x).collect::<TS>().into_iter(),
+            OneMany::Many(xs) => xs.into_iter(),
+        }
+    }
+}
+
+impl<C, T, TS> Cartesian<C> for OneMany<T, TS>
+where
+    C: Copy,
+    T: Cartesian<C>,
+    TS: IntoIterator<Item = T>,
+{
+    fn coordinate(&self) -> &[C] {
+        if let Self::One(c) = self {
+            c.coordinate()
+        } else {
+            unreachable!()
+        }
+    }
+}
+
+impl<T, TS> Extend<OneMany<T, TS>> for OneMany<T, TS>
+where
+    T: Clone,
+    TS: IntoIterator<Item = T> + FromIterator<T> + Extend<T>,
+{
+    fn extend<U: IntoIterator<Item = OneMany<T, TS>>>(&mut self, iter: U) {
+        match self {
+            Self::One(x) => {
+                *self = Self::Many(
+                    std::iter::once(x.clone())
+                        .chain(
+                            iter.into_iter()
+                                .flat_map(std::iter::IntoIterator::into_iter),
+                        )
+                        .collect(),
+                );
+            }
+            Self::Many(xs) => xs.extend(
+                iter.into_iter()
+                    .flat_map(std::iter::IntoIterator::into_iter),
+            ),
+        }
     }
 }
 
@@ -33,10 +116,6 @@ impl<C: Copy> Cartesian<C> for Vec<C> {
 /// # Panics
 ///
 /// Panics if `graph` edges are not 0-rewrites.
-///
-/// # Errors
-///
-/// This function will return an error if two uncollapsible nodes are unified.
 pub(crate) fn unify<N, E, Ix, RN, RE>(
     graph: &mut StableDiGraph<N, ScaffoldEdge<E>, Ix>,
     p: NodeIndex<Ix>,
@@ -44,86 +123,71 @@ pub(crate) fn unify<N, E, Ix, RN, RE>(
     quotient: &mut UnionFind<NodeIndex<Ix>>,
     mut on_remove_node: RN,
     mut on_remove_edge: RE,
-    signature: &impl Signature,
-) -> anyhow::Result<()>
-where
-    N: Clone,
-    E: Clone,
+) where
+    N: Clone + Extend<N>,
     Ix: IndexType,
     RE: FnMut(EdgeIndex<Ix>),
     RN: FnMut(NodeIndex<Ix>),
 {
-    enum Quotient<Ix> {
-        RetargetSource(NodeIndex<Ix>, NodeIndex<Ix>, EdgeIndex<Ix>),
-        RetargetTarget(NodeIndex<Ix>, NodeIndex<Ix>, EdgeIndex<Ix>),
-        RemoveNode(NodeIndex<Ix>),
-    }
     let (p, q) = (quotient.find_mut(p), quotient.find_mut(q));
     if p == q {
-        return Ok(());
+        return;
     }
     quotient.union(p, q);
     let keep = quotient.find_mut(p);
     let remove = if keep == p { q } else { p };
-    let mut ops: Vec<Quotient<Ix>> = Default::default();
-    for e in graph
+    // unify along the source of edges
+    for (target, e) in graph
         .edges_directed(remove, Outgoing)
-        .filter(|e| e.target() != keep)
+        .filter_map(|e| (e.target() != keep).then(|| (e.target(), e.id())))
+        .collect::<Vec<_>>()
     {
-        ops.push(Quotient::RetargetSource(keep, e.target(), e.id()));
+        let removed = graph.remove_edge(e).expect("tried to remove missing edge");
+        let prev = <&Rewrite0>::try_from(&removed.rewrite)
+            .expect("non 0-rewrite passed to collapse unify");
+        on_remove_edge(e);
+        if !graph
+            .edges_connecting(keep, target)
+            .map(|existing| {
+                <&Rewrite0>::try_from(&existing.weight().rewrite)
+                    .expect("non 0-rewrite passed to collapse unify")
+                    .label()
+            })
+            .contains(&prev.label())
+        {
+            graph.add_edge(keep, target, removed);
+        }
     }
-    for e in graph
+    // unify along the target of edges
+    for (source, e) in graph
         .edges_directed(remove, Incoming)
-        .filter(|e| e.source() != keep)
+        .filter_map(|e| (e.source() != keep).then(|| (e.source(), e.id())))
+        .collect::<Vec<_>>()
     {
-        ops.push(Quotient::RetargetTarget(keep, e.source(), e.id()));
+        let removed = graph.remove_edge(e).expect("tried to remove missing edge");
+        let prev = <&Rewrite0>::try_from(&removed.rewrite)
+            .expect("non 0-rewrite passed to collapse unify");
+        on_remove_edge(e);
+        if !graph
+            .edges_connecting(source, keep)
+            .map(|existing| {
+                <&Rewrite0>::try_from(&existing.weight().rewrite)
+                    .expect("non 0-rewrite passed to collapse unify")
+                    .label()
+            })
+            .contains(&prev.label())
+        {
+            graph.add_edge(source, keep, removed);
+        }
     }
-    ops.push(Quotient::RemoveNode(remove));
-    for op in ops {
-        match op {
-            Quotient::RetargetSource(keep, target, e) => {
-                if let Some(existing) = graph.find_edge(keep, target) {
-                    if !signature.label_equiv(
-                        <&Rewrite0>::try_from(&graph[existing].rewrite)
-                            .expect("non 0-rewrite passed to collapse unify")
-                            .label(),
-                        <&Rewrite0>::try_from(&graph[e].rewrite)
-                            .expect("non 0-rewrite passed to collapse unify")
-                            .label(),
-                    ) {
-                        return Err(anyhow!("label inconsistency"));
-                    }
-                } else {
-                    graph.add_edge(keep, target, graph[e].clone());
-                }
-                graph.remove_edge(e);
-                on_remove_edge(e);
-            }
-            Quotient::RetargetTarget(keep, source, e) => {
-                if let Some(existing) = graph.find_edge(source, keep) {
-                    if !signature.label_equiv(
-                        <&Rewrite0>::try_from(&graph[existing].rewrite)
-                            .expect("non 0-rewrite passed to collapse unify")
-                            .label(),
-                        <&Rewrite0>::try_from(&graph[e].rewrite)
-                            .expect("non 0-rewrite passed to collapse unify")
-                            .label(),
-                    ) {
-                        return Err(anyhow!("label inconsistency"));
-                    }
-                } else {
-                    graph.add_edge(source, keep, graph[e].clone());
-                }
-                graph.remove_edge(e);
-                on_remove_edge(e);
-            }
-            Quotient::RemoveNode(remove) => {
-                graph.remove_node(remove);
-                on_remove_node(remove);
-            }
-        };
+
+    let removed = graph
+        .remove_node(remove)
+        .expect("tried to remove missing node");
+    on_remove_node(remove);
+    if let Some(k) = graph.node_weight_mut(keep) {
+        k.extend(std::iter::once(removed));
     }
-    Ok(())
 }
 
 /// Given a **stable** `graph` of 0-diagrams and 0-rewrites, reduce the graph along the
@@ -136,9 +200,8 @@ where
 /// # Panics
 ///
 /// Panics if `graph` edges are not 0-rewrites.
-pub(crate) fn collapse<V: Clone + Cartesian<Height>, E: Clone, Ix: IndexType>(
+pub(crate) fn collapse<V: Clone + Cartesian<Height> + Extend<V>, E: Clone, Ix: IndexType>(
     graph: &mut StableScaffold<V, E, Ix>,
-    signature: &impl Signature,
 ) -> UnionFind<NodeIndex<Ix>> {
     // invariant: #nodes of graph = #equivalence classes of union_find
     let mut union_find = UnionFind::new(graph.node_count());
@@ -190,20 +253,14 @@ pub(crate) fn collapse<V: Clone + Cartesian<Height>, E: Clone, Ix: IndexType>(
             // check triangles within nodes which might refute collapsibility of e
             && graph.edges_directed(e.source(), Incoming).all(|p| {
                 if let Some(c) = graph.find_edge(p.source(), e.target()) {
-                    signature.label_equiv(
-                        <&Rewrite0>::try_from(&p.weight().rewrite).unwrap().label(),
-                        <&Rewrite0>::try_from(&graph.edge_weight(c).unwrap().rewrite).unwrap().label(),
-                    )
+                    <&Rewrite0>::try_from(&p.weight().rewrite).unwrap().label() == <&Rewrite0>::try_from(&graph.edge_weight(c).unwrap().rewrite).unwrap().label()
                 } else {
                     true
                 }
             })
             && graph.edges_directed(e.target(), Outgoing).all(|n| {
                 if let Some(c) = graph.find_edge(e.source(), n.target()) {
-                    signature.label_equiv(
-                        <&Rewrite0>::try_from(&n.weight().rewrite).unwrap().label(),
-                        <&Rewrite0>::try_from(&graph.edge_weight(c).unwrap().rewrite).unwrap().label(),
-                    )
+                    <&Rewrite0>::try_from(&n.weight().rewrite).unwrap().label() == <&Rewrite0>::try_from(&graph.edge_weight(c).unwrap().rewrite).unwrap().label()
                 } else {
                     true
                 }
@@ -223,9 +280,7 @@ pub(crate) fn collapse<V: Clone + Cartesian<Height>, E: Clone, Ix: IndexType>(
                     nodes.retain(|&n| n != rn);
                 },
                 |_re| (),
-                signature,
-            )
-            .expect("non-determinism in collapse; edge ({s}, {t}) has become uncollapsible");
+            );
         }
         tree[n]
             .1
@@ -235,4 +290,49 @@ pub(crate) fn collapse<V: Clone + Cartesian<Height>, E: Clone, Ix: IndexType>(
     // check the tree of collapse subproblems has been completed
     debug_assert!(tree[NodeIndex::new(0)].1.get().is_some());
     union_find
+}
+
+impl Diagram {
+    pub(crate) fn explode_and_collapse(self) -> FastHashMap<Coord, Rc<BTreeSet<Coord>>> {
+        type Coords = OneMany<Coord, BTreeSet<Coord>>;
+
+        // Construct the fully exploded scaffold of the diagram.
+        let mut scaffold: StableScaffold<Vec<Height>> = Default::default();
+        let dimension = self.dimension();
+        scaffold.add_node(self.into());
+        for _ in 0..dimension {
+            scaffold = scaffold
+                .explode_simple(
+                    |_, key, si| match si {
+                        SliceIndex::Boundary(_) => None,
+                        SliceIndex::Interior(h) => Some([key.as_slice(), &[h]].concat()),
+                    },
+                    |_, _, _| Some(()),
+                    |_, _, _| Some(()),
+                )
+                .unwrap();
+        }
+        let mut stable: StableScaffold<Coords, _, _> = scaffold.map(
+            |_ix, ScaffoldNode { key, diagram }| ScaffoldNode {
+                key: Coords::One(key.clone()),
+                diagram: diagram.clone(),
+            },
+            |_ix, e| e.clone(),
+        );
+        let union_find = collapse(&mut stable);
+        union_find
+            .into_labeling()
+            .into_iter()
+            .flat_map(|ix| {
+                match stable[ix].key.clone() {
+                    OneMany::One(c) => vec![(c.clone(), Rc::new(std::iter::once(c).collect()))],
+                    OneMany::Many(cs) => {
+                        let shared = Rc::new(cs.clone());
+                        cs.into_iter().map(|c| (c, shared.clone())).collect()
+                    }
+                }
+                .into_iter()
+            })
+            .collect()
+    }
 }

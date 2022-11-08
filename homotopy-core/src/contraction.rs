@@ -4,7 +4,11 @@ use std::{
     hash::Hash,
 };
 
-use homotopy_common::{declare_idx, hash::FastHashMap, idx::IdxVec};
+use homotopy_common::{
+    declare_idx,
+    hash::{FastHashMap, FastHashSet},
+    idx::IdxVec,
+};
 use itertools::Itertools;
 use petgraph::{
     adj::UnweightedList,
@@ -23,14 +27,14 @@ use thiserror::Error;
 
 use crate::{
     attach::attach,
-    collapse::{collapse, unify, Cartesian},
+    collapse::{collapse, unify, Cartesian, OneMany},
     common::{Boundary, BoundaryPath, DimensionError, Height, Orientation, SingularHeight},
     diagram::{Diagram, Diagram0, DiagramN},
     expansion::expand_propagate,
     rewrite::{Cone, Cospan, Rewrite, Rewrite0, RewriteN},
     scaffold::{
         Explodable, ExplosionOutput, ExternalRewrite, InternalRewrite, Scaffold, ScaffoldEdge,
-        ScaffoldNode,
+        ScaffoldNode, StableScaffold,
     },
     signature::Signature,
     typecheck::{typecheck_cospan, TypeError},
@@ -97,7 +101,7 @@ impl DiagramN {
         attach(self, boundary_path, |slice| {
             let slice = slice.try_into().or(Err(ContractionError::Invalid))?;
             let ContractExpand { contract, expand } =
-                contract_in_path(&slice, interior_path, height, bias, signature)?;
+                contract_in_path(&slice, interior_path, height, bias)?;
 
             let cospan = match boundary_path.boundary() {
                 Boundary::Source => Cospan {
@@ -126,7 +130,6 @@ fn contract_base(
     diagram: &DiagramN,
     height: SingularHeight,
     bias: Option<Bias>,
-    signature: &impl Signature,
 ) -> Result<ContractExpand, ContractionError> {
     use Height::{Regular, Singular};
     let slices: IdxVec<Height, Diagram> = diagram.slices().collect();
@@ -196,7 +199,7 @@ fn contract_base(
     graph.add_edge(r1, s0, cospan0.backward.clone().into());
     graph.add_edge(r1, s1, cospan1.forward.clone().into());
     graph.add_edge(r2, s1, cospan1.backward.clone().into());
-    let result = colimit(&graph, signature)?;
+    let result = colimit(&graph)?;
 
     let cospan = Cospan {
         forward: result.legs[r0].clone(),
@@ -290,10 +293,9 @@ fn contract_in_path(
     path: &[Height],
     height: SingularHeight,
     bias: Option<Bias>,
-    signature: &impl Signature,
 ) -> Result<ContractExpand, ContractionError> {
     match path.split_first() {
-        None => contract_base(diagram, height, bias, signature),
+        None => contract_base(diagram, height, bias),
         Some((step, rest)) => {
             let slice: DiagramN = diagram
                 .slice(*step)
@@ -304,7 +306,7 @@ fn contract_in_path(
             let ContractExpand {
                 contract: contract_base,
                 expand: expand_base,
-            } = contract_in_path(&slice, rest, height, bias, signature)?;
+            } = contract_in_path(&slice, rest, height, bias)?;
             match step {
                 Height::Regular(i) => {
                     let contract = RewriteN::new(
@@ -378,7 +380,7 @@ fn contract_in_path(
                                 .map_err(|_err| ContractionError::Invalid)?,
                         });
                         graph.add_edge(s, c, contract_base.clone().into());
-                        let cocone = colimit(&graph, signature)?;
+                        let cocone = colimit(&graph)?;
                         (cocone.legs[r_p].clone(), cocone.legs[r_n].clone())
                     };
                     let contract = RewriteN::new(
@@ -419,7 +421,7 @@ where
     legs: IdxVec<NodeIndex<Ix>, Rewrite>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 struct ContractNode {
     bias: Option<Bias>,
     coordinate: Vec<Height>,
@@ -430,12 +432,10 @@ impl Cartesian<Height> for ContractNode {
         self.coordinate.as_slice()
     }
 }
+
 type ContractGraph<Ix> = Scaffold<ContractNode, (), Ix>;
 
-fn colimit<Ix: IndexType>(
-    graph: &ContractGraph<Ix>,
-    signature: &impl Signature,
-) -> Result<Cocone<Ix>, ContractionError> {
+fn colimit<Ix: IndexType>(graph: &ContractGraph<Ix>) -> Result<Cocone<Ix>, ContractionError> {
     let dimension = graph
         .node_weights()
         .next()
@@ -452,19 +452,23 @@ fn colimit<Ix: IndexType>(
     }
 
     if dimension == 0 {
-        colimit_base(graph, signature)
+        colimit_base(graph)
     } else {
-        colimit_recursive(graph, signature)
+        colimit_recursive(graph)
     }
 }
 
-fn colimit_base<Ix: IndexType>(
-    graph: &ContractGraph<Ix>,
-    signature: &impl Signature,
-) -> Result<Cocone<Ix>, ContractionError> {
+fn colimit_base<Ix: IndexType>(graph: &ContractGraph<Ix>) -> Result<Cocone<Ix>, ContractionError> {
     // mutably construct the collapsed graph
-    let mut stable = StableDiGraph::from(graph.clone());
-    let mut union_find = collapse(&mut stable, signature);
+    type ContractNodes<'a> = OneMany<&'a ContractNode, FastHashSet<&'a ContractNode>>;
+    let mut stable: StableScaffold<ContractNodes, _, _> = StableDiGraph::from(graph.map(
+        |_ix, ScaffoldNode { key, diagram }| ScaffoldNode {
+            key: ContractNodes::One(key),
+            diagram: diagram.clone(),
+        },
+        |_ix, e| e.clone(),
+    ));
+    let mut union_find = collapse(&mut stable);
 
     // unify all nodes of maximal dimension
     let (max_dim_index, max_dim_generator) = stable
@@ -476,7 +480,7 @@ fn colimit_base<Ix: IndexType>(
         .max_by_key(|(_, g)| g.dimension)
         .ok_or(ContractionError::NonUniqueMaxDimensionGenerator)?;
 
-    let codimension = stable[max_dim_index]
+    let codimension = graph[max_dim_index]
         .key
         .coordinate
         .len()
@@ -552,9 +556,7 @@ fn colimit_base<Ix: IndexType>(
             &mut union_find,
             |_rn| (),
             |_re| (),
-            signature,
-        )
-        .map_err(|_err| ContractionError::LabelInconsistency)?;
+        );
     }
 
     let colimit = Diagram0::new(max_dim_generator, orientation);
@@ -570,15 +572,18 @@ fn colimit_base<Ix: IndexType>(
                     debug_assert_eq!(d.generator, colimit.generator);
                     Rewrite0::new(d, colimit, None)
                 } else {
-                    let label = <&Rewrite0>::try_from(
-                        &stable[stable
-                            .find_edge(p, q)
-                            .ok_or(ContractionError::NonConnectedMaxDimensionGenerator)?]
-                        .rewrite,
-                    )
-                    .expect("non 0-rewrite passed to colimit_base")
-                    .label()
-                    .clone();
+                    // Collect the labels of all edges between p and q.
+                    let mut labels = stable.edges_connecting(p, q).map(|e| {
+                        <&Rewrite0>::try_from(&e.weight().rewrite)
+                            .expect("non 0-rewrite passed to colimit_base")
+                            .label()
+                    });
+                    let label = labels
+                        .next()
+                        .ok_or(ContractionError::NonConnectedMaxDimensionGenerator)?;
+                    if labels.any(|l| l != label) {
+                        return Err(ContractionError::LabelInconsistency);
+                    }
                     Rewrite0::new(d, colimit, label)
                 }
             };
@@ -596,7 +601,6 @@ fn colimit_base<Ix: IndexType>(
 
 fn colimit_recursive<Ix: IndexType>(
     graph: &ContractGraph<Ix>,
-    signature: &impl Signature,
 ) -> Result<Cocone<Ix>, ContractionError> {
     // Input: graph of n-diagrams and n-rewrites
 
@@ -900,7 +904,7 @@ fn colimit_recursive<Ix: IndexType>(
                 },
                 |_, ScaffoldEdge { rewrite, .. }| Some(rewrite.clone().into()),
             );
-            let cocone: Cocone<RestrictionIx> = colimit(&restriction, signature)?;
+            let cocone: Cocone<RestrictionIx> = colimit(&restriction)?;
             Ok((source_ix, cocone, target_ix, restriction_to_exploded))
         })
         .fold_ok(vec![], |mut acc, x| {

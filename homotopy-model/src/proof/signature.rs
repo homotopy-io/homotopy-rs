@@ -2,8 +2,8 @@ use std::{collections::VecDeque, str::FromStr};
 
 use homotopy_common::tree::{Node, Tree};
 use homotopy_core::{
-    common::Generator, diagram::NewDiagramError, label::Neighbourhood, signature::Signature as S,
-    Diagram, Diagram0, DiagramN,
+    common::Generator, diagram::NewDiagramError, signature::Signature as S, Diagram, Diagram0,
+    DiagramN,
 };
 use homotopy_graphics::style::{Color, SignatureStyleData, VertexShape};
 use serde::{Deserialize, Serialize};
@@ -103,16 +103,13 @@ impl Signature {
             .map_or(0, |id| id + 1)
     }
 
-    fn insert<D>(
+    fn insert(
         &mut self,
         generator: Generator,
-        diagram: D,
+        diagram: impl Into<Diagram>,
         name: &str,
         invertible: bool,
-        neighbourhood: Neighbourhood,
-    ) where
-        D: Into<Diagram>,
-    {
+    ) {
         let diagram: Diagram = diagram.into();
         let info = GeneratorInfo {
             generator,
@@ -123,7 +120,6 @@ impl Signature {
             color: Color::from_str(COLORS[generator.id % COLORS.len()]).unwrap(),
             shape: Default::default(),
             diagram,
-            neighbourhood,
         };
 
         self.0.push_onto(self.0.root(), SignatureItem::Item(info));
@@ -185,7 +181,7 @@ impl Signature {
         let id = self.next_generator_id();
         let generator = Generator::new(id, 0);
         let diagram = Diagram0::from(generator);
-        self.insert(generator, diagram, name, false, Neighbourhood::default());
+        self.insert(generator, diagram, name, false);
     }
 
     pub fn create_generator(
@@ -197,8 +193,8 @@ impl Signature {
     ) -> Result<Diagram, NewDiagramError> {
         let id = self.next_generator_id();
         let generator = Generator::new(id, source.dimension() + 1);
-        let (diagram, neighbourhood) = DiagramN::from_generator(generator, source, target, self)?;
-        self.insert(generator, diagram.clone(), name, invertible, neighbourhood);
+        let diagram = DiagramN::from_generator(generator, source, target)?;
+        self.insert(generator, diagram.clone(), name, invertible);
         Ok(diagram.into())
     }
 

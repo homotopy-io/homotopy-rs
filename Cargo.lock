@@ -1397,7 +1397,7 @@ checksum = "478c572c3d73181ff3c2539045f6eb99e5491218eae919370993b890cdbdd98e"
 [[package]]
 name = "petgraph"
 version = "0.6.2"
-source = "git+https://github.com/NickHu/petgraph?branch=filter_map#5a10d71722f1fcf07645d49e59f58a174199216d"
+source = "git+https://github.com/NickHu/petgraph?branch=master#a9be31d752aa42240e96b4650ab527054fc57a3f"
 dependencies = [
  "fixedbitset",
  "indexmap",
