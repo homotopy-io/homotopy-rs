@@ -106,7 +106,7 @@ enum SignatureData {
 
 impl Default for SignatureData {
     fn default() -> Self {
-        Self::Folder("".to_owned(), true)
+        Self::Folder(Default::default(), true)
     }
 }
 

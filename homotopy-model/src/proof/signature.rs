@@ -30,7 +30,7 @@ impl Default for SignatureItem {
     fn default() -> Self {
         Self::Folder(FolderInfo {
             id: 0,
-            name: "".to_owned(),
+            name: Default::default(),
             open: true,
         })
     }
