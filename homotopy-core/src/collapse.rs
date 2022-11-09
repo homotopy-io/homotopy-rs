@@ -6,7 +6,7 @@ use itertools::Itertools;
 use once_cell::unsync::OnceCell;
 use petgraph::{
     prelude::DiGraph,
-    stable_graph::{DefaultIx, EdgeIndex, IndexType, NodeIndex, StableDiGraph},
+    stable_graph::{DefaultIx, EdgeIndex, IndexType, NodeIndex},
     unionfind::UnionFind,
     visit::{EdgeRef, IntoEdgeReferences, IntoNodeReferences, Topo, Walker},
     Direction::{Incoming, Outgoing},
@@ -14,7 +14,7 @@ use petgraph::{
 
 use crate::{
     label::{Coord, Coords},
-    scaffold::{Explodable, ScaffoldEdge, ScaffoldNode, StableScaffold},
+    scaffold::{Explodable, ScaffoldNode, StableScaffold},
     Diagram, Height, Rewrite0, SliceIndex,
 };
 
@@ -116,18 +116,16 @@ where
 /// # Panics
 ///
 /// Panics if `graph` edges are not 0-rewrites.
-pub(crate) fn unify<N, E, Ix, RN, RE>(
-    graph: &mut StableDiGraph<N, ScaffoldEdge<E>, Ix>,
+pub(crate) fn unify<V, E, Ix>(
+    graph: &mut StableScaffold<V, E, Ix>,
     p: NodeIndex<Ix>,
     q: NodeIndex<Ix>,
     quotient: &mut UnionFind<NodeIndex<Ix>>,
-    mut on_remove_node: RN,
-    mut on_remove_edge: RE,
+    mut on_remove_node: impl FnMut(NodeIndex<Ix>),
+    mut on_remove_edge: impl FnMut(EdgeIndex<Ix>),
 ) where
-    N: Clone + Extend<N>,
+    V: Extend<V>,
     Ix: IndexType,
-    RE: FnMut(EdgeIndex<Ix>),
-    RN: FnMut(NodeIndex<Ix>),
 {
     let (p, q) = (quotient.find_mut(p), quotient.find_mut(q));
     if p == q {
@@ -200,9 +198,11 @@ pub(crate) fn unify<N, E, Ix, RN, RE>(
 /// # Panics
 ///
 /// Panics if `graph` edges are not 0-rewrites.
-pub(crate) fn collapse<V: Clone + Cartesian<Height> + Extend<V>, E: Clone, Ix: IndexType>(
-    graph: &mut StableScaffold<V, E, Ix>,
-) -> UnionFind<NodeIndex<Ix>> {
+pub(crate) fn collapse<V, E, Ix>(graph: &mut StableScaffold<V, E, Ix>) -> UnionFind<NodeIndex<Ix>>
+where
+    V: Cartesian<Height> + Extend<V>,
+    Ix: IndexType,
+{
     // invariant: #nodes of graph = #equivalence classes of union_find
     let mut union_find = UnionFind::new(graph.node_count());
     // tree tracks which edges descended from other edges by graph explosion
