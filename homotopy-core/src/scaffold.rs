@@ -47,12 +47,12 @@ where
     pub edge_to_edges: IdxVec<G::EdgeId, Vec<G2::EdgeId>>,
 }
 
-pub trait Explodable<'a, G>
+pub trait Explodable<G>
 where
     G: ScaffoldGraph,
 {
     fn explode<G2, NodeMap, InternalEdgeMap, ExternalEdgeMap>(
-        &'a self,
+        &self,
         node_map: NodeMap,
         internal_edge_map: InternalEdgeMap,
         external_edge_map: ExternalEdgeMap,
@@ -65,7 +65,7 @@ where
 
     #[inline]
     fn explode_simple<G2, NodeMap, InternalEdgeMap, ExternalEdgeMap>(
-        &'a self,
+        &self,
         node_map: NodeMap,
         internal_edge_map: InternalEdgeMap,
         external_edge_map: ExternalEdgeMap,
@@ -96,6 +96,13 @@ impl<V> ScaffoldNode<V> {
         Self {
             key,
             diagram: diagram.into(),
+        }
+    }
+
+    pub fn map<T>(self, mut f: impl FnMut(V) -> T) -> ScaffoldNode<T> {
+        ScaffoldNode {
+            key: f(self.key),
+            diagram: self.diagram,
         }
     }
 }
@@ -138,6 +145,13 @@ impl<E> ScaffoldEdge<E> {
         Self {
             key,
             rewrite: rewrite.into(),
+        }
+    }
+
+    pub fn map<T>(self, mut f: impl FnMut(E) -> T) -> ScaffoldEdge<T> {
+        ScaffoldEdge {
+            key: f(self.key),
+            rewrite: self.rewrite,
         }
     }
 }
@@ -206,10 +220,10 @@ impl ExternalRewrite {
     }
 }
 
-impl<'a, G> Explodable<'a, G> for G
+impl<G> Explodable<G> for G
 where
-    G: 'a + ScaffoldGraph + NodeCount + EdgeCount + Index<G::NodeId, Output = G::NodeWeight>,
-    &'a G: GraphBase<NodeId = G::NodeId, EdgeId = G::EdgeId>
+    G: ScaffoldGraph + NodeCount + EdgeCount + Index<G::NodeId, Output = G::NodeWeight>,
+    for<'a> &'a G: GraphBase<NodeId = G::NodeId, EdgeId = G::EdgeId>
         + IntoNodeReferences<NodeRef = (G::NodeId, &'a G::NodeWeight)>
         + IntoEdgeReferences<EdgeWeight = G::EdgeWeight>,
     G::NodeId: Idx,
@@ -217,7 +231,7 @@ where
 {
     /// Explodes a scaffold to obtain the scaffold one dimension higher.
     fn explode<G2, NodeMap, InternalEdgeMap, ExternalEdgeMap>(
-        &'a self,
+        &self,
         mut node_map: NodeMap,
         mut internal_edge_map: InternalEdgeMap,
         mut external_edge_map: ExternalEdgeMap,
