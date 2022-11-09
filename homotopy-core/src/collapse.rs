@@ -1,20 +1,21 @@
 //! Functions to collapse diagram scaffolds; used in contraction, typechecking etc.
-use std::{collections::BTreeSet, rc::Rc};
+use std::{collections::BTreeSet, ops::Index, rc::Rc};
 
-use homotopy_common::{declare_idx, hash::FastHashMap};
+use homotopy_common::{declare_idx, hash::FastHashMap, idx::Idx};
 use itertools::Itertools;
 use once_cell::unsync::OnceCell;
 use petgraph::{
+    data::Build,
     prelude::DiGraph,
     stable_graph::{DefaultIx, EdgeIndex, IndexType, NodeIndex},
     unionfind::UnionFind,
-    visit::{EdgeRef, IntoEdgeReferences, IntoNodeReferences, Topo, Walker},
+    visit::{EdgeCount, EdgeRef, GraphBase, IntoEdgeReferences, IntoNodeReferences, Topo, Walker},
     Direction::{Incoming, Outgoing},
 };
 
 use crate::{
     label::{Coord, Coords},
-    scaffold::{Explodable, ScaffoldNode, StableScaffold},
+    scaffold::{Explodable, ScaffoldGraph, ScaffoldNode, StableScaffold},
     Diagram, Height, Rewrite0, SliceIndex,
 };
 
@@ -43,6 +44,12 @@ where
 {
     One(T),
     Many(TS),
+}
+
+impl<T, TS: IntoIterator<Item = T>> From<T> for OneMany<T, TS> {
+    fn from(x: T) -> Self {
+        Self::One(x)
+    }
 }
 
 impl<T, TS> Default for OneMany<T, TS>
@@ -293,9 +300,22 @@ where
 }
 
 impl Diagram {
-    pub(crate) fn fully_explode(self) -> StableScaffold<Coords> {
+    pub(crate) fn fully_explode<G>(self) -> G
+    where
+        G: Default
+            + Build
+            + ScaffoldGraph<EdgeKey = ()>
+            + EdgeCount
+            + Index<G::NodeId, Output = G::NodeWeight>,
+        for<'a> &'a G: GraphBase<NodeId = G::NodeId, EdgeId = G::EdgeId>
+            + IntoNodeReferences<NodeRef = (G::NodeId, &'a G::NodeWeight)>
+            + IntoEdgeReferences<EdgeWeight = G::EdgeWeight>,
+        G::NodeKey: Clone + Default + IntoIterator<Item = Height> + FromIterator<Height>,
+        G::NodeId: Idx,
+        G::EdgeId: Idx,
+    {
         // Construct the fully exploded scaffold of the diagram.
-        let mut scaffold: StableScaffold<Coord> = Default::default();
+        let mut scaffold: G = Default::default();
         let dimension = self.dimension();
         scaffold.add_node(self.into());
         for _ in 0..dimension {
@@ -303,24 +323,26 @@ impl Diagram {
                 .explode_simple(
                     |_, key, si| match si {
                         SliceIndex::Boundary(_) => None,
-                        SliceIndex::Interior(h) => Some([key.as_slice(), &[h]].concat()),
+                        SliceIndex::Interior(h) => Some(
+                            Clone::clone(key)
+                                .into_iter()
+                                .chain(std::iter::once(h))
+                                .collect(),
+                        ),
                     },
                     |_, _, _| Some(()),
                     |_, _, _| Some(()),
                 )
                 .unwrap();
         }
-        scaffold.map(
-            |_ix, ScaffoldNode { key, diagram }| ScaffoldNode {
-                key: Coords::One(key.clone()),
-                diagram: diagram.clone(),
-            },
-            |_ix, e| e.clone(),
-        )
+        scaffold
     }
 
     pub(crate) fn label_identifications(self) -> FastHashMap<Coord, Rc<BTreeSet<Coord>>> {
-        let mut stable = self.fully_explode();
+        let mut stable = self.fully_explode::<StableScaffold<Coord>>().map(
+            |_ix, n| n.clone().map(Into::<Coords>::into),
+            |_ix, e| e.clone(),
+        );
         let union_find = collapse(&mut stable);
         union_find
             .into_labeling()
@@ -344,7 +366,12 @@ mod test {
     use petgraph::visit::{EdgeRef, IntoEdgeReferences};
 
     use super::collapse;
-    use crate::{examples, Diagram};
+    use crate::{
+        examples,
+        label::{Coord, Coords},
+        scaffold::StableScaffold,
+        Diagram,
+    };
 
     #[test]
     fn braid_weak_identity() {
@@ -352,7 +379,10 @@ mod test {
         let weak: Diagram = Diagram::from(braid).weak_identity().into();
         // for each pair of nodes, assert that there is at most one edge (label) between them;
         // otherwise, there is an inconsistency
-        let mut exploded = weak.fully_explode();
+        let mut exploded = weak.fully_explode::<StableScaffold<Coord>>().map(
+            |_ix, n| n.clone().map(Into::<Coords>::into),
+            |_ix, e| e.clone(),
+        );
         collapse(&mut exploded);
         for e in exploded.edge_references() {
             assert_eq!(
