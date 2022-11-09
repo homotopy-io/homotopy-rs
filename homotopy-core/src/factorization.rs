@@ -21,8 +21,8 @@ pub fn factorize(f: Rewrite, g: Rewrite, target: Diagram) -> Factorization {
 
     match (f, g, target) {
         (Rewrite::Rewrite0(f), Rewrite::Rewrite0(g), Diagram::Diagram0(t)) => {
-            assert!(f.target() == None || f.target() == Some(t));
-            assert!(g.target() == None || g.target() == Some(t));
+            assert!(f.target().is_none() || f.target() == Some(t));
+            assert!(g.target().is_none() || g.target() == Some(t));
 
             Factorization::Unique(None)
         }

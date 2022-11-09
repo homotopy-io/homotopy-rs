@@ -5,6 +5,7 @@ use homotopy_core::{
 };
 
 #[test]
+#[allow(clippy::many_single_char_names)]
 fn bead_rewrite_base() -> Result<(), String> {
     let mut builder = SignatureBuilder::default();
     let x = builder.add_zero();
@@ -21,7 +22,7 @@ fn bead_rewrite_base() -> Result<(), String> {
     // x -> e <- x -> e <- x
     let source = e
         .attach(&e, Boundary::Target, &[])
-        .map_err(|_| "attachment invalid")?;
+        .map_err(|_err| "attachment invalid")?;
 
     // x -> bead_rewrite <- x -> e <- x
     let target = DiagramN::new(
