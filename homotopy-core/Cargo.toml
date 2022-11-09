@@ -15,7 +15,7 @@ bimap = "0.6.2"
 getrandom = { version = "0.2.8", features = ["js"] }
 hashconsing = "1.5.1"
 highway = "0.8.1"
-log = "0.4.16"
+log = "0.4.17"
 once_cell = "1.16.0"
 petgraph = "0.6.2"
 serde = { features = ["derive"], version = "1.0.147" }

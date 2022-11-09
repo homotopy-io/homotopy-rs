@@ -40,7 +40,7 @@ gloo = "0.8.0"
 gloo-timers = "0.2.4"
 
 wasm-logger = "0.2.0"
-log = "0.4.16"
+log = "0.4.17"
 euclid = "0.22.7"
 ultraviolet = "0.9.0"
 lyon_path = "1.0.2"
@@ -90,4 +90,4 @@ features = [
 cargo-husky = { features = ["precommit-hook", "run-cargo-check", "run-cargo-test", "run-cargo-fmt", "run-cargo-clippy"], version = "1.5.0" }
 wasm-bindgen-test = "0.3.33"
 futures = "0.3.25"
-wasm-bindgen-futures = "0.4.31"
+wasm-bindgen-futures = "0.4.33"
