@@ -90,12 +90,13 @@ impl Diagram {
     }
 
     #[must_use]
-    pub fn weak_identity(&self) -> DiagramN {
+    pub fn weak_identity(self) -> DiagramN {
+        let dimension = self.dimension();
         DiagramN::new_unsafe(
-            self.clone(),
+            self,
             vec![Cospan {
-                forward: Rewrite::identity(self.dimension()),
-                backward: Rewrite::identity(self.dimension()),
+                forward: Rewrite::identity(dimension),
+                backward: Rewrite::identity(dimension),
             }],
         )
     }
