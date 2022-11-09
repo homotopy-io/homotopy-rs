@@ -192,7 +192,7 @@ impl Diagram {
     }
 }
 
-pub fn globularity(s: &Diagram, t: &Diagram) -> bool {
+pub(crate) fn globularity(s: &Diagram, t: &Diagram) -> bool {
     use Diagram::{Diagram0, DiagramN};
     match (s, t) {
         (Diagram0(_), Diagram0(_)) => true,

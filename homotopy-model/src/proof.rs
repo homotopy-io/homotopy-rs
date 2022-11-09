@@ -7,7 +7,7 @@ use homotopy_core::{
         SliceIndex,
     },
     contraction::ContractionError,
-    diagram::{globularity, NewDiagramError},
+    diagram::NewDiagramError,
     expansion::ExpansionError,
     signature::Signature as S,
     Diagram, DiagramN,
@@ -283,12 +283,9 @@ impl ProofState {
             SliceIndex::{Boundary, Interior},
         };
         match *action {
-            Action::SetBoundary(boundary) => self.workspace.as_ref().map_or(false, |ws| {
-                self.boundary.as_ref().map_or(true, |selected| {
-                    selected.boundary == boundary || globularity(&selected.diagram, &ws.diagram)
-                })
-            }),
-            Action::TakeIdentityDiagram | Action::ClearWorkspace => self.workspace.is_some(),
+            Action::SetBoundary(_) | Action::TakeIdentityDiagram | Action::ClearWorkspace => {
+                self.workspace.is_some()
+            }
             Action::Theorem => self
                 .workspace
                 .as_ref()
