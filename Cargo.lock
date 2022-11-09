@@ -1160,11 +1160,12 @@ dependencies = [
 
 [[package]]
 name = "lyon_algorithms"
-version = "1.0.1"
+version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d53c2fefbc729e3c206d53d0cc7ccf90d3d31614f32e329f7e042d55e6b0573"
+checksum = "fcb7a1845c15729d73d25d42cb650b647f73c3494453a5c3cd3aae0df3ac5c6c"
 dependencies = [
  "lyon_path",
+ "num-traits 0.2.15",
 ]
 
 [[package]]
