@@ -344,12 +344,12 @@ mod test {
     use petgraph::visit::{EdgeRef, IntoEdgeReferences};
 
     use super::collapse;
-    use crate::{examples, Diagram, DiagramN};
+    use crate::{examples, Diagram};
 
     #[test]
     fn braid_weak_identity() {
         let (_sig, braid) = examples::crossing();
-        let weak: Diagram = DiagramN::new(braid.into(), vec![]).into();
+        let weak: Diagram = Diagram::from(braid).weak_identity().into();
         // for each pair of nodes, assert that there is at most one edge (label) between them;
         // otherwise, there is an inconsistency
         let mut exploded = weak.fully_explode();
