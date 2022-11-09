@@ -203,9 +203,8 @@
             src = pkgs.fetchFromGitHub {
               owner = "lovasoa";
               repo = "highs-js";
-              # https://github.com/lovasoa/highs-js/pull/19
-              rev = "0de32edec1102c49db02d24ce0f29be302177b7f";
-              sha256 = "sha256-xxvq9hQlX0yIARtu6tZNwqnrGw5jwq1JR6+cj9wvN50=";
+              rev = "89292f2a0a2e2d5635e0e0f1bb4501ecf63bc709";
+              sha256 = "sha256-ksWMY9Bas7RzwX1TOl6z6orJmS+09VJV07oAvB1XhT4=";
               fetchSubmodules = true;
             };
             nativeBuildInputs = with pkgs; [ cmake ];
