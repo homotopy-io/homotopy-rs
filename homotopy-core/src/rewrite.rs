@@ -106,7 +106,7 @@ impl Rewrite {
         use crate::Boundary::{Source, Target};
 
         let label_identifications =
-            label_identifications.unwrap_or_else(|| base.clone().explode_and_collapse());
+            label_identifications.unwrap_or_else(|| base.clone().label_identifications());
 
         match base {
             Diagram::Diagram0(base) => Rewrite0::new(

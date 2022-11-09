@@ -13,7 +13,7 @@ use petgraph::{
 };
 
 use crate::{
-    label::Coord,
+    label::{Coord, Coords},
     scaffold::{Explodable, ScaffoldEdge, ScaffoldNode, StableScaffold},
     Diagram, Height, Rewrite0, SliceIndex,
 };
@@ -293,11 +293,9 @@ pub(crate) fn collapse<V: Clone + Cartesian<Height> + Extend<V>, E: Clone, Ix: I
 }
 
 impl Diagram {
-    pub(crate) fn explode_and_collapse(self) -> FastHashMap<Coord, Rc<BTreeSet<Coord>>> {
-        type Coords = OneMany<Coord, BTreeSet<Coord>>;
-
+    pub(crate) fn fully_explode(self) -> StableScaffold<Coords> {
         // Construct the fully exploded scaffold of the diagram.
-        let mut scaffold: StableScaffold<Vec<Height>> = Default::default();
+        let mut scaffold: StableScaffold<Coord> = Default::default();
         let dimension = self.dimension();
         scaffold.add_node(self.into());
         for _ in 0..dimension {
@@ -312,13 +310,17 @@ impl Diagram {
                 )
                 .unwrap();
         }
-        let mut stable: StableScaffold<Coords, _, _> = scaffold.map(
+        scaffold.map(
             |_ix, ScaffoldNode { key, diagram }| ScaffoldNode {
                 key: Coords::One(key.clone()),
                 diagram: diagram.clone(),
             },
             |_ix, e| e.clone(),
-        );
+        )
+    }
+
+    pub(crate) fn label_identifications(self) -> FastHashMap<Coord, Rc<BTreeSet<Coord>>> {
+        let mut stable = self.fully_explode();
         let union_find = collapse(&mut stable);
         union_find
             .into_labeling()
@@ -334,5 +336,32 @@ impl Diagram {
                 .into_iter()
             })
             .collect()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use petgraph::visit::{EdgeRef, IntoEdgeReferences};
+
+    use super::collapse;
+    use crate::{examples, Diagram, DiagramN};
+
+    #[test]
+    fn braid_weak_identity() {
+        let (_sig, braid) = examples::crossing();
+        let weak: Diagram = DiagramN::new(braid.into(), vec![]).into();
+        // for each pair of nodes, assert that there is at most one edge (label) between them;
+        // otherwise, there is an inconsistency
+        let mut exploded = weak.fully_explode();
+        collapse(&mut exploded);
+        for e in exploded.edge_references() {
+            assert_eq!(
+                exploded
+                    .edges_connecting(e.source(), e.target())
+                    .collect::<Vec<_>>(),
+                vec![e]
+            );
+            assert_eq!(exploded.edges_connecting(e.target(), e.source()).count(), 0);
+        }
     }
 }
