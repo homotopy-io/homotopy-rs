@@ -847,8 +847,8 @@ dependencies = [
 
 [[package]]
 name = "highs"
-version = "1.2.1"
-source = "git+https://github.com/regular-citizen/highs#bb56bf5c7a200bf67fdfcbaad6e48fa693937481"
+version = "1.2.2"
+source = "git+https://github.com/regular-citizen/highs#f2c43ea31be51daf9f3b9a8fdab76afe9a20d5ff"
 dependencies = [
  "js-sys",
  "log",
