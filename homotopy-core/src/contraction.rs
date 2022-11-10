@@ -4,11 +4,7 @@ use std::{
     hash::Hash,
 };
 
-use homotopy_common::{
-    declare_idx,
-    hash::{FastHashMap, FastHashSet},
-    idx::IdxVec,
-};
+use homotopy_common::{declare_idx, hash::FastHashMap, idx::IdxVec};
 use itertools::Itertools;
 use petgraph::{
     adj::UnweightedList,
@@ -18,7 +14,6 @@ use petgraph::{
     },
     graph::{DefaultIx, DiGraph, IndexType, NodeIndex},
     graphmap::DiGraphMap,
-    stable_graph::StableDiGraph,
     visit::{EdgeRef, IntoNodeReferences},
     EdgeDirection::{Incoming, Outgoing},
 };
@@ -27,14 +22,14 @@ use thiserror::Error;
 
 use crate::{
     attach::attach,
-    collapse::{collapse, unify, Cartesian, OneMany},
+    collapse::{unify, Cartesian, Collapsible},
     common::{Boundary, BoundaryPath, DimensionError, Height, Orientation, SingularHeight},
     diagram::{Diagram, Diagram0, DiagramN},
     expansion::expand_propagate,
     rewrite::{Cone, Cospan, Rewrite, Rewrite0, RewriteN},
     scaffold::{
         Explodable, ExplosionOutput, ExternalRewrite, InternalRewrite, Scaffold, ScaffoldEdge,
-        ScaffoldNode, StableScaffold,
+        ScaffoldNode,
     },
     signature::Signature,
     typecheck::{typecheck_cospan, TypeError},
@@ -467,16 +462,7 @@ fn colimit<Ix: IndexType>(graph: &ContractGraph<Ix>) -> Result<Cocone<Ix>, Contr
 }
 
 fn colimit_base<Ix: IndexType>(graph: &ContractGraph<Ix>) -> Result<Cocone<Ix>, ContractionError> {
-    // mutably construct the collapsed graph
-    type ContractNodes<'a> = OneMany<&'a ContractNode, FastHashSet<&'a ContractNode>>;
-    let mut stable: StableScaffold<ContractNodes, _, _> = StableDiGraph::from(graph.map(
-        |_ix, ScaffoldNode { key, diagram }| ScaffoldNode {
-            key: ContractNodes::One(key),
-            diagram: diagram.clone(),
-        },
-        |_ix, e| e.clone(),
-    ));
-    let mut union_find = collapse(&mut stable);
+    let (mut stable, mut union_find) = graph.collapse();
 
     // unify all nodes of maximal dimension
     let (max_dim_index, max_dim_generator) = stable
