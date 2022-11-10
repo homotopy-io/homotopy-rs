@@ -1,5 +1,9 @@
 //! Functions to collapse diagram scaffolds; used in contraction, typechecking etc.
-use std::{collections::BTreeSet, ops::Index, rc::Rc};
+use std::{
+    collections::BTreeSet,
+    ops::{AddAssign, Index},
+    rc::Rc,
+};
 
 use homotopy_common::{declare_idx, hash::FastHashMap, idx::Idx};
 use itertools::Itertools;
@@ -93,27 +97,15 @@ where
     }
 }
 
-impl<T, TS> Extend<OneMany<T, TS>> for OneMany<T, TS>
+impl<T, TS> AddAssign for OneMany<T, TS>
 where
     T: Clone,
     TS: IntoIterator<Item = T> + FromIterator<T> + Extend<T>,
 {
-    fn extend<U: IntoIterator<Item = OneMany<T, TS>>>(&mut self, iter: U) {
+    fn add_assign(&mut self, rhs: Self) {
         match self {
-            Self::One(x) => {
-                *self = Self::Many(
-                    std::iter::once(x.clone())
-                        .chain(
-                            iter.into_iter()
-                                .flat_map(std::iter::IntoIterator::into_iter),
-                        )
-                        .collect(),
-                );
-            }
-            Self::Many(xs) => xs.extend(
-                iter.into_iter()
-                    .flat_map(std::iter::IntoIterator::into_iter),
-            ),
+            Self::One(x) => *self = Self::Many(std::iter::once(x.clone()).chain(rhs).collect()),
+            Self::Many(xs) => xs.extend(rhs),
         }
     }
 }
@@ -131,7 +123,7 @@ pub(crate) fn unify<V, E, Ix>(
     mut on_remove_node: impl FnMut(NodeIndex<Ix>),
     mut on_remove_edge: impl FnMut(EdgeIndex<Ix>),
 ) where
-    V: Extend<V>,
+    V: AddAssign,
     Ix: IndexType,
 {
     let (p, q) = (quotient.find_mut(p), quotient.find_mut(q));
@@ -191,7 +183,7 @@ pub(crate) fn unify<V, E, Ix>(
         .expect("tried to remove missing node");
     on_remove_node(remove);
     if let Some(k) = graph.node_weight_mut(keep) {
-        k.extend(std::iter::once(removed));
+        k.add_assign(removed);
     }
 }
 
@@ -231,7 +223,7 @@ pub(crate) fn collapse_stable<V, E, Ix>(
     graph: &mut StableScaffold<V, E, Ix>,
 ) -> UnionFind<NodeIndex<Ix>>
 where
-    V: Cartesian<Height> + Extend<V>,
+    V: Cartesian<Height> + AddAssign,
     Ix: IndexType,
 {
     // invariant: #nodes of graph = #equivalence classes of union_find

@@ -1,4 +1,4 @@
-use std::ops::{Index, Range};
+use std::ops::{AddAssign, Index, Range};
 
 use homotopy_common::idx::{Idx, IdxVec};
 use petgraph::{
@@ -14,7 +14,7 @@ use crate::{
     common::{Boundary, DimensionError, Height, RegularHeight, SingularHeight, SliceIndex},
     diagram::{Diagram, DiagramN},
     rewrite::{Rewrite, RewriteN},
-    Diagram0, Direction,
+    Direction,
 };
 
 /// Weighted graph where each node has an associated [`Diagram`] and each edge has an associated
@@ -107,20 +107,9 @@ impl<V> ScaffoldNode<V> {
     }
 }
 
-impl<V: Extend<V>> Extend<ScaffoldNode<V>> for ScaffoldNode<V> {
-    fn extend<T: IntoIterator<Item = ScaffoldNode<V>>>(&mut self, iter: T) {
-        self.key
-            .extend(iter.into_iter().map(|ScaffoldNode { key, diagram }| {
-                debug_assert_eq!(
-                    Diagram0::try_from(&self.diagram)
-                        .expect("extended non-fully exploded scaffold")
-                        .generator,
-                    Diagram0::try_from(&diagram)
-                        .expect("extended non-fully exploded scaffold")
-                        .generator,
-                );
-                key
-            }));
+impl<V: AddAssign> AddAssign for ScaffoldNode<V> {
+    fn add_assign(&mut self, rhs: Self) {
+        self.key += rhs.key;
     }
 }
 
