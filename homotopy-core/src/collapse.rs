@@ -14,8 +14,8 @@ use petgraph::{
 };
 
 use crate::{
-    label::{Coord, Coords},
-    scaffold::{Explodable, ScaffoldGraph, ScaffoldNode, StableScaffold},
+    label::Coord,
+    scaffold::{Explodable, Scaffold, ScaffoldGraph, ScaffoldNode, StableScaffold},
     Diagram, Height, Rewrite0, SliceIndex,
 };
 
@@ -195,6 +195,28 @@ pub(crate) fn unify<V, E, Ix>(
     }
 }
 
+type Set<T> = OneMany<T, BTreeSet<T>>;
+
+pub(crate) trait Collapsible<V, E, Ix> {
+    fn collapse(&self) -> (StableScaffold<Set<V>, E, Ix>, UnionFind<NodeIndex<Ix>>);
+}
+
+impl<V, E, Ix> Collapsible<V, E, Ix> for Scaffold<V, E, Ix>
+where
+    V: Clone + Ord + Cartesian<Height>,
+    E: Clone,
+    Ix: IndexType,
+{
+    fn collapse(&self) -> (StableScaffold<Set<V>, E, Ix>, UnionFind<NodeIndex<Ix>>) {
+        let mut stable = StableScaffold::from(self.map(
+            |_, n| ScaffoldNode::new(Set::One(n.key.clone()), n.diagram.clone()),
+            |_, e| e.clone(),
+        ));
+        let union_find = collapse_stable(&mut stable);
+        (stable, union_find)
+    }
+}
+
 /// Given a **stable** `graph` of 0-diagrams and 0-rewrites, reduce the graph along the
 /// *collapsibility* relation, and return the equivalence class on node indices of the induced
 /// relation as a [`UnionFind`]. An edge is collapsible exactly when:
@@ -205,7 +227,9 @@ pub(crate) fn unify<V, E, Ix>(
 /// # Panics
 ///
 /// Panics if `graph` edges are not 0-rewrites.
-pub(crate) fn collapse<V, E, Ix>(graph: &mut StableScaffold<V, E, Ix>) -> UnionFind<NodeIndex<Ix>>
+pub(crate) fn collapse_stable<V, E, Ix>(
+    graph: &mut StableScaffold<V, E, Ix>,
+) -> UnionFind<NodeIndex<Ix>>
 where
     V: Cartesian<Height> + Extend<V>,
     Ix: IndexType,
@@ -339,11 +363,7 @@ impl Diagram {
     }
 
     pub(crate) fn label_identifications(self) -> FastHashMap<Coord, Rc<BTreeSet<Coord>>> {
-        let mut stable = self.fully_explode::<StableScaffold<Coord>>().map(
-            |_ix, n| n.clone().map(Into::<Coords>::into),
-            |_ix, e| e.clone(),
-        );
-        let union_find = collapse(&mut stable);
+        let (stable, union_find) = self.fully_explode::<Scaffold<Coord>>().collapse();
         union_find
             .into_labeling()
             .into_iter()
@@ -365,13 +385,8 @@ impl Diagram {
 mod test {
     use petgraph::visit::{EdgeRef, IntoEdgeReferences};
 
-    use super::collapse;
-    use crate::{
-        examples,
-        label::{Coord, Coords},
-        scaffold::StableScaffold,
-        Diagram,
-    };
+    use super::Collapsible;
+    use crate::{examples, label::Coord, scaffold::Scaffold, Diagram};
 
     #[test]
     fn braid_weak_identity() {
@@ -379,11 +394,7 @@ mod test {
         let weak: Diagram = Diagram::from(braid).weak_identity().into();
         // for each pair of nodes, assert that there is at most one edge (label) between them;
         // otherwise, there is an inconsistency
-        let mut exploded = weak.fully_explode::<StableScaffold<Coord>>().map(
-            |_ix, n| n.clone().map(Into::<Coords>::into),
-            |_ix, e| e.clone(),
-        );
-        collapse(&mut exploded);
+        let (exploded, _) = weak.fully_explode::<Scaffold<Coord>>().collapse();
         for e in exploded.edge_references() {
             assert_eq!(
                 exploded

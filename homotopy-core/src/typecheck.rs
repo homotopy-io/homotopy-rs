@@ -14,12 +14,12 @@ use thiserror::Error;
 
 pub use crate::common::Mode;
 use crate::{
-    collapse::{collapse, OneMany},
+    collapse::Collapsible,
     common::{Generator, Height, SingularHeight},
     diagram::{Diagram, DiagramN},
     label::Label,
     rewrite::{Cone, Cospan, Rewrite, RewriteN},
-    scaffold::{Explodable, Scaffold, ScaffoldNode, StableScaffold},
+    scaffold::{Explodable, Scaffold},
     signature::{GeneratorInfo, Signature},
     Boundary, Rewrite0, SliceIndex,
 };
@@ -406,8 +406,6 @@ type Simplex = Vec<NodeIndex>; // An n-simplex is a list of n + 1 vertices.
 type LabelledSimplex = Vec<Label>; // An n-simplex is a list of (n + 1 choose 2) edges.
 
 fn collapse_simplicies(diagram: impl Into<Diagram>) -> FastHashSet<LabelledSimplex> {
-    type TypecheckingNodes<'a> = OneMany<&'a Vec<Height>, FastHashSet<&'a Vec<Height>>>;
-
     let diagram: Diagram = diagram.into();
     let dimension = diagram.dimension();
 
@@ -466,16 +464,7 @@ fn collapse_simplicies(diagram: impl Into<Diagram>) -> FastHashSet<LabelledSimpl
         r.label()
     };
 
-    let stable = StableScaffold::from(scaffold.clone());
-    let mut stable = stable.map(
-        |_, node| ScaffoldNode {
-            key: TypecheckingNodes::One(&node.key),
-            diagram: node.diagram.clone(),
-        },
-        |_, edge| edge.clone(),
-    );
-
-    let union_find = collapse(&mut stable);
+    let (_, union_find) = scaffold.collapse();
     neighbourhoods[central]
         .iter()
         .map(|simplex| {
