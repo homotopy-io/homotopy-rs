@@ -1,4 +1,6 @@
-use homotopy_core::{examples, signature::SignatureBuilder, Bias, Boundary, Diagram, DiagramN};
+use homotopy_core::{
+    examples, signature::SignatureBuilder, Bias, Boundary, Diagram, DiagramN, Height,
+};
 use insta::assert_debug_snapshot;
 use pretty_assertions::assert_eq;
 
@@ -224,4 +226,70 @@ fn bubble() {
             .target(),
         Diagram::from(bubble.source().identity())
     );
+}
+
+// cone-wise smoothing should smooth out the cap next to a wire
+#[test]
+fn bead_then_cap() -> anyhow::Result<()> {
+    let mut sig = SignatureBuilder::default();
+    let x = sig.add_zero();
+    let f = sig.add(x, x)?;
+    let g = sig.add(x, x)?;
+    let endo_f = sig.add(f.clone(), f.clone())?;
+    let endo_g = sig.add(g.clone(), g.clone())?;
+    let endo_f_then_inverse = endo_f.attach(&endo_f.inverse(), Boundary::Target, &[0])?;
+    let g_then_endo_f_then_inverse = endo_f_then_inverse.attach(&g, Boundary::Source, &[])?;
+    let endo_g_then_endo_f_then_inverse =
+        g_then_endo_f_then_inverse.attach(&endo_g, Boundary::Source, &[0])?;
+    let endo_g_tensor_endo_f_then_inverse = endo_g_then_endo_f_then_inverse
+        .identity()
+        .contract(Boundary::Target.into(), &[], 0, None, &sig)?
+        .target();
+    assert_eq!(
+        endo_g_tensor_endo_f_then_inverse
+            .identity()
+            .contract(Boundary::Target.into(), &[], 0, None, &sig)?
+            .target(),
+        endo_g.attach(&f, Boundary::Target, &[])?.into()
+    );
+    Ok(())
+}
+
+// cone-wise smoothing should only happen at the top level, never in a recursive level
+#[test]
+fn cap_braid() -> anyhow::Result<()> {
+    let mut sig = SignatureBuilder::default();
+    let x = sig.add_zero();
+    let s = sig.add(x.identity(), x.identity())?;
+    let cap: DiagramN = s
+        .attach(&s.inverse(), Boundary::Target, &[])?
+        .identity()
+        .contract(Boundary::Target.into(), &[], 0, Some(Bias::Same), &sig)?;
+    let wire_then_cap = cap.attach(&s, Boundary::Source, &[0])?;
+    let wire_over_cap: DiagramN = wire_then_cap
+        .identity()
+        .contract(
+            Boundary::Target.into(),
+            &[Height::Singular(0)],
+            0,
+            Some(Bias::Lower),
+            &sig,
+        )?
+        .target()
+        .try_into()?;
+    assert_eq!(wire_over_cap.cospans().len(), 1);
+    let wire_under_cap: DiagramN = wire_then_cap
+        .identity()
+        .contract(
+            Boundary::Target.into(),
+            &[Height::Singular(0)],
+            0,
+            Some(Bias::Higher),
+            &sig,
+        )?
+        .target()
+        .try_into()?;
+    assert_eq!(wire_under_cap.cospans().len(), 1);
+
+    Ok(())
 }
