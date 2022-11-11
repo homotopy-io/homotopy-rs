@@ -5,7 +5,11 @@ use std::{
     rc::Rc,
 };
 
-use homotopy_common::{declare_idx, hash::FastHashMap, idx::Idx};
+use homotopy_common::{
+    declare_idx,
+    hash::{FastHashMap, FastHashSet},
+    idx::Idx,
+};
 use itertools::Itertools;
 use once_cell::unsync::OnceCell;
 use petgraph::{
@@ -18,7 +22,7 @@ use petgraph::{
 };
 
 use crate::{
-    label::Coord,
+    label::{Coord, Label},
     scaffold::{Explodable, Scaffold, ScaffoldGraph, ScaffoldNode, StableScaffold},
     Diagram, Height, Rewrite0, SliceIndex,
 };
@@ -267,6 +271,16 @@ where
             continue;
         }
         let mut quotient: Vec<_> = Default::default();
+        let label_set = |u: NodeIndex<Ix>, v: NodeIndex<Ix>| -> FastHashSet<Label> {
+            graph
+                .edges_connecting(u, v)
+                .map(|e| {
+                    <&Rewrite0>::try_from(&e.weight().rewrite)
+                        .expect("non 0-rewrite passed to collapse")
+                        .label()
+                })
+                .collect()
+        };
         // find collapsible edges wrt nodes
         for e in graph.edge_references().filter(|e| {
             // e is contained within nodes
@@ -274,20 +288,14 @@ where
             // e is an identity rewrite
             && <&Rewrite0>::try_from(&e.weight().rewrite).unwrap().0.as_ref().map_or(true, |(s, t, _)| s.generator == t.generator)
             // check triangles within nodes which might refute collapsibility of e
-            && graph.edges_directed(e.source(), Incoming).all(|p| {
-                if let Some(c) = graph.find_edge(p.source(), e.target()) {
-                    <&Rewrite0>::try_from(&p.weight().rewrite).unwrap().label() == <&Rewrite0>::try_from(&graph.edge_weight(c).unwrap().rewrite).unwrap().label()
-                } else {
-                    true
-                }
-            })
-            && graph.edges_directed(e.target(), Outgoing).all(|n| {
-                if let Some(c) = graph.find_edge(e.source(), n.target()) {
-                    <&Rewrite0>::try_from(&n.weight().rewrite).unwrap().label() == <&Rewrite0>::try_from(&graph.edge_weight(c).unwrap().rewrite).unwrap().label()
-                } else {
-                    true
-                }
-            })
+            && graph
+                .neighbors_directed(e.source(), Incoming)
+                .filter(|p| graph.find_edge(*p, e.target()).is_some())
+                .all(|p| label_set(p, e.source()) == label_set(p, e.target()))
+            && graph
+                .neighbors_directed(e.target(), Outgoing)
+                .filter(|n| graph.find_edge(e.source(), *n).is_some())
+                .all(|n| label_set(e.target(), n) == label_set(e.source(), n))
         }) {
             // e is collapsible
             quotient.push((e.source(), e.target()));
