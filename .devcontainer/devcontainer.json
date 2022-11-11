@@ -1,0 +1,35 @@
+// Adapted from https://github.com/xtruder/nix-devcontainer-python-jupyter/blob/main/.devcontainer/devcontainer.json
+// For format details, see https://aka.ms/vscode-remote/devcontainer.json or the definition README at
+// https://github.com/microsoft/vscode-dev-containers/tree/master/containers/docker-existing-dockerfile
+{
+  "name": "nix-devcontainer-homotopy-rs",
+  "dockerFile": "Dockerfile",
+  "context": "${localWorkspaceFolder}",
+  "build": {
+    "args": {
+      "USER_UID": "${localEnv:USER_UID}",
+      "USER_GID": "${localEnv:USER_GID}"
+    },
+  },
+
+  "runArgs": [
+    "--security-opt", "label=disable"
+  ],
+
+  "mounts": [
+    "source=nix-devcontainer-homotopy-rs_nix,target=/nix,type=volume"
+  ],
+
+  "userEnvProbe": "loginShell",
+  "overrideCommand": false,
+  "updateRemoteUserUID": false,
+
+  // build development environment on creation
+  "onCreateCommand": "nix run nixpkgs#cachix -- use homotopy-io && nix develop --build && nix profile install nixpkgs#nix-direnv",
+
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  "forwardPorts": [8080],
+
+  // Use 'postCreateCommand' to run commands after the container is created.
+  "postCreateCommand": "ln -s $HOME/.nix-profile/share/nix-direnv/direnvrc $HOME/.direnvrc",
+}
