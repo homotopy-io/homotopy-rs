@@ -1,6 +1,7 @@
 use std::convert::{Into, TryFrom, TryInto};
 
 use homotopy::Homotopy;
+use homotopy_common::hash::FastHashSet;
 use homotopy_core::{
     common::{
         Boundary, BoundaryPath, DimensionError, Direction, Generator, Height, Mode, RegularHeight,
@@ -597,7 +598,7 @@ impl ProofState {
             None => return Ok(()),
         };
 
-        let mut matches: Vector<AttachOption> = Vector::new();
+        let mut matches: FastHashSet<AttachOption> = Default::default();
 
         let selected_with_path: Vec<_> = selected
             .iter()
@@ -694,12 +695,12 @@ impl ProofState {
                 Err(ProofError::NoAttachment)
             }
             1 => {
-                self.attach(matches.front().unwrap())?;
+                self.attach(&matches.into_iter().next().unwrap())?;
                 Ok(())
             }
             _ => {
                 let workspace = self.workspace.as_mut().unwrap();
-                workspace.attach = Some(matches);
+                workspace.attach = Some(matches.into_iter().collect());
                 workspace.attachment_highlight = None;
                 Ok(())
             }
