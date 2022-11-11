@@ -2,10 +2,8 @@ name: CI
 
 on:
   push:
-    branches-ignore:
-      # Don't run on dependabot PRs
-      # https://github.com/actions-rs/clippy-check/issues/2#issuecomment-807852653
-      - 'dependabot/**'
+    branches:
+      - master
   pull_request:
 
 env:
