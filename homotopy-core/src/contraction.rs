@@ -869,17 +869,75 @@ fn colimit_recursive<Ix: IndexType>(
                 .externals(Outgoing)
                 .max_by_key(|&ix| restriction[ix].diagram.max_generator().generator.dimension)
                 .expect("recursive colimit subproblem has no max dimensional subdiagram");
-            let (source_ix, target_ix) = restriction
-                .edges_directed(max_ix, Incoming)
-                .fold((None, None), |(s, t), e| match e.weight().key {
-                    Some(DeltaSlice::Internal(_, Direction::Forward)) => {debug_assert_eq!(s, None); (Some(e.source()), t)},
-                    Some(DeltaSlice::Internal(_, Direction::Backward)) => {debug_assert_eq!(t, None); (s, Some(e.source()))},
-                    _ => (s, t),
-                });
-            let source_ix = source_ix
-                .expect("recursive colimit subproblem max dimensional subdiagram index has missing incoming source");
-            let target_ix = target_ix
-                .expect("recursive colimit subproblem max dimensional subdiagram index has missing incoming target");
+            // TODO(@calintat): Clean this up!
+            let source_ix = {
+                let mut cur = restriction
+                    .edges_directed(max_ix, Incoming)
+                    .find(|e| {
+                        matches!(
+                            e.weight().key,
+                            Some(DeltaSlice::Internal(_, Direction::Forward))
+                        )
+                    })
+                    .unwrap()
+                    .source();
+                while let Some(prev) = restriction
+                    .edges_directed(cur, Outgoing)
+                    .find(|e| {
+                        matches!(
+                            e.weight().key,
+                            Some(DeltaSlice::Internal(_, Direction::Backward))
+                        )
+                    })
+                    .map(|e| e.target())
+                {
+                    cur = restriction
+                        .edges_directed(prev, Incoming)
+                        .find(|e| {
+                            matches!(
+                                e.weight().key,
+                                Some(DeltaSlice::Internal(_, Direction::Forward))
+                            )
+                        })
+                        .unwrap()
+                        .source();
+                }
+                cur
+            };
+            let target_ix = {
+                let mut cur = restriction
+                    .edges_directed(max_ix, Incoming)
+                    .find(|e| {
+                        matches!(
+                            e.weight().key,
+                            Some(DeltaSlice::Internal(_, Direction::Backward))
+                        )
+                    })
+                    .unwrap()
+                    .source();
+                while let Some(prev) = restriction
+                    .edges_directed(cur, Outgoing)
+                    .find(|e| {
+                        matches!(
+                            e.weight().key,
+                            Some(DeltaSlice::Internal(_, Direction::Forward))
+                        )
+                    })
+                    .map(|e| e.target())
+                {
+                    cur = restriction
+                        .edges_directed(prev, Incoming)
+                        .find(|e| {
+                            matches!(
+                                e.weight().key,
+                                Some(DeltaSlice::Internal(_, Direction::Backward))
+                            )
+                        })
+                        .unwrap()
+                        .source();
+                }
+                cur
+            };
             // throw away extra information used to compute source and target
             let restriction = restriction.filter_map(
                 |_,
