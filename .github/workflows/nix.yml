@@ -27,3 +27,21 @@ jobs:
         env:
           PR_URL: ${{github.event.pull_request.html_url}}
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+  devshell:
+    name: Build and cache devShell
+    runs-on: ubuntu-latest
+    needs: lockfile
+    steps:
+      - name: Install Nix
+        uses: cachix/install-nix-action@v18
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+      - name: Setup cachix
+        uses: cachix/cachix-action@v12
+        with:
+          name: homotopy-io
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+      - name: Build devShell
+        run: |
+          nix develop --build github:homotopy-io/homotopy-rs/update_flake_lock_action
