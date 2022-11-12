@@ -66,7 +66,9 @@ where
     };
 
     if Mode::Deep == mode {
-        typecheck_worker(&diagram.source(), signature, mode)?;
+        for regular in diagram.regular_slices() {
+            typecheck_worker(&regular, signature, mode)?;
+        }
     }
 
     let slices: IdxVec<Height, Diagram> = diagram.slices().collect();
@@ -122,7 +124,7 @@ where
     typecheck(
         &DiagramN::new(source, vec![cospan]).into(),
         signature,
-        Mode::Shallow,
+        Mode::Deep,
     )
 }
 
