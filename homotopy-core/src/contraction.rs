@@ -871,7 +871,7 @@ fn colimit_recursive<Ix: IndexType>(
                 .expect("recursive colimit subproblem has no max dimensional subdiagram");
             // TODO(@calintat): Clean this up!
             let source_ix = {
-                let mut cur = restriction
+                if let Some(mut cur) = restriction
                     .edges_directed(max_ix, Incoming)
                     .find(|e| {
                         matches!(
@@ -879,64 +879,70 @@ fn colimit_recursive<Ix: IndexType>(
                             Some(DeltaSlice::Internal(_, Direction::Forward))
                         )
                     })
-                    .unwrap()
-                    .source();
-                while let Some(prev) = restriction
-                    .edges_directed(cur, Outgoing)
-                    .find(|e| {
-                        matches!(
-                            e.weight().key,
-                            Some(DeltaSlice::Internal(_, Direction::Backward))
-                        )
-                    })
-                    .map(|e| e.target())
+                    .map(|e| e.source())
                 {
-                    cur = restriction
-                        .edges_directed(prev, Incoming)
-                        .find(|e| {
-                            matches!(
-                                e.weight().key,
-                                Some(DeltaSlice::Internal(_, Direction::Forward))
-                            )
-                        })
-                        .unwrap()
-                        .source();
-                }
-                cur
-            };
-            let target_ix = {
-                let mut cur = restriction
-                    .edges_directed(max_ix, Incoming)
-                    .find(|e| {
-                        matches!(
-                            e.weight().key,
-                            Some(DeltaSlice::Internal(_, Direction::Backward))
-                        )
-                    })
-                    .unwrap()
-                    .source();
-                while let Some(prev) = restriction
-                    .edges_directed(cur, Outgoing)
-                    .find(|e| {
-                        matches!(
-                            e.weight().key,
-                            Some(DeltaSlice::Internal(_, Direction::Forward))
-                        )
-                    })
-                    .map(|e| e.target())
-                {
-                    cur = restriction
-                        .edges_directed(prev, Incoming)
+                    while let Some(prev) = restriction
+                        .edges_directed(cur, Outgoing)
                         .find(|e| {
                             matches!(
                                 e.weight().key,
                                 Some(DeltaSlice::Internal(_, Direction::Backward))
                             )
                         })
-                        .unwrap()
-                        .source();
+                        .map(|e| e.target())
+                    {
+                        cur = restriction
+                            .edges_directed(prev, Incoming)
+                            .find(|e| {
+                                matches!(
+                                    e.weight().key,
+                                    Some(DeltaSlice::Internal(_, Direction::Forward))
+                                )
+                            })
+                            .unwrap()
+                            .source();
+                    }
+                    cur
+                } else {
+                    max_ix
                 }
-                cur
+            };
+            let target_ix = {
+                if let Some(mut cur) = restriction
+                    .edges_directed(max_ix, Incoming)
+                    .find(|e| {
+                        matches!(
+                            e.weight().key,
+                            Some(DeltaSlice::Internal(_, Direction::Backward))
+                        )
+                    })
+                    .map(|e| e.source())
+                {
+                    while let Some(prev) = restriction
+                        .edges_directed(cur, Outgoing)
+                        .find(|e| {
+                            matches!(
+                                e.weight().key,
+                                Some(DeltaSlice::Internal(_, Direction::Forward))
+                            )
+                        })
+                        .map(|e| e.target())
+                    {
+                        cur = restriction
+                            .edges_directed(prev, Incoming)
+                            .find(|e| {
+                                matches!(
+                                    e.weight().key,
+                                    Some(DeltaSlice::Internal(_, Direction::Backward))
+                                )
+                            })
+                            .unwrap()
+                            .source();
+                    }
+                    cur
+                } else {
+                    max_ix
+                }
             };
             // throw away extra information used to compute source and target
             let restriction = restriction.filter_map(
