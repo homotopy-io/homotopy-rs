@@ -1,26 +1,23 @@
 use std::{
     cell::RefCell,
     cmp::Ordering,
-    collections::BTreeSet,
     convert::{From, Into},
     fmt,
     hash::Hash,
     ops::Range,
-    rc::Rc,
 };
 
 use hashconsing::{HConsed, HConsign, HashConsign};
-use homotopy_common::hash::FastHashMap;
 use once_cell::unsync::OnceCell;
 use serde::{ser::SerializeStruct, Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{
     common::{
-        BoundaryPath, DimensionError, Generator, Mode, Orientation, RegularHeight, SingularHeight,
+        BoundaryPath, DimensionError, Generator, Label, LabelIdentifications, Mode, Orientation,
+        RegularHeight, SingularHeight,
     },
     diagram::Diagram,
-    label::{Coord, Label},
     Boundary, Diagram0, Height,
 };
 
@@ -99,7 +96,7 @@ impl Rewrite {
         boundary_path: BoundaryPath,
         depth: usize,
         prefix: &[Height],
-        label_identifications: Option<FastHashMap<Coord, Rc<BTreeSet<Coord>>>>,
+        label_identifications: Option<LabelIdentifications>,
     ) -> Self {
         use Height::{Regular, Singular};
 
@@ -112,8 +109,7 @@ impl Rewrite {
             Diagram::Diagram0(base) => Rewrite0::new(
                 base,
                 generator,
-                Some((
-                    generator,
+                Some(Label::new(
                     boundary_path,
                     label_identifications[&prefix.to_vec()].as_ref().clone(),
                 )),
@@ -253,10 +249,14 @@ impl Rewrite {
 }
 
 #[derive(Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct Rewrite0(pub(crate) Option<(Diagram0, Diagram0, Label)>);
+pub struct Rewrite0(pub(crate) Option<(Diagram0, Diagram0, Option<Label>)>);
 
 impl Rewrite0 {
-    pub fn new(source: impl Into<Diagram0>, target: impl Into<Diagram0>, label: Label) -> Self {
+    pub fn new(
+        source: impl Into<Diagram0>,
+        target: impl Into<Diagram0>,
+        label: Option<Label>,
+    ) -> Self {
         let source: Diagram0 = source.into();
         let target: Diagram0 = target.into();
         assert!(source.generator.dimension <= target.generator.dimension);
@@ -315,8 +315,8 @@ impl Rewrite0 {
         self.0.as_ref().map(|(_, target, _)| *target)
     }
 
-    pub fn label(&self) -> Label {
-        self.0.as_ref().and_then(|(_, _, label)| label.clone())
+    pub fn label(&self) -> Option<&Label> {
+        self.0.as_ref().and_then(|(_, _, label)| label.as_ref())
     }
 
     pub(crate) fn max_generator(&self, boundary: Boundary) -> Option<Diagram0> {

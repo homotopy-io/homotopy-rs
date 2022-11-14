@@ -21,8 +21,7 @@ DiagramN {
                             +,
                         ),
                         Some(
-                            (
-                                1:1,
+                            Label(
                                 BoundaryPath(
                                     Source,
                                     0,
@@ -43,8 +42,7 @@ DiagramN {
                             +,
                         ),
                         Some(
-                            (
-                                1:1,
+                            Label(
                                 BoundaryPath(
                                     Target,
                                     0,
@@ -67,8 +65,7 @@ DiagramN {
                             +,
                         ),
                         Some(
-                            (
-                                1:1,
+                            Label(
                                 BoundaryPath(
                                     Source,
                                     0,
@@ -89,8 +86,7 @@ DiagramN {
                             +,
                         ),
                         Some(
-                            (
-                                1:1,
+                            Label(
                                 BoundaryPath(
                                     Target,
                                     0,
@@ -124,8 +120,7 @@ DiagramN {
                                                 +,
                                             ),
                                             Some(
-                                                (
-                                                    1:1,
+                                                Label(
                                                     BoundaryPath(
                                                         Source,
                                                         0,
@@ -146,8 +141,7 @@ DiagramN {
                                                 +,
                                             ),
                                             Some(
-                                                (
-                                                    1:1,
+                                                Label(
                                                     BoundaryPath(
                                                         Target,
                                                         0,
@@ -171,8 +165,7 @@ DiagramN {
                                             +,
                                         ),
                                         Some(
-                                            (
-                                                2:2,
+                                            Label(
                                                 BoundaryPath(
                                                     Source,
                                                     1,
@@ -193,8 +186,7 @@ DiagramN {
                                             +,
                                         ),
                                         Some(
-                                            (
-                                                2:2,
+                                            Label(
                                                 BoundaryPath(
                                                     Target,
                                                     1,
@@ -217,8 +209,7 @@ DiagramN {
                                             +,
                                         ),
                                         Some(
-                                            (
-                                                2:2,
+                                            Label(
                                                 BoundaryPath(
                                                     Source,
                                                     0,
@@ -243,8 +234,7 @@ DiagramN {
                                             +,
                                         ),
                                         Some(
-                                            (
-                                                2:2,
+                                            Label(
                                                 BoundaryPath(
                                                     Source,
                                                     0,
@@ -271,8 +261,7 @@ DiagramN {
                                             +,
                                         ),
                                         Some(
-                                            (
-                                                2:2,
+                                            Label(
                                                 BoundaryPath(
                                                     Source,
                                                     0,
@@ -310,8 +299,7 @@ DiagramN {
                                                 +,
                                             ),
                                             Some(
-                                                (
-                                                    1:1,
+                                                Label(
                                                     BoundaryPath(
                                                         Source,
                                                         0,
@@ -332,8 +320,7 @@ DiagramN {
                                                 +,
                                             ),
                                             Some(
-                                                (
-                                                    1:1,
+                                                Label(
                                                     BoundaryPath(
                                                         Target,
                                                         0,
@@ -357,8 +344,7 @@ DiagramN {
                                             +,
                                         ),
                                         Some(
-                                            (
-                                                2:2,
+                                            Label(
                                                 BoundaryPath(
                                                     Source,
                                                     1,
@@ -379,8 +365,7 @@ DiagramN {
                                             +,
                                         ),
                                         Some(
-                                            (
-                                                2:2,
+                                            Label(
                                                 BoundaryPath(
                                                     Target,
                                                     1,
@@ -403,8 +388,7 @@ DiagramN {
                                             +,
                                         ),
                                         Some(
-                                            (
-                                                2:2,
+                                            Label(
                                                 BoundaryPath(
                                                     Target,
                                                     0,
@@ -429,8 +413,7 @@ DiagramN {
                                             +,
                                         ),
                                         Some(
-                                            (
-                                                2:2,
+                                            Label(
                                                 BoundaryPath(
                                                     Target,
                                                     0,
@@ -457,8 +440,7 @@ DiagramN {
                                             +,
                                         ),
                                         Some(
-                                            (
-                                                2:2,
+                                            Label(
                                                 BoundaryPath(
                                                     Target,
                                                     0,
@@ -498,8 +480,7 @@ DiagramN {
                                                 +,
                                             ),
                                             Some(
-                                                (
-                                                    1:1,
+                                                Label(
                                                     BoundaryPath(
                                                         Source,
                                                         0,
@@ -520,8 +501,7 @@ DiagramN {
                                                 +,
                                             ),
                                             Some(
-                                                (
-                                                    1:1,
+                                                Label(
                                                     BoundaryPath(
                                                         Target,
                                                         0,
@@ -545,8 +525,7 @@ DiagramN {
                                             +,
                                         ),
                                         Some(
-                                            (
-                                                3:2,
+                                            Label(
                                                 BoundaryPath(
                                                     Source,
                                                     1,
@@ -567,8 +546,7 @@ DiagramN {
                                             +,
                                         ),
                                         Some(
-                                            (
-                                                3:2,
+                                            Label(
                                                 BoundaryPath(
                                                     Target,
                                                     1,
@@ -591,8 +569,7 @@ DiagramN {
                                             +,
                                         ),
                                         Some(
-                                            (
-                                                3:2,
+                                            Label(
                                                 BoundaryPath(
                                                     Source,
                                                     0,
@@ -617,8 +594,7 @@ DiagramN {
                                             +,
                                         ),
                                         Some(
-                                            (
-                                                3:2,
+                                            Label(
                                                 BoundaryPath(
                                                     Source,
                                                     0,
@@ -645,8 +621,7 @@ DiagramN {
                                             +,
                                         ),
                                         Some(
-                                            (
-                                                3:2,
+                                            Label(
                                                 BoundaryPath(
                                                     Source,
                                                     0,
@@ -684,8 +659,7 @@ DiagramN {
                                                 +,
                                             ),
                                             Some(
-                                                (
-                                                    1:1,
+                                                Label(
                                                     BoundaryPath(
                                                         Source,
                                                         0,
@@ -706,8 +680,7 @@ DiagramN {
                                                 +,
                                             ),
                                             Some(
-                                                (
-                                                    1:1,
+                                                Label(
                                                     BoundaryPath(
                                                         Target,
                                                         0,
@@ -731,8 +704,7 @@ DiagramN {
                                             +,
                                         ),
                                         Some(
-                                            (
-                                                3:2,
+                                            Label(
                                                 BoundaryPath(
                                                     Source,
                                                     1,
@@ -753,8 +725,7 @@ DiagramN {
                                             +,
                                         ),
                                         Some(
-                                            (
-                                                3:2,
+                                            Label(
                                                 BoundaryPath(
                                                     Target,
                                                     1,
@@ -777,8 +748,7 @@ DiagramN {
                                             +,
                                         ),
                                         Some(
-                                            (
-                                                3:2,
+                                            Label(
                                                 BoundaryPath(
                                                     Target,
                                                     0,
@@ -803,8 +773,7 @@ DiagramN {
                                             +,
                                         ),
                                         Some(
-                                            (
-                                                3:2,
+                                            Label(
                                                 BoundaryPath(
                                                     Target,
                                                     0,
@@ -831,8 +800,7 @@ DiagramN {
                                             +,
                                         ),
                                         Some(
-                                            (
-                                                3:2,
+                                            Label(
                                                 BoundaryPath(
                                                     Target,
                                                     0,
@@ -883,8 +851,7 @@ DiagramN {
                                                                     +,
                                                                 ),
                                                                 Some(
-                                                                    (
-                                                                        1:1,
+                                                                    Label(
                                                                         BoundaryPath(
                                                                             Source,
                                                                             0,
@@ -905,8 +872,7 @@ DiagramN {
                                                                     +,
                                                                 ),
                                                                 Some(
-                                                                    (
-                                                                        1:1,
+                                                                    Label(
                                                                         BoundaryPath(
                                                                             Target,
                                                                             0,
@@ -930,8 +896,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    2:2,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         1,
@@ -952,8 +917,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    2:2,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         1,
@@ -976,8 +940,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    2:2,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         0,
@@ -1002,8 +965,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    2:2,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         0,
@@ -1030,8 +992,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    2:2,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         0,
@@ -1069,8 +1030,7 @@ DiagramN {
                                                                     +,
                                                                 ),
                                                                 Some(
-                                                                    (
-                                                                        1:1,
+                                                                    Label(
                                                                         BoundaryPath(
                                                                             Source,
                                                                             0,
@@ -1091,8 +1051,7 @@ DiagramN {
                                                                     +,
                                                                 ),
                                                                 Some(
-                                                                    (
-                                                                        1:1,
+                                                                    Label(
                                                                         BoundaryPath(
                                                                             Target,
                                                                             0,
@@ -1116,8 +1075,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    2:2,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         1,
@@ -1138,8 +1096,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    2:2,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         1,
@@ -1162,8 +1119,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    2:2,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         0,
@@ -1188,8 +1144,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    2:2,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         0,
@@ -1216,8 +1171,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    2:2,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         0,
@@ -1257,8 +1211,7 @@ DiagramN {
                                                                     +,
                                                                 ),
                                                                 Some(
-                                                                    (
-                                                                        1:1,
+                                                                    Label(
                                                                         BoundaryPath(
                                                                             Source,
                                                                             0,
@@ -1279,8 +1232,7 @@ DiagramN {
                                                                     +,
                                                                 ),
                                                                 Some(
-                                                                    (
-                                                                        1:1,
+                                                                    Label(
                                                                         BoundaryPath(
                                                                             Target,
                                                                             0,
@@ -1304,8 +1256,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    3:2,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         1,
@@ -1326,8 +1277,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    3:2,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         1,
@@ -1350,8 +1300,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    3:2,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         0,
@@ -1376,8 +1325,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    3:2,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         0,
@@ -1404,8 +1352,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    3:2,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         0,
@@ -1443,8 +1390,7 @@ DiagramN {
                                                                     +,
                                                                 ),
                                                                 Some(
-                                                                    (
-                                                                        1:1,
+                                                                    Label(
                                                                         BoundaryPath(
                                                                             Source,
                                                                             0,
@@ -1465,8 +1411,7 @@ DiagramN {
                                                                     +,
                                                                 ),
                                                                 Some(
-                                                                    (
-                                                                        1:1,
+                                                                    Label(
                                                                         BoundaryPath(
                                                                             Target,
                                                                             0,
@@ -1490,8 +1435,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    3:2,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         1,
@@ -1512,8 +1456,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    3:2,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         1,
@@ -1536,8 +1479,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    3:2,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         0,
@@ -1562,8 +1504,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    3:2,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         0,
@@ -1590,8 +1531,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    3:2,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         0,
@@ -1632,8 +1572,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         0,
@@ -1654,8 +1593,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         0,
@@ -1679,8 +1617,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     1,
@@ -1701,8 +1638,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     1,
@@ -1725,8 +1661,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     0,
@@ -1751,8 +1686,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     0,
@@ -1779,8 +1713,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     0,
@@ -1813,8 +1746,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         0,
@@ -1835,8 +1767,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         0,
@@ -1860,8 +1791,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     1,
@@ -1882,8 +1812,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     1,
@@ -1906,8 +1835,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     0,
@@ -1932,8 +1860,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     0,
@@ -1960,8 +1887,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     0,
@@ -1999,8 +1925,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         0,
@@ -2021,8 +1946,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         0,
@@ -2046,8 +1970,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     1,
@@ -2068,8 +1991,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     1,
@@ -2092,8 +2014,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     0,
@@ -2118,8 +2039,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     0,
@@ -2146,8 +2066,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     0,
@@ -2180,8 +2099,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         0,
@@ -2202,8 +2120,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         0,
@@ -2227,8 +2144,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     1,
@@ -2249,8 +2165,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     1,
@@ -2273,8 +2188,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     0,
@@ -2299,8 +2213,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     0,
@@ -2327,8 +2240,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     0,
@@ -2368,8 +2280,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         0,
@@ -2390,8 +2301,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         0,
@@ -2415,8 +2325,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     1,
@@ -2437,8 +2346,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     1,
@@ -2461,8 +2369,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     0,
@@ -2487,8 +2394,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     0,
@@ -2515,8 +2421,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     0,
@@ -2549,8 +2454,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         0,
@@ -2571,8 +2475,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         0,
@@ -2596,8 +2499,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     1,
@@ -2618,8 +2520,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     1,
@@ -2642,8 +2543,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     0,
@@ -2668,8 +2568,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     0,
@@ -2696,8 +2595,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     0,
@@ -2735,8 +2633,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         0,
@@ -2757,8 +2654,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         0,
@@ -2782,8 +2678,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     1,
@@ -2804,8 +2699,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     1,
@@ -2828,8 +2722,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     0,
@@ -2854,8 +2747,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     0,
@@ -2882,8 +2774,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     0,
@@ -2916,8 +2807,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         0,
@@ -2938,8 +2828,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         0,
@@ -2963,8 +2852,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     1,
@@ -2985,8 +2873,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     1,
@@ -3009,8 +2896,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     0,
@@ -3035,8 +2921,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     0,
@@ -3063,8 +2948,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     0,
@@ -3102,8 +2986,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         0,
@@ -3124,8 +3007,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         0,
@@ -3149,8 +3031,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     1,
@@ -3171,8 +3052,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     1,
@@ -3195,8 +3075,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     0,
@@ -3221,8 +3100,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     0,
@@ -3249,8 +3127,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     0,
@@ -3283,8 +3160,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         0,
@@ -3305,8 +3181,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         0,
@@ -3330,8 +3205,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     1,
@@ -3352,8 +3226,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     1,
@@ -3376,8 +3249,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     0,
@@ -3402,8 +3274,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     0,
@@ -3430,8 +3301,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     0,
@@ -3471,8 +3341,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         0,
@@ -3493,8 +3362,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         0,
@@ -3518,8 +3386,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     1,
@@ -3540,8 +3407,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     1,
@@ -3564,8 +3430,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     0,
@@ -3590,8 +3455,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     0,
@@ -3618,8 +3482,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                3:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     0,
@@ -3657,8 +3520,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Source,
                                                                         0,
@@ -3679,8 +3541,7 @@ DiagramN {
                                                                 +,
                                                             ),
                                                             Some(
-                                                                (
-                                                                    1:1,
+                                                                Label(
                                                                     BoundaryPath(
                                                                         Target,
                                                                         0,
@@ -3704,8 +3565,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Source,
                                                                     1,
@@ -3726,8 +3586,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     1,
@@ -3750,8 +3609,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     0,
@@ -3776,8 +3634,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     0,
@@ -3804,8 +3661,7 @@ DiagramN {
                                                             +,
                                                         ),
                                                         Some(
-                                                            (
-                                                                2:2,
+                                                            Label(
                                                                 BoundaryPath(
                                                                     Target,
                                                                     0,

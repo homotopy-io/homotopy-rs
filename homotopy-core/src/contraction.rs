@@ -578,7 +578,7 @@ fn colimit_base<Ix: IndexType>(graph: &ContractGraph<Ix>) -> Result<Cocone<Ix>, 
                     if labels.any(|l| l != label) {
                         return Err(ContractionError::LabelInconsistency);
                     }
-                    Rewrite0::new(d, colimit, label)
+                    Rewrite0::new(d, colimit, label.cloned())
                 }
             };
             legs.push(r.into());

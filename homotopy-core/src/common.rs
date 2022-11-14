@@ -1,10 +1,12 @@
 use std::{
     cmp::Ordering,
+    collections::BTreeSet,
     fmt,
     ops::{Index, IndexMut, Mul},
+    rc::Rc,
 };
 
-use homotopy_common::idx::Idx;
+use homotopy_common::{hash::FastHashMap, idx::Idx};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -336,3 +338,14 @@ impl fmt::Debug for Orientation {
         }
     }
 }
+
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+pub struct Label(BoundaryPath, BTreeSet<Vec<Height>>);
+
+impl Label {
+    pub fn new(boundary_path: BoundaryPath, coords: BTreeSet<Vec<Height>>) -> Self {
+        Self(boundary_path, coords)
+    }
+}
+
+pub(crate) type LabelIdentifications = FastHashMap<Vec<Height>, Rc<BTreeSet<Vec<Height>>>>;

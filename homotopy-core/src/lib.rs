@@ -15,7 +15,6 @@ pub mod diagram;
 pub mod examples;
 pub mod expansion;
 pub mod factorization;
-pub mod label;
 pub mod layout;
 pub mod mesh;
 pub mod migration;

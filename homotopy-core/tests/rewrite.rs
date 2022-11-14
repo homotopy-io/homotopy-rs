@@ -1,7 +1,7 @@
 use std::ops::Index;
 
 use homotopy_core::{
-    common::BoundaryPath,
+    common::{BoundaryPath, Label},
     Boundary::{Source, Target},
     Cospan, Diagram0, DiagramN, Generator,
     Height::{Regular, Singular},
@@ -68,8 +68,8 @@ prop_compose! {
         let x = Generator::new(0, 0);
         let internal = |g: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, g, (g, BoundaryPath(Source, 0), std::iter::once(vec![]).collect()).into()).into(),
-                backward: Rewrite0::new(x, g, (g, BoundaryPath(Target, 0), std::iter::once(vec![]).collect()).into()).into(),
+                forward: Rewrite0::new(x, g, Label::new(BoundaryPath(Source, 0), std::iter::once(vec![]).collect()).into()).into(),
+                backward: Rewrite0::new(x, g, Label::new(BoundaryPath(Target, 0), std::iter::once(vec![]).collect()).into()).into(),
             }
         };
 
@@ -81,7 +81,6 @@ prop_compose! {
             // add a new cone
             let (size_index, target) = cone_sizes.pop().unwrap();
             let size = std::cmp::min(sources_remaining.len(), choose(size_index));
-            let filler_generator = generator_2d(&sources_remaining[..size], target);
             targets.push(target);
 
             singular_slices.push(
@@ -92,12 +91,10 @@ prop_compose! {
                         Rewrite0::new(
                             source,
                             target,
-                            (
-                                filler_generator,
+                            Some(Label::new(
                                 BoundaryPath(Source, 0),
                                 std::iter::once(vec![Singular(i)]).collect(),
-                            )
-                                .into(),
+                            )),
                         )
                         .into()
                     })
@@ -110,12 +107,10 @@ prop_compose! {
                         Rewrite0::new(
                             x,
                             target,
-                            (
-                                filler_generator,
+                            Some(Label::new(
                                 BoundaryPath(Source, 0),
                                 std::iter::once(vec![Regular(r)]).collect(),
-                            )
-                                .into(),
+                            )),
                         )
                         .into()
                     })
@@ -155,8 +150,8 @@ prop_compose! {
         let x = Generator::new(0, 0);
         let internal = |g: Generator| -> Cospan {
             Cospan {
-                forward: Rewrite0::new(x, g, (g, BoundaryPath(Source, 0), std::iter::once(vec![]).collect()).into()).into(),
-                backward: Rewrite0::new(x, g, (g, BoundaryPath(Target, 0), std::iter::once(vec![]).collect()).into()).into(),
+                forward: Rewrite0::new(x, g, Label::new(BoundaryPath(Source, 0), std::iter::once(vec![]).collect()).into()).into(),
+                backward: Rewrite0::new(x, g, Label::new(BoundaryPath(Target, 0), std::iter::once(vec![]).collect()).into()).into(),
             }
         };
         (

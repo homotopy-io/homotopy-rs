@@ -1,7 +1,7 @@
 #[allow(clippy::wildcard_imports)]
 use crate::*;
 use crate::{
-    common::BoundaryPath,
+    common::{BoundaryPath, Label},
     rewrite::Cone,
     signature::{Signature, SignatureBuilder},
     Boundary::{Source, Target},
@@ -97,7 +97,7 @@ pub fn touching() -> (impl Signature, DiagramN) {
         Rewrite0::new(
             x_generator,
             s_generator,
-            (s_generator, bp, std::iter::once(coord).collect()).into(),
+            Label::new(bp, std::iter::once(coord).collect()).into(),
         )
         .into()
     };
@@ -168,7 +168,7 @@ pub fn crossing() -> (impl Signature, DiagramN) {
         Rewrite0::new(
             x_generator,
             s_generator,
-            (s_generator, bp, std::iter::once(coord).collect()).into(),
+            Label::new(bp, std::iter::once(coord).collect()).into(),
         )
         .into()
     };
