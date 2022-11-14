@@ -7,7 +7,7 @@ use highway::{HighwayHash, HighwayHasher};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    label::Label, rewrite::Cone, Cospan, Diagram, Diagram0, DiagramN, Generator, Orientation,
+    common::Label, rewrite::Cone, Cospan, Diagram, Diagram0, DiagramN, Generator, Orientation,
     Rewrite, Rewrite0, RewriteN,
 };
 
@@ -86,7 +86,7 @@ impl Store {
             Rewrite::Rewrite0(r0) => RewriteSer::R0 {
                 source: r0.source().map(|d| (d.generator, d.orientation)),
                 target: r0.target().map(|d| (d.generator, d.orientation)),
-                label: r0.label(),
+                label: r0.label().cloned(),
             },
             Rewrite::RewriteN(rewrite) => {
                 let cones = rewrite
@@ -282,7 +282,7 @@ enum RewriteSer {
         target: Option<(Generator, Orientation)>,
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
-        label: Label,
+        label: Option<Label>,
     },
     Rn {
         dimension: NonZeroU32,

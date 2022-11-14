@@ -15,9 +15,8 @@ use thiserror::Error;
 pub use crate::common::Mode;
 use crate::{
     collapse::Collapsible,
-    common::{Generator, Height, SingularHeight},
+    common::{Generator, Height, Label, SingularHeight},
     diagram::{Diagram, DiagramN},
-    label::Label,
     rewrite::{Cone, Cospan, Rewrite, RewriteN},
     scaffold::{Explodable, Scaffold},
     signature::{GeneratorInfo, Signature},
@@ -405,7 +404,7 @@ fn check_dimension(diagram: Diagram) -> bool {
 }
 
 type Simplex = Vec<NodeIndex>; // An n-simplex is a list of n + 1 vertices.
-type LabelledSimplex = Vec<Label>; // An n-simplex is a list of (n + 1 choose 2) edges.
+type LabelledSimplex = Vec<Option<Label>>; // An n-simplex is a list of (n + 1 choose 2) edges.
 
 fn collapse_simplicies(diagram: impl Into<Diagram>) -> FastHashSet<LabelledSimplex> {
     let diagram: Diagram = diagram.into();
@@ -463,7 +462,7 @@ fn collapse_simplicies(diagram: impl Into<Diagram>) -> FastHashSet<LabelledSimpl
     let label = |a, b| {
         let e = scaffold.find_edge(a, b).unwrap();
         let r: &Rewrite0 = (&scaffold[e].rewrite).try_into().unwrap();
-        r.label()
+        r.label().cloned()
     };
 
     let (_, union_find) = scaffold.collapse();

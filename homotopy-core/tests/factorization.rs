@@ -1,5 +1,8 @@
 use homotopy_core::{
-    common::BoundaryPath, factorization::factorize, rewrite::Cone, signature::SignatureBuilder,
+    common::{BoundaryPath, Label},
+    factorization::factorize,
+    rewrite::Cone,
+    signature::SignatureBuilder,
     Boundary, Cospan, Diagram, DiagramN, Generator, Height, Rewrite, Rewrite0, RewriteN,
     SliceIndex,
 };
@@ -189,8 +192,7 @@ fn scalar_braid() {
         forward: Rewrite0::new(
             x,
             f,
-            Some((
-                f,
+            Some(Label::new(
                 BoundaryPath(Source, 1),
                 std::iter::once(vec![]).collect(),
             )),
@@ -199,8 +201,7 @@ fn scalar_braid() {
         backward: Rewrite0::new(
             x,
             f,
-            Some((
-                f,
+            Some(Label::new(
                 BoundaryPath(Target, 1),
                 std::iter::once(vec![]).collect(),
             )),
@@ -211,8 +212,7 @@ fn scalar_braid() {
         forward: Rewrite0::new(
             x,
             s,
-            Some((
-                s,
+            Some(Label::new(
                 BoundaryPath(Source, 2),
                 std::iter::once(vec![]).collect(),
             )),
@@ -221,8 +221,7 @@ fn scalar_braid() {
         backward: Rewrite0::new(
             x,
             s,
-            Some((
-                s,
+            Some(Label::new(
                 BoundaryPath(Target, 2),
                 std::iter::once(vec![]).collect(),
             )),
@@ -239,8 +238,7 @@ fn scalar_braid() {
                 Rewrite0::new(
                     x,
                     s,
-                    Some((
-                        s,
+                    Some(Label::new(
                         BoundaryPath(Source, 0),
                         std::iter::once(vec![Regular(0), Regular(0)]).collect(),
                     )),
@@ -253,8 +251,7 @@ fn scalar_braid() {
                 Rewrite0::new(
                     x,
                     f,
-                    Some((
-                        f,
+                    Some(Label::new(
                         BoundaryPath(Source, 0),
                         std::iter::once(vec![Regular(0)]).collect(),
                     )),
@@ -273,8 +270,7 @@ fn scalar_braid() {
             Rewrite0::new(
                 x,
                 s,
-                Some((
-                    s,
+                Some(Label::new(
                     BoundaryPath(Source, 1),
                     std::iter::once(vec![Regular(0)]).collect(),
                 )),

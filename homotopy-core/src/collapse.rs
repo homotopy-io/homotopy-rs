@@ -5,11 +5,7 @@ use std::{
     rc::Rc,
 };
 
-use homotopy_common::{
-    declare_idx,
-    hash::{FastHashMap, FastHashSet},
-    idx::Idx,
-};
+use homotopy_common::{declare_idx, hash::FastHashSet, idx::Idx};
 use itertools::Itertools;
 use once_cell::unsync::OnceCell;
 use petgraph::{
@@ -22,7 +18,7 @@ use petgraph::{
 };
 
 use crate::{
-    label::{Coord, Label},
+    common::{Label, LabelIdentifications},
     scaffold::{Explodable, Scaffold, ScaffoldGraph, ScaffoldNode, StableScaffold},
     Diagram, Height, Rewrite0, SliceIndex,
 };
@@ -271,7 +267,7 @@ where
             continue;
         }
         let mut quotient: Vec<_> = Default::default();
-        let label_set = |u: NodeIndex<Ix>, v: NodeIndex<Ix>| -> FastHashSet<Label> {
+        let label_set = |u: NodeIndex<Ix>, v: NodeIndex<Ix>| -> FastHashSet<Option<&Label>> {
             graph
                 .edges_connecting(u, v)
                 .map(|e| {
@@ -362,8 +358,8 @@ impl Diagram {
         scaffold
     }
 
-    pub(crate) fn label_identifications(self) -> FastHashMap<Coord, Rc<BTreeSet<Coord>>> {
-        let (stable, union_find) = self.fully_explode::<Scaffold<Coord>>().collapse();
+    pub(crate) fn label_identifications(self) -> LabelIdentifications {
+        let (stable, union_find) = self.fully_explode::<Scaffold<Vec<Height>>>().collapse();
         union_find
             .into_labeling()
             .into_iter()
@@ -386,7 +382,7 @@ mod test {
     use petgraph::visit::{EdgeRef, IntoEdgeReferences};
 
     use super::Collapsible;
-    use crate::{examples, label::Coord, scaffold::Scaffold, Diagram};
+    use crate::{examples, scaffold::Scaffold, Diagram, Height};
 
     #[test]
     fn braid_weak_identity() {
@@ -394,7 +390,7 @@ mod test {
         let weak: Diagram = Diagram::from(braid).weak_identity().into();
         // for each pair of nodes, assert that there is at most one edge (label) between them;
         // otherwise, there is an inconsistency
-        let (exploded, _) = weak.fully_explode::<Scaffold<Coord>>().collapse();
+        let (exploded, _) = weak.fully_explode::<Scaffold<Vec<Height>>>().collapse();
         for e in exploded.edge_references() {
             assert_eq!(
                 exploded
