@@ -1,11 +1,8 @@
 //! Functions to collapse diagram scaffolds; used in contraction, typechecking etc.
-use std::{
-    collections::BTreeSet,
-    ops::{AddAssign, Index},
-    rc::Rc,
-};
+use std::ops::{AddAssign, Index};
 
 use homotopy_common::{declare_idx, hash::FastHashSet, idx::Idx};
+use im::OrdSet;
 use itertools::Itertools;
 use once_cell::unsync::OnceCell;
 use petgraph::{
@@ -187,9 +184,12 @@ pub(crate) fn unify<V, E, Ix>(
     }
 }
 
-type Set<T> = OneMany<T, BTreeSet<T>>;
+type Set<T> = OneMany<T, OrdSet<T>>;
 
-pub(crate) trait Collapsible<V, E, Ix> {
+pub(crate) trait Collapsible<V, E, Ix>
+where
+    V: Clone + Ord,
+{
     fn collapse(&self) -> (StableScaffold<Set<V>, E, Ix>, UnionFind<NodeIndex<Ix>>);
 }
 
@@ -365,9 +365,9 @@ impl Diagram {
             .into_iter()
             .flat_map(|ix| {
                 match stable[ix].key.clone() {
-                    OneMany::One(c) => vec![(c.clone(), Rc::new(std::iter::once(c).collect()))],
+                    OneMany::One(c) => vec![(c.clone(), OrdSet::unit(c))],
                     OneMany::Many(cs) => {
-                        let shared = Rc::new(cs.clone());
+                        let shared = cs.clone();
                         cs.into_iter().map(|c| (c, shared.clone())).collect()
                     }
                 }

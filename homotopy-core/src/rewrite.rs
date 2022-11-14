@@ -111,7 +111,7 @@ impl Rewrite {
                 generator,
                 Some(Label::new(
                     boundary_path,
-                    label_identifications[&prefix.to_vec()].as_ref().clone(),
+                    label_identifications[&prefix.to_vec()].clone(),
                 )),
             )
             .into(),

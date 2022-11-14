@@ -918,6 +918,7 @@ dependencies = [
  "hashconsing",
  "highway",
  "homotopy-common",
+ "im",
  "insta",
  "itertools",
  "log",
