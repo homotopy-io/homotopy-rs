@@ -1,12 +1,13 @@
 [workspace]
 members = [
-  "homotopy-core",
+  "homotopy-cli",
   "homotopy-common",
-  "homotopy-model",
+  "homotopy-core",
   "homotopy-gl",
   "homotopy-graphics",
+  "homotopy-model",
+  "homotopy-server",
   "homotopy-web",
-  "homotopy-cli",
 ]
 
 [profile.release]

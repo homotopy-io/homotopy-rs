@@ -1,0 +1,15 @@
+{
+  "name": "homotopy-server",
+  "main": "index.js",
+  "engines": {
+    "node": 16
+  },
+  "dependencies": {
+    "firebase-admin": "^10.0.2",
+    "firebase-functions": "^3.18.0"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^0.2.0"
+  },
+  "private": true
+}

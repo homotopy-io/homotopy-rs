@@ -117,6 +117,23 @@
         "type": "github"
       }
     },
+    "npmlock2nix": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1664436392,
+        "narHash": "sha256-H+sGDfpuVZ2uXCQOhA/9WYpda8ScGFZY+u11TY31jjU=",
+        "owner": "nix-community",
+        "repo": "npmlock2nix",
+        "rev": "10584aabd213ed135184d69f592b66566718d7fc",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "npmlock2nix",
+        "rev": "10584aabd213ed135184d69f592b66566718d7fc",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "devshell": "devshell",
@@ -125,6 +142,7 @@
         "naersk": "naersk",
         "nix-cargo-integration": "nix-cargo-integration",
         "nixpkgs": "nixpkgs",
+        "npmlock2nix": "npmlock2nix",
         "rust-overlay": "rust-overlay"
       }
     },

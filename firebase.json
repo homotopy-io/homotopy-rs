@@ -1,4 +1,7 @@
 {
+  "functions": {
+    "source": "homotopy-server/js"
+  },
   "hosting": {
     "target": "homotopy-rs",
     "public": "result",
