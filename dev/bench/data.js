@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1668170861768,
+  "lastUpdate": 1668728219628,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -42899,6 +42899,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/9",
             "value": 27.892,
             "range": "+/- 0.003",
+            "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "distinct": true,
+          "id": "54a163b73498bff527d028731ca0935ef36efa13",
+          "message": "Render LaTeX in attach view panel.",
+          "timestamp": "2022-11-17T22:30:34Z",
+          "tree_id": "1665adca7eda4475f80c07bd4f65fdd9e0c83e27",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/54a163b73498bff527d028731ca0935ef36efa13"
+        },
+        "date": 1668728209803,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/4",
+            "value": 2.8283,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/5",
+            "value": 11.014,
+            "range": "+/- 0.003",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/6",
+            "value": 50.788,
+            "range": "+/- 0.015",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/7",
+            "value": 326.72,
+            "range": "+/- 0.120",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/8",
+            "value": 2.7668,
+            "range": "+/- 0.000",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/9",
+            "value": 27.761,
+            "range": "+/- 0.047",
             "unit": "s"
           }
         ]
