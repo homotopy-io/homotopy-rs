@@ -1,6 +1,9 @@
 use yew::prelude::*;
 
-use crate::model::proof::{Action, AttachOption, Signature};
+use crate::{
+    app::tex::TexSpan,
+    model::proof::{Action, AttachOption, Signature},
+};
 
 #[derive(Debug, Clone, PartialEq, Properties)]
 pub struct Props {
@@ -69,9 +72,11 @@ impl AttachView {
                     class="attach__option-color"
                     style={format!("background: {}", info.color)}
                 />
-                <span class="attach__option-name">
-                    {&info.name}
-                </span>
+                <TexSpan
+                    class="attach__option-name"
+                    error_color="#c004"
+                    raw_tex={info.name.clone()}
+                />
             </li>
         }
     }
