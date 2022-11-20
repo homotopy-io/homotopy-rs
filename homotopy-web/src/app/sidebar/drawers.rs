@@ -124,7 +124,7 @@ declare_sidebar_drawers! {
         |dispatch, proof: &Proof, _| html! {
             <ProjectView
                 dispatch={dispatch}
-                metadata={proof.metadata().clone()}
+                metadata={proof.metadata.clone()}
             />
         },
         min_width: 250,
@@ -136,14 +136,14 @@ declare_sidebar_drawers! {
         "list",
         |dispatch: &Callback<model::Action>, proof: &Proof, drawer_view_size: DrawerViewSize| html! {
             <SignatureView
-                signature={proof.signature().clone()}
+                signature={proof.signature.clone()}
                 dispatch={dispatch.reform(model::Action::Proof)}
                 drawer_view_size={drawer_view_size}
             />
         },
         min_width: 250,
         top_icon: "create_new_folder",
-        top_icon_action: |proof: &Proof| model::Action::Proof(Action::EditSignature(SignatureEdit::NewFolder(proof.signature().as_tree().root()))),
+        top_icon_action: |proof: &Proof| model::Action::Proof(Action::EditSignature(SignatureEdit::NewFolder(proof.signature.as_tree().root()))),
     }
 
     DRAWER_IMAGE_EXPORT {
@@ -153,7 +153,7 @@ declare_sidebar_drawers! {
         |dispatch, proof: &Proof, _| html! {
             <ImageExportView
                 dispatch={dispatch}
-                view_dim={proof.workspace().as_ref().map_or(0, |ws| ws.view.dimension())}
+                view_dim={proof.workspace.as_ref().map_or(0, |ws| ws.view.dimension())}
             />
         },
         min_width: 250,

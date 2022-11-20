@@ -102,7 +102,7 @@ pub struct ProofState {
     pub signature: Signature,
     pub workspace: Option<Workspace>,
     pub metadata: Metadata,
-    boundary: Option<SelectedBoundary>,
+    pub boundary: Option<SelectedBoundary>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -260,7 +260,7 @@ impl ProofState {
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.diagram.dimension() > 0),
-            Action::Restrict => self.workspace().as_ref().map_or(false, |ws| {
+            Action::Restrict => self.workspace.as_ref().map_or(false, |ws| {
                 !ws.path.is_empty()
                     && ws
                         .path
@@ -667,7 +667,7 @@ impl ProofState {
             .try_into()
             .map_err(|_dimerr| ProofError::InvalidAction)?;
 
-        let invertible = Diagram::from(diagram.clone()).is_invertible(self.signature());
+        let invertible = Diagram::from(diagram.clone()).is_invertible(&self.signature);
         // new generator of singular height 1 from source to target of current diagram
         let singleton = self.signature.create_generator(
             diagram.source(),
@@ -773,26 +773,6 @@ impl ProofState {
         }
 
         Ok(())
-    }
-
-    pub fn boundary(&self) -> Option<&SelectedBoundary> {
-        self.boundary.as_ref()
-    }
-
-    pub fn workspace(&self) -> Option<&Workspace> {
-        self.workspace.as_ref()
-    }
-
-    pub fn signature(&self) -> &Signature {
-        &self.signature
-    }
-
-    pub fn metadata(&self) -> &Metadata {
-        &self.metadata
-    }
-
-    pub fn render_style() -> RenderStyle {
-        RenderStyle::default()
     }
 
     pub fn unwind_to_valid_path(&mut self) {

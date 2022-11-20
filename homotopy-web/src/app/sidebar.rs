@@ -378,7 +378,7 @@ impl Sidebar {
                     <AttachView
                         dispatch={model_dispatch.clone()}
                         options={attach_options.clone()}
-                        signature={ctx.props().proof.signature().clone()}
+                        signature={ctx.props().proof.signature.clone()}
                     />
                 </SidebarDrawer>
             };
