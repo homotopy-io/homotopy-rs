@@ -2,7 +2,7 @@ use std::{
     collections::VecDeque,
     iter::{FromIterator, FusedIterator},
     mem,
-    ops::{Deref, DerefMut, Index},
+    ops::{Deref, DerefMut, Index, IndexMut},
 };
 
 use crate::{declare_idx, idx::IdxVec};
@@ -96,15 +96,6 @@ impl<T> DerefMut for NodeData<T> {
     }
 }
 
-impl<T> Index<usize> for NodeData<T> {
-    type Output = Node;
-
-    #[inline]
-    fn index(&self, idx: usize) -> &Self::Output {
-        &self.children[idx]
-    }
-}
-
 impl<T> Tree<T> {
     #[inline]
     pub fn new(root: T) -> Self {
@@ -116,6 +107,16 @@ impl<T> Tree<T> {
         });
 
         Self { nodes, root }
+    }
+
+    #[inline]
+    pub fn get(&self, node: Node) -> Option<&NodeData<T>> {
+        self.nodes.get(node)
+    }
+
+    #[inline]
+    pub fn get_mut(&mut self, node: Node) -> Option<&mut NodeData<T>> {
+        self.nodes.get_mut(node)
     }
 
     #[inline]
@@ -366,6 +367,20 @@ where
         let mut nodes = IdxVec::new();
         let root = nodes.push(Default::default());
         Self { nodes, root }
+    }
+}
+
+impl<T> Index<Node> for Tree<T> {
+    type Output = NodeData<T>;
+
+    fn index(&self, index: Node) -> &Self::Output {
+        &self.nodes[index]
+    }
+}
+
+impl<T> IndexMut<Node> for Tree<T> {
+    fn index_mut(&mut self, index: Node) -> &mut Self::Output {
+        &mut self.nodes[index]
     }
 }
 
