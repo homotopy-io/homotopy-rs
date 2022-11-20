@@ -1,7 +1,14 @@
 pub use history::Proof;
 use history::{History, UndoState};
+use homotopy_common::hash::FastHashSet;
+use homotopy_core::{
+    common::{BoundaryPath, RegularHeight},
+    Boundary, Diagram, DiagramN, Height, SliceIndex,
+};
 use homotopy_graphics::{manim, stl, svg, tikz};
+use homotopy_model::proof::AttachOption;
 pub use homotopy_model::{history, migration, proof, serialize};
+use im::Vector;
 use js_sys::JsString;
 use serde::Serialize;
 use thiserror::Error;
@@ -19,6 +26,11 @@ pub enum Action {
     ExportManim(bool),
     ExportStl,
     Select(usize),
+
+    ClearAttach,
+    SelectPoints(Vec<Vec<SliceIndex>>),
+    HighlightAttachment(Option<AttachOption>),
+    HighlightSlice(Option<SliceIndex>),
 }
 
 impl Action {
@@ -60,6 +72,9 @@ impl From<history::Action> for Action {
 #[derive(Debug, Clone, Default)]
 pub struct State {
     pub history: History,
+    pub attach: Option<Vector<AttachOption>>,
+    pub attachment_highlight: Option<AttachOption>,
+    pub slice_highlight: Option<SliceIndex>,
 }
 
 impl State {
@@ -89,6 +104,7 @@ impl State {
                 let mut proof = self.with_proof(Clone::clone).ok_or(ModelError::Internal)?;
                 proof.update(&action).map_err(ModelError::from)?;
                 self.history.add(action, proof);
+                self.clear_attach();
             }
 
             Action::History(history::Action::Move(dir)) => {
@@ -107,6 +123,7 @@ impl State {
                         pop_action();
                     }
                 };
+                self.clear_attach();
             }
 
             Action::ExportTikz(with_braid) => {
@@ -236,16 +253,18 @@ impl State {
             }
 
             Action::Select(index) => {
-                let proof = self.with_proof(Clone::clone).ok_or(ModelError::Internal)?;
-                let action = match proof.attach_options() {
+                let action = match self.attach.as_ref() {
                     // Select a generator.
                     None => proof::Action::SelectGenerator(
-                        proof
-                            .signature
-                            .iter()
-                            .nth(index)
-                            .ok_or(ModelError::IndexOutOfBounds)?
-                            .generator,
+                        self.with_proof(|proof| {
+                            proof
+                                .signature
+                                .iter()
+                                .nth(index)
+                                .ok_or(ModelError::IndexOutOfBounds)
+                                .map(|info| info.generator)
+                        })
+                        .ok_or(ModelError::Internal)??,
                     ),
                     // Select an attachment option.
                     Some(att) => proof::Action::Attach(
@@ -254,9 +273,154 @@ impl State {
                 };
                 self.update(Action::Proof(action))?;
             }
+            Action::SelectPoints(points) => self.select_points(&points)?,
+            Action::HighlightAttachment(option) => self.highlight_attachment(option),
+            Action::HighlightSlice(slice) => self.highlight_slice(slice),
+            Action::ClearAttach => self.clear_attach(),
         }
 
         Ok(())
+    }
+
+    /// Handler for [Action::SelectPoints].
+    fn select_points(&mut self, selected: &[Vec<SliceIndex>]) -> Result<(), ModelError> {
+        let proof = self.with_proof(Clone::clone).ok_or(ModelError::Internal)?;
+
+        if selected.is_empty() {
+            return Ok(());
+        }
+
+        let workspace = match &proof.workspace {
+            Some(workspace) => workspace,
+            None => return Ok(()),
+        };
+
+        let mut matches: FastHashSet<AttachOption> = Default::default();
+
+        let selected_with_path: Vec<_> = selected
+            .iter()
+            .map(|point| {
+                let mut point_with_path: Vec<SliceIndex> = workspace.path.iter().copied().collect();
+                point_with_path.extend(point.iter().copied());
+                point_with_path
+            })
+            .collect();
+
+        let attach_on_boundary = selected_with_path
+            .iter()
+            .any(|point| BoundaryPath::split(point).0.is_some());
+
+        for point in selected_with_path {
+            let (boundary_path, point) = BoundaryPath::split(&point);
+
+            if boundary_path.is_none() && attach_on_boundary {
+                continue;
+            }
+
+            let haystack = match boundary_path {
+                None => workspace.diagram.clone(),
+                Some(boundary_path) => DiagramN::try_from(workspace.diagram.clone())
+                    .ok()
+                    .and_then(|diagram| diagram.boundary(boundary_path))
+                    .ok_or(ModelError::NoAttachment)?,
+            };
+
+            let boundary: Boundary = boundary_path.map_or(Boundary::Target, BoundaryPath::boundary);
+
+            for info in proof.signature.iter() {
+                macro_rules! extend {
+                    ($diagram:expr, $tag:expr) => {
+                        let needle = $diagram.slice(boundary.flip()).unwrap();
+                        matches.extend(
+                            haystack
+                                .embeddings(&needle)
+                                .filter(|embedding| contains_point(&needle, &point, embedding))
+                                .map(|embedding| AttachOption {
+                                    generator: info.generator,
+                                    diagram: $diagram,
+                                    tag: $tag,
+                                    boundary_path,
+                                    embedding: embedding.into_iter().collect(),
+                                }),
+                        );
+                    };
+                }
+
+                match info.generator.dimension.cmp(&(haystack.dimension() + 1)) {
+                    std::cmp::Ordering::Less => {
+                        if cfg!(feature = "weak-units") {
+                            let identity = |mut diagram: Diagram| {
+                                while diagram.dimension() < haystack.dimension() + 1 {
+                                    diagram = diagram.weak_identity().into();
+                                }
+                                DiagramN::try_from(diagram).unwrap()
+                            };
+
+                            extend!(identity(info.diagram.clone()), Some("identity".to_owned()));
+                        }
+
+                        if let Diagram::DiagramN(d) = &info.diagram {
+                            if info.invertible {
+                                let bubble = |mut diagram: DiagramN| {
+                                    while diagram.dimension() < haystack.dimension() + 1 {
+                                        diagram = diagram.bubble();
+                                    }
+                                    diagram
+                                };
+
+                                extend!(bubble(d.clone()), Some("bubble".to_owned()));
+                                extend!(bubble(d.inverse()), Some("inverse bubble".to_owned()));
+                            }
+                        }
+                    }
+                    std::cmp::Ordering::Equal => {
+                        if let Diagram::DiagramN(d) = &info.diagram {
+                            extend!(d.clone(), None);
+                            if info.invertible {
+                                extend!(d.inverse(), Some("inverse".to_owned()));
+                            }
+                        }
+                    }
+                    std::cmp::Ordering::Greater => (),
+                }
+            }
+        }
+
+        match matches.len() {
+            0 => {
+                self.clear_attach();
+                Err(ModelError::NoAttachment)
+            }
+            1 => {
+                self.clear_attach();
+                self.update(Action::Proof(proof::Action::Attach(
+                    matches.into_iter().next().unwrap(),
+                )))
+            }
+            _ => {
+                self.attach = Some(matches.into_iter().collect());
+                self.attachment_highlight = None;
+                self.slice_highlight = None;
+                Ok(())
+            }
+        }
+    }
+
+    /// Handler for [Action::HighlightAttachment].
+    fn highlight_attachment(&mut self, option: Option<AttachOption>) {
+        self.attachment_highlight = option;
+    }
+
+    /// Handler for [Action::HighlightSlice].
+    fn highlight_slice(&mut self, option: Option<SliceIndex>) {
+        self.slice_highlight = option;
+    }
+
+    /// Handler for [Action::ClearAttach].
+    fn clear_attach(&mut self) {
+        self.attach = None;
+        self.attachment_highlight = None;
+        self.slice_highlight = None;
     }
 }
 
@@ -270,6 +434,8 @@ pub enum ModelError {
     History(#[from] history::HistoryError),
     #[error("internal error")]
     Internal,
+    #[error("no attachment found")]
+    NoAttachment,
     #[error("index out of bounds")]
     IndexOutOfBounds,
 }
@@ -317,4 +483,28 @@ extern "C" {
 
     #[wasm_bindgen]
     pub fn display_panic_message();
+}
+
+fn contains_point(diagram: &Diagram, point: &[Height], embedding: &[RegularHeight]) -> bool {
+    use Diagram::{Diagram0, DiagramN};
+
+    match (point.split_first(), diagram) {
+        (None, _) => true,
+        (Some(_), Diagram0(_)) => false,
+        (Some((height, point)), DiagramN(diagram)) => {
+            let (shift, embedding) = embedding.split_first().unwrap_or((&0, &[]));
+            let shift = Height::Regular(*shift);
+
+            if usize::from(*height) < usize::from(shift) {
+                return false;
+            }
+
+            let height = Height::from(usize::from(*height) - usize::from(shift));
+
+            match diagram.slice(height) {
+                Some(slice) => contains_point(&slice, point, embedding),
+                None => false,
+            }
+        }
+    }
 }

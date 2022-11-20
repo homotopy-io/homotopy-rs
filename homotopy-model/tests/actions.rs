@@ -30,15 +30,3 @@ fn construct_associator() {
     assert_debug_snapshot!("construct_associator_signature", proof.signature);
     assert_debug_snapshot!("construct_associator_workspace", proof.workspace);
 }
-
-#[ignore]
-#[test]
-fn construct_braid_and_contract() {
-    let action_dump = include_str!("examples/braid_contraction.json");
-
-    let proof = actions_test_helper(action_dump);
-
-    // Snapshot the end result
-    assert_debug_snapshot!("construct_braid_contraction_signature", proof.signature);
-    assert_debug_snapshot!("construct_braid_contraction_workspace", proof.workspace);
-}

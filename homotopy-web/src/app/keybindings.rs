@@ -50,6 +50,7 @@ declare_keybindings! {
     "7" => Action::Select(6)
     "8" => Action::Select(7)
     "9" => Action::Select(8)
+    "escape" => Action::ClearAttach
     "arrowup" => Action::Proof(proof::Action::SwitchSlice(Direction::Forward))
     "arrowdown" => Action::Proof(proof::Action::SwitchSlice(Direction::Backward))
     "arrowleft" => Action::Proof(proof::Action::AscendSlice(1))

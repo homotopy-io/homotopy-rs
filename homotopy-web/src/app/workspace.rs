@@ -4,6 +4,7 @@ use homotopy_core::{
     common::{Boundary, Height, SliceIndex},
     DiagramN,
 };
+use im::Vector;
 use path_control::PathControl;
 use slice_control::SliceControl;
 use view_control::ViewControl;
@@ -16,7 +17,10 @@ use crate::{
         tex::TexSpan,
     },
     components::panzoom::PanZoomComponent,
-    model::proof::{homotopy::Homotopy, Action, Metadata, Signature, Workspace},
+    model::{
+        proof::{self, homotopy::Homotopy, AttachOption, Metadata, Signature, Workspace},
+        Action,
+    },
 };
 
 mod path_control;
@@ -31,6 +35,9 @@ pub struct Props {
     pub dispatch: Callback<Action>,
     pub signature: Signature,
     pub metadata: Metadata,
+    pub attach: Option<Vector<AttachOption>>,
+    pub attachment_highlight: Option<AttachOption>,
+    pub slice_highlight: Option<SliceIndex>,
 }
 
 pub enum Message {}
@@ -47,7 +54,10 @@ impl Component for WorkspaceView {
 
     fn create(ctx: &Context<Self>) -> Self {
         let on_select = ctx.props().dispatch.reform(Action::SelectPoints);
-        let on_homotopy = ctx.props().dispatch.reform(Action::Homotopy);
+        let on_homotopy = ctx
+            .props()
+            .dispatch
+            .reform(|homotopy| Action::Proof(proof::Action::Homotopy(homotopy)));
         Self {
             on_select,
             on_homotopy,
@@ -82,7 +92,7 @@ impl Component for WorkspaceView {
                 html! {
                     <SliceControl
                         number_slices={diagram.size().unwrap()}
-                        descend_slice={ctx.props().dispatch.reform(Action::DescendSlice)}
+                        descend_slice={ctx.props().dispatch.reform(|si| Action::Proof(proof::Action::DescendSlice(si)))}
                         diagram_ref={self.diagram_ref.clone()}
                         on_hover={ctx.props().dispatch.reform(Action::HighlightSlice)}
                     />
@@ -99,8 +109,8 @@ impl Component for WorkspaceView {
                         <PathControl
                             path={ws.path.clone()}
                             view={ws.view}
-                            ascend_slice={ctx.props().dispatch.reform(Action::AscendSlice)}
-                            update_view={ctx.props().dispatch.reform(Action::UpdateView)}
+                            ascend_slice={ctx.props().dispatch.reform(|i| Action::Proof(proof::Action::AscendSlice(i)))}
+                            update_view={ctx.props().dispatch.reform(|v| Action::Proof(proof::Action::UpdateView(v)))}
                             dimension={ws.diagram.dimension()}
                         />
                         <ViewControl />
@@ -146,9 +156,15 @@ impl WorkspaceView {
 
     fn view_diagram_svg<const N: usize>(&self, ctx: &Context<Self>) -> Html {
         if let Some(ref ws) = ctx.props().workspace {
-            let highlight = highlight_attachment::<N>(ws).or_else(|| highlight_slice::<N>(ws));
+            let attachment_highlight = ctx
+                .props()
+                .attachment_highlight
+                .as_ref()
+                .map(|option| highlight_attachment::<N>(ws, option));
+            let slice_highlight = ctx.props().slice_highlight.map(highlight_slice::<N>);
+            let highlight = attachment_highlight.or(slice_highlight);
             html! {
-                <PanZoomComponent on_scroll={ctx.props().dispatch.reform(Action::SwitchSlice)}>
+                <PanZoomComponent on_scroll={ctx.props().dispatch.reform(|dir| Action::Proof(proof::Action::SwitchSlice(dir)))}>
                     <DiagramSvg<N>
                         diagram={ws.visible_diagram()}
                         id="workspace__diagram"
@@ -168,7 +184,10 @@ impl WorkspaceView {
 
 // TODO: highlighting needs better documentation and maybe a refactor
 
-fn highlight_attachment<const N: usize>(workspace: &Workspace) -> Option<HighlightSvg<N>> {
+fn highlight_attachment<const N: usize>(
+    workspace: &Workspace,
+    option: &AttachOption,
+) -> HighlightSvg<N> {
     use Height::Regular;
 
     fn extend<const N: usize>(slices: [SliceIndex; 2]) -> [SliceIndex; N] {
@@ -181,17 +200,15 @@ fn highlight_attachment<const N: usize>(workspace: &Workspace) -> Option<Highlig
         extension
     }
 
-    let attach_option = workspace.attachment_highlight.as_ref()?;
-    let needle = &attach_option.diagram;
-
-    let boundary_path = attach_option.boundary_path;
-    let embedding = &attach_option.embedding;
+    let needle = &option.diagram;
+    let boundary_path = option.boundary_path;
+    let embedding = &option.embedding;
 
     match boundary_path {
         Some(bp) if bp.depth() == workspace.path.len() => {
             let slice: Result<DiagramN, _> = needle.slice(bp.boundary().flip()).unwrap().try_into();
             let size = slice.map(|slice| slice.size()).unwrap_or_default();
-            Some(HighlightSvg {
+            HighlightSvg {
                 from: extend([
                     bp.boundary().into(),
                     Regular(embedding.get(0).copied().unwrap_or_default()).into(),
@@ -201,16 +218,16 @@ fn highlight_attachment<const N: usize>(workspace: &Workspace) -> Option<Highlig
                     Regular(embedding.get(0).copied().unwrap_or_default() + size).into(),
                 ]),
                 kind: HighlightKind::Attach,
-            })
+            }
         }
-        Some(bp) if bp.depth() > workspace.path.len() => Some(HighlightSvg {
+        Some(bp) if bp.depth() > workspace.path.len() => HighlightSvg {
             from: extend([Boundary::Source.into(), bp.boundary().into()]),
             to: extend([Boundary::Target.into(), bp.boundary().into()]),
             kind: HighlightKind::Attach,
-        }),
+        },
         Some(bp) if bp.boundary() == Boundary::Source => {
             let embedding = embedding.skip(workspace.path.len() - bp.depth() - 1);
-            Some(HighlightSvg {
+            HighlightSvg {
                 from: extend([
                     Regular(embedding.get(0).copied().unwrap_or_default()).into(),
                     Regular(embedding.get(1).copied().unwrap_or_default()).into(),
@@ -220,7 +237,7 @@ fn highlight_attachment<const N: usize>(workspace: &Workspace) -> Option<Highlig
                     Regular(embedding.get(1).copied().unwrap_or_default() + 1).into(),
                 ]),
                 kind: HighlightKind::Attach,
-            })
+            }
         }
         _ => {
             // Note: An empty boundary path implies that `needle` is one dimension higher than the
@@ -236,7 +253,7 @@ fn highlight_attachment<const N: usize>(workspace: &Workspace) -> Option<Highlig
                 .map(|d: DiagramN| d.size())
                 .unwrap_or_default();
 
-            Some(HighlightSvg {
+            HighlightSvg {
                 from: extend([
                     Regular(embedding.get(0).copied().unwrap_or_default()).into(),
                     Regular(embedding.get(1).copied().unwrap_or_default()).into(),
@@ -246,21 +263,20 @@ fn highlight_attachment<const N: usize>(workspace: &Workspace) -> Option<Highlig
                     Regular(embedding.get(1).copied().unwrap_or_default() + needle_st_size).into(),
                 ]),
                 kind: HighlightKind::Attach,
-            })
+            }
         }
     }
 }
 
-fn highlight_slice<const N: usize>(workspace: &Workspace) -> Option<HighlightSvg<N>> {
-    let slice = workspace.slice_highlight.as_ref()?;
+fn highlight_slice<const N: usize>(slice: SliceIndex) -> HighlightSvg<N> {
     let mut from = [Boundary::Source.into(); N];
-    from[0] = *slice;
+    from[0] = slice;
     let mut to = [Boundary::Target.into(); N];
-    to[0] = *slice;
+    to[0] = slice;
 
-    Some(HighlightSvg {
+    HighlightSvg {
         from,
         to,
         kind: HighlightKind::Slice,
-    })
+    }
 }

@@ -176,7 +176,10 @@ impl App {
                 workspace={proof.workspace().map(Clone::clone)}
                 signature={signature.clone()}
                 metadata={metadata.clone()}
-                dispatch={dispatch.reform(model::Action::Proof)}
+                dispatch={dispatch.clone()}
+                attach={state.attach.clone()}
+                attachment_highlight={state.attachment_highlight.clone()}
+                slice_highlight={state.slice_highlight}
             />
         };
 
@@ -196,6 +199,7 @@ impl App {
                 <Sidebar
                     dispatch={dispatch}
                     proof={proof}
+                    attach={state.attach.clone()}
                 />
                 <div class="toaster">
                     <ToasterComponent timeout={3000} />
