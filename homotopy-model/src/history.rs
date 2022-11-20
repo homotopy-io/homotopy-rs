@@ -93,7 +93,6 @@ impl Snapshot {
 #[derive(Debug, Clone)]
 pub struct History {
     snapshots: Tree<Snapshot>,
-    overlay: Option<ProofState>,
     current: Node,
 }
 
@@ -101,11 +100,7 @@ impl Default for History {
     fn default() -> Self {
         let snapshots: Tree<Snapshot> = Default::default();
         let current = snapshots.root();
-        Self {
-            snapshots,
-            overlay: None,
-            current,
-        }
+        Self { snapshots, current }
     }
 }
 
@@ -122,74 +117,54 @@ impl History {
     where
         F: Fn(&Proof) -> U,
     {
-        if let Some(ref overlay) = self.overlay {
-            let mut overlayed = self.snapshots.with(self.current, Clone::clone)?;
-            overlayed.inner_mut().proof = overlay.clone();
-            Some(f(&overlayed))
-        } else {
-            self.with_proof_internal(f)
-        }
-    }
-
-    pub fn with_proof_internal<F, U>(&self, f: F) -> Option<U>
-    where
-        F: Fn(&Proof) -> U,
-    {
         self.snapshots.with(self.current, f)
     }
 
     pub fn add(&mut self, action: super::proof::Action, proof: Proof) {
-        if action.relevant() {
-            // check if this action has been performed at this state previously
-            let existing = self
-                .with_proof_internal(|n| {
-                    n.children().find(|id| {
-                        self.snapshots
-                            .with(*id, |n| n.action.as_ref() == Some(&action))
-                            .unwrap_or_default()
-                    })
+        // check if this action has been performed at this state previously
+        let existing = self
+            .with_proof(|n| {
+                n.children().find(|id| {
+                    self.snapshots
+                        .with(*id, |n| n.action.as_ref() == Some(&action))
+                        .unwrap_or_default()
                 })
-                .flatten();
-            if let Some(child) = existing {
-                // update timestamp and ensure the action was deterministic
-                self.snapshots
-                    .with_mut(child, |n| {
-                        assert_eq!(proof.proof, n.proof);
-                        n.touch();
-                    })
-                    .expect("This should always succeed.");
-                self.current = child;
-            } else {
-                // fresh action
-                if let Some(child) = self.snapshots.push_onto(
-                    self.current,
-                    Snapshot::new(Some(action), proof.into_inner().proof),
-                ) {
-                    self.current = child;
-                }
-            }
-            self.overlay = None;
+            })
+            .flatten();
+        if let Some(child) = existing {
+            // update timestamp and ensure the action was deterministic
+            self.snapshots
+                .with_mut(child, |n| {
+                    assert_eq!(proof.proof, n.proof);
+                    n.touch();
+                })
+                .expect("This should always succeed.");
+            self.current = child;
         } else {
-            self.overlay = Some(proof.into_inner().proof);
+            // fresh action
+            if let Some(child) = self.snapshots.push_onto(
+                self.current,
+                Snapshot::new(Some(action), proof.into_inner().proof),
+            ) {
+                self.current = child;
+            }
         }
     }
 
     pub fn undo(&mut self) -> Result<(), HistoryError> {
         let prev = self
-            .with_proof_internal(NodeData::parent)
+            .with_proof(NodeData::parent)
             .flatten()
             .ok_or(HistoryError::Undo)?;
-        self.overlay = None;
         self.current = prev;
         Ok(())
     }
 
     pub fn redo(&mut self) -> Result<(), HistoryError> {
         let next = self
-            .with_proof_internal(NodeData::last)
+            .with_proof(NodeData::last)
             .flatten()
             .ok_or(HistoryError::Redo)?;
-        self.overlay = None;
         self.current = next;
         Ok(())
     }

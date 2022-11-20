@@ -6882,8 +6882,5 @@ Some(
         view: View {
             dimension: 2,
         },
-        attach: None,
-        attachment_highlight: None,
-        slice_highlight: None,
     },
 )

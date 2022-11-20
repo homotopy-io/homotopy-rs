@@ -1,11 +1,9 @@
 use std::convert::{Into, TryFrom, TryInto};
 
 use homotopy::Homotopy;
-use homotopy_common::hash::FastHashSet;
 use homotopy_core::{
     common::{
-        Boundary, BoundaryPath, DimensionError, Direction, Generator, Height, Mode, RegularHeight,
-        SliceIndex,
+        Boundary, BoundaryPath, DimensionError, Direction, Generator, Height, Mode, SliceIndex,
     },
     contraction::ContractionError,
     diagram::NewDiagramError,
@@ -43,9 +41,6 @@ pub struct Workspace {
     pub diagram: Diagram,
     pub path: Vector<SliceIndex>,
     pub view: View,
-    pub attach: Option<Vector<AttachOption>>,
-    pub attachment_highlight: Option<AttachOption>,
-    pub slice_highlight: Option<SliceIndex>,
 }
 
 impl Workspace {
@@ -125,9 +120,6 @@ pub enum Action {
     /// nothing if the workspace is empty.
     TakeIdentityDiagram,
 
-    /// Clear the attachment state.
-    ClearAttach,
-
     /// Clear the workspace by forgetting the current diagram.
     ClearWorkspace,
 
@@ -153,13 +145,7 @@ pub enum Action {
 
     UpdateView(View),
 
-    SelectPoints(Vec<Vec<SliceIndex>>),
-
     Attach(AttachOption),
-
-    HighlightAttachment(Option<AttachOption>),
-
-    HighlightSlice(Option<SliceIndex>),
 
     Homotopy(Homotopy),
 
@@ -184,16 +170,6 @@ pub enum Action {
     RecoverBoundary,
 
     Nothing,
-}
-
-impl Action {
-    /// Determines if this [Action] is relevant with respect to undo/redo operations.
-    pub fn relevant(&self) -> bool {
-        !matches!(
-            self,
-            Action::HighlightSlice(_) | Action::HighlightAttachment(_)
-        )
-    }
 }
 
 #[derive(Debug, Error)]
@@ -222,13 +198,9 @@ impl ProofState {
     /// Update the state in response to an [Action].
     pub fn update(&mut self, action: &Action) -> Result<(), ProofError> {
         match action {
-            Action::CreateGeneratorZero => {
-                self.signature.create_generator_zero("Cell");
-                self.clear_attach();
-            }
+            Action::CreateGeneratorZero => self.signature.create_generator_zero("Cell"),
             Action::SetBoundary(boundary) => self.set_boundary(*boundary)?,
             Action::TakeIdentityDiagram => self.take_identity_diagram(),
-            Action::ClearAttach => self.clear_attach(),
             Action::ClearWorkspace => self.clear_workspace(),
             Action::ClearBoundary => self.clear_boundary(),
             Action::SelectGenerator(generator) => self.select_generator(*generator)?,
@@ -236,10 +208,7 @@ impl ProofState {
             Action::DescendSlice(slice) => self.descend_slice(*slice)?,
             Action::SwitchSlice(direction) => self.switch_slice(*direction),
             Action::UpdateView(view) => self.update_view(*view),
-            Action::SelectPoints(points) => self.select_points(points)?,
             Action::Attach(option) => self.attach(option)?,
-            Action::HighlightAttachment(option) => self.highlight_attachment(option.clone()),
-            Action::HighlightSlice(slice) => self.highlight_slice(*slice),
             Action::Homotopy(Homotopy::Expand(homotopy)) => self.homotopy_expansion(homotopy)?,
             Action::Homotopy(Homotopy::Contract(homotopy)) => {
                 self.homotopy_contraction(homotopy)?;
@@ -452,9 +421,6 @@ impl ProofState {
                     view: View {
                         dimension: selected.diagram.dimension().min(2) as u8,
                     },
-                    attach: Default::default(),
-                    attachment_highlight: Default::default(),
-                    slice_highlight: Default::default(),
                 });
             }
         }
@@ -471,7 +437,6 @@ impl ProofState {
                 }
 
                 workspace.diagram = workspace.diagram.identity().into();
-                self.clear_attach();
             }
             None => {}
         }
@@ -487,15 +452,6 @@ impl ProofState {
         self.boundary = None;
     }
 
-    /// Handler for [Action::ClearAttach].
-    fn clear_attach(&mut self) {
-        if let Some(ref mut workspace) = self.workspace {
-            workspace.attach = None;
-            workspace.attachment_highlight = None;
-            workspace.slice_highlight = None;
-        }
-    }
-
     /// Handler for [Action::SelectGenerator].
     fn select_generator(&mut self, generator: Generator) -> Result<(), ProofError> {
         let info = self
@@ -509,9 +465,6 @@ impl ProofState {
             view: View {
                 dimension: info.generator.dimension.min(2) as u8,
             },
-            attach: Default::default(),
-            attachment_highlight: Default::default(),
-            slice_highlight: Default::default(),
         });
 
         Ok(())
@@ -529,8 +482,6 @@ impl ProofState {
                     workspace.view = workspace.view.inc();
                 }
             }
-
-            self.clear_attach();
         }
     }
 
@@ -554,8 +505,6 @@ impl ProofState {
             if workspace.visible_dimension() < workspace.view.dimension() as usize {
                 workspace.view = workspace.view.dec();
             }
-
-            self.clear_attach();
         }
 
         Ok(())
@@ -576,7 +525,6 @@ impl ProofState {
 
             let next_slice = slice.step(diagram.size(), direction).unwrap_or(slice);
             workspace.path.push_back(next_slice);
-            self.clear_attach();
         }
     }
 
@@ -584,126 +532,6 @@ impl ProofState {
     fn update_view(&mut self, view: View) {
         if let Some(workspace) = &mut self.workspace {
             workspace.view = view;
-        }
-    }
-
-    /// Handler for [Action::SelectPoint].
-    fn select_points(&mut self, selected: &[Vec<SliceIndex>]) -> Result<(), ProofError> {
-        if selected.is_empty() {
-            return Ok(());
-        }
-
-        let workspace = match &self.workspace {
-            Some(workspace) => workspace,
-            None => return Ok(()),
-        };
-
-        let mut matches: FastHashSet<AttachOption> = Default::default();
-
-        let selected_with_path: Vec<_> = selected
-            .iter()
-            .map(|point| {
-                let mut point_with_path: Vec<SliceIndex> = workspace.path.iter().copied().collect();
-                point_with_path.extend(point.iter().copied());
-                point_with_path
-            })
-            .collect();
-
-        let attach_on_boundary = selected_with_path
-            .iter()
-            .any(|point| BoundaryPath::split(point).0.is_some());
-
-        for point in selected_with_path {
-            let (boundary_path, point) = BoundaryPath::split(&point);
-
-            if boundary_path.is_none() && attach_on_boundary {
-                continue;
-            }
-
-            let haystack = match boundary_path {
-                None => workspace.diagram.clone(),
-                Some(boundary_path) => DiagramN::try_from(workspace.diagram.clone())
-                    .ok()
-                    .and_then(|diagram| diagram.boundary(boundary_path))
-                    .ok_or(ProofError::NoAttachment)?,
-            };
-
-            let boundary: Boundary = boundary_path.map_or(Boundary::Target, BoundaryPath::boundary);
-
-            for info in self.signature.iter() {
-                macro_rules! extend {
-                    ($diagram:expr, $tag:expr) => {
-                        let needle = $diagram.slice(boundary.flip()).unwrap();
-                        matches.extend(
-                            haystack
-                                .embeddings(&needle)
-                                .filter(|embedding| contains_point(&needle, &point, embedding))
-                                .map(|embedding| AttachOption {
-                                    generator: info.generator,
-                                    diagram: $diagram,
-                                    tag: $tag,
-                                    boundary_path,
-                                    embedding: embedding.into_iter().collect(),
-                                }),
-                        );
-                    };
-                }
-
-                match info.generator.dimension.cmp(&(haystack.dimension() + 1)) {
-                    std::cmp::Ordering::Less => {
-                        if cfg!(feature = "weak-units") {
-                            let identity = |mut diagram: Diagram| {
-                                while diagram.dimension() < haystack.dimension() + 1 {
-                                    diagram = diagram.weak_identity().into();
-                                }
-                                DiagramN::try_from(diagram).unwrap()
-                            };
-
-                            extend!(identity(info.diagram.clone()), Some("identity".to_owned()));
-                        }
-
-                        if let Diagram::DiagramN(d) = &info.diagram {
-                            if info.invertible {
-                                let bubble = |mut diagram: DiagramN| {
-                                    while diagram.dimension() < haystack.dimension() + 1 {
-                                        diagram = diagram.bubble();
-                                    }
-                                    diagram
-                                };
-
-                                extend!(bubble(d.clone()), Some("bubble".to_owned()));
-                                extend!(bubble(d.inverse()), Some("inverse bubble".to_owned()));
-                            }
-                        }
-                    }
-                    std::cmp::Ordering::Equal => {
-                        if let Diagram::DiagramN(d) = &info.diagram {
-                            extend!(d.clone(), None);
-                            if info.invertible {
-                                extend!(d.inverse(), Some("inverse".to_owned()));
-                            }
-                        }
-                    }
-                    std::cmp::Ordering::Greater => (),
-                }
-            }
-        }
-
-        match matches.len() {
-            0 => {
-                self.clear_attach();
-                Err(ProofError::NoAttachment)
-            }
-            1 => {
-                self.attach(&matches.into_iter().next().unwrap())?;
-                Ok(())
-            }
-            _ => {
-                let workspace = self.workspace.as_mut().unwrap();
-                workspace.attach = Some(matches.into_iter().collect());
-                workspace.attachment_highlight = None;
-                Ok(())
-            }
         }
     }
 
@@ -731,22 +559,7 @@ impl ProofState {
             };
         }
 
-        self.clear_attach();
         Ok(())
-    }
-
-    /// Handler for [Action::HighlightAttachment].
-    fn highlight_attachment(&mut self, option: Option<AttachOption>) {
-        if let Some(workspace) = &mut self.workspace {
-            workspace.attachment_highlight = option;
-        }
-    }
-
-    /// Handler for [Action::HighlightSlice].
-    fn highlight_slice(&mut self, option: Option<SliceIndex>) {
-        if let Some(workspace) = &mut self.workspace {
-            workspace.slice_highlight = option;
-        }
     }
 
     /// Handler for [Action::Behead].
@@ -772,7 +585,6 @@ impl ProofState {
 
             ws.diagram = beheaded_diagram;
             ws.path = Default::default();
-            self.clear_attach();
         }
 
         Ok(())
@@ -802,7 +614,6 @@ impl ProofState {
 
             ws.diagram = befooted_diagram;
             ws.path = Default::default();
-            self.clear_attach();
         }
 
         Ok(())
@@ -840,7 +651,6 @@ impl ProofState {
             }
             ws.diagram = diagram;
             ws.path = Default::default();
-            self.clear_attach();
         }
 
         Ok(())
@@ -909,7 +719,6 @@ impl ProofState {
             // would have the path updated such that the image of the slice after the expansion is
             // visible. For now, we just step back up until we find a valid path.
             self.unwind_to_valid_path();
-            self.clear_attach();
         }
 
         Ok(())
@@ -961,7 +770,6 @@ impl ProofState {
 
             // FIXME(@doctorn) see above
             self.unwind_to_valid_path();
-            self.clear_attach();
         }
 
         Ok(())
@@ -981,13 +789,6 @@ impl ProofState {
 
     pub fn metadata(&self) -> &Metadata {
         &self.metadata
-    }
-
-    pub fn attach_options(&self) -> Option<&Vector<AttachOption>> {
-        match self.workspace() {
-            Some(ws) => ws.attach.as_ref(),
-            None => None,
-        }
     }
 
     pub fn render_style() -> RenderStyle {
@@ -1052,30 +853,6 @@ impl<'a> arbitrary::Arbitrary<'a> for AttachOption {
         })
         */
         Err(arbitrary::Error::EmptyChoose)
-    }
-}
-
-fn contains_point(diagram: &Diagram, point: &[Height], embedding: &[RegularHeight]) -> bool {
-    use Diagram::{Diagram0, DiagramN};
-
-    match (point.split_first(), diagram) {
-        (None, _) => true,
-        (Some(_), Diagram0(_)) => false,
-        (Some((height, point)), DiagramN(diagram)) => {
-            let (shift, embedding) = embedding.split_first().unwrap_or((&0, &[]));
-            let shift = Height::Regular(*shift);
-
-            if usize::from(*height) < usize::from(shift) {
-                return false;
-            }
-
-            let height = Height::from(usize::from(*height) - usize::from(shift));
-
-            match diagram.slice(height) {
-                Some(slice) => contains_point(&slice, point, embedding),
-                None => false,
-            }
-        }
     }
 }
 

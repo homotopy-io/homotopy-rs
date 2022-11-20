@@ -3,7 +3,10 @@ use yew::prelude::*;
 
 use crate::{
     app::tex::TexSpan,
-    model::proof::{Action, AttachOption, Signature},
+    model::{
+        proof::{self, AttachOption, Signature},
+        Action,
+    },
 };
 
 #[derive(Debug, Clone, PartialEq, Properties)]
@@ -47,7 +50,7 @@ impl AttachView {
 
         let onclick = ctx.props().dispatch.reform({
             let option = option.clone();
-            move |_| Action::Attach(option.clone())
+            move |_| Action::Proof(proof::Action::Attach(option.clone()))
         });
 
         let onmouseenter = ctx.props().dispatch.reform({

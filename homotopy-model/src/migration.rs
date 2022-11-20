@@ -74,9 +74,6 @@ fn load(proof: OldProof) -> Option<(Signature, Option<Workspace>)> {
             diagram: w.diagram.clone(),
             path: Default::default(),
             view: View::new(w.diagram.dimension().min(2) as u8),
-            attach: Default::default(),
-            attachment_highlight: Default::default(),
-            slice_highlight: Default::default(),
         }),
         None => None,
     };

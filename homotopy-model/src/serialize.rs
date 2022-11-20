@@ -210,9 +210,6 @@ pub fn deserialize(data: &[u8]) -> Option<((Signature, Option<Workspace>), Metad
             diagram: store.unpack_diagram(workspace_data.diagram)?,
             path: workspace_data.path,
             view: workspace_data.view,
-            attach: Default::default(),
-            attachment_highlight: Default::default(),
-            slice_highlight: Default::default(),
         });
     }
     Some(((signature, workspace), data.metadata))

@@ -1,91 +1,1575 @@
-[true,
 [
-  "CreateGeneratorZero",
-  {
-    "SelectGenerator": {
-      "id": 0,
-      "dimension": 0
+  true,
+  [
+    "CreateGeneratorZero",
+    {
+      "SelectGenerator": {
+        "id": 0,
+        "dimension": 0
+      }
+    },
+    {
+      "SetBoundary": "Source"
+    },
+    {
+      "SelectGenerator": {
+        "id": 0,
+        "dimension": 0
+      }
+    },
+    {
+      "SetBoundary": "Target"
+    },
+    {
+      "SelectGenerator": {
+        "id": 1,
+        "dimension": 1
+      }
+    },
+    {
+      "Attach": {
+        "generator": {
+          "id": 1,
+          "dimension": 1
+        },
+        "diagram": {
+          "source": {
+            "Diagram0": {
+              "generator": {
+                "id": 0,
+                "dimension": 0
+              },
+              "orientation": "Positive"
+            }
+          },
+          "cospans": [
+            {
+              "forward": {
+                "Rewrite0": [
+                  {
+                    "generator": {
+                      "id": 0,
+                      "dimension": 0
+                    },
+                    "orientation": "Positive"
+                  },
+                  {
+                    "generator": {
+                      "id": 1,
+                      "dimension": 1
+                    },
+                    "orientation": "Positive"
+                  },
+                  [
+                    [
+                      "Source",
+                      0
+                    ],
+                    [
+                      []
+                    ]
+                  ]
+                ]
+              },
+              "backward": {
+                "Rewrite0": [
+                  {
+                    "generator": {
+                      "id": 0,
+                      "dimension": 0
+                    },
+                    "orientation": "Positive"
+                  },
+                  {
+                    "generator": {
+                      "id": 1,
+                      "dimension": 1
+                    },
+                    "orientation": "Positive"
+                  },
+                  [
+                    [
+                      "Target",
+                      0
+                    ],
+                    [
+                      []
+                    ]
+                  ]
+                ]
+              }
+            }
+          ]
+        },
+        "tag": null,
+        "boundary_path": [
+          "Target",
+          0
+        ],
+        "embedding": []
+      }
+    },
+    {
+      "SetBoundary": "Source"
+    },
+    {
+      "SelectGenerator": {
+        "id": 1,
+        "dimension": 1
+      }
+    },
+    {
+      "SetBoundary": "Target"
+    },
+    {
+      "SelectGenerator": {
+        "id": 2,
+        "dimension": 2
+      }
+    },
+    {
+      "Attach": {
+        "generator": {
+          "id": 2,
+          "dimension": 2
+        },
+        "diagram": {
+          "source": {
+            "DiagramN": {
+              "source": {
+                "Diagram0": {
+                  "generator": {
+                    "id": 0,
+                    "dimension": 0
+                  },
+                  "orientation": "Positive"
+                }
+              },
+              "cospans": [
+                {
+                  "forward": {
+                    "Rewrite0": [
+                      {
+                        "generator": {
+                          "id": 0,
+                          "dimension": 0
+                        },
+                        "orientation": "Positive"
+                      },
+                      {
+                        "generator": {
+                          "id": 1,
+                          "dimension": 1
+                        },
+                        "orientation": "Positive"
+                      },
+                      [
+                        [
+                          "Source",
+                          0
+                        ],
+                        [
+                          []
+                        ]
+                      ]
+                    ]
+                  },
+                  "backward": {
+                    "Rewrite0": [
+                      {
+                        "generator": {
+                          "id": 0,
+                          "dimension": 0
+                        },
+                        "orientation": "Positive"
+                      },
+                      {
+                        "generator": {
+                          "id": 1,
+                          "dimension": 1
+                        },
+                        "orientation": "Positive"
+                      },
+                      [
+                        [
+                          "Target",
+                          0
+                        ],
+                        [
+                          []
+                        ]
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "forward": {
+                    "Rewrite0": [
+                      {
+                        "generator": {
+                          "id": 0,
+                          "dimension": 0
+                        },
+                        "orientation": "Positive"
+                      },
+                      {
+                        "generator": {
+                          "id": 1,
+                          "dimension": 1
+                        },
+                        "orientation": "Positive"
+                      },
+                      [
+                        [
+                          "Source",
+                          0
+                        ],
+                        [
+                          []
+                        ]
+                      ]
+                    ]
+                  },
+                  "backward": {
+                    "Rewrite0": [
+                      {
+                        "generator": {
+                          "id": 0,
+                          "dimension": 0
+                        },
+                        "orientation": "Positive"
+                      },
+                      {
+                        "generator": {
+                          "id": 1,
+                          "dimension": 1
+                        },
+                        "orientation": "Positive"
+                      },
+                      [
+                        [
+                          "Target",
+                          0
+                        ],
+                        [
+                          []
+                        ]
+                      ]
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "cospans": [
+            {
+              "forward": {
+                "RewriteN": {
+                  "dimension": 1,
+                  "cones": [
+                    {
+                      "index": 0,
+                      "internal": {
+                        "source": [
+                          {
+                            "forward": {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 1,
+                                    "dimension": 1
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                [
+                                  [
+                                    "Source",
+                                    0
+                                  ],
+                                  [
+                                    []
+                                  ]
+                                ]
+                              ]
+                            },
+                            "backward": {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 1,
+                                    "dimension": 1
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                [
+                                  [
+                                    "Target",
+                                    0
+                                  ],
+                                  [
+                                    []
+                                  ]
+                                ]
+                              ]
+                            }
+                          },
+                          {
+                            "forward": {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 1,
+                                    "dimension": 1
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                [
+                                  [
+                                    "Source",
+                                    0
+                                  ],
+                                  [
+                                    []
+                                  ]
+                                ]
+                              ]
+                            },
+                            "backward": {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 1,
+                                    "dimension": 1
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                [
+                                  [
+                                    "Target",
+                                    0
+                                  ],
+                                  [
+                                    []
+                                  ]
+                                ]
+                              ]
+                            }
+                          }
+                        ],
+                        "target": {
+                          "forward": {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 0,
+                                  "dimension": 0
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Source",
+                                  1
+                                ],
+                                [
+                                  []
+                                ]
+                              ]
+                            ]
+                          },
+                          "backward": {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 0,
+                                  "dimension": 0
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Target",
+                                  1
+                                ],
+                                [
+                                  []
+                                ]
+                              ]
+                            ]
+                          }
+                        },
+                        "regular_slices": [
+                          {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 0,
+                                  "dimension": 0
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Source",
+                                  0
+                                ],
+                                [
+                                  [
+                                    {
+                                      "Regular": 0
+                                    }
+                                  ]
+                                ]
+                              ]
+                            ]
+                          },
+                          {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 0,
+                                  "dimension": 0
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Source",
+                                  0
+                                ],
+                                [
+                                  [
+                                    {
+                                      "Regular": 1
+                                    }
+                                  ]
+                                ]
+                              ]
+                            ]
+                          },
+                          {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 0,
+                                  "dimension": 0
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Source",
+                                  0
+                                ],
+                                [
+                                  [
+                                    {
+                                      "Regular": 2
+                                    }
+                                  ]
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "singular_slices": [
+                          {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 1,
+                                  "dimension": 1
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Source",
+                                  0
+                                ],
+                                [
+                                  [
+                                    {
+                                      "Singular": 0
+                                    }
+                                  ]
+                                ]
+                              ]
+                            ]
+                          },
+                          {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 1,
+                                  "dimension": 1
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Source",
+                                  0
+                                ],
+                                [
+                                  [
+                                    {
+                                      "Singular": 1
+                                    }
+                                  ]
+                                ]
+                              ]
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              },
+              "backward": {
+                "RewriteN": {
+                  "dimension": 1,
+                  "cones": [
+                    {
+                      "index": 0,
+                      "internal": {
+                        "source": [
+                          {
+                            "forward": {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 1,
+                                    "dimension": 1
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                [
+                                  [
+                                    "Source",
+                                    0
+                                  ],
+                                  [
+                                    []
+                                  ]
+                                ]
+                              ]
+                            },
+                            "backward": {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 1,
+                                    "dimension": 1
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                [
+                                  [
+                                    "Target",
+                                    0
+                                  ],
+                                  [
+                                    []
+                                  ]
+                                ]
+                              ]
+                            }
+                          }
+                        ],
+                        "target": {
+                          "forward": {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 0,
+                                  "dimension": 0
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Source",
+                                  1
+                                ],
+                                [
+                                  []
+                                ]
+                              ]
+                            ]
+                          },
+                          "backward": {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 0,
+                                  "dimension": 0
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Target",
+                                  1
+                                ],
+                                [
+                                  []
+                                ]
+                              ]
+                            ]
+                          }
+                        },
+                        "regular_slices": [
+                          {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 0,
+                                  "dimension": 0
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Target",
+                                  0
+                                ],
+                                [
+                                  [
+                                    {
+                                      "Regular": 0
+                                    }
+                                  ]
+                                ]
+                              ]
+                            ]
+                          },
+                          {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 0,
+                                  "dimension": 0
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Target",
+                                  0
+                                ],
+                                [
+                                  [
+                                    {
+                                      "Regular": 1
+                                    }
+                                  ]
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "singular_slices": [
+                          {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 1,
+                                  "dimension": 1
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Target",
+                                  0
+                                ],
+                                [
+                                  [
+                                    {
+                                      "Singular": 0
+                                    }
+                                  ]
+                                ]
+                              ]
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "tag": null,
+        "boundary_path": [
+          "Source",
+          0
+        ],
+        "embedding": [
+          0
+        ]
+      }
+    },
+    {
+      "SetBoundary": "Source"
+    },
+    {
+      "SelectGenerator": {
+        "id": 2,
+        "dimension": 2
+      }
+    },
+    {
+      "Attach": {
+        "generator": {
+          "id": 2,
+          "dimension": 2
+        },
+        "diagram": {
+          "source": {
+            "DiagramN": {
+              "source": {
+                "Diagram0": {
+                  "generator": {
+                    "id": 0,
+                    "dimension": 0
+                  },
+                  "orientation": "Positive"
+                }
+              },
+              "cospans": [
+                {
+                  "forward": {
+                    "Rewrite0": [
+                      {
+                        "generator": {
+                          "id": 0,
+                          "dimension": 0
+                        },
+                        "orientation": "Positive"
+                      },
+                      {
+                        "generator": {
+                          "id": 1,
+                          "dimension": 1
+                        },
+                        "orientation": "Positive"
+                      },
+                      [
+                        [
+                          "Source",
+                          0
+                        ],
+                        [
+                          []
+                        ]
+                      ]
+                    ]
+                  },
+                  "backward": {
+                    "Rewrite0": [
+                      {
+                        "generator": {
+                          "id": 0,
+                          "dimension": 0
+                        },
+                        "orientation": "Positive"
+                      },
+                      {
+                        "generator": {
+                          "id": 1,
+                          "dimension": 1
+                        },
+                        "orientation": "Positive"
+                      },
+                      [
+                        [
+                          "Target",
+                          0
+                        ],
+                        [
+                          []
+                        ]
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "forward": {
+                    "Rewrite0": [
+                      {
+                        "generator": {
+                          "id": 0,
+                          "dimension": 0
+                        },
+                        "orientation": "Positive"
+                      },
+                      {
+                        "generator": {
+                          "id": 1,
+                          "dimension": 1
+                        },
+                        "orientation": "Positive"
+                      },
+                      [
+                        [
+                          "Source",
+                          0
+                        ],
+                        [
+                          []
+                        ]
+                      ]
+                    ]
+                  },
+                  "backward": {
+                    "Rewrite0": [
+                      {
+                        "generator": {
+                          "id": 0,
+                          "dimension": 0
+                        },
+                        "orientation": "Positive"
+                      },
+                      {
+                        "generator": {
+                          "id": 1,
+                          "dimension": 1
+                        },
+                        "orientation": "Positive"
+                      },
+                      [
+                        [
+                          "Target",
+                          0
+                        ],
+                        [
+                          []
+                        ]
+                      ]
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "cospans": [
+            {
+              "forward": {
+                "RewriteN": {
+                  "dimension": 1,
+                  "cones": [
+                    {
+                      "index": 0,
+                      "internal": {
+                        "source": [
+                          {
+                            "forward": {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 1,
+                                    "dimension": 1
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                [
+                                  [
+                                    "Source",
+                                    0
+                                  ],
+                                  [
+                                    []
+                                  ]
+                                ]
+                              ]
+                            },
+                            "backward": {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 1,
+                                    "dimension": 1
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                [
+                                  [
+                                    "Target",
+                                    0
+                                  ],
+                                  [
+                                    []
+                                  ]
+                                ]
+                              ]
+                            }
+                          },
+                          {
+                            "forward": {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 1,
+                                    "dimension": 1
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                [
+                                  [
+                                    "Source",
+                                    0
+                                  ],
+                                  [
+                                    []
+                                  ]
+                                ]
+                              ]
+                            },
+                            "backward": {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 1,
+                                    "dimension": 1
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                [
+                                  [
+                                    "Target",
+                                    0
+                                  ],
+                                  [
+                                    []
+                                  ]
+                                ]
+                              ]
+                            }
+                          }
+                        ],
+                        "target": {
+                          "forward": {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 0,
+                                  "dimension": 0
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Source",
+                                  1
+                                ],
+                                [
+                                  []
+                                ]
+                              ]
+                            ]
+                          },
+                          "backward": {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 0,
+                                  "dimension": 0
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Target",
+                                  1
+                                ],
+                                [
+                                  []
+                                ]
+                              ]
+                            ]
+                          }
+                        },
+                        "regular_slices": [
+                          {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 0,
+                                  "dimension": 0
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Source",
+                                  0
+                                ],
+                                [
+                                  [
+                                    {
+                                      "Regular": 0
+                                    }
+                                  ]
+                                ]
+                              ]
+                            ]
+                          },
+                          {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 0,
+                                  "dimension": 0
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Source",
+                                  0
+                                ],
+                                [
+                                  [
+                                    {
+                                      "Regular": 1
+                                    }
+                                  ]
+                                ]
+                              ]
+                            ]
+                          },
+                          {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 0,
+                                  "dimension": 0
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Source",
+                                  0
+                                ],
+                                [
+                                  [
+                                    {
+                                      "Regular": 2
+                                    }
+                                  ]
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "singular_slices": [
+                          {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 1,
+                                  "dimension": 1
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Source",
+                                  0
+                                ],
+                                [
+                                  [
+                                    {
+                                      "Singular": 0
+                                    }
+                                  ]
+                                ]
+                              ]
+                            ]
+                          },
+                          {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 1,
+                                  "dimension": 1
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Source",
+                                  0
+                                ],
+                                [
+                                  [
+                                    {
+                                      "Singular": 1
+                                    }
+                                  ]
+                                ]
+                              ]
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              },
+              "backward": {
+                "RewriteN": {
+                  "dimension": 1,
+                  "cones": [
+                    {
+                      "index": 0,
+                      "internal": {
+                        "source": [
+                          {
+                            "forward": {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 1,
+                                    "dimension": 1
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                [
+                                  [
+                                    "Source",
+                                    0
+                                  ],
+                                  [
+                                    []
+                                  ]
+                                ]
+                              ]
+                            },
+                            "backward": {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 1,
+                                    "dimension": 1
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                [
+                                  [
+                                    "Target",
+                                    0
+                                  ],
+                                  [
+                                    []
+                                  ]
+                                ]
+                              ]
+                            }
+                          }
+                        ],
+                        "target": {
+                          "forward": {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 0,
+                                  "dimension": 0
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Source",
+                                  1
+                                ],
+                                [
+                                  []
+                                ]
+                              ]
+                            ]
+                          },
+                          "backward": {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 0,
+                                  "dimension": 0
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Target",
+                                  1
+                                ],
+                                [
+                                  []
+                                ]
+                              ]
+                            ]
+                          }
+                        },
+                        "regular_slices": [
+                          {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 0,
+                                  "dimension": 0
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Target",
+                                  0
+                                ],
+                                [
+                                  [
+                                    {
+                                      "Regular": 0
+                                    }
+                                  ]
+                                ]
+                              ]
+                            ]
+                          },
+                          {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 0,
+                                  "dimension": 0
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Target",
+                                  0
+                                ],
+                                [
+                                  [
+                                    {
+                                      "Regular": 1
+                                    }
+                                  ]
+                                ]
+                              ]
+                            ]
+                          }
+                        ],
+                        "singular_slices": [
+                          {
+                            "Rewrite0": [
+                              {
+                                "generator": {
+                                  "id": 1,
+                                  "dimension": 1
+                                },
+                                "orientation": "Positive"
+                              },
+                              {
+                                "generator": {
+                                  "id": 2,
+                                  "dimension": 2
+                                },
+                                "orientation": "Positive"
+                              },
+                              [
+                                [
+                                  "Target",
+                                  0
+                                ],
+                                [
+                                  [
+                                    {
+                                      "Singular": 0
+                                    }
+                                  ]
+                                ]
+                              ]
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "tag": null,
+        "boundary_path": [
+          "Source",
+          0
+        ],
+        "embedding": [
+          1
+        ]
+      }
+    },
+    {
+      "SetBoundary": "Target"
+    },
+    {
+      "SelectGenerator": {
+        "id": 3,
+        "dimension": 3
+      }
     }
-  },
-  {
-    "SetBoundary": "Source"
-  },
-  {
-    "SelectGenerator": {
-      "id": 0,
-      "dimension": 0
-    }
-  },
-  {
-    "SetBoundary": "Target"
-  },
-  {
-    "SelectGenerator": {
-      "id": 1,
-      "dimension": 1
-    }
-  },
-  {
-    "SelectPoints": [
-      [
-        "Target"
-      ]
-    ]
-  },
-  {
-    "SetBoundary": "Source"
-  },
-  {
-    "SelectGenerator": {
-      "id": 1,
-      "dimension": 1
-    }
-  },
-  {
-    "SetBoundary": "Target"
-  },
-  {
-    "SelectGenerator": {
-      "id": 2,
-      "dimension": 2
-    }
-  },
-  {
-    "SelectPoints": [
-      [
-        "Source",
-        {
-          "Singular": 0
-        }
-      ]
-    ]
-  },
-  {
-    "SetBoundary": "Source"
-  },
-  {
-    "SelectGenerator": {
-      "id": 2,
-      "dimension": 2
-    }
-  },
-  {
-    "SelectPoints": [
-      [
-        "Source",
-        {
-          "Singular": 1
-        }
-      ]
-    ]
-  },
-  {
-    "SetBoundary": "Target"
-  },
-  {
-    "SelectGenerator": {
-      "id": 3,
-      "dimension": 3
-    }
-  }
-]]
+  ]
+]

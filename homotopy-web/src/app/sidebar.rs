@@ -1,3 +1,4 @@
+use im::Vector;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::{closure::Closure, JsCast};
 use yew::prelude::*;
@@ -9,7 +10,7 @@ use crate::{
         icon::{Icon, IconSize},
         Visibility,
     },
-    model::{self, proof, Proof},
+    model::{self, proof, proof::AttachOption, Proof},
 };
 
 mod buttons;
@@ -261,6 +262,7 @@ impl Component for SidebarDrawer {
 #[derive(Properties, Clone, PartialEq)]
 pub struct SidebarProps {
     pub proof: Proof,
+    pub attach: Option<Vector<AttachOption>>,
     pub dispatch: Callback<model::Action>,
 }
 
@@ -361,13 +363,8 @@ impl Sidebar {
     fn drawer(&self, ctx: &Context<Self>) -> Html {
         let model_dispatch = &ctx.props().dispatch;
         let sidebar_dispatch = ctx.link().callback(|x| x);
-        let proof = &ctx.props().proof;
 
-        let attach_options = proof
-            .workspace()
-            .and_then(|workspace| workspace.attach.clone());
-
-        if let Some(attach_options) = attach_options {
+        if let Some(attach_options) = ctx.props().attach.as_ref() {
             return html! {
                 <SidebarDrawer
                     class="attach"
@@ -376,11 +373,11 @@ impl Sidebar {
                     sidebar_dispatch={sidebar_dispatch}
                     initial_width={self.last_drawer_width}
                     icon="close"
-                    on_click={model::Action::from(proof::Action::ClearAttach)}
+                    on_click={model::Action::ClearAttach}
                 >
                     <AttachView
-                        dispatch={model_dispatch.reform(model::Action::Proof)}
-                        options={attach_options}
+                        dispatch={model_dispatch.clone()}
+                        options={attach_options.clone()}
                         signature={ctx.props().proof.signature().clone()}
                     />
                 </SidebarDrawer>
