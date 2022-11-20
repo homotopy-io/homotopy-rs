@@ -57,7 +57,7 @@ impl Component for App {
         let state = model::State::default();
         // Install the signature stylesheet
         let mut signature_stylesheet = SignatureStylesheet::new();
-        signature_stylesheet.update(state.with_proof(|p| p.signature().clone()).unwrap());
+        signature_stylesheet.update(state.proof().signature.clone());
         signature_stylesheet.mount();
 
         Self {
@@ -74,22 +74,14 @@ impl Component for App {
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Message::Dispatch(action) => {
-                if !self
-                    .state
-                    .with_proof(|proof| action.is_valid(proof))
-                    .unwrap_or_default()
-                {
+                if !action.is_valid(self.state.proof()) {
                     return false;
                 }
 
                 log::info!("Received action: {:?}", action);
 
                 if let model::Action::Proof(ref action) = action {
-                    if self
-                        .state
-                        .with_proof(|p| p.resets_panzoom(action))
-                        .unwrap_or_default()
-                    {
+                    if self.state.proof().resets_panzoom(action) {
                         self.panzoom.reset();
                         self.orbit_control.reset();
                     }
@@ -134,7 +126,7 @@ impl Component for App {
                 }
 
                 self.signature_stylesheet
-                    .update(self.state.with_proof(|p| p.signature().clone()).unwrap());
+                    .update(self.state.proof().signature.clone());
 
                 true
             }
@@ -164,18 +156,14 @@ impl App {
     }
 
     fn render(ctx: &Context<Self>, state: &model::State) -> Html {
-        let proof = state
-            .with_proof(Clone::clone)
-            .expect("This should always succeed.");
+        let proof = state.proof();
         let dispatch = ctx.link().callback(Message::Dispatch);
-        let signature = proof.signature();
-        let metadata = proof.metadata();
 
         let workspace = html! {
             <WorkspaceView
-                workspace={proof.workspace().map(Clone::clone)}
-                signature={signature.clone()}
-                metadata={metadata.clone()}
+                workspace={proof.workspace.clone()}
+                signature={proof.signature.clone()}
+                metadata={proof.metadata.clone()}
                 dispatch={dispatch.clone()}
                 attach={state.attach.clone()}
                 attachment_highlight={state.attachment_highlight.clone()}
@@ -183,12 +171,12 @@ impl App {
             />
         };
 
-        let boundary_preview = match proof.boundary() {
+        let boundary_preview = match &proof.boundary {
             Some(b) => html! {
                 <BoundaryPreview
                     boundary={b.clone()}
                     dispatch={dispatch.reform(model::Action::Proof)}
-                    signature={signature.clone()}
+                    signature={proof.signature.clone()}
                 />
             },
             None => Default::default(),
@@ -198,7 +186,7 @@ impl App {
             <main class="app">
                 <Sidebar
                     dispatch={dispatch}
-                    proof={proof}
+                    proof={proof.clone()}
                     attach={state.attach.clone()}
                 />
                 <div class="toaster">

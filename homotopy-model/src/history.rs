@@ -113,24 +113,17 @@ pub enum HistoryError {
 }
 
 impl History {
-    pub fn with_proof<F, U>(&self, f: F) -> Option<U>
-    where
-        F: Fn(&Proof) -> U,
-    {
-        self.snapshots.with(self.current, f)
+    pub fn proof(&self) -> &Proof {
+        &self.snapshots[self.current]
     }
 
     pub fn add(&mut self, action: super::proof::Action, proof: Proof) {
         // check if this action has been performed at this state previously
-        let existing = self
-            .with_proof(|n| {
-                n.children().find(|id| {
-                    self.snapshots
-                        .with(*id, |n| n.action.as_ref() == Some(&action))
-                        .unwrap_or_default()
-                })
-            })
-            .flatten();
+        let existing = self.proof().children().find(|id| {
+            self.snapshots
+                .with(*id, |n| n.action.as_ref() == Some(&action))
+                .unwrap_or_default()
+        });
         if let Some(child) = existing {
             // update timestamp and ensure the action was deterministic
             self.snapshots
@@ -152,19 +145,13 @@ impl History {
     }
 
     pub fn undo(&mut self) -> Result<(), HistoryError> {
-        let prev = self
-            .with_proof(NodeData::parent)
-            .flatten()
-            .ok_or(HistoryError::Undo)?;
+        let prev = self.proof().parent().ok_or(HistoryError::Undo)?;
         self.current = prev;
         Ok(())
     }
 
     pub fn redo(&mut self) -> Result<(), HistoryError> {
-        let next = self
-            .with_proof(NodeData::last)
-            .flatten()
-            .ok_or(HistoryError::Redo)?;
+        let next = self.proof().last().ok_or(HistoryError::Redo)?;
         self.current = next;
         Ok(())
     }

@@ -79,11 +79,8 @@ pub struct State {
 
 impl State {
     #[inline]
-    pub(super) fn with_proof<F, U>(&self, f: F) -> Option<U>
-    where
-        F: Fn(&Proof) -> U,
-    {
-        self.history.with_proof(f)
+    pub fn proof(&self) -> &Proof {
+        self.history.proof()
     }
 
     /// Update the state in response to an [Action].
@@ -101,7 +98,7 @@ impl State {
                 let data = serde_json::to_string(&action).expect("Failed to serialize action.");
                 push_action(JsString::from(data));
 
-                let mut proof = self.with_proof(Clone::clone).ok_or(ModelError::Internal)?;
+                let mut proof = self.proof().clone();
                 proof.update(&action).map_err(ModelError::from)?;
                 self.history.add(action, proof);
                 self.clear_attach();
@@ -127,22 +124,16 @@ impl State {
             }
 
             Action::ExportTikz(with_braid) => {
-                let signature = self
-                    .with_proof(|p| p.signature.clone())
-                    .ok_or(ModelError::Internal)?;
-                let diagram = self
-                    .with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram())
-                    .ok_or(ModelError::Internal)?;
-                let stylesheet = tikz::stylesheet(&signature);
-                let data = tikz::render(&diagram, &stylesheet, &signature, with_braid).unwrap();
+                let signature = &self.proof().signature;
+                let diagram = self.proof().workspace.as_ref().unwrap().visible_diagram();
+                let stylesheet = tikz::stylesheet(signature);
+                let data = tikz::render(&diagram, &stylesheet, signature, with_braid).unwrap();
                 generate_download("homotopy_io_export", "tikz", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
 
             Action::ExportSvg => {
-                let signature = self
-                    .with_proof(|p| p.signature.clone())
-                    .ok_or(ModelError::Internal)?;
+                let signature = &self.proof().signature;
 
                 // First we locate the element containing the SVG rendered the SVG rendering
                 // pipeline. We *could* do this by using a lookup by class name, which would not
@@ -162,7 +153,7 @@ impl State {
                 // same way the `SignatureStylesheet` struct does.
                 // We also strip the styles of whitespace since it is unneeded.
                 let stylesheet = {
-                    let mut inner_stylesheet = svg::stylesheet(&signature);
+                    let mut inner_stylesheet = svg::stylesheet(signature);
                     inner_stylesheet.retain(|c| !c.is_whitespace());
                     format!("<style>{}</style>", inner_stylesheet)
                 };
@@ -186,26 +177,18 @@ impl State {
             }
 
             Action::ExportManim(use_opengl) => {
-                let signature = self
-                    .with_proof(|p| p.signature.clone())
-                    .ok_or(ModelError::Internal)?;
-                let diagram = self
-                    .with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram())
-                    .ok_or(ModelError::Internal)?;
-                let stylesheet = manim::stylesheet(&signature);
-                let data = manim::render(&diagram, &signature, &stylesheet, use_opengl).unwrap();
+                let signature = &self.proof().signature;
+                let diagram = self.proof().workspace.as_ref().unwrap().visible_diagram();
+                let stylesheet = manim::stylesheet(signature);
+                let data = manim::render(&diagram, signature, &stylesheet, use_opengl).unwrap();
                 generate_download("homotopy_io_export", "py", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
 
             Action::ExportStl => {
-                let signature = self
-                    .with_proof(|p| p.signature.clone())
-                    .ok_or(ModelError::Internal)?;
-                let diagram = self
-                    .with_proof(|p| p.workspace.as_ref().unwrap().visible_diagram())
-                    .ok_or(ModelError::Internal)?;
-                let data = stl::render(&diagram, &signature).unwrap();
+                let signature = &self.proof().signature;
+                let diagram = self.proof().workspace.as_ref().unwrap().visible_diagram();
+                let data = stl::render(&diagram, signature).unwrap();
                 generate_download("homotopy_io_export", "stl", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
@@ -220,12 +203,9 @@ impl State {
 
             Action::ExportProof => {
                 let data = serialize::serialize(
-                    self.with_proof(|p| p.signature.clone())
-                        .ok_or(ModelError::Internal)?,
-                    self.with_proof(|p| p.workspace.clone())
-                        .ok_or(ModelError::Internal)?,
-                    self.with_proof(|p| p.metadata.clone())
-                        .ok_or(ModelError::Internal)?,
+                    self.proof().signature.clone(),
+                    self.proof().workspace.clone(),
+                    self.proof().metadata.clone(),
                 );
                 generate_download("homotopy_io_export", "hom", data.as_slice())
                     .map_err(ModelError::Export)?;
@@ -256,15 +236,12 @@ impl State {
                 let action = match self.attach.as_ref() {
                     // Select a generator.
                     None => proof::Action::SelectGenerator(
-                        self.with_proof(|proof| {
-                            proof
-                                .signature
-                                .iter()
-                                .nth(index)
-                                .ok_or(ModelError::IndexOutOfBounds)
-                                .map(|info| info.generator)
-                        })
-                        .ok_or(ModelError::Internal)??,
+                        self.proof()
+                            .signature
+                            .iter()
+                            .nth(index)
+                            .ok_or(ModelError::IndexOutOfBounds)?
+                            .generator,
                     ),
                     // Select an attachment option.
                     Some(att) => proof::Action::Attach(
@@ -284,13 +261,11 @@ impl State {
 
     /// Handler for [Action::SelectPoints].
     fn select_points(&mut self, selected: &[Vec<SliceIndex>]) -> Result<(), ModelError> {
-        let proof = self.with_proof(Clone::clone).ok_or(ModelError::Internal)?;
-
         if selected.is_empty() {
             return Ok(());
         }
 
-        let workspace = match &proof.workspace {
+        let workspace = match self.proof().workspace.as_ref() {
             Some(workspace) => workspace,
             None => return Ok(()),
         };
@@ -327,7 +302,7 @@ impl State {
 
             let boundary: Boundary = boundary_path.map_or(Boundary::Target, BoundaryPath::boundary);
 
-            for info in proof.signature.iter() {
+            for info in self.proof().signature.iter() {
                 macro_rules! extend {
                     ($diagram:expr, $tag:expr) => {
                         let needle = $diagram.slice(boundary.flip()).unwrap();

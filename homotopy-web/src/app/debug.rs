@@ -2,7 +2,7 @@ use closure::closure;
 use web_sys::{File, HtmlInputElement};
 use yew::prelude::*;
 
-use crate::model::{Action, Proof};
+use crate::model::{proof::Workspace, Action, Proof};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Msg {
@@ -41,10 +41,10 @@ impl Component for DebugView {
         let diagram = ctx
             .props()
             .proof
-            .workspace()
-            .cloned()
-            .map(|ws| ws.visible_diagram());
-        let signature = ctx.props().proof.signature().clone();
+            .workspace
+            .as_ref()
+            .map(Workspace::visible_diagram);
+        let signature = ctx.props().proof.signature.clone();
         html! {
             <>
                 <div>
