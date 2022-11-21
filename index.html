@@ -24,6 +24,7 @@
     </script>
 	<script>
 		window.action_buffer=[];
+		function drop_actions() {window.action_buffer = [];};
 		function push_action(a) {window.action_buffer.push(a);};
 		function pop_action() {window.action_buffer.pop();};
 		function dump_action_text() {return '[false,['+window.action_buffer.join(',')+']]';};
