@@ -74,6 +74,12 @@ impl State {
     pub fn update(&mut self, action: Action) -> Result<(), ModelError> {
         match action {
             Action::Proof(action) => {
+                // If we are importing a proof,
+                // might as well forget about all previous actions.
+                // This avoid OOM with multiple imports of big proofs.
+                if matches!(action, proof::Action::ImportProof(_)) {
+                    drop_actions();
+                }
                 // Only exfiltrate proof actions, otherwise
                 // we risk funny business with circular action imports.
                 let data = serde_json::to_string(&action).expect("Failed to serialize action.");
@@ -271,6 +277,9 @@ pub fn generate_download(name: &str, ext: &str, data: &[u8]) -> Result<(), wasm_
 
 #[wasm_bindgen]
 extern "C" {
+    #[wasm_bindgen]
+    pub fn drop_actions();
+
     #[wasm_bindgen]
     pub fn push_action(a: JsString);
 
