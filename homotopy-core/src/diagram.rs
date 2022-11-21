@@ -85,8 +85,8 @@ impl Diagram {
     }
 
     #[must_use]
-    pub fn identity(&self) -> DiagramN {
-        DiagramN::new_unsafe(self.clone(), vec![])
+    pub fn identity(self) -> DiagramN {
+        DiagramN::new_unsafe(self, vec![])
     }
 
     #[must_use]

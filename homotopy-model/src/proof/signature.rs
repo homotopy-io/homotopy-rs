@@ -177,11 +177,12 @@ impl Signature {
         })
     }
 
-    pub fn create_generator_zero(&mut self, name: &str) {
+    pub fn create_generator_zero(&mut self, name: &str) -> Diagram0 {
         let id = self.next_generator_id();
         let generator = Generator::new(id, 0);
         let diagram = Diagram0::from(generator);
         self.insert(generator, diagram, name, false);
+        diagram
     }
 
     pub fn create_generator(
@@ -190,12 +191,12 @@ impl Signature {
         target: Diagram,
         name: &str,
         invertible: bool,
-    ) -> Result<Diagram, NewDiagramError> {
+    ) -> Result<DiagramN, NewDiagramError> {
         let id = self.next_generator_id();
         let generator = Generator::new(id, source.dimension() + 1);
         let diagram = DiagramN::from_generator(generator, source, target)?;
         self.insert(generator, diagram.clone(), name, invertible);
-        Ok(diagram.into())
+        Ok(diagram)
     }
 
     pub fn remove(&mut self, generator: Generator) {
@@ -303,6 +304,18 @@ impl homotopy_core::signature::Signature for Signature {
 
     fn generator_info(&self, g: Generator) -> Option<&GeneratorInfo> {
         self.iter().find(|info| info.generator == g)
+    }
+
+    fn add_zero(&mut self) -> Diagram0 {
+        self.create_generator_zero("Cell")
+    }
+
+    fn add(
+        &mut self,
+        source: impl Into<Diagram>,
+        target: impl Into<Diagram>,
+    ) -> Result<DiagramN, NewDiagramError> {
+        self.create_generator(source.into(), target.into(), "Cell", false)
     }
 }
 

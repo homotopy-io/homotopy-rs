@@ -30,7 +30,7 @@ fn associator() {
 
 #[test]
 fn snake() {
-    let (_, diagram) = examples::snake();
+    let (_, diagram) = examples::algebraic_snake();
 
     let layout = Layout::<3>::new(&diagram.into()).unwrap();
 

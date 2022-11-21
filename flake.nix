@@ -71,6 +71,7 @@
               ++ (with self.pkgs; [
                 { package = cargo-insta; }
                 { package = cargo-make; }
+                { package = cargo-nextest; }
                 { package = cargo-rr; }
                 { package = cargo-watch; }
                 { package = devserver; }

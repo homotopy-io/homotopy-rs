@@ -14,7 +14,7 @@ use crate::{
 //  |   | → |   |
 //  m   |   |   m
 // / \  |   |  / \
-pub fn associator() -> (SignatureBuilder, DiagramN) {
+pub fn associator() -> (impl Signature, DiagramN) {
     let mut sig = SignatureBuilder::default();
 
     let x = sig.add_zero();
@@ -240,6 +240,22 @@ pub fn crossing() -> (impl Signature, DiagramN) {
     )
 }
 
+//  |
+//  >
+// / \
+pub fn half_braid() -> (impl Signature, DiagramN) {
+    let mut sig = SignatureBuilder::default();
+    let x = sig.add_zero();
+    let s = sig.add(x.identity(), x.identity()).unwrap();
+    let s_then_s = s.attach(&s, Boundary::Target, &[]).unwrap();
+    let half_braid = s_then_s
+        .identity()
+        .contract(Boundary::Target.into(), &[], 0, Some(Bias::Lower), &sig)
+        .unwrap();
+
+    (sig, half_braid)
+}
+
 // | |
 // | b
 // a |
@@ -412,7 +428,45 @@ pub fn scalar_and_beads() -> (impl Signature, DiagramN) {
     )
 }
 
-pub fn real_snake() -> (impl Signature, DiagramN) {
+pub fn cap() -> (impl Signature, DiagramN) {
+    let mut sig = SignatureBuilder::default();
+
+    // 0-cells
+    let x = sig.add_zero();
+
+    // 1-cells
+    let f = sig.add(x, x).unwrap();
+    let f_then_inverse = f.attach(&f.inverse(), Target, &[]).unwrap();
+
+    // 2-cells
+    let cap = f_then_inverse
+        .identity()
+        .contract(Boundary::Target.into(), &[], 0, None, &sig)
+        .expect("failed to contract f then inverse");
+
+    (sig, cap)
+}
+
+pub fn cup() -> (impl Signature, DiagramN) {
+    let mut sig = SignatureBuilder::default();
+
+    // 0-cells
+    let x = sig.add_zero();
+
+    // 1-cells
+    let f = sig.add(x, x).unwrap();
+    let f_then_inverse = f.attach(&f.inverse(), Target, &[]).unwrap();
+
+    // 2-cells
+    let cup = f_then_inverse
+        .identity()
+        .contract(Boundary::Source.into(), &[], 0, None, &sig)
+        .expect("failed to contract f then inverse");
+
+    (sig, cup)
+}
+
+pub fn snake() -> (impl Signature, DiagramN) {
     let mut sig = SignatureBuilder::default();
 
     // 0-cells
@@ -465,7 +519,7 @@ pub fn bubble() -> (impl Signature, DiagramN) {
     (sig, bubble)
 }
 
-pub fn snake() -> (impl Signature, DiagramN) {
+pub fn algebraic_snake() -> (impl Signature, DiagramN) {
     let mut sig = SignatureBuilder::default();
 
     // 0-cells
