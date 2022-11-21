@@ -2,7 +2,7 @@ use homotopy_core::{
     common::{BoundaryPath, Label},
     factorization::factorize,
     rewrite::Cone,
-    signature::SignatureBuilder,
+    signature::{Signature, SignatureBuilder},
     Boundary, Cospan, Diagram, DiagramN, Generator, Height, Rewrite, Rewrite0, RewriteN,
     SliceIndex,
 };

@@ -17,7 +17,7 @@ fn associator() {
 
 #[test]
 fn snake() {
-    let (_, diagram) = examples::snake();
+    let (_, diagram) = examples::algebraic_snake();
 
     let mesh = Mesh::<3>::new(&diagram.into()).unwrap();
     let cubes = mesh

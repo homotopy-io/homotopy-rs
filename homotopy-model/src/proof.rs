@@ -198,7 +198,9 @@ impl ProofState {
     /// Update the state in response to an [Action].
     pub fn update(&mut self, action: &Action) -> Result<(), ProofError> {
         match action {
-            Action::CreateGeneratorZero => self.signature.create_generator_zero("Cell"),
+            Action::CreateGeneratorZero => {
+                self.signature.create_generator_zero("Cell");
+            }
             Action::SetBoundary(boundary) => self.set_boundary(*boundary)?,
             Action::TakeIdentityDiagram => self.take_identity_diagram(),
             Action::ClearWorkspace => self.clear_workspace(),
@@ -436,7 +438,7 @@ impl ProofState {
                     workspace.view = workspace.view.inc();
                 }
 
-                workspace.diagram = workspace.diagram.identity().into();
+                workspace.diagram = workspace.diagram.clone().identity().into();
             }
             None => {}
         }
@@ -547,6 +549,7 @@ impl ProofState {
                     .or(Err(ProofError::NoAttachment))?,
                 None => workspace
                     .diagram
+                    .clone()
                     .identity()
                     .attach(attachment, Boundary::Target, &embedding)
                     .or(Err(ProofError::NoAttachment))?,
@@ -678,7 +681,7 @@ impl ProofState {
 
         // rewrite from singleton to original diagram
         self.signature
-            .create_generator(singleton, diagram.into(), "Proof", true)?;
+            .create_generator(singleton.into(), diagram.into(), "Proof", true)?;
 
         self.clear_workspace();
 

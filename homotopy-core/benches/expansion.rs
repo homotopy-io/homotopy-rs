@@ -19,6 +19,7 @@ fn expand_matchsticks(crit: &mut Criterion) {
     group.bench_function("expand", |b| {
         b.iter(|| {
             contracted
+                .clone()
                 .identity()
                 .expand(
                     Boundary::Target.into(),
