@@ -3,6 +3,7 @@ default_to_workspace = false
 
 [env]
 GIT_DESCRIBE = { script = ["git describe --dirty --always --tags"] }
+CARGO_TARGET_DIR = "target/wasm"
 
 [env.development]
 TARGET_SUBDIRECTORY = "debug"
@@ -14,7 +15,7 @@ TARGET_SUBDIRECTORY = "release"
 script = '''
 mkdir -p dist
 cargo build --target wasm32-unknown-unknown --profile ${CARGO_MAKE_CARGO_PROFILE}
-wasm-bindgen --out-dir dist --no-typescript --target web target/wasm32-unknown-unknown/${TARGET_SUBDIRECTORY}/homotopy_web.wasm
+wasm-bindgen --out-dir dist --no-typescript --target web ${CARGO_TARGET_DIR}/wasm32-unknown-unknown/${TARGET_SUBDIRECTORY}/homotopy_web.wasm
 '''
 
 [tasks.build-wasm-watch]
