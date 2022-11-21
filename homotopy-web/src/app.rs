@@ -1,4 +1,5 @@
 use boundary::BoundaryPreview;
+use gloo_timers::future::TimeoutFuture;
 use settings::{AppSettings, AppSettingsKey};
 use sidebar::Sidebar;
 use signature_stylesheet::SignatureStylesheet;
@@ -35,11 +36,13 @@ mod tex;
 mod workspace;
 
 pub enum Message {
+    BlockingDispatch(model::Action),
     Dispatch(model::Action),
 }
 
 pub struct App {
     state: model::State,
+    loading: bool,
     panzoom: PanZoom,
     orbit_control: GlViewControl,
     signature_stylesheet: SignatureStylesheet,
@@ -62,6 +65,7 @@ impl Component for App {
 
         Self {
             state,
+            loading: false,
             panzoom: PanZoom::new(),
             orbit_control: GlViewControl::new(),
             signature_stylesheet,
@@ -71,16 +75,25 @@ impl Component for App {
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Message::Dispatch(action) => {
+            Message::BlockingDispatch(action) => {
                 if !action.is_valid(self.state.proof()) {
                     return false;
                 }
 
+                self.loading = true;
+
+                ctx.link().send_future(async move {
+                    TimeoutFuture::new(0).await; // TODO: remove this awful hack
+                    Message::Dispatch(action)
+                });
+                true
+            }
+            Message::Dispatch(action) => {
                 log::info!("Received action: {:?}", action);
 
-                if let model::Action::Proof(ref action) = action {
+                if let model::Action::Proof(action) = &action {
                     if self.state.proof().resets_panzoom(action) {
                         self.panzoom.reset();
                         self.orbit_control.reset();
@@ -127,6 +140,7 @@ impl Component for App {
 
                 self.signature_stylesheet
                     .update(self.state.proof().signature.clone());
+                self.loading = false;
 
                 true
             }
@@ -134,7 +148,7 @@ impl Component for App {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        Self::render(ctx, &self.state)
+        Self::render(ctx, &self.state, self.loading)
     }
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
@@ -155,9 +169,9 @@ impl App {
         self.before_unload = Some(before_unload);
     }
 
-    fn render(ctx: &Context<Self>, state: &model::State) -> Html {
+    fn render(ctx: &Context<Self>, state: &model::State, loading: bool) -> Html {
         let proof = state.proof();
-        let dispatch = ctx.link().callback(Message::Dispatch);
+        let dispatch = ctx.link().callback(Message::BlockingDispatch);
 
         let workspace = html! {
             <WorkspaceView
@@ -182,8 +196,15 @@ impl App {
             None => Default::default(),
         };
 
+        let spinner = if loading {
+            html! { <div class="cover-spin"></div> }
+        } else {
+            html! {}
+        };
+
         html! {
             <main class="app">
+                {spinner}
                 <Sidebar
                     dispatch={dispatch}
                     proof={proof.clone()}
