@@ -507,6 +507,7 @@ pub fn bubble() -> (impl Signature, DiagramN) {
 
     // 2-cells
     let cap = f_then_inverse
+        .clone()
         .identity()
         .contract(Boundary::Target.into(), &[], 0, None, &sig)
         .expect("failed to contract f then inverse");
@@ -564,8 +565,8 @@ pub fn lips() -> (impl Signature, DiagramN) {
         .unwrap();
 
     // 3-cells
-    let snake_death = sig.add(snake.clone(), f.identity()).unwrap();
-    let snake_birth = sig.add(f.identity(), snake).unwrap();
+    let snake_death = sig.add(snake.clone(), f.clone().identity()).unwrap();
+    let snake_birth = sig.add(f.clone().identity(), snake).unwrap();
 
     // 4-cells
     let lips = sig

@@ -6,7 +6,7 @@ use homotopy_core::{
         Boundary, BoundaryPath, DimensionError, Direction, Generator, Height, Mode, SliceIndex,
     },
     contraction::ContractionError,
-    diagram::NewDiagramError,
+    diagram::{AttachmentError, NewDiagramError},
     expansion::ExpansionError,
     signature::Signature as S,
     Diagram, DiagramN,
@@ -174,10 +174,10 @@ pub enum Action {
 
 #[derive(Debug, Error)]
 pub enum ProofError {
-    #[error("no attachment found")]
-    NoAttachment,
-    #[error("the boundaries are not compatible")]
-    IncompatibleBoundaries(#[from] NewDiagramError),
+    #[error(transparent)]
+    NewDiagramError(#[from] NewDiagramError),
+    #[error(transparent)]
+    AttachmentError(#[from] AttachmentError),
     #[error("selected a generator that is not in the signature")]
     UnknownGeneratorSelected,
     #[error("tried to descend into an invalid diagram slice")]
@@ -186,9 +186,9 @@ pub enum ProofError {
     InvalidAction,
     #[error("the diagram cannot be inverted because not all generators are defined as invertible")]
     NotInvertible,
-    #[error("error while performing expansion: {0}")]
+    #[error(transparent)]
     ExpansionError(#[from] ExpansionError),
-    #[error("error while performing contraction: {0}")]
+    #[error(transparent)]
     ContractionError(#[from] ContractionError),
     #[error("import failed")]
     Import,
@@ -383,8 +383,7 @@ impl ProofState {
                     };
 
                     self.signature
-                        .create_generator(source, target, "Cell", false)
-                        .map_err(ProofError::IncompatibleBoundaries)?;
+                        .create_generator(source, target, "Cell", false)?;
 
                     self.boundary = None;
                 }
@@ -543,22 +542,16 @@ impl ProofState {
             let attachment: &DiagramN = &option.diagram;
             let embedding: Vec<_> = option.embedding.iter().copied().collect();
 
-            let result = match &option.boundary_path {
+            workspace.diagram = match &option.boundary_path {
                 Some(bp) => <&DiagramN>::try_from(&workspace.diagram)?
-                    .attach(attachment, bp.boundary(), &embedding)
-                    .or(Err(ProofError::NoAttachment))?,
+                    .attach(attachment, bp.boundary(), &embedding)?
+                    .into(),
                 None => workspace
                     .diagram
                     .clone()
                     .identity()
-                    .attach(attachment, Boundary::Target, &embedding)
-                    .or(Err(ProofError::NoAttachment))?,
-            };
-
-            // TODO: Figure out what should happen with the slice path
-            workspace.diagram = match option.boundary_path {
-                Some(_) => result.into(),
-                None => result.target(),
+                    .attach(attachment, Boundary::Target, &embedding)?
+                    .target(),
             };
         }
 
