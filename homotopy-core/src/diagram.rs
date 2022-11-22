@@ -216,8 +216,8 @@ impl Diagram0 {
         }
     }
 
-    pub fn identity(&self) -> DiagramN {
-        Diagram::from(*self).identity()
+    pub fn identity(self) -> DiagramN {
+        Diagram::from(self).identity()
     }
 
     #[must_use]
@@ -514,8 +514,8 @@ impl DiagramN {
     }
 
     #[must_use]
-    pub fn identity(&self) -> Self {
-        Diagram::from(self.clone()).identity()
+    pub fn identity(self) -> Self {
+        Diagram::from(self).identity()
     }
 
     // TODO: This needs better documentation

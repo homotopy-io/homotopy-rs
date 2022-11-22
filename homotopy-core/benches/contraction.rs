@@ -11,16 +11,24 @@ fn contract_scalar(crit: &mut Criterion) {
     let (sig, diagram) = examples::two_scalars();
     group.bench_function("left", |b| {
         b.iter(|| {
-            diagram
-                .identity()
-                .contract(Boundary::Target.into(), &[], 0, Some(Bias::Lower), &sig)
+            diagram.clone().identity().contract(
+                Boundary::Target.into(),
+                &[],
+                0,
+                Some(Bias::Lower),
+                &sig,
+            )
         });
     });
     group.bench_function("right", |b| {
         b.iter(|| {
-            diagram
-                .identity()
-                .contract(Boundary::Target.into(), &[], 0, Some(Bias::Higher), &sig)
+            diagram.clone().identity().contract(
+                Boundary::Target.into(),
+                &[],
+                0,
+                Some(Bias::Higher),
+                &sig,
+            )
         });
     });
 
@@ -34,6 +42,7 @@ fn contract_beads(crit: &mut Criterion) {
     group.bench_function("contract", |b| {
         b.iter(|| {
             diagram
+                .clone()
                 .identity()
                 .contract(Boundary::Target.into(), &[], 1, None, &sig)
         });
@@ -58,6 +67,7 @@ fn contract_stacks(crit: &mut Criterion) {
     group.bench_function("contract", |b| {
         b.iter(|| {
             diagram
+                .clone()
                 .identity()
                 .contract(Boundary::Target.into(), &[], 0, None, &sig)
         });

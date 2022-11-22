@@ -25,6 +25,7 @@ fn scalar() {
     );
 
     assert!(scalar_then_scalar
+        .clone()
         .identity()
         .contract(Boundary::Target.into(), &[], 0, Some(Bias::Same), &sig)
         .is_err());
@@ -32,6 +33,7 @@ fn scalar() {
     assert_debug_snapshot!(
         "scalar_biased_left",
         scalar_then_scalar
+            .clone()
             .identity()
             .contract(Boundary::Target.into(), &[], 0, Some(Bias::Lower), &sig)
             .unwrap()
@@ -41,6 +43,7 @@ fn scalar() {
     assert_debug_snapshot!(
         "scalar_biased_right",
         scalar_then_scalar
+            .clone()
             .identity()
             .contract(Boundary::Target.into(), &[], 0, Some(Bias::Higher), &sig)
             .unwrap()
@@ -50,6 +53,7 @@ fn scalar() {
     assert_debug_snapshot!(
         "scalar_inverse_unbiased",
         scalar_then_inverse
+            .clone()
             .identity()
             .contract(Boundary::Target.into(), &[], 0, Some(Bias::Same), &sig)
             .unwrap()
@@ -75,6 +79,7 @@ fn three_scalars() {
         .attach(&scalar, Boundary::Target, &[])
         .unwrap();
     let l = three
+        .clone()
         .identity()
         .contract(Boundary::Target.into(), &[], 0, Some(Bias::Higher), &sig)
         .unwrap()
@@ -99,6 +104,7 @@ fn braids() {
     assert_debug_snapshot!(
         "crossing",
         crossing
+            .clone()
             .identity()
             .contract(Boundary::Target.into(), &[], 0, None, &sig)
             .unwrap()
@@ -211,6 +217,7 @@ fn snakerator() {
 
     assert_eq!(
         snake
+            .clone()
             .identity()
             .contract(Boundary::Target.into(), &[], 0, None, &sig)
             .expect("failed to contract snake")
@@ -224,6 +231,7 @@ fn bubble_pop_2d() {
     let (sig, bubble) = examples::bubble();
     assert_eq!(
         bubble
+            .clone()
             .identity()
             .contract(Boundary::Target.into(), &[], 0, None, &sig)
             .expect("failed to contract bubble")
@@ -329,6 +337,7 @@ fn cap_braid() -> anyhow::Result<()> {
         .contract(Boundary::Target.into(), &[], 0, Some(Bias::Same), &sig)?;
     let wire_then_cap = two_cap.attach(&s, Boundary::Source, &[0])?;
     let wire_over_cap: DiagramN = wire_then_cap
+        .clone()
         .identity()
         .contract(
             Boundary::Target.into(),
@@ -647,6 +656,7 @@ fn hourglass_no_absorb() -> anyhow::Result<()> {
         .contract(Boundary::Target.into(), &[], 0, None, &sig)?
         .contract(Boundary::Source.into(), &[], 0, None, &sig)?;
     assert!(hourglass
+        .clone()
         .identity()
         .contract(Boundary::Target.into(), &[], 0, Some(Bias::Same), &sig)
         .is_err());
@@ -671,7 +681,7 @@ fn counit_braid() -> anyhow::Result<()> {
     let counit_tensor_wire = counit.attach(&s, Boundary::Target, &[])?;
     let wire_tensor_counit = counit.attach(&s, Boundary::Source, &[])?;
 
-    let counit_braid_above_left = counit_tensor_wire.identity().contract(
+    let counit_braid_above_left = counit_tensor_wire.clone().identity().contract(
         Boundary::Target.into(),
         &[Height::Singular(0)],
         0,
@@ -687,7 +697,7 @@ fn counit_braid() -> anyhow::Result<()> {
         &sig,
     );
     assert!(counit_braid_below_left.is_ok());
-    let counit_braid_below_right = wire_tensor_counit.identity().contract(
+    let counit_braid_below_right = wire_tensor_counit.clone().identity().contract(
         Boundary::Target.into(),
         &[Height::Singular(0)],
         0,
@@ -717,9 +727,11 @@ fn counit_braid() -> anyhow::Result<()> {
 fn bead_interchanger() -> anyhow::Result<()> {
     let (sig, beads) = examples::two_beads();
 
-    let contracted = beads
-        .identity()
-        .contract(Boundary::Target.into(), &[], 0, None, &sig)?;
+    let contracted =
+        beads
+            .clone()
+            .identity()
+            .contract(Boundary::Target.into(), &[], 0, None, &sig)?;
     let expanded_forwards = contracted.expand(
         Boundary::Target.into(),
         &[Height::Singular(0), Height::Singular(1)],
@@ -861,6 +873,7 @@ fn double_braid() -> anyhow::Result<()> {
         .attach(&s, Boundary::Target, &[])?
         .identity();
     let over_left = three_wires
+        .clone()
         .identity()
         .contract(
             Boundary::Target.into(),
@@ -893,6 +906,7 @@ fn double_braid() -> anyhow::Result<()> {
         .is_ok());
 
     let under_left = three_wires
+        .clone()
         .identity()
         .contract(
             Boundary::Target.into(),
@@ -925,6 +939,7 @@ fn double_braid() -> anyhow::Result<()> {
         .is_ok());
 
     let over_right = three_wires
+        .clone()
         .identity()
         .contract(
             Boundary::Target.into(),
@@ -1002,6 +1017,7 @@ fn braid_next_to_endomorphism() -> anyhow::Result<()> {
         .attach(&s, Boundary::Target, &[])?
         .attach(&s, Boundary::Target, &[])?;
     assert!(e_wire_wire
+        .clone()
         .identity()
         .contract(
             Boundary::Target.into(),
@@ -1025,6 +1041,7 @@ fn braid_next_to_endomorphism() -> anyhow::Result<()> {
         .attach(&s, Boundary::Source, &[])?
         .attach(&s, Boundary::Source, &[])?;
     assert!(wire_wire_e
+        .clone()
         .identity()
         .contract(
             Boundary::Target.into(),

@@ -62,6 +62,7 @@ fn bead_with_half_braid() -> anyhow::Result<()> {
             .attach(&e, Boundary::Source, &[2])?;
 
     let e_tensor_half_braid = e_above_left_half_braid
+        .clone()
         .identity()
         .contract(Boundary::Target.into(), &[], 0, None, &sig)?
         .target();
@@ -92,6 +93,7 @@ fn bead_with_half_braid() -> anyhow::Result<()> {
     );
 
     let half_braid_tensor_e = e_below_right_half_braid
+        .clone()
         .identity()
         .contract(Boundary::Target.into(), &[], 0, None, &sig)?
         .target();
