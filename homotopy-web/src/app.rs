@@ -1,9 +1,14 @@
+use std::cell::RefCell;
+
 use boundary::BoundaryPreview;
-use gloo_timers::future::TimeoutFuture;
+use gloo_timers::{callback::Timeout, future::TimeoutFuture};
+use homotopy_model::{proof::SerializedData, serialize};
+use rexie::{ObjectStore, Rexie, Store, Transaction, TransactionMode};
 use settings::{AppSettings, AppSettingsKey};
 use sidebar::Sidebar;
 use signature_stylesheet::SignatureStylesheet;
 use wasm_bindgen::{closure::Closure, JsCast};
+use wasm_bindgen_futures::spawn_local;
 use workspace::WorkspaceView;
 use yew::prelude::*;
 
@@ -36,12 +41,20 @@ mod tex;
 mod workspace;
 
 pub enum Message {
+    Autosave,
     BlockingDispatch(model::Action),
     Dispatch(model::Action),
+    DatabaseReady,
+    ImportProof(Option<SerializedData>),
+}
+
+thread_local! {
+    pub static INDEXEDDB: RefCell<Option<Rexie>>  = RefCell::new(None);
 }
 
 pub struct App {
     state: model::State,
+    autosave: Option<Timeout>,
     loading: bool,
     panzoom: PanZoom,
     orbit_control: GlViewControl,
@@ -62,9 +75,21 @@ impl Component for App {
         let mut signature_stylesheet = SignatureStylesheet::new();
         signature_stylesheet.update(state.proof().signature.clone());
         signature_stylesheet.mount();
+        // Initialize IndexedDB for autosaving
+        ctx.link().send_future(async {
+            let rexie = Rexie::builder("autosave")
+                .add_object_store(ObjectStore::new("saves"))
+                .build()
+                .await
+                .expect("failed to initialize IndexedDB");
+            log::info!("IndexedDB ready");
+            INDEXEDDB.with(|db| db.replace(Some(rexie)));
+            Message::DatabaseReady
+        });
 
         Self {
             state,
+            autosave: Default::default(),
             loading: false,
             panzoom: PanZoom::new(),
             orbit_control: GlViewControl::new(),
@@ -77,11 +102,35 @@ impl Component for App {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            Message::Autosave => {
+                let data = serialize::serialize(
+                    self.state.proof().signature.clone(),
+                    self.state.proof().workspace.clone(),
+                    self.state.proof().metadata.clone(),
+                );
+                spawn_local(async move {
+                    INDEXEDDB.with(|db| {
+                        if let Some((transaction, saves)) =
+                            get_saves(db, TransactionMode::ReadWrite)
+                        {
+                            let encoded = serde_wasm_bindgen::to_value(data.as_slice()).unwrap();
+                            spawn_local(async move {
+                                saves.put(&encoded, Some(&"latest".into())).await.unwrap();
+                                transaction.done().await.unwrap();
+                            });
+                        } else {
+                            log::warn!("Attempted autosave but IndexedDB not ready");
+                        }
+                    });
+                });
+                false
+            }
             Message::BlockingDispatch(action) => {
                 if !action.is_valid(self.state.proof()) {
                     return false;
                 }
 
+                self.autosave.take().map(Timeout::cancel);
                 self.loading = true;
 
                 ctx.link().send_future(async move {
@@ -141,8 +190,44 @@ impl Component for App {
                 self.signature_stylesheet
                     .update(self.state.proof().signature.clone());
                 self.loading = false;
+                let link = ctx.link().clone();
+                self.autosave = Some(Timeout::new(30000, move || {
+                    link.send_message(Message::Autosave);
+                }));
 
                 true
+            }
+            Message::DatabaseReady => {
+                // load autosave
+                let link = ctx.link().clone();
+                INDEXEDDB.with(|db| {
+                    if let Some((_, saves)) = get_saves(db, TransactionMode::ReadOnly) {
+                        link.send_future(async move {
+                            if let Ok(autosave) = saves.get(&"latest".into()).await {
+                                log::info!("Loading autosave…");
+                                let proof = serde_wasm_bindgen::from_value(autosave).ok();
+                                Message::ImportProof(proof)
+                            } else {
+                                Message::ImportProof(None)
+                            }
+                        });
+                    } else {
+                        log::error!("IndexedDB not ready!");
+                    }
+                });
+                true
+            }
+            Message::ImportProof(proof) => {
+                if let Some(data) = proof {
+                    self.state
+                        .update(model::Action::Proof(model::proof::Action::ImportProof(
+                            data,
+                        )))
+                        .map_err(|_err| log::error!("Failed to load autosave"))
+                        .is_ok()
+                } else {
+                    false
+                }
             }
         }
     }
@@ -291,4 +376,12 @@ impl App {
             </main>
         }
     }
+}
+
+fn get_saves(db: &RefCell<Option<Rexie>>, mode: TransactionMode) -> Option<(Transaction, Store)> {
+    let db = db.borrow();
+    let rexie = db.as_ref()?;
+    let transaction = rexie.transaction(&["saves"], mode).ok()?;
+    let store = transaction.store("saves").ok()?;
+    Some((transaction, store))
 }
