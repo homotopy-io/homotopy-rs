@@ -44,21 +44,26 @@ pub struct Workspace {
 }
 
 impl Workspace {
-    pub fn visible_dimension(&self) -> usize {
-        self.diagram.dimension() - self.path.len()
+    pub fn new(diagram: Diagram) -> Self {
+        // Default to 2D unless the diagram has dimension 0 or 1.
+        let dimension = diagram.dimension().min(2) as u8;
+        Self {
+            diagram,
+            path: Default::default(),
+            view: View { dimension },
+        }
     }
 
     pub fn visible_diagram(&self) -> Diagram {
-        let mut diagram = self.diagram.clone();
+        self.path
+            .iter()
+            .fold(self.diagram.clone(), |diagram, index| {
+                DiagramN::try_from(diagram).unwrap().slice(*index).unwrap()
+            })
+    }
 
-        for index in &self.path {
-            match diagram {
-                Diagram::Diagram0(_) => return diagram,
-                Diagram::DiagramN(d) => diagram = d.slice(*index).unwrap(),
-            }
-        }
-
-        diagram
+    pub fn visible_dimension(&self) -> usize {
+        self.diagram.dimension() - self.path.len()
     }
 }
 
@@ -416,13 +421,7 @@ impl ProofState {
     fn recover_boundary(&mut self) {
         if self.workspace.is_none() {
             if let Some(selected) = &self.boundary {
-                self.workspace = Some(Workspace {
-                    diagram: selected.diagram.clone(),
-                    path: Default::default(),
-                    view: View {
-                        dimension: selected.diagram.dimension().min(2) as u8,
-                    },
-                });
+                self.workspace = Some(Workspace::new(selected.diagram.clone()));
             }
         }
     }
@@ -460,13 +459,7 @@ impl ProofState {
             .generator_info(generator)
             .ok_or(ProofError::UnknownGeneratorSelected)?;
 
-        self.workspace = Some(Workspace {
-            diagram: info.diagram.clone(),
-            path: Default::default(),
-            view: View {
-                dimension: info.generator.dimension.min(2) as u8,
-            },
-        });
+        self.workspace = Some(Workspace::new(info.diagram.clone()));
 
         Ok(())
     }

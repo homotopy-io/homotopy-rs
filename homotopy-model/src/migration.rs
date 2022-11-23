@@ -2,9 +2,7 @@ use homotopy_core::migration::OldProof;
 use homotopy_graphics::style::{Color, VertexShape};
 use serde::Deserialize;
 
-use crate::proof::{
-    generators::GeneratorInfo, Metadata, Signature, SignatureItem, View, Workspace,
-};
+use crate::proof::{generators::GeneratorInfo, Metadata, Signature, SignatureItem, Workspace};
 
 #[derive(Deserialize)]
 struct Export {
@@ -69,14 +67,7 @@ fn load(proof: OldProof) -> Option<(Signature, Option<Workspace>)> {
         signature.insert_item(SignatureItem::Item(info));
     }
 
-    let workspace = match proof.workspace {
-        Some(w) => Some(Workspace {
-            diagram: w.diagram.clone(),
-            path: Default::default(),
-            view: View::new(w.diagram.dimension().min(2) as u8),
-        }),
-        None => None,
-    };
+    let workspace = proof.workspace.map(|w| Workspace::new(w.diagram));
 
     Some((signature, workspace))
 }
