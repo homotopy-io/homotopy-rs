@@ -2,7 +2,7 @@ use criterion::{criterion_group, BenchmarkId, Criterion};
 use homotopy_core::{
     examples,
     typecheck::{typecheck, Mode},
-    Bias, Boundary,
+    Bias, Boundary, Direction,
 };
 
 fn contract_scalar(crit: &mut Criterion) {
@@ -15,6 +15,7 @@ fn contract_scalar(crit: &mut Criterion) {
                 Boundary::Target.into(),
                 &[],
                 0,
+                Direction::Forward,
                 Some(Bias::Lower),
                 &sig,
             )
@@ -26,6 +27,7 @@ fn contract_scalar(crit: &mut Criterion) {
                 Boundary::Target.into(),
                 &[],
                 0,
+                Direction::Forward,
                 Some(Bias::Higher),
                 &sig,
             )
@@ -41,16 +43,27 @@ fn contract_beads(crit: &mut Criterion) {
     let (sig, diagram) = examples::three_beads();
     group.bench_function("contract", |b| {
         b.iter(|| {
-            diagram
-                .clone()
-                .identity()
-                .contract(Boundary::Target.into(), &[], 1, None, &sig)
+            diagram.clone().identity().contract(
+                Boundary::Target.into(),
+                &[],
+                1,
+                Direction::Forward,
+                None,
+                &sig,
+            )
         });
     });
 
     let contracted = diagram
         .identity()
-        .contract(Boundary::Target.into(), &[], 1, None, &sig)
+        .contract(
+            Boundary::Target.into(),
+            &[],
+            1,
+            Direction::Forward,
+            None,
+            &sig,
+        )
         .unwrap()
         .into();
     group.bench_function("typecheck", |b| {
@@ -66,16 +79,27 @@ fn contract_stacks(crit: &mut Criterion) {
     let (sig, diagram) = examples::stacks();
     group.bench_function("contract", |b| {
         b.iter(|| {
-            diagram
-                .clone()
-                .identity()
-                .contract(Boundary::Target.into(), &[], 0, None, &sig)
+            diagram.clone().identity().contract(
+                Boundary::Target.into(),
+                &[],
+                0,
+                Direction::Forward,
+                None,
+                &sig,
+            )
         });
     });
 
     let contracted = diagram
         .identity()
-        .contract(Boundary::Target.into(), &[], 0, None, &sig)
+        .contract(
+            Boundary::Target.into(),
+            &[],
+            0,
+            Direction::Forward,
+            None,
+            &sig,
+        )
         .unwrap()
         .into();
     group.bench_function("typecheck", |b| {
@@ -98,7 +122,14 @@ fn contract_high_dimensions(crit: &mut Criterion) {
                         diagram = diagram.identity();
                         for _ in 0..i {
                             diagram = diagram
-                                .contract(Boundary::Target.into(), &[], 0, None, &sig)
+                                .contract(
+                                    Boundary::Target.into(),
+                                    &[],
+                                    0,
+                                    Direction::Forward,
+                                    None,
+                                    &sig,
+                                )
                                 .unwrap();
                         }
                     }

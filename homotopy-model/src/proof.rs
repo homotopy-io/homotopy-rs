@@ -565,27 +565,18 @@ impl ProofState {
             location
         };
 
-        // TODO(@calintat): This code should live in contraction.
-        let (height, bias) = match homotopy.direction {
-            Direction::Forward => (homotopy.height, homotopy.bias),
-            Direction::Backward => {
-                if homotopy.height == 0 {
-                    // TODO: Show an error
-                    log::info!("Contracting off the edge of the diagram.");
-                    return Ok(());
-                }
-
-                let bias = homotopy.bias.map(homotopy_core::Bias::flip);
-                (homotopy.height - 1, bias)
-            }
-        };
-
         let (boundary_path, interior_path) = BoundaryPath::split(&location);
 
         if let Some(boundary_path) = boundary_path {
             let diagram: &mut DiagramN = diagram.try_into()?;
-            *diagram =
-                diagram.contract(boundary_path, &interior_path, height, bias, &self.signature)?;
+            *diagram = diagram.contract(
+                boundary_path,
+                &interior_path,
+                homotopy.height,
+                homotopy.direction,
+                homotopy.bias,
+                &self.signature,
+            )?;
         } else {
             *diagram = diagram
                 .clone()
@@ -593,8 +584,9 @@ impl ProofState {
                 .contract(
                     Boundary::Target.into(),
                     &interior_path,
-                    height,
-                    bias,
+                    homotopy.height,
+                    homotopy.direction,
+                    homotopy.bias,
                     &self.signature,
                 )?
                 .target();
