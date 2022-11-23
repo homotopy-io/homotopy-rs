@@ -218,20 +218,19 @@ impl Component for App {
             }
             Message::ImportProof(proof) => {
                 let Some(data) = proof else { return false };
-                match self
+                if self
                     .state
                     .update(model::Action::Proof(model::proof::Action::ImportProof(
                         data,
-                    ))) {
-                    Ok(()) => {
-                        self.signature_stylesheet
-                            .update(self.state.proof().signature.clone());
-                        true
-                    }
-                    Err(_) => {
-                        log::error!("Failed to load autosave");
-                        false
-                    }
+                    )))
+                    .is_ok()
+                {
+                    self.signature_stylesheet
+                        .update(self.state.proof().signature.clone());
+                    true
+                } else {
+                    log::error!("Failed to load autosave");
+                    false
                 }
             }
         }
