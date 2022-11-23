@@ -24,7 +24,7 @@ mod signature;
 pub mod generators;
 pub mod homotopy;
 
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct View {
     dimension: u8,
 }
