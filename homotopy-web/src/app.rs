@@ -176,31 +176,26 @@ impl Component for App {
 
                 self.loading = false;
 
-                match result {
-                    Ok(()) => {
-                        if resets_panzoom {
-                            self.panzoom.reset();
-                            self.orbit_control.reset();
-                        }
-
-                        if self.before_unload.is_none() {
-                            self.install_unload_hook();
-                        }
-
-                        self.signature_stylesheet
-                            .update(self.state.proof().signature.clone());
-
-                        let link = ctx.link().clone();
-                        self.autosave = Some(Timeout::new(30000, move || {
-                            link.send_message(Message::Autosave);
-                        }));
+                if let Ok(true) = result {
+                    if resets_panzoom {
+                        self.panzoom.reset();
+                        self.orbit_control.reset();
                     }
-                    Err(error) => {
-                        log::error!("Error occured: {}", error);
-                        if !matches!(error, model::ModelError::Proof(model::proof::ProofError::InvalidAction)) {
-                            self.toaster.toast(Toast::error(format!("{}", error)));
-                        }c
+
+                    if self.before_unload.is_none() {
+                        self.install_unload_hook();
                     }
+
+                    self.signature_stylesheet
+                        .update(self.state.proof().signature.clone());
+
+                    let link = ctx.link().clone();
+                    self.autosave = Some(Timeout::new(30000, move || {
+                        link.send_message(Message::Autosave);
+                    }));
+                } else if let Err(error) = result {
+                    log::error!("Error occured: {}", error);
+                    self.toaster.toast(Toast::error(format!("{}", error)));
                 }
 
                 true

@@ -80,7 +80,7 @@ impl State {
     }
 
     /// Update the state in response to an [Action].
-    pub fn update(&mut self, action: Action) -> Result<(), ModelError> {
+    pub fn update(&mut self, action: Action) -> Result<bool, ModelError> {
         match action {
             Action::Proof(action) => {
                 // If we are importing a proof,
@@ -95,7 +95,9 @@ impl State {
                 push_action(JsString::from(data));
 
                 let mut proof = self.proof().clone();
-                proof.update(&action).map_err(ModelError::from)?;
+                if !proof.update(&action)? {
+                    return Ok(false);
+                }
                 self.history.add(action, proof);
                 self.clear_attach();
             }
@@ -221,8 +223,9 @@ impl State {
                 self.history = Default::default();
                 let mut proof = self.proof().clone();
                 for a in &actions[..len] {
-                    proof.update(a)?;
-                    self.history.add(a.clone(), proof.clone());
+                    if proof.update(a)? {
+                        self.history.add(a.clone(), proof.clone());
+                    }
                 }
             }
 
@@ -250,7 +253,7 @@ impl State {
             Action::ClearAttach => self.clear_attach(),
         }
 
-        Ok(())
+        Ok(true)
     }
 
     /// Handler for [Action::SelectPoints].
@@ -358,21 +361,22 @@ impl State {
         match matches.len() {
             0 => {
                 self.clear_attach();
-                Err(ModelError::NoAttachment)
+                return Err(ModelError::NoAttachment);
             }
             1 => {
                 self.clear_attach();
                 self.update(Action::Proof(proof::Action::Attach(
                     matches.into_iter().next().unwrap(),
-                )))
+                )))?;
             }
             _ => {
                 self.attach = Some(matches.into_iter().collect());
                 self.attachment_highlight = None;
                 self.slice_highlight = None;
-                Ok(())
             }
         }
+
+        Ok(())
     }
 
     /// Handler for [Action::HighlightAttachment].
