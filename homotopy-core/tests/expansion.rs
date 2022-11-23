@@ -12,7 +12,14 @@ fn matchsticks() {
 
     let contracted = diagram
         .identity()
-        .contract(Boundary::Target.into(), &[], 0, Some(Bias::Lower), &sig)
+        .contract(
+            Boundary::Target.into(),
+            &[],
+            0,
+            Direction::Forward,
+            Some(Bias::Lower),
+            &sig,
+        )
         .unwrap()
         .target();
 
@@ -64,7 +71,14 @@ fn bead_with_half_braid() -> anyhow::Result<()> {
     let e_tensor_half_braid = e_above_left_half_braid
         .clone()
         .identity()
-        .contract(Boundary::Target.into(), &[], 0, None, &sig)?
+        .contract(
+            Boundary::Target.into(),
+            &[],
+            0,
+            Direction::Forward,
+            None,
+            &sig,
+        )?
         .target();
     assert_eq!(
         e_tensor_half_braid
@@ -95,7 +109,14 @@ fn bead_with_half_braid() -> anyhow::Result<()> {
     let half_braid_tensor_e = e_below_right_half_braid
         .clone()
         .identity()
-        .contract(Boundary::Target.into(), &[], 0, None, &sig)?
+        .contract(
+            Boundary::Target.into(),
+            &[],
+            0,
+            Direction::Forward,
+            None,
+            &sig,
+        )?
         .target();
     assert_eq!(
         half_braid_tensor_e
@@ -138,7 +159,14 @@ fn braid_smooth() -> anyhow::Result<()> {
     // make touching have only one singular height
     let touching = touching
         .identity()
-        .contract(Boundary::Target.into(), &[], 0, None, &sig)?
+        .contract(
+            Boundary::Target.into(),
+            &[],
+            0,
+            Direction::Forward,
+            None,
+            &sig,
+        )?
         .target();
     let expanded: DiagramN = touching
         .identity()
@@ -188,6 +216,7 @@ fn bead_no_stretch() -> anyhow::Result<()> {
             Boundary::Target.into(),
             &[Height::Singular(0)],
             1,
+            Direction::Forward,
             None,
             &sig
         )
@@ -197,7 +226,14 @@ fn bead_no_stretch() -> anyhow::Result<()> {
     // make touching have only one singular height
     let touching: DiagramN = touching
         .identity()
-        .contract(Boundary::Target.into(), &[], 0, None, &sig)?
+        .contract(
+            Boundary::Target.into(),
+            &[],
+            0,
+            Direction::Forward,
+            None,
+            &sig,
+        )?
         .target()
         .try_into()?;
     let f = DiagramN::try_from(
@@ -211,7 +247,14 @@ fn bead_no_stretch() -> anyhow::Result<()> {
         .attach(&f, Boundary::Source, &[])?
         .attach(&e, Boundary::Source, &[])?
         .identity()
-        .contract(Boundary::Target.into(), &[], 0, None, &sig)?
+        .contract(
+            Boundary::Target.into(),
+            &[],
+            0,
+            Direction::Forward,
+            None,
+            &sig,
+        )?
         .target();
     assert!(e_touching
         .identity()

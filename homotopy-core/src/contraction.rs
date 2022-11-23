@@ -73,6 +73,8 @@ pub enum ContractionError {
     IllTyped(#[from] TypeError),
     #[error("invalid boundary path provided to contraction")]
     Dimension(#[from] DimensionError),
+    #[error("contracting off the edge of the diagram")]
+    OutOfBounds,
 }
 
 struct ContractExpand {
@@ -86,12 +88,23 @@ impl DiagramN {
         boundary_path: BoundaryPath,
         interior_path: &[Height],
         height: SingularHeight,
+        direction: Direction,
         bias: Option<Bias>,
         signature: &impl Signature,
     ) -> Result<Self, ContractionError> {
         if boundary_path.depth() >= self.dimension() {
             return Err(ContractionError::Invalid);
         }
+
+        let (height, bias) = match direction {
+            Direction::Forward => (height, bias),
+            Direction::Backward => {
+                if height == 0 {
+                    return Err(ContractionError::OutOfBounds);
+                }
+                (height - 1, bias.map(Bias::flip))
+            }
+        };
 
         attach(self, boundary_path, |slice| {
             let slice = slice.try_into().or(Err(ContractionError::Invalid))?;

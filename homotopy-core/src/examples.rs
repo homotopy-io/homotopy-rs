@@ -250,7 +250,14 @@ pub fn half_braid() -> (impl Signature, DiagramN) {
     let s_then_s = s.attach(&s, Boundary::Target, &[]).unwrap();
     let half_braid = s_then_s
         .identity()
-        .contract(Boundary::Target.into(), &[], 0, Some(Bias::Lower), &sig)
+        .contract(
+            Boundary::Target.into(),
+            &[],
+            0,
+            Direction::Forward,
+            Some(Bias::Lower),
+            &sig,
+        )
         .unwrap();
 
     (sig, half_braid)
@@ -441,7 +448,14 @@ pub fn cap() -> (impl Signature, DiagramN) {
     // 2-cells
     let cap = f_then_inverse
         .identity()
-        .contract(Boundary::Target.into(), &[], 0, None, &sig)
+        .contract(
+            Boundary::Target.into(),
+            &[],
+            0,
+            Direction::Forward,
+            None,
+            &sig,
+        )
         .expect("failed to contract f then inverse");
 
     (sig, cap)
@@ -460,7 +474,14 @@ pub fn cup() -> (impl Signature, DiagramN) {
     // 2-cells
     let cup = f_then_inverse
         .identity()
-        .contract(Boundary::Source.into(), &[], 0, None, &sig)
+        .contract(
+            Boundary::Source.into(),
+            &[],
+            0,
+            Direction::Forward,
+            None,
+            &sig,
+        )
         .expect("failed to contract f then inverse");
 
     (sig, cup)
@@ -480,11 +501,25 @@ pub fn snake() -> (impl Signature, DiagramN) {
     // 2-cells
     let cap = f_then_inverse
         .identity()
-        .contract(Boundary::Target.into(), &[], 0, None, &sig)
+        .contract(
+            Boundary::Target.into(),
+            &[],
+            0,
+            Direction::Forward,
+            None,
+            &sig,
+        )
         .expect("failed to contract f then inverse");
     let cup = inverse_then_f
         .identity()
-        .contract(Boundary::Source.into(), &[], 0, None, &sig)
+        .contract(
+            Boundary::Source.into(),
+            &[],
+            0,
+            Direction::Forward,
+            None,
+            &sig,
+        )
         .expect("failed to contract inverse then f");
     let snake = cap
         .attach(&f, Target, &[])
@@ -509,11 +544,25 @@ pub fn bubble() -> (impl Signature, DiagramN) {
     let cap = f_then_inverse
         .clone()
         .identity()
-        .contract(Boundary::Target.into(), &[], 0, None, &sig)
+        .contract(
+            Boundary::Target.into(),
+            &[],
+            0,
+            Direction::Forward,
+            None,
+            &sig,
+        )
         .expect("failed to contract f then inverse");
     let cup = f_then_inverse
         .identity()
-        .contract(Boundary::Source.into(), &[], 0, None, &sig)
+        .contract(
+            Boundary::Source.into(),
+            &[],
+            0,
+            Direction::Forward,
+            None,
+            &sig,
+        )
         .expect("failed to contract inverse then f");
     let bubble = cap.attach(&cup, Source, &[]).unwrap();
 

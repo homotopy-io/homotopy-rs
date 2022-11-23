@@ -12,7 +12,14 @@ fn expand_matchsticks(crit: &mut Criterion) {
     let (sig, diagram) = examples::matchsticks();
     let contracted = diagram
         .identity()
-        .contract(Boundary::Target.into(), &[], 0, Some(Bias::Lower), &sig)
+        .contract(
+            Boundary::Target.into(),
+            &[],
+            0,
+            Direction::Forward,
+            Some(Bias::Lower),
+            &sig,
+        )
         .unwrap()
         .target();
 
