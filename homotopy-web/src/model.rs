@@ -36,10 +36,9 @@ pub enum Action {
 impl Action {
     /// Determines if a given [Action] is valid given the current [Proof].
     pub fn is_valid(&self, proof: &Proof) -> bool {
-        use homotopy_core::Direction::{Backward, Forward};
-
         match self {
-            Self::Proof(action) => proof.is_valid(action),
+            Self::Proof(action) => action.is_valid(proof),
+            Self::History(history::Action::Move(dir)) => proof.can_move(dir),
             Self::ExportTikz(_) | Self::ExportSvg | Self::ExportManim(_) => proof
                 .workspace
                 .as_ref()
@@ -48,10 +47,7 @@ impl Action {
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.view.dimension() == 3),
-            Self::History(history::Action::Move(dir)) => match dir {
-                history::Direction::Linear(Forward) => proof.can_redo(),
-                history::Direction::Linear(Backward) => proof.can_undo(),
-            },
+            Self::SelectPoints(_) => proof.workspace.is_some(),
             _ => true,
         }
     }
@@ -223,7 +219,7 @@ impl State {
                     actions.len() - 1
                 };
                 for a in &actions[..len] {
-                    if proof.is_valid(a) {
+                    if a.is_valid(&proof) {
                         proof.update(a)?;
                         self.history.add(a.clone(), proof.clone());
                     } else {

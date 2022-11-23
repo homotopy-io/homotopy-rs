@@ -157,6 +157,90 @@ pub enum Action {
     Nothing,
 }
 
+impl Action {
+    /// Determines if a given [Action] is valid given the current [ProofState].
+    #[allow(clippy::match_same_arms)]
+    pub fn is_valid(&self, proof: &ProofState) -> bool {
+        use homotopy_core::{Height::Singular, SliceIndex::Interior};
+        match self {
+            Self::CreateGeneratorZero => true,
+            Self::SetBoundary(_) => proof.workspace.is_some(),
+            Self::TakeIdentityDiagram => proof.workspace.is_some(),
+            Self::ClearWorkspace => proof.workspace.is_some(),
+            Self::ClearBoundary => proof.boundary.is_some(),
+            Self::SelectGenerator(_) => true,
+            Self::AscendSlice(count) => {
+                *count > 0
+                    && proof
+                        .workspace
+                        .as_ref()
+                        .map_or(false, |ws| ws.path.len() > *count)
+            }
+            Self::DescendSlice(_) => proof
+                .workspace
+                .as_ref()
+                .map_or(false, |ws| ws.visible_dimension() > 0),
+            Self::SwitchSlice(_) => proof.workspace.as_ref().map_or(false, |ws| {
+                ws.path
+                    .last()
+                    .map_or(false, |index| matches!(index, Interior(_)))
+            }),
+            Self::IncreaseView(count) => {
+                *count > 0
+                    && proof.workspace.as_ref().map_or(false, |ws| {
+                        ws.view.dimension < std::cmp::min(ws.visible_dimension() as u8, View::MAX)
+                    })
+            }
+            Self::DecreaseView(count) => {
+                *count > 0
+                    && proof
+                        .workspace
+                        .as_ref()
+                        .map_or(false, |ws| ws.view.dimension > 0)
+            }
+            Self::Attach(option) => proof.workspace.as_ref().map_or(false, |ws| {
+                option.boundary_path.is_none() || ws.diagram.dimension() > 0
+            }),
+            Self::Homotopy(_) => proof
+                .workspace
+                .as_ref()
+                .map_or(false, |ws| ws.diagram.dimension() > 0),
+            Self::Behead | Self::Befoot => {
+                proof
+                    .workspace
+                    .as_ref()
+                    .map_or(false, |ws| match &ws.diagram {
+                        Diagram::Diagram0(_) => false,
+                        Diagram::DiagramN(diagram) => {
+                            (ws.path.is_empty() && diagram.size() > 0)
+                                || (ws.path.len() == 1
+                                    && !matches!(ws.path[0], Interior(Singular(_))))
+                        }
+                    })
+            }
+            Self::Invert => proof
+                .workspace
+                .as_ref()
+                .map_or(false, |ws| ws.diagram.dimension() > 0),
+            Self::Restrict => proof.workspace.as_ref().map_or(false, |ws| {
+                !ws.path.is_empty()
+                    && ws
+                        .path
+                        .iter()
+                        .all(|index| !matches!(index, Interior(Singular(_))))
+            }),
+            Self::Theorem => proof
+                .workspace
+                .as_ref()
+                .map_or(false, |ws| ws.diagram.dimension() > 0),
+            Self::ImportProof(_) => true,
+            Self::EditSignature(_) | Self::EditMetadata(_) => true, /* technically the edits could be trivial but do not worry about that for now */
+            Self::FlipBoundary | Self::RecoverBoundary => proof.boundary.is_some(),
+            Self::Nothing => false,
+        }
+    }
+}
+
 #[derive(Debug, Error)]
 pub enum ProofError {
     #[error(transparent)]
@@ -232,59 +316,6 @@ impl ProofState {
             | Action::IncreaseView(_)
             | Action::DecreaseView(_) => true,
             _ => false,
-        }
-    }
-
-    /// Determines if a given [Action] is valid, given the current [ProofState].
-    pub fn is_valid(&self, action: &Action) -> bool {
-        use homotopy_core::{
-            Height::Regular,
-            SliceIndex::{Boundary, Interior},
-        };
-        match *action {
-            Action::SetBoundary(_) | Action::TakeIdentityDiagram | Action::ClearWorkspace => {
-                self.workspace.is_some()
-            }
-            Action::Theorem => self
-                .workspace
-                .as_ref()
-                .map_or(false, |ws| ws.diagram.dimension() > 0),
-            Action::Restrict => self.workspace.as_ref().map_or(false, |ws| {
-                !ws.path.is_empty()
-                    && ws
-                        .path
-                        .iter()
-                        .all(|si| matches!(si, Boundary(_) | Interior(Regular(_))))
-            }),
-            Action::Behead | Action::Befoot => {
-                self.workspace
-                    .as_ref()
-                    .map_or(false, |ws| match &ws.diagram {
-                        Diagram::Diagram0(_) => false,
-                        Diagram::DiagramN(d) => {
-                            d.size() > 0
-                                && (ws.path.is_empty()
-                                    || (ws.path.len() == 1
-                                        && matches!(
-                                            ws.path[0],
-                                            Boundary(_) | Interior(Regular(_))
-                                        )))
-                        }
-                    })
-            }
-            Action::Invert => self
-                .workspace
-                .as_ref()
-                .map_or(false, |ws| ws.diagram.dimension() > 0 && ws.path.is_empty()),
-            Action::AscendSlice(_) | Action::SwitchSlice(_) => self
-                .workspace
-                .as_ref()
-                .map_or(false, |ws| !ws.path.is_empty()),
-            Action::DescendSlice(_) => self
-                .workspace
-                .as_ref()
-                .map_or(false, |ws| ws.visible_dimension() > 0),
-            _ => true,
         }
     }
 
