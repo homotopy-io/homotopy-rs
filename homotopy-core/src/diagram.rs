@@ -655,6 +655,17 @@ impl<'a> TryFrom<&'a Diagram> for Diagram0 {
     }
 }
 
+impl<'a> TryFrom<&'a mut Diagram> for &'a mut Diagram0 {
+    type Error = DimensionError;
+
+    fn try_from(diagram: &'a mut Diagram) -> Result<Self, Self::Error> {
+        match diagram {
+            Diagram::Diagram0(diagram) => Ok(diagram),
+            Diagram::DiagramN(_) => Err(DimensionError),
+        }
+    }
+}
+
 impl TryFrom<Diagram> for DiagramN {
     type Error = DimensionError;
 
@@ -670,6 +681,17 @@ impl<'a> TryFrom<&'a Diagram> for &'a DiagramN {
     type Error = DimensionError;
 
     fn try_from(diagram: &'a Diagram) -> Result<Self, Self::Error> {
+        match diagram {
+            Diagram::Diagram0(_) => Err(DimensionError),
+            Diagram::DiagramN(diagram) => Ok(diagram),
+        }
+    }
+}
+
+impl<'a> TryFrom<&'a mut Diagram> for &'a mut DiagramN {
+    type Error = DimensionError;
+
+    fn try_from(diagram: &'a mut Diagram) -> Result<Self, Self::Error> {
         match diagram {
             Diagram::Diagram0(_) => Err(DimensionError),
             Diagram::DiagramN(diagram) => Ok(diagram),
