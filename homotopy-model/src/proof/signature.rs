@@ -149,18 +149,18 @@ impl Signature {
         use SignatureItemEdit::{
             MakeInvertible, MakeOriented, Recolor, Rename, Reshape, ShowSourceTarget,
         };
-        self.0
-            .with_mut(node, move |n| match (n.inner_mut(), edit) {
-                (SignatureItem::Item(info), Rename(name)) => info.name = name,
-                (SignatureItem::Item(info), Recolor(color)) => info.color = color,
-                (SignatureItem::Item(info), Reshape(shape)) => info.shape = shape,
-                (SignatureItem::Item(info), MakeOriented(true)) => info.oriented = true,
-                (SignatureItem::Item(info), MakeInvertible(true)) => info.invertible = true,
-                (SignatureItem::Item(info), ShowSourceTarget(show)) => info.single_preview = !show,
-                (SignatureItem::Folder(info), Rename(name)) => info.name = name,
-                (_, _) => {}
-            })
-            .ok_or(ProofError::InvalidAction)
+        self.0.with_mut(node, move |n| match (n.inner_mut(), edit) {
+            (SignatureItem::Item(info), Rename(name)) => info.name = name,
+            (SignatureItem::Item(info), Recolor(color)) => info.color = color,
+            (SignatureItem::Item(info), Reshape(shape)) => info.shape = shape,
+            (SignatureItem::Item(info), MakeOriented(true)) => info.oriented = true,
+            (SignatureItem::Item(info), MakeInvertible(true)) => info.invertible = true,
+            (SignatureItem::Item(info), ShowSourceTarget(show)) => info.single_preview = !show,
+            (SignatureItem::Folder(info), Rename(name)) => info.name = name,
+            (_, _) => {}
+        });
+
+        Ok(())
     }
 
     pub fn has_descendents_in(&self, node: Node, diagram: &Diagram) -> bool {
