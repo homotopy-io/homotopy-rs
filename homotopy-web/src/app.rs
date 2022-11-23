@@ -125,10 +125,6 @@ impl Component for App {
                 false
             }
             Message::BlockingDispatch(action) => {
-                if !action.is_valid(self.state.proof()) {
-                    return false;
-                }
-
                 self.autosave.take().map(Timeout::cancel);
                 self.loading = true;
 
@@ -141,12 +137,13 @@ impl Component for App {
             Message::Dispatch(action) => {
                 log::info!("Received action: {:?}", action);
 
-                if let model::Action::Proof(action) = &action {
-                    if self.state.proof().resets_panzoom(action) {
-                        self.panzoom.reset();
-                        self.orbit_control.reset();
-                    }
-                }
+                // Determine if the action needs to reset the panzoom
+                // but do not reset it until we have performed the action.
+                let resets_panzoom = if let model::Action::Proof(action) = &action {
+                    self.state.proof().resets_panzoom(action)
+                } else {
+                    false
+                };
 
                 let performance = web_sys::window().unwrap().performance().unwrap();
                 performance.mark("startStateUpdate").unwrap();
@@ -177,22 +174,32 @@ impl Component for App {
 
                 homotopy_core::collect_garbage();
 
-                if self.before_unload.is_none() && result.is_ok() {
-                    self.install_unload_hook();
-                }
-
-                if let Err(error) = result {
-                    self.toaster.toast(Toast::error(format!("{}", error)));
-                    log::error!("Error occured: {}", error);
-                }
-
-                self.signature_stylesheet
-                    .update(self.state.proof().signature.clone());
                 self.loading = false;
-                let link = ctx.link().clone();
-                self.autosave = Some(Timeout::new(30000, move || {
-                    link.send_message(Message::Autosave);
-                }));
+
+                match result {
+                    Ok(()) => {
+                        if resets_panzoom {
+                            self.panzoom.reset();
+                            self.orbit_control.reset();
+                        }
+
+                        if self.before_unload.is_none() {
+                            self.install_unload_hook();
+                        }
+
+                        self.signature_stylesheet
+                            .update(self.state.proof().signature.clone());
+
+                        let link = ctx.link().clone();
+                        self.autosave = Some(Timeout::new(30000, move || {
+                            link.send_message(Message::Autosave);
+                        }));
+                    }
+                    Err(error) => {
+                        log::error!("Error occured: {}", error);
+                        self.toaster.toast(Toast::error(format!("{}", error)));
+                    }
+                }
 
                 true
             }
