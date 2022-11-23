@@ -208,8 +208,6 @@ impl State {
             }
 
             Action::ImportActions(data) => {
-                // Leave room for a future "replay on top of current workspace".
-                let mut proof: Proof = Default::default();
                 let (safe, actions): (bool, Vec<proof::Action>) =
                     serde_json::from_slice(&data.0)
                         .or(Err(ModelError::Proof(proof::ProofError::Import)))?;
@@ -218,6 +216,10 @@ impl State {
                 } else {
                     actions.len() - 1
                 };
+
+                // Forget the history and start from a fresh proof.
+                self.history = Default::default();
+                let mut proof = self.proof().clone();
                 for a in &actions[..len] {
                     if a.is_valid(&proof) {
                         proof.update(a)?;
