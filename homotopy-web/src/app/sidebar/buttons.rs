@@ -16,15 +16,9 @@ macro_rules! declare_sidebar_tools {
     })*) => {
         paste! {
             impl Sidebar {
-                $(
-                    #[allow(non_snake_case)]
-                    fn [<$name _visible>](&self, ctx: &Context<Self>) -> Visibility {
-                       $action.is_valid(&ctx.props().proof).into()
-                    }
-                )*
-
                 pub(super) fn tools(&self, ctx: &Context<Self>) -> Html {
                     let dispatch = &ctx.link().callback(|x| x);
+                    let proof = &ctx.props().proof;
                     html! {
                         <nav class="sidebar__tools">
                             $(<SidebarButton
@@ -33,7 +27,7 @@ macro_rules! declare_sidebar_tools {
                                 action={SidebarMsg::Dispatch($action)}
                                 shortcut={Keybindings::get_shortcut($action)}
                                 dispatch={dispatch}
-                                visibility={self.[<$name _visible>](ctx)}
+                                visibility={Visibility::from($action.is_valid(proof))}
                             />)*
                         </nav>
                     }

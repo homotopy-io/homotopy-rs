@@ -17,7 +17,7 @@ pub enum Action {
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Direction {
-    Linear(homotopy_core::common::Direction),
+    Linear(homotopy_core::Direction),
     // TODO: branch moves
 }
 
@@ -58,6 +58,13 @@ pub trait UndoState {
     fn can_undo(&self) -> bool;
 
     fn can_redo(&self) -> bool;
+
+    fn can_move(&self, dir: &Direction) -> bool {
+        match dir {
+            Direction::Linear(homotopy_core::Direction::Forward) => self.can_redo(),
+            Direction::Linear(homotopy_core::Direction::Backward) => self.can_undo(),
+        }
+    }
 }
 
 impl UndoState for Proof {
