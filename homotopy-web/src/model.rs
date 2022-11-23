@@ -221,12 +221,8 @@ impl State {
                 self.history = Default::default();
                 let mut proof = self.proof().clone();
                 for a in &actions[..len] {
-                    if a.is_valid(&proof) {
-                        proof.update(a)?;
-                        self.history.add(a.clone(), proof.clone());
-                    } else {
-                        return Err(ModelError::Proof(proof::ProofError::InvalidAction));
-                    }
+                    proof.update(a)?;
+                    self.history.add(a.clone(), proof.clone());
                 }
             }
 

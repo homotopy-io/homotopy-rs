@@ -32,7 +32,7 @@ use crate::{
     components::{read_touch_list_abs, Finger},
     model::proof::{
         homotopy::{Contract, Expand, Homotopy},
-        RenderStyle, Signature,
+        Signature,
     },
 };
 
@@ -713,5 +713,22 @@ fn drag_to_homotopy<const N: usize>(
             }
         }
         _ => unreachable!(),
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Debug)]
+pub struct RenderStyle {
+    pub scale: f32,
+    pub wire_thickness: f32,
+    pub point_radius: f32,
+}
+
+impl Default for RenderStyle {
+    fn default() -> Self {
+        Self {
+            scale: 40.0,
+            wire_thickness: 8.0,
+            point_radius: 6.0,
+        }
     }
 }
