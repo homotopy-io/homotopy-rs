@@ -13,7 +13,6 @@ use super::proof::{
 };
 
 #[obake::versioned]
-#[obake(version("0.1.0"))]
 #[obake(version("0.1.2"))]
 #[obake(derive(serde::Serialize, serde::Deserialize))]
 #[obake(serde(untagged))]
@@ -21,75 +20,19 @@ use super::proof::{
 struct WorkspaceData {
     diagram: Key<Diagram>,
     path: Vector<SliceIndex>,
-    #[obake(cfg(">=0.1.2"))]
     view: View,
 }
 
-impl From<WorkspaceData!["0.1.0"]> for WorkspaceData!["0.1.2"] {
-    fn from(from: WorkspaceData!["0.1.0"]) -> Self {
-        Self {
-            diagram: from.diagram,
-            path: from.path,
-            view: Default::default(),
-        }
-    }
-}
-
 #[obake::versioned]
-#[obake(version("0.1.0"))]
-#[obake(version("0.1.1"))]
-#[obake(version("0.1.2"))]
-#[obake(version("0.1.3"))] // with metadata
+#[obake(version("0.1.3"))]
 #[obake(derive(serde::Serialize, serde::Deserialize))]
 #[obake(serde(tag = "version"))]
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 struct Data {
     store: Store,
-    #[obake(cfg("<0.1.1"))]
-    signature: Vec<GeneratorData>,
-    #[obake(cfg(">=0.1.1"))]
     signature: Tree<SignatureData>,
-    #[obake(cfg("<0.1.2"))]
-    workspace: Option<WorkspaceData!["0.1.0"]>,
-    #[obake(cfg(">=0.1.2"))]
-    workspace: Option<WorkspaceData!["0.1.2"]>,
-    #[obake(cfg(">=0.1.3"))]
+    workspace: Option<WorkspaceData>,
     metadata: Metadata,
-}
-
-impl From<Data!["0.1.0"]> for Data!["0.1.1"] {
-    fn from(from: Data!["0.1.0"]) -> Self {
-        Self {
-            store: from.store,
-            signature: from
-                .signature
-                .into_iter()
-                .map(SignatureData::Item)
-                .collect(),
-            workspace: from.workspace,
-        }
-    }
-}
-
-impl From<Data!["0.1.1"]> for Data!["0.1.2"] {
-    fn from(from: Data!["0.1.1"]) -> Self {
-        Self {
-            store: from.store,
-            signature: from.signature,
-            workspace: from.workspace.map(Into::into),
-        }
-    }
-}
-
-impl From<Data!["0.1.2"]> for Data!["0.1.3"] {
-    fn from(from: Data!["0.1.2"]) -> Self {
-        Self {
-            store: from.store,
-            signature: from.signature,
-            workspace: from.workspace,
-            metadata: Default::default(),
-        }
-    }
 }
 
 impl std::fmt::Debug for Data {
