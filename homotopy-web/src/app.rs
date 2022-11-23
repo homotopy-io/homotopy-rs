@@ -197,7 +197,9 @@ impl Component for App {
                     }
                     Err(error) => {
                         log::error!("Error occured: {}", error);
-                        self.toaster.toast(Toast::error(format!("{}", error)));
+                        if !matches!(error, model::ModelError::Proof(model::proof::ProofError::InvalidAction)) {
+                            self.toaster.toast(Toast::error(format!("{}", error)));
+                        }c
                     }
                 }
 
