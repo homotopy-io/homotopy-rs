@@ -16,7 +16,8 @@ pub struct PathControlProps {
     pub view: View,
     pub dimension: usize,
     pub ascend_slice: Callback<usize>,
-    pub update_view: Callback<View>,
+    pub increase_view: Callback<u8>,
+    pub decrease_view: Callback<u8>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -42,9 +43,9 @@ pub fn path_control(props: &PathControlProps) -> Html {
             Step::Projection => "P".to_owned(),
         };
 
-        let view = props.view;
         let ascend_slice = props.ascend_slice.clone();
-        let update_view = props.update_view.clone();
+        let increase_view = props.increase_view.clone();
+        let decrease_view = props.decrease_view.clone();
 
         let onclick = Callback::from(move |_| {
             if index < path_len {
@@ -52,11 +53,11 @@ pub fn path_control(props: &PathControlProps) -> Html {
             }
 
             if step == Step::View {
-                update_view.emit(view.dec());
+                decrease_view.emit(1);
             }
 
             if step == Step::Projection {
-                update_view.emit(view.inc());
+                increase_view.emit(1);
             }
         });
 

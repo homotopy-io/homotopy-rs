@@ -68,28 +68,7 @@ impl Workspace {
 }
 
 impl View {
-    const MIN: u8 = 0;
     const MAX: u8 = 4;
-
-    pub fn new(dim: u8) -> Self {
-        Self {
-            dimension: dim.clamp(Self::MIN, Self::MAX),
-        }
-    }
-
-    #[must_use]
-    pub fn inc(self) -> Self {
-        Self {
-            dimension: (self.dimension + 1).clamp(Self::MIN, Self::MAX),
-        }
-    }
-
-    #[must_use]
-    pub fn dec(self) -> Self {
-        Self {
-            dimension: (self.dimension - 1).clamp(Self::MIN, Self::MAX),
-        }
-    }
 
     pub fn dimension(self) -> u8 {
         self.dimension
@@ -148,7 +127,8 @@ pub enum Action {
     /// Switch between adjacent slices in the currently selected diagram in the workspace.
     SwitchSlice(Direction),
 
-    UpdateView(View),
+    IncreaseView(u8),
+    DecreaseView(u8),
 
     Attach(AttachOption),
 
@@ -214,7 +194,8 @@ impl ProofState {
             Action::AscendSlice(count) => self.ascend_slice(*count),
             Action::DescendSlice(slice) => self.descend_slice(*slice)?,
             Action::SwitchSlice(direction) => self.switch_slice(*direction),
-            Action::UpdateView(view) => self.update_view(*view),
+            Action::IncreaseView(count) => self.increase_view(*count),
+            Action::DecreaseView(count) => self.decrease_view(*count),
             Action::Attach(option) => self.attach(option)?,
             Action::Homotopy(Homotopy::Expand(homotopy)) => self.homotopy_expansion(homotopy)?,
             Action::Homotopy(Homotopy::Contract(homotopy)) => {
@@ -248,7 +229,8 @@ impl ProofState {
             Action::SelectGenerator(_)
             | Action::ClearWorkspace
             | Action::DescendSlice(_)
-            | Action::UpdateView(_) => true,
+            | Action::IncreaseView(_)
+            | Action::DecreaseView(_) => true,
             _ => false,
         }
     }
@@ -433,7 +415,7 @@ impl ProofState {
                 if workspace.diagram.dimension() + workspace.path.len() >= 2 {
                     workspace.path.push_front(Boundary::Target.into());
                 } else {
-                    workspace.view = workspace.view.inc();
+                    workspace.view.dimension += 1;
                 }
 
                 workspace.diagram = workspace.diagram.clone().identity().into();
@@ -473,7 +455,7 @@ impl ProofState {
 
                 // Boost the view dimension if necessary.
                 if workspace.view.dimension < 2 {
-                    workspace.view = workspace.view.inc();
+                    workspace.view.dimension += 1;
                 }
             }
         }
@@ -496,8 +478,8 @@ impl ProofState {
 
             // Update workspace
             workspace.path = path;
-            if workspace.visible_dimension() < workspace.view.dimension() as usize {
-                workspace.view = workspace.view.dec();
+            if workspace.visible_dimension() < workspace.view.dimension as usize {
+                workspace.view.dimension -= 1;
             }
         }
 
@@ -522,10 +504,20 @@ impl ProofState {
         }
     }
 
-    /// Handler for [Action::UpdateView]
-    fn update_view(&mut self, view: View) {
+    /// Handler for [Action::IncreaseView].
+    fn increase_view(&mut self, count: u8) {
         if let Some(workspace) = &mut self.workspace {
-            workspace.view = view;
+            workspace.view.dimension = std::cmp::min(
+                workspace.view.dimension + count,
+                std::cmp::min(workspace.visible_dimension() as u8, View::MAX),
+            );
+        }
+    }
+
+    /// Handler for [Action::DecreaseView].
+    fn decrease_view(&mut self, count: u8) {
+        if let Some(workspace) = &mut self.workspace {
+            workspace.view.dimension = workspace.view.dimension.saturating_sub(count);
         }
     }
 

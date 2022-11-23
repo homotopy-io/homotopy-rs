@@ -92,7 +92,7 @@ impl Component for WorkspaceView {
                 html! {
                     <SliceControl
                         number_slices={diagram.size().unwrap()}
-                        descend_slice={ctx.props().dispatch.reform(|si| Action::Proof(proof::Action::DescendSlice(si)))}
+                        descend_slice={ctx.props().dispatch.reform(Action::Proof).reform(proof::Action::DescendSlice)}
                         diagram_ref={self.diagram_ref.clone()}
                         on_hover={ctx.props().dispatch.reform(Action::HighlightSlice)}
                     />
@@ -109,8 +109,9 @@ impl Component for WorkspaceView {
                         <PathControl
                             path={ws.path.clone()}
                             view={ws.view}
-                            ascend_slice={ctx.props().dispatch.reform(|i| Action::Proof(proof::Action::AscendSlice(i)))}
-                            update_view={ctx.props().dispatch.reform(|v| Action::Proof(proof::Action::UpdateView(v)))}
+                            ascend_slice={ctx.props().dispatch.reform(Action::Proof).reform(proof::Action::AscendSlice)}
+                            increase_view={ctx.props().dispatch.reform(Action::Proof).reform(proof::Action::IncreaseView)}
+                            decrease_view={ctx.props().dispatch.reform(Action::Proof).reform(proof::Action::DecreaseView)}
                             dimension={ws.diagram.dimension()}
                         />
                         <ViewControl />
@@ -164,7 +165,7 @@ impl WorkspaceView {
             let slice_highlight = ctx.props().slice_highlight.map(highlight_slice::<N>);
             let highlight = attachment_highlight.or(slice_highlight);
             html! {
-                <PanZoomComponent on_scroll={ctx.props().dispatch.reform(|dir| Action::Proof(proof::Action::SwitchSlice(dir)))}>
+                <PanZoomComponent on_scroll={ctx.props().dispatch.reform(Action::Proof).reform(proof::Action::SwitchSlice)}>
                     <DiagramSvg<N>
                         diagram={ws.visible_diagram()}
                         id="workspace__diagram"
