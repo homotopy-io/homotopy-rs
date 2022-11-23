@@ -829,6 +829,17 @@ impl<'a> TryFrom<&'a Rewrite> for &'a Rewrite0 {
     }
 }
 
+impl<'a> TryFrom<&'a mut Rewrite> for &'a mut Rewrite0 {
+    type Error = DimensionError;
+
+    fn try_from(rewrite: &'a mut Rewrite) -> Result<Self, Self::Error> {
+        match rewrite {
+            Rewrite::Rewrite0(rewrite) => Ok(rewrite),
+            Rewrite::RewriteN(_) => Err(DimensionError),
+        }
+    }
+}
+
 impl TryFrom<Rewrite> for RewriteN {
     type Error = DimensionError;
 
@@ -844,6 +855,17 @@ impl<'a> TryFrom<&'a Rewrite> for &'a RewriteN {
     type Error = DimensionError;
 
     fn try_from(rewrite: &'a Rewrite) -> Result<Self, Self::Error> {
+        match rewrite {
+            Rewrite::Rewrite0(_) => Err(DimensionError),
+            Rewrite::RewriteN(rewrite) => Ok(rewrite),
+        }
+    }
+}
+
+impl<'a> TryFrom<&'a mut Rewrite> for &'a mut RewriteN {
+    type Error = DimensionError;
+
+    fn try_from(rewrite: &'a mut Rewrite) -> Result<Self, Self::Error> {
         match rewrite {
             Rewrite::Rewrite0(_) => Err(DimensionError),
             Rewrite::RewriteN(rewrite) => Ok(rewrite),
