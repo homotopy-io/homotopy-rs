@@ -106,7 +106,7 @@ pub fn expand_in_path(
                 .ok_or(ExpansionError::OutOfBounds)?;
 
             let recursive = expand_in_path(&slice, rest, direction)?;
-            Ok(expand_propagate(diagram, *height, recursive)?.into())
+            Ok(expand_propagate(diagram, *height, recursive, true)?.into())
         }
     }
 }
@@ -466,6 +466,7 @@ pub(crate) fn expand_propagate(
     diagram: &DiagramN,
     height: SingularHeight,
     expansion: Rewrite,
+    normalize: bool,
 ) -> Result<RewriteN, ExpansionError> {
     let slice = diagram
         .slice(Height::Singular(height))
@@ -486,7 +487,7 @@ pub(crate) fn expand_propagate(
     let cone = match (forward, backward) {
         (Some(forward), Some(backward)) => {
             let source_cospan = Cospan { forward, backward };
-            if source_cospan.is_redundant() {
+            if normalize && source_cospan.is_redundant() {
                 Some(Cone::new_unit(
                     height,
                     target_cospan.clone(),
