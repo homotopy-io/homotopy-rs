@@ -72,8 +72,7 @@ impl Component for App {
     fn create(ctx: &Context<Self>) -> Self {
         let state = model::State::default();
         // Install the signature stylesheet
-        let mut signature_stylesheet = SignatureStylesheet::new();
-        signature_stylesheet.update(state.proof().signature.clone());
+        let signature_stylesheet = SignatureStylesheet::new();
         signature_stylesheet.mount();
         // Initialize IndexedDB for autosaving
         ctx.link().send_future(async {
@@ -218,15 +217,21 @@ impl Component for App {
                 true
             }
             Message::ImportProof(proof) => {
-                if let Some(data) = proof {
-                    self.state
-                        .update(model::Action::Proof(model::proof::Action::ImportProof(
-                            data,
-                        )))
-                        .map_err(|_err| log::error!("Failed to load autosave"))
-                        .is_ok()
-                } else {
-                    false
+                let Some(data) = proof else { return false };
+                match self
+                    .state
+                    .update(model::Action::Proof(model::proof::Action::ImportProof(
+                        data,
+                    ))) {
+                    Ok(()) => {
+                        self.signature_stylesheet
+                            .update(self.state.proof().signature.clone());
+                        true
+                    }
+                    Err(_) => {
+                        log::error!("Failed to load autosave");
+                        false
+                    }
                 }
             }
         }
