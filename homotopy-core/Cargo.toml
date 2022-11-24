@@ -22,7 +22,7 @@ serde = { features = ["derive"], version = "1.0.147" }
 rmp-serde = "1.1.1"
 itertools = "0.10.5"
 thiserror = "1.0.37"
-flate2 = "1.0.24"
+flate2 = "1.0.25"
 serde_json = "1.0.89"
 base64 = "0.13.1"
 arbitrary = { version = "1.2.0", optional = true, features = ["derive"] }
