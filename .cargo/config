@@ -25,6 +25,7 @@ rustflags = [
     "-Wclippy::unseparated_literal_suffix",
 
     # exceptions
+    "-Aunused_macros", # remove this once we fix the obake versioned macro
     "-Aclippy::cargo_common_metadata",
     "-Aclippy::cast_possible_truncation",
     "-Aclippy::cast_possible_wrap",
