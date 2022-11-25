@@ -8,7 +8,7 @@ use homotopy_core::{
 use homotopy_graphics::style::{Color, SignatureStyleData, VertexShape};
 use serde::{Deserialize, Serialize};
 
-use crate::proof::{generators::GeneratorInfo, ProofError};
+use crate::proof::generators::GeneratorInfo;
 
 pub const COLORS: &[&str] = &[
     "#2980b9", // belize blue
@@ -145,7 +145,7 @@ impl Signature {
             .flatten()
     }
 
-    fn edit(&mut self, node: Node, edit: SignatureItemEdit) -> Result<(), ProofError> {
+    fn edit(&mut self, node: Node, edit: SignatureItemEdit) {
         use SignatureItemEdit::{
             MakeInvertible, MakeOriented, Recolor, Rename, Reshape, ShowSourceTarget,
         };
@@ -159,8 +159,6 @@ impl Signature {
             (SignatureItem::Folder(info), Rename(name)) => info.name = name,
             (_, _) => {}
         });
-
-        Ok(())
     }
 
     pub fn has_descendents_in(&self, node: Node, diagram: &Diagram) -> bool {
@@ -205,7 +203,7 @@ impl Signature {
         }
     }
 
-    pub fn update(&mut self, edit: &SignatureEdit) -> Result<(), ProofError> {
+    pub fn update(&mut self, edit: &SignatureEdit) {
         match edit {
             SignatureEdit::Edit(node, edit) => {
                 // Intercept edit in order to update the whole signature.
@@ -219,7 +217,7 @@ impl Signature {
                         SignatureItem::Folder(_) => item,
                     });
                 }
-                self.edit(*node, edit.clone())?;
+                self.edit(*node, edit.clone());
             }
             SignatureEdit::NewFolder(node) => {
                 self.0.push_onto(
@@ -275,7 +273,6 @@ impl Signature {
                 }
             }
         }
-        Ok(())
     }
 
     pub fn as_tree(&self) -> Tree<SignatureItem> {
