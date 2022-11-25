@@ -45,7 +45,7 @@ pub enum Message {
     BlockingDispatch(model::Action),
     Dispatch(model::Action),
     DatabaseReady,
-    ImportProof(Option<SerializedData>),
+    LoadAutosave(Option<SerializedData>),
 }
 
 thread_local! {
@@ -221,9 +221,9 @@ impl Component for App {
                             if let Ok(autosave) = saves.get(&"latest".into()).await {
                                 log::info!("Loading autosave…");
                                 let proof = serde_wasm_bindgen::from_value(autosave).ok();
-                                Message::ImportProof(proof)
+                                Message::LoadAutosave(proof)
                             } else {
-                                Message::ImportProof(None)
+                                Message::LoadAutosave(None)
                             }
                         });
                     } else {
@@ -232,7 +232,7 @@ impl Component for App {
                 });
                 true
             }
-            Message::ImportProof(proof) => {
+            Message::LoadAutosave(proof) => {
                 let Some(data) = proof else { return false };
                 if self
                     .state
@@ -243,6 +243,8 @@ impl Component for App {
                 {
                     self.signature_stylesheet
                         .update(self.state.proof().signature.clone());
+                    self.toaster
+                        .toast(Toast::success("Successfully loaded autosave"));
                     true
                 } else {
                     log::error!("Failed to load autosave");
