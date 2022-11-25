@@ -287,7 +287,7 @@ impl Default for Sidebar {
         Sidebar {
             last_drawer_width: SidebarDrawer::DEFAULT_WIDTH,
             drawer_view_size: DrawerViewSize::from(SidebarDrawer::DEFAULT_WIDTH),
-            open: Default::default(),
+            open: Some(drawers::NavDrawer::DRAWER_SIGNATURE),
             keybindings: Default::default(),
         }
     }
