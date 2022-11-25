@@ -1142,8 +1142,14 @@ svg {
   color: white;
 }
 
+.toaster__toast--warning .toaster__toast__inner {
+  background: #f39c12;
+  color: white;
+}
+
 .toaster__toast--success .toaster__toast__inner {
   background: #27ae60;
+  color: white;
 }
 
 @keyframes toast__inner {

@@ -34,7 +34,11 @@ macro_rules! declare_toast_kinds {
     }
 }
 
-declare_toast_kinds![(Success, success, "success"), (Error, error, "error"),];
+declare_toast_kinds![
+    (Success, success, "success"),
+    (Warning, warn, "warning"),
+    (Error, error, "error"),
+];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Toast {

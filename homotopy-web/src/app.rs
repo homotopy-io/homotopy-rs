@@ -137,6 +137,18 @@ impl Component for App {
             Message::Dispatch(action) => {
                 log::info!("Received action: {:?}", action);
 
+                // Intercept 'MakeOriented' actions to show warning.
+                if let model::Action::Proof(model::proof::Action::EditSignature(
+                    model::proof::SignatureEdit::Edit(
+                        _,
+                        model::proof::SignatureItemEdit::MakeOriented(true),
+                    ),
+                )) = &action
+                {
+                    self.toaster
+                        .toast(Toast::warn("Oriented generators are experimental"));
+                }
+
                 // Determine if the action needs to reset the panzoom
                 // but do not reset it until we have performed the action.
                 let resets_panzoom = if let model::Action::Proof(action) = &action {
@@ -195,7 +207,7 @@ impl Component for App {
                     }));
                 } else if let Err(error) = result {
                     log::error!("Error occured: {}", error);
-                    self.toaster.toast(Toast::error(format!("{}", error)));
+                    self.toaster.toast(Toast::error(error.to_string()));
                 }
 
                 true
