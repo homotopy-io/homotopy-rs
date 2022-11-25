@@ -266,33 +266,34 @@ impl ProofState {
     ///
     /// Returns a boolean indicating if the state was updated.
     pub fn update(&mut self, action: &Action) -> Result<bool, ProofError> {
-        match action {
+        let result = match action {
             Action::CreateGeneratorZero => self.create_generator_zero(),
-            Action::SetBoundary(boundary) => self.set_boundary(*boundary),
+            Action::SetBoundary(boundary) => self.set_boundary(*boundary)?,
             Action::TakeIdentityDiagram => self.take_identity_diagram(),
             Action::ClearWorkspace => self.clear_workspace(),
             Action::ClearBoundary => self.clear_boundary(),
-            Action::SelectGenerator(generator) => self.select_generator(*generator),
+            Action::SelectGenerator(generator) => self.select_generator(*generator)?,
             Action::AscendSlice(count) => self.ascend_slice(*count),
-            Action::DescendSlice(slice) => self.descend_slice(*slice),
+            Action::DescendSlice(slice) => self.descend_slice(*slice)?,
             Action::SwitchSlice(direction) => self.switch_slice(*direction),
             Action::IncreaseView(count) => self.increase_view(*count),
             Action::DecreaseView(count) => self.decrease_view(*count),
-            Action::Attach(option) => self.attach(option),
-            Action::Homotopy(Homotopy::Expand(homotopy)) => self.homotopy_expansion(homotopy),
-            Action::Homotopy(Homotopy::Contract(homotopy)) => self.homotopy_contraction(homotopy),
+            Action::Attach(option) => self.attach(option)?,
+            Action::Homotopy(Homotopy::Expand(homotopy)) => self.homotopy_expand(homotopy)?,
+            Action::Homotopy(Homotopy::Contract(homotopy)) => self.homotopy_contract(homotopy)?,
             Action::Behead => self.behead(),
             Action::Befoot => self.befoot(),
-            Action::Invert => self.invert(),
+            Action::Invert => self.invert()?,
             Action::Restrict => self.restrict(),
-            Action::Theorem => self.theorem(),
+            Action::Theorem => self.theorem()?,
             Action::EditSignature(edit) => self.edit_signature(edit),
             Action::FlipBoundary => self.flip_boundary(),
             Action::RecoverBoundary => self.recover_boundary(),
-            Action::ImportProof(data) => self.import_proof(data),
+            Action::ImportProof(data) => self.import_proof(data)?,
             Action::EditMetadata(edit) => self.edit_metadata(edit),
-            Action::Nothing => Ok(false),
-        }
+            Action::Nothing => false,
+        };
+        Ok(result)
     }
 
     /// Determines if a given [Action] should reset the panzoom state, given the current  [ProofState].
@@ -314,10 +315,9 @@ impl ProofState {
     }
 
     /// Handler for [Action::CreateGeneratorZero].
-    #[allow(clippy::unnecessary_wraps)]
-    fn create_generator_zero(&mut self) -> Result<bool, ProofError> {
+    fn create_generator_zero(&mut self) -> bool {
         self.signature.create_generator_zero("Cell");
-        Ok(true)
+        true
     }
 
     /// Handler for [Action::SetBoundary].
@@ -350,8 +350,8 @@ impl ProofState {
     /// Handler for [Action::TakeIdentityDiagram].
     ///
     /// Invalid if the workspace is empty.
-    fn take_identity_diagram(&mut self) -> Result<bool, ProofError> {
-        let Some(ws) = &mut self.workspace else { return Ok(false) };
+    fn take_identity_diagram(&mut self) -> bool {
+        let Some(ws) = &mut self.workspace else { return false };
 
         if ws.diagram.dimension() + ws.path.len() >= 2 {
             ws.path.push_front(Boundary::Target.into());
@@ -361,21 +361,21 @@ impl ProofState {
 
         ws.diagram = ws.diagram.clone().identity().into();
 
-        Ok(true)
+        true
     }
 
     /// Handler for [Action::ClearWorkspace].
     ///
     /// Invalid if the workspace is empty.
-    fn clear_workspace(&mut self) -> Result<bool, ProofError> {
-        Ok(self.workspace.take().is_some())
+    fn clear_workspace(&mut self) -> bool {
+        self.workspace.take().is_some()
     }
 
     /// Handler for [Action::ClearBoundary].
     ///
     /// Invalid if the selected boundary is empty.
-    fn clear_boundary(&mut self) -> Result<bool, ProofError> {
-        Ok(self.boundary.take().is_some())
+    fn clear_boundary(&mut self) -> bool {
+        self.boundary.take().is_some()
     }
 
     /// Handler for [Action::SelectGenerator].
@@ -395,11 +395,11 @@ impl ProofState {
     /// Handler for [Action::AscendSlice].
     ///
     /// Invalid if the workspace is empty or the path is too short.
-    fn ascend_slice(&mut self, count: usize) -> Result<bool, ProofError> {
-        let Some(ws) = &mut self.workspace else { return Ok(false) };
+    fn ascend_slice(&mut self, count: usize) -> bool {
+        let Some(ws) = &mut self.workspace else { return false };
 
         if count == 0 || ws.path.is_empty() {
-            return Ok(false);
+            return false;
         }
 
         for _ in 0..count {
@@ -412,7 +412,7 @@ impl ProofState {
             }
         }
 
-        Ok(true)
+        true
     }
 
     /// Handler for [Action::DescendSlice].
@@ -440,49 +440,47 @@ impl ProofState {
     /// Handler for [Action::SwitchSlice].
     ///
     /// Invalid if the workspace is empty, the path is empty, or we cannot step in the given direction.
-    fn switch_slice(&mut self, direction: Direction) -> Result<bool, ProofError> {
-        let Some(ws) = &mut self.workspace else { return Ok(false) };
+    fn switch_slice(&mut self, direction: Direction) -> bool {
+        let Some(ws) = &mut self.workspace else { return false };
 
-        let Some(slice) = ws.path.pop_back() else { return Ok(false) };
+        let Some(slice) = ws.path.pop_back() else { return false };
 
         let diagram = DiagramN::try_from(ws.visible_diagram()).unwrap();
         let next_slice = slice.step(diagram.size(), direction);
         ws.path.push_back(next_slice.unwrap_or(slice));
-        Ok(next_slice.is_some())
+        next_slice.is_some()
     }
 
     /// Handler for [Action::IncreaseView].
     ///
     /// Invalid if the workspace is empty or the view dimension is too high.
-    fn increase_view(&mut self, count: u8) -> Result<bool, ProofError> {
-        let Some(ws) = &mut self.workspace else { return Ok(false) };
+    fn increase_view(&mut self, count: u8) -> bool {
+        let Some(ws) = &mut self.workspace else { return false };
 
-        if count == 0 || ws.view.dimension == std::cmp::min(ws.visible_dimension() as u8, View::MAX)
-        {
-            return Ok(false);
+        let max = std::cmp::min(ws.visible_dimension() as u8, View::MAX);
+
+        if count == 0 || ws.view.dimension == max {
+            return false;
         }
 
-        ws.view.dimension = std::cmp::min(
-            ws.view.dimension + count,
-            std::cmp::min(ws.visible_dimension() as u8, View::MAX),
-        );
+        ws.view.dimension = std::cmp::min(ws.view.dimension + count, max);
 
-        Ok(true)
+        true
     }
 
     /// Handler for [Action::DecreaseView].
     ///
     /// Invalid if the workspace is empty or the view dimension is too low.
-    fn decrease_view(&mut self, count: u8) -> Result<bool, ProofError> {
-        let Some(ws) = &mut self.workspace else { return Ok(false) };
+    fn decrease_view(&mut self, count: u8) -> bool {
+        let Some(ws) = &mut self.workspace else { return false };
 
         if count == 0 || ws.view.dimension == 0 {
-            return Ok(false);
+            return false;
         }
 
         ws.view.dimension = ws.view.dimension.saturating_sub(count);
 
-        Ok(true)
+        true
     }
 
     /// Handler for [Action::Attach].
@@ -511,7 +509,7 @@ impl ProofState {
     /// Handler for [Action::Homotopy].
     ///
     /// Invalid if the workspace is empty or has dimension 0.
-    fn homotopy_expansion(&mut self, homotopy: &Expand) -> Result<bool, ProofError> {
+    fn homotopy_expand(&mut self, homotopy: &Expand) -> Result<bool, ProofError> {
         let Some(ws) = &mut self.workspace else { return Ok(false) };
         let diagram = &mut ws.diagram;
 
@@ -555,7 +553,7 @@ impl ProofState {
     /// Handler for [Action::Homotopy].
     ///
     /// Invalid if the workspace is empty or has dimension 0.
-    fn homotopy_contraction(&mut self, homotopy: &Contract) -> Result<bool, ProofError> {
+    fn homotopy_contract(&mut self, homotopy: &Contract) -> Result<bool, ProofError> {
         let Some(ws) = &mut self.workspace else { return Ok(false) };
         let diagram = &mut ws.diagram;
 
@@ -601,9 +599,9 @@ impl ProofState {
     /// Handler for [Action::Behead].
     ///
     /// Invalid if the workspace is empty or has dimension 0, or if the path is invalid.
-    fn behead(&mut self) -> Result<bool, ProofError> {
-        let Some(ws) = &mut self.workspace else { return Ok(false) };
-        let Diagram::DiagramN(diagram) = &ws.diagram else { return Ok(false) };
+    fn behead(&mut self) -> bool {
+        let Some(ws) = &mut self.workspace else { return false };
+        let Diagram::DiagramN(diagram) = &ws.diagram else { return false };
 
         let max_height = match ws.path.len() {
             0 if diagram.size() > 0 => diagram.size() - 1,
@@ -611,23 +609,23 @@ impl ProofState {
                 SliceIndex::Boundary(Boundary::Source) => 0,
                 SliceIndex::Boundary(Boundary::Target) => diagram.size(),
                 SliceIndex::Interior(Height::Regular(j)) => j,
-                _ => return Ok(false),
+                _ => return false,
             },
-            _ => return Ok(false),
+            _ => return false,
         };
 
         ws.diagram = diagram.behead(max_height).into();
         ws.path = Default::default();
 
-        Ok(true)
+        true
     }
 
     /// Handler for [Action::Befoot].
     ///
     /// Invalid if the workspace is empty or has dimension 0, or if the path is invalid.
-    fn befoot(&mut self) -> Result<bool, ProofError> {
-        let Some(ws) = &mut self.workspace else { return Ok(false) };
-        let Diagram::DiagramN(diagram) = &ws.diagram else { return Ok(false) };
+    fn befoot(&mut self) -> bool {
+        let Some(ws) = &mut self.workspace else { return false };
+        let Diagram::DiagramN(diagram) = &ws.diagram else { return false };
 
         let min_height = match ws.path.len() {
             0 if diagram.size() > 0 => 1,
@@ -635,15 +633,15 @@ impl ProofState {
                 SliceIndex::Boundary(Boundary::Source) => 0,
                 SliceIndex::Boundary(Boundary::Target) => diagram.size(),
                 SliceIndex::Interior(Height::Regular(j)) => j,
-                _ => return Ok(false),
+                _ => return false,
             },
-            _ => return Ok(false),
+            _ => return false,
         };
 
         ws.diagram = diagram.befoot(min_height).into();
         ws.path = Default::default();
 
-        Ok(true)
+        true
     }
 
     /// Handler for [Action::Invert].
@@ -669,20 +667,22 @@ impl ProofState {
     /// Handler for [Action::Restrict].
     ///
     /// Invalid if the workspace is empty, or if the path is empty or contains a singular slice.
-    fn restrict(&mut self) -> Result<bool, ProofError> {
-        let Some(ws) = &mut self.workspace else { return Ok(false) };
+    fn restrict(&mut self) -> bool {
+        let Some(ws) = &mut self.workspace else { return false };
 
-        if ws.path.is_empty() ||  ws
-        .path
-        .iter()
-        .any(|index| matches!(index, SliceIndex::Interior(Height::Singular(_)))){
-            return Ok(false);
+        if ws.path.is_empty()
+            || ws
+                .path
+                .iter()
+                .any(|index| matches!(index, SliceIndex::Interior(Height::Singular(_))))
+        {
+            return false;
         }
 
         ws.diagram = ws.visible_diagram();
         ws.path = Default::default();
 
-        Ok(true)
+        true
     }
 
     /// Handler for [Action::Theorem].
@@ -732,7 +732,7 @@ impl ProofState {
     }
 
     /// Handler for [Action::EditSignature].
-    fn edit_signature(&mut self, edit: &SignatureEdit) -> Result<bool, ProofError> {
+    fn edit_signature(&mut self, edit: &SignatureEdit) -> bool {
         // intercept remove events in order to clean-up workspace and boundaries
         if let SignatureEdit::Remove(node) = edit {
             // remove from the workspace
@@ -763,39 +763,38 @@ impl ProofState {
             }
         }
 
-        self.signature.update(edit)?;
+        self.signature.update(edit);
 
-        Ok(true)
+        true
     }
 
     /// Handler for [Action::EditMetadata].
-    #[allow(clippy::unnecessary_wraps)]
-    fn edit_metadata(&mut self, edit: &MetadataEdit) -> Result<bool, ProofError> {
+    fn edit_metadata(&mut self, edit: &MetadataEdit) -> bool {
         match edit {
             MetadataEdit::Title(title) => self.metadata.title = Some(title.clone()),
             MetadataEdit::Author(author) => self.metadata.author = Some(author.clone()),
             MetadataEdit::Abstract(abstr) => self.metadata.abstr = Some(abstr.clone()),
         }
 
-        Ok(true)
+        true
     }
 
     /// Handler for [Action::FlipBoundary].
     ///
     /// Invalid if the selected boundary is empty.
-    fn flip_boundary(&mut self) -> Result<bool, ProofError> {
-        let Some(selected) = &mut self.boundary else { return Ok(false) };
+    fn flip_boundary(&mut self) -> bool {
+        let Some(selected) = &mut self.boundary else { return false };
         selected.boundary = selected.boundary.flip();
-        Ok(true)
+        true
     }
 
     /// Handler for [Action::RecoverBoundary].
     ///
     /// Invalid if the selected boundary is empty.
-    fn recover_boundary(&mut self) -> Result<bool, ProofError> {
-        let Some(selected) = self.boundary.as_ref() else { return Ok(false) };
+    fn recover_boundary(&mut self) -> bool {
+        let Some(selected) = self.boundary.as_ref() else { return false };
         self.workspace = Some(Workspace::new(selected.diagram.clone()));
-        Ok(true)
+        true
     }
 
     fn unwind_to_valid_path(&mut self) {
