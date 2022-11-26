@@ -173,6 +173,22 @@ impl History {
         actions
     }
 
+    pub fn get_last_import_segment(&self) -> Vec<super::proof::Action> {
+        let mut actions = Vec::new();
+        for a in self
+            .snapshots
+            .ancestors_of(self.current)
+            .filter_map(|n| self.snapshots.with(n, |s| s.action.clone()).flatten())
+        {
+            actions.push(a.clone());
+            if matches!(a, super::proof::Action::ImportProof(_)) {
+                break;
+            }
+        }
+        actions.reverse();
+        actions
+    }
+
     pub fn last_action(&self) -> Option<super::proof::Action> {
         self.snapshots
             .with(self.current, |s| s.action.clone())

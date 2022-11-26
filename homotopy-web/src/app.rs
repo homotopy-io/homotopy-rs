@@ -348,7 +348,7 @@ impl App {
                             <p>
                                 {"We'll fix the problem in no time!"}
                             </p>
-                            <button onclick={move |_| model::download_actions()}>{"Download action logs"}</button>
+                            <button onclick={move |_| {crate::panic::export_dump(false).unwrap();}}>{"Download action logs"}</button>
                         </div>
                     </div>
                 </div>
