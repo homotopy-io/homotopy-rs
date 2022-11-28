@@ -20,6 +20,6 @@ pub fn main_js() -> Result<(), JsValue> {
 
     // check if we are the main/UI thread
     wasm_logger::init(wasm_logger::Config::default());
-    yew::start_app::<app::App>();
+    yew::Renderer::<app::App>::new().render();
     Ok(())
 }
