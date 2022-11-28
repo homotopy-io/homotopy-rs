@@ -59,7 +59,7 @@ highs = "1.2.1"
 console_error_panic_hook = { version = "0.1.7", optional = true }
 im = { version = "15.1.0", features = ["serde"] }
 arrayvec = "0.7.2"
-yew = "0.19.3"
+yew = "0.20.0"
 yew-agent = "0.1.0"
 yew-macro = "0.19.3"
 time = {version = "0.3.17", features = ["wasm-bindgen"] }
