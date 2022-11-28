@@ -1,8 +1,11 @@
 use homotopy_common::hash::FastHashMap;
-use yew_agent::{Agent, AgentLink, Context, HandlerId};
+use serde::{Deserialize, Serialize};
+use yew::Context;
+use yew_agent::{HandlerId, Private, Public, Worker, WorkerLink};
 
 use super::KeyStore;
 
+#[derive(Serialize, Deserialize)]
 pub enum SettingsInput<S: KeyStore> {
     Subscribe(S::Key),
     Unsubscribe(S::Key),
@@ -13,21 +16,21 @@ pub struct SettingsAgent<S>
 where
     S: KeyStore + 'static,
 {
-    link: AgentLink<Self>,
+    link: WorkerLink<Self>,
     store: S,
     handlers: FastHashMap<S::Key, Vec<HandlerId>>,
 }
 
-impl<S> Agent for SettingsAgent<S>
+impl<S> Worker for SettingsAgent<S>
 where
     S: KeyStore + 'static,
 {
     type Input = SettingsInput<S>;
     type Message = ();
     type Output = S::Message;
-    type Reach = Context<Self>;
+    type Reach = Public<Self>;
 
-    fn create(link: AgentLink<Self>) -> Self {
+    fn create(link: WorkerLink<Self>) -> Self {
         Self {
             link,
             store: Default::default(),

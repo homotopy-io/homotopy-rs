@@ -2,7 +2,9 @@
 
 use std::cell::RefCell;
 
-use yew_agent::{Agent, AgentLink, Context, Dispatched, Dispatcher, HandlerId};
+use serde::{Deserialize, Serialize};
+use yew::Context;
+use yew_agent::{Dispatched, Dispatcher, HandlerId, Public, Worker, WorkerLink};
 
 pub trait State: Default + Sized + 'static {
     type Action;
@@ -24,21 +26,21 @@ pub struct DeltaAgent<T>
 where
     T: State,
 {
-    link: AgentLink<Self>,
+    link: WorkerLink<Self>,
     state: T,
     handlers: Vec<DeltaCallback<T>>,
 }
 
-impl<T> Agent for DeltaAgent<T>
+impl<T> Worker for DeltaAgent<T>
 where
     T: State,
 {
     type Input = DeltaInput<T>;
     type Message = ();
     type Output = ();
-    type Reach = Context<Self>;
+    type Reach = Public<Self>;
 
-    fn create(link: AgentLink<Self>) -> Self {
+    fn create(link: WorkerLink<Self>) -> Self {
         Self {
             link,
             state: Default::default(),
