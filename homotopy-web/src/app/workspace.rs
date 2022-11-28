@@ -199,7 +199,7 @@ impl WorkspaceView {
                         on_select={self.on_select.reform(move |p| (p, weak_units))}
                         on_homotopy={self.on_homotopy.clone()}
                         highlight={highlight}
-                        ref={self.diagram_ref.clone()}
+                        diagram_ref={self.diagram_ref.clone()}
                     />
                 </PanZoomComponent>
             }
