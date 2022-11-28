@@ -129,6 +129,9 @@ impl Component for App {
                 self.loading = true;
 
                 ctx.link().send_future(async move {
+                    //TODO: remove this too
+                    std::panic::set_hook(Box::new(crate::panic::panic_handler));
+
                     TimeoutFuture::new(0).await; // TODO: remove this awful hack
                     Message::Dispatch(action)
                 });
