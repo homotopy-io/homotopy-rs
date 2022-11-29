@@ -3,8 +3,8 @@ use std::hash::Hash;
 use serde::{Deserialize, Serialize};
 
 pub trait KeyStore: Serialize + Deserialize<'static> + Default + Clone {
-    type Key: Copy + Eq + Hash + 'static;
-    type Message: Clone;
+    type Key: Copy + Eq + Serialize + for<'a> Deserialize<'a> + Hash + 'static;
+    type Message: Clone + Serialize + for<'a> Deserialize<'a>;
 
     fn get(&self, k: Self::Key) -> Self::Message;
 
@@ -54,7 +54,7 @@ macro_rules! declare_settings {
                 }
             }
 
-            #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Hash)]
+            #[derive(serde::Serialize, serde::Deserialize, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug, Hash)]
             #[allow(non_camel_case_types)]
             $vis enum [<$name Key>] {
                 $(
@@ -63,7 +63,7 @@ macro_rules! declare_settings {
                 ),*
             }
 
-            #[derive(Clone, Debug)]
+            #[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
             #[allow(non_camel_case_types)]
             $vis enum [<$name Msg>] {
                 $(
@@ -135,7 +135,9 @@ macro_rules! declare_settings {
                     use $crate::components::settings::SettingsAgent;
                     use yew_agent::Bridged;
 
-                    let bridge = SettingsAgent::<[<$name KeyStore>]>::bridge(callback);
+                    let bridge = SettingsAgent::<[<$name KeyStore>]>::bridge(
+                        std::rc::Rc::new((|m| callback.emit(m)))
+                    );
 
                     Self {
                         bridge,
