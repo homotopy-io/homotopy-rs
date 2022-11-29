@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
@@ -46,7 +48,10 @@ impl Component for SettingsView {
     type Properties = SettingsProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let mut settings = AppSettings::connect(ctx.link().callback(|x| x));
+        let link = ctx.link().clone();
+        let mut settings = AppSettings::connect(Rc::new(move |x| {
+            link.send_message(x);
+        }));
         // So that we can keep our local copy of the global settings up to date,
         // we're going to need to subscribe to all changes in the global settings state.
         settings.subscribe(AppSettings::ALL);

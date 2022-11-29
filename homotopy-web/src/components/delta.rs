@@ -7,16 +7,17 @@ use yew::Context;
 use yew_agent::{Dispatched, Dispatcher, HandlerId, Public, Worker, WorkerLink};
 
 pub trait State: Default + Sized + 'static {
-    type Action;
+    type Action: Serialize + for<'de> Deserialize<'de>;
 
     fn update(&mut self, action: &Self::Action);
 }
 
+#[derive(Serialize, Deserialize)]
 pub enum DeltaInput<T>
 where
     T: State,
 {
-    Register(DeltaCallback<T>),
+    Register,
     Emit(T::Action),
 }
 
@@ -28,7 +29,8 @@ where
 {
     link: WorkerLink<Self>,
     state: T,
-    handlers: Vec<DeltaCallback<T>>,
+    //handlers: Vec<DeltaCallback<T>>,
+    handlers: Vec<HandlerId>,
 }
 
 impl<T> Worker for DeltaAgent<T>
@@ -50,16 +52,19 @@ where
 
     fn update(&mut self, _: Self::Message) {}
 
-    fn handle_input(&mut self, msg: Self::Input, _id: HandlerId) {
+    fn handle_input(&mut self, msg: Self::Input, id: HandlerId) {
         match msg {
-            DeltaInput::Register(callback) => {
-                self.handlers.push(callback);
+            DeltaInput::Register => {
+                self.handlers.push(id);
             }
             DeltaInput::Emit(msg) => {
                 self.state.update(&msg);
+                //TODO actually do callbacks
+                /*
                 for callback in &self.handlers {
                     callback(self, &msg);
                 }
+                */
             }
         }
     }
@@ -99,6 +104,10 @@ where
     }
 
     pub fn register(&self, callback: DeltaCallback<T>) {
-        self.0.borrow_mut().send(DeltaInput::Register(callback));
+        //TODO fix this
+        // DeltaInput::Register(callback)
+        // Temp fix to make clippy shut up
+        std::mem::drop(callback);
+        self.0.borrow_mut().send(DeltaInput::Register);
     }
 }

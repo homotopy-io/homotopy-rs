@@ -480,6 +480,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b52c2ef4a78da0ba68fbe1fd920627411096d2ac478f7f4c9f3a54ba6705bade"
 dependencies = [
  "num-traits 0.2.15",
+ "serde",
 ]
 
 [[package]]

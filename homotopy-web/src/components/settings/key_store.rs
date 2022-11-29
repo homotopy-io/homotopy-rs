@@ -18,7 +18,8 @@ pub trait Settings {
 
     const ALL: &'static [<Self::Store as KeyStore>::Key];
 
-    fn connect(callback: yew::callback::Callback<<Self::Store as KeyStore>::Message>) -> Self;
+    fn connect(callback: std::rc::Rc<dyn Fn(<Self::Store as KeyStore>::Message) + 'static>)
+        -> Self;
 
     fn subscribe(&mut self, keys: &[<Self::Store as KeyStore>::Key]);
 
@@ -131,12 +132,12 @@ macro_rules! declare_settings {
                     $([<$name Key>]::$key),*
                 ];
 
-                fn connect(callback: yew::callback::Callback<[<$name Msg>]>) -> Self {
+                fn connect(callback: std::rc::Rc<dyn Fn([<$name Msg>]) + 'static>) -> Self {
                     use $crate::components::settings::SettingsAgent;
                     use yew_agent::Bridged;
 
                     let bridge = SettingsAgent::<[<$name KeyStore>]>::bridge(
-                        std::rc::Rc::new((|m| callback.emit(m)))
+                        callback
                     );
 
                     Self {

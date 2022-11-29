@@ -93,7 +93,10 @@ impl Component for DiagramGl {
     type Properties = DiagramGlProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let mut settings = AppSettings::connect(ctx.link().callback(DiagramGlMessage::Setting));
+        let link = ctx.link().clone();
+        let mut settings = AppSettings::connect(Rc::new(move |s| {
+            link.send_message(DiagramGlMessage::Setting(s));
+        }));
 
         settings.subscribe(AppSettings::ALL);
 

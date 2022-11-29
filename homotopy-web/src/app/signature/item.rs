@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{rc::Rc, str::FromStr};
 
 use homotopy_common::tree::Node;
 use homotopy_core::Diagram;
@@ -205,7 +205,10 @@ impl Component for ItemView {
     fn create(ctx: &Context<Self>) -> Self {
         const ITEM_SUBSCRIPTIONS: &[AppSettingsKey] = &[AppSettingsKey::show_previews];
 
-        let mut settings = AppSettings::connect(ctx.link().callback(ItemViewMessage::Setting));
+        let link = ctx.link().clone();
+        let mut settings = AppSettings::connect(Rc::new(move |s| {
+            link.send_message(ItemViewMessage::Setting(s));
+        }));
         settings.subscribe(ITEM_SUBSCRIPTIONS);
 
         let name = match &ctx.props().item {

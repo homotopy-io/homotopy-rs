@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::{cell::RefCell, rc::Rc};
 
 use boundary::BoundaryPreview;
 use gloo_timers::{callback::Timeout, future::TimeoutFuture};
@@ -94,7 +94,7 @@ impl Component for App {
             orbit_control: GlViewControl::new(),
             signature_stylesheet,
             toaster: Toaster::new(),
-            _settings: AppSettings::connect(Callback::noop()),
+            _settings: AppSettings::connect(Rc::new(|_| {})),
             before_unload: None,
         }
     }

@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use yew::prelude::*;
 
 use crate::{
@@ -30,7 +32,10 @@ impl Component for ImageExportView {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let mut settings = ImageExportSettings::connect(ctx.link().callback(|x| x));
+        let link = ctx.link().clone();
+        let mut settings = ImageExportSettings::connect(Rc::new(move |x| {
+            link.send_message(x);
+        }));
         // So that we can keep our local copy of the global settings up to date,
         // we're going to need to subscribe to all changes in the global settings state.
         settings.subscribe(ImageExportSettings::ALL);

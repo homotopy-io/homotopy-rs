@@ -1,13 +1,14 @@
 use std::fmt;
 
 use gloo_timers::callback::Timeout;
+use serde::{Deserialize, Serialize};
 use yew::prelude::*;
 
 use crate::components::delta::{Delta, State};
 
 macro_rules! declare_toast_kinds {
     ($(($name:ident, $method:ident, $class:literal),)*) => {
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
         pub enum ToastKind {
             $($name),*
         }
@@ -40,7 +41,7 @@ declare_toast_kinds![
     (Error, error, "error"),
 ];
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Toast {
     pub kind: ToastKind,
     pub message: String,
@@ -52,7 +53,7 @@ pub struct ToasterProps {
     pub timeout: u32,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub enum ToasterMsg {
     Toast(Toast),
     Clear,

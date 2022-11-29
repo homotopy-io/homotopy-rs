@@ -1,4 +1,5 @@
 use homotopy_core::Direction;
+use serde::{Deserialize, Serialize};
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
@@ -7,19 +8,19 @@ use crate::{
     components::delta::{Delta, DeltaAgent, State},
 };
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PlayState {
     Playing,
     Paused,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LoopingBehaviour {
     FillFoward,
     Boomerang,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 enum PlaybackSpeed {
     Half,
     Normal,
@@ -56,6 +57,7 @@ impl PlaybackSpeed {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub enum ScrubAction {
     SetState(PlayState),
     Push,

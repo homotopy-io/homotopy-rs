@@ -1,7 +1,6 @@
 use homotopy_common::hash::FastHashMap;
 use serde::{Deserialize, Serialize};
-use yew::Context;
-use yew_agent::{HandlerId, Private, Public, Worker, WorkerLink};
+use yew_agent::{HandlerId, Public, Worker, WorkerLink};
 
 use super::KeyStore;
 

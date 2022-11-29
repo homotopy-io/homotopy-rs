@@ -1,4 +1,5 @@
 use closure::closure;
+use serde::{Deserialize, Serialize};
 use yew::prelude::*;
 
 use crate::components::{
@@ -6,7 +7,7 @@ use crate::components::{
     node_midpoint, read_touch_list, Finger, Point,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TouchAction {
     TouchUpdate(Vec<(Finger, Point)>),
     TouchMove(Vec<(Finger, Point)>),

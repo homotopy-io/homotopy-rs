@@ -43,7 +43,7 @@ gloo-timers = { version = "0.2.5", features = ["futures"] }
 
 wasm-logger = "0.2.0"
 log = "0.4.17"
-euclid = "0.22.7"
+euclid = { version = "0.22.7", features = ["serde"] }
 ultraviolet = "0.9.0"
 lyon_path = "1.0.2"
 thiserror = "1.0.37"
