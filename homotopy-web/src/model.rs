@@ -9,10 +9,9 @@ use homotopy_graphics::{manim, stl, svg, tikz};
 use homotopy_model::proof::AttachOption;
 pub use homotopy_model::{history, migration, proof, serialize};
 use im::Vector;
-use js_sys::JsString;
 use serde::Serialize;
 use thiserror::Error;
-use wasm_bindgen::{prelude::*, JsCast};
+use wasm_bindgen::JsCast;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub enum Action {
@@ -83,20 +82,15 @@ impl State {
     pub fn update(&mut self, action: Action) -> Result<bool, ModelError> {
         match action {
             Action::Proof(action) => {
-                // If we are importing a proof,
-                // might as well forget about all previous actions.
-                // This avoid OOM with multiple imports of big proofs.
-                if matches!(action, proof::Action::ImportProof(_)) {
-                    drop_actions();
-                }
                 // Only exfiltrate proof actions, otherwise
                 // we risk funny business with circular action imports.
-                let data = serde_json::to_string(&action).expect("Failed to serialize action.");
-                push_action(JsString::from(data));
+                crate::panic::push_action(&action);
 
                 let mut proof = self.proof().clone();
-                if !proof.update(&action)? {
-                    return Ok(false);
+                let res = proof.update(&action);
+                if matches!(res, Err(_) | Ok(false)) {
+                    crate::panic::pop_action();
+                    return Ok(res?);
                 }
                 self.history.add(action, proof);
                 self.clear_attach();
@@ -108,14 +102,19 @@ impl State {
                     history::Direction::Linear(Forward) => {
                         self.history.redo()?;
                         if let Some(action) = self.history.last_action() {
-                            let data = serde_json::to_string(&action)
-                                .expect("Failed to serialize action.");
-                            push_action(JsString::from(data));
+                            crate::panic::push_action(&action);
                         }
                     }
                     history::Direction::Linear(Backward) => {
                         self.history.undo()?;
-                        pop_action();
+                        // The action we just undid is an ImportProof
+                        // So we need to reimport the context before
+                        // that into the panic handler.
+                        if !crate::panic::pop_action() {
+                            for a in self.history.get_last_import_segment() {
+                                crate::panic::push_action(&a);
+                            }
+                        }
                     }
                 };
                 self.clear_attach();
@@ -192,11 +191,7 @@ impl State {
             }
 
             Action::ExportActions => {
-                let actions = self.history.get_actions();
-                let payload: (bool, Vec<proof::Action>) = (true, actions);
-                let data = serde_json::to_string(&payload).map_err(|_e| ModelError::Internal)?;
-                generate_download("homotopy_io_actions", "txt", data.as_bytes())
-                    .map_err(ModelError::Export)?;
+                crate::panic::export_dump(true)?;
             }
 
             Action::ExportProof => {
@@ -219,8 +214,7 @@ impl State {
                     actions.len() - 1
                 };
 
-                // Forget the history and start from a fresh proof.
-                self.history = Default::default();
+                // Replay actions in top of workspace
                 let mut proof = self.proof().clone();
                 for a in &actions[..len] {
                     if proof.update(a)? {
@@ -435,27 +429,6 @@ pub fn generate_download(name: &str, ext: &str, data: &[u8]) -> Result<(), wasm_
     a.click();
     a.remove();
     web_sys::Url::revoke_object_url(&url)
-}
-
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen]
-    pub fn drop_actions();
-
-    #[wasm_bindgen]
-    pub fn push_action(a: JsString);
-
-    #[wasm_bindgen]
-    pub fn pop_action();
-
-    #[wasm_bindgen]
-    pub fn dump_actions() -> JsString;
-
-    #[wasm_bindgen]
-    pub fn download_actions();
-
-    #[wasm_bindgen]
-    pub fn display_panic_message();
 }
 
 fn contains_point(diagram: &Diagram, point: &[Height], embedding: &[RegularHeight]) -> bool {

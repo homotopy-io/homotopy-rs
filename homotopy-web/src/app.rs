@@ -129,6 +129,9 @@ impl Component for App {
                 self.loading = true;
 
                 ctx.link().send_future(async move {
+                    //TODO: remove this too
+                    std::panic::set_hook(Box::new(crate::panic::panic_handler));
+
                     TimeoutFuture::new(0).await; // TODO: remove this awful hack
                     Message::Dispatch(action)
                 });
@@ -348,7 +351,7 @@ impl App {
                             <p>
                                 {"We'll fix the problem in no time!"}
                             </p>
-                            <button onclick={move |_| model::download_actions()}>{"Download action logs"}</button>
+                            <button onclick={move |_| {crate::panic::export_dump(false).unwrap();}}>{"Download action logs"}</button>
                         </div>
                     </div>
                 </div>
