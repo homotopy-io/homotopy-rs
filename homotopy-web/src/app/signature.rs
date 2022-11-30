@@ -3,7 +3,7 @@ use yew::prelude::*;
 use yew_macro::function_component;
 
 use crate::{
-    app::sidebar::DrawerViewSize,
+    app::{settings::AppSettingsDispatch, sidebar::DrawerViewSize},
     model::proof::{Action, Signature},
 };
 
@@ -15,6 +15,7 @@ pub struct Props {
     pub signature: Signature,
     pub dispatch: Callback<Action>,
     pub drawer_view_size: DrawerViewSize,
+    pub settings: AppSettingsDispatch,
 }
 
 #[function_component(SignatureView)]
@@ -26,6 +27,7 @@ pub fn signature_view(props: &Props) -> Html {
             dispatch={props.dispatch.clone()}
             signature={props.signature.clone()}
             drawer_view_size={props.drawer_view_size}
+            settings={props.settings.clone()}
         />
     }
 }

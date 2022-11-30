@@ -13,7 +13,7 @@ use self::{
     shaders::Shaders,
 };
 use super::{buffers, orbit_camera::OrbitCamera, DiagramGlProps};
-use crate::{app::AppSettings, components::settings::Store, model::proof::Signature};
+use crate::{app::AppSettings, model::proof::Signature};
 
 mod axes;
 mod gbuffer;
@@ -41,11 +41,11 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(ctx: GlCtx, settings: &Store<AppSettings>, props: &DiagramGlProps) -> Result<Self> {
-        let cubical_subdivision = *settings.get_cubical_subdivision();
-        let smooth_time = *settings.get_smooth_time();
-        let subdivision_depth = *settings.get_subdivision_depth() as u8;
-        let samples = *settings.get_geometry_samples() as u8;
+    pub fn new(ctx: GlCtx, props: &DiagramGlProps) -> Result<Self> {
+        let cubical_subdivision = *props.settings.inner.get_cubical_subdivision();
+        let smooth_time = *props.settings.inner.get_smooth_time();
+        let subdivision_depth = *props.settings.inner.get_subdivision_depth() as u8;
+        let samples = *props.settings.inner.get_geometry_samples() as u8;
         let signature = props.signature.clone();
 
         Ok(Self {
@@ -73,7 +73,7 @@ impl Renderer {
         })
     }
 
-    pub fn update(&mut self, settings: &Store<AppSettings>) -> Result<()> {
+    pub fn update(&mut self, settings: &AppSettings) -> Result<()> {
         let cubical_subdivision = *settings.get_cubical_subdivision();
         let smooth_time = *settings.get_smooth_time();
         let subdivision_depth = *settings.get_subdivision_depth() as u8;
@@ -108,7 +108,7 @@ impl Renderer {
         Ok(())
     }
 
-    pub fn render(&mut self, camera: &OrbitCamera, settings: &Store<AppSettings>, t: f32) {
+    pub fn render(&mut self, camera: &OrbitCamera, settings: &AppSettings, t: f32) {
         let geometry_scale = *settings.get_geometry_scale() as f32 / 10.;
 
         let v = camera.view_transform(&self.ctx);

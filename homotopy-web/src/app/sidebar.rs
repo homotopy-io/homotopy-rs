@@ -5,7 +5,7 @@ use yew::prelude::*;
 use yew_macro::function_component;
 
 use crate::{
-    app::{attach::AttachView, keybindings::Keybindings},
+    app::{attach::AttachView, keybindings::Keybindings, settings::AppSettingsDispatch},
     components::{
         icon::{Icon, IconSize},
         Visibility,
@@ -264,6 +264,7 @@ pub struct SidebarProps {
     pub proof: Proof,
     pub attach: Option<Vector<AttachOption>>,
     pub dispatch: Callback<model::Action>,
+    pub settings: AppSettingsDispatch,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -392,6 +393,7 @@ impl Sidebar {
                     &ctx.props().proof,
                     self.last_drawer_width,
                     self.drawer_view_size,
+                    ctx.props().settings.clone(),
                 )
             })
             .unwrap_or_default()

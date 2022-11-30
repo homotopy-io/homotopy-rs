@@ -1,4 +1,4 @@
-use std::{rc::Rc, str::FromStr};
+use std::str::FromStr;
 
 use homotopy_common::tree::Node;
 use homotopy_core::Diagram;
@@ -10,12 +10,10 @@ use yew_macro::function_component;
 
 use crate::{
     app::{
-        diagram_svg::DiagramSvg, sidebar::DrawerViewSize, tex::TexSpan, AppSettings, AppSettingsKey,
+        diagram_svg::DiagramSvg, settings::AppSettingsDispatch, sidebar::DrawerViewSize,
+        tex::TexSpan,
     },
-    components::{
-        icon::{Icon, IconSize},
-        settings::{KeyStore, Settings, Store},
-    },
+    components::icon::{Icon, IconSize},
     model::proof::{
         generators::GeneratorInfo, Action, Signature, SignatureEdit, SignatureItem,
         SignatureItemEdit, COLORS, VERTEX_SHAPES,
@@ -111,6 +109,7 @@ pub struct ItemViewProps {
     pub item: SignatureItem,
     pub signature: Signature,
     pub drawer_view_size: DrawerViewSize,
+    pub settings: AppSettingsDispatch,
 
     #[prop_or_default]
     pub on_drag_over: Callback<DragEvent>,
@@ -146,7 +145,6 @@ pub enum ItemViewMessage {
     SwitchTo(ItemViewMode),
     Edit(SignatureItemEdit),
     CachePreview(bool, Diagram),
-    Setting(<Store<AppSettings> as KeyStore>::Message),
     Noop,
 }
 
@@ -191,11 +189,9 @@ fn custom_recolor_button(props: &CustomRecolorButtonProps) -> Html {
 }
 
 pub struct ItemView {
-    local: Store<AppSettings>,
     mode: ItemViewMode,
     name: String,
     preview_cache: Option<Preview>,
-    _settings: AppSettings,
 }
 
 impl Component for ItemView {
@@ -203,24 +199,14 @@ impl Component for ItemView {
     type Properties = ItemViewProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        const ITEM_SUBSCRIPTIONS: &[AppSettingsKey] = &[AppSettingsKey::show_previews];
-
-        let link = ctx.link().clone();
-        let mut settings = AppSettings::connect(Rc::new(move |s| {
-            link.send_message(ItemViewMessage::Setting(s));
-        }));
-        settings.subscribe(ITEM_SUBSCRIPTIONS);
-
         let name = match &ctx.props().item {
             SignatureItem::Item(info) => info.name.clone(),
             SignatureItem::Folder(info) => info.name.clone(),
         };
         Self {
-            local: Default::default(),
             mode: Default::default(),
             name,
             preview_cache: Default::default(),
-            _settings: settings,
         }
     }
 
@@ -239,10 +225,6 @@ impl Component for ItemView {
             }
             ItemViewMessage::CachePreview(show_single_preview, diagram) => {
                 self.cache_preview(ctx, show_single_preview, &diagram);
-                return true;
-            }
-            ItemViewMessage::Setting(msg) => {
-                self.local.set(&msg);
                 return true;
             }
             ItemViewMessage::Noop => {}
@@ -452,7 +434,7 @@ impl ItemView {
     }
 
     fn view_preview(&self, ctx: &Context<Self>) -> Html {
-        if !self.local.get_show_previews() {
+        if !ctx.props().settings.inner.get_show_previews() {
             return html! {};
         }
 
@@ -799,6 +781,7 @@ impl ItemView {
         let toggle_single_preview = ctx.link().callback(toggle_or_noop!(ShowSourceTarget));
         let toggle_invertible = ctx.link().callback(toggle_or_noop!(MakeInvertible));
         let toggle_framed = ctx.link().callback(toggle_or_noop!(MakeOriented));
+        let disabled = *ctx.props().settings.inner.get_show_previews();
 
         let color = if info.color.is_light() {
             "var(--drawer-foreground)".to_owned()
@@ -816,7 +799,7 @@ impl ItemView {
                         color={color.clone()}
                         onclick={toggle_single_preview}
                         checked={!info.single_preview}
-                        disabled={!self.local.get_show_previews()}
+                        disabled={disabled}
                     />
                     <GeneratorPreferenceCheckbox
                         left="Directed"

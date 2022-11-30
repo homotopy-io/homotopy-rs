@@ -14,6 +14,7 @@ use crate::{
     app::{
         diagram_gl::DiagramGl,
         diagram_svg::{DiagramSvg, HighlightKind, HighlightSvg},
+        settings::AppSettingsDispatch,
         tex::TexSpan,
     },
     components::panzoom::PanZoomComponent,
@@ -38,6 +39,7 @@ pub struct Props {
     pub attach: Option<Vector<AttachOption>>,
     pub attachment_highlight: Option<AttachOption>,
     pub slice_highlight: Option<SliceIndex>,
+    pub settings: AppSettingsDispatch,
 }
 
 pub enum Message {}
@@ -146,6 +148,7 @@ impl WorkspaceView {
                             diagram={ws.visible_diagram()}
                             signature={ctx.props().signature.clone()}
                             view={ws.view}
+                            settings={ctx.props().settings.clone()}
                         />
                     }
                 }

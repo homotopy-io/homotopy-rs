@@ -1,12 +1,7 @@
-use std::rc::Rc;
-
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-use crate::{
-    components::settings::{KeyStore, Settings},
-    declare_settings,
-};
+use crate::declare_settings;
 
 declare_settings! {
     pub struct AppSettings {
@@ -33,42 +28,29 @@ declare_settings! {
     }
 }
 
-#[derive(Properties, Clone, PartialEq, Eq)]
-pub struct SettingsProps {}
-
-pub struct SettingsView {
-    _settings: AppSettings,
-    // Maintain a local copy of the global app settings in order to display the current settings
-    // state correctly.
-    local: AppSettingsKeyStore,
+#[derive(Properties, Clone, PartialEq)]
+pub struct SettingsProps {
+    pub settings: AppSettingsDispatch,
 }
+
+pub struct SettingsView {}
 
 impl Component for SettingsView {
     type Message = AppSettingsMsg;
     type Properties = SettingsProps;
 
-    fn create(ctx: &Context<Self>) -> Self {
-        let link = ctx.link().clone();
-        let mut settings = AppSettings::connect(Rc::new(move |x| {
-            link.send_message(x);
-        }));
-        // So that we can keep our local copy of the global settings up to date,
-        // we're going to need to subscribe to all changes in the global settings state.
-        settings.subscribe(AppSettings::ALL);
-
-        Self {
-            _settings: settings,
-            local: Default::default(),
-        }
+    fn create(_ctx: &Context<Self>) -> Self {
+        Self {}
     }
 
-    fn view(&self, _ctx: &Context<Self>) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
             <div class="settings">
                 <h3>{"General"}</h3>
                 <div class="settings__segment">
                     {
-                        self.view_checkbox(
+                        SettingsView::view_checkbox(
+                            ctx,
                             "Show previews in signature",
                             |local| *local.get_show_previews(),
                             AppSettingsDispatch::set_show_previews,
@@ -79,28 +61,32 @@ impl Component for SettingsView {
                 <div class="settings__segment">
                     <h4>{"Quality"}</h4>
                     {
-                        self.view_checkbox(
+                        SettingsView::view_checkbox(
+                            ctx,
                             "Cubical subdivision",
                             |local| *local.get_cubical_subdivision(),
                             AppSettingsDispatch::set_cubical_subdivision,
                         )
                     }
                     {
-                        self.view_checkbox(
+                        SettingsView::view_checkbox(
+                            ctx,
                             "Scale by device pixel ratio",
                             |local| *local.get_dpr_scale(),
                             AppSettingsDispatch::set_dpr_scale,
                         )
                     }
                     {
-                        self.view_checkbox(
+                        SettingsView::view_checkbox(
+                            ctx,
                             "Smooth in the time axis",
                             |local| *local.get_smooth_time(),
                             AppSettingsDispatch::set_smooth_time,
                         )
                     }
                     {
-                        self.view_slider(
+                        SettingsView::view_slider(
+                            ctx,
                             "Subdivision depth",
                             |local| *local.get_subdivision_depth(),
                             AppSettingsDispatch::set_subdivision_depth,
@@ -109,7 +95,8 @@ impl Component for SettingsView {
                         )
                     }
                     {
-                        self.view_slider(
+                        SettingsView::view_slider(
+                            ctx,
                             "Geometry samples",
                             |local| *local.get_geometry_samples(),
                             AppSettingsDispatch::set_geometry_samples,
@@ -121,14 +108,16 @@ impl Component for SettingsView {
                 <div class="settings__segment">
                     <h4>{"Style"}</h4>
                     {
-                        self.view_checkbox(
+                        SettingsView::view_checkbox(
+                            ctx,
                             "Orthographic projection",
                             |local| *local.get_orthographic_3d(),
                             AppSettingsDispatch::set_orthographic_3d,
                         )
                     }
                     {
-                        self.view_slider(
+                        SettingsView::view_slider(
+                            ctx,
                             "Specularity",
                             |local| *local.get_specularity(),
                             AppSettingsDispatch::set_specularity,
@@ -137,7 +126,8 @@ impl Component for SettingsView {
                         )
                     }
                     {
-                        self.view_slider(
+                        SettingsView::view_slider(
+                            ctx,
                             "Shininess",
                             |local| *local.get_shininess(),
                             AppSettingsDispatch::set_shininess,
@@ -146,14 +136,16 @@ impl Component for SettingsView {
                         )
                     }
                     {
-                        self.view_checkbox(
+                        SettingsView::view_checkbox(
+                            ctx,
                             "Animate singularities",
                             |local| *local.get_animate_singularities(),
                             AppSettingsDispatch::set_animate_singularities,
                         )
                     }
                     {
-                        self.view_slider(
+                        SettingsView::view_slider(
+                            ctx,
                             "Singularity duration",
                             |local| *local.get_singularity_duration(),
                             AppSettingsDispatch::set_singularity_duration,
@@ -162,7 +154,8 @@ impl Component for SettingsView {
                         )
                     }
                     {
-                        self.view_slider(
+                        SettingsView::view_slider(
+                            ctx,
                             "4D geometry scale",
                             |local| *local.get_geometry_scale(),
                             AppSettingsDispatch::set_geometry_scale,
@@ -174,35 +167,40 @@ impl Component for SettingsView {
                 <div class="settings__segment">
                     <h4>{"Debugging"}</h4>
                     {
-                        self.view_checkbox(
+                        SettingsView::view_checkbox(
+                            ctx,
                             "Debug wireframe",
                             |local| *local.get_wireframe_3d(),
                             AppSettingsDispatch::set_wireframe_3d,
                         )
                     }
                     {
-                        self.view_checkbox(
+                        SettingsView::view_checkbox(
+                            ctx,
                             "Hide mesh",
                             |local| *local.get_mesh_hidden(),
                             AppSettingsDispatch::set_mesh_hidden,
                         )
                     }
                     {
-                        self.view_checkbox(
+                        SettingsView::view_checkbox(
+                            ctx,
                             "Debug normals",
                             |local| *local.get_debug_normals(),
                             AppSettingsDispatch::set_debug_normals,
                         )
                     }
                     {
-                        self.view_checkbox(
+                        SettingsView::view_checkbox(
+                            ctx,
                             "Disable lighting",
                             |local| *local.get_disable_lighting(),
                             AppSettingsDispatch::set_disable_lighting,
                         )
                     }
                     {
-                        self.view_checkbox(
+                        SettingsView::view_checkbox(
+                            ctx,
                             "Debug axes",
                             |local| *local.get_debug_axes(),
                             AppSettingsDispatch::set_debug_axes,
@@ -213,21 +211,20 @@ impl Component for SettingsView {
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
-        self.local.set(&msg);
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        ctx.props().settings.dispatch.emit(msg);
         true
     }
 }
 
 impl SettingsView {
-    fn view_checkbox<G, S>(&self, name: &str, getter: G, setter: S) -> Html
+    fn view_checkbox<G, S>(ctx: &Context<Self>, name: &str, getter: G, setter: S) -> Html
     where
-        G: Fn(&AppSettingsKeyStore) -> bool,
+        G: Fn(&AppSettings) -> bool,
         S: Fn(&AppSettingsDispatch, bool) + 'static,
     {
-        let checked = getter(&self.local);
-        let dispatch = AppSettingsDispatch::new();
-
+        let checked = getter(&ctx.props().settings.inner.clone());
+        let dispatch = ctx.props().settings.clone();
         html! {
             <div class="settings__toggle-setting">
                 <input
@@ -240,13 +237,19 @@ impl SettingsView {
         }
     }
 
-    fn view_slider<G, S>(&self, name: &str, getter: G, setter: S, min: u32, max: u32) -> Html
+    fn view_slider<G, S>(
+        ctx: &Context<Self>,
+        name: &str,
+        getter: G,
+        setter: S,
+        min: u32,
+        max: u32,
+    ) -> Html
     where
-        G: Fn(&AppSettingsKeyStore) -> u32,
+        G: Fn(&AppSettings) -> u32,
         S: Fn(&AppSettingsDispatch, u32) + 'static,
     {
-        let dispatch = AppSettingsDispatch::new();
-
+        let dispatch = ctx.props().settings.clone();
         html! {
             <div class="settings__slider-setting">
                 {name}
@@ -254,7 +257,7 @@ impl SettingsView {
                     type="range"
                     min={min.to_string()}
                     max={max.to_string()}
-                    value={getter(&self.local).to_string()}
+                    value={getter(&ctx.props().settings.inner.clone()).to_string()}
                     onchange={Callback::from(move |e: Event| {
                         let input: HtmlInputElement = e.target_unchecked_into();
                         let updated = input.value().parse::<u32>().unwrap_or(0);

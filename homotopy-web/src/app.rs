@@ -1,10 +1,10 @@
-use std::{cell::RefCell, rc::Rc};
+use std::cell::RefCell;
 
 use boundary::BoundaryPreview;
 use gloo_timers::{callback::Timeout, future::TimeoutFuture};
 use homotopy_model::{proof::SerializedData, serialize};
 use rexie::{ObjectStore, Rexie, Store, Transaction, TransactionMode};
-use settings::{AppSettings, AppSettingsKey};
+use settings::{AppSettings, AppSettingsDispatch, AppSettingsMsg};
 use sidebar::Sidebar;
 use signature_stylesheet::SignatureStylesheet;
 use wasm_bindgen::{closure::Closure, JsCast};
@@ -17,7 +17,7 @@ use crate::{
     components::{
         icon::{Icon, IconSize},
         panzoom::PanZoom,
-        settings::Settings,
+        settings::KeyStore,
         toast::{Toast, Toaster, ToasterComponent},
     },
     model,
@@ -46,6 +46,7 @@ pub enum Message {
     Dispatch(model::Action),
     DatabaseReady,
     LoadAutosave(Option<SerializedData>),
+    UpdateSettings(AppSettingsMsg),
 }
 
 thread_local! {
@@ -60,7 +61,7 @@ pub struct App {
     orbit_control: GlViewControl,
     signature_stylesheet: SignatureStylesheet,
     toaster: Toaster,
-    _settings: AppSettings,
+    settings: AppSettings,
     before_unload: Option<Closure<dyn FnMut(web_sys::BeforeUnloadEvent)>>,
 }
 
@@ -94,7 +95,7 @@ impl Component for App {
             orbit_control: GlViewControl::new(),
             signature_stylesheet,
             toaster: Toaster::new(),
-            _settings: AppSettings::connect(Rc::new(|_| {})),
+            settings: Default::default(),
             before_unload: None,
         }
     }
@@ -254,11 +255,15 @@ impl Component for App {
                     false
                 }
             }
+            Message::UpdateSettings(msg) => {
+                self.settings.set(&msg);
+                true
+            }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        Self::render(ctx, &self.state, self.loading)
+        self.render(ctx, &self.state, self.loading)
     }
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
@@ -279,9 +284,13 @@ impl App {
         self.before_unload = Some(before_unload);
     }
 
-    fn render(ctx: &Context<Self>, state: &model::State, loading: bool) -> Html {
+    fn render(&self, ctx: &Context<Self>, state: &model::State, loading: bool) -> Html {
         let proof = state.proof();
         let dispatch = ctx.link().callback(Message::BlockingDispatch);
+        let settings_dispatch = AppSettingsDispatch::new(
+            self.settings.clone(),
+            ctx.link().callback(Message::UpdateSettings),
+        );
 
         let workspace = html! {
             <WorkspaceView
@@ -292,6 +301,7 @@ impl App {
                 attach={state.attach.clone()}
                 attachment_highlight={state.attachment_highlight.clone()}
                 slice_highlight={state.slice_highlight}
+                settings={settings_dispatch.clone()}
             />
         };
 
@@ -319,6 +329,7 @@ impl App {
                     dispatch={dispatch}
                     proof={proof.clone()}
                     attach={state.attach.clone()}
+                    settings={settings_dispatch}
                 />
                 <div class="toaster">
                     <ToasterComponent timeout={3000} />

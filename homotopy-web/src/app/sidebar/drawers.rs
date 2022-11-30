@@ -5,8 +5,11 @@ use super::{DrawerViewSize, Sidebar, SidebarButton, SidebarDrawer, SidebarMsg};
 use crate::app::debug::DebugView;
 use crate::{
     app::{
-        account::AccountView, image_export::ImageExportView, project::ProjectView,
-        settings::SettingsView, signature::SignatureView,
+        account::AccountView,
+        image_export::ImageExportView,
+        project::ProjectView,
+        settings::{AppSettingsDispatch, SettingsView},
+        signature::SignatureView,
     },
     components::Visible,
     model::{
@@ -47,6 +50,7 @@ macro_rules! declare_sidebar_drawers {
                 proof: &Proof,
                 initial_width: i32,
                 drawer_view_size: DrawerViewSize,
+                settings: AppSettingsDispatch
             ) -> Html {
                 match self {
                     $(
@@ -67,7 +71,7 @@ macro_rules! declare_sidebar_drawers {
                                         action(proof)
                                     })?
                                 >
-                                    {body(model_dispatch, proof, drawer_view_size)}
+                                    {body(model_dispatch, proof, drawer_view_size, settings)}
                                 </SidebarDrawer>
                             }
                         }
@@ -110,7 +114,7 @@ declare_sidebar_drawers! {
         "Account",
         "account",
         "account_circle",
-        |_, _, _| html! {
+        |_, _, _, _| html! {
             <AccountView
             />
         },
@@ -121,7 +125,7 @@ declare_sidebar_drawers! {
         "Project",
         "project",
         "info",
-        |dispatch, proof: &Proof, _| html! {
+        |dispatch, proof: &Proof, _, _| html! {
             <ProjectView
                 dispatch={dispatch}
                 metadata={proof.metadata.clone()}
@@ -134,11 +138,12 @@ declare_sidebar_drawers! {
         "Signature",
         "signature",
         "list",
-        |dispatch: &Callback<model::Action>, proof: &Proof, drawer_view_size: DrawerViewSize| html! {
+        |dispatch: &Callback<model::Action>, proof: &Proof, drawer_view_size: DrawerViewSize, settings: AppSettingsDispatch| html! {
             <SignatureView
                 signature={proof.signature.clone()}
                 dispatch={dispatch.reform(model::Action::Proof)}
                 drawer_view_size={drawer_view_size}
+                settings={settings}
             />
         },
         min_width: 250,
@@ -150,7 +155,7 @@ declare_sidebar_drawers! {
         "Image export",
         "ImageExport",
         "output",
-        |dispatch, proof: &Proof, _| html! {
+        |dispatch, proof: &Proof, _, _| html! {
             <ImageExportView
                 dispatch={dispatch}
                 view_dim={proof.workspace.as_ref().map_or(0, |ws| ws.view.dimension())}
@@ -163,8 +168,8 @@ declare_sidebar_drawers! {
         "Settings",
         "settings",
         "settings",
-        |_, _, _| html! {
-            <SettingsView />
+        |_, _, _, settings: AppSettingsDispatch| html! {
+            <SettingsView settings={settings} />
         },
         min_width: 250,
     }
@@ -174,7 +179,7 @@ declare_sidebar_drawers! {
         "Debug",
         "debug",
         "bug_report",
-        |dispatch, proof: &Proof, _| html! {
+        |dispatch, proof: &Proof, _, _| html! {
             <DebugView proof={proof.clone()} dispatch={dispatch} />
         },
         min_width: 250,

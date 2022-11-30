@@ -12,10 +12,9 @@ use self::{
     scrub_controls::{ScrubAction, ScrubComponent, ScrubState},
 };
 use crate::{
-    app::AppSettings,
+    app::settings::AppSettingsDispatch,
     components::{
         delta::{Delta, DeltaAgent},
-        settings::{KeyStore, Settings, Store},
         toast::{Toast, Toaster},
         touch_interface::{TouchAction, TouchInterface},
     },
@@ -60,26 +59,24 @@ pub enum DiagramGlMessage {
     Render(f64),
     Camera(f32, f32, f32, Vec3),
     Scrub(f32),
-    Setting(<Store<AppSettings> as KeyStore>::Message),
 }
 
-#[derive(Properties, Clone, PartialEq, Eq)]
+#[derive(Properties, Clone, PartialEq)]
 pub struct DiagramGlProps {
     pub diagram: Diagram,
     pub signature: Signature,
     pub view: View,
+    pub settings: AppSettingsDispatch,
 }
 
 pub struct DiagramGl {
     canvas: NodeRef,
     toaster: Toaster,
-    _settings: AppSettings,
     _camera_delta: Delta<OrbitCamera>,
     scrub_delta: Delta<ScrubState>,
 
     camera: OrbitCamera,
     renderer: Rc<RefCell<Option<Renderer>>>,
-    local: Store<AppSettings>,
     global_t: f32,
     t_coord: f32,
 
@@ -93,13 +90,6 @@ impl Component for DiagramGl {
     type Properties = DiagramGlProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let link = ctx.link().clone();
-        let mut settings = AppSettings::connect(Rc::new(move |s| {
-            link.send_message(DiagramGlMessage::Setting(s));
-        }));
-
-        settings.subscribe(AppSettings::ALL);
-
         let camera_delta = Delta::new();
         let link = ctx.link().clone();
         camera_delta.register(Box::new(move |agent: &DeltaAgent<OrbitCamera>, _| {
@@ -122,13 +112,11 @@ impl Component for DiagramGl {
         Self {
             canvas: Default::default(),
             toaster: Toaster::new(),
-            _settings: settings,
             _camera_delta: camera_delta,
             scrub_delta,
 
             camera: Default::default(),
             renderer: Default::default(),
-            local: Default::default(),
             global_t: Default::default(),
             t_coord: Default::default(),
 
@@ -149,11 +137,12 @@ impl Component for DiagramGl {
                     ));
                 }
                 // Update camera settings
-                self.camera.set_ortho(*self.local.get_orthographic_3d());
+                self.camera
+                    .set_ortho(*ctx.props().settings.inner.get_orthographic_3d());
 
                 if let Some(renderer) = &mut *self.renderer.borrow_mut() {
-                    renderer.update(&self.local).unwrap();
-                    renderer.render(&self.camera, &self.local, self.t_coord);
+                    renderer.update(&ctx.props().settings.inner).unwrap();
+                    renderer.render(&self.camera, &ctx.props().settings.inner, self.t_coord);
                 }
 
                 // Schedule the next frame
@@ -169,7 +158,6 @@ impl Component for DiagramGl {
                 // Scrub controls are [0,1], but animation is [-1,1] so map between
                 self.t_coord = 2. * t - 1.;
             }
-            DiagramGlMessage::Setting(msg) => self.local.set(&msg),
         }
 
         false
@@ -211,8 +199,7 @@ impl Component for DiagramGl {
     fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
         if let Ok(gl_ctx) = GlCtx::attach(&self.canvas) {
             {
-                *self.renderer.borrow_mut() =
-                    Some(Renderer::new(gl_ctx, &self.local, ctx.props()).unwrap());
+                *self.renderer.borrow_mut() = Some(Renderer::new(gl_ctx, ctx.props()).unwrap());
             }
 
             if first_render {

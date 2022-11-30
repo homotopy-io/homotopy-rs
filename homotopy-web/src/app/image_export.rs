@@ -1,11 +1,6 @@
-use std::rc::Rc;
-
 use yew::prelude::*;
 
-use crate::{
-    components::settings::{KeyStore, Settings},
-    declare_settings, model,
-};
+use crate::{components::settings::KeyStore, declare_settings, model};
 
 declare_settings! {
     pub struct ImageExportSettings {
@@ -21,32 +16,21 @@ pub struct Props {
 }
 
 pub struct ImageExportView {
-    _settings: ImageExportSettings,
-    // Maintain a local copy of the global app settings in order to display the current settings
-    // state correctly.
-    local: ImageExportSettingsKeyStore,
+    settings: ImageExportSettings,
 }
 
 impl Component for ImageExportView {
     type Message = ImageExportSettingsMsg;
     type Properties = Props;
 
-    fn create(ctx: &Context<Self>) -> Self {
-        let link = ctx.link().clone();
-        let mut settings = ImageExportSettings::connect(Rc::new(move |x| {
-            link.send_message(x);
-        }));
-        // So that we can keep our local copy of the global settings up to date,
-        // we're going to need to subscribe to all changes in the global settings state.
-        settings.subscribe(ImageExportSettings::ALL);
+    fn create(_ctx: &Context<Self>) -> Self {
         Self {
-            _settings: settings,
-            local: Default::default(),
+            settings: Default::default(),
         }
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
-        self.local.set(&msg);
+        self.settings.set(&msg);
         true
     }
 
@@ -81,7 +65,7 @@ impl Component for ImageExportView {
 
 impl ImageExportView {
     fn view_tikz(&self, ctx: &Context<Self>) -> Html {
-        let show_braidings = *self.local.get_tikz_show_braidings();
+        let show_braidings = *self.settings.get_tikz_show_braidings();
         if ctx.props().view_dim == 2 {
             html! {
                 <>
@@ -89,6 +73,7 @@ impl ImageExportView {
                     <div class="settings__segment">
                         {
                             self.view_checkbox(
+                                ctx,
                                 "Show braidings",
                                 |local| *local.get_tikz_show_braidings(),
                                 ImageExportSettingsDispatch::set_tikz_show_braidings,
@@ -119,7 +104,7 @@ impl ImageExportView {
     }
 
     fn view_manim(&self, ctx: &Context<Self>) -> Html {
-        let use_opengl = *self.local.get_manim_use_opengl();
+        let use_opengl = *self.settings.get_manim_use_opengl();
         if ctx.props().view_dim == 2 {
             html! {
                 <>
@@ -127,6 +112,7 @@ impl ImageExportView {
                     <div class="settings__segment">
                         {
                             self.view_checkbox(
+                                ctx,
                                 "OpenGL renderer",
                                 |local| *local.get_manim_use_opengl(),
                                 ImageExportSettingsDispatch::set_manim_use_opengl,
@@ -156,13 +142,16 @@ impl ImageExportView {
         }
     }
 
-    fn view_checkbox<G, S>(&self, name: &str, getter: G, setter: S) -> Html
+    fn view_checkbox<G, S>(&self, ctx: &Context<Self>, name: &str, getter: G, setter: S) -> Html
     where
-        G: Fn(&ImageExportSettingsKeyStore) -> bool,
+        G: Fn(&ImageExportSettings) -> bool,
         S: Fn(&ImageExportSettingsDispatch, bool) + 'static,
     {
-        let checked = getter(&self.local);
-        let dispatch = ImageExportSettingsDispatch::new();
+        let checked = getter(&self.settings);
+        let dispatch = ImageExportSettingsDispatch {
+            inner: self.settings.clone(),
+            dispatch: ctx.link().callback(|x| x),
+        };
 
         html! {
             <div class="settings__toggle-setting">
