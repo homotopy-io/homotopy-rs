@@ -12,7 +12,6 @@ use wasm_bindgen_futures::spawn_local;
 use workspace::WorkspaceView;
 use yew::prelude::*;
 
-use self::diagram_gl::GlViewControl;
 use crate::{
     components::{
         icon::{Icon, IconSize},
@@ -58,7 +57,6 @@ pub struct App {
     autosave: Option<Timeout>,
     loading: bool,
     panzoom: PanZoom,
-    orbit_control: GlViewControl,
     signature_stylesheet: SignatureStylesheet,
     toaster: Toaster,
     settings: AppSettings,
@@ -92,7 +90,6 @@ impl Component for App {
             autosave: Default::default(),
             loading: false,
             panzoom: PanZoom::new(),
-            orbit_control: GlViewControl::new(),
             signature_stylesheet,
             toaster: Toaster::new(),
             settings: Default::default(),
@@ -195,7 +192,7 @@ impl Component for App {
                 if let Ok(true) = result {
                     if resets_panzoom {
                         self.panzoom.reset();
-                        self.orbit_control.reset();
+                        //self.orbit_control.reset();
                     }
 
                     if self.before_unload.is_none() {

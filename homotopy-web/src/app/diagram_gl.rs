@@ -14,7 +14,7 @@ use self::{
 use crate::{
     app::settings::AppSettingsDispatch,
     components::{
-        delta::{Delta, DeltaAgent},
+        delta::Delta,
         toast::{Toast, Toaster},
         touch_interface::{TouchAction, TouchInterface},
     },
@@ -59,6 +59,7 @@ pub enum DiagramGlMessage {
     Render(f64),
     Camera(f32, f32, f32, Vec3),
     Scrub(f32),
+    ScrubCallback(Callback<ScrubAction>),
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -72,8 +73,9 @@ pub struct DiagramGlProps {
 pub struct DiagramGl {
     canvas: NodeRef,
     toaster: Toaster,
-    _camera_delta: Delta<OrbitCamera>,
-    scrub_delta: Delta<ScrubState>,
+    // Nasty hack to make ScrubControls own its state
+    // We don't want to redraw the DiagramGl
+    scrub_dispatch: Option<Callback<ScrubAction>>,
 
     camera: OrbitCamera,
     renderer: Rc<RefCell<Option<Renderer>>>,
@@ -89,31 +91,15 @@ impl Component for DiagramGl {
     type Message = DiagramGlMessage;
     type Properties = DiagramGlProps;
 
-    fn create(ctx: &Context<Self>) -> Self {
-        let camera_delta = Delta::new();
-        let link = ctx.link().clone();
-        camera_delta.register(Box::new(move |agent: &DeltaAgent<OrbitCamera>, _| {
-            let state = agent.state();
-            link.send_message(DiagramGlMessage::Camera(
-                state.phi,
-                state.theta,
-                state.distance,
-                state.target,
-            ));
-        }));
-
-        let scrub_delta = Delta::new();
-        let link = ctx.link().clone();
-        scrub_delta.register(Box::new(move |agent: &DeltaAgent<ScrubState>, _| {
-            let state = agent.state();
-            link.send_message(DiagramGlMessage::Scrub(state.t));
-        }));
-
+    fn create(_ctx: &Context<Self>) -> Self {
+        // When orbit camera changes
+        // Need to get event DiagramGlMessage::Camera
+        // When scrub_state changes
+        // Need to get event DiagramGlMessage::Scrub with state.t
         Self {
             canvas: Default::default(),
             toaster: Toaster::new(),
-            _camera_delta: camera_delta,
-            scrub_delta,
+            scrub_dispatch: None,
 
             camera: Default::default(),
             renderer: Default::default(),
@@ -132,9 +118,11 @@ impl Component for DiagramGl {
                 self.global_t = t;
                 if ctx.props().view.dimension() == 4 {
                     // Slow the animation such that we get 1s per cospan
-                    self.scrub_delta.emit(ScrubAction::Advance(
-                        1e-3 * dt / ctx.props().diagram.size().unwrap() as f32,
-                    ));
+                    if let Some(dispatch) = &self.scrub_dispatch {
+                        dispatch.emit(ScrubAction::Advance(
+                            1e-3 * dt / ctx.props().diagram.size().unwrap() as f32,
+                        ));
+                    }
                 }
                 // Update camera settings
                 self.camera
@@ -158,8 +146,10 @@ impl Component for DiagramGl {
                 // Scrub controls are [0,1], but animation is [-1,1] so map between
                 self.t_coord = 2. * t - 1.;
             }
+            DiagramGlMessage::ScrubCallback(c) => {
+                self.scrub_dispatch = Some(c);
+            }
         }
-
         false
     }
 
@@ -172,7 +162,12 @@ impl Component for DiagramGl {
         let on_touch_update = OrbitCamera::on_touch_update(&self.canvas);
 
         let scrub = if ctx.props().view.dimension() == 4 {
-            html! { <ScrubComponent slices={ctx.props().diagram.size().unwrap()} /> }
+            html! {
+                <ScrubComponent
+                    slices={ctx.props().diagram.size().unwrap()}
+                    dispatch={ctx.link().callback(|x| x)}
+                />
+            }
         } else {
             Default::default()
         };
