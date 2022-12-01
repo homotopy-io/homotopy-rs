@@ -14,10 +14,12 @@ use yew::prelude::*;
 
 use crate::{
     components::{
+        delta::State,
         icon::{Icon, IconSize},
-        panzoom::PanZoom,
+        panzoom::PanZoomState,
         settings::KeyStore,
         toast::{Toast, Toaster, ToasterComponent},
+        touch_interface::{TouchAction, TouchInterface},
     },
     model,
 };
@@ -39,13 +41,14 @@ mod signature_stylesheet;
 mod tex;
 mod workspace;
 
-pub enum Message {
+pub enum AppMessage {
     Autosave,
     BlockingDispatch(model::Action),
     Dispatch(model::Action),
     DatabaseReady,
     LoadAutosave(Option<SerializedData>),
-    UpdateSettings(AppSettingsMsg),
+    DispatchSettings(AppSettingsMsg),
+    DispatchPanzoom(TouchAction),
 }
 
 thread_local! {
@@ -56,7 +59,7 @@ pub struct App {
     state: model::State,
     autosave: Option<Timeout>,
     loading: bool,
-    panzoom: PanZoom,
+    panzoom: PanZoomState,
     signature_stylesheet: SignatureStylesheet,
     toaster: Toaster,
     settings: AppSettings,
@@ -64,7 +67,7 @@ pub struct App {
 }
 
 impl Component for App {
-    type Message = Message;
+    type Message = AppMessage;
     type Properties = ();
 
     #[allow(unused_variables)]
@@ -82,14 +85,14 @@ impl Component for App {
                 .expect("failed to initialize IndexedDB");
             log::info!("IndexedDB ready");
             INDEXEDDB.with(|db| db.replace(Some(rexie)));
-            Message::DatabaseReady
+            AppMessage::DatabaseReady
         });
 
         Self {
             state,
             autosave: Default::default(),
             loading: false,
-            panzoom: PanZoom::new(),
+            panzoom: Default::default(),
             signature_stylesheet,
             toaster: Toaster::new(),
             settings: Default::default(),
@@ -99,7 +102,7 @@ impl Component for App {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Message::Autosave => {
+            AppMessage::Autosave => {
                 let data = serialize::serialize(
                     self.state.proof().signature.clone(),
                     self.state.proof().workspace.clone(),
@@ -122,7 +125,7 @@ impl Component for App {
                 });
                 false
             }
-            Message::BlockingDispatch(action) => {
+            AppMessage::BlockingDispatch(action) => {
                 self.autosave.take().map(Timeout::cancel);
                 self.loading = true;
 
@@ -131,11 +134,11 @@ impl Component for App {
                     std::panic::set_hook(Box::new(crate::panic::panic_handler));
 
                     TimeoutFuture::new(0).await; // TODO: remove this awful hack
-                    Message::Dispatch(action)
+                    AppMessage::Dispatch(action)
                 });
                 true
             }
-            Message::Dispatch(action) => {
+            AppMessage::Dispatch(action) => {
                 log::info!("Received action: {:?}", action);
 
                 // Intercept 'MakeOriented' actions to show warning.
@@ -204,7 +207,7 @@ impl Component for App {
 
                     let link = ctx.link().clone();
                     self.autosave = Some(Timeout::new(30000, move || {
-                        link.send_message(Message::Autosave);
+                        link.send_message(AppMessage::Autosave);
                     }));
                 } else if let Err(error) = result {
                     log::error!("Error occured: {}", error);
@@ -213,7 +216,7 @@ impl Component for App {
 
                 true
             }
-            Message::DatabaseReady => {
+            AppMessage::DatabaseReady => {
                 // load autosave
                 let link = ctx.link().clone();
                 INDEXEDDB.with(|db| {
@@ -222,9 +225,9 @@ impl Component for App {
                             if let Ok(autosave) = saves.get(&"latest".into()).await {
                                 log::info!("Loading autosave…");
                                 let proof = serde_wasm_bindgen::from_value(autosave).ok();
-                                Message::LoadAutosave(proof)
+                                AppMessage::LoadAutosave(proof)
                             } else {
-                                Message::LoadAutosave(None)
+                                AppMessage::LoadAutosave(None)
                             }
                         });
                     } else {
@@ -233,7 +236,7 @@ impl Component for App {
                 });
                 true
             }
-            Message::LoadAutosave(proof) => {
+            AppMessage::LoadAutosave(proof) => {
                 let Some(data) = proof else { return false };
                 if self
                     .state
@@ -252,8 +255,12 @@ impl Component for App {
                     false
                 }
             }
-            Message::UpdateSettings(msg) => {
+            AppMessage::DispatchSettings(msg) => {
                 self.settings.set(&msg);
+                true
+            }
+            AppMessage::DispatchPanzoom(msg) => {
+                self.panzoom.update(&msg);
                 true
             }
         }
@@ -283,10 +290,10 @@ impl App {
 
     fn render(&self, ctx: &Context<Self>, state: &model::State, loading: bool) -> Html {
         let proof = state.proof();
-        let dispatch = ctx.link().callback(Message::BlockingDispatch);
+        let dispatch = ctx.link().callback(AppMessage::BlockingDispatch);
         let settings_dispatch = AppSettingsDispatch::new(
             self.settings.clone(),
-            ctx.link().callback(Message::UpdateSettings),
+            ctx.link().callback(AppMessage::DispatchSettings),
         );
 
         let workspace = html! {
@@ -294,11 +301,12 @@ impl App {
                 workspace={proof.workspace.clone()}
                 signature={proof.signature.clone()}
                 metadata={proof.metadata.clone()}
-                dispatch={dispatch.clone()}
+                dispatch={ctx.link().callback(|x| x)}
                 attach={state.attach.clone()}
                 attachment_highlight={state.attachment_highlight.clone()}
                 slice_highlight={state.slice_highlight}
                 settings={settings_dispatch.clone()}
+                panzoom={self.panzoom.clone()}
             />
         };
 

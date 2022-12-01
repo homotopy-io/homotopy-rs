@@ -16,8 +16,9 @@ use crate::{
         diagram_svg::{DiagramSvg, HighlightKind, HighlightSvg},
         settings::AppSettingsDispatch,
         tex::TexSpan,
+        AppMessage,
     },
-    components::panzoom::PanZoomComponent,
+    components::panzoom::{PanZoomComponent, PanZoomState},
     model::{
         proof::{self, homotopy::Homotopy, AttachOption, Metadata, Signature, Workspace},
         Action,
@@ -33,13 +34,14 @@ mod view_control;
 #[derive(Clone, PartialEq, Properties)]
 pub struct Props {
     pub workspace: Option<Workspace>,
-    pub dispatch: Callback<Action>,
+    pub dispatch: Callback<AppMessage>,
     pub signature: Signature,
     pub metadata: Metadata,
     pub attach: Option<Vector<AttachOption>>,
     pub attachment_highlight: Option<AttachOption>,
     pub slice_highlight: Option<SliceIndex>,
     pub settings: AppSettingsDispatch,
+    pub panzoom: PanZoomState,
 }
 
 pub enum Message {}
@@ -55,11 +57,13 @@ impl Component for WorkspaceView {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let on_select = ctx.props().dispatch.reform(Action::SelectPoints);
-        let on_homotopy = ctx
+        let on_select = ctx
             .props()
             .dispatch
-            .reform(|homotopy| Action::Proof(proof::Action::Homotopy(homotopy)));
+            .reform(|p| AppMessage::BlockingDispatch(Action::SelectPoints(p)));
+        let on_homotopy = ctx.props().dispatch.reform(|homotopy| {
+            AppMessage::BlockingDispatch(Action::Proof(proof::Action::Homotopy(homotopy)))
+        });
         Self {
             on_select,
             on_homotopy,
@@ -91,12 +95,14 @@ impl Component for WorkspaceView {
         let slice_buttons = match workspace {
             Some(ref ws) if matches!(ws.view.dimension(), 1 | 2) => {
                 let diagram = ws.visible_diagram();
+                let dispatch = ctx.props().dispatch.reform(AppMessage::BlockingDispatch);
                 html! {
                     <SliceControl
                         number_slices={diagram.size().unwrap()}
-                        descend_slice={ctx.props().dispatch.reform(Action::Proof).reform(proof::Action::DescendSlice)}
+                        descend_slice={dispatch.reform(Action::Proof).reform(proof::Action::DescendSlice)}
                         diagram_ref={self.diagram_ref.clone()}
-                        on_hover={ctx.props().dispatch.reform(Action::HighlightSlice)}
+                        on_hover={dispatch.reform(Action::HighlightSlice)}
+                        panzoom={ctx.props().panzoom.clone()}
                     />
                 }
             }
@@ -106,17 +112,25 @@ impl Component for WorkspaceView {
         let toolbar = workspace.as_ref().map_or_else(
             || html! {},
             |ws| {
+                let dispatch = ctx
+                    .props()
+                    .dispatch
+                    .reform(AppMessage::BlockingDispatch)
+                    .reform(Action::Proof);
                 html! {
                     <div class="workspace__toolbar">
                         <PathControl
                             path={ws.path.clone()}
                             view={ws.view}
-                            ascend_slice={ctx.props().dispatch.reform(Action::Proof).reform(proof::Action::AscendSlice)}
-                            increase_view={ctx.props().dispatch.reform(Action::Proof).reform(proof::Action::IncreaseView)}
-                            decrease_view={ctx.props().dispatch.reform(Action::Proof).reform(proof::Action::DecreaseView)}
+                            ascend_slice={dispatch.reform(proof::Action::AscendSlice)}
+                            increase_view={dispatch.reform(proof::Action::IncreaseView)}
+                            decrease_view={dispatch.reform(proof::Action::DecreaseView)}
                             dimension={ws.diagram.dimension()}
                         />
-                        <ViewControl />
+                        <ViewControl
+                            panzoom={ctx.props().panzoom.clone()}
+                            dispatch={ctx.props().dispatch.reform(AppMessage::DispatchPanzoom)}
+                        />
                     </div>
                 }
             },
@@ -168,7 +182,11 @@ impl WorkspaceView {
             let slice_highlight = ctx.props().slice_highlight.map(highlight_slice::<N>);
             let highlight = attachment_highlight.or(slice_highlight);
             html! {
-                <PanZoomComponent on_scroll={ctx.props().dispatch.reform(Action::Proof).reform(proof::Action::SwitchSlice)}>
+                <PanZoomComponent
+                    state={ctx.props().panzoom.clone()}
+                    dispatch={ctx.props().dispatch.reform(AppMessage::DispatchPanzoom)}
+                    on_scroll={ctx.props().dispatch.reform(|s| AppMessage::BlockingDispatch(Action::Proof(proof::Action::SwitchSlice(s))))}
+                >
                     <DiagramSvg<N>
                         diagram={ws.visible_diagram()}
                         id="workspace__diagram"

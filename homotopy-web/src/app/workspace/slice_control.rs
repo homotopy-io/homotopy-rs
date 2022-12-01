@@ -4,55 +4,33 @@ use yew::prelude::*;
 
 use crate::{
     app::{Icon, IconSize},
-    components::{
-        bounding_rect,
-        panzoom::{PanZoom, PanZoomAgent},
-    },
+    components::{bounding_rect, panzoom::PanZoomState},
 };
 
-#[derive(Debug, Clone, PartialEq, Properties)]
+#[derive(Clone, PartialEq, Properties)]
 pub struct SliceControlProps {
     pub number_slices: usize,
     pub descend_slice: Callback<SliceIndex>,
     pub diagram_ref: NodeRef,
     pub on_hover: Callback<Option<SliceIndex>>,
-}
-
-pub enum SliceControlMsg {
-    Delta(f64, f64),
+    pub panzoom: PanZoomState,
 }
 
 pub struct SliceControl {
-    _panzoom: PanZoom,
-    translate: f64,
-    scale: f64,
     node_ref: NodeRef,
 }
 
 impl Component for SliceControl {
-    type Message = SliceControlMsg;
+    type Message = ();
     type Properties = SliceControlProps;
 
-    fn create(ctx: &Context<Self>) -> Self {
-        let panzoom = PanZoom::new();
-        let link = ctx.link().clone();
-        panzoom.register(Box::new(move |agent: &PanZoomAgent, _| {
-            let state = agent.state();
-            link.send_message(SliceControlMsg::Delta(state.translate.y, state.scale));
-        }));
-
+    fn create(_ctx: &Context<Self>) -> Self {
         Self {
-            _panzoom: panzoom,
-            translate: 0.0,
-            scale: 1.0,
             node_ref: Default::default(),
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
-        let SliceControlMsg::Delta(translate, scale) = msg;
-        self.translate = translate;
-        self.scale = scale;
+    fn update(&mut self, _ctx: &Context<Self>, _msg: Self::Message) -> bool {
         true
     }
 
@@ -67,7 +45,7 @@ impl Component for SliceControl {
                 height: {height}px;
                 min-height: {min_height}px;
             "#,
-            y = self.translate,
+            y = ctx.props().panzoom.translate.y,
             height = height,
             min_height = 24 * (ctx.props().number_slices * 2 + 3),
         );

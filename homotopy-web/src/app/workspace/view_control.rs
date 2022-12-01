@@ -2,11 +2,16 @@ use yew::prelude::*;
 
 use crate::{
     app::{diagram_gl::GlViewControl, Icon, IconSize},
-    components::panzoom::PanZoom,
+    components::panzoom::{PanZoomDispatch, PanZoomState, Zoomable},
 };
 
+#[derive(Clone, PartialEq, Properties)]
+pub struct ViewProps {
+    pub panzoom: PanZoomState,
+    pub dispatch: PanZoomDispatch,
+}
+
 pub struct ViewControl {
-    panzoom: PanZoom,
     orbit_control: GlViewControl,
 }
 
@@ -18,28 +23,27 @@ pub enum ViewMessage {
 
 impl Component for ViewControl {
     type Message = ViewMessage;
-    type Properties = ();
+    type Properties = ViewProps;
 
     fn create(_ctx: &Context<Self>) -> Self {
         Self {
-            panzoom: PanZoom::new(),
             orbit_control: GlViewControl::new(),
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             ViewMessage::ZoomIn => {
-                self.panzoom.zoom_in();
                 self.orbit_control.zoom_in();
+                ctx.props().dispatch.zoom_in();
             }
             ViewMessage::ZoomOut => {
-                self.panzoom.zoom_out();
                 self.orbit_control.zoom_out();
+                ctx.props().dispatch.zoom_out();
             }
             ViewMessage::Reset => {
-                self.panzoom.reset();
                 self.orbit_control.reset();
+                ctx.props().dispatch.reset();
             }
         }
         false
