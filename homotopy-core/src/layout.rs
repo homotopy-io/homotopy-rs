@@ -277,6 +277,14 @@ fn solve(
 
     // Variables
     let mut variables: IdxVec<NodeIndex, Variable> = IdxVec::default();
+
+    // Add some dummy variables to fix HiGHS binding problems
+    for _ in 0..4 {
+        let v = problem.add(variable().min(0.0));
+        let w = problem.add(variable().min(0.0));
+        constraints.push((v - w).geq(1.0));
+    }
+
     let mut point_to_variable: FastHashMap<Point, Variable> = FastHashMap::default();
     for ps in colimit.node_weights() {
         let v = problem.add(variable().min(0.0));
