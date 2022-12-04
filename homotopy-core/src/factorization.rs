@@ -15,7 +15,7 @@ pub fn factorize(f: Rewrite, g: Rewrite, target: Diagram) -> Factorization {
         return Factorization::Unique(f.into());
     }
 
-    if f.strip_labels() == g.strip_labels() {
+    if f.equals_modulo_labels(&g) {
         return Factorization::Unique(Rewrite::identity(f.dimension()).into());
     }
 
@@ -66,12 +66,12 @@ pub fn factorize(f: Rewrite, g: Rewrite, target: Diagram) -> Factorization {
                                             c.regular_slices(),
                                             g_cone.regular_slices(),
                                         )
-                                        .all(|(f, g)| f.strip_labels() == g.strip_labels())
+                                        .all(|(f, g)| f.equals_modulo_labels(g))
                                         && std::iter::zip(
                                             c.singular_slices(),
                                             g_cone.singular_slices(),
                                         )
-                                        .all(|(f, g)| f.strip_labels() == g.strip_labels())
+                                        .all(|(f, g)| f.equals_modulo_labels(g))
                                 }) =>
                             {
                                 ConeFactorization::Unique(vec![].into())
