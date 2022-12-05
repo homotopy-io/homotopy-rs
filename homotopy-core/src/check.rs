@@ -7,7 +7,7 @@ use crate::{
     common::Mode,
     diagram::RewritingError,
     rewrite::{CompositionError, Cone},
-    Diagram, DiagramN, Direction, Height, Rewrite, Rewrite0, RewriteN,
+    Cospan, Diagram, DiagramN, Direction, Height, Rewrite, Rewrite0, RewriteN,
 };
 
 thread_local! {
@@ -239,21 +239,13 @@ impl Cone {
         for (i, (cs, singular_slice)) in
             std::iter::zip(self.source(), self.singular_slices()).enumerate()
         {
-            match cs
-                .forward
-                .strip_labels()
-                .compose(&singular_slice.strip_labels())
-            {
+            match cs.forward.compose(singular_slice) {
                 Ok(f) if f.equals_modulo_labels(&self.regular_slices()[i]) => { /* no error */ }
                 Ok(_) => errors.push(MalformedCone::NotCommutative(i)),
                 Err(ce) => errors.push(ce.into()),
             }
 
-            match cs
-                .backward
-                .strip_labels()
-                .compose(&singular_slice.strip_labels())
-            {
+            match cs.backward.compose(singular_slice) {
                 Ok(f) if f.equals_modulo_labels(&self.regular_slices()[i + 1]) => { /* no error */ }
                 Ok(_) => errors.push(MalformedCone::NotCommutative(i + 1)),
                 Err(ce) => errors.push(ce.into()),
@@ -331,6 +323,7 @@ impl Rewrite {
             RewriteN(f) => RewriteN(f.strip_labels()),
         }
     }
+
     #[must_use]
     pub fn equals_modulo_labels(&self, other: &Rewrite) -> bool {
         use Rewrite::{Rewrite0, RewriteN};
@@ -339,6 +332,14 @@ impl Rewrite {
             (RewriteN(f), RewriteN(g)) => f.equals_modulo_labels(g),
             (_, _) => false,
         }
+    }
+}
+
+impl Cospan {
+    #[must_use]
+    pub fn equals_modulo_labels(&self, other: &Cospan) -> bool {
+        self.forward.equals_modulo_labels(&other.forward)
+            && self.backward.equals_modulo_labels(&other.backward)
     }
 }
 
