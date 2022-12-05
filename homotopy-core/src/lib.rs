@@ -30,4 +30,5 @@ pub fn collect_garbage() {
     DiagramN::collect_garbage();
     RewriteN::collect_garbage();
     rewrite::Cone::collect_garbage();
+    common::Label::collect_garbage();
 }

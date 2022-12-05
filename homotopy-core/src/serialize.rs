@@ -4,11 +4,14 @@ use std::{
 
 use bimap::BiHashMap;
 use highway::{HighwayHash, HighwayHasher};
+use im::OrdSet;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    common::Label, rewrite::Cone, Cospan, Diagram, Diagram0, DiagramN, Generator, Orientation,
-    Rewrite, Rewrite0, RewriteN,
+    common::{BoundaryPath, Label},
+    rewrite::Cone,
+    Cospan, Diagram, Diagram0, DiagramN, Generator, Height, Orientation, Rewrite, Rewrite0,
+    RewriteN,
 };
 
 /// Similar to `Hash`, except supposed to be deterministic and shouldn't collide
@@ -86,7 +89,7 @@ impl Store {
             Rewrite::Rewrite0(r0) => RewriteSer::R0 {
                 source: r0.source().map(|d| (d.generator, d.orientation)),
                 target: r0.target().map(|d| (d.generator, d.orientation)),
-                label: r0.label().cloned(),
+                label: r0.label().map(|l| (l.boundary_path(), l.coords())),
             },
             Rewrite::RewriteN(rewrite) => {
                 let cones = rewrite
@@ -189,6 +192,7 @@ impl Store {
                     (Some(source), Some(target), label) => {
                         let source = Diagram0::new(source.0, source.1);
                         let target = Diagram0::new(target.0, target.1);
+                        let label = label.map(|label| Label::new(label.0, label.1));
                         Some(Rewrite0(Some((source, target, label))).into())
                     }
                     _ => None,
@@ -282,7 +286,7 @@ enum RewriteSer {
         target: Option<(Generator, Orientation)>,
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
-        label: Option<Label>,
+        label: Option<(BoundaryPath, OrdSet<Vec<Height>>)>,
     },
     Rn {
         dimension: NonZeroU32,
