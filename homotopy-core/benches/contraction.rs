@@ -110,7 +110,7 @@ fn contract_stacks(crit: &mut Criterion) {
 
 fn contract_high_dimensions(crit: &mut Criterion) {
     let mut group = crit.benchmark_group("contract high dimensions");
-    for dimension in 2..10 {
+    for dimension in 2..5 {
         let (sig, dn) = examples::bead_series(dimension);
         group.bench_with_input(
             BenchmarkId::from_parameter(dimension),
