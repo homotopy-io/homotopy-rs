@@ -46,6 +46,7 @@ base64 = "0.13.1"
 default = ["safety-checks"]
 safety-checks = []
 fuzz = ["arbitrary", "homotopy-common/fuzz"]
+highs = ["good_lp/highs"]
 
 [[bench]]
 name = "bench"
