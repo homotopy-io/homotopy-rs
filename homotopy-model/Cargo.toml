@@ -28,7 +28,7 @@ im = { version = "15.1.0", features = ["serde"] }
 arrayvec = "0.7.2"
 
 [dev-dependencies]
-insta = "1.21.2"
+insta = "1.22.0"
 
 [features]
 default = []
