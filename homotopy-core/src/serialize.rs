@@ -40,6 +40,10 @@ pub struct Store {
     #[serde(skip_serializing, skip_deserializing)]
     cone_keys: BiHashMap<Cone, Key<Cone>>,
     cones: BTreeMap<Key<Cone>, ConeSer>,
+
+    #[serde(skip_serializing, skip_deserializing)]
+    label_keys: BiHashMap<Label, Key<Label>>,
+    labels: BTreeMap<Key<Label>, LabelSer>,
 }
 
 impl Store {
@@ -89,7 +93,7 @@ impl Store {
             Rewrite::Rewrite0(r0) => RewriteSer::R0 {
                 source: r0.source().map(|d| (d.generator, d.orientation)),
                 target: r0.target().map(|d| (d.generator, d.orientation)),
-                label: r0.label().map(|l| (l.boundary_path(), l.coords())),
+                label: r0.label().map(|l| self.pack_label(l)),
             },
             Rewrite::RewriteN(rewrite) => {
                 let cones = rewrite
@@ -148,6 +152,19 @@ impl Store {
         }
     }
 
+    fn pack_label(&mut self, label: &Label) -> Key<Label> {
+        if let Some(key) = self.label_keys.get_by_left(label) {
+            return *key;
+        }
+
+        let serialized = LabelSer(label.boundary_path(), label.coords());
+
+        let key: Key<Label> = serialized.key();
+        self.label_keys.insert(label.clone(), key);
+        self.labels.insert(key, serialized);
+        key
+    }
+
     pub fn unpack_diagram(&mut self, key: Key<Diagram>) -> Option<Diagram> {
         self.diagram_keys.get_by_right(&key).cloned().or_else(|| {
             let diagram = match self.diagrams.get(&key)?.clone() {
@@ -192,7 +209,10 @@ impl Store {
                     (Some(source), Some(target), label) => {
                         let source = Diagram0::new(source.0, source.1);
                         let target = Diagram0::new(target.0, target.1);
-                        let label = label.map(|label| Label::new(label.0, label.1));
+                        let label = match label {
+                            None => None,
+                            Some(label) => Some(self.unpack_label(label)?),
+                        };
                         Some(Rewrite0(Some((source, target, label))).into())
                     }
                     _ => None,
@@ -258,6 +278,15 @@ impl Store {
                 cone
             })
     }
+
+    pub fn unpack_label(&mut self, key: Key<Label>) -> Option<Label> {
+        self.label_keys.get_by_right(&key).cloned().or_else(|| {
+            let serialized = self.labels.get(&key)?.clone();
+            let label = Label::new(serialized.0, serialized.1);
+            self.label_keys.insert(label.clone(), key);
+            Some(label)
+        })
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
@@ -286,7 +315,7 @@ enum RewriteSer {
         target: Option<(Generator, Orientation)>,
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
-        label: Option<(BoundaryPath, OrdSet<Vec<Height>>)>,
+        label: Option<Key<Label>>,
     },
     Rn {
         dimension: NonZeroU32,
@@ -358,6 +387,9 @@ impl Hash for ConeSer {
         }
     }
 }
+
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
+struct LabelSer(BoundaryPath, OrdSet<Vec<Height>>);
 
 // Phantom key type
 #[derive(Debug)]
