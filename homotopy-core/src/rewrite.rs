@@ -216,6 +216,9 @@ impl Rewrite {
             .map_or(true, |d| d.generator.dimension <= self.dimension())
     }
 
+    /// This will implicitly mangle/strip labels
+    /// Do not read labels of the result and always
+    /// compare it with equals_modulo_labels
     #[inline]
     pub fn compose(&self, g: &Self) -> Result<Self, CompositionError> {
         match (self, g) {
@@ -288,16 +291,15 @@ impl Rewrite0 {
         }
     }
 
+    /// This will implicitly mangle/strip labels
+    /// Do not read labels of the result and always
+    /// compare it with equals_modulo_labels
     pub fn compose(&self, g: &Self) -> Result<Self, CompositionError> {
         match (&self.0, &g.0) {
             (Some(_), None) => Ok(self.clone()),
             (None, Some(_)) => Ok(g.clone()),
             (None, None) => Ok(Self::identity()),
-            (Some((f_s, f_t, f_l)), Some((g_s, g_t, g_l))) if f_t == g_s => {
-                assert!(
-                    f_l.is_none() && g_l.is_none(),
-                    "Composition of labelled rewrites is illegal"
-                );
+            (Some((f_s, f_t, _)), Some((g_s, g_t, _))) if f_t == g_s => {
                 Ok(Self::new(*f_s, *g_t, None))
             }
             (f, g) => {
@@ -536,6 +538,9 @@ impl RewriteN {
             })
     }
 
+    /// This will implicitly mangle/strip labels
+    /// Do not read labels of the result and always
+    /// compare it with equals_modulo_labels
     pub fn compose(&self, g: &Self) -> Result<Self, CompositionError> {
         if self.dimension() != g.dimension() {
             return Err(CompositionError::Dimension(self.dimension(), g.dimension()));
@@ -576,7 +581,10 @@ impl RewriteN {
                     } else {
                         let index = index as usize;
 
-                        if f_cone.target() != &g_cone.source()[index] {
+                        if !f_cone
+                            .target()
+                            .equals_modulo_labels(&g_cone.source()[index])
+                        {
                             return Err(CompositionError::Incompatible);
                         }
 
