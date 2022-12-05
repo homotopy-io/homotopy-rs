@@ -297,7 +297,8 @@ fn solve(
     for e in colimit.edge_references() {
         let x = variables[e.source()];
         let y = variables[e.target()];
-        constraints.push((y - x).geq(1.0));
+        let d = problem.add(variable().min(1.0));
+        constraints.push((d + x - y).eq(0.0));
     }
 
     // Fair averaging constraints (inc. straight wires).
