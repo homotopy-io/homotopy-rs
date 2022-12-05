@@ -1,13 +1,20 @@
 use std::{
+    cell::RefCell,
     cmp::Ordering,
     fmt,
     ops::{Index, IndexMut, Mul},
 };
 
+use hashconsing::{HConsed, HConsign, HashConsign};
 use homotopy_common::{hash::FastHashMap, idx::Idx};
 use im::OrdSet;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+
+thread_local! {
+    static LABEL_FACTORY: RefCell<HConsign<LabelInternal>> =
+        RefCell::new(HConsign::with_capacity(37));
+}
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 #[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
@@ -338,13 +345,60 @@ impl fmt::Debug for Orientation {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
-pub struct Label(BoundaryPath, OrdSet<Vec<Height>>);
+#[derive(Clone, Eq, PartialEq, Hash)]
+pub struct Label(HConsed<LabelInternal>);
+
+impl Serialize for Label {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_newtype_struct("Label", self.0.get())
+    }
+}
+
+impl<'de> Deserialize<'de> for Label {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Deserialize::deserialize(deserializer)
+            .map(|l| Label(LABEL_FACTORY.with(|factory| factory.borrow_mut().mk(l))))
+    }
+}
+
+impl fmt::Debug for Label {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("Label")
+            .field(&self.0 .0)
+            .field(&self.0 .1)
+            .finish()
+    }
+}
 
 impl Label {
     pub fn new(boundary_path: BoundaryPath, coords: OrdSet<Vec<Height>>) -> Self {
-        Self(boundary_path, coords)
+        Self(LABEL_FACTORY.with(|factory| {
+            factory
+                .borrow_mut()
+                .mk(LabelInternal(boundary_path, coords))
+        }))
+    }
+
+    pub fn boundary_path(&self) -> BoundaryPath {
+        self.0 .0
+    }
+
+    pub fn coords(&self) -> OrdSet<Vec<Height>> {
+        self.0 .1.clone()
+    }
+
+    pub(crate) fn collect_garbage() {
+        LABEL_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
     }
 }
+
+#[derive(Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+struct LabelInternal(BoundaryPath, OrdSet<Vec<Height>>);
 
 pub(crate) type LabelIdentifications = FastHashMap<Vec<Height>, OrdSet<Vec<Height>>>;
