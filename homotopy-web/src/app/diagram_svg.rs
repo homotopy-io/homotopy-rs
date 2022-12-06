@@ -214,12 +214,13 @@ impl<const N: usize> Component for DiagramSvg<N> {
                             )
                             .contains_point(point, 0.01)
                     });
-                    let d = match element {
-                        None => return false,
-                        Some(element) => element.generator(),
-                    };
-                    let info = ctx.props().signature.generator_info(d.generator).unwrap();
-                    match d.orientation {
+                    let Some(element) = element else { return false };
+                    let info = ctx
+                        .props()
+                        .signature
+                        .generator_info(element.generator())
+                        .unwrap();
+                    match element.orientation() {
                         Orientation::Positive => info.name.clone(),
                         Orientation::Zero => format!("{} (homotopy)", info.name),
                         Orientation::Negative => format!("{} (inverse)", info.name),
@@ -375,6 +376,7 @@ impl<const N: usize> DiagramSvg<N> {
     fn view_element(&self, ctx: &Context<Self>, index: usize, element: &GraphicElement<N>) -> Html {
         let class = generator_class_from_diagram_dim(
             element.generator(),
+            element.orientation(),
             ctx.props().diagram.dimension(),
             element.clone().into(),
         );
@@ -383,7 +385,7 @@ impl<const N: usize> DiagramSvg<N> {
             GraphicElement::Surface(_, path) => {
                 let path = path_to_svg(&path.clone().transformed(&self.prepared.transform));
                 html! {
-                    <path d={path} class={class} stroke-width={1} />
+                    <path d={path} class={class} />
                 }
             }
             GraphicElement::Wire(_, _, path, mask) => {
@@ -395,7 +397,6 @@ impl<const N: usize> DiagramSvg<N> {
                             d={path}
                             class={class}
                             stroke-width={ctx.props().style.wire_thickness.to_string()}
-                            fill="none"
                         />
                     }
                 } else {
@@ -428,7 +429,6 @@ impl<const N: usize> DiagramSvg<N> {
                                 d={path}
                                 class={class}
                                 stroke-width={ctx.props().style.wire_thickness.to_string()}
-                                fill="none"
                                 mask={format!("url(#{})", mask_id)}
                             />
                         </>

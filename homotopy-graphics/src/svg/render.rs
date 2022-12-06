@@ -8,6 +8,7 @@ use homotopy_core::{
     diagram::Diagram0,
     layout::Layout,
     projection::{Depths, Homotopy, Projection},
+    Generator, Orientation,
 };
 use lyon_path::{builder::NoAttributes, Path};
 
@@ -140,10 +141,17 @@ impl<const N: usize> GraphicElement<N> {
         }
     }
 
-    pub fn generator(&self) -> Diagram0 {
+    pub fn generator(&self) -> Generator {
         use GraphicElement::{Point, Surface, Wire};
         match self {
-            Surface(generator, _) | Wire(generator, _, _, _) | Point(generator, _) => *generator,
+            Surface(d, _) | Wire(d, _, _, _) | Point(d, _) => d.generator,
+        }
+    }
+
+    pub fn orientation(&self) -> Orientation {
+        use GraphicElement::{Point, Surface, Wire};
+        match self {
+            Surface(d, _) | Wire(d, _, _, _) | Point(d, _) => d.orientation,
         }
     }
 
