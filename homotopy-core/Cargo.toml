@@ -43,7 +43,7 @@ test-case = "2.2.2"
 base64 = "0.13.1"
 
 [features]
-default = ["safety-checks"]
+default = []
 safety-checks = []
 fuzz = ["arbitrary", "homotopy-common/fuzz"]
 highs = ["good_lp/highs"]
