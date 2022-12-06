@@ -57,7 +57,6 @@ fn scalar() {
     assert_debug_snapshot!(
         "scalar_biased_right",
         scalar_then_scalar
-            .clone()
             .identity()
             .contract(
                 Boundary::Target.into(),
@@ -74,7 +73,6 @@ fn scalar() {
     assert_debug_snapshot!(
         "scalar_inverse_unbiased",
         scalar_then_inverse
-            .clone()
             .identity()
             .contract(
                 Boundary::Target.into(),
@@ -114,7 +112,6 @@ fn three_scalars() {
         .attach(&scalar, Boundary::Target, &[])
         .unwrap();
     let l = three
-        .clone()
         .identity()
         .contract(
             Boundary::Target.into(),
@@ -155,7 +152,6 @@ fn braids() {
     assert_debug_snapshot!(
         "crossing",
         crossing
-            .clone()
             .identity()
             .contract(
                 Boundary::Target.into(),

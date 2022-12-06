@@ -10,7 +10,10 @@ use petgraph::{
     prelude::DiGraph,
     stable_graph::{DefaultIx, EdgeIndex, IndexType, NodeIndex},
     unionfind::UnionFind,
-    visit::{EdgeCount, EdgeRef, GraphBase, IntoEdgeReferences, IntoNodeReferences, Topo, Walker},
+    visit::{
+        EdgeCount, EdgeFiltered, EdgeRef, GraphBase, IntoEdgeReferences, IntoNodeReferences, Topo,
+        Walker,
+    },
     Direction::{Incoming, Outgoing},
 };
 
@@ -250,7 +253,7 @@ where
             }
             tree[cur]
                 .1
-                .set(vec![ix])
+                .set((vec![ix], vec![]))
                 .expect("failed to initialise collapse subproblem tree");
         }
         tree
@@ -259,13 +262,23 @@ where
         // collapse subproblem
         let mut children = tree.neighbors_directed(n, Incoming).detach();
         let mut nodes = vec![];
+        let mut seen_edges: Vec<EdgeIndex<Ix>> = vec![];
         while let Some(child) = children.next_node(&tree) {
-            nodes.extend_from_slice(tree[child].1.get().unwrap());
+            nodes.extend_from_slice(&tree[child].1.get().unwrap().0);
+            seen_edges.extend_from_slice(&tree[child].1.get().unwrap().1);
         }
         if nodes.is_empty() {
             // n is a leaf
             continue;
         }
+        let edges: Vec<_> = EdgeFiltered::from_fn(&*graph, |e| {
+            !seen_edges.contains(&e.id())
+                && nodes.contains(&e.source())
+                && nodes.contains(&e.target())
+        })
+        .edge_references()
+        .collect();
+        seen_edges.extend(edges.iter().map(EdgeRef::id));
         let mut quotient: Vec<_> = Default::default();
         let label_set = |u: NodeIndex<Ix>, v: NodeIndex<Ix>| -> FastHashSet<Option<&Label>> {
             graph
@@ -278,20 +291,18 @@ where
                 .collect()
         };
         // find collapsible edges wrt nodes
-        for e in graph.edge_references().filter(|e| {
-            // e is contained within nodes
-            nodes.contains(&e.source()) && nodes.contains(&e.target())
+        for e in edges.into_iter().filter(|e| {
             // e is an identity rewrite
-            && <&Rewrite0>::try_from(&e.weight().rewrite).unwrap().0.as_ref().map_or(true, |(s, t, _)| s.generator == t.generator)
+            <&Rewrite0>::try_from(&e.weight().rewrite).unwrap().0.as_ref().map_or(true, |(s, t, _)| s.generator == t.generator) &&
             // check triangles within nodes which might refute collapsibility of e
-            && graph
+            graph
                 .neighbors_directed(e.source(), Incoming)
                 .filter(|p| graph.find_edge(*p, e.target()).is_some())
                 .all(|p| label_set(p, e.source()) == label_set(p, e.target()))
             && graph
-                .neighbors_directed(e.target(), Outgoing)
-                .filter(|n| graph.find_edge(e.source(), *n).is_some())
-                .all(|n| label_set(e.target(), n) == label_set(e.source(), n))
+                    .neighbors_directed(e.target(), Outgoing)
+                    .filter(|n| graph.find_edge(e.source(), *n).is_some())
+                    .all(|n| label_set(e.target(), n) == label_set(e.source(), n))
         }) {
             // e is collapsible
             quotient.push((e.source(), e.target()));
@@ -306,12 +317,12 @@ where
                 |rn| {
                     nodes.retain(|&n| n != rn);
                 },
-                |_re| (),
+                |re| seen_edges.retain(|&e| e != re),
             );
         }
         tree[n]
             .1
-            .set(nodes)
+            .set((nodes, seen_edges))
             .expect("failed to propagate collapse subproblem");
     }
     // check the tree of collapse subproblems has been completed
