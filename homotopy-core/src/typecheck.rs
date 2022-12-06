@@ -104,24 +104,13 @@ pub fn typecheck_cospan<S>(source: Diagram, cospan: Cospan, signature: &S) -> Re
 where
     S: Signature,
 {
-    typecheck(
-        &source
-            .clone()
-            .rewrite_forward(&cospan.forward)
-            .unwrap()
-            .rewrite_backward(&cospan.backward)
-            .unwrap(),
-        signature,
-        Mode::Shallow,
-    )?;
+    let diagram = DiagramN::new(source, vec![cospan]);
+
+    typecheck(&diagram.target(), signature, Mode::Shallow)?;
 
     if cfg!(feature = "safety-checks") {
-        typecheck(
-            &DiagramN::new(source, vec![cospan]).into(),
-            signature,
-            Mode::Shallow,
-        )
-        .expect("Contraction/expansion is ill-typed");
+        typecheck(&diagram.into(), signature, Mode::Shallow)
+            .expect("Contraction/expansion is ill-typed");
     }
 
     Ok(())
