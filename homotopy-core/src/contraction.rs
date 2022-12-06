@@ -114,23 +114,17 @@ impl DiagramN {
                 contract_in_path(&slice, interior_path, height, bias)?
             };
 
-            let cospan = match boundary_path.boundary() {
-                Boundary::Source => Cospan {
-                    forward: expand.into(),
-                    backward: contract.into(),
-                },
-                Boundary::Target => Cospan {
-                    forward: contract.into(),
-                    backward: expand.into(),
-                },
+            let cospan = Cospan {
+                forward: contract.into(),
+                backward: expand.into(),
             };
 
-            typecheck_cospan(
-                slice.into(),
-                cospan.clone(),
-                boundary_path.boundary(),
-                signature,
-            )?;
+            typecheck_cospan(slice.into(), cospan.clone(), signature)?;
+
+            let cospan = match boundary_path.boundary() {
+                Boundary::Source => cospan.flip(),
+                Boundary::Target => cospan,
+            };
 
             Ok(vec![cospan])
         })

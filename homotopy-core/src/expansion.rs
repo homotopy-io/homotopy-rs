@@ -61,18 +61,17 @@ impl DiagramN {
         attach(self, boundary_path, |slice| {
             let expand: Rewrite = expand_in_path(&slice, interior_path, direction)?;
             let identity = Rewrite::identity(slice.dimension());
-            let cospan = match boundary_path.boundary() {
-                Boundary::Source => Cospan {
-                    forward: expand,
-                    backward: identity,
-                },
-                Boundary::Target => Cospan {
-                    forward: identity,
-                    backward: expand,
-                },
+            let cospan = Cospan {
+                forward: identity,
+                backward: expand,
             };
 
-            typecheck_cospan(slice, cospan.clone(), boundary_path.boundary(), signature)?;
+            typecheck_cospan(slice, cospan.clone(), signature)?;
+
+            let cospan = match boundary_path.boundary() {
+                Boundary::Source => cospan.flip(),
+                Boundary::Target => cospan,
+            };
 
             Ok(vec![cospan])
         })

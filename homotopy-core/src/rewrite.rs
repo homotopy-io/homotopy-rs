@@ -73,12 +73,17 @@ impl Cospan {
     }
 
     #[must_use]
+    pub fn flip(self) -> Self {
+        Self {
+            forward: self.backward,
+            backward: self.forward,
+        }
+    }
+
+    #[must_use]
     pub fn inverse(&self) -> Self {
         use Orientation::Negative;
-        Self {
-            forward: self.backward.orientation_transform(Negative),
-            backward: self.forward.orientation_transform(Negative),
-        }
+        self.map(|r| r.orientation_transform(Negative)).flip()
     }
 }
 

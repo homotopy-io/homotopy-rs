@@ -20,7 +20,7 @@ use crate::{
     rewrite::{Cone, Cospan, Rewrite, RewriteN},
     scaffold::{Explodable, Scaffold},
     signature::{GeneratorInfo, Signature},
-    Boundary, Rewrite0, SliceIndex,
+    Rewrite0, SliceIndex,
 };
 
 type Point = Vec<SingularHeight>;
@@ -65,9 +65,7 @@ where
     };
 
     if Mode::Deep == mode {
-        for regular in diagram.regular_slices() {
-            typecheck_worker(&regular, signature, mode)?;
-        }
+        typecheck_worker(&diagram.source(), signature, mode)?;
     }
 
     let slices: IdxVec<Height, Diagram> = diagram.slices().collect();
@@ -102,28 +100,25 @@ where
     Ok(())
 }
 
-pub fn typecheck_cospan<S>(
-    slice: Diagram,
-    cospan: Cospan,
-    boundary: Boundary,
-    signature: &S,
-) -> Result<(), TypeError>
+pub fn typecheck_cospan<S>(source: Diagram, cospan: Cospan, signature: &S) -> Result<(), TypeError>
 where
     S: Signature,
 {
-    let source = match boundary {
-        Boundary::Source => slice
-            .rewrite_forward(&cospan.backward)
+    typecheck(
+        &source
+            .clone()
+            .rewrite_forward(&cospan.forward)
             .unwrap()
-            .rewrite_backward(&cospan.forward)
+            .rewrite_backward(&cospan.backward)
             .unwrap(),
-        Boundary::Target => slice,
-    };
+        signature,
+        Mode::Shallow,
+    )?;
 
     typecheck(
         &DiagramN::new(source, vec![cospan]).into(),
         signature,
-        Mode::Deep,
+        Mode::Shallow,
     )
 }
 
@@ -490,7 +485,7 @@ fn collapse_simplicies(diagram: impl Into<Diagram>) -> FastHashSet<LabelledSimpl
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::signature::SignatureBuilder;
+    use crate::{signature::SignatureBuilder, Boundary};
 
     #[test]
     fn associativity() {
