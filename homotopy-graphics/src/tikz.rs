@@ -54,7 +54,7 @@ pub fn name_from_diagram_dim(
     let n = diagram.generator.dimension;
     let k = representation as usize;
 
-    let c = d.saturating_sub(n + k);
+    let c = d.saturating_sub(n + k) % 3;
 
     name(diagram.generator, c, diagram.orientation)
 }
