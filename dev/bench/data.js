@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1670340514848,
+  "lastUpdate": 1670341005819,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -43229,6 +43229,60 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 340.78,
             "range": "+/- 0.430",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "36002049+mlharaujo@users.noreply.github.com",
+            "name": "mlharaujo",
+            "username": "mlharaujo"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9d3011ffd12cb14b26c8312ebab8374a63c8dbec",
+          "message": "Add files via upload (#941)",
+          "timestamp": "2022-12-06T15:20:03Z",
+          "tree_id": "b80c891779ce2ce08a0ce846367235a6f213e3db",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/9d3011ffd12cb14b26c8312ebab8374a63c8dbec"
+        },
+        "date": 1670340994975,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract beads/contract",
+            "value": 1.2502,
+            "range": "+/- 0.017",
+            "unit": "ms"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 1.0774,
+            "range": "+/- 0.016",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 1.1,
+            "range": "+/- 0.015",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 16.909,
+            "range": "+/- 0.227",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 389.08,
+            "range": "+/- 3.070",
             "unit": "ms"
           }
         ]
