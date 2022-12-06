@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1670341005819,
+  "lastUpdate": 1670341485906,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -43283,6 +43283,48 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 389.08,
             "range": "+/- 3.070",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e646fdbbbd4a0471eb2808894e07067ee5a468fa",
+          "message": "Fix HiGHS bindings (#939)\n\n* Pass Highs problem on C heap to avoid stack overflows.\r\n\r\n* Renaming examples.",
+          "timestamp": "2022-12-06T15:32:18Z",
+          "tree_id": "4f2edf9c4accb65b52b331c12d7e0d472d8f5fd1",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/e646fdbbbd4a0471eb2808894e07067ee5a468fa"
+        },
+        "date": 1670341473430,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract beads/contract",
+            "value": 1.063,
+            "range": "+/- 0.009",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 14.597,
+            "range": "+/- 0.006",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 341.06,
+            "range": "+/- 0.340",
             "unit": "ms"
           }
         ]
