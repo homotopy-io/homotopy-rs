@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1670350942278,
+  "lastUpdate": 1670353100689,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -43427,6 +43427,48 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 387.66,
             "range": "+/- 2.830",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "f750dd7377487b5d6c1cd56c9c428c9c2a9b4152",
+          "message": "Turn second part of typecheck_cospan into assertion\n\nNote the assertion is guarded by the \"safety-checks\" feature.",
+          "timestamp": "2022-12-06T18:32:46Z",
+          "tree_id": "82e8e6108193664af5e185f6dc4167a84b80e630",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/f750dd7377487b5d6c1cd56c9c428c9c2a9b4152"
+        },
+        "date": 1670353085865,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract beads/contract",
+            "value": 1.0034,
+            "range": "+/- 0.006",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 14.235,
+            "range": "+/- 0.018",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 361.24,
+            "range": "+/- 0.400",
             "unit": "ms"
           }
         ]
