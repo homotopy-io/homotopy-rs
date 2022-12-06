@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1670336734579,
+  "lastUpdate": 1670340514848,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -43187,6 +43187,48 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 333.93,
             "range": "+/- 0.350",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "cfcb073bdd5995026d4b0fb3b7817c0ef5b01b00",
+          "message": "Fix colour bug and simplify svg output",
+          "timestamp": "2022-12-06T15:11:35Z",
+          "tree_id": "c0febac204cdfe8151026d83c1a6e352cf72496e",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/cfcb073bdd5995026d4b0fb3b7817c0ef5b01b00"
+        },
+        "date": 1670340503662,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract beads/contract",
+            "value": 1.0611,
+            "range": "+/- 0.004",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 14.577,
+            "range": "+/- 0.012",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 340.78,
+            "range": "+/- 0.430",
             "unit": "ms"
           }
         ]
