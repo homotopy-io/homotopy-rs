@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1670341485906,
+  "lastUpdate": 1670341930152,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -43325,6 +43325,60 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 341.06,
             "range": "+/- 0.340",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "c97a341b52e3545d1d5bd90387ec6e86ba960122",
+          "message": "Cycle codimension number in tikz and manim exports",
+          "timestamp": "2022-12-06T15:37:28Z",
+          "tree_id": "6c9d1a3f70b79d7621da18a1226450c66bf77f99",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/c97a341b52e3545d1d5bd90387ec6e86ba960122"
+        },
+        "date": 1670341917777,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract beads/contract",
+            "value": 1.2685,
+            "range": "+/- 0.002",
+            "unit": "ms"
+          },
+          {
+            "name": "contract beads/typecheck",
+            "value": 1.0887,
+            "range": "+/- 0.002",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/2",
+            "value": 1.1043,
+            "range": "+/- 0.002",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 17.645,
+            "range": "+/- 0.251",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 406.89,
+            "range": "+/- 1.960",
             "unit": "ms"
           }
         ]
