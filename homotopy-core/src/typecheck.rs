@@ -115,11 +115,16 @@ where
         Mode::Shallow,
     )?;
 
-    typecheck(
-        &DiagramN::new(source, vec![cospan]).into(),
-        signature,
-        Mode::Shallow,
-    )
+    if cfg!(feature = "safety-checks") {
+        typecheck(
+            &DiagramN::new(source, vec![cospan]).into(),
+            signature,
+            Mode::Shallow,
+        )
+        .expect("Contraction/expansion is ill-typed");
+    }
+
+    Ok(())
 }
 
 fn target_points(rewrites: &[Rewrite]) -> Vec<(Point, Generator)> {
