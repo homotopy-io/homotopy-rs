@@ -2,7 +2,7 @@ use homotopy_core::typecheck::{typecheck, Mode};
 pub use homotopy_model::{history::Proof, proof::Action, serialize};
 use insta::assert_debug_snapshot;
 
-fn actions_test_helper(json: &str) -> Proof {
+fn actions_test_helper(json: &str, should_check: bool) -> Proof {
     let (_safe, actions): (bool, Vec<Action>) = serde_json::from_str(json).unwrap();
     let mut proof: Proof = Default::default();
 
@@ -11,9 +11,11 @@ fn actions_test_helper(json: &str) -> Proof {
             .update(a)
             .expect("Actions should replay without errors.");
         // Typecheck as we go along
-        if let Some(workspace) = &proof.workspace {
-            typecheck(&workspace.diagram, &proof.signature, Mode::Deep)
-                .unwrap_or_else(|_| panic!("Typechecking failure at action: {:?}.", a));
+        if should_check {
+            if let Some(workspace) = &proof.workspace {
+                typecheck(&workspace.diagram, &proof.signature, Mode::Deep)
+                    .unwrap_or_else(|_| panic!("Typechecking failure at action: {:?}.", a));
+            }
         }
     }
 
@@ -24,9 +26,23 @@ fn actions_test_helper(json: &str) -> Proof {
 fn construct_associator() {
     let action_dump = include_str!("examples/associator.json");
 
-    let proof = actions_test_helper(action_dump);
+    let proof = actions_test_helper(action_dump, true);
 
     // Snapshot the end result
     assert_debug_snapshot!("construct_associator_signature", proof.signature);
     assert_debug_snapshot!("construct_associator_workspace", proof.workspace);
+}
+
+#[test]
+fn construct_adjoint_equivalence() {
+    let action_dump = include_str!("examples/equivalence_to_adjoint_equivalence.json");
+
+    let proof = actions_test_helper(action_dump, false);
+    // Snapshotting with debug takes too long
+    typecheck(
+        &proof.workspace.as_ref().unwrap().diagram,
+        &proof.signature,
+        Mode::Deep,
+    )
+    .expect("Typecheck failure.");
 }
