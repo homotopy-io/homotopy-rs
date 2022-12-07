@@ -4,7 +4,7 @@ use std::{
     hash::Hash,
 };
 
-use homotopy_common::{declare_idx, hash::FastHashMap, idx::IdxVec};
+use homotopy_common::{declare_idx, hash::FastHashMap, idx::IdxVec, timeout::timeout_if_needed};
 use itertools::Itertools;
 use petgraph::{
     adj::UnweightedList,
@@ -552,6 +552,7 @@ fn colimit_base<Ix: IndexType>(graph: &ContractGraph<Ix>) -> Result<Cocone<Ix>, 
     };
 
     for i in max_dims {
+        timeout_if_needed().or(Err(ContractionError::Invalid))?;
         unify(
             &mut stable,
             i,
@@ -709,6 +710,8 @@ fn colimit_recursive<Ix: IndexType>(
         }
     }
 
+    timeout_if_needed().or(Err(ContractionError::Invalid))?;
+
     // find the colimit of the Δ diagram by computing the quotient graph under strongly-connected
     // components and linearizing
     declare_idx! { struct QuotientIx = DefaultIx; }
@@ -789,6 +792,7 @@ fn colimit_recursive<Ix: IndexType>(
                 )
                 .collect(),
         );
+        timeout_if_needed().or(Err(ContractionError::Invalid))?;
         for scc in &linear_components {
             // get the right-most boundary of this scc
             regular_monotone.push({

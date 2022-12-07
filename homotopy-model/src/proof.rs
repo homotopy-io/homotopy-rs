@@ -259,6 +259,8 @@ pub enum ProofError {
     ContractionError(#[from] ContractionError),
     #[error("import failed")]
     Import,
+    #[error("timeout")]
+    Timeout,
 }
 
 impl ProofState {

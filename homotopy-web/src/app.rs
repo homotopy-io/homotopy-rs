@@ -214,10 +214,14 @@ impl App {
         };
 
         let spinner = if loading {
-            html! { <div class="cover-spin"></div> }
+            html! {
+                <></>
+            }
         } else {
             html! {}
         };
+
+        homotopy_common::timeout::reset_timeout_state();
 
         html! {
             <main class="app">

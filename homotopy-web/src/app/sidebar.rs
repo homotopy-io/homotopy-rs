@@ -348,6 +348,7 @@ impl Component for Sidebar {
                     <a href="#about">
                         <img src="/logo.svg" alt="Homotopy.io logo" class="sidebar__logo" />
                     </a>
+                    <button onclick={move |_| {log::warn!("Received timeout request"); homotopy_common::timeout::timeout_now();}}>{"Q"}</button>
                     {self.nav(ctx)}
                     {self.tools(ctx)}
                 </aside>

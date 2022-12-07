@@ -1,6 +1,6 @@
 pub use history::Proof;
 use history::{History, UndoState};
-use homotopy_common::hash::FastHashSet;
+use homotopy_common::{hash::FastHashSet, timeout::timeout_if_needed};
 use homotopy_core::{
     common::{BoundaryPath, RegularHeight},
     Boundary, Diagram, DiagramN, Height, SliceIndex,
@@ -217,6 +217,7 @@ impl State {
                 // Replay actions in top of workspace
                 let mut proof = self.proof().clone();
                 for a in &actions[..len] {
+                    timeout_if_needed().or(Err(proof::ProofError::Timeout))?;
                     if proof.update(a)? {
                         self.history.add(a.clone(), proof.clone());
                     }
