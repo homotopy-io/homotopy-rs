@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1670420878489,
+  "lastUpdate": 1670422572268,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -43547,6 +43547,42 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 383.61,
             "range": "+/- 1.940",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "distinct": true,
+          "id": "8b7e8e3c67aac3d1447cc96e25aaeac1d5b1c9ed",
+          "message": "Added example of equivalence to adjoint equivalence.",
+          "timestamp": "2022-12-07T14:01:31Z",
+          "tree_id": "698669f01ab2bbf55d0e314398dcadbd0f285def",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/8b7e8e3c67aac3d1447cc96e25aaeac1d5b1c9ed"
+        },
+        "date": 1670422560434,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/3",
+            "value": 12.709,
+            "range": "+/- 0.024",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 332.28,
+            "range": "+/- 0.710",
             "unit": "ms"
           }
         ]
