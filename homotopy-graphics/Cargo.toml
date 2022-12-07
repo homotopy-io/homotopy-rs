@@ -17,7 +17,7 @@ euclid = "0.22.7"
 itertools = "0.10.5"
 log = "0.4.17"
 lyon_algorithms = "1.0.2"
-lyon_geom = "1.0.3"
+lyon_geom = "1.0.4"
 lyon_path = "1.0.2"
 palette = { git = "https://github.com/Ogeon/palette", features = ["serializing"] }
 paste = "1.0.9"
