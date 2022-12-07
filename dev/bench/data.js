@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1670357809495,
+  "lastUpdate": 1670420878489,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -43505,6 +43505,48 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 280.07,
             "range": "+/- 0.380",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "committer": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "distinct": true,
+          "id": "3eaca3df4eb7a3d99171e982e8afc2dc56f3938f",
+          "message": "Make collapse only consider new edges in each subproblem",
+          "timestamp": "2022-12-07T13:31:27Z",
+          "tree_id": "6b18a0b5281816de0c1aa09a61873a06cb56c091",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/3eaca3df4eb7a3d99171e982e8afc2dc56f3938f"
+        },
+        "date": 1670420862887,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract beads/contract",
+            "value": 1.0436,
+            "range": "+/- 0.002",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 14.908,
+            "range": "+/- 0.064",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 383.61,
+            "range": "+/- 1.940",
             "unit": "ms"
           }
         ]
