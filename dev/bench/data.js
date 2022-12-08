@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1670422572268,
+  "lastUpdate": 1670522468412,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -43583,6 +43583,42 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 332.28,
             "range": "+/- 0.710",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7e2b03e8d124a64ac1d560e022c7efb5025479a0",
+          "message": "Roseman moves B1, B2, and D1 (#579)",
+          "timestamp": "2022-12-08T17:45:28Z",
+          "tree_id": "0b4e93759c0c9df66b5f45e2a3330d67ba6be101",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/7e2b03e8d124a64ac1d560e022c7efb5025479a0"
+        },
+        "date": 1670522454920,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/3",
+            "value": 12.768,
+            "range": "+/- 0.010",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 330.94,
+            "range": "+/- 0.610",
             "unit": "ms"
           }
         ]
