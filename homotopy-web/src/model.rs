@@ -86,13 +86,15 @@ impl State {
                 // we risk funny business with circular action imports.
                 crate::panic::push_action(&action);
 
-                let mut proof = self.proof().clone();
-                let res = proof.update(&action);
-                if matches!(res, Err(_) | Ok(false)) {
-                    crate::panic::pop_action();
-                    return Ok(res?);
+                if self.history.try_redo(&action).is_err() {
+                    let mut proof = self.proof().clone();
+                    let res = proof.update(&action);
+                    if matches!(res, Err(_) | Ok(false)) {
+                        crate::panic::pop_action();
+                        return Ok(res?);
+                    }
+                    self.history.add(action, proof);
                 }
-                self.history.add(action, proof);
                 self.clear_attach();
             }
 

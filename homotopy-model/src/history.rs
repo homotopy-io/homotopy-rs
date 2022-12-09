@@ -4,7 +4,6 @@ use std::{
 };
 
 use homotopy_common::tree::{Node, NodeData, Tree};
-use instant::Instant;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -21,10 +20,9 @@ pub enum Direction {
     // TODO: branch moves
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Eq, PartialEq, Default)]
 pub struct Snapshot {
     proof: ProofState,
-    timestamp: instant::Instant,
     action: Option<super::proof::Action>,
 }
 
@@ -39,16 +37,6 @@ impl Deref for Snapshot {
 impl DerefMut for Snapshot {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.proof
-    }
-}
-
-impl Default for Snapshot {
-    fn default() -> Self {
-        Self {
-            proof: Default::default(),
-            timestamp: Instant::now(),
-            action: Default::default(),
-        }
     }
 }
 
@@ -79,21 +67,13 @@ impl UndoState for Proof {
 
 impl fmt::Debug for Snapshot {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(T{:?}, {:?})", self.timestamp, self.action)
+        write!(f, "{:?}", self.action)
     }
 }
 
 impl Snapshot {
     fn new(action: Option<super::proof::Action>, proof: ProofState) -> Self {
-        Self {
-            proof,
-            action,
-            timestamp: Instant::now(),
-        }
-    }
-
-    fn touch(&mut self) {
-        self.timestamp = Instant::now();
+        Self { proof, action }
     }
 }
 
@@ -125,29 +105,11 @@ impl History {
     }
 
     pub fn add(&mut self, action: super::proof::Action, proof: Proof) {
-        // check if this action has been performed at this state previously
-        let existing = self.proof().children().find(|id| {
-            self.snapshots
-                .with(*id, |n| n.action.as_ref() == Some(&action))
-                .unwrap_or_default()
-        });
-        if let Some(child) = existing {
-            // update timestamp and ensure the action was deterministic
-            self.snapshots
-                .with_mut(child, |n| {
-                    assert_eq!(proof.proof, n.proof);
-                    n.touch();
-                })
-                .expect("This should always succeed.");
+        if let Some(child) = self.snapshots.push_onto(
+            self.current,
+            Snapshot::new(Some(action), proof.into_inner().proof),
+        ) {
             self.current = child;
-        } else {
-            // fresh action
-            if let Some(child) = self.snapshots.push_onto(
-                self.current,
-                Snapshot::new(Some(action), proof.into_inner().proof),
-            ) {
-                self.current = child;
-            }
         }
     }
 
@@ -159,6 +121,20 @@ impl History {
 
     pub fn redo(&mut self) -> Result<(), HistoryError> {
         let next = self.proof().last().ok_or(HistoryError::Redo)?;
+        self.current = next;
+        Ok(())
+    }
+
+    pub fn try_redo(&mut self, action: &super::proof::Action) -> Result<(), HistoryError> {
+        let next = self
+            .proof()
+            .children()
+            .find(|id| {
+                self.snapshots
+                    .with(*id, |n| n.action.as_ref() == Some(action))
+                    .unwrap_or_default()
+            })
+            .ok_or(HistoryError::Redo)?;
         self.current = next;
         Ok(())
     }
