@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1670522468412,
+  "lastUpdate": 1670586592437,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -43619,6 +43619,48 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 330.94,
             "range": "+/- 0.610",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "9ef847d786a2b4d11c2343959569c8ec5cbdeb91",
+          "message": "Minor changes in layout\n\n* Do not allow multi-edges in the posets\n* Enable the empty model assertion on release mode",
+          "timestamp": "2022-12-09T11:33:27Z",
+          "tree_id": "ffd7e03f70ea34b7a7aeb90e6dde05aa16f31443",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/9ef847d786a2b4d11c2343959569c8ec5cbdeb91"
+        },
+        "date": 1670586576790,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract beads/contract",
+            "value": 1.0821,
+            "range": "+/- 0.028",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 15.382,
+            "range": "+/- 0.152",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 408.48,
+            "range": "+/- 2.890",
             "unit": "ms"
           }
         ]
