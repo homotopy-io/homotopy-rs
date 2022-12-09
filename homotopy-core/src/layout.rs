@@ -344,7 +344,7 @@ fn solve(
                 let n: f64 = u32::try_from(ins.len()).unwrap().into();
                 let m: f64 = u32::try_from(outs.len()).unwrap().into();
 
-                if orientation == dim - 1 {
+                if dim < 2 {
                     // Strict constraint: avg(ins) = avg(outs)
                     constraints.push(
                         ins.iter()
@@ -356,7 +356,7 @@ fn solve(
                 } else {
                     // Weak constraints: |avg(ins) - avg(outs)| <= c.
                     let c = problem.add(variable().min(0.0));
-                    objective.push(Expression::from(c));
+                    objective.push(c * (orientation * 1000 + 1) as f32);
                     constraints.push(
                         std::iter::once(c * (n * m))
                             .chain(ins.iter().map(|&i| i * m))
