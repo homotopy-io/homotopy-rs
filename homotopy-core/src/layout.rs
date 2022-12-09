@@ -103,7 +103,7 @@ fn concat(lhs: &ConstraintSet, rhs: &ConstraintSet) -> ConstraintSet {
         lhs_nodes.push(union.add_node(*n));
     }
     for e in lhs.edge_references() {
-        union.add_edge(lhs_nodes[e.source()], lhs_nodes[e.target()], ());
+        union.update_edge(lhs_nodes[e.source()], lhs_nodes[e.target()], ());
     }
 
     // Copy of `rhs`.
@@ -112,13 +112,13 @@ fn concat(lhs: &ConstraintSet, rhs: &ConstraintSet) -> ConstraintSet {
         rhs_nodes.push(union.add_node(*n));
     }
     for e in rhs.edge_references() {
-        union.add_edge(rhs_nodes[e.source()], rhs_nodes[e.target()], ());
+        union.update_edge(rhs_nodes[e.source()], rhs_nodes[e.target()], ());
     }
 
     // Edges from `lhs` to `rhs`.
     for a in lhs.externals(EdgeDirection::Outgoing) {
         for b in rhs.externals(EdgeDirection::Incoming) {
-            union.add_edge(lhs_nodes[a], rhs_nodes[b], ());
+            union.update_edge(lhs_nodes[a], rhs_nodes[b], ());
         }
     }
 
@@ -138,7 +138,7 @@ fn colimit(constraints: &[ConstraintSet]) -> (ConstraintSet, FastHashMap<Point, 
         for e in constraint.edge_references() {
             let s = constraint[e.source()];
             let t = constraint[e.target()];
-            colimit.add_edge(point_to_node[&s], point_to_node[&t], ());
+            colimit.update_edge(point_to_node[&s], point_to_node[&t], ());
         }
     }
 
@@ -401,7 +401,7 @@ fn solve(
             width = std::cmp::max_by(width, position + 1.0, |x, y| x.partial_cmp(y).unwrap());
         }
     } else {
-        debug_assert_eq!(
+        assert_eq!(
             colimit.node_indices().len(),
             0,
             "Model is empty but we need variables."
