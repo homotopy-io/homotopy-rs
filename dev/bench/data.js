@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1670670908632,
+  "lastUpdate": 1670707078245,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -43805,6 +43805,48 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 334.44,
             "range": "+/- 0.390",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "distinct": true,
+          "id": "1abbad3a2210877f38d196ac0f275d47b47efe84",
+          "message": "Added braiding half bubbles test case (against #947 regression).",
+          "timestamp": "2022-12-10T21:02:52Z",
+          "tree_id": "82e53e5ce46cf68fb162cb99419f60d90d64cc38",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/1abbad3a2210877f38d196ac0f275d47b47efe84"
+        },
+        "date": 1670707064589,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract beads/contract",
+            "value": 1.0419,
+            "range": "+/- 0.007",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 14.819,
+            "range": "+/- 0.082",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 384.9,
+            "range": "+/- 2.150",
             "unit": "ms"
           }
         ]
