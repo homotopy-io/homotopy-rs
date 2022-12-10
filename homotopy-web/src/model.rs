@@ -1,6 +1,5 @@
 pub use history::Proof;
 use history::{History, UndoState};
-use homotopy_common::hash::FastHashSet;
 use homotopy_core::{
     common::{BoundaryPath, RegularHeight},
     Boundary, Diagram, DiagramN, Height, SliceIndex,
@@ -27,7 +26,7 @@ pub enum Action {
     Select(usize),
 
     ClearAttach,
-    SelectPoints(Vec<Vec<SliceIndex>>),
+    SelectPoint(Vec<SliceIndex>),
     HighlightAttachment(Option<AttachOption>),
     HighlightSlice(Option<SliceIndex>),
 }
@@ -46,7 +45,7 @@ impl Action {
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.view.dimension() == 3),
-            Self::SelectPoints(_) => proof.workspace.is_some(),
+            Self::SelectPoint(_) => proof.workspace.is_some(),
             _ => true,
         }
     }
@@ -243,7 +242,7 @@ impl State {
                 };
                 self.update(Action::Proof(action))?;
             }
-            Action::SelectPoints(points) => self.select_points(&points)?,
+            Action::SelectPoint(point) => self.select_point(&point)?,
             Action::HighlightAttachment(option) => self.highlight_attachment(option),
             Action::HighlightSlice(slice) => self.highlight_slice(slice),
             Action::ClearAttach => self.clear_attach(),
@@ -252,105 +251,88 @@ impl State {
         Ok(true)
     }
 
-    /// Handler for [Action::SelectPoints].
-    fn select_points(&mut self, selected: &[Vec<SliceIndex>]) -> Result<(), ModelError> {
-        if selected.is_empty() {
-            return Ok(());
-        }
-
+    /// Handler for [Action::SelectPoint].
+    fn select_point(&mut self, point: &[SliceIndex]) -> Result<(), ModelError> {
         let workspace = match self.proof().workspace.as_ref() {
             Some(workspace) => workspace,
             None => return Ok(()),
         };
 
-        let mut matches: FastHashSet<AttachOption> = Default::default();
+        let mut matches: Vector<AttachOption> = Default::default();
 
-        let selected_with_path: Vec<_> = selected
-            .iter()
-            .map(|point| {
-                let mut point_with_path: Vec<SliceIndex> = workspace.path.iter().copied().collect();
-                point_with_path.extend(point.iter().copied());
-                point_with_path
-            })
-            .collect();
+        let point = {
+            let mut point_with_path: Vec<SliceIndex> = workspace.path.iter().copied().collect();
+            point_with_path.extend(point);
+            point_with_path
+        };
 
-        let attach_on_boundary = selected_with_path
-            .iter()
-            .any(|point| BoundaryPath::split(point).0.is_some());
+        let (boundary_path, point) = BoundaryPath::split(&point);
 
-        for point in selected_with_path {
-            let (boundary_path, point) = BoundaryPath::split(&point);
+        let haystack = match boundary_path {
+            None => workspace.diagram.clone(),
+            Some(boundary_path) => DiagramN::try_from(workspace.diagram.clone())
+                .ok()
+                .and_then(|diagram| diagram.boundary(boundary_path))
+                .ok_or(ModelError::NoAttachment)?,
+        };
 
-            if boundary_path.is_none() && attach_on_boundary {
-                continue;
+        let boundary = boundary_path.map_or(Boundary::Target, BoundaryPath::boundary);
+
+        for info in self.proof().signature.iter() {
+            macro_rules! extend {
+                ($diagram:expr, $tag:expr) => {
+                    let needle = $diagram.slice(boundary.flip()).unwrap();
+                    matches.extend(
+                        haystack
+                            .embeddings(&needle)
+                            .filter(|embedding| contains_point(&needle, &point, embedding))
+                            .map(|embedding| AttachOption {
+                                generator: info.generator,
+                                diagram: $diagram,
+                                tag: $tag,
+                                boundary_path,
+                                embedding: embedding.into_iter().collect(),
+                            }),
+                    );
+                };
             }
 
-            let haystack = match boundary_path {
-                None => workspace.diagram.clone(),
-                Some(boundary_path) => DiagramN::try_from(workspace.diagram.clone())
-                    .ok()
-                    .and_then(|diagram| diagram.boundary(boundary_path))
-                    .ok_or(ModelError::NoAttachment)?,
-            };
+            match info.generator.dimension.cmp(&(haystack.dimension() + 1)) {
+                std::cmp::Ordering::Less => {
+                    if cfg!(feature = "weak-units") {
+                        let identity = |mut diagram: Diagram| {
+                            while diagram.dimension() < haystack.dimension() + 1 {
+                                diagram = diagram.weak_identity().into();
+                            }
+                            DiagramN::try_from(diagram).unwrap()
+                        };
 
-            let boundary: Boundary = boundary_path.map_or(Boundary::Target, BoundaryPath::boundary);
+                        extend!(identity(info.diagram.clone()), Some("identity".to_owned()));
+                    }
 
-            for info in self.proof().signature.iter() {
-                macro_rules! extend {
-                    ($diagram:expr, $tag:expr) => {
-                        let needle = $diagram.slice(boundary.flip()).unwrap();
-                        matches.extend(
-                            haystack
-                                .embeddings(&needle)
-                                .filter(|embedding| contains_point(&needle, &point, embedding))
-                                .map(|embedding| AttachOption {
-                                    generator: info.generator,
-                                    diagram: $diagram,
-                                    tag: $tag,
-                                    boundary_path,
-                                    embedding: embedding.into_iter().collect(),
-                                }),
-                        );
-                    };
-                }
-
-                match info.generator.dimension.cmp(&(haystack.dimension() + 1)) {
-                    std::cmp::Ordering::Less => {
-                        if cfg!(feature = "weak-units") {
-                            let identity = |mut diagram: Diagram| {
+                    if let Diagram::DiagramN(d) = &info.diagram {
+                        if info.invertible {
+                            let bubble = |mut diagram: DiagramN| {
                                 while diagram.dimension() < haystack.dimension() + 1 {
-                                    diagram = diagram.weak_identity().into();
+                                    diagram = diagram.bubble();
                                 }
-                                DiagramN::try_from(diagram).unwrap()
+                                diagram
                             };
 
-                            extend!(identity(info.diagram.clone()), Some("identity".to_owned()));
-                        }
-
-                        if let Diagram::DiagramN(d) = &info.diagram {
-                            if info.invertible {
-                                let bubble = |mut diagram: DiagramN| {
-                                    while diagram.dimension() < haystack.dimension() + 1 {
-                                        diagram = diagram.bubble();
-                                    }
-                                    diagram
-                                };
-
-                                extend!(bubble(d.clone()), Some("bubble".to_owned()));
-                                extend!(bubble(d.inverse()), Some("inverse bubble".to_owned()));
-                            }
+                            extend!(bubble(d.clone()), Some("bubble".to_owned()));
+                            extend!(bubble(d.inverse()), Some("inverse bubble".to_owned()));
                         }
                     }
-                    std::cmp::Ordering::Equal => {
-                        if let Diagram::DiagramN(d) = &info.diagram {
-                            extend!(d.clone(), None);
-                            if info.invertible {
-                                extend!(d.inverse(), Some("inverse".to_owned()));
-                            }
-                        }
-                    }
-                    std::cmp::Ordering::Greater => (),
                 }
+                std::cmp::Ordering::Equal => {
+                    if let Diagram::DiagramN(d) = &info.diagram {
+                        extend!(d.clone(), None);
+                        if info.invertible {
+                            extend!(d.inverse(), Some("inverse".to_owned()));
+                        }
+                    }
+                }
+                std::cmp::Ordering::Greater => (),
             }
         }
 
@@ -366,7 +348,7 @@ impl State {
                 )))?;
             }
             _ => {
-                self.attach = Some(matches.into_iter().collect());
+                self.attach = Some(matches);
                 self.attachment_highlight = None;
                 self.slice_highlight = None;
             }

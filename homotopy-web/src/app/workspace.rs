@@ -43,7 +43,7 @@ pub struct Props {
 pub enum Message {}
 
 pub struct WorkspaceView {
-    on_select: Callback<Vec<Vec<SliceIndex>>>,
+    on_select: Callback<Vec<SliceIndex>>,
     on_homotopy: Callback<Homotopy>,
     diagram_ref: NodeRef,
 }
@@ -53,7 +53,7 @@ impl Component for WorkspaceView {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let on_select = ctx.props().dispatch.reform(Action::SelectPoints);
+        let on_select = ctx.props().dispatch.reform(Action::SelectPoint);
         let on_homotopy = ctx
             .props()
             .dispatch

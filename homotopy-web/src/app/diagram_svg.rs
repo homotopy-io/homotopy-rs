@@ -52,7 +52,7 @@ pub struct DiagramSvgProps<const N: usize> {
     #[prop_or_default]
     pub style: RenderStyle,
     #[prop_or_default]
-    pub on_select: Callback<Vec<Vec<SliceIndex>>>,
+    pub on_select: Callback<Vec<SliceIndex>>,
     #[prop_or_default]
     pub on_homotopy: Callback<Homotopy>,
     #[prop_or_default]
@@ -567,7 +567,7 @@ impl<const N: usize> DiagramSvg<N> {
             if let Some(simplex) = self.simplex_at(point) {
                 ctx.props()
                     .on_select
-                    .emit(simplex.into_iter().map(|p| p.to_vec()).collect());
+                    .emit(simplex.into_iter().next().unwrap().to_vec());
             }
         }
     }
