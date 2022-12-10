@@ -185,10 +185,14 @@ impl Iterator for ConeFactorizationInternal {
                             ConeIterator {
                                 slices_product,
                                 index: self.offset + source.start,
-                                source: self.f_cone.as_ref().map_or_else(
-                                    || vec![self.g_cone.target().clone()],
-                                    |f_cone| f_cone.source()[source].to_vec(),
-                                ),
+                                source: if source.is_empty() {
+                                    vec![]
+                                } else {
+                                    self.f_cone.as_ref().map_or_else(
+                                        || vec![self.g_cone.target().clone()],
+                                        |f_cone| f_cone.source()[source].to_vec(),
+                                    )
+                                },
                                 target: self.g_cone.source()[target].clone(),
                             }
                         })
