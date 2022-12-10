@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1670624059720,
+  "lastUpdate": 1670670908632,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -43769,6 +43769,42 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 334.98,
             "range": "+/- 0.590",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "50b209c442ca5370ab8eb64c32ae7b305a146a67",
+          "message": "Fix bug in factorization (fix #947)",
+          "timestamp": "2022-12-10T11:00:41Z",
+          "tree_id": "89369ce5d944b90587483f357206c45bce80e75a",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/50b209c442ca5370ab8eb64c32ae7b305a146a67"
+        },
+        "date": 1670670897412,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/3",
+            "value": 12.694,
+            "range": "+/- 0.006",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 334.44,
+            "range": "+/- 0.390",
             "unit": "ms"
           }
         ]
