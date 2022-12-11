@@ -316,15 +316,6 @@ pub enum MalformedCone {
 
 impl Rewrite {
     #[must_use]
-    pub fn strip_labels(&self) -> Self {
-        use Rewrite::{Rewrite0, RewriteN};
-        match self {
-            Rewrite0(f) => Rewrite0(f.strip_labels()),
-            RewriteN(f) => RewriteN(f.strip_labels()),
-        }
-    }
-
-    #[must_use]
     pub fn equals_modulo_labels(&self, other: &Rewrite) -> bool {
         use Rewrite::{Rewrite0, RewriteN};
         match (self, other) {
@@ -345,11 +336,6 @@ impl Cospan {
 
 impl Rewrite0 {
     #[must_use]
-    pub fn strip_labels(&self) -> Self {
-        Self(self.0.as_ref().map(|(s, t, _)| (*s, *t, None)))
-    }
-
-    #[must_use]
     pub fn equals_modulo_labels(&self, other: &Rewrite0) -> bool {
         match (&self.0, &other.0) {
             (Some((ss, st, _)), Some((os, ot, _))) => ss == os && st == ot,
@@ -360,34 +346,6 @@ impl Rewrite0 {
 }
 
 impl RewriteN {
-    #[must_use]
-    pub fn strip_labels(&self) -> Self {
-        RewriteN::new_unsafe(
-            self.dimension(),
-            self.cones()
-                .iter()
-                .map(|c| {
-                    Cone::new(
-                        c.index,
-                        c.source()
-                            .iter()
-                            .map(|cs| cs.map(Rewrite::strip_labels))
-                            .collect(),
-                        c.target().map(Rewrite::strip_labels),
-                        c.regular_slices()
-                            .iter()
-                            .map(Rewrite::strip_labels)
-                            .collect(),
-                        c.singular_slices()
-                            .iter()
-                            .map(Rewrite::strip_labels)
-                            .collect(),
-                    )
-                })
-                .collect(),
-        )
-    }
-
     #[must_use]
     pub fn equals_modulo_labels(&self, other: &RewriteN) -> bool {
         // Do all the cheap and non-recursive tests first
