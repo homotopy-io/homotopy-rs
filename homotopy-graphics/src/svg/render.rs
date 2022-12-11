@@ -135,7 +135,7 @@ impl<const N: usize> GraphicElement<N> {
                     .iter()
                     .map(|mask| mask.clone().transformed(transform))
                     .collect();
-                let arrow = arrow.map(|arrow| transform.transform_point(arrow.clone()));
+                let arrow = arrow.map(|arrow| transform.transform_point(arrow));
                 Wire(*g, *depth, path, mask, arrow)
             }
             Point(g, point) => Point(*g, transform.transform_point(*point)),
@@ -199,7 +199,7 @@ impl<const N: usize> GraphicElement<N> {
                         None => (0, vec![]),
                     };
 
-                    let arrow = arrow_location(&layout, &ps);
+                    let arrow = arrow_location(layout, ps);
 
                     wire_elements.push(Self::Wire(
                         generator,
@@ -296,10 +296,8 @@ fn arrow_location<const N: usize>(layout: &Layout<N>, ps: &[Coordinate<N>; 2]) -
             [ps[0].get(0).unwrap(), ps[0].get(1).unwrap()],
             [ps[1].get(0).unwrap(), ps[1].get(1).unwrap()],
         ] {
-            [[Interior(Regular(_)), _], _] => Some(p_start),
-            [[_, Interior(Regular(_))], _] => Some(p_start),
-            [_, [Interior(Regular(_)), _]] => Some(p_end),
-            [_, [_, Interior(Regular(_))]] => Some(p_end),
+            [[Interior(Regular(_)), _] | [_, Interior(Regular(_))], _] => Some(p_start),
+            [_, [Interior(Regular(_)), _] | [_, Interior(Regular(_))]] => Some(p_end),
             _ => None,
         },
         // 2 => match [[ps[0].get_unchecked(0),], ps.get_unchecked(1)] {

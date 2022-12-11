@@ -392,7 +392,7 @@ impl<const N: usize> DiagramSvg<N> {
                 let mask_thickness = wire_thickness * 2.0;
                 let arrow_thickness = wire_thickness * 0.75;
 
-                fn arrow_path(center: &Point, forward: bool) -> String {
+                let arrow_path = |center: Point, forward: bool| -> String {
                     let dir = if forward { 1. } else { -1. };
                     format!(
                         "M {x1} {y1} L {x2} {y2} L {x3} {y3}",
@@ -403,7 +403,7 @@ impl<const N: usize> DiagramSvg<N> {
                         x3 = center.x + 10. * dir,
                         y3 = center.y + 5. * dir,
                     )
-                }
+                };
 
                 let arrows_svg = if info.invertible && element.orientation() != Orientation::Zero {
                     arrows
@@ -415,7 +415,7 @@ impl<const N: usize> DiagramSvg<N> {
                                      class={class.clone()}
                                      stroke-width={arrow_thickness.to_string()}
                                      fill="none"
-                                     d={arrow_path(&center, element.orientation() == Orientation::Positive)}
+                                     d={arrow_path(center, element.orientation() == Orientation::Positive)}
                                  />
                             }
                         })
@@ -476,7 +476,7 @@ impl<const N: usize> DiagramSvg<N> {
                 let point = self.prepared.transform.transform_point(*point);
                 let radius = ctx.props().style.point_radius;
 
-                fn generator_box(center: Point, radius: f32, forward: bool) -> String {
+                let generator_box = |center: Point, radius: f32, forward: bool| -> String {
                     let dir = if forward { 1. } else { -1. };
                     format!(
                         "M {x1} {y1} L {x2} {y2} L {x3} {y3} L {x4} {y4} Z",
@@ -489,7 +489,7 @@ impl<const N: usize> DiagramSvg<N> {
                         x4 = center.x + radius * (1.5 - 0.5 * dir),
                         y4 = center.y - radius,
                     )
-                }
+                };
 
                 // If the generator is invertible, we render it as a box with one corner extended
                 // to encode orientation.
