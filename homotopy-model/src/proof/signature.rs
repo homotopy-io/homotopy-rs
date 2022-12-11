@@ -295,8 +295,8 @@ impl SignatureStyleData for Signature {
 impl homotopy_core::signature::Signature for Signature {
     type Info = GeneratorInfo;
 
-    fn generators(&self) -> Vec<Generator> {
-        self.iter().map(|info| info.generator).collect()
+    fn generators(&self) -> Box<dyn Iterator<Item = Generator> + '_> {
+        Box::new(self.iter().map(|info| info.generator))
     }
 
     fn generator_info(&self, g: Generator) -> Option<&GeneratorInfo> {
