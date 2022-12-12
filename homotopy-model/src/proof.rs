@@ -728,6 +728,7 @@ impl ProofState {
         self.signature = signature;
         self.workspace = workspace;
         self.metadata = metadata;
+        self.boundary = None;
         Ok(true)
     }
 
