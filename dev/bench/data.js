@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1670781272353,
+  "lastUpdate": 1670879477934,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -43931,6 +43931,48 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 331.87,
             "range": "+/- 0.390",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "27efe859c27146b2566cbfa4454252f0e2c5c97e",
+          "message": "Clear selected boundary when importing proof",
+          "timestamp": "2022-12-12T20:54:53Z",
+          "tree_id": "bf61f3fa1d071c9158b01491e4d5f322e2db0944",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/27efe859c27146b2566cbfa4454252f0e2c5c97e"
+        },
+        "date": 1670879461530,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract beads/contract",
+            "value": 1.0415,
+            "range": "+/- 0.037",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 14.125,
+            "range": "+/- 0.211",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 396.55,
+            "range": "+/- 7.960",
             "unit": "ms"
           }
         ]
