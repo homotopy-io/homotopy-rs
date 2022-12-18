@@ -19,7 +19,7 @@ pub enum Action {
     ImportActions(proof::SerializedData),
     ExportProof,
     ExportActions,
-    ExportTikz(bool),
+    ExportTikz(bool, bool),
     ExportSvg,
     ExportManim(bool),
     ExportStl,
@@ -37,7 +37,7 @@ impl Action {
         match self {
             Self::Proof(action) => action.is_valid(proof),
             Self::History(history::Action::Move(dir)) => proof.can_move(dir),
-            Self::ExportTikz(_) | Self::ExportSvg | Self::ExportManim(_) => proof
+            Self::ExportTikz(_, _) | Self::ExportSvg | Self::ExportManim(_) => proof
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.view.dimension() == 2),
@@ -121,11 +121,12 @@ impl State {
                 self.clear_attach();
             }
 
-            Action::ExportTikz(with_braid) => {
+            Action::ExportTikz(leftright, with_braid) => {
                 let signature = &self.proof().signature;
                 let diagram = self.proof().workspace.as_ref().unwrap().visible_diagram();
                 let stylesheet = tikz::stylesheet(signature);
-                let data = tikz::render(&diagram, &stylesheet, signature, with_braid).unwrap();
+                let data =
+                    tikz::render(&diagram, &stylesheet, signature, leftright, with_braid).unwrap();
                 generate_download("homotopy_io_export", "tikz", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }

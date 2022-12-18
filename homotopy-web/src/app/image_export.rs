@@ -7,6 +7,7 @@ use crate::{
 
 declare_settings! {
     pub struct ImageExportSettings {
+        tikz_leftright_mode: bool = false,
         tikz_show_braidings: bool = true,
         manim_use_opengl: bool = false,
     }
@@ -77,6 +78,7 @@ impl Component for ImageExportView {
 impl ImageExportView {
     fn view_tikz(&self, ctx: &Context<Self>) -> Html {
         let show_braidings = *self.local.get_tikz_show_braidings();
+        let leftright_mode = *self.local.get_tikz_leftright_mode();
         if ctx.props().view_dim == 2 {
             html! {
                 <>
@@ -84,12 +86,19 @@ impl ImageExportView {
                     <div class="settings__segment">
                         {
                             self.view_checkbox(
+                                "Left-right mode",
+                                |local| *local.get_tikz_leftright_mode(),
+                                ImageExportSettingsDispatch::set_tikz_leftright_mode,
+                            )
+                        }
+                        {
+                            self.view_checkbox(
                                 "Show braidings",
                                 |local| *local.get_tikz_show_braidings(),
                                 ImageExportSettingsDispatch::set_tikz_show_braidings,
                             )
                         }
-                        <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportTikz(show_braidings))}>{"Export"}</button>
+                        <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportTikz(leftright_mode,show_braidings))}>{"Export"}</button>
                     </div>
                 </>
             }
