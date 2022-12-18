@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1670879477934,
+  "lastUpdate": 1671383591987,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -43973,6 +43973,42 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 396.55,
             "range": "+/- 7.960",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "distinct": true,
+          "id": "4a70a535d0312d723a00f52b8c78c4962c005bb2",
+          "message": "Fixed opacity in tikz and manim exports.",
+          "timestamp": "2022-12-18T16:59:38Z",
+          "tree_id": "8b706a48c1e3db0db9fa3ebbdcf73088689c4837",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/4a70a535d0312d723a00f52b8c78c4962c005bb2"
+        },
+        "date": 1671383580740,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/3",
+            "value": 12.689,
+            "range": "+/- 0.005",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 327.97,
+            "range": "+/- 0.490",
             "unit": "ms"
           }
         ]
