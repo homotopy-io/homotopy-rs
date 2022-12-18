@@ -142,7 +142,7 @@ pub fn render(
 // This contains all the "magic" commands we need to inject
 // in the case we want to show braidings.
 const MAGIC_MACRO: &str = "\n\\newcommand{\\wire}[2]{
-  \\ifdefined\\recolor\\draw[color=\\recolor!75, line width=10pt]\\else\\draw[color=#1!80, line width=5pt]\\fi #2;
+  \\ifdefined\\recolor\\draw[color=\\recolor, line width=10pt]\\else\\draw[color=#1, line width=5pt]\\fi #2;
 }
 \\newcommand{\\clipped}[3]{
 \\begin{scope}
@@ -178,7 +178,7 @@ fn render_inner(
     for (g, path) in surfaces.iter() {
         writeln!(
             tikz,
-            "\\fill[{color}!75] {path};",
+            "\\fill[{color}] {path};",
             color = name_from_diagram_dim(*g, diagram_dimension, GeneratorRepresentation::Surface),
             path = &render_path(path)
         )
@@ -237,7 +237,7 @@ fn render_inner(
             } else {
                 writeln!(
                     tikz,
-                    "\\draw[color={color}!80, line width=5pt]{path};",
+                    "\\draw[color={color}, line width=5pt]{path};",
                     color =
                         name_from_diagram_dim(*g, diagram_dimension, GeneratorRepresentation::Wire),
                     path = &render_path(path)

@@ -191,7 +191,7 @@ pub fn render(
     for (d, path) in surfaces {
         writeln!(
             manim,
-            "{ind}{ind}surfaces.add(self.build_path({path},width=1).set_fill(C[\"{color}\"],0.75)) # path_{id}_{dim}",
+            "{ind}{ind}surfaces.add(self.build_path({path},width=1).set_fill(C[\"{color}\"],1)) # path_{id}_{dim}",
             ind=INDENT,
             color=name_from_diagram_dim(d, diagram.dimension(), GeneratorRepresentation::Surface),
             id=d.generator.id,
@@ -224,7 +224,7 @@ pub fn render(
         if i > 0 {
             writeln!(manim, "{ind}{ind}# Begin scope", ind = INDENT).unwrap();
             for (d, path) in &layer {
-                writeln!(manim, "{ind}{ind}wires.add(Intersection(surfaces,self.build_path({path},width=20),color=C[\"generator_{id}_{dim}\"],fill_opacity=0.8))",
+                writeln!(manim, "{ind}{ind}wires.add(Intersection(surfaces,self.build_path({path},width=20),color=C[\"generator_{id}_{dim}\"]))",
                          ind=INDENT,
                          id=d.generator.id,
                          dim=d.generator.dimension,
@@ -288,7 +288,7 @@ pub fn render(
             "{ind}{ind}wires = self.get_wires(surfaces)\n",
             "{ind}{ind}points = self.get_points()\n",
             "{ind}{ind}# Background (for rendering consistency, set color=BLACK if unwanted)\n",
-            "{ind}{ind}bg = Rectangle(width={x}*2,height={y}*2,color=WHITE,fill_opacity=1).move_to(surfaces)\n",
+            "{ind}{ind}bg = Rectangle(width={x}*2,height={y}*2,color=WHITE).move_to(surfaces)\n",
             "{ind}{ind}# Root\n",
             "{ind}{ind}scale_factor = max(config.frame_size[0]/{x},config.frame_size[1]/{x})*0.002 # Magic number\n",
             "{ind}{ind}root = VGroup(bg,surfaces,wires,points).shift({x}*LEFT+{y}*DOWN).scale(scale_factor)\n",
