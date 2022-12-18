@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1671383591987,
+  "lastUpdate": 1671393284255,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -44009,6 +44009,42 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 327.97,
             "range": "+/- 0.490",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "21369041360516226ba8ac45eef646bd22e2a333",
+          "message": "Toggle for reading direction of tikz export (#642). (#953)",
+          "timestamp": "2022-12-18T19:43:37Z",
+          "tree_id": "1543045ec7e2b37f25b881bd38e59cc354333a76",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/21369041360516226ba8ac45eef646bd22e2a333"
+        },
+        "date": 1671393272625,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/3",
+            "value": 13.094,
+            "range": "+/- 0.028",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 329.75,
+            "range": "+/- 0.810",
             "unit": "ms"
           }
         ]
