@@ -45,7 +45,7 @@ log = "0.4.17"
 euclid = "0.22.7"
 ultraviolet = "0.9.0"
 lyon_path = "1.0.3"
-thiserror = "1.0.37"
+thiserror = "1.0.38"
 katex = { version = "0.4", features = ["wasm-js"], default-features = false }
 html-escape = "0.2.12"
 obake = { version = "1.0.4", features = ["serde"] }
