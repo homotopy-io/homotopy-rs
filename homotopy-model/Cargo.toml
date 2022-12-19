@@ -15,7 +15,7 @@ serde = { version = "1.0.151", features = ["derive"] }
 syn = "1.0.105"
 paste = "1.0.11"
 rmp-serde = "1.1.1"
-serde_json = "1.0.89"
+serde_json = "1.0.91"
 arbitrary = { version = "1.2.0", optional = true, features = ["derive"] }
 
 palette = { git = "https://github.com/Ogeon/palette", features = ["serializing"] }
