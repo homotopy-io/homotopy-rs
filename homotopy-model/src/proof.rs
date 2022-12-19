@@ -38,7 +38,9 @@ impl View {
 #[cfg(feature = "fuzz")]
 impl<'a> arbitrary::Arbitrary<'a> for View {
     fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-        Ok(Self::new(u.int_in_range(0..=4)?))
+        Ok(Self {
+            dimension: u.int_in_range(0..=4)?,
+        })
     }
 }
 
@@ -751,16 +753,18 @@ impl ProofState {
         }
 
         if let SignatureEdit::Edit(node, SignatureItemEdit::MakeOriented(true)) = edit {
-            let generator = self.signature.find_generator(*node).unwrap();
+            if let Some(generator) = self.signature.find_generator(*node) {
+                // remove framing from the workspace
+                if let Some(ws) = &mut self.workspace {
+                    ws.diagram = ws.diagram.remove_framing(generator);
+                }
 
-            // remove framing from the workspace
-            if let Some(ws) = &mut self.workspace {
-                ws.diagram = ws.diagram.remove_framing(generator);
-            }
-
-            // remove framing from the boundary
-            if let Some(selected) = &mut self.boundary {
-                selected.diagram = selected.diagram.remove_framing(generator);
+                // remove framing from the boundary
+                if let Some(selected) = &mut self.boundary {
+                    selected.diagram = selected.diagram.remove_framing(generator);
+                }
+            } else {
+                return false;
             }
         }
 
@@ -843,6 +847,7 @@ impl<'a> arbitrary::Arbitrary<'a> for AttachOption {
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub struct SerializedData(pub Vec<u8>);
 
 impl std::fmt::Debug for SerializedData {

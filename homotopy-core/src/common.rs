@@ -71,7 +71,8 @@ impl Height {
 #[cfg(feature = "fuzz")]
 impl<'a> arbitrary::Arbitrary<'a> for Height {
     fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-        u.int_in_range(0..=2047)?.map(Height::from)
+        let h: usize = u.int_in_range(0..=2047)?;
+        Ok(Height::from(h))
     }
 }
 
