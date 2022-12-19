@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1671393284255,
+  "lastUpdate": 1671438851878,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -44045,6 +44045,48 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 329.75,
             "range": "+/- 0.810",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "distinct": true,
+          "id": "d756fa67e232582079851304feed95cb304ec17a",
+          "message": "Updated Arbitrary impls.",
+          "timestamp": "2022-12-19T08:19:17Z",
+          "tree_id": "a5cc50f4f4828825ae7e643f96ecb446430107c7",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/d756fa67e232582079851304feed95cb304ec17a"
+        },
+        "date": 1671438837172,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract beads/contract",
+            "value": 1.0231,
+            "range": "+/- 0.013",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 14.808,
+            "range": "+/- 0.106",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 376.7,
+            "range": "+/- 2.260",
             "unit": "ms"
           }
         ]
