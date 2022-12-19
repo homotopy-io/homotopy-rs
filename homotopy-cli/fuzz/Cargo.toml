@@ -19,6 +19,9 @@ homotopy-model = { path = "../../homotopy-model", features = ["fuzz"] }
 [workspace]
 members = ["."]
 
+[patch.crates-io]
+petgraph = { git = "https://github.com/NickHu/petgraph", branch = "master" }
+
 [[bin]]
 name = "actions"
 path = "fuzz_targets/actions.rs"

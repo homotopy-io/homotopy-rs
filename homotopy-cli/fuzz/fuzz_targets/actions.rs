@@ -15,7 +15,7 @@ libfuzzer_sys::fuzz_target!(|actions: Vec<Action>| {
         {
             break;
         }
-        if proof.is_valid(a) {
+        if a.is_valid(&proof) {
             match proof.update(a) {
                 Ok(_) => continue,
                 Err(_) => break,
