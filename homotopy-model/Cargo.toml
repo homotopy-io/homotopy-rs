@@ -11,7 +11,7 @@ homotopy-common = { path = "../homotopy-common" }
 homotopy-core = { path = "../homotopy-core" }
 homotopy-graphics = { path = "../homotopy-graphics" }
 quote = "1.0.23"
-serde = { version = "1.0.151", features = ["derive"] }
+serde = { version = "1.0.152", features = ["derive"] }
 syn = "1.0.107"
 paste = "1.0.11"
 rmp-serde = "1.1.1"
