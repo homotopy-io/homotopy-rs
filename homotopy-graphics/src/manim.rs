@@ -64,10 +64,9 @@ pub fn name_from_diagram_dim(
 #[inline]
 fn name(generator: Generator, c: usize, orientation: Orientation) -> String {
     format!(
-        "generator_{}_{}_{}_{}",
+        "generator_{}_{}_{c}_{}",
         generator.id,
         generator.dimension,
-        c,
         match orientation {
             Orientation::Positive => "pos",
             Orientation::Negative => "neg",
@@ -222,21 +221,19 @@ pub fn render(
     {
         // Background
         if i > 0 {
-            writeln!(manim, "{ind}{ind}# Begin scope", ind = INDENT).unwrap();
+            writeln!(manim, "{INDENT}{INDENT}# Begin scope").unwrap();
             for (d, path) in &layer {
-                writeln!(manim, "{ind}{ind}wires.add(Intersection(surfaces,self.build_path({path},width=20),color=C[\"generator_{id}_{dim}\"]))",
-                         ind=INDENT,
+                writeln!(manim, "{INDENT}{INDENT}wires.add(Intersection(surfaces,self.build_path({path},width=20),color=C[\"generator_{id}_{dim}\"]))",
                          id=d.generator.id,
                          dim=d.generator.dimension,
                          path=&render_path(path)
                 ).unwrap();
             }
-            writeln!(manim, "{ind}{ind}# End scope", ind = INDENT).unwrap();
+            writeln!(manim, "{INDENT}{INDENT}# End scope").unwrap();
         }
 
         for (d, path) in &layer {
-            writeln!(manim, "{ind}{ind}wires.add(self.build_path({path},width=20,color=C[\"{color}\"])) # path_{id}_{dim}",
-                ind=INDENT,
+            writeln!(manim, "{INDENT}{INDENT}wires.add(self.build_path({path},width=20,color=C[\"{color}\"])) # path_{id}_{dim}",
                 color=name_from_diagram_dim(*d, diagram.dimension(), GeneratorRepresentation::Wire),
                 id=d.generator.id,
                 dim=d.generator.dimension,
@@ -312,7 +309,7 @@ pub fn render(
 fn render_point(point: Point2D<f32>) -> String {
     let x = ((point.x) * 100.0).round() / 100.0;
     let y = ((point.y) * 100.0).round() / 100.0;
-    format!("np.array([{},{},0])", x, y)
+    format!("np.array([{x},{y},0])")
 }
 
 fn max_point_path(path: &Path) -> Point2D<f32> {
@@ -337,12 +334,10 @@ fn render_vertex(generator_style: &impl GeneratorStyle, color: &str) -> String {
         Circle => format!(
             "Circle(radius={radius},color=C[\"{color}\"],fill_opacity=1)",
             radius = CIRCLE_RADIUS,
-            color = color,
         ),
         Square => format!(
             "Square(side_length={side_length},color=C[\"{color}\"],fill_opacity=1)",
             side_length = SQUARE_SIDELENGTH,
-            color = color,
         ),
     }
 }

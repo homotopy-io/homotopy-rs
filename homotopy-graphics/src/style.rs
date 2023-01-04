@@ -31,7 +31,7 @@ impl Color {
 
     pub fn hex(&self) -> String {
         let (r, g, b) = self.clone().into_components::<u8>();
-        format!("#{:02x}{:02x}{:02x}", r, g, b)
+        format!("#{r:02x}{g:02x}{b:02x}")
     }
 
     // Used for UI to make sure we always maintain sufficient contrast for legibility.

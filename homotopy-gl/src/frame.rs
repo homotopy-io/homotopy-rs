@@ -208,7 +208,7 @@ impl<'a> Frame<'a> {
                                 data
                             } else {
                                 // an unset uniform is a programmer error, so just panic
-                                panic!("uniform '{}' is unset", name);
+                                panic!("uniform '{name}' is unset");
                             };
 
                             data.uniform(self.ctx, loc);

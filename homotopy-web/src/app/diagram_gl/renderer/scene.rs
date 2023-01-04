@@ -177,7 +177,6 @@ impl Scene {
         let color_of = |diagram: Diagram0, k: usize| -> Vec3 {
             let d = self.diagram.dimension();
             let n = diagram.generator.dimension;
-            let k = k as usize;
             let c = d.saturating_sub(n + k);
             signature_styles
                 .generator_style(diagram.generator)

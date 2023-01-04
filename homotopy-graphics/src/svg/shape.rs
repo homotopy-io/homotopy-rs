@@ -114,7 +114,7 @@ fn distance_to_line_segment(point: Point, from: Point, to: Point) -> f32 {
         (from - point).length()
     } else {
         let t = (point - from).dot(vec) / square_length;
-        let t = f32::max(0.0, f32::min(1.0, t));
+        let t = t.clamp(0.0, 1.0);
         let projected = from + vec * t;
         (projected - point).length()
     }

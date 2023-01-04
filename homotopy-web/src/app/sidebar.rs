@@ -228,8 +228,8 @@ impl Component for SidebarDrawer {
 
         html! {
             <aside
-                class={format!("{} drawer drawer-{}", ctx.props().class, size_class)}
-                style={format!("width: {}px;", width)}
+                class={format!("{} drawer drawer-{size_class}", ctx.props().class)}
+                style={format!("width: {width}px;")}
                 >
                 <div class="drawer__inner">
                     <div class="drawer__header">

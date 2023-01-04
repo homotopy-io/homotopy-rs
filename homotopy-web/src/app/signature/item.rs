@@ -499,7 +499,7 @@ impl ItemView {
             html! {
                 <div
                     class="signature__generator-picker-preset"
-                    style={format!("background: {}", color)}
+                    style={format!("background: {color}")}
                     onclick={recolor}
                 />
             }

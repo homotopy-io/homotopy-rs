@@ -73,7 +73,7 @@ fn export_hom(path: &PathBuf, proof: &Proof) -> anyhow::Result<()> {
         proof.workspace.clone(),
         proof.metadata.clone(),
     );
-    write(path, &data).context("Could not export .hom file.")
+    write(path, data).context("Could not export .hom file.")
 }
 
 fn main() -> anyhow::Result<()> {
@@ -90,13 +90,13 @@ fn main() -> anyhow::Result<()> {
     };
 
     for a in &actions {
-        println!("Performing action: {:?}", a);
+        println!("Performing action: {a:?}");
         proof.update(a)?;
     }
 
     if !opt.no_replay_crash {
         if let Some(a) = last_action {
-            println!("Performing final action: {:?}", a);
+            println!("Performing final action: {a:?}");
             // When debugging, set a breakpoint here!
             proof.update(&a)?;
         }
