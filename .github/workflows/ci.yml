@@ -9,7 +9,7 @@ on:
 env:
   CARGO_HUSKY_DONT_INSTALL_HOOKS: true
   NIX_BUILD: nix build -L --show-trace
-  NIX_BUILD_UNCACHED: nix run nixpkgs#nix-build-uncached -- -build-flags -L
+  NIX_BUILD_UNCACHED: nix run nixpkgs#nix-build-uncached -- -build-flags -L --show-trace
   FLAKE: 'github:homotopy-io/homotopy-rs?rev=${{ github.sha }}'
 
 jobs:

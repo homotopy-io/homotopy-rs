@@ -22,7 +22,7 @@
         devshell.follows = "devshell";
         rustOverlay.follows = "rust-overlay";
       };
-      url = "github:yusdacra/nix-cargo-integration?rev=7fe944f24f1a7014b58ddafbdc8cf1ffae4de1ab";
+      url = "github:NickHu/nix-cargo-integration";
     };
     naersk = {
       inputs = {
