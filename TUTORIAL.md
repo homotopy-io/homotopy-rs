@@ -13,7 +13,7 @@ You may use the `Undo` and `Redo` features at any point in the tutorial.
 The statement of the theorem requires the following generators in the signature:
 - Two 0-cells $C,D$, the categories that are equivalent,
 - Two 1-cells $F: C \to D,G: D \to C$, the back-forth functors,
-- Two 2-cells $\alpha: 1_C \to G \circ F,\beta: F \circ F \to 1_D$, the invertible natural transformations that witness the equivalence.
+- Two 2-cells $\alpha: 1_C \to G \circ F,\beta: F \circ G \to 1_D$, the invertible natural transformations that witness the equivalence.
 
 So, let us start with the empty workspace viewed at [homotopy.io](https://beta.homotopy.io).
 If we click on the `Signature` button (second on the left), we can see that it is currently empty, as expected. We will begin by constructing the signature we described above.
