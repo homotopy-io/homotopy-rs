@@ -3,16 +3,17 @@
     "crate2nix": {
       "flake": false,
       "locked": {
-        "lastModified": 1672711430,
-        "narHash": "sha256-Gq7ummixte2rR65e5HU/rEA/gBqsN9sC4lAc4FQnU5o=",
+        "lastModified": 1672909846,
+        "narHash": "sha256-jstUTBOdJRTkH8nHaJD3q1V7ShDn9DuqF2GKyY7OeKw=",
         "owner": "kolloch",
         "repo": "crate2nix",
-        "rev": "3b62301bcf5acf7129dc17736cd076ddba21214a",
+        "rev": "9f6d5f15f8f8dbe5cf615660097dfb37f76823db",
         "type": "github"
       },
       "original": {
         "owner": "kolloch",
         "repo": "crate2nix",
+        "rev": "9f6d5f15f8f8dbe5cf615660097dfb37f76823db",
         "type": "github"
       }
     },
@@ -92,7 +93,9 @@
     },
     "nix-cargo-integration": {
       "inputs": {
-        "crate2nix": "crate2nix",
+        "crate2nix": [
+          "crate2nix"
+        ],
         "devshell": [
           "devshell"
         ],
@@ -104,11 +107,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1672853618,
-        "narHash": "sha256-bBdJ3SyuZGrs+ebUVQH2rx+icN9OkPwbcjLgpGvy+Wg=",
+        "lastModified": 1672911374,
+        "narHash": "sha256-yJ6mrXV3H4B9ms9QA1ITG2MytIOH7yj8YWf12GfdR40=",
         "owner": "NickHu",
         "repo": "nix-cargo-integration",
-        "rev": "3b0e377db92aee0b9725fe6696bc698025fcb800",
+        "rev": "add9577d298689e842c8ee14d70acf3ca662a6cf",
         "type": "github"
       },
       "original": {
@@ -135,6 +138,7 @@
     },
     "root": {
       "inputs": {
+        "crate2nix": "crate2nix",
         "devshell": "devshell",
         "flake-compat": "flake-compat",
         "flake-utils": "flake-utils",
