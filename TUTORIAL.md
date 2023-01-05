@@ -21,12 +21,12 @@ If we click on the `Signature` button (second on the left), we can see that it i
 ## The 0-cells
 
 We start by adding two 0-cells. Click on the `Add` button (bottom-left, keyboard shortcut A). The two new generators should now show-up in the signature and can be selected by clicking on them or by using numbers 1-9 on the keyboard. At this point, the workspace should look like this:
-![Signature with two 0-cells](./docs/img/tutorial1.png)
+![Signature with two 0-cells](docs/img/tutorial1.png)
 
 The workspace can be then cleared by clicking `Clear` (bottom-left, keyboard shortcut C).
 Clicking on the left of the generator name, we can edit the generator name to respectively $C$ and $D$. LaTeX is supported with the usual dollar-sign convention.
 
-![Renaming the 0-cells](./docs/img/tutorial2.png)
+![Renaming the 0-cells](docs/img/tutorial2.png)
 
 ## The 1-cells
 
@@ -40,7 +40,7 @@ This will give a 1-cell, our $F$. We repeat the process with $C$ and $D$ swapped
 
 Clicking on our newly constructed $F$, the resulting diagram will be displayed in the workspace. Note that since $F$ is a 1-cell, the diagram displayed will be 1-dimensional, which we read bottom-to-top.
 
-![Viewing our 1-cells](./docs/img/tutorial3.png)
+![Viewing our 1-cells](docs/img/tutorial3.png)
 
 In this workspace view, we also have some slice-controls on the right, which we'll explain how to use later on. First, let us rename these 1-cells to $F$ and $G$, as we have done previously for $C$ and $D$.
 
@@ -53,18 +53,18 @@ Adding the 2-cells $\alpha$ and $\beta$ will be trickier for two reasons:
 Recall that $\alpha$ has source the identity on $1_C$ and target the composite of $F$ and $G$. Visually, it looks like a cup.
 To construct the source, select the generator $C$ and click on `Identity` (or I): the blue point gets promoted to a blue line that we may take as the `Source` of our 2-dimensional $\alpha$.
 
-![Taking the identity on C as source](./docs/img/tutorial4.png)
+![Taking the identity on C as source](docs/img/tutorial4.png)
 
 For the target, we select $F$ and then paste $G$ on top of it by clicking towards the upper edge. Since there is only one generator that $D$ as a source, namely $G$, it is automatically selected by the tool.
 
-![Constructing the composite of F and G](./docs/img/tutorial5.png)
+![Constructing the composite of F and G](docs/img/tutorial5.png)
 
 Now, this composite diagram we just constructed has the same boundary as the identity on $C$, which we selected as a source (they both have source and target $C$). This is a necessary condition for the tool to allow us construct a new generator in the signature called *globularity*.
 
 For example, if we didn't compose $G$ on top of $F$, the globularity check would have failed (as the target of $F$ is $D$ and not $C$) and `Target` button would have been hidden by the tool.
 
 Since in our case, the globularity check passes, we may construct $\alpha$ by taking our $G \circ F$ diagram as a target. This gets us the following cup diagram:
-![An algebraic cup diagram](./docs/img/tutorial6.svg)
+![An algebraic cup diagram](docs/img/tutorial6.svg)
 
 Now try to construct the dual diagram corresponding to $\beta$, the cap:
 ![An algebraic cap diagram](./docs/img/tutorial7.svg)
@@ -72,7 +72,7 @@ Now try to construct the dual diagram corresponding to $\beta$, the cap:
 To make both 2-cells invertible, we can just click on the `Directed/Invertible` toggle, which appears when trying to edit a generator name. When a generator is flagged as `Invertible`, an (I) symbol will appear next to its name. In our case, this should only happen for $\alpha$ and $\beta$.
 
 At this point, the signature should look like this:
-![The signature constructed so far](./docs/img/tutorial8.png)
+![The signature constructed so far](docs/img/tutorial8.png)
 
 We're done with our setup: the proof assistant has validated the 'let $C$ and $D$ be equivalent categories' part of our theorem, and now we will turn to proving the rest of the statement.
 
