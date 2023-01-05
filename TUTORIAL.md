@@ -21,10 +21,11 @@ If we click on the `Signature` button (second on the left), we can see that it i
 ## The 0-cells
 
 We start by adding two 0-cells. Click on the `Add` button (bottom-left, keyboard shortcut A). The two new generators should now show-up in the signature and can be selected by clicking on them or by using numbers 1-9 on the keyboard. At this point, the workspace should look like this:
+
 ![Signature with two 0-cells](./doc/img/tutorial1.png)
 
 The workspace can be then cleared by clicking `Clear` (bottom-left, keyboard shortcut C).
-Clicking on the left of the generator name, we can edit the generator name to respectively $C$ and $D$. LaTeX is supported with the usual dollar-sign convention.
+Clicking on the left of the generator name, we can edit the generator name to respectively $C$ and $D$. $\LaTeX$ is supported with the usual dollar-sign convention.
 
 ![Renaming the 0-cells](./doc/img/tutorial2.png)
 
@@ -64,14 +65,17 @@ Now, this composite diagram we just constructed has the same boundary as the ide
 For example, if we didn't compose $G$ on top of $F$, the globularity check would have failed (as the target of $F$ is $D$ and not $C$) and `Target` button would have been hidden by the tool.
 
 Since in our case, the globularity check passes, we may construct $\alpha$ by taking our $G \circ F$ diagram as a target. This gets us the following cup diagram:
+
 ![An algebraic cup diagram](./doc/img/tutorial6.svg)
 
 Now try to construct the dual diagram corresponding to $\beta$, the cap:
+
 ![An algebraic cap diagram](./doc/img/tutorial7.svg)
 
 To make both 2-cells invertible, we can just click on the `Directed/Invertible` toggle, which appears when trying to edit a generator name. When a generator is flagged as `Invertible`, an (I) symbol will appear next to its name. In our case, this should only happen for $\alpha$ and $\beta$.
 
 At this point, the signature should look like this:
+
 ![The signature constructed so far](./doc/img/tutorial8.png)
 
 We're done with our setup: the proof assistant has validated the 'let $C$ and $D$ be equivalent categories' part of our theorem, and now we will turn to proving the rest of the statement.
