@@ -36,8 +36,8 @@ pub fn path_control(props: &PathControlProps) -> Html {
             Step::SliceIndex(slice) => match slice {
                 SliceIndex::Boundary(Boundary::Source) => "S".to_owned(),
                 SliceIndex::Boundary(Boundary::Target) => "T".to_owned(),
-                SliceIndex::Interior(Height::Singular(h)) => format!("S{}", h),
-                SliceIndex::Interior(Height::Regular(h)) => format!("R{}", h),
+                SliceIndex::Interior(Height::Singular(h)) => format!("S{h}"),
+                SliceIndex::Interior(Height::Regular(h)) => format!("R{h}"),
             },
             Step::View => "V".to_owned(),
             Step::Projection => "P".to_owned(),

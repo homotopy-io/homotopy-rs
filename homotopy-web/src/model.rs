@@ -154,7 +154,7 @@ impl State {
                 let stylesheet = {
                     let mut inner_stylesheet = svg::stylesheet(signature);
                     inner_stylesheet.retain(|c| !c.is_whitespace());
-                    format!("<style>{}</style>", inner_stylesheet)
+                    format!("<style>{inner_stylesheet}</style>")
                 };
 
                 // So we now have the SVG and its stylesheet in separate strings.

@@ -35,12 +35,11 @@ impl Component for GeneratorPreferenceCheckbox {
             color_main
         };
 
-        let border_style = format!("border: 1px solid {};", color);
+        let border_style = format!("border: 1px solid {color};");
 
         let slider_style = format!(
-            "transform: translateX({}); background-color: {};",
+            "transform: translateX({}); background-color: {color};",
             if ctx.props().checked { "100%" } else { "0" },
-            color,
         );
 
         let (left_color, right_color) = if ctx.props().disabled {
@@ -51,8 +50,8 @@ impl Component for GeneratorPreferenceCheckbox {
             (color_text_on, color_text_off)
         };
         let (left_style, right_style) = (
-            format!("color: {};", left_color),
-            format!("color: {};", right_color),
+            format!("color: {left_color};"),
+            format!("color: {right_color};"),
         );
 
         html! {

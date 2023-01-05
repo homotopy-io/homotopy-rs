@@ -21,8 +21,9 @@
         nixpkgs.follows = "nixpkgs";
         devshell.follows = "devshell";
         rustOverlay.follows = "rust-overlay";
+        crate2nix.follows = "crate2nix";
       };
-      url = "github:yusdacra/nix-cargo-integration?rev=7fe944f24f1a7014b58ddafbdc8cf1ffae4de1ab";
+      url = "github:NickHu/nix-cargo-integration";
     };
     naersk = {
       inputs = {
@@ -39,6 +40,10 @@
         nixpkgs.follows = "nixpkgs";
       };
       url = "github:oxalica/rust-overlay";
+    };
+    crate2nix = {
+      url = "github:kolloch/crate2nix?rev=9f6d5f15f8f8dbe5cf615660097dfb37f76823db";
+      flake = false;
     };
   };
 

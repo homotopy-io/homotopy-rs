@@ -68,7 +68,6 @@ impl Component for SliceControl {
                 min-height: {min_height}px;
             "#,
             y = self.translate,
-            height = height,
             min_height = 24 * (ctx.props().number_slices * 2 + 3),
         );
 
@@ -84,8 +83,8 @@ impl Component for SliceControl {
             let label = match index {
                 SliceIndex::Boundary(Boundary::Source) => "Source".to_owned(),
                 SliceIndex::Boundary(Boundary::Target) => "Target".to_owned(),
-                SliceIndex::Interior(Height::Regular(i)) => format!("Regular {}", i),
-                SliceIndex::Interior(Height::Singular(i)) => format!("Singular {}", i),
+                SliceIndex::Interior(Height::Regular(i)) => format!("Regular {i}"),
+                SliceIndex::Interior(Height::Singular(i)) => format!("Singular {i}"),
             };
 
             html! {
@@ -100,7 +99,7 @@ impl Component for SliceControl {
             }
         };
 
-        let buttons: Html = SliceIndex::for_size(ctx.props().number_slices as usize)
+        let buttons: Html = SliceIndex::for_size(ctx.props().number_slices)
             .map(slice_button)
             .rev()
             .collect();

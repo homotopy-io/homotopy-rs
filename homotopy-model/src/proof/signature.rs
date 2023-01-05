@@ -113,7 +113,7 @@ impl Signature {
         let diagram: Diagram = diagram.into();
         let info = GeneratorInfo {
             generator,
-            name: format!("{} {}", name, generator.id),
+            name: format!("{name} {}", generator.id),
             oriented: false,
             invertible,
             single_preview: true,

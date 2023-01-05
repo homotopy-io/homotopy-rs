@@ -61,10 +61,9 @@ pub fn name_from_diagram_dim(
 
 fn name(generator: Generator, c: usize, orientation: Orientation) -> String {
     format!(
-        "generator-{}-{}-{}-{}",
+        "generator-{}-{}-{c}-{}",
         generator.id,
         generator.dimension,
-        c,
         match orientation {
             Orientation::Positive => "pos",
             Orientation::Negative => "neg",
@@ -75,7 +74,7 @@ fn name(generator: Generator, c: usize, orientation: Orientation) -> String {
 
 fn rgb(color: Color) -> String {
     let (r, g, b) = color.into_components::<u8>();
-    format!("{{RGB}}{{{}, {}, {}}}", r, g, b)
+    format!("{{RGB}}{{{r}, {g}, {b}}}")
 }
 
 pub fn render(
@@ -263,9 +262,9 @@ fn render_point(point: Point2D<f32>, leftright_mode: bool) -> String {
     let x = (point.x * 100.0).round() / 100.0;
     let y = (point.y * 100.0).round() / 100.0;
     if leftright_mode {
-        format!("({},{})", y, -x)
+        format!("({y},{})", -x)
     } else {
-        format!("({},{})", x, y)
+        format!("({x},{y})")
     }
 }
 
@@ -300,9 +299,9 @@ fn render_vertex(
     .join(", ");
 
     if leftright_mode {
-        format!("({},{}) {} ({});", y1, -x1, shape_str, sz)
+        format!("({y1},{}) {shape_str} ({sz});", -x1)
     } else {
-        format!("({},{}) {} ({});", x1, y1, shape_str, sz)
+        format!("({x1},{y1}) {shape_str} ({sz});")
     }
 }
 

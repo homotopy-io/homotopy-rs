@@ -415,7 +415,7 @@ impl<const N: usize> DiagramSvg<N> {
                         })
                         .collect();
 
-                    let mask_id = format!("{}-mask-{}", ctx.props().id, index);
+                    let mask_id = format!("{}-mask-{index}", ctx.props().id);
 
                     html! {
                         <>
@@ -429,7 +429,7 @@ impl<const N: usize> DiagramSvg<N> {
                                 d={path}
                                 class={class}
                                 stroke-width={ctx.props().style.wire_thickness.to_string()}
-                                mask={format!("url(#{})", mask_id)}
+                                mask={format!("url(#{mask_id})")}
                             />
                         </>
                     }
