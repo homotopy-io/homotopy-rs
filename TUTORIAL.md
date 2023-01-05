@@ -111,7 +111,7 @@ Hence the 'Proof' cell is really our witness that to what the definition of $\be
 
 Let us rename the 'Theorem' generator to $\beta'$, and the 'Proof' generator to '$\beta'$ Definition' for clarity. The signature should now look like this:
 
-![The signature with our new counit](./doc/img/tutorial8.png)
+![The signature with our new counit](./doc/img/tutorial11.png)
 
 Notice in particular that $\beta'$ looks exactly like $\beta$, and that it also invertible, as we would expect. We did not have to flag it as such, as they tool already checked that it was constructed by composing only invertible generator.
 
