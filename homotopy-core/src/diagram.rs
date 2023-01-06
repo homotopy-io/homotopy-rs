@@ -182,10 +182,7 @@ impl Diagram {
         }
     }
 
-    pub fn is_invertible<S>(&self, signature: &S) -> bool
-    where
-        S: Signature,
-    {
+    pub fn is_invertible(&self, signature: &impl Signature) -> bool {
         self.generators()
             .iter()
             .filter(|g| g.dimension >= self.dimension())

@@ -107,12 +107,9 @@ impl DiagramN {
         };
 
         attach(self, boundary_path, |slice| {
-            let slice = slice.try_into().or(Err(ContractionError::Invalid))?;
-            let ContractExpand { contract, expand } = if interior_path.is_empty() {
-                contract_base(&slice, height, bias, true)?
-            } else {
-                contract_in_path(&slice, interior_path, height, bias)?
-            };
+            let slice = slice.try_into()?;
+            let ContractExpand { contract, expand } =
+                contract_in_path(&slice, interior_path, height, bias, true)?;
 
             let cospan = Cospan {
                 forward: contract.into(),
@@ -303,9 +300,10 @@ fn contract_in_path(
     path: &[Height],
     height: SingularHeight,
     bias: Option<Bias>,
+    cone_wise_smooth: bool,
 ) -> Result<ContractExpand, ContractionError> {
     match path.split_first() {
-        None => contract_base(diagram, height, bias, false),
+        None => contract_base(diagram, height, bias, cone_wise_smooth),
         Some((step, rest)) => {
             let slice: DiagramN = diagram
                 .slice(*step)
@@ -316,7 +314,7 @@ fn contract_in_path(
             let ContractExpand {
                 contract: contract_base,
                 expand: expand_base,
-            } = contract_in_path(&slice, rest, height, bias)?;
+            } = contract_in_path(&slice, rest, height, bias, false)?;
             match step {
                 Height::Regular(i) => {
                     let contract = RewriteN::new(

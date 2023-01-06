@@ -10,7 +10,7 @@ use crate::{
     common::{
         Boundary, BoundaryPath, DimensionError, Direction, Height, RegularHeight, SingularHeight,
     },
-    diagram::{Diagram, DiagramN},
+    diagram::DiagramN,
     factorization::factorize,
     rewrite::{Cone, Cospan, Rewrite, RewriteN},
     signature::Signature,
@@ -48,25 +48,23 @@ pub enum ExpansionError {
 }
 
 impl DiagramN {
-    pub fn expand<S>(
+    pub fn expand(
         &self,
         boundary_path: BoundaryPath,
         interior_path: &[Height],
         direction: Direction,
-        signature: &S,
-    ) -> Result<Self, ExpansionError>
-    where
-        S: Signature,
-    {
+        signature: &impl Signature,
+    ) -> Result<Self, ExpansionError> {
         attach(self, boundary_path, |slice| {
-            let expand: Rewrite = expand_in_path(&slice, interior_path, direction)?;
+            let slice = slice.try_into()?;
+            let expand = expand_in_path(&slice, interior_path, direction)?;
             let identity = Rewrite::identity(slice.dimension());
             let cospan = Cospan {
                 forward: identity,
-                backward: expand,
+                backward: expand.into(),
             };
 
-            typecheck_cospan(slice, cospan.clone(), signature)?;
+            typecheck_cospan(slice.into(), cospan.clone(), signature)?;
 
             let cospan = match boundary_path.boundary() {
                 Boundary::Source => cospan.flip(),
@@ -79,14 +77,17 @@ impl DiagramN {
 }
 
 pub fn expand_in_path(
-    diagram: &Diagram,
+    diagram: &DiagramN,
     location: &[Height],
     direction: Direction,
-) -> Result<Rewrite, ExpansionError> {
+) -> Result<RewriteN, ExpansionError> {
     use Height::{Regular, Singular};
 
+    if diagram.dimension() < location.len() {
+        return Err(ExpansionError::OutOfBounds);
+    }
+
     match location.split_first() {
-        _ if diagram.dimension() < location.len() => Err(ExpansionError::OutOfBounds),
         None | Some((Singular(_), &[])) => Err(ExpansionError::LocationTooShort),
         Some((Regular(h0), &[])) => expand_base_regular(diagram, *h0, None, direction),
         Some((Regular(h0), &[Regular(h1)])) => {
@@ -95,17 +96,12 @@ pub fn expand_in_path(
         Some((Singular(h0), &[Singular(h1)])) => expand_base_singular(diagram, *h0, h1, direction),
         Some((Regular(_), _)) => Err(ExpansionError::RegularSlice),
         Some((Singular(height), rest)) => {
-            let diagram = match diagram {
-                Diagram::Diagram0(_) => Err(ExpansionError::OutOfBounds),
-                Diagram::DiagramN(diagram) => Ok(diagram),
-            }?;
-
-            let slice = diagram
+            let slice: DiagramN = diagram
                 .slice(Height::Singular(*height))
-                .ok_or(ExpansionError::OutOfBounds)?;
-
+                .ok_or(ExpansionError::OutOfBounds)?
+                .try_into()?;
             let recursive = expand_in_path(&slice, rest, direction)?;
-            Ok(expand_propagate(diagram, *height, recursive, true)?.into())
+            expand_propagate(diagram, *height, recursive.into(), true)
         }
     }
 }
@@ -113,16 +109,11 @@ pub fn expand_in_path(
 /// Remove a redundant singular level where its incoming rewrites are identical.
 /// This move is algebraically valid (if it typechecks).
 fn expand_base_regular(
-    diagram: &Diagram,
+    diagram: &DiagramN,
     h0: RegularHeight,
     h1: Option<RegularHeight>,
     direction: Direction,
-) -> Result<Rewrite, ExpansionError> {
-    let diagram = match diagram {
-        Diagram::Diagram0(_) => Err(ExpansionError::OutOfBounds),
-        Diagram::DiagramN(diagram) => Ok(diagram),
-    }?;
-
+) -> Result<RewriteN, ExpansionError> {
     if (h0 == 0 && direction == Direction::Backward)
         || (h0 == diagram.size() && direction == Direction::Forward)
         || h0 > diagram.size()
@@ -145,8 +136,7 @@ fn expand_base_regular(
                 Ok(RewriteN::new(
                     diagram.dimension(),
                     vec![Cone::new_unit(i, cs.clone(), cs.forward.clone())],
-                )
-                .into())
+                ))
             } else {
                 Err(ExpansionError::Unsmoothable)
             }
@@ -225,22 +215,17 @@ fn expand_base_regular(
                 )
             };
 
-            Ok(RewriteN::new(diagram.dimension(), vec![cone]).into())
+            Ok(RewriteN::new(diagram.dimension(), vec![cone]))
         }
     }
 }
 
 fn expand_base_singular(
-    diagram: &Diagram,
+    diagram: &DiagramN,
     h0: SingularHeight,
     h1: SingularHeight,
     direction: Direction,
-) -> Result<Rewrite, ExpansionError> {
-    let diagram = match diagram {
-        Diagram::Diagram0(_) => Err(ExpansionError::OutOfBounds),
-        Diagram::DiagramN(diagram) => Ok(diagram),
-    }?;
-
+) -> Result<RewriteN, ExpansionError> {
     if h0 >= diagram.size() {
         return Err(ExpansionError::OutOfBounds);
     }
@@ -277,7 +262,7 @@ fn expand_base_singular(
                 ],
             );
 
-            Ok(RewriteN::new(diagram.dimension(), vec![cone]).into())
+            Ok(RewriteN::new(diagram.dimension(), vec![cone]))
         }
         Direction::Backward => {
             let expansion = expand_cospan(h1, backward, forward)?;
@@ -306,7 +291,7 @@ fn expand_base_singular(
                 ],
             );
 
-            Ok(RewriteN::new(diagram.dimension(), vec![cone]).into())
+            Ok(RewriteN::new(diagram.dimension(), vec![cone]))
         }
     }
 }

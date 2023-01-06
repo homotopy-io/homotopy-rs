@@ -38,10 +38,11 @@ thread_local! {
     static RESTRICT_CACHE: RefCell<FastHashMap<(Rewrite, Embedding), Rewrite>> = RefCell::new(FastHashMap::default());
 }
 
-pub fn typecheck<S>(diagram: &Diagram, signature: &S, mode: Mode) -> Result<(), TypeError>
-where
-    S: Signature,
-{
+pub fn typecheck(
+    diagram: &Diagram,
+    signature: &impl Signature,
+    mode: Mode,
+) -> Result<(), TypeError> {
     if !check_dimension(diagram.clone()) {
         return Err(TypeError::IllTyped);
     }
@@ -49,10 +50,11 @@ where
     typecheck_worker(diagram, signature, mode)
 }
 
-fn typecheck_worker<S>(diagram: &Diagram, signature: &S, mode: Mode) -> Result<(), TypeError>
-where
-    S: Signature,
-{
+fn typecheck_worker(
+    diagram: &Diagram,
+    signature: &impl Signature,
+    mode: Mode,
+) -> Result<(), TypeError> {
     let diagram = match diagram {
         Diagram::Diagram0(d) => {
             if d.generator.dimension == 0 {
@@ -100,10 +102,11 @@ where
     Ok(())
 }
 
-pub fn typecheck_cospan<S>(source: Diagram, cospan: Cospan, signature: &S) -> Result<(), TypeError>
-where
-    S: Signature,
-{
+pub fn typecheck_cospan(
+    source: Diagram,
+    cospan: Cospan,
+    signature: &impl Signature,
+) -> Result<(), TypeError> {
     let diagram = DiagramN::new(source, vec![cospan]);
 
     typecheck(&diagram.target(), signature, Mode::Shallow)?;
