@@ -4,7 +4,7 @@ The homotopy.io proof assistant allows the construction of composite morphisms i
 
 The proof assistant is implemented in the Rust programming language, and compiled to WebAssembly to run in the web browser.
 
-For a description of how the tool works, please see the [nLab page](https://ncatlab.org/nlab/show/homotopy.io).
+For a description of how the tool works, please see the [nLab page](https://ncatlab.org/nlab/show/homotopy.io). A more recent tutorial may be found [here](./TUTORIAL.md).
 
 The master branch is hosted live here: https://beta.homotopy.io/
 

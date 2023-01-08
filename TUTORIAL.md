@@ -114,39 +114,97 @@ Notice in particular that $\beta'$ looks exactly like $\beta$, and that it also 
 
 We are now ready to prove that $\alpha$ and $\beta'$ satisfy the snake equations. These are unfortunately not dual, so we will have to check both separately.
 
-## Proving the Snake Equation holds on $G$
+## Proving the Snake Equation holds on $F$
 
-After all this setup work, we're finally at the point where we can actually prove something in the tool. We will start by proving that we can contract down one of the snakes to the identity on $G$.
+After all this setup work, we're finally at the point where we can actually prove something in the tool. We will start by proving that we can contract down one of the snakes to the identity on $F$.
 
 In theory we could start from either side of the equation, i.e. contract down the snake to the identity or, viceversa, build up the snake from the identity. However, in practice it is much easier to start with the most complex side of the equation and contract it down.
 
-So, let us start by constructing our snake. It will need to have the same boundary as the identity on $G$, which looks like this:
+So, let us start by constructing our snake. It will need to have the same boundary as the identity on $F$, which looks like this:
 
-![Diagram for identity on G](./doc/img/tutorial12.svg)
+![Diagram for identity on F](./doc/img/tutorial25.svg)
 
 We don't have that many options for how to construct a diagram fitting these requirements. The blue regions will need to come from $\alpha$, so we can start by selecting it as the current generator:
 
 ![Our cup diagram again](./doc/img/tutorial6.svg)
 
-We now need to make the left-most region red. Clicking towards the left-edge, the tool will automatically attach the only matching diagram, which in this case is the identity on $G$.
+We now need to make the right-most region red. Clicking towards the right-edge, the tool will automatically attach the only matching diagram, which in this case is the identity on $F$.
 
-![An almost-snake](./doc/img/tutorial13.svg)
+![An almost-snake on F](./doc/img/tutorial26.svg)
 
-We're almost there! To finish the snake we need to insert some kind of cup, which will close off the blue region on the left. If we click to attach on the top edge, we can choose to insert $\beta$ or $\beta'$. But, remember, $\beta$ need not satisfy the snake equation! Since we claim we can prove it with $\beta'$, let's select that and see how far we can get with the proof.
+We're almost there! To finish the snake we need to insert some kind of cup, which will close off the blue region on the right. If we click to attach on the top edge, we can choose to insert $\beta$ or $\beta'$. But, remember, $\beta$ need not satisfy the snake equation! Since we claim we can prove it with $\beta'$, let's select that and see how far we can get with the proof.
 
-![An actual snake](./doc/img/tutorial14.svg)
+![The snake on F](./doc/img/tutorial27.svg)
 
-Note that is does have the same boundary as $G$.
+Note that is does have the same boundary as the identity on $F$.
 
-Now, we want to construct an homotopy from this diagram into the identity on $G$. In order to do that, we need to be working one dimension higher. We can do this by taking the identity on the snake diagram in the current workspace, by clicking `Identity` or pressing I on the keyboard. Nothing should visibly change, as we are still seeing a 2d projection, but the view controls on the top-right corner should change to reflect the presence of this new dimension.
+Now, we want to construct an homotopy from this diagram into the identity on $F$. In order to do that, we need to be working one dimension higher. We can do this by taking the identity on the snake diagram in the current workspace, by clicking `Identity` or pressing I on the keyboard. Nothing should visibly change, as we are still seeing a 2d projection, but the view controls on the top-right corner should change to reflect the presence of this new dimension.
 
-Although our view has not changed, whenever we do anything on the current diagram, the tool will compute its meaning as a 3d path. In other words, we can just try to simplify the current diagram into the identity on $G$, and the tool will do the book-keeping of what the overall proof looks like.
+Although our view has not changed, whenever we do anything on the current diagram, the tool will compute its meaning as a 3d path. In other words, we can just try to simplify the current diagram into the identity on $F$, and the tool will do the book-keeping of what the overall proof looks like.
 
 Having taken the identity on the snake, our first step of the proof will be to unravel the definition of $\beta'$. We can do that by clicking on the white dot that represents $\beta'$. If you are unsure of where that is, note that you can hover over the diagram to get a helpful tooltip.
 
+![An unfolded sock](./doc/img/tutorial28.svg)
+
+We now drag up the left-most $\alpha$ four times, until it so that the right copy of $\alpha$ moves on top of it. In category-theoretic terms, all we are doing here is performing interchanges.
+
+![Interchange 1](./doc/img/tutorial29.svg)
+
+![Interchange 2](./doc/img/tutorial30.svg)
+
+![Interchange 3](./doc/img/tutorial31.svg)
+
+![Interchange 4](./doc/img/tutorial32.svg)
+
+At this point, we have successfully moved our $\alpha$ to be right above an $\alpha^{-1}$. This means that we can merge the red surfaces by dragging either of the $\alpha$ or $\alpha^{-1}$ dots towards the other, while holding the SHIFT key. This tells the tool that we intend to kill-off something by composing it with its inverse.
+
+![A final bubble](./doc/img/tutorial33.svg)
+
+We can do the same thing again to eliminate the $\beta$ bubble: hold SHIFT and drag either of $\beta$ or $\beta^{-1}$ towards the other.
+
+![Diagram for identity on F](./doc/img/tutorial25.svg)
+
+We have achieved our goal!
+
+The great advantage of working in this diagrammatic way is that we can now ask the tool to render for us the entire proof we just constructed. To get into this view-from-the-top-dimension mode, we just have to click on the star symbol on the top-right corner. The diagram should look something like this:
+
+![Our proof of the snake on F](./doc/img/tutorial34.svg)
+
+The fact that proofs are geometric objects in themselves allows us to reason visually about them. For example, it is evident from the above diagram that our earlier proof was not really optimal, as there are two regions in which not much is happening. We could simplify them by performing contractions through dragging. As a challenge, try to reduce the proof down to this diagram:
+
+![A better proof of the snake on F](./doc/img/tutorial35.svg)
+
+Remember that we want to be careful not to over-contract our proofs: we still want to be able to tell what is going on, which is hard if the entire proof happens in a single step!
+
+As we are done with this part of the proof, we can click `Theorem` or press H to add this result to our signature. For clarity, we can rename the 'Theorem' cell to 'Snake 1', and the 'Proof' cell to 'Proof of Snake 1'.
+
+## Proving the Snake Equation holds on $G$
+
+We now construct the second snake and prove it contracts down to the identity on $G$. This will be slightly harder than the snake on $F$, as the two proofs are not dual!
+
+For reference, recall that the identity on $G$ looks like this:
+
+![Diagram for identity on G](./doc/img/tutorial12.svg)
+
+We are again looking for a snake diagram sharing the same boundary. Let's select $\alpha$ as the current generator:
+
+![Our cup diagram again](./doc/img/tutorial6.svg)
+
+We now need to make the left-most region red. We click towards the left-edge to attach an identity on $G$.
+
+![An almost-snake on G](./doc/img/tutorial13.svg)
+
+We finish the snake by attaching a $\beta'$, which closes-off the blue region on the left.
+
+![The snake on G](./doc/img/tutorial14.svg)
+
+This finishes the construction of our snake. We now take the identity on this diagram and begin proving it contracts down to the identity on $G$.
+
+Our first step of the proof will be again to expand out $\beta'$ according to its definition.
+
 ![An unfolded sock](./doc/img/tutorial15.svg)
 
-We now need to break up the right part of the sock, by inserting a copy of $\alpha$ and its inverse, also called a bubble. By carefully clicking on the region highlighted below, we can insert an inverse $\alpha$ bubble:
+At this point we do something different from the other proof. We need to break up the right part of the sock, by inserting a copy of $\alpha$ and its inverse, also called a bubble. By carefully clicking on the region highlighted below, we can insert an inverse $\alpha$ bubble:
 
 ![Attach region](./doc/img/tutorial16.png)
 
@@ -154,17 +212,17 @@ The resulting diagram is the broken sock:
 
 ![A broken sock](./doc/img/tutorial17.svg)
 
-We now drag down the left-most $\alpha^{-1}$ twice, so that the right copy of $\alpha$ moves on top of it. In category-theoretic terms, we all we are doing here is performing interchanges.
+We now drag down the left-most $\alpha^{-1}$ twice, so that the right copy of $\alpha$ moves on top of it.
 
 ![Interchange 1](./doc/img/tutorial18.svg)
 
 ![Interchange 2](./doc/img/tutorial19.svg)
 
-At this point, we have successfully transferred the inverse $\alpha$ bubble on the left, and we can merge the red surfaces by dragging either of the $\alpha$ or $\alpha^{-1}$ dots towards the other, while holding the SHIFT key. This tells the tool that we intend to kill-off something by composing it with its inverse.
+Now that we have successfully transferred the inverse $\alpha$ bubble on the left, we can merge the red surfaces by dragging either of the $\alpha$ or $\alpha^{-1}$ dots towards the other, while holding the SHIFT key.
 
 ![The sock restored](./doc/img/tutorial20.svg)
 
-We're almost there: we're left with two pairs of $\beta,\beta^{-1}$ and $\alpha,\alpha^{-1}$ that we need to cancel. We start by dragging down the left-most $\beta$ node. We have to perform this move four times in order to get the following situation:
+We're almost at our goal: we're left with two pairs of $\beta,\beta^{-1}$ and $\alpha,\alpha^{-1}$ that we need to cancel. We start by dragging down the left-most $\beta$ node. We have to perform this move four times in order to get the following situation:
 
 ![A connected bubble](./doc/img/tutorial21.svg)
 
@@ -176,15 +234,23 @@ We squash the final bubble by dragging while holding SHIFT again, reaching our g
 
 ![Diagram for identity on G](./doc/img/tutorial12.svg)
 
-The great advantage of working in this diagrammatic way is that we can now ask the tool to render the entire proof we just did for us. To get into this view-from-the-top-dimension mode, we just have to click on the star symbol on the top-right corner. The diagram should look something like this:
+Before we save our theorem, we want to simplify the whole proof, so we click on the star symbol on the top-right corner to get the following view:
 
-![Our proof of the snake](./doc/img/tutorial23.svg)
+![Our proof of the snake on G](./doc/img/tutorial23.svg)
 
-The fact that proofs are geometric objects in themselves allows us to reason visually about them. For example, it is evident from the above diagram that our earlier proof was not really optimal, as there are at least three regions in which not much is happening, which we could simplify again by performing contractions through dragging. As a challenge, try to reduce the proof down to this diagram:
+As a final challenge, try to reduce the proof down to this diagram:
 
-![A better proof of the snake](./doc/img/tutorial24.svg)
+![A better proof of the snake on G](./doc/img/tutorial24.svg)
 
-Remember that we want to be careful not to over-contract our proofs: we still want to be able to tell what is going on, which is hard if the entire proof happens in a single step!
+We're finally done with the proof, so we can click `Theorem` or press H to add this result to our signature, and rename the 'Theorem' cell to 'Snake 2', and the 'Proof' cell to 'Proof of Snake 2'.
 
-As we are done with this part of the proof, we can click `Theorem` or press H to add this result to our signature. For clarity, we can rename the 'Theorem' cell to 'Snake 1', and the 'Proof' cell to 'Proof of Snake 1'.
+We can also display the whole proof in 3d or 4d by clicking on the right-most P symbols in the view controls, when looking at either the theorem or the proof of one of our snakes.
+
+## Saving the Proof
+
+By clicking on the top-most button on the left, we can open the project view for our workspace. Here we can set the title, author and abstract of our workspace, with $\LaTeX$ support as usual.
+
+The self-explanatory `Import` and `Export` buttons then allow for downloading and reimporting workspaces into the tool.
+
+A final fact to mention is that every 2d or 3d diagram that can be displayed in the tool may be exported from the `Image Export` panel, located as the third button on the top-left. A number of formats are supported depending on the dimension of the diagram. In particular, 2d diagrams may be exported to TikZ and SVG.
 
