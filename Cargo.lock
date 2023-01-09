@@ -1366,7 +1366,7 @@ dependencies = [
 [[package]]
 name = "palette"
 version = "0.6.1"
-source = "git+https://github.com/Ogeon/palette#c9be0f39b0fa68500d1aee5deebb55b2c0eff721"
+source = "git+https://github.com/Ogeon/palette#f11e27cf13ceb59a5de279547a8b6ca171bde761"
 dependencies = [
  "approx",
  "fast-srgb8",
@@ -1378,7 +1378,7 @@ dependencies = [
 [[package]]
 name = "palette_derive"
 version = "0.6.1"
-source = "git+https://github.com/Ogeon/palette#c9be0f39b0fa68500d1aee5deebb55b2c0eff721"
+source = "git+https://github.com/Ogeon/palette#f11e27cf13ceb59a5de279547a8b6ca171bde761"
 dependencies = [
  "proc-macro2",
  "quote",
