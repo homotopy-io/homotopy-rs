@@ -1,6 +1,6 @@
 use std::{io, io::prelude::*};
 
-use base64::decode;
+use base64::prelude::{Engine, BASE64_STANDARD};
 use flate2::bufread::ZlibDecoder;
 use homotopy_common::hash::FastHashMap;
 use serde::Deserialize;
@@ -50,7 +50,7 @@ impl OldProof {
         // create an old proof object from string
 
         // atob()
-        let proof_str = decode(proof_str)?;
+        let proof_str = BASE64_STANDARD.decode(proof_str)?;
         // zlib decompress
         let proof_str = decode_bufreader(&proof_str)?;
         // parse json
