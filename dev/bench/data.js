@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1673010312966,
+  "lastUpdate": 1673263286778,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -44129,6 +44129,42 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 398.11,
             "range": "+/- 2.820",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "distinct": true,
+          "id": "84af96ea9827cec40187632d820b6bfeda93938a",
+          "message": "Removed snapshotting from action tests (#967).",
+          "timestamp": "2023-01-09T11:10:01Z",
+          "tree_id": "af7caca0e131cce79ae3512378ed9bb8db3278f5",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/84af96ea9827cec40187632d820b6bfeda93938a"
+        },
+        "date": 1673263274574,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/3",
+            "value": 13.063,
+            "range": "+/- 0.017",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 328.03,
+            "range": "+/- 0.420",
             "unit": "ms"
           }
         ]
