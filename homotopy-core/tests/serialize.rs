@@ -1,3 +1,4 @@
+use base64::prelude::{Engine, BASE64_STANDARD};
 use homotopy_core::{examples, serialize::Store, Diagram};
 use insta::assert_debug_snapshot;
 
@@ -12,7 +13,7 @@ fn serialize_associator() {
         (serialized, key)
     };
 
-    assert_debug_snapshot!(base64::encode(&serialized));
+    assert_debug_snapshot!(BASE64_STANDARD.encode(&serialized));
 
     let deserialized = {
         let mut store: Store = rmp_serde::decode::from_slice(&serialized).unwrap();
