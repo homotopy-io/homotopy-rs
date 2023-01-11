@@ -75,7 +75,7 @@ At this point, the signature should look like this:
 
 ![The signature constructed so far](./doc/img/tutorial8.png)
 
-We're done with our setup: the proof assistant has validated the 'let $C$ and $D$ be equivalent categories' part of our theorem, and now we will turn to proving the rest of the statement.
+We're done with our setup: the proof assistant has validated the *let $C$ and $D$ be equivalent categories* part of our theorem, and now we will turn to proving the rest of the statement.
 
 ## Constructing the Adjoint
 
@@ -94,7 +94,7 @@ The workspace should now look like this:
 
 ![Current workspace](./doc/img/tutorial9.svg)
 
-We now need to 'close-off' the right-most blue region to make the boundary of $\beta$ by inserting a $\beta^{-1}$, so click again on the bottom edge of the diagram, and select $\beta^{-1}$. This should result in the sock diagram:
+We now need to *close-off* the right-most blue region to make the boundary of $\beta$ by inserting a $\beta^{-1}$, so click again on the bottom edge of the diagram, and select $\beta^{-1}$. This should result in the sock diagram:
 
 ![Current workspace with the sock diagram](./doc/img/tutorial10.svg)
 
@@ -156,11 +156,11 @@ We now drag up the left-most $\alpha$ four times, until it so that the right cop
 
 ![Interchange 4](./doc/img/tutorial32.svg)
 
-At this point, we have successfully moved our $\alpha$ to be right above an $\alpha^{-1}$. This means that we can merge the red surfaces by dragging either of the $\alpha$ or $\alpha^{-1}$ dots towards the other, while holding the SHIFT key. This tells the tool that we intend to kill-off something by composing it with its inverse.
+At this point, we have successfully moved our $\alpha$ to be right above an $\alpha^{-1}$. This means that we can merge the red surfaces by dragging either of the $\alpha$ or $\alpha^{-1}$ dots towards the other, while holding the `SHIFT` key. This tells the tool that we intend to kill-off something by composing it with its inverse.
 
 ![A final bubble](./doc/img/tutorial33.svg)
 
-We can do the same thing again to eliminate the $\beta$ bubble: hold SHIFT and drag either of $\beta$ or $\beta^{-1}$ towards the other.
+We can do the same thing again to eliminate the $\beta$ bubble: hold `SHIFT` and drag either of $\beta$ or $\beta^{-1}$ towards the other.
 
 ![Diagram for identity on F](./doc/img/tutorial25.svg)
 
@@ -218,7 +218,7 @@ We now drag down the left-most $\alpha^{-1}$ twice, so that the right copy of $\
 
 ![Interchange 2](./doc/img/tutorial19.svg)
 
-Now that we have successfully transferred the inverse $\alpha$ bubble on the left, we can merge the red surfaces by dragging either of the $\alpha$ or $\alpha^{-1}$ dots towards the other, while holding the SHIFT key.
+Now that we have successfully transferred the inverse $\alpha$ bubble on the left, we can merge the red surfaces by dragging either of the $\alpha$ or $\alpha^{-1}$ dots towards the other, while holding the `SHIFT` key.
 
 ![The sock restored](./doc/img/tutorial20.svg)
 
@@ -226,11 +226,11 @@ We're almost at our goal: we're left with two pairs of $\beta,\beta^{-1}$ and $\
 
 ![A connected bubble](./doc/img/tutorial21.svg)
 
-Now $\beta$ and $\beta'$ are vertically aligned, so we may cancel them by dragging either towards the other while holding SHIFT. This just leaves us with an $\alpha$ bubble:
+Now $\beta$ and $\beta'$ are vertically aligned, so we may cancel them by dragging either towards the other while holding `SHIFT`. This just leaves us with an $\alpha$ bubble:
 
 ![The identity on G with an alpha bubble](./doc/img/tutorial22.svg)
 
-We squash the final bubble by dragging while holding SHIFT again, reaching our goal:
+We squash the final bubble by dragging while holding `SHIFT` again, reaching our goal:
 
 ![Diagram for identity on G](./doc/img/tutorial12.svg)
 
