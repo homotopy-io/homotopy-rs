@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1673263286778,
+  "lastUpdate": 1673536379516,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -44165,6 +44165,42 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 328.03,
             "range": "+/- 0.420",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5df07062b07fc5d1543ac2c12089b6c13891550e",
+          "message": "Adding a tutorial (#966)\n\n* Started writing an accessible tutorial.\r\n\r\n* Fixed image links.\r\n\r\n* Actually fixed image links.\r\n\r\n* Minor formatting adjustments.\r\n\r\n* Fixed typo.\r\n\r\n* Added new section.\r\n\r\n* Fixed typo.\r\n\r\n* Added new section.\r\n\r\n* Fixed typo.\r\n\r\n* Added new section.\r\n\r\n* Minor aesthetic changes.\r\n\r\n* Implemented feedback.",
+          "timestamp": "2023-01-12T15:01:54Z",
+          "tree_id": "36191c1446fa871fe5244077086b3a2d73258f95",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/5df07062b07fc5d1543ac2c12089b6c13891550e"
+        },
+        "date": 1673536368613,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/3",
+            "value": 12.463,
+            "range": "+/- 0.005",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 321.21,
+            "range": "+/- 0.770",
             "unit": "ms"
           }
         ]
