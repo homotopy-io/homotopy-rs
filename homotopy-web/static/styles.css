@@ -211,6 +211,26 @@ button, .button {
   align-items: flex-start;
 }
 
+.workspace__empty-diagram {
+  display: table;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  z-index: 0;
+}
+
+.workspace__empty-diagram-content {
+  display: table-cell;
+  vertical-align: middle;
+}
+
+.workspace__empty-logo {
+  width: 100%;
+  box-sizing: border-box;
+  filter: invert(1);
+  -webkit-filter: invert(1);
+}
+
 .tex__wrapper.workspace__project-title {
   flex: 0 1 auto;
   font-size: 28px;
