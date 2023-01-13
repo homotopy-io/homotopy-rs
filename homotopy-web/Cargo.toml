@@ -70,20 +70,21 @@ version = "0.3.60"
 features = [
   "BeforeUnloadEvent",
   "console",
-  "Element",
   "DataTransfer",
   "DomRect",
   "DomTokenList",
   "Document",
+  "Element",
+  "EventListener",
+  "EventTarget",
   "HtmlHeadElement",
-  "Window",
+  "KeyboardEvent",
+  "Location",
+  "Performance",
+  "Touch",
   "TouchEvent",
   "TouchList",
-  "Touch",
-  "Performance",
-  "EventTarget",
-  "KeyboardEvent",
-  "EventListener",
+  "Window",
 ]
 
 # These crates are used for running unit tests.

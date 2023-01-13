@@ -55,4 +55,5 @@ declare_keybindings! {
     "arrowdown" => Action::Proof(proof::Action::SwitchSlice(Direction::Backward))
     "arrowleft" => Action::Proof(proof::Action::AscendSlice(1))
     "arrowright" => Action::Proof(proof::Action::DescendSlice(SliceIndex::Boundary(Boundary::Source)))
+    "?" => Action::ShowTutorial
 }

@@ -96,6 +96,10 @@ pub fn get_onboarding_message() -> Html {
                         <td style="text-align: right">{"Save theorem  "}</td>
                         <td style="text-align: left"><kbd class="kbc-button">{"H"}</kbd></td>
                     </tr>
+                    <tr>
+                        <td style="text-align: right">{"View tutorial  "}</td>
+                        <td style="text-align: left"><kbd class="kbc-button">{"?"}</kbd></td>
+                    </tr>
                 </table>
             </div>
         </div>
