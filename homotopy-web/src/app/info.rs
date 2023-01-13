@@ -28,11 +28,11 @@ pub fn get_modal_message() -> Html {
             <p>{"homotopy.io source code is published under the terms of the BSD 3-Clause License."}</p>
             <pre>{include_str!("../../../LICENSE")}</pre>
             {"homotopy.io documentation is licensed under a "}
-            <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">
+            <a rel="license" href="https://creativecommons.org/licenses/by/4.0/">
                 {"Creative Commons Attribution 4.0 International License"}
             </a>{"."}
             <br />
-            <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">
+            <a rel="license" href="https://creativecommons.org/licenses/by/4.0/">
                 <img alt="Creative Commons License" style="border-width:0" src="by.svg" />
             </a>
         </div>
@@ -72,15 +72,31 @@ pub fn get_onboarding_message() -> Html {
                 <header>
                     <h3>{"Don't Panic!"}</h3>
                 </header>
-                <p>
-                    {"Here are some instructions:"}
-                </p>
-                <ul>
-                    <li>{"Add generators with  "}<kbd class="kbc-button">{"A"}</kbd></li>
-                    <li>{"Select them with "}<kbd class="kbc-button">{"1"}</kbd>{" to "}<kbd class="kbc-button">{"9"}</kbd></li>
-                    <li>{"Take source with  "}<kbd class="kbc-button">{"S"}</kbd></li>
-                    <li>{"Take target with  "}<kbd class="kbc-button">{"T"}</kbd></li>
-                </ul>
+                <table>
+                    <tr>
+                        <td style="text-align: right">{"Add generators  "}</td>
+                        <td style="text-align: left"><kbd class="kbc-button">{"A"}</kbd></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: right">{"Clear workspace  "}</td>
+                        <td style="text-align: left"><kbd class="kbc-button">{"C"}</kbd></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: right">{"Take source/target  "}</td>
+                        <td style="text-align: left">
+                            <kbd class="kbc-button">{"S"}</kbd>
+                            <kbd class="kbc-button">{"T"}</kbd>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: right">{"Take identity  "}</td>
+                        <td style="text-align: left"><kbd class="kbc-button">{"I"}</kbd></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: right">{"Save theorem  "}</td>
+                        <td style="text-align: left"><kbd class="kbc-button">{"H"}</kbd></td>
+                    </tr>
+                </table>
             </div>
         </div>
     }

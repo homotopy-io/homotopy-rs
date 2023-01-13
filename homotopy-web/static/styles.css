@@ -227,8 +227,7 @@ button, .button {
 .workspace__empty-logo {
   width: 100%;
   box-sizing: border-box;
-  filter: invert(1);
-  -webkit-filter: invert(1);
+  filter: brightness(75%);
 }
 
 .tex__wrapper.workspace__project-title {
