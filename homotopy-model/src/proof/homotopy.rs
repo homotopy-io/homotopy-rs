@@ -1,5 +1,5 @@
 use homotopy_core::{
-    common::{Direction, SingularHeight, SliceIndex},
+    common::{Direction, Height, SingularHeight, SliceIndex},
     contraction::Bias,
 };
 use serde::{Deserialize, Serialize};
@@ -17,6 +17,7 @@ pub struct Contract {
 #[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub struct Expand {
     pub location: Vec<SliceIndex>,
+    pub point: [Height; 2],
     pub direction: Direction,
 }
 

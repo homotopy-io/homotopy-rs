@@ -14,7 +14,7 @@ fn expand_matchsticks(crit: &mut Criterion) {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             Some(Bias::Lower),
@@ -30,7 +30,8 @@ fn expand_matchsticks(crit: &mut Criterion) {
                 .identity()
                 .expand(
                     Boundary::Target.into(),
-                    &[Singular(0), Singular(1)],
+                    &mut [],
+                    [Singular(0), Singular(1)],
                     Direction::Forward,
                     &sig,
                 )
@@ -42,7 +43,8 @@ fn expand_matchsticks(crit: &mut Criterion) {
         .identity()
         .expand(
             Boundary::Target.into(),
-            &[Singular(0), Singular(1)],
+            &mut [],
+            [Singular(0), Singular(1)],
             Direction::Forward,
             &sig,
         )

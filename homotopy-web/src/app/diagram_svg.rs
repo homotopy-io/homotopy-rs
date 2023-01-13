@@ -594,8 +594,8 @@ fn drag_to_homotopy<const N: usize>(
     match N {
         1 => {
             let height = match point[0] {
-                Boundary(_) => return None,
-                Interior(height) => height,
+                Interior(Singular(height)) => height,
+                _ => return None,
             };
 
             let direction = if angle.radians <= 0.0 {
@@ -604,18 +604,12 @@ fn drag_to_homotopy<const N: usize>(
                 Direction::Backward
             };
 
-            Some(match height {
-                Regular(_) => Homotopy::Expand(Expand {
-                    location: point.to_vec(),
-                    direction,
-                }),
-                Singular(i) => Homotopy::Contract(Contract {
-                    bias: None,
-                    location: Default::default(),
-                    height: i,
-                    direction,
-                }),
-            })
+            Some(Homotopy::Contract(Contract {
+                bias: None,
+                location: Default::default(),
+                height,
+                direction,
+            }))
         }
         2 => {
             let diagram: DiagramN = diagram.try_into().ok()?;
@@ -680,12 +674,9 @@ fn drag_to_homotopy<const N: usize>(
             };
 
             if expansion {
-                let mut location: Vec<_> = prefix.into_iter().collect();
-                location.push(y.into());
-                location.push(x.into());
-
                 Some(Homotopy::Expand(Expand {
-                    location,
+                    location: prefix.into_iter().collect(),
+                    point: [y, x],
                     direction,
                 }))
             } else {

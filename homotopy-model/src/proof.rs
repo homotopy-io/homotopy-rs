@@ -223,7 +223,7 @@ impl Action {
             Self::Invert => proof
                 .workspace
                 .as_ref()
-                .map_or(false, |ws| ws.diagram.dimension() > 0),
+                .map_or(false, |ws| ws.path.is_empty() && ws.diagram.dimension() > 0),
             Self::Restrict => proof.workspace.as_ref().map_or(false, |ws| {
                 !ws.path.is_empty()
                     && ws
@@ -521,13 +521,14 @@ impl ProofState {
             location
         };
 
-        let (boundary_path, interior_path) = BoundaryPath::split(&location);
+        let (boundary_path, mut interior_path) = BoundaryPath::split(&location);
 
         if let Some(boundary_path) = boundary_path {
             let Diagram::DiagramN(diagram) = diagram else { return Ok(false) };
             *diagram = diagram.expand(
                 boundary_path,
-                &interior_path,
+                &mut interior_path,
+                homotopy.point,
                 homotopy.direction,
                 &self.signature,
             )?;
@@ -537,17 +538,18 @@ impl ProofState {
                 .identity()
                 .expand(
                     Boundary::Target.into(),
-                    &interior_path,
+                    &mut interior_path,
+                    homotopy.point,
                     homotopy.direction,
                     &self.signature,
                 )?
                 .target();
         }
 
-        // FIXME(@doctorn) this is a stand-in for a more sophisticated approach. Ideally, we
-        // would have the path updated such that the image of the slice after the expansion is
-        // visible. For now, we just step back up until we find a valid path.
-        self.unwind_to_valid_path();
+        let offset = boundary_path.map_or(0, |bp| bp.depth() + 1);
+        for i in offset..ws.path.len() {
+            ws.path[i] = SliceIndex::Interior(interior_path[i - offset]);
+        }
 
         Ok(true)
     }
@@ -565,13 +567,13 @@ impl ProofState {
             location
         };
 
-        let (boundary_path, interior_path) = BoundaryPath::split(&location);
+        let (boundary_path, mut interior_path) = BoundaryPath::split(&location);
 
         if let Some(boundary_path) = boundary_path {
             let Diagram::DiagramN(diagram) = diagram else { return Ok(false) };
             *diagram = diagram.contract(
                 boundary_path,
-                &interior_path,
+                &mut interior_path,
                 homotopy.height,
                 homotopy.direction,
                 homotopy.bias,
@@ -583,7 +585,7 @@ impl ProofState {
                 .identity()
                 .contract(
                     Boundary::Target.into(),
-                    &interior_path,
+                    &mut interior_path,
                     homotopy.height,
                     homotopy.direction,
                     homotopy.bias,
@@ -592,8 +594,10 @@ impl ProofState {
                 .target();
         }
 
-        // FIXME(@doctorn) see above
-        self.unwind_to_valid_path();
+        let offset = boundary_path.map_or(0, |bp| bp.depth() + 1);
+        for i in offset..ws.path.len() {
+            ws.path[i] = SliceIndex::Interior(interior_path[i - offset]);
+        }
 
         Ok(true)
     }
@@ -654,14 +658,16 @@ impl ProofState {
     fn invert(&mut self) -> Result<bool, ProofError> {
         let Some(ws) = &mut self.workspace else { return Ok(false) };
 
+        if !ws.path.is_empty() {
+            return Ok(false);
+        }
+
         if !ws.diagram.is_invertible(&self.signature) {
             return Err(ProofError::NotInvertible);
         }
 
         let Diagram::DiagramN(diagram) = &mut ws.diagram else { return Ok(false) };
         *diagram = diagram.inverse();
-
-        self.unwind_to_valid_path();
 
         Ok(true)
     }
@@ -800,24 +806,6 @@ impl ProofState {
         let Some(selected) = self.boundary.as_ref() else { return false };
         self.workspace = Some(Workspace::new(selected.diagram.clone()));
         true
-    }
-
-    fn unwind_to_valid_path(&mut self) {
-        if let Some(workspace) = &mut self.workspace {
-            let mut diagram = workspace.diagram.clone();
-
-            for (i, index) in workspace.path.iter().enumerate() {
-                match diagram {
-                    Diagram::DiagramN(d) if d.slice(*index).is_some() => {
-                        diagram = d.slice(*index).unwrap();
-                    }
-                    _ => {
-                        workspace.path = workspace.path.take(i);
-                        return;
-                    }
-                }
-            }
-        }
     }
 }
 

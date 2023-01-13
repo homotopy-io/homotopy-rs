@@ -252,7 +252,7 @@ pub fn half_braid() -> (impl Signature, DiagramN) {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             Some(Bias::Lower),
@@ -450,7 +450,7 @@ pub fn cap() -> (impl Signature, DiagramN) {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -476,7 +476,7 @@ pub fn cup() -> (impl Signature, DiagramN) {
         .identity()
         .contract(
             Boundary::Source.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -503,7 +503,7 @@ pub fn snake() -> (impl Signature, DiagramN) {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -514,7 +514,7 @@ pub fn snake() -> (impl Signature, DiagramN) {
         .identity()
         .contract(
             Boundary::Source.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -546,7 +546,7 @@ pub fn bubble() -> (impl Signature, DiagramN) {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -557,7 +557,7 @@ pub fn bubble() -> (impl Signature, DiagramN) {
         .identity()
         .contract(
             Boundary::Source.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,

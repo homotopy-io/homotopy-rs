@@ -14,7 +14,7 @@ fn matchsticks() {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             Some(Bias::Lower),
@@ -27,7 +27,8 @@ fn matchsticks() {
         .identity()
         .expand(
             Boundary::Target.into(),
-            &[Singular(0), Singular(1)],
+            &mut [],
+            [Singular(0), Singular(1)],
             Direction::Forward,
             &sig,
         )
@@ -73,7 +74,7 @@ fn bead_with_half_braid() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -86,7 +87,8 @@ fn bead_with_half_braid() -> anyhow::Result<()> {
             .identity()
             .expand(
                 Boundary::Target.into(),
-                &[Height::Singular(0), Height::Singular(0)],
+                &mut [],
+                [Height::Singular(0), Height::Singular(0)],
                 Direction::Forward,
                 &sig
             )?
@@ -98,7 +100,8 @@ fn bead_with_half_braid() -> anyhow::Result<()> {
             .identity()
             .expand(
                 Boundary::Target.into(),
-                &[Height::Singular(0), Height::Singular(0)],
+                &mut [],
+                [Height::Singular(0), Height::Singular(0)],
                 Direction::Backward,
                 &sig
             )?
@@ -111,7 +114,7 @@ fn bead_with_half_braid() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -124,7 +127,8 @@ fn bead_with_half_braid() -> anyhow::Result<()> {
             .identity()
             .expand(
                 Boundary::Target.into(),
-                &[Height::Singular(0), Height::Singular(1)],
+                &mut [],
+                [Height::Singular(0), Height::Singular(1)],
                 Direction::Forward,
                 &sig
             )?
@@ -136,7 +140,8 @@ fn bead_with_half_braid() -> anyhow::Result<()> {
             .identity()
             .expand(
                 Boundary::Target.into(),
-                &[Height::Singular(0), Height::Singular(1)],
+                &mut [],
+                [Height::Singular(0), Height::Singular(1)],
                 Direction::Backward,
                 &sig
             )?
@@ -161,7 +166,7 @@ fn braid_smooth() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -172,11 +177,8 @@ fn braid_smooth() -> anyhow::Result<()> {
         .identity()
         .expand(
             Boundary::Target.into(),
-            &[
-                Height::Singular(0),
-                Height::Singular(0),
-                Height::Singular(0),
-            ],
+            &mut [Height::Singular(0)],
+            [Height::Singular(0), Height::Singular(0)],
             Direction::Backward,
             &sig,
         )?
@@ -214,7 +216,7 @@ fn bead_no_stretch() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Singular(0)],
+            &mut [Height::Singular(0)],
             1,
             Direction::Forward,
             None,
@@ -228,7 +230,7 @@ fn bead_no_stretch() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -249,7 +251,7 @@ fn bead_no_stretch() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -260,11 +262,8 @@ fn bead_no_stretch() -> anyhow::Result<()> {
         .identity()
         .expand(
             Boundary::Target.into(),
-            &[
-                Height::Singular(0),
-                Height::Singular(1),
-                Height::Singular(0)
-            ],
+            &mut [Height::Singular(0)],
+            [Height::Singular(1), Height::Singular(0)],
             Direction::Forward,
             &sig
         )

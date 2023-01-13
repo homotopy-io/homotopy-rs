@@ -13,7 +13,7 @@ fn contract_scalar(crit: &mut Criterion) {
         b.iter(|| {
             diagram.clone().identity().contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 Some(Bias::Lower),
@@ -25,7 +25,7 @@ fn contract_scalar(crit: &mut Criterion) {
         b.iter(|| {
             diagram.clone().identity().contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 Some(Bias::Higher),
@@ -45,7 +45,7 @@ fn contract_beads(crit: &mut Criterion) {
         b.iter(|| {
             diagram.clone().identity().contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 1,
                 Direction::Forward,
                 None,
@@ -58,7 +58,7 @@ fn contract_beads(crit: &mut Criterion) {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             1,
             Direction::Forward,
             None,
@@ -81,7 +81,7 @@ fn contract_stacks(crit: &mut Criterion) {
         b.iter(|| {
             diagram.clone().identity().contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 None,
@@ -94,7 +94,7 @@ fn contract_stacks(crit: &mut Criterion) {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -124,7 +124,7 @@ fn contract_high_dimensions(crit: &mut Criterion) {
                             diagram = diagram
                                 .contract(
                                     Boundary::Target.into(),
-                                    &[],
+                                    &mut [],
                                     0,
                                     Direction::Forward,
                                     None,

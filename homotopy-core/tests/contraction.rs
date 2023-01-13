@@ -29,7 +29,7 @@ fn scalar() {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             Some(Bias::Same),
@@ -44,7 +44,7 @@ fn scalar() {
             .identity()
             .contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 Some(Bias::Lower),
@@ -60,7 +60,7 @@ fn scalar() {
             .identity()
             .contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 Some(Bias::Higher),
@@ -76,7 +76,7 @@ fn scalar() {
             .identity()
             .contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 Some(Bias::Same),
@@ -92,7 +92,7 @@ fn scalar() {
             .identity()
             .contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 Some(Bias::Same),
@@ -115,7 +115,7 @@ fn three_scalars() {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             Some(Bias::Higher),
@@ -127,7 +127,7 @@ fn three_scalars() {
     //      . .
     let into_middle = l.clone().identity().contract(
         Boundary::Target.into(),
-        &[],
+        &mut [],
         0,
         Direction::Forward,
         Some(Bias::Lower),
@@ -136,7 +136,7 @@ fn three_scalars() {
     assert!(into_middle.is_ok());
     let into_left = l.identity().contract(
         Boundary::Target.into(),
-        &[],
+        &mut [],
         0,
         Direction::Forward,
         Some(Bias::Higher),
@@ -155,7 +155,7 @@ fn braids() {
             .identity()
             .contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 None,
@@ -172,7 +172,7 @@ fn braids() {
             .identity()
             .contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 None,
@@ -191,7 +191,7 @@ fn beads() {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -210,7 +210,7 @@ fn stacks() {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -234,7 +234,7 @@ fn inverses_1d() {
             .identity()
             .contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 None,
@@ -254,7 +254,7 @@ fn inverses_1d() {
             .identity()
             .contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 None,
@@ -275,7 +275,7 @@ fn inverses_2d() {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -290,7 +290,7 @@ fn inverses_2d() {
             .identity()
             .contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 None,
@@ -310,7 +310,7 @@ fn inverses_2d() {
             .identity()
             .contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 None,
@@ -331,7 +331,7 @@ fn snakerator() {
             .identity()
             .contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 None,
@@ -352,7 +352,7 @@ fn bubble_pop_2d() {
             .identity()
             .contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 None,
@@ -386,7 +386,7 @@ fn bead_tensor_bead_and_inverse() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -398,7 +398,7 @@ fn bead_tensor_bead_and_inverse() -> anyhow::Result<()> {
             .identity()
             .contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 None,
@@ -433,7 +433,7 @@ fn monoid_tensor_bead_and_inverse() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -445,7 +445,7 @@ fn monoid_tensor_bead_and_inverse() -> anyhow::Result<()> {
             .identity()
             .contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 None,
@@ -461,7 +461,7 @@ fn monoid_tensor_bead_and_inverse() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -473,7 +473,7 @@ fn monoid_tensor_bead_and_inverse() -> anyhow::Result<()> {
             .identity()
             .contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 None,
@@ -502,7 +502,7 @@ fn cap_braid() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             Some(Bias::Same),
@@ -514,7 +514,7 @@ fn cap_braid() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Singular(0)],
+            &mut [Height::Singular(0)],
             0,
             Direction::Forward,
             Some(Bias::Lower),
@@ -527,7 +527,7 @@ fn cap_braid() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Singular(0)],
+            &mut [Height::Singular(0)],
             0,
             Direction::Forward,
             Some(Bias::Higher),
@@ -543,11 +543,8 @@ fn cap_braid() -> anyhow::Result<()> {
             .identity()
             .expand(
                 Boundary::Target.into(),
-                &[
-                    Height::Singular(0),
-                    Height::Singular(0),
-                    Height::Singular(0)
-                ],
+                &mut [Height::Singular(0)],
+                [Height::Singular(0), Height::Singular(0)],
                 Direction::Backward,
                 &sig
             )?
@@ -559,11 +556,8 @@ fn cap_braid() -> anyhow::Result<()> {
             .identity()
             .expand(
                 Boundary::Target.into(),
-                &[
-                    Height::Singular(0),
-                    Height::Singular(0),
-                    Height::Singular(0)
-                ],
+                &mut [Height::Singular(0)],
+                [Height::Singular(0), Height::Singular(0)],
                 Direction::Forward,
                 &sig
             )?
@@ -591,7 +585,7 @@ fn no_reidemeister_1() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             Some(Bias::Same),
@@ -600,7 +594,7 @@ fn no_reidemeister_1() -> anyhow::Result<()> {
     let r1_source = two_cap
         .contract(
             Boundary::Source.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             Some(Bias::Higher),
@@ -608,14 +602,15 @@ fn no_reidemeister_1() -> anyhow::Result<()> {
         )?
         .expand(
             Boundary::Source.into(),
-            &[Height::Singular(0), Height::Singular(1)],
+            &mut [],
+            [Height::Singular(0), Height::Singular(1)],
             Direction::Forward,
             &sig,
         )?
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -626,7 +621,7 @@ fn no_reidemeister_1() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -664,7 +659,7 @@ fn bead_through_cap_cup() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -678,7 +673,7 @@ fn bead_through_cap_cup() -> anyhow::Result<()> {
             .identity()
             .contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 None,
@@ -693,7 +688,7 @@ fn bead_through_cap_cup() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -707,7 +702,7 @@ fn bead_through_cap_cup() -> anyhow::Result<()> {
             .identity()
             .contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 None,
@@ -726,7 +721,7 @@ fn bead_through_cap_cup() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -740,7 +735,7 @@ fn bead_through_cap_cup() -> anyhow::Result<()> {
             .identity()
             .contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 None,
@@ -755,7 +750,7 @@ fn bead_through_cap_cup() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -769,7 +764,7 @@ fn bead_through_cap_cup() -> anyhow::Result<()> {
             .identity()
             .contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 None,
@@ -801,7 +796,7 @@ fn three_dimensional_scalar_across_wire_preserves_label_neighbourhood() -> anyho
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Singular(0)],
+            &mut [Height::Singular(0)],
             0,
             Direction::Forward,
             Some(Bias::Higher),
@@ -816,11 +811,8 @@ fn three_dimensional_scalar_across_wire_preserves_label_neighbourhood() -> anyho
         .identity()
         .expand(
             Boundary::Target.into(),
-            &[
-                Height::Singular(0),
-                Height::Singular(0),
-                Height::Singular(0),
-            ],
+            &mut [Height::Singular(0)],
+            [Height::Singular(0), Height::Singular(0)],
             Direction::Backward,
             &sig,
         )?
@@ -864,7 +856,7 @@ fn contract_two_caps() -> anyhow::Result<()> {
             .identity()
             .contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 None,
@@ -876,7 +868,7 @@ fn contract_two_caps() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Singular(0)],
+            &mut [Height::Singular(0)],
             0,
             Direction::Forward,
             None,
@@ -893,7 +885,7 @@ fn contract_two_caps() -> anyhow::Result<()> {
             .identity()
             .contract(
                 Boundary::Target.into(),
-                &[],
+                &mut [],
                 0,
                 Direction::Forward,
                 None,
@@ -905,7 +897,7 @@ fn contract_two_caps() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Singular(0)],
+            &mut [Height::Singular(0)],
             0,
             Direction::Forward,
             None,
@@ -931,7 +923,7 @@ fn hourglass_no_absorb() -> anyhow::Result<()> {
     let hourglass = endomorphism
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -939,7 +931,7 @@ fn hourglass_no_absorb() -> anyhow::Result<()> {
         )?
         .contract(
             Boundary::Source.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -950,7 +942,7 @@ fn hourglass_no_absorb() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             Some(Bias::Same),
@@ -961,7 +953,7 @@ fn hourglass_no_absorb() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             1,
             Direction::Forward,
             Some(Bias::Same),
@@ -987,7 +979,7 @@ fn counit_braid() -> anyhow::Result<()> {
 
     let counit_braid_above_left = counit_tensor_wire.clone().identity().contract(
         Boundary::Target.into(),
-        &[Height::Singular(0)],
+        &mut [Height::Singular(0)],
         0,
         Direction::Forward,
         Some(Bias::Lower),
@@ -996,7 +988,7 @@ fn counit_braid() -> anyhow::Result<()> {
     assert!(counit_braid_above_left.is_ok());
     let counit_braid_below_left = counit_tensor_wire.identity().contract(
         Boundary::Target.into(),
-        &[Height::Singular(0)],
+        &mut [Height::Singular(0)],
         0,
         Direction::Forward,
         Some(Bias::Higher),
@@ -1005,7 +997,7 @@ fn counit_braid() -> anyhow::Result<()> {
     assert!(counit_braid_below_left.is_ok());
     let counit_braid_below_right = wire_tensor_counit.clone().identity().contract(
         Boundary::Target.into(),
-        &[Height::Singular(0)],
+        &mut [Height::Singular(0)],
         0,
         Direction::Forward,
         Some(Bias::Lower),
@@ -1014,7 +1006,7 @@ fn counit_braid() -> anyhow::Result<()> {
     assert!(counit_braid_below_right.is_ok());
     let counit_braid_above_right = wire_tensor_counit.identity().contract(
         Boundary::Target.into(),
-        &[Height::Singular(0)],
+        &mut [Height::Singular(0)],
         0,
         Direction::Forward,
         Some(Bias::Higher),
@@ -1037,7 +1029,7 @@ fn bead_interchanger() -> anyhow::Result<()> {
 
     let contracted = beads.clone().identity().contract(
         Boundary::Target.into(),
-        &[],
+        &mut [],
         0,
         Direction::Forward,
         None,
@@ -1045,7 +1037,8 @@ fn bead_interchanger() -> anyhow::Result<()> {
     )?;
     let expanded_forwards = contracted.expand(
         Boundary::Target.into(),
-        &[Height::Singular(0), Height::Singular(1)],
+        &mut [],
+        [Height::Singular(0), Height::Singular(1)],
         Direction::Forward,
         &sig,
     )?;
@@ -1055,7 +1048,7 @@ fn bead_interchanger() -> anyhow::Result<()> {
                 .identity()
                 .contract(
                     Boundary::Target.into(),
-                    &[],
+                    &mut [],
                     0,
                     Direction::Forward,
                     None,
@@ -1069,7 +1062,8 @@ fn bead_interchanger() -> anyhow::Result<()> {
     );
     let expanded_backwards = contracted.expand(
         Boundary::Target.into(),
-        &[Height::Singular(0), Height::Singular(1)],
+        &mut [],
+        [Height::Singular(0), Height::Singular(1)],
         Direction::Backward,
         &sig,
     )?;
@@ -1077,7 +1071,7 @@ fn bead_interchanger() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -1102,7 +1096,7 @@ fn pull_through_braid() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -1127,7 +1121,7 @@ fn pull_through_braid() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -1139,11 +1133,8 @@ fn pull_through_braid() -> anyhow::Result<()> {
         .identity()
         .expand(
             Boundary::Target.into(),
-            &[
-                Height::Singular(0),
-                Height::Singular(0),
-                Height::Singular(1),
-            ],
+            &mut [Height::Singular(0)],
+            [Height::Singular(0), Height::Singular(1)],
             Direction::Forward,
             &sig,
         )?
@@ -1178,7 +1169,7 @@ fn no_bend_cup() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -1203,7 +1194,7 @@ fn no_bend_cup() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -1230,7 +1221,7 @@ fn double_braid() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Regular(0)],
+            &mut [Height::Regular(0)],
             0,
             Direction::Forward,
             Some(Bias::Lower),
@@ -1242,7 +1233,7 @@ fn double_braid() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Singular(0)],
+            &mut [Height::Singular(0)],
             0,
             Direction::Forward,
             Some(Bias::Higher),
@@ -1253,7 +1244,7 @@ fn double_braid() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Singular(0)],
+            &mut [Height::Singular(0)],
             0,
             Direction::Forward,
             Some(Bias::Lower),
@@ -1266,7 +1257,7 @@ fn double_braid() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Regular(0)],
+            &mut [Height::Regular(0)],
             0,
             Direction::Forward,
             Some(Bias::Higher),
@@ -1278,7 +1269,7 @@ fn double_braid() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Singular(0)],
+            &mut [Height::Singular(0)],
             0,
             Direction::Forward,
             Some(Bias::Higher),
@@ -1289,7 +1280,7 @@ fn double_braid() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Singular(0)],
+            &mut [Height::Singular(0)],
             0,
             Direction::Forward,
             Some(Bias::Lower),
@@ -1302,7 +1293,7 @@ fn double_braid() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Regular(0)],
+            &mut [Height::Regular(0)],
             1,
             Direction::Forward,
             Some(Bias::Lower),
@@ -1314,7 +1305,7 @@ fn double_braid() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Singular(0)],
+            &mut [Height::Singular(0)],
             0,
             Direction::Forward,
             Some(Bias::Higher),
@@ -1325,7 +1316,7 @@ fn double_braid() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Singular(0)],
+            &mut [Height::Singular(0)],
             0,
             Direction::Forward,
             Some(Bias::Lower),
@@ -1337,7 +1328,7 @@ fn double_braid() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Regular(0)],
+            &mut [Height::Regular(0)],
             1,
             Direction::Forward,
             Some(Bias::Higher),
@@ -1349,7 +1340,7 @@ fn double_braid() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Singular(0)],
+            &mut [Height::Singular(0)],
             0,
             Direction::Forward,
             Some(Bias::Higher),
@@ -1360,7 +1351,7 @@ fn double_braid() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Singular(0)],
+            &mut [Height::Singular(0)],
             0,
             Direction::Forward,
             Some(Bias::Lower),
@@ -1386,7 +1377,7 @@ fn braid_next_to_endomorphism() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Singular(0)],
+            &mut [Height::Singular(0)],
             1,
             Direction::Forward,
             Some(Bias::Lower),
@@ -1397,7 +1388,7 @@ fn braid_next_to_endomorphism() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Singular(0)],
+            &mut [Height::Singular(0)],
             1,
             Direction::Forward,
             Some(Bias::Higher),
@@ -1412,7 +1403,7 @@ fn braid_next_to_endomorphism() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Singular(0)],
+            &mut [Height::Singular(0)],
             0,
             Direction::Forward,
             Some(Bias::Lower),
@@ -1423,7 +1414,7 @@ fn braid_next_to_endomorphism() -> anyhow::Result<()> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[Height::Singular(0)],
+            &mut [Height::Singular(0)],
             0,
             Direction::Forward,
             Some(Bias::Higher),
@@ -1478,7 +1469,7 @@ fn endomorphism_on_ring() -> anyhow::Result<(impl Signature, DiagramN)> {
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -1489,7 +1480,7 @@ fn endomorphism_on_ring() -> anyhow::Result<(impl Signature, DiagramN)> {
         .identity()
         .contract(
             Boundary::Source.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -1521,7 +1512,7 @@ fn endomorphism_on_half_algebraic_ring() -> anyhow::Result<(impl Signature, Diag
         .identity()
         .contract(
             Boundary::Source.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -1572,7 +1563,7 @@ fn contract_with_weak_id((sig, diagram): (impl Signature, DiagramN)) -> anyhow::
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             0,
             Direction::Forward,
             None,
@@ -1592,7 +1583,7 @@ fn contract_with_weak_id((sig, diagram): (impl Signature, DiagramN)) -> anyhow::
         .identity()
         .contract(
             Boundary::Target.into(),
-            &[],
+            &mut [],
             diagram.size() - 1,
             Direction::Forward,
             None,
