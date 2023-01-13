@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1673536379516,
+  "lastUpdate": 1673623378655,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -44201,6 +44201,42 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 321.21,
             "range": "+/- 0.770",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "4f9df39b224f5aec12cbac3952086babf94f38f5",
+          "message": "Update selected slice path when manipulating the diagram (fix #30)",
+          "timestamp": "2023-01-13T15:08:57Z",
+          "tree_id": "9c591f59128bd9d10bae2c97d0eba4b471afedfc",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/4f9df39b224f5aec12cbac3952086babf94f38f5"
+        },
+        "date": 1673623366277,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/3",
+            "value": 13.069,
+            "range": "+/- 0.032",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 328.59,
+            "range": "+/- 0.620",
             "unit": "ms"
           }
         ]
