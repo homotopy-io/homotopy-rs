@@ -69,36 +69,36 @@ pub fn get_onboarding_message() -> Html {
         <div class="workspace__empty-diagram">
             <div class="workspace__empty-diagram-content">
                 <img src="/logo.svg" alt="Homotopy.io logo" class="workspace__empty-logo" />
-                <header>
+                <header class="workspace__empty-header">
                     <h3>{"Don't Panic!"}</h3>
                 </header>
                 <table>
                     <tr>
-                        <td style="text-align: right">{"Add 0-cell  "}</td>
-                        <td style="text-align: left"><kbd class="kbc-button">{"A"}</kbd></td>
+                        <td class="workspace__empty-keydesc">{"Add 0-cell  "}</td>
+                        <td class="workspace__empty-keyicon"><kbd class="kbc-button">{"A"}</kbd></td>
                     </tr>
                     <tr>
-                        <td style="text-align: right">{"Select source/target  "}</td>
-                        <td style="text-align: left">
+                        <td class="workspace__empty-keydesc">{"Select source/target  "}</td>
+                        <td class="workspace__empty-keyicon">
                             <kbd class="kbc-button">{"S"}</kbd>
                             <kbd class="kbc-button">{"T"}</kbd>
                         </td>
                     </tr>
                     <tr>
-                        <td style="text-align: right">{"Take identity  "}</td>
-                        <td style="text-align: left"><kbd class="kbc-button">{"I"}</kbd></td>
+                        <td class="workspace__empty-keydesc">{"Take identity  "}</td>
+                        <td class="workspace__empty-keyicon"><kbd class="kbc-button">{"I"}</kbd></td>
                     </tr>
                     <tr>
-                        <td style="text-align: right">{"Clear workspace  "}</td>
-                        <td style="text-align: left"><kbd class="kbc-button">{"C"}</kbd></td>
+                        <td class="workspace__empty-keydesc">{"Clear workspace  "}</td>
+                        <td class="workspace__empty-keyicon"><kbd class="kbc-button">{"C"}</kbd></td>
                     </tr>
                     <tr>
-                        <td style="text-align: right">{"Save theorem  "}</td>
-                        <td style="text-align: left"><kbd class="kbc-button">{"H"}</kbd></td>
+                        <td class="workspace__empty-keydesc">{"Save theorem  "}</td>
+                        <td class="workspace__empty-keyicon"><kbd class="kbc-button">{"H"}</kbd></td>
                     </tr>
                     <tr>
-                        <td style="text-align: right">{"View tutorial  "}</td>
-                        <td style="text-align: left"><kbd class="kbc-button">{"?"}</kbd></td>
+                        <td class="workspace__empty-keydesc">{"View tutorial  "}</td>
+                        <td class="workspace__empty-keyicon"><kbd class="kbc-button">{"?"}</kbd></td>
                     </tr>
                 </table>
             </div>

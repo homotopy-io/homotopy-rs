@@ -227,7 +227,21 @@ button, .button {
 .workspace__empty-logo {
   width: 100%;
   box-sizing: border-box;
-  filter: brightness(75%);
+  filter: brightness(80%);
+}
+
+.workspace__empty-header {
+	color: grey;
+}
+
+.workspace__empty-keydesc {
+	text-align: right;
+	color: grey;
+}
+
+.workspace__empty-keyicon {
+	text-align: left;
+	color: grey;
 }
 
 .tex__wrapper.workspace__project-title {
