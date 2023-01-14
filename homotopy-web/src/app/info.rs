@@ -74,15 +74,11 @@ pub fn get_onboarding_message() -> Html {
                 </header>
                 <table>
                     <tr>
-                        <td style="text-align: right">{"Add generators  "}</td>
+                        <td style="text-align: right">{"Add 0-cell  "}</td>
                         <td style="text-align: left"><kbd class="kbc-button">{"A"}</kbd></td>
                     </tr>
                     <tr>
-                        <td style="text-align: right">{"Clear workspace  "}</td>
-                        <td style="text-align: left"><kbd class="kbc-button">{"C"}</kbd></td>
-                    </tr>
-                    <tr>
-                        <td style="text-align: right">{"Take source/target  "}</td>
+                        <td style="text-align: right">{"Select source/target  "}</td>
                         <td style="text-align: left">
                             <kbd class="kbc-button">{"S"}</kbd>
                             <kbd class="kbc-button">{"T"}</kbd>
@@ -91,6 +87,10 @@ pub fn get_onboarding_message() -> Html {
                     <tr>
                         <td style="text-align: right">{"Take identity  "}</td>
                         <td style="text-align: left"><kbd class="kbc-button">{"I"}</kbd></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: right">{"Clear workspace  "}</td>
+                        <td style="text-align: left"><kbd class="kbc-button">{"C"}</kbd></td>
                     </tr>
                     <tr>
                         <td style="text-align: right">{"Save theorem  "}</td>
