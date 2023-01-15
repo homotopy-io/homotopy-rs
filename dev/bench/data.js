@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1673783624245,
+  "lastUpdate": 1673783840619,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -44345,6 +44345,42 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 326.59,
             "range": "+/- 0.540",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "367b1e36178b759cefd64b0bcb0bd13c5640a027",
+          "message": "Always open signature drawer when adding 0-cell (fix #974)",
+          "timestamp": "2023-01-15T11:46:27Z",
+          "tree_id": "ce26665c36af9c00aca1ac21519692155abe4d78",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/367b1e36178b759cefd64b0bcb0bd13c5640a027"
+        },
+        "date": 1673783827084,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/3",
+            "value": 12.998,
+            "range": "+/- 0.014",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 321.04,
+            "range": "+/- 0.440",
             "unit": "ms"
           }
         ]
