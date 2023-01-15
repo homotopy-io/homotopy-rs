@@ -78,3 +78,6 @@ homotopy.io source code is published under the terms of the [BSD 3-Clause Licens
 We use the HiGHS linear programming solver for the layout algorithm:
 
 Parallelizing the dual revised simplex method, Q. Huangfu and J. A. J. Hall, Mathematical Programming Computation, 10 (1), 119-142, 2018. DOI: 10.1007/s12532-017-0130-5
+
+We use the [keyboard-css](https://github.com/shhdharmen/keyboard-css) library.
+

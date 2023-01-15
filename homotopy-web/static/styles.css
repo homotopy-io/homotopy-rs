@@ -211,6 +211,39 @@ button, .button {
   align-items: flex-start;
 }
 
+.workspace__empty-diagram {
+  display: table;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  z-index: 0;
+}
+
+.workspace__empty-diagram-content {
+  display: table-cell;
+  vertical-align: middle;
+}
+
+.workspace__empty-logo {
+  width: 100%;
+  box-sizing: border-box;
+  filter: brightness(80%);
+}
+
+.workspace__empty-header {
+	color: grey;
+}
+
+.workspace__empty-keydesc {
+	text-align: right;
+	color: grey;
+}
+
+.workspace__empty-keyicon {
+	text-align: left;
+	color: grey;
+}
+
 .tex__wrapper.workspace__project-title {
   flex: 0 1 auto;
   font-size: 28px;

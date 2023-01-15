@@ -14,6 +14,7 @@ use crate::{
     app::{
         diagram_gl::DiagramGl,
         diagram_svg::{DiagramSvg, HighlightKind, HighlightSvg},
+        info::get_onboarding_message,
         tex::TexSpan,
     },
     components::panzoom::PanZoomComponent,
@@ -74,10 +75,8 @@ impl Component for WorkspaceView {
         let diagram_view = if workspace.is_some() {
             self.view_diagram(ctx)
         } else {
-            // TODO: Show onboarding info if workspace and signature is empty
-            html! {
-                <content class="workspace__empty-diagram"></content>
-            }
+            // Show onboarding info if workspace and signature is empty
+            get_onboarding_message()
         };
         let project_title = html! {
             <TexSpan
