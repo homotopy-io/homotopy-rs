@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1673623378655,
+  "lastUpdate": 1673780272361,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -44237,6 +44237,42 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 328.59,
             "range": "+/- 0.620",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0f0847d9d89a597ae778884c72ba4fefdb1e83c4",
+          "message": "Empty workspace message (#512) (#973)\n\n* Provisional onboarding message.\r\n\r\n* Implemented feedback.\r\n\r\n* Added redirect to tutorial keyboard shortcut.\r\n\r\n* Added CSS library license.\r\n\r\n* Rearrange shortcuts\r\n\r\n* Made text grey.\r\n\r\nCo-authored-by: Calin Tataru <calintat@gmail.com>",
+          "timestamp": "2023-01-15T10:48:27Z",
+          "tree_id": "7f07b6d55e65a3259052ea7430543ac4c0a9fed9",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/0f0847d9d89a597ae778884c72ba4fefdb1e83c4"
+        },
+        "date": 1673780260239,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/3",
+            "value": 13.057,
+            "range": "+/- 0.025",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 327.52,
+            "range": "+/- 9.220",
             "unit": "ms"
           }
         ]
