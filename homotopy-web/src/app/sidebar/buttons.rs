@@ -81,7 +81,7 @@ declare_sidebar_tools! {
     }
 
     BUTTON_ADD_GENERATOR {
-        "Add Generator",
+        "Add 0-cell",
         "add_circle_outline",
         model::Action::Proof(model::proof::Action::CreateGeneratorZero),
     }
