@@ -59,21 +59,29 @@ impl Bias {
 pub enum ContractionError {
     #[error("contraction failed: label inconsistency")]
     LabelInconsistency,
+
     #[error("contraction failed: max dimensional generator not connected to all others")]
     NonConnectedMaxDimensionGenerator,
+
     #[error("contraction failed: max dimensional generator not unique")]
     NonUniqueMaxDimensionGenerator,
+
     #[error("contraction failed: orientation error")]
     Orientation,
+
     #[error("contraction invalid")]
     Invalid,
+
     #[error("contraction ambiguous")]
     Ambiguous,
-    #[error("contraction fails to typecheck: {0}")]
+
+    #[error("contraction is ill-typed")]
     IllTyped(#[from] TypeError),
-    #[error("invalid boundary path provided to contraction")]
+
+    #[error(transparent)]
     Dimension(#[from] DimensionError),
-    #[error("contracting off the edge of the diagram")]
+
+    #[error("location is outside of the diagram")]
     OutOfBounds,
 }
 
@@ -92,24 +100,10 @@ impl DiagramN {
         bias: Option<Bias>,
         signature: &impl Signature,
     ) -> Result<Self, ContractionError> {
-        if boundary_path.depth() >= self.dimension() {
-            return Err(ContractionError::Invalid);
-        }
-
-        let (height, bias) = match direction {
-            Direction::Forward => (height, bias),
-            Direction::Backward => {
-                if height == 0 {
-                    return Err(ContractionError::OutOfBounds);
-                }
-                (height - 1, bias.map(Bias::flip))
-            }
-        };
-
         attach(self, boundary_path, |slice| {
             let slice = slice.try_into()?;
             let ContractExpand { contract, expand } =
-                contract_in_path(&slice, interior_path, height, bias, true)?;
+                contract_in_path(&slice, interior_path, height, direction, bias, true)?;
 
             let cospan = Cospan {
                 forward: contract.into(),
@@ -131,31 +125,34 @@ impl DiagramN {
 fn contract_base(
     diagram: &DiagramN,
     height: SingularHeight,
+    direction: Direction,
     bias: Option<Bias>,
     cone_wise_smooth: bool,
 ) -> Result<ContractExpand, ContractionError> {
     use Height::{Regular, Singular};
-    let slices: IdxVec<Height, Diagram> = diagram.slices().collect();
-    let cospans = diagram.cospans();
 
-    let cospan0 = cospans.get(height).ok_or(ContractionError::Invalid)?;
-    let cospan1 = cospans.get(height + 1).ok_or(ContractionError::Invalid)?;
+    if height >= diagram.size()
+        || (height == 0 && direction == Direction::Backward)
+        || (height == diagram.size() - 1 && direction == Direction::Forward)
+    {
+        return Err(ContractionError::OutOfBounds);
+    }
 
-    let regular0: &Diagram = slices
-        .get(Regular(height))
-        .ok_or(ContractionError::Invalid)?;
-    let singular0: &Diagram = slices
-        .get(Singular(height))
-        .ok_or(ContractionError::Invalid)?;
-    let regular1: &Diagram = slices
-        .get(Regular(height + 1))
-        .ok_or(ContractionError::Invalid)?;
-    let singular1: &Diagram = slices
-        .get(Singular(height + 1))
-        .ok_or(ContractionError::Invalid)?;
-    let regular2: &Diagram = slices
-        .get(Regular(height + 2))
-        .ok_or(ContractionError::Invalid)?;
+    let (i, bias) = match direction {
+        Direction::Forward => (height, bias),
+        Direction::Backward => (height - 1, bias.map(Bias::flip)),
+    };
+
+    let slices: IdxVec<Height, Diagram> = diagram.slices().take(2 * i + 5).collect();
+
+    let cospan0 = &diagram.cospans()[i];
+    let cospan1 = &diagram.cospans()[i + 1];
+
+    let regular0 = &slices[Regular(i)];
+    let singular0 = &slices[Singular(i)];
+    let regular1 = &slices[Regular(i + 1)];
+    let singular1 = &slices[Singular(i + 1)];
+    let regular2 = &slices[Regular(i + 2)];
 
     let (bias0, bias1) = match bias {
         None => (None, None),
@@ -166,35 +163,35 @@ fn contract_base(
     let r0 = graph.add_node(ScaffoldNode {
         key: ContractNode {
             bias: None,
-            coordinate: vec![Height::Regular(0)],
+            coordinate: vec![Regular(0)],
         },
         diagram: regular0.clone(),
     });
     let s0 = graph.add_node(ScaffoldNode {
         key: ContractNode {
             bias: bias0,
-            coordinate: vec![Height::Singular(0)],
+            coordinate: vec![Singular(0)],
         },
         diagram: singular0.clone(),
     });
     let r1 = graph.add_node(ScaffoldNode {
         key: ContractNode {
             bias: None,
-            coordinate: vec![Height::Regular(1)],
+            coordinate: vec![Regular(1)],
         },
         diagram: regular1.clone(),
     });
     let s1 = graph.add_node(ScaffoldNode {
         key: ContractNode {
             bias: bias1,
-            coordinate: vec![Height::Singular(1)],
+            coordinate: vec![Singular(1)],
         },
         diagram: singular1.clone(),
     });
     let r2 = graph.add_node(ScaffoldNode {
         key: ContractNode {
             bias: None,
-            coordinate: vec![Height::Regular(2)],
+            coordinate: vec![Regular(2)],
         },
         diagram: regular2.clone(),
     });
@@ -212,7 +209,7 @@ fn contract_base(
     let contract = RewriteN::new(
         diagram.dimension(),
         vec![Cone::new(
-            height,
+            i,
             vec![cospan0.clone(), cospan1.clone()],
             cospan.clone(),
             vec![
@@ -230,7 +227,7 @@ fn contract_base(
             // A cospan is smoothable if the forward and backward rewrites are identical and redundant.
             RewriteN::new(
                 diagram.dimension(),
-                vec![Cone::new_unit(height, cospan.clone(), cospan.forward)],
+                vec![Cone::new_unit(i, cospan.clone(), cospan.forward)],
             )
         } else {
             match (cone_wise_smooth, result.colimit) {
@@ -273,11 +270,11 @@ fn contract_base(
 
                     let cone = if smooth_cospan.is_identity() {
                         // Decrease diagram height by 1.
-                        Cone::new_unit(height, cospan, smooth)
+                        Cone::new_unit(i, cospan, smooth)
                     } else {
                         // Keep diagram height the same.
                         Cone::new(
-                            height,
+                            i,
                             vec![smooth_cospan],
                             cospan.clone(),
                             vec![cospan.forward, cospan.backward],
@@ -299,25 +296,26 @@ fn contract_in_path(
     diagram: &DiagramN,
     path: &mut [Height],
     height: SingularHeight,
+    direction: Direction,
     bias: Option<Bias>,
     cone_wise_smooth: bool,
 ) -> Result<ContractExpand, ContractionError> {
+    use Height::{Regular, Singular};
+
     match path.split_first_mut() {
-        None => contract_base(diagram, height, bias, cone_wise_smooth),
+        None => contract_base(diagram, height, direction, bias, cone_wise_smooth),
         Some((step, rest)) => {
             let slice: DiagramN = diagram
                 .slice(*step)
-                .ok_or(ContractionError::Invalid)?
-                .try_into()
-                .ok()
-                .ok_or(ContractionError::Invalid)?;
+                .ok_or(ContractionError::OutOfBounds)?
+                .try_into()?;
             let ContractExpand {
                 contract: contract_base,
                 expand: expand_base,
-            } = contract_in_path(&slice, rest, height, bias, false)?;
+            } = contract_in_path(&slice, rest, height, direction, bias, false)?;
             match *step {
-                Height::Regular(i) => {
-                    *step = Height::Singular(i);
+                Regular(i) => {
+                    *step = Singular(i);
                     let contract = RewriteN::new(
                         diagram.dimension(),
                         vec![Cone::new_unit(
@@ -330,10 +328,7 @@ fn contract_in_path(
                         )],
                     );
                     let expand = expand_propagate(
-                        &diagram
-                            .clone()
-                            .rewrite_forward(&contract)
-                            .map_err(|_err| ContractionError::Invalid)?,
+                        &diagram.clone().rewrite_forward(&contract).unwrap(),
                         step,
                         expand_base.into(),
                         false,
@@ -341,43 +336,40 @@ fn contract_in_path(
                     .map_err(|_err| ContractionError::Invalid)?;
                     Ok(ContractExpand { contract, expand })
                 }
-                Height::Singular(i) => {
+                Singular(i) => {
                     let source_cospan = &diagram.cospans()[i];
+                    let slice: Diagram = slice.into();
                     let contract_base = contract_base.into();
                     let (forward, backward) = {
                         // compose by colimit
                         let mut graph = DiGraph::new();
-                        let regular_prev = diagram
-                            .slice(SliceIndex::Interior(Height::Regular(i)))
-                            .ok_or(ContractionError::Invalid)?;
                         let r_p = graph.add_node(ScaffoldNode {
                             key: ContractNode {
                                 bias: None,
                                 coordinate: vec![Height::Regular(0), Height::Regular(i)],
                             },
-                            diagram: regular_prev.clone(),
+                            diagram: slice
+                                .clone()
+                                .rewrite_backward(&source_cospan.forward)
+                                .unwrap(),
                         });
-                        let singular = regular_prev
-                            .rewrite_forward(&source_cospan.forward)
-                            .map_err(|_err| ContractionError::Invalid)?;
                         let s = graph.add_node(ScaffoldNode {
                             key: ContractNode {
                                 bias: None,
                                 coordinate: vec![Height::Regular(0), Height::Singular(i)],
                             },
-                            diagram: singular.clone(),
+                            diagram: slice.clone(),
                         });
                         graph.add_edge(r_p, s, source_cospan.forward.clone().into());
-                        let regular_next = singular
-                            .clone()
-                            .rewrite_backward(&source_cospan.backward)
-                            .map_err(|_err| ContractionError::Invalid)?;
                         let r_n = graph.add_node(ScaffoldNode {
                             key: ContractNode {
                                 bias: None,
                                 coordinate: vec![Height::Regular(0), Height::Regular(i + 1)],
                             },
-                            diagram: regular_next,
+                            diagram: slice
+                                .clone()
+                                .rewrite_backward(&source_cospan.backward)
+                                .unwrap(),
                         });
                         graph.add_edge(r_n, s, source_cospan.backward.clone().into());
                         let c = graph.add_node(ScaffoldNode {
@@ -385,9 +377,7 @@ fn contract_in_path(
                                 bias: None,
                                 coordinate: vec![Height::Singular(0), Height::Singular(i)],
                             },
-                            diagram: singular
-                                .rewrite_forward(&contract_base)
-                                .map_err(|_err| ContractionError::Invalid)?,
+                            diagram: slice.rewrite_forward(&contract_base).unwrap(),
                         });
                         graph.add_edge(s, c, contract_base.clone().into());
                         let cocone = colimit(&graph)?;
@@ -407,10 +397,7 @@ fn contract_in_path(
                         )],
                     );
                     let expand = expand_propagate(
-                        &diagram
-                            .clone()
-                            .rewrite_forward(&contract)
-                            .map_err(|_err| ContractionError::Invalid)?,
+                        &diagram.clone().rewrite_forward(&contract).unwrap(),
                         step,
                         expand_base.into(),
                         true,

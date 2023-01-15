@@ -37,10 +37,10 @@ pub enum ExpansionError {
     #[error("expansion failed to propagate")]
     FailedToPropagate,
 
-    #[error("expansion is ill-typed: {0}")]
+    #[error("expansion is ill-typed")]
     IllTyped(#[from] TypeError),
 
-    #[error("invalid boundary path provided to expansion")]
+    #[error(transparent)]
     Dimension(#[from] DimensionError),
 }
 
@@ -76,58 +76,50 @@ impl DiagramN {
 
 pub fn expand_in_path(
     diagram: &DiagramN,
-    location: &mut [Height],
+    path: &mut [Height],
     point: [Height; 2],
     direction: Direction,
 ) -> Result<RewriteN, ExpansionError> {
     use Height::{Regular, Singular};
 
-    if diagram.dimension() < location.len() {
-        return Err(ExpansionError::OutOfBounds);
-    }
-
-    match location.split_first_mut() {
+    match path.split_first_mut() {
         None => match point {
             [Regular(h0), Regular(h1)] => expand_base_regular(diagram, h0, h1, direction),
             [Singular(h0), Singular(h1)] => expand_base_singular(diagram, h0, h1, direction),
             _ => unreachable!(),
         },
-        Some((height, rest)) => {
+        Some((step, rest)) => {
             let slice: DiagramN = diagram
-                .slice(*height)
+                .slice(*step)
                 .ok_or(ExpansionError::OutOfBounds)?
                 .try_into()?;
             let recursive = expand_in_path(&slice, rest, point, direction)?;
-            expand_propagate(diagram, height, recursive.into(), true)
+            expand_propagate(diagram, step, recursive.into(), true)
         }
     }
 }
 
-/// Remove a redundant singular level where its incoming rewrites are identical.
-/// This move is algebraically valid (if it typechecks).
 fn expand_base_regular(
     diagram: &DiagramN,
     h0: RegularHeight,
     h1: RegularHeight,
     direction: Direction,
 ) -> Result<RewriteN, ExpansionError> {
-    if (h0 == 0 && direction == Direction::Backward)
+    if h0 > diagram.size()
+        || (h0 == 0 && direction == Direction::Backward)
         || (h0 == diagram.size() && direction == Direction::Forward)
-        || h0 > diagram.size()
     {
         return Err(ExpansionError::OutOfBounds);
     }
 
-    let i = h0
-        - match direction {
-            Direction::Forward => 0,
-            Direction::Backward => 1,
-        }; // cospans[i] needs to be deleted by the smoothing rewrite
+    let i = match direction {
+        Direction::Forward => h0,
+        Direction::Backward => h0 - 1,
+    };
 
-    let cs = &diagram.cospans()[i];
-
-    let forward: &RewriteN = (&cs.forward).try_into().unwrap();
-    let backward: &RewriteN = (&cs.backward).try_into().unwrap();
+    let cospan = &diagram.cospans()[i];
+    let forward: &RewriteN = (&cospan.forward).try_into()?;
+    let backward: &RewriteN = (&cospan.backward).try_into()?;
 
     let j = {
         let preimage = match direction {
@@ -169,14 +161,14 @@ fn expand_base_regular(
 
     let cone = if smooth_cospan.is_identity() {
         // Decrease diagram height by 1.
-        Cone::new_unit(i, cs.clone(), smooth)
+        Cone::new_unit(i, cospan.clone(), smooth)
     } else {
         // Keep diagram height the same.
         Cone::new(
             i,
             vec![smooth_cospan],
-            cs.clone(),
-            vec![cs.forward.clone(), cs.backward.clone()],
+            cospan.clone(),
+            vec![cospan.forward.clone(), cospan.backward.clone()],
             vec![smooth],
         )
     };
@@ -212,8 +204,8 @@ fn expand_base_singular(
     }
 
     let cospan = &diagram.cospans()[h0];
-    let forward: &RewriteN = (&cospan.forward).try_into().unwrap();
-    let backward: &RewriteN = (&cospan.backward).try_into().unwrap();
+    let forward: &RewriteN = (&cospan.forward).try_into()?;
+    let backward: &RewriteN = (&cospan.backward).try_into()?;
 
     match direction {
         Direction::Forward => {
@@ -426,7 +418,7 @@ fn expand_cospan(
     })
 }
 
-/// Propagate a expansion on a singular level to the whole diagram
+/// Propagate a expansion on a slice to the whole diagram.
 pub(crate) fn expand_propagate(
     diagram: &DiagramN,
     height: &mut Height,
