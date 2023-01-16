@@ -1297,6 +1297,22 @@ svg {
   height: 100%;
 }
 
+.help {
+  text-align: center;
+}
+
+.help table {
+  margin: auto;
+}
+
+.help-action {
+	text-align: right;
+}
+
+.help-description {
+	text-align: left;
+}
+
 /* https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#using_a_label_element_to_trigger_a_hidden_file_input_element */
 
 .visually-hidden {
