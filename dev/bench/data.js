@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1673870988537,
+  "lastUpdate": 1673875984126,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -44423,6 +44423,42 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 391.42,
             "range": "+/- 5.110",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "e38bf93fedb6ab1fce4fc29f8ff00a95844fe83a",
+          "message": "Help menu (fix #977)",
+          "timestamp": "2023-01-16T13:20:47Z",
+          "tree_id": "4d09a8cd8f1f1c6404661a5da15a6defb1a58f96",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/e38bf93fedb6ab1fce4fc29f8ff00a95844fe83a"
+        },
+        "date": 1673875970143,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/3",
+            "value": 12.774,
+            "range": "+/- 0.005",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 335.38,
+            "range": "+/- 0.810",
             "unit": "ms"
           }
         ]
