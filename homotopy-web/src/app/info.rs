@@ -7,6 +7,7 @@ pub fn get_help_message() -> Html {
         <div class="modal-content">
             <header>
                 <h2>{"Help"}</h2>
+                <a href="#" class="modal-button"><Icon name="close" size={IconSize::Icon24}/></a>
             </header>
             <div class="help">
                 <p>
@@ -108,6 +109,7 @@ pub fn get_about_message() -> Html {
         <div class="modal-content">
             <header>
                 <h2>{"About"}</h2>
+                <a href="#" class="modal-button"><Icon name="close" size={IconSize::Icon24}/></a>
             </header>
             <p>
                 <a href="https://ncatlab.org/nlab/show/homotopy.io">{"homotopy.io"}</a>

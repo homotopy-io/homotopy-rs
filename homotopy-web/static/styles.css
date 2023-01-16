@@ -1285,8 +1285,15 @@ svg {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding-left: 16px;
+  padding-right: 16px;
   color: var(--sidebar-foreground);
   background-color: var(--sidebar-background);
+}
+
+.modal-button {
+  text-decoration: none;
+  color: var(--sidebar-foreground);
 }
 
 .modal-close {
