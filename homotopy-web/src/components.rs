@@ -7,6 +7,7 @@ mod common;
 
 pub mod delta;
 pub mod icon;
+pub mod modal;
 pub mod panzoom;
 pub mod settings;
 pub mod toast;

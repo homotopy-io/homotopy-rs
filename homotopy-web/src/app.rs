@@ -11,6 +11,7 @@ use self::diagram_gl::GlViewControl;
 use crate::{
     components::{
         icon::{Icon, IconSize},
+        modal::Modal,
         panzoom::PanZoom,
         settings::Settings,
         toast::{Toast, Toaster, ToasterComponent},
@@ -235,33 +236,15 @@ impl App {
                     {boundary_preview}
                     {workspace}
                 </div>
-                <div id="panic" class="modal" style="display:none;position:absolute;">
-                    <div class="modal-dialog">
-                        <a href="#invisible-button">
-                            // Empty div to create an invisible button
-                            <div class="modal-close"></div>
-                        </a>
-                        {info::get_panic_message()}
-                    </div>
-                </div>
-                <div id="about" class="modal">
-                    <div class="modal-dialog">
-                        <a href="#">
-                            // Empty div to create an invisible button
-                            <div class="modal-close"></div>
-                        </a>
-                        {info::get_about_message()}
-                    </div>
-                </div>
-                <div id="help" class="modal">
-                    <div class="modal-dialog">
-                        <a href="#">
-                            // Empty div to create an invisible button
-                            <div class="modal-close"></div>
-                        </a>
-                        {info::get_help_message()}
-                    </div>
-                </div>
+                <Modal id="panic" header="Unexpected crash" persistent=true>
+                    {info::get_panic_message()}
+                </Modal>
+                <Modal id="about" header="About">
+                    {info::get_about_message()}
+                </Modal>
+                <Modal id="help" header="Help">
+                    {info::get_help_message()}
+                </Modal>
                 <span class="version">
                     {format!("Version: {}", option_env!("GIT_DESCRIBE").unwrap_or(env!("CARGO_PKG_VERSION")))}
                 </span>

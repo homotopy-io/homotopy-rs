@@ -27,7 +27,7 @@
 		function display_panic_message() {
 			setTimeout(() => {
 				window.document.querySelectorAll(".cover-spin").forEach(el => el.remove());
-				window.document.getElementById("panic").style.display = "table";
+				window.document.location.href = "#panic";
 			}, 250);
 		};
 		window.help=display_panic_message;
