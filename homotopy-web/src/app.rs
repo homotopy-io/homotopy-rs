@@ -246,11 +246,20 @@ impl App {
                 </div>
                 <div id="about" class="modal">
                     <div class="modal-dialog">
-                        <a href="#invisible-button">
+                        <a href="#">
                             // Empty div to create an invisible button
                             <div class="modal-close"></div>
                         </a>
-                        {info::get_modal_message()}
+                        {info::get_about_message()}
+                    </div>
+                </div>
+                <div id="help" class="modal">
+                    <div class="modal-dialog">
+                        <a href="#">
+                            // Empty div to create an invisible button
+                            <div class="modal-close"></div>
+                        </a>
+                        {info::get_help_message()}
                     </div>
                 </div>
                 <span class="version">

@@ -29,6 +29,7 @@ macro_rules! declare_keybindings {
 }
 
 declare_keybindings! {
+    "?" => Action::Help
     "y" => Action::History(history::Action::Move(history::Direction::Linear(Direction::Forward)))
     "u" => Action::History(history::Action::Move(history::Direction::Linear(Direction::Backward)))
     "d" => Action::Proof(proof::Action::Behead)
@@ -50,10 +51,8 @@ declare_keybindings! {
     "7" => Action::Select(6)
     "8" => Action::Select(7)
     "9" => Action::Select(8)
-    "escape" => Action::ClearAttach
     "arrowup" => Action::Proof(proof::Action::SwitchSlice(Direction::Forward))
     "arrowdown" => Action::Proof(proof::Action::SwitchSlice(Direction::Backward))
     "arrowleft" => Action::Proof(proof::Action::AscendSlice(1))
     "arrowright" => Action::Proof(proof::Action::DescendSlice(SliceIndex::Boundary(Boundary::Source)))
-    "?" => Action::ShowTutorial
 }

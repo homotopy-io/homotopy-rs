@@ -1,6 +1,109 @@
 use yew::prelude::*;
 
-pub fn get_modal_message() -> Html {
+use crate::components::icon::{Icon, IconSize};
+
+pub fn get_help_message() -> Html {
+    html! {
+        <div class="modal-content">
+            <header>
+                <h2>{"Help"}</h2>
+            </header>
+            <div class="help">
+                <p>
+                    {"For instructions on how to use the tool, visit the "}<a href="https://github.com/homotopy-io/homotopy-rs/blob/master/TUTORIAL.md">{"tutorial"}</a>{"."}
+                </p>
+                <table>
+                    <tr>
+                        <td class="help-action"><Icon name="touch_app" size={IconSize::Icon24}/></td>
+                        <td class="help-description">{"Attach"}</td>
+                    </tr>
+                    <tr>
+                        <td class="help-action"><Icon name="swipe" size={IconSize::Icon24}/></td>
+                        <td class="help-description">{"Homotopy"}</td>
+                    </tr>
+                    <tr>
+                        <td class="help-action">{"Hold  "}<kbd class="kbc-button">{"SHIFT"}</kbd></td>
+                        <td class="help-description">{"Cancel inverses"}</td>
+                    </tr>
+                    <tr>
+                        <td class="help-action"><kbd class="kbc-button">{"U"}</kbd></td>
+                        <td class="help-description">{"Undo"}</td>
+                    </tr>
+                    <tr>
+                        <td class="help-action"><kbd class="kbc-button">{"Y"}</kbd></td>
+                        <td class="help-description">{"Redo"}</td>
+                    </tr>
+                    <tr>
+                        <td class="help-action"><kbd class="kbc-button">{"A"}</kbd></td>
+                        <td class="help-description">{"Add 0-cell"}</td>
+                    </tr>
+                    <tr>
+                        <td class="help-action">
+                            <kbd class="kbc-button">{"S"}</kbd>
+                            {" "}
+                            <kbd class="kbc-button">{"T"}</kbd>
+                        </td>
+                        <td class="help-description">{"Set source/target"}</td>
+                    </tr>
+                    <tr>
+                        <td class="help-action"><kbd class="kbc-button">{"I"}</kbd></td>
+                        <td class="help-description">{"Take identity"}</td>
+                    </tr>
+                    <tr>
+                        <td class="help-action"><kbd class="kbc-button">{"C"}</kbd></td>
+                        <td class="help-description">{"Clear workspace"}</td>
+                    </tr>
+                    <tr>
+                        <td class="help-action">
+                            <kbd class="kbc-button">{"↑"}</kbd>
+                            {" "}
+                            <kbd class="kbc-button">{"↓"}</kbd>
+                        </td>
+                        <td class="help-description">{"Switch slice"}</td>
+                    </tr>
+                    <tr>
+                        <td class="help-action"><kbd class="kbc-button">{"←"}</kbd></td>
+                        <td class="help-description">{"Ascend slice"}</td>
+                    </tr>
+                    <tr>
+                        <td class="help-action"><kbd class="kbc-button">{"→"}</kbd></td>
+                        <td class="help-description">{"Descend slice"}</td>
+                    </tr>
+                    <tr>
+                        <td class="help-action"><kbd class="kbc-button">{"D"}</kbd></td>
+                        <td class="help-description">{"Behead"}</td>
+                    </tr>
+                    <tr>
+                        <td class="help-action"><kbd class="kbc-button">{"F"}</kbd></td>
+                        <td class="help-description">{"Befoot"}</td>
+                    </tr>
+                    <tr>
+                        <td class="help-action"><kbd class="kbc-button">{"V"}</kbd></td>
+                        <td class="help-description">{"Invert"}</td>
+                    </tr>
+                    <tr>
+                        <td class="help-action"><kbd class="kbc-button">{"R"}</kbd></td>
+                        <td class="help-description">{"Restrict"}</td>
+                    </tr>
+                    <tr>
+                        <td class="help-action"><kbd class="kbc-button">{"H"}</kbd></td>
+                        <td class="help-description">{"Theorem"}</td>
+                    </tr>
+                    <tr>
+                        <td class="help-action">
+                            <kbd class="kbc-button">{"1"}</kbd>
+                            {" - "}
+                            <kbd class="kbc-button">{"9"}</kbd>
+                        </td>
+                        <td class="help-description">{"Select generator or attachment"}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    }
+}
+
+pub fn get_about_message() -> Html {
     html! {
         <div class="modal-content">
             <header>
@@ -74,30 +177,27 @@ pub fn get_onboarding_message() -> Html {
                 </header>
                 <table>
                     <tr>
-                        <td class="workspace__empty-keydesc">{"Add 0-cell  "}</td>
+                        <td class="workspace__empty-keydesc">{"Add 0-cell"}</td>
                         <td class="workspace__empty-keyicon"><kbd class="kbc-button">{"A"}</kbd></td>
                     </tr>
                     <tr>
-                        <td class="workspace__empty-keydesc">{"Select source/target  "}</td>
+                        <td class="workspace__empty-keydesc">{"Set source/target"}</td>
                         <td class="workspace__empty-keyicon">
                             <kbd class="kbc-button">{"S"}</kbd>
+                            {" "}
                             <kbd class="kbc-button">{"T"}</kbd>
                         </td>
                     </tr>
                     <tr>
-                        <td class="workspace__empty-keydesc">{"Take identity  "}</td>
+                        <td class="workspace__empty-keydesc">{"Take identity"}</td>
                         <td class="workspace__empty-keyicon"><kbd class="kbc-button">{"I"}</kbd></td>
                     </tr>
                     <tr>
-                        <td class="workspace__empty-keydesc">{"Clear workspace  "}</td>
+                        <td class="workspace__empty-keydesc">{"Clear workspace"}</td>
                         <td class="workspace__empty-keyicon"><kbd class="kbc-button">{"C"}</kbd></td>
                     </tr>
                     <tr>
-                        <td class="workspace__empty-keydesc">{"Save theorem  "}</td>
-                        <td class="workspace__empty-keyicon"><kbd class="kbc-button">{"H"}</kbd></td>
-                    </tr>
-                    <tr>
-                        <td class="workspace__empty-keydesc">{"View tutorial  "}</td>
+                        <td class="workspace__empty-keydesc">{"Help"}</td>
                         <td class="workspace__empty-keyicon"><kbd class="kbc-button">{"?"}</kbd></td>
                     </tr>
                 </table>

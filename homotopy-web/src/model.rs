@@ -30,7 +30,7 @@ pub enum Action {
     HighlightAttachment(Option<AttachOption>),
     HighlightSlice(Option<SliceIndex>),
 
-    ShowTutorial,
+    Help,
 }
 
 impl Action {
@@ -249,7 +249,7 @@ impl State {
             Action::HighlightAttachment(option) => self.highlight_attachment(option),
             Action::HighlightSlice(slice) => self.highlight_slice(slice),
             Action::ClearAttach => self.clear_attach(),
-            Action::ShowTutorial => show_tutorial()?,
+            Action::Help => help()?,
         }
 
         Ok(true)
@@ -395,13 +395,11 @@ pub enum ModelError {
     IndexOutOfBounds,
 }
 
-fn show_tutorial() -> Result<(), ModelError> {
+fn help() -> Result<(), ModelError> {
     let window = web_sys::window().ok_or(ModelError::Internal)?;
     let document = window.document().ok_or(ModelError::Internal)?;
     let location = document.location().ok_or(ModelError::Internal)?;
-    location
-        .set_href("https://github.com/homotopy-io/homotopy-rs/blob/master/TUTORIAL.md")
-        .or(Err(ModelError::Internal))
+    location.set_href("#help").or(Err(ModelError::Internal))
 }
 
 pub fn generate_download(name: &str, ext: &str, data: &[u8]) -> Result<(), wasm_bindgen::JsValue> {
