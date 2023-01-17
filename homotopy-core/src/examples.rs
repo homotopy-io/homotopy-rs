@@ -371,6 +371,18 @@ pub fn bead_series(n: usize) -> (impl Signature, DiagramN) {
     (sig, res)
 }
 
+// take an endomorphism on a zero cell `n` times
+pub fn iterated_endomorphism(n: usize) -> (impl Signature, DiagramN) {
+    let mut sig = SignatureBuilder::default();
+
+    let x = sig.add_zero();
+    let mut res: DiagramN = sig.add(x, x).unwrap();
+    for _ in 1..n {
+        res = sig.add(res.clone(), res).unwrap();
+    }
+    (sig, res)
+}
+
 //    |
 //    m
 //   / \
