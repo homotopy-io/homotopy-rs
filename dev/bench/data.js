@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1673956897167,
+  "lastUpdate": 1673979696458,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -44609,6 +44609,60 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 327.25,
             "range": "+/- 0.580",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "committer": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "distinct": true,
+          "id": "f920a0f939ee4e72e6194e09ac350ed6296a4e28",
+          "message": "add benchmark for label identifications on construction of iterated endomorphism",
+          "timestamp": "2023-01-17T18:05:13Z",
+          "tree_id": "50467b466ff6e3271d28be82a6b76c5cefe2659a",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/f920a0f939ee4e72e6194e09ac350ed6296a4e28"
+        },
+        "date": 1673979682125,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 7.1059,
+            "range": "+/- 0.011",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 65.309,
+            "range": "+/- 0.102",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 864.39,
+            "range": "+/- 1.030",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 12.91,
+            "range": "+/- 0.016",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 328.16,
+            "range": "+/- 0.490",
             "unit": "ms"
           }
         ]
