@@ -663,3 +663,43 @@ pub fn pants_unit() -> (impl Signature, DiagramN) {
 
     (sig, pants_unit)
 }
+
+pub fn two_cups() -> (impl Signature, DiagramN) {
+    let mut sig = SignatureBuilder::default();
+
+    // 0-cells
+    let x = sig.add_zero();
+    let y = sig.add_zero();
+
+    // 1-cells
+    let f = sig.add(x, y).unwrap();
+
+    let two_cups: DiagramN = f
+        .attach(&f.inverse(), Target, &[])
+        .unwrap()
+        .attach(&f, Target, &[])
+        .unwrap()
+        .attach(&f.inverse(), Target, &[])
+        .unwrap()
+        .identity()
+        .contract(
+            Source.into(),
+            &mut [],
+            0,
+            Direction::Forward,
+            Some(Bias::Same),
+            &sig,
+        )
+        .unwrap()
+        .contract(
+            Source.into(),
+            &mut [],
+            0,
+            Direction::Forward,
+            Some(Bias::Same),
+            &sig,
+        )
+        .unwrap();
+
+    (sig, two_cups)
+}

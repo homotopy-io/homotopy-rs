@@ -1523,6 +1523,25 @@ fn endomorphism_on_half_algebraic_ring() -> anyhow::Result<(impl Signature, Diag
     Ok((sig, endomorphism))
 }
 
+// ensure that the singular braid on two cups is not smoothed away
+#[test]
+fn singular_braid_on_two_cups() -> anyhow::Result<()> {
+    let (sig, two_cups) = examples::two_cups();
+
+    let braid = two_cups.identity().identity().contract(
+        Boundary::Target.into(),
+        &mut [Height::Regular(0)],
+        0,
+        Direction::Forward,
+        Some(Bias::Lower),
+        &sig,
+    )?;
+
+    assert!(braid.cospans()[0].backward.is_identity());
+
+    Ok(())
+}
+
 // everything should contract when composed with a weak unit, on either side
 #[test_case(examples::associator())]
 #[test_case(examples::two_endomorphism())]
