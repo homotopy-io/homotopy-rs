@@ -621,7 +621,13 @@ impl ProofState {
         };
 
         ws.diagram = diagram.behead(max_height).into();
-        ws.path = Default::default();
+
+        if ws.path.len() == 1 {
+            ws.path.pop_back();
+            if ws.view.dimension < 2 {
+                ws.view.dimension += 1;
+            }
+        }
 
         true
     }
@@ -645,7 +651,13 @@ impl ProofState {
         };
 
         ws.diagram = diagram.befoot(min_height).into();
-        ws.path = Default::default();
+
+        if ws.path.len() == 1 {
+            ws.path.pop_back();
+            if ws.view.dimension < 2 {
+                ws.view.dimension += 1;
+            }
+        }
 
         true
     }
