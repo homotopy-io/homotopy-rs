@@ -8,6 +8,7 @@ use std::{
 };
 
 use hashconsing::{HConsed, HConsign, HashConsign};
+use homotopy_common::hash::FastHashSet;
 use once_cell::unsync::OnceCell;
 use serde::{ser::SerializeStruct, Deserialize, Serialize};
 use thiserror::Error;
@@ -101,23 +102,23 @@ impl Rewrite {
         boundary_path: BoundaryPath,
         depth: usize,
         prefix: &[Height],
-        label_identifications: Option<LabelIdentifications>,
+        label_identifications: (&mut FastHashSet<Diagram>, &mut LabelIdentifications),
     ) -> Self {
         use Height::{Regular, Singular};
 
         use crate::Boundary::{Source, Target};
 
-        let label_identifications =
-            label_identifications.unwrap_or_else(|| base.clone().label_identifications());
+        let (seen, store) = label_identifications;
+        if !seen.contains(&base) {
+            store.extend(base.clone().label_identifications());
+            seen.insert(base.clone());
+        }
 
         match base {
             Diagram::Diagram0(base) => Rewrite0::new(
                 base,
                 generator,
-                Some(Label::new(
-                    boundary_path,
-                    label_identifications[&prefix.to_vec()].clone(),
-                )),
+                Some(Label::new(boundary_path, store[&prefix.to_vec()].clone())),
             )
             .into(),
             Diagram::DiagramN(base) => {
@@ -128,7 +129,7 @@ impl Rewrite {
                         BoundaryPath(Source, depth + 1),
                         depth + 1,
                         &[],
-                        None,
+                        (seen, store),
                     ),
                     backward: Self::cone_over_generator(
                         generator,
@@ -136,7 +137,7 @@ impl Rewrite {
                         BoundaryPath(Target, depth + 1),
                         depth + 1,
                         &[],
-                        None,
+                        (seen, store),
                     ),
                 };
                 let mut regular_slices: Vec<_> = Default::default();
@@ -151,7 +152,7 @@ impl Rewrite {
                             boundary_path,
                             depth + 1,
                             &[prefix, &[Regular(i)]].concat(),
-                            Some(label_identifications.clone()),
+                            (seen, store),
                         )),
                         Singular(i) => singular_slices.push(Self::cone_over_generator(
                             generator,
@@ -159,7 +160,7 @@ impl Rewrite {
                             boundary_path,
                             depth + 1,
                             &[prefix, &[Singular(i)]].concat(),
-                            Some(label_identifications.clone()),
+                            (seen, store),
                         )),
                     });
                 RewriteN::new(

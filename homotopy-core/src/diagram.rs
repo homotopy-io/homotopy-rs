@@ -271,6 +271,8 @@ impl DiagramN {
             return Err(NewDiagramError::NonGlobular);
         }
 
+        let mut seen = Default::default();
+        let mut store = Default::default();
         let cospan = Cospan {
             forward: Rewrite::cone_over_generator(
                 generator,
@@ -278,7 +280,7 @@ impl DiagramN {
                 BoundaryPath(Source, 0),
                 0,
                 &[],
-                None,
+                (&mut seen, &mut store),
             ),
             backward: Rewrite::cone_over_generator(
                 generator,
@@ -286,7 +288,7 @@ impl DiagramN {
                 BoundaryPath(Target, 0),
                 0,
                 &[],
-                None,
+                (&mut seen, &mut store),
             ),
         };
 
