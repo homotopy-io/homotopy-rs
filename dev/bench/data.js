@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1673949375458,
+  "lastUpdate": 1673956897167,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -44573,6 +44573,42 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 321.49,
             "range": "+/- 0.330",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "a48489189681bbd61a723bb7292730fd6c22a339",
+          "message": "Add test for cone wise smoothing bug (fix #976)",
+          "timestamp": "2023-01-17T11:49:19Z",
+          "tree_id": "ab099035008a2a8615b49b91054ade1260d42932",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/a48489189681bbd61a723bb7292730fd6c22a339"
+        },
+        "date": 1673956884592,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "contract high dimensions/3",
+            "value": 12.779,
+            "range": "+/- 0.023",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 327.25,
+            "range": "+/- 0.580",
             "unit": "ms"
           }
         ]
