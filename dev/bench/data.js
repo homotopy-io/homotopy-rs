@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1673979696458,
+  "lastUpdate": 1673980661181,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -44663,6 +44663,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 328.16,
             "range": "+/- 0.490",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "committer": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "distinct": true,
+          "id": "eebc0a8e7ebdc986120acec375182b5ad03d42c7",
+          "message": "Reduce allocations and increase sharing for label identifications on\ndiagram creation",
+          "timestamp": "2023-01-17T18:06:29Z",
+          "tree_id": "903616f80589e9c794cc4015f4d9f12f8ae81a06",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/eebc0a8e7ebdc986120acec375182b5ad03d42c7"
+        },
+        "date": 1673980648945,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/4",
+            "value": 1.0442,
+            "range": "+/- 0.000",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 7.0945,
+            "range": "+/- 0.036",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 63.652,
+            "range": "+/- 0.080",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 950.57,
+            "range": "+/- 0.900",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 12.917,
+            "range": "+/- 0.014",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 339.42,
+            "range": "+/- 0.860",
             "unit": "ms"
           }
         ]
