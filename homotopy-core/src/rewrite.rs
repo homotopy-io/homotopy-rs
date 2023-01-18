@@ -102,7 +102,7 @@ impl Rewrite {
         boundary_path: BoundaryPath,
         depth: usize,
         prefix: &[Height],
-        label_identifications: (&mut FastHashSet<Diagram>, &mut LabelIdentifications),
+        label_identifications: (&mut FastHashSet<Diagram>, &mut LabelIdentifications, bool),
         rewrite_cache: &mut FastHashMap<
             (Generator, Diagram, BoundaryPath, usize, Vec<Height>),
             Self,
@@ -124,8 +124,8 @@ impl Rewrite {
         }
 
         // share label identifications between different recursive calls
-        let (seen, store) = label_identifications;
-        if !seen.contains(&base) {
+        let (seen, store, update) = label_identifications;
+        if update && !seen.contains(&base) {
             store.extend(base.clone().label_identifications());
             seen.insert(base.clone());
         }
@@ -145,7 +145,7 @@ impl Rewrite {
                         BoundaryPath(Source, depth + 1),
                         depth + 1,
                         &[],
-                        (seen, store),
+                        (seen, store, true),
                         rewrite_cache,
                     ),
                     backward: Self::cone_over_generator(
@@ -154,7 +154,7 @@ impl Rewrite {
                         BoundaryPath(Target, depth + 1),
                         depth + 1,
                         &[],
-                        (seen, store),
+                        (seen, store, true),
                         rewrite_cache,
                     ),
                 };
@@ -170,7 +170,7 @@ impl Rewrite {
                             boundary_path,
                             depth + 1,
                             &[prefix, &[Regular(i)]].concat(),
-                            (seen, store),
+                            (seen, store, false),
                             rewrite_cache,
                         )),
                         Singular(i) => singular_slices.push(Self::cone_over_generator(
@@ -179,7 +179,7 @@ impl Rewrite {
                             boundary_path,
                             depth + 1,
                             &[prefix, &[Singular(i)]].concat(),
-                            (seen, store),
+                            (seen, store, false),
                             rewrite_cache,
                         )),
                     });

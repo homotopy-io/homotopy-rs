@@ -281,7 +281,7 @@ impl DiagramN {
                 BoundaryPath(Source, 0),
                 0,
                 &[],
-                (&mut seen, &mut store),
+                (&mut seen, &mut store, true),
                 &mut rewrite_cache,
             ),
             backward: Rewrite::cone_over_generator(
@@ -290,7 +290,7 @@ impl DiagramN {
                 BoundaryPath(Target, 0),
                 0,
                 &[],
-                (&mut seen, &mut store),
+                (&mut seen, &mut store, true),
                 &mut rewrite_cache,
             ),
         };
