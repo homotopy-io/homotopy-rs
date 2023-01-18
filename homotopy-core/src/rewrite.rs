@@ -8,7 +8,7 @@ use std::{
 };
 
 use hashconsing::{HConsed, HConsign, HashConsign};
-use homotopy_common::hash::FastHashSet;
+use homotopy_common::hash::{FastHashMap, FastHashSet};
 use once_cell::unsync::OnceCell;
 use serde::{ser::SerializeStruct, Deserialize, Serialize};
 use thiserror::Error;
@@ -103,18 +103,34 @@ impl Rewrite {
         depth: usize,
         prefix: &[Height],
         label_identifications: (&mut FastHashSet<Diagram>, &mut LabelIdentifications),
+        rewrite_cache: &mut FastHashMap<
+            (Generator, Diagram, BoundaryPath, usize, Vec<Height>),
+            Self,
+        >,
     ) -> Self {
         use Height::{Regular, Singular};
 
         use crate::Boundary::{Source, Target};
 
+        // memoize to reduce number of recursive calls
+        if let Some(rewrite) = rewrite_cache.get(&(
+            generator,
+            base.clone(),
+            boundary_path,
+            depth,
+            prefix.to_vec(),
+        )) {
+            return rewrite.clone();
+        }
+
+        // share label identifications between different recursive calls
         let (seen, store) = label_identifications;
         if !seen.contains(&base) {
             store.extend(base.clone().label_identifications());
             seen.insert(base.clone());
         }
 
-        match base {
+        let result: Self = match base.clone() {
             Diagram::Diagram0(base) => Rewrite0::new(
                 base,
                 generator,
@@ -130,6 +146,7 @@ impl Rewrite {
                         depth + 1,
                         &[],
                         (seen, store),
+                        rewrite_cache,
                     ),
                     backward: Self::cone_over_generator(
                         generator,
@@ -138,6 +155,7 @@ impl Rewrite {
                         depth + 1,
                         &[],
                         (seen, store),
+                        rewrite_cache,
                     ),
                 };
                 let mut regular_slices: Vec<_> = Default::default();
@@ -153,6 +171,7 @@ impl Rewrite {
                             depth + 1,
                             &[prefix, &[Regular(i)]].concat(),
                             (seen, store),
+                            rewrite_cache,
                         )),
                         Singular(i) => singular_slices.push(Self::cone_over_generator(
                             generator,
@@ -161,6 +180,7 @@ impl Rewrite {
                             depth + 1,
                             &[prefix, &[Singular(i)]].concat(),
                             (seen, store),
+                            rewrite_cache,
                         )),
                     });
                 RewriteN::new(
@@ -175,7 +195,14 @@ impl Rewrite {
                 )
                 .into()
             }
-        }
+        };
+
+        rewrite_cache.insert(
+            (generator, base, boundary_path, depth, prefix.to_vec()),
+            result.clone(),
+        );
+
+        result
     }
 
     #[inline]

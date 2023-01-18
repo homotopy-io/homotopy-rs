@@ -273,6 +273,7 @@ impl DiagramN {
 
         let mut seen = Default::default();
         let mut store = Default::default();
+        let mut rewrite_cache = Default::default();
         let cospan = Cospan {
             forward: Rewrite::cone_over_generator(
                 generator,
@@ -281,6 +282,7 @@ impl DiagramN {
                 0,
                 &[],
                 (&mut seen, &mut store),
+                &mut rewrite_cache,
             ),
             backward: Rewrite::cone_over_generator(
                 generator,
@@ -289,6 +291,7 @@ impl DiagramN {
                 0,
                 &[],
                 (&mut seen, &mut store),
+                &mut rewrite_cache,
             ),
         };
 
