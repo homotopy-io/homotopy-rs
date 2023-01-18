@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1673980661181,
+  "lastUpdate": 1674046554851,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -44723,6 +44723,60 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 339.42,
             "range": "+/- 0.860",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "committer": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "distinct": true,
+          "id": "15f2cd1fcf3d5e05a6592be45ca93bb73413d6a5",
+          "message": "Reduce allocations and increase sharing for label identifications on\ndiagram creation",
+          "timestamp": "2023-01-18T12:41:15Z",
+          "tree_id": "c18884d782aa1880e54241d257ef03ee8a8a5f0f",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/15f2cd1fcf3d5e05a6592be45ca93bb73413d6a5"
+        },
+        "date": 1674046540049,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 2.4996,
+            "range": "+/- 0.002",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 21.582,
+            "range": "+/- 0.044",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 323.63,
+            "range": "+/- 0.470",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 12.855,
+            "range": "+/- 0.015",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 322.81,
+            "range": "+/- 0.550",
             "unit": "ms"
           }
         ]
