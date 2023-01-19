@@ -19,6 +19,9 @@ use crate::{
 
 #[derive(Debug, Error)]
 pub enum ExpansionError {
+    #[error("can't perform expansion at this location")]
+    WrongLocation,
+
     #[error("can't perform expansion in a regular slice")]
     RegularSlice,
 
@@ -86,7 +89,7 @@ pub fn expand_in_path(
         None => match point {
             [Regular(h0), Regular(h1)] => expand_base_regular(diagram, h0, h1, direction),
             [Singular(h0), Singular(h1)] => expand_base_singular(diagram, h0, h1, direction),
-            _ => unreachable!(),
+            _ => Err(ExpansionError::WrongLocation),
         },
         Some((step, rest)) => {
             let slice: DiagramN = diagram
