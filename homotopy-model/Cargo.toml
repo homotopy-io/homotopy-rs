@@ -20,7 +20,7 @@ arbitrary = { version = "1.2.2", optional = true, features = ["derive"] }
 
 palette = { git = "https://github.com/Ogeon/palette", features = ["serializing"] }
 
-log = "0.4.17"
+tracing = "0.1.37"
 
 thiserror = "1.0.38"
 obake = { version = "1.0.4", features = ["serde"] }

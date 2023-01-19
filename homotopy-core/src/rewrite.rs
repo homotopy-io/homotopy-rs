@@ -336,7 +336,7 @@ impl Rewrite0 {
                 Ok(Self::new(*f_s, *g_t, None))
             }
             (f, g) => {
-                log::error!("Failed to compose source: {:?}, target: {:?}", f, g);
+                tracing::error!("Failed to compose source: {:?}, target: {:?}", f, g);
                 Err(CompositionError::Incompatible)
             }
         }

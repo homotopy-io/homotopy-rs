@@ -25,7 +25,7 @@ pub fn deserialize(data: &[u8]) -> Option<((Signature, Option<Workspace>), Metad
     // Deserialize
     let export: Export = match serde_json::from_slice(data) {
         Err(error) => {
-            log::error!("Migration tool: cannot load file. Error: {}", error);
+            tracing::error!("Migration tool: cannot load file. Error: {}", error);
             None
         }
         Ok(export) => Some(export),
@@ -33,7 +33,7 @@ pub fn deserialize(data: &[u8]) -> Option<((Signature, Option<Workspace>), Metad
 
     let proof = match OldProof::new(&export.proof) {
         Err(error) => {
-            log::error!("Migration tool: corrupted proof string. Error: {}", error);
+            tracing::error!("Migration tool: corrupted proof string. Error: {}", error);
             None
         }
         Ok(proof) => Some(proof),

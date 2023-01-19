@@ -109,7 +109,7 @@ pub fn deserialize(data: &[u8]) -> Option<((Signature, Option<Workspace>), Metad
     // Deserialize with version tag
     let data: AnyVersion<Data> = match rmp_serde::decode::from_slice(data) {
         Err(error) => {
-            log::error!("Error while deserializing: {}", error);
+            tracing::error!("Error while deserializing: {}", error);
             None
         }
         Ok(data) => Some(data),

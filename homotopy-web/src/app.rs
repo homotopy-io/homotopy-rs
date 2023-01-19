@@ -91,7 +91,7 @@ impl Component for App {
                 true
             }
             Message::Dispatch(action) => {
-                log::info!("Received action: {:?}", action);
+                tracing::info!("Received action: {:?}", action);
 
                 // Intercept 'MakeOriented' actions to show warning.
                 if let model::Action::Proof(model::proof::Action::EditSignature(
@@ -124,7 +124,7 @@ impl Component for App {
                         "stopStateUpdate",
                     )
                     .unwrap();
-                log::info!(
+                tracing::info!(
                     "State update took {}ms.",
                     js_sys::Reflect::get(
                         &performance
@@ -157,7 +157,7 @@ impl Component for App {
                     self.signature_stylesheet
                         .update(self.state.proof().signature.clone());
                 } else if let Err(error) = result {
-                    log::error!("Error occured: {}", error);
+                    tracing::error!("Error occured: {}", error);
                     self.toaster.toast(Toast::error(error.to_string()));
                 }
 

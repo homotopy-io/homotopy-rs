@@ -149,7 +149,7 @@ impl<const N: usize> PreparedDiagram<N> {
                 "stopPrepareDiagram",
             )
             .unwrap();
-        log::info!(
+        tracing::info!(
             "preparing diagram for rendering took {}ms",
             js_sys::Reflect::get(
                 &performance
@@ -328,7 +328,7 @@ impl<const N: usize> Component for DiagramSvg<N> {
         // TODO: Do not redraw diagram when highlight changes!
         // TODO: Do not redraw diagram for drags.
 
-        log::info!("redrawing diagram");
+        tracing::info!("redrawing diagram");
 
         html! {
             <svg
@@ -550,10 +550,10 @@ impl<const N: usize> DiagramSvg<N> {
             );
 
             if let Some(homotopy) = homotopy {
-                log::info!("Homotopy: {:?}", homotopy);
+                tracing::info!("Homotopy: {:?}", homotopy);
                 ctx.props().on_homotopy.emit(homotopy);
             } else {
-                log::info!("No homotopy");
+                tracing::info!("No homotopy");
             }
         }
     }
@@ -589,7 +589,7 @@ fn drag_to_homotopy<const N: usize>(
     let point = match simplex {
         Simplex::Surface([p0, _, _]) | Simplex::Wire([p0, _]) | Simplex::Point([p0]) => p0,
     };
-    log::debug!("Point: {:?}", point);
+    tracing::debug!("Point: {:?}", point);
 
     match N {
         1 => {

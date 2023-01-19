@@ -39,9 +39,9 @@ wasm-bindgen = { version = "0.2.83" }
 serde-wasm-bindgen = "0.4.5"
 gloo = "0.8.0"
 gloo-timers = { version = "0.2.5", features = ["futures"] }
-
-wasm-logger = "0.2.0"
-log = "0.4.17"
+tracing-web = "0.1.2"
+tracing = { version = "0.1.37", features = ["log"] }
+tracing-subscriber = { version = "0.3.16", features = ["time"] }
 euclid = "0.22.7"
 ultraviolet = "0.9.0"
 lyon_path = "1.0.3"
@@ -62,6 +62,7 @@ arrayvec = "0.7.2"
 yew = "0.19.3"
 yew-agent = "0.1.0"
 yew-macro = "0.19.3"
+time = {version = "0.3.17", features = ["wasm-bindgen"] }
 
 # The `web-sys` crate allows you to interact with the various browser APIs,
 # like the DOM.
