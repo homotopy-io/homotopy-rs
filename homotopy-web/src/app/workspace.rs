@@ -156,11 +156,14 @@ impl WorkspaceView {
 
     fn view_diagram_svg<const N: usize>(&self, ctx: &Context<Self>) -> Html {
         if let Some(ref ws) = ctx.props().workspace {
-            let attachment_highlight = ctx
-                .props()
-                .attachment_highlight
-                .as_ref()
-                .map(|option| highlight_attachment::<N>(ws, option));
+            let attachment_highlight = match N {
+                0 => None,
+                _ => ctx
+                    .props()
+                    .attachment_highlight
+                    .as_ref()
+                    .map(|option| highlight_attachment::<N>(ws, option)),
+            };
             let slice_highlight = ctx.props().slice_highlight.map(highlight_slice::<N>);
             let highlight = attachment_highlight.or(slice_highlight);
             html! {
