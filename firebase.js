@@ -13,39 +13,39 @@ const firebaseConfig = {
   measurementId: "G-CYGQVSSM6Q"
 };
 
-console.log("Loading firebase...");
-window.firebase_working = false;
+if (location.hostname.match(/^(?:[^.]+\.)?homotopy.io$/)) {
+  console.log("Loading firebase...");
 
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
-// Compat modules for firebase ui
-await import("https://www.gstatic.com/firebasejs/9.7.0/firebase-app-compat.js")
-  .catch(err => {
-    console.error("Failed to import firebase-app-compat", err);
-    throw err;
-  });
-// Initialize Firebase
-const app = firebase.initializeApp(firebaseConfig);
+  // Compat modules for firebase ui
+  await import("https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js")
+    .catch(err => {
+      console.error("Failed to import firebase-app-compat", err);
+      throw err;
+    });
+  // Initialize Firebase
+  const app = firebase.initializeApp(firebaseConfig);
 
-await import("https://www.gstatic.com/firebasejs/9.7.0/firebase-analytics-compat.js")
-  .catch(err => {
-    console.error("Failed to import firebase-analytics-compat", err);
-    throw err;
-  });
-const analytics = firebase.analytics();
+  await import("https://www.gstatic.com/firebasejs/9.15.0/firebase-analytics-compat.js")
+    .catch(err => {
+      console.error("Failed to import firebase-analytics-compat", err);
+      throw err;
+    });
+  const analytics = firebase.analytics();
 
-await import("https://www.gstatic.com/firebasejs/9.7.0/firebase-performance-compat.js")
-  .catch(err => {
-    console.error("Failed to import firebase-performance-compat", err);
-    throw err;
-  });
-const perf = firebase.performance();
+  await import("https://www.gstatic.com/firebasejs/9.15.0/firebase-performance-compat.js")
+    .catch(err => {
+      console.error("Failed to import firebase-performance-compat", err);
+      throw err;
+    });
+  const perf = firebase.performance();
 
-await import("https://www.gstatic.com/firebasejs/9.7.0/firebase-auth-compat.js")
-  .catch(err => {
-    console.error("Failed to import firebase-auth-compat", err);
-    throw err;
-  });
-const auth = firebase.auth();
-window.firebase_working = true;
+  await import("https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js")
+    .catch(err => {
+      console.error("Failed to import firebase-auth-compat", err);
+      throw err;
+    });
+  const auth = firebase.auth();
+}
