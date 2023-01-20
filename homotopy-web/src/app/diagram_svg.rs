@@ -122,7 +122,7 @@ impl<const N: usize> PreparedDiagram<N> {
         let graphic = GraphicElement::build(&complex, &layout, &projection, &depths);
         let actions = ActionRegion::build(&complex, &layout, &projection);
 
-        let dimensions = Point::from(project_2d(layout.get([Boundary::Target.into(); N])))
+        let dimensions = Point::from(project_2d(layout[&[Boundary::Target.into(); N]]))
             .max((1.0, 1.0).into())
             .to_vector()
             .to_size()
@@ -511,7 +511,7 @@ impl<const N: usize> DiagramSvg<N> {
     }
 
     fn position(&self, point: [SliceIndex; N]) -> Option<Point2D<f32>> {
-        let point = project_2d(self.prepared.layout.get_checked(point)?).into();
+        let point = project_2d(*self.prepared.layout.get(&point)?).into();
         Some(self.prepared.transform.transform_point(point))
     }
 

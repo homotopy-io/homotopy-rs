@@ -216,9 +216,9 @@ impl<const N: usize> Projection<N> {
                     // To determine which, we check if the incoming strand crosses over the outgoing strand using the layout.
                     let &i = front_inputs.first().unwrap();
                     let &j = front_outputs.first().unwrap();
-                    let position_node = layout.get(coord)[0];
-                    let position_input_wire = layout.get(input_coords[i])[0];
-                    let position_output_wire = layout.get(output_coords[j])[0];
+                    let position_node = layout[&coord][0];
+                    let position_input_wire = layout[&input_coords[i]][0];
+                    let position_output_wire = layout[&output_coords[j]][0];
 
                     if matches!(
                         (

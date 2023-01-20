@@ -18,8 +18,14 @@ use crate::{
 };
 
 #[derive(Clone, Debug)]
-pub struct Layout<const N: usize> {
-    pub positions: FastHashMap<[SliceIndex; N], [f32; N]>,
+pub struct Layout<const N: usize>(FastHashMap<[SliceIndex; N], [f32; N]>);
+
+impl<const N: usize> Deref for Layout<N> {
+    type Target = FastHashMap<[SliceIndex; N], [f32; N]>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
 impl<const N: usize> Layout<N> {
@@ -40,7 +46,7 @@ impl<const N: usize> Layout<N> {
                 |n, key, si| {
                     let mut key = *key;
                     key.0[i] = si;
-                    key.1[i] = positions[n][si];
+                    key.1[N - i - 1] = positions[n][si]; // reverse the coordinates for rendering purposes
                     Some(key)
                 },
                 |_, _, r| Some((i, r.direction())),
@@ -55,18 +61,7 @@ impl<const N: usize> Layout<N> {
             .map(|node| node.weight.key)
             .collect();
 
-        Ok(Self { positions })
-    }
-
-    pub fn get(&self, path: [SliceIndex; N]) -> [f32; N] {
-        self.get_checked(path).unwrap()
-    }
-
-    // TODO(@calintat): Remove this once #712 is fixed.
-    pub fn get_checked(&self, path: [SliceIndex; N]) -> Option<[f32; N]> {
-        let mut position = *self.positions.get(&path)?;
-        position.reverse();
-        Some(position)
+        Ok(Self(positions))
     }
 }
 

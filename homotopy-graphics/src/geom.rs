@@ -156,7 +156,7 @@ impl CubicalGeometry {
         let mut coord_to_vert: FastHashMap<[SliceIndex; N], Vert> = FastHashMap::default();
 
         for (path, diagram) in mesh.nodes() {
-            let position = layout.get(path);
+            let position = layout[&path];
             let position =
                 Vec4::from([0, 1, 2, 3].map(|i| position.get(i).copied().unwrap_or_default()));
 

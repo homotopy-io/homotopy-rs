@@ -76,7 +76,7 @@ impl<const N: usize> ActionRegion<N> {
                     region_wires.push(Self::Wire(*ps, path));
                 }
                 Simplex::Point([p]) => {
-                    let center = project_2d(layout.get(*p)).into();
+                    let center = project_2d(layout[p]).into();
                     region_points.push(Self::Point([*p], center));
                 }
             }
@@ -207,8 +207,7 @@ impl<const N: usize> GraphicElement<N> {
                 Simplex::Point([p]) => {
                     let (generator, is_identity) = projection.front_generator(*p);
                     if !is_identity {
-                        point_elements
-                            .push(Self::Point(generator, project_2d(layout.get(*p)).into()));
+                        point_elements.push(Self::Point(generator, project_2d(layout[p]).into()));
                     }
                 }
             }
@@ -378,7 +377,7 @@ fn make_path<const N: usize>(
     projection: &Projection<N>,
     builder: &mut lyon_path::builder::WithSvg<lyon_path::path::Builder>,
 ) {
-    let start = project_2d(layout.get(points[0])).into();
+    let start = project_2d(layout[&points[0]]).into();
     builder.move_to(start);
 
     for i in 1..points.len() {
@@ -408,8 +407,8 @@ fn make_path_segment<const N: usize>(
         SliceIndex::Interior,
     };
 
-    let layout_start: Point = project_2d(layout.get(start)).into();
-    let layout_end: Point = project_2d(layout.get(end)).into();
+    let layout_start: Point = project_2d(layout[&start]).into();
+    let layout_end: Point = project_2d(layout[&end]).into();
 
     match ((start.get(0), start.get(1)), (end.get(0), end.get(1))) {
         (
