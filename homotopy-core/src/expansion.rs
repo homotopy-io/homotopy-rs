@@ -129,7 +129,7 @@ fn expand_base_regular(
             Direction::Forward => forward.regular_preimage(h1),
             Direction::Backward => backward.regular_preimage(h1),
         };
-        if preimage.is_empty() {
+        if matches!(preimage.len(), 0 | 2) {
             preimage.start
         } else {
             return Err(ExpansionError::Unsmoothable);
