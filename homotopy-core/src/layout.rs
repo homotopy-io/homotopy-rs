@@ -1,8 +1,7 @@
 use std::ops::{Deref, DerefMut};
 
 use good_lp::{
-    default_solver, variable, Constraint, Expression, ProblemVariables, Solution, SolverModel,
-    Variable,
+    variable, Constraint, Expression, ProblemVariables, Solution, SolverModel, Variable,
 };
 use homotopy_common::{
     hash::{FastHashMap, FastHashSet},
@@ -376,7 +375,7 @@ fn solve(
     #[cfg(all(target_family = "wasm", feature = "highs"))]
     let mut model = generic_model.using(good_lp::highs);
     #[cfg(not(all(target_family = "wasm", feature = "highs")))]
-    let mut model = generic_model.using(default_solver);
+    let mut model = generic_model.using(good_lp::minilp);
 
     for c in constraints {
         model.add_constraint(c);
