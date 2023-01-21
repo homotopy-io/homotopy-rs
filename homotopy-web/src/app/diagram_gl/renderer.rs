@@ -26,6 +26,7 @@ pub struct Renderer {
     ctx: GlCtx,
     signature: Signature,
     // state
+    animated_3d: bool,
     cubical_subdivision: bool,
     smooth_time: bool,
     subdivision_depth: u8,
@@ -42,6 +43,7 @@ pub struct Renderer {
 
 impl Renderer {
     pub fn new(ctx: GlCtx, settings: &Store<AppSettings>, props: &DiagramGlProps) -> Result<Self> {
+        let animated_3d = *settings.get_animated_3d();
         let cubical_subdivision = *settings.get_cubical_subdivision();
         let smooth_time = *settings.get_smooth_time();
         let subdivision_depth = *settings.get_subdivision_depth() as u8;
@@ -53,6 +55,7 @@ impl Renderer {
                 &ctx,
                 &props.diagram,
                 props.view,
+                animated_3d,
                 cubical_subdivision,
                 smooth_time,
                 subdivision_depth,
@@ -66,6 +69,7 @@ impl Renderer {
             cylinder_buffer: GBuffer::new(&ctx)?,
             ctx,
             signature,
+            animated_3d,
             cubical_subdivision,
             smooth_time,
             subdivision_depth,
@@ -74,6 +78,7 @@ impl Renderer {
     }
 
     pub fn update(&mut self, settings: &Store<AppSettings>) -> Result<()> {
+        let animated_3d = *settings.get_animated_3d();
         let cubical_subdivision = *settings.get_cubical_subdivision();
         let smooth_time = *settings.get_smooth_time();
         let subdivision_depth = *settings.get_subdivision_depth() as u8;
@@ -86,17 +91,20 @@ impl Renderer {
 
         self.ctx.set_pixel_ratio(pixel_ratio)?;
 
-        if self.cubical_subdivision != cubical_subdivision
+        if self.animated_3d != animated_3d
+            || self.cubical_subdivision != cubical_subdivision
             || self.smooth_time != smooth_time
             || self.subdivision_depth != subdivision_depth
             || self.geometry_samples != samples
         {
+            self.animated_3d = animated_3d;
             self.cubical_subdivision = cubical_subdivision;
             self.smooth_time = smooth_time;
             self.subdivision_depth = subdivision_depth;
             self.geometry_samples = samples;
             self.scene.reload_meshes(
                 &self.ctx,
+                animated_3d,
                 cubical_subdivision,
                 smooth_time,
                 subdivision_depth,
@@ -109,19 +117,22 @@ impl Renderer {
     }
 
     pub fn render(&mut self, camera: &OrbitCamera, settings: &Store<AppSettings>, t: f32) {
+        let n = self.scene.view.dimension();
+        let animated = n == 4 || n == 3 && self.animated_3d;
+
         let geometry_scale = *settings.get_geometry_scale() as f32 / 10.;
 
         let v = camera.view_transform(&self.ctx);
         let p = camera.perspective_transform(&self.ctx);
 
-        let program = if self.scene.view.dimension() <= 3 {
-            &self.shaders.geometry_3d
-        } else {
+        let program = if animated {
             &self.shaders.geometry_4d
+        } else {
+            &self.shaders.geometry_3d
         };
 
         // Render animated wireframes to cylinder buffer
-        if self.scene.view.dimension() == 4 {
+        if animated {
             let mut frame = Frame::new(&mut self.ctx)
                 .with_frame_buffer(&self.cylinder_buffer.framebuffer)
                 .with_clear_color(Vec4::new(0., 0., 0., 0.));
@@ -161,7 +172,7 @@ impl Renderer {
                     }));
                 }
 
-                if self.scene.view.dimension() == 4 {
+                if animated {
                     let duration = self.scene.diagram.size().unwrap() as f32;
 
                     for animation_curve in &self.scene.animation_curves {

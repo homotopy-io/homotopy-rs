@@ -13,7 +13,7 @@ pub fn render(
 ) -> Result<String, DimensionError> {
     let mut output = String::new();
 
-    let mut cubical = CubicalGeometry::new::<3>(diagram)?;
+    let mut cubical = CubicalGeometry::new::<3>(diagram, false)?;
     cubical.subdivide(false, 3);
 
     let mut simplicial = SimplicialGeometry::from(cubical);

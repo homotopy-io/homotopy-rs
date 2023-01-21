@@ -8,6 +8,7 @@ use crate::{
 
 declare_settings! {
     pub struct AppSettings {
+        animated_3d: bool = false,
         cubical_subdivision: bool = true,
         dpr_scale: bool = true,
         smooth_time: bool = true,
@@ -67,6 +68,13 @@ impl Component for SettingsView {
                             "Show previews in signature",
                             |local| *local.get_show_previews(),
                             AppSettingsDispatch::set_show_previews,
+                        )
+                    }
+                    {
+                        self.view_checkbox(
+                            "Render 3D diagrams as movies",
+                            |local| *local.get_animated_3d(),
+                            AppSettingsDispatch::set_animated_3d,
                         )
                     }
                 </div>

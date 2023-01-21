@@ -139,7 +139,7 @@ impl Component for DiagramGl {
                 let t = t as f32;
                 let dt = t - self.global_t;
                 self.global_t = t;
-                if ctx.props().view.dimension() == 4 {
+                if self.is_animated(ctx) {
                     // Slow the animation such that we get 1s per cospan
                     self.scrub_delta.emit(ScrubAction::Advance(
                         1e-3 * dt / ctx.props().diagram.size().unwrap() as f32,
@@ -180,7 +180,7 @@ impl Component for DiagramGl {
         let on_touch_move = OrbitCamera::on_touch_move(&self.canvas);
         let on_touch_update = OrbitCamera::on_touch_update(&self.canvas);
 
-        let scrub = if ctx.props().view.dimension() == 4 {
+        let scrub = if self.is_animated(ctx) {
             html! { <ScrubComponent slices={ctx.props().diagram.size().unwrap()} /> }
         } else {
             Default::default()
@@ -224,6 +224,11 @@ impl Component for DiagramGl {
 }
 
 impl DiagramGl {
+    fn is_animated(&self, ctx: &Context<Self>) -> bool {
+        let n = ctx.props().view.dimension();
+        n == 4 || n == 3 && *self.local.get_animated_3d()
+    }
+
     fn schedule_frame(&mut self, ctx: &Context<Self>) {
         let link = ctx.link().clone();
         self.render_loop = Some(request_animation_frame(move |t| {

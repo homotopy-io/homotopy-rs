@@ -71,6 +71,7 @@ impl Scene {
         ctx: &GlCtx,
         diagram: &Diagram,
         view: View,
+        animated_3d: bool,
         cubical_subdivision: bool,
         smooth_time: bool,
         subdivision_depth: u8,
@@ -94,6 +95,7 @@ impl Scene {
 
         scene.reload_meshes(
             ctx,
+            animated_3d,
             cubical_subdivision,
             smooth_time,
             subdivision_depth,
@@ -104,9 +106,11 @@ impl Scene {
     }
 
     #[allow(clippy::many_single_char_names)]
+    #[allow(clippy::too_many_arguments)]
     pub fn reload_meshes(
         &mut self,
         ctx: &GlCtx,
+        animated_3d: bool,
         cubical_subdivision: bool,
         smooth_time: bool,
         subdivision_depth: u8,
@@ -155,12 +159,15 @@ impl Scene {
             )?));
         }
 
+        let n = self.view.dimension();
+        let animated = n == 4 || n == 3 && animated_3d;
+
         let mut cubical = match self.view.dimension() {
-            0 => CubicalGeometry::new::<0>(&self.diagram).unwrap(),
-            1 => CubicalGeometry::new::<1>(&self.diagram).unwrap(),
-            2 => CubicalGeometry::new::<2>(&self.diagram).unwrap(),
-            3 => CubicalGeometry::new::<3>(&self.diagram).unwrap(),
-            4 => CubicalGeometry::new::<4>(&self.diagram).unwrap(),
+            0 => CubicalGeometry::new::<0>(&self.diagram, animated).unwrap(),
+            1 => CubicalGeometry::new::<1>(&self.diagram, animated).unwrap(),
+            2 => CubicalGeometry::new::<2>(&self.diagram, animated).unwrap(),
+            3 => CubicalGeometry::new::<3>(&self.diagram, animated).unwrap(),
+            4 => CubicalGeometry::new::<4>(&self.diagram, animated).unwrap(),
             _ => unreachable!(),
         };
 
@@ -197,28 +204,7 @@ impl Scene {
             }
         };
 
-        if self.view.dimension() <= 3 {
-            simplicial.inflate_3d(geometry_samples, signature_styles);
-            for tri_buffers in buffer_tris(&simplicial, ctx)? {
-                let generator = tri_buffers.generator;
-                self.components.push(Component {
-                    generator,
-                    vertices: vertex_array!(
-                        ctx,
-                        &tri_buffers.element_buffer,
-                        [&tri_buffers.vertex_buffer, &tri_buffers.normal_buffer]
-                    )?,
-                    albedo: color_of(generator, tri_buffers.k),
-                    vertex_shape: shape_of(generator),
-                });
-
-                self.wireframe_components.push(vertex_array!(
-                    ctx,
-                    &tri_buffers.wireframe_element_buffer,
-                    [&tri_buffers.vertex_buffer]
-                )?);
-            }
-        } else {
+        if animated {
             for tetra_buffers in buffer_tetras(&simplicial, ctx)? {
                 let generator = tetra_buffers.generator;
                 self.components.push(Component {
@@ -304,6 +290,27 @@ impl Scene {
                     albedo: color_of(generator, 0),
                     vertex_shape: shape_of(generator),
                 });
+            }
+        } else {
+            simplicial.inflate_3d(geometry_samples, signature_styles);
+            for tri_buffers in buffer_tris(&simplicial, ctx)? {
+                let generator = tri_buffers.generator;
+                self.components.push(Component {
+                    generator,
+                    vertices: vertex_array!(
+                        ctx,
+                        &tri_buffers.element_buffer,
+                        [&tri_buffers.vertex_buffer, &tri_buffers.normal_buffer]
+                    )?,
+                    albedo: color_of(generator, tri_buffers.k),
+                    vertex_shape: shape_of(generator),
+                });
+
+                self.wireframe_components.push(vertex_array!(
+                    ctx,
+                    &tri_buffers.wireframe_element_buffer,
+                    [&tri_buffers.vertex_buffer]
+                )?);
             }
         }
 

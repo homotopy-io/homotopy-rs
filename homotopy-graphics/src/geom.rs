@@ -101,11 +101,10 @@ pub struct VertData {
     pub k: usize,
 }
 
-pub fn calculate_boundary(path: &[SliceIndex]) -> Vec<bool> {
-    path.iter()
-        .map(|index| matches!(index, SliceIndex::Boundary(_)))
-        .rev()
-        .collect()
+pub fn calculate_boundary<const N: usize>(path: [SliceIndex; N]) -> [bool; N] {
+    let mut boundary = path.map(|si| matches!(si, SliceIndex::Boundary(_)));
+    boundary.reverse();
+    boundary
 }
 
 // Curve data
@@ -143,10 +142,20 @@ pub type CubicalGeometry = Geometry<CubeData>;
 pub type SimplicialGeometry = Geometry<SimplexData>;
 
 impl CubicalGeometry {
-    pub fn new<const N: usize>(diagram: &Diagram) -> Result<Self, DimensionError> {
+    pub fn new<const N: usize>(diagram: &Diagram, animated: bool) -> Result<Self, DimensionError> {
         if diagram.dimension() < N {
             return Err(DimensionError);
         }
+
+        let embedding = match (N, animated) {
+            (0, false) => [None, None, None, None],
+            (1, false) => [Some(0), None, None, None],
+            (2, false) => [Some(0), Some(1), None, None],
+            (3, false) => [Some(0), Some(1), Some(2), None],
+            (3, true) => [Some(0), Some(1), None, Some(2)],
+            (4, true) => [Some(0), Some(1), Some(2), Some(3)],
+            _ => unreachable!(),
+        };
 
         // Extract the mesh and layout.
         let mesh = Mesh::new(diagram)?;
@@ -158,10 +167,10 @@ impl CubicalGeometry {
         for (path, diagram) in mesh.nodes() {
             let position = layout[&path];
             let position =
-                Vec4::from([0, 1, 2, 3].map(|i| position.get(i).copied().unwrap_or_default()));
+                Vec4::from(embedding.map(|i| i.map(|i| position[i]).unwrap_or_default()));
 
-            let boundary = calculate_boundary(&path);
-            let boundary = [0, 1, 2, 3].map(|i| boundary.get(i).copied().unwrap_or_default());
+            let boundary = calculate_boundary(path);
+            let boundary = embedding.map(|i| i.map(|i| boundary[i]).unwrap_or_default());
 
             let vert = geom.mk_vert(VertData {
                 position,
@@ -175,8 +184,8 @@ impl CubicalGeometry {
         for cube in mesh.cubes().filter(|cube| cube.visible) {
             let dim = cube.dimension();
 
-            // We ignore top-dimensional cubes in 3D and 4D.
-            if N >= 3 && dim == N {
+            // We ignore volumes unless the geometry is animated.
+            if dim > 3 || dim == 3 && !animated {
                 continue;
             }
 
