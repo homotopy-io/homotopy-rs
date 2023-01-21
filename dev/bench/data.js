@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1674219007554,
+  "lastUpdate": 1674318918196,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -45209,6 +45209,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 330.31,
             "range": "+/- 1.200",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "e739846808400b09ac6d6b9b6c28d8a9d7a5f522",
+          "message": "Option to render 3D diagrams as movies (closes #532)",
+          "timestamp": "2023-01-21T16:12:24Z",
+          "tree_id": "2d3a6383897b650f836f3ccd421d279d01854a94",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/e739846808400b09ac6d6b9b6c28d8a9d7a5f522"
+        },
+        "date": 1674318906229,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 2.0227,
+            "range": "+/- 0.046",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 15.772,
+            "range": "+/- 0.278",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 239.03,
+            "range": "+/- 3.420",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 5.0428,
+            "range": "+/- 0.035",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 14.295,
+            "range": "+/- 0.238",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 353.7,
+            "range": "+/- 5.050",
             "unit": "ms"
           }
         ]
