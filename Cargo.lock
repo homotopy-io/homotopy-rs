@@ -1138,8 +1138,8 @@ dependencies = [
 
 [[package]]
 name = "katex"
-version = "0.4.4"
-source = "git+https://github.com/regular-citizen/katex-rs#87d35729e2b114dcc7a67e48da29f92e132fbca1"
+version = "0.4.5"
+source = "git+https://github.com/regular-citizen/katex-rs#7b71af7ddf8d43b6785bf22f369728896c6afc32"
 dependencies = [
  "cfg-if",
  "derive_builder",
