@@ -49,7 +49,7 @@ thiserror = "1.0.38"
 katex = { version = "0.4", features = ["wasm-js"], default-features = false }
 html-escape = "0.2.13"
 obake = { version = "1.0.4", features = ["serde"] }
-good_lp = { version = "1.3.3", features = ["highs"], default-features = false}
+good_lp = { version = "1.3.2", features = ["highs"], default-features = false}
 highs = "1.2.1"
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
