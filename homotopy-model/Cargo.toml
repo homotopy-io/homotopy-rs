@@ -33,4 +33,3 @@ insta = "1.26.0"
 [features]
 default = []
 fuzz = ["arbitrary", "homotopy-core/fuzz", "homotopy-common/fuzz"]
-weak-units = []
