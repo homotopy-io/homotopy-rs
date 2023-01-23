@@ -58,10 +58,6 @@
             # crate2nix insta compatibility fix
             testPreRun = ''
               export INSTA_WORKSPACE_ROOT=$(pwd)
-              for file in $INSTA_WORKSPACE_ROOT/tests/snapshots/*; do
-                case $(basename $file) in (tests_*) continue;; esac;
-                mv $file $INSTA_WORKSPACE_ROOT/tests/snapshots/tests_$(basename $file)
-              done
             '';
           };
           shell = self: super: {
