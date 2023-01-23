@@ -26,7 +26,7 @@ pub enum Action {
     Select(usize),
 
     ClearAttach,
-    SelectPoint(Vec<SliceIndex>),
+    SelectPoint(Vec<SliceIndex>, bool),
     HighlightAttachment(Option<AttachOption>),
     HighlightSlice(Option<SliceIndex>),
 
@@ -47,7 +47,7 @@ impl Action {
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.view.dimension() == 3),
-            Self::SelectPoint(_) => proof.workspace.is_some(),
+            Self::SelectPoint(_, _) => proof.workspace.is_some(),
             _ => true,
         }
     }
@@ -245,7 +245,7 @@ impl State {
                 };
                 self.update(Action::Proof(action))?;
             }
-            Action::SelectPoint(point) => self.select_point(&point)?,
+            Action::SelectPoint(point, weak_units) => self.select_point(&point, weak_units)?,
             Action::HighlightAttachment(option) => self.highlight_attachment(option),
             Action::HighlightSlice(slice) => self.highlight_slice(slice),
             Action::ClearAttach => self.clear_attach(),
@@ -256,7 +256,7 @@ impl State {
     }
 
     /// Handler for [Action::SelectPoint].
-    fn select_point(&mut self, point: &[SliceIndex]) -> Result<(), ModelError> {
+    fn select_point(&mut self, point: &[SliceIndex], weak_units: bool) -> Result<(), ModelError> {
         let workspace = match self.proof().workspace.as_ref() {
             Some(workspace) => workspace,
             None => return Ok(()),
@@ -303,7 +303,7 @@ impl State {
 
             match info.generator.dimension.cmp(&(haystack.dimension() + 1)) {
                 std::cmp::Ordering::Less => {
-                    if cfg!(feature = "weak-units") {
+                    if weak_units {
                         let identity = |mut diagram: Diagram| {
                             while diagram.dimension() < haystack.dimension() + 1 {
                                 diagram = diagram.weak_identity().into();

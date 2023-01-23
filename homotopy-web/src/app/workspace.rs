@@ -16,8 +16,12 @@ use crate::{
         diagram_svg::{DiagramSvg, HighlightKind, HighlightSvg},
         info::get_onboarding_message,
         tex::TexSpan,
+        AppSettings, AppSettingsKey,
     },
-    components::panzoom::PanZoomComponent,
+    components::{
+        panzoom::PanZoomComponent,
+        settings::{KeyStore, Settings, Store},
+    },
     model::{
         proof::{self, homotopy::Homotopy, AttachOption, Metadata, Signature, Workspace},
         Action,
@@ -41,12 +45,16 @@ pub struct Props {
     pub slice_highlight: Option<SliceIndex>,
 }
 
-pub enum Message {}
+pub enum Message {
+    Setting(<Store<AppSettings> as KeyStore>::Message),
+}
 
 pub struct WorkspaceView {
-    on_select: Callback<Vec<SliceIndex>>,
+    local: Store<AppSettings>,
+    on_select: Callback<(Vec<SliceIndex>, bool)>,
     on_homotopy: Callback<Homotopy>,
     diagram_ref: NodeRef,
+    _settings: AppSettings,
 }
 
 impl Component for WorkspaceView {
@@ -54,20 +62,35 @@ impl Component for WorkspaceView {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let on_select = ctx.props().dispatch.reform(Action::SelectPoint);
+        const ITEM_SUBSCRIPTIONS: &[AppSettingsKey] = &[AppSettingsKey::weak_units];
+
+        let mut settings = AppSettings::connect(ctx.link().callback(Message::Setting));
+        settings.subscribe(ITEM_SUBSCRIPTIONS);
+
+        let on_select = ctx
+            .props()
+            .dispatch
+            .reform(|(p, weak_units)| Action::SelectPoint(p, weak_units));
         let on_homotopy = ctx
             .props()
             .dispatch
             .reform(|homotopy| Action::Proof(proof::Action::Homotopy(homotopy)));
         Self {
+            local: Default::default(),
             on_select,
             on_homotopy,
             diagram_ref: Default::default(),
+            _settings: settings,
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, _: Self::Message) -> bool {
-        false
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+        match msg {
+            Message::Setting(msg) => {
+                self.local.set(&msg);
+                true
+            }
+        }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -156,6 +179,7 @@ impl WorkspaceView {
 
     fn view_diagram_svg<const N: usize>(&self, ctx: &Context<Self>) -> Html {
         if let Some(ref ws) = ctx.props().workspace {
+            let weak_units = *self.local.get_weak_units();
             let attachment_highlight = match N {
                 0 => None,
                 _ => ctx
@@ -172,7 +196,7 @@ impl WorkspaceView {
                         diagram={ws.visible_diagram()}
                         id="workspace__diagram"
                         signature={ctx.props().signature.clone()}
-                        on_select={self.on_select.clone()}
+                        on_select={self.on_select.reform(move |p| (p, weak_units))}
                         on_homotopy={self.on_homotopy.clone()}
                         highlight={highlight}
                         ref={self.diagram_ref.clone()}
