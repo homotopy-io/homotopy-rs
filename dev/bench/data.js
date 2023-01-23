@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1674482035888,
+  "lastUpdate": 1674485037709,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -45455,6 +45455,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 358.17,
             "range": "+/- 0.870",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "9745e18298640cbf3f922893e1696eacfa969d7f",
+          "message": "Get rid of weak units flag and replace it with setting",
+          "timestamp": "2023-01-23T14:15:03Z",
+          "tree_id": "99faabcafe40456380716b00e5a74bd75d7af156",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/9745e18298640cbf3f922893e1696eacfa969d7f"
+        },
+        "date": 1674485023399,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 1.7266,
+            "range": "+/- 0.003",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 16.041,
+            "range": "+/- 0.044",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 280.6,
+            "range": "+/- 0.760",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 6.3103,
+            "range": "+/- 0.007",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 13.305,
+            "range": "+/- 0.051",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 336.14,
+            "range": "+/- 1.410",
             "unit": "ms"
           }
         ]
