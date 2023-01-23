@@ -52,6 +52,7 @@
       outputs = inputs.nix-cargo-integration.lib.makeOutputs {
         root = ./.;
         buildPlatform = "crate2nix";
+        useCrate2NixFromPkgs = true;
         overrides = {
           build = self: super: {
             # crate2nix insta compatibility fix
