@@ -1,7 +1,7 @@
 use std::fmt::Write;
 
 use euclid::default::Point2D;
-use homotopy_common::hash::FastHashMap;
+use homotopy_common::hash::{FastHashMap, FastHashSet};
 use homotopy_core::{
     common::DimensionError,
     complex::make_complex,
@@ -19,29 +19,43 @@ use crate::{
     svg::render::GraphicElement,
 };
 
-pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
+#[allow(clippy::implicit_hasher)]
+pub fn stylesheet(
+    styles: &impl SignatureStyleData,
+    dimension: usize,
+    diagrams: &FastHashSet<(Diagram0, GeneratorRepresentation)>,
+) -> String {
     let mut stylesheet = String::new();
 
-    for generator in styles.generators() {
+    for diagram in diagrams {
+        let generator = diagram.0.generator;
+        let orientation = diagram.0.orientation;
+        let representation = diagram.1;
+        let selector = color_selector(diagram.0, dimension, representation);
         let color = styles.generator_style(generator).unwrap().color();
-        for c in 0..3 {
-            for orientation in [
-                Orientation::Positive,
-                Orientation::Zero,
-                Orientation::Negative,
-            ] {
-                writeln!(
-                    stylesheet,
-                    "\\definecolor{{{generator}}}{color}",
-                    generator = name(generator, c, orientation),
-                    color = rgb(color.lighten(c, orientation).clone()),
-                )
-                .unwrap();
-            }
-        }
+        writeln!(
+            stylesheet,
+            "\\definecolor{{{generator}}}{color}",
+            generator = name(generator, selector, orientation),
+            color = rgb(color.lighten(selector, orientation).clone()),
+        )
+        .unwrap();
     }
 
     stylesheet
+}
+
+#[inline]
+pub fn color_selector(
+    diagram: Diagram0,
+    diagram_dimension: usize,
+    representation: GeneratorRepresentation,
+) -> usize {
+    let d = diagram_dimension;
+    let n = diagram.generator.dimension;
+    let k = representation as usize;
+
+    d.saturating_sub(n + k) % 3
 }
 
 #[inline]
@@ -50,13 +64,11 @@ pub fn name_from_diagram_dim(
     diagram_dimension: usize,
     representation: GeneratorRepresentation,
 ) -> String {
-    let d = diagram_dimension;
-    let n = diagram.generator.dimension;
-    let k = representation as usize;
-
-    let c = d.saturating_sub(n + k) % 3;
-
-    name(diagram.generator, c, diagram.orientation)
+    name(
+        diagram.generator,
+        color_selector(diagram, diagram_dimension, representation),
+        diagram.orientation,
+    )
 }
 
 fn name(generator: Generator, c: usize, orientation: Orientation) -> String {
@@ -79,11 +91,11 @@ fn rgb(color: Color) -> String {
 
 pub fn render(
     diagram: &Diagram,
-    stylesheet: &str,
     signature_styles: &impl SignatureStyleData,
     leftright_mode: bool,
     show_braids: bool,
 ) -> Result<String, DimensionError> {
+    let dimension = diagram.dimension();
     let layout = Layout::<2>::new(diagram)?;
     let complex = make_complex(diagram);
     let depths = Depths::<2>::new(diagram)?;
@@ -98,26 +110,34 @@ pub fn render(
     let mut surfaces = Vec::default();
     let mut wires: FastHashMap<usize, Vec<(Diagram0, Path)>> = FastHashMap::default();
     let mut points = Vec::default();
+    let mut diagrams: FastHashSet<_> = Default::default();
     for element in graphic {
         match element {
-            GraphicElement::Surface(g, path) => surfaces.push((g, path)),
+            GraphicElement::Surface(g, path) => {
+                diagrams.insert((g, GeneratorRepresentation::Surface));
+                surfaces.push((g, path));
+            }
             GraphicElement::Wire(g, depth, path, _) => {
+                diagrams.insert((g, GeneratorRepresentation::Wire));
                 wires.entry(depth).or_default().push((g, path));
             }
-            GraphicElement::Point(g, point) => points.push((g, point)),
+            GraphicElement::Point(g, point) => {
+                diagrams.insert((g, GeneratorRepresentation::Point));
+                points.push((g, point));
+            }
         }
     }
 
     let mut tikz = String::new();
     writeln!(tikz, "\\begin{{tikzpicture}}").unwrap();
-    tikz.push_str(stylesheet);
+    tikz.push_str(&stylesheet(signature_styles, dimension, &diagrams));
 
     tikz.push_str(&render_inner(
         &surfaces,
         wires,
         leftright_mode,
         show_braids,
-        diagram.dimension(),
+        dimension,
     ));
 
     // Points are unchanged
@@ -130,7 +150,7 @@ pub fn render(
         writeln!(
             tikz,
             "\\fill[{}] {}",
-            name_from_diagram_dim(d, diagram.dimension(), GeneratorRepresentation::Point),
+            name_from_diagram_dim(d, dimension, GeneratorRepresentation::Point),
             vertex
         )
         .unwrap();

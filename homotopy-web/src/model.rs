@@ -126,9 +126,7 @@ impl State {
             Action::ExportTikz(leftright, with_braid) => {
                 let signature = &self.proof().signature;
                 let diagram = self.proof().workspace.as_ref().unwrap().visible_diagram();
-                let stylesheet = tikz::stylesheet(signature);
-                let data =
-                    tikz::render(&diagram, &stylesheet, signature, leftright, with_braid).unwrap();
+                let data = tikz::render(&diagram, signature, leftright, with_braid).unwrap();
                 generate_download("homotopy_io_export", "tikz", data.as_bytes())
                     .map_err(ModelError::Export)?;
             }

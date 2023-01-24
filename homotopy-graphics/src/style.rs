@@ -134,7 +134,7 @@ impl Default for VertexShape {
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
 pub enum GeneratorRepresentation {
     Point = 0,
     Wire = 1,
