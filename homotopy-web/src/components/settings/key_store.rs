@@ -112,81 +112,59 @@ macro_rules! declare_settings {
                 )*
             }
 
+            #[derive(Default)]
             pub struct $name {
-                bridge: Box<dyn yew_agent::Bridge<
-                    $crate::components::settings::SettingsAgent<[<$name KeyStore>]>
-                >>,
+                store: [<$name KeyStore>],
+                handlers: homotopy_common::hash::FastHashMap<[<$name Key>], Vec<Box<yew::callback::Callback<[<$name Msg>]>>>>
             }
 
-            pub struct [<$name Dispatch>] {
-                dispatch: std::cell::RefCell<yew_agent::Dispatcher<
-                    $crate::components::settings::SettingsAgent<[<$name KeyStore>]>
-                >>,
-            }
+            static SETTINGS : std::sync::RwLock<$name> = std::sync::RwLock::new();
 
-            impl $crate::components::settings::Settings for $name {
-                type Store = [<$name KeyStore>];
-
+            impl $name {
                 const ALL: &'static [[<$name Key>]] = &[
                     $([<$name Key>]::$key),*
                 ];
 
-                fn connect(callback: yew::callback::Callback<[<$name Msg>]>) -> Self {
-                    use $crate::components::settings::SettingsAgent;
-                    use yew_agent::Bridged;
-
-                    let bridge = SettingsAgent::<[<$name KeyStore>]>::bridge(callback);
-
-                    Self {
-                        bridge,
-                    }
-                }
-
-                fn subscribe(&mut self, keys: &[[<$name Key>]]) {
-                    use $crate::components::settings::SettingsInput;
+                fn subscribe(keys: &[[<$name Key>]], callback: yew::callback::Callback<[<$name Msg>]>) {
                     for key in keys.iter().copied() {
-                        self.bridge.send(SettingsInput::Subscribe(key))
+                        {
+                            let settings = SETTINGS.write().unwrap();
+                            if let Some(handlers) = settings.handlers.get_mut(&key) {
+                                handlers.push(callback);
+                            } else {
+                                settings.handlers.insert(key, vec![callback]);
+                            }
+                        }
+                        {
+                            let settings = SETTINGS.read().unwrap();
+                            for handler in settings.handlers.as_ref().into_iter() {
+                                handler.dispatch(settings.store.get(key));
+                            }
+                        }
                     }
                 }
 
-                fn unsubscribe(&mut self, keys: &[[<$name Key>]]) {
-                    use $crate::components::settings::SettingsInput;
-                    for key in keys.iter().copied() {
-                        self.bridge.send(SettingsInput::Unsubscribe(key))
-                    }
-                }
-            }
-
-            impl $name {
-                $(
-                    #[allow(unused)]
-                    #[inline(always)]
-                    pub fn [<set_ $key>](&mut self, v: $ty) {
-                        use $crate::components::settings::SettingsInput;
-                        self.bridge.send(SettingsInput::Update([<$name Msg>]::$key(v)))
-                    }
-                )*
-            }
-
-            impl [<$name Dispatch>] {
-                fn new() -> Self {
-                    use $crate::components::settings::SettingsAgent;
-                    use yew_agent::Dispatched;
-
-                    Self {
-                        dispatch: std::cell::RefCell::new(
-                            SettingsAgent::<[<$name KeyStore>]>::dispatcher()
-                        ),
+                fn broadcast(msg: &[<$name Msg>]) {
+                    {
+                        let settings = SETTINGS.read().unwrap();
+                        if let Some(handlers) = settings.handlers.get(&[<$name Msg>]::key_of(msg)) {
+                            for handler in handlers {
+                                handler.dispatch(settings.store.get(msg));
+                            }
+                        }
                     }
                 }
 
                 $(
                     #[allow(unused)]
                     #[inline(always)]
-                    pub fn [<set_ $key>](&self, v: $ty) {
-                        use $crate::components::settings::SettingsInput;
-                        self.dispatch.borrow_mut()
-                            .send(SettingsInput::Update([<$name Msg>]::$key(v)))
+                    pub fn [<set_ $key>](v: $ty) {
+                        let msg = [<$name Msg>]::$key(v);
+                        {
+                            let settings = SETTINGS.write().unwrap();
+                            settings.settings.set(msg);
+                        }
+                        Self::broadcast(msg)
                     }
                 )*
             }

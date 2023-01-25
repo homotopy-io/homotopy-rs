@@ -1,5 +1,4 @@
 use homotopy_common::hash::FastHashMap;
-use yew_agent::{Agent, AgentLink, Context, HandlerId};
 
 use super::KeyStore;
 
@@ -13,21 +12,20 @@ pub struct SettingsAgent<S>
 where
     S: KeyStore + 'static,
 {
-    link: AgentLink<Self>,
+    link: (),
     store: S,
-    handlers: FastHashMap<S::Key, Vec<HandlerId>>,
+    handlers: FastHashMap<S::Key, Vec<()>>,
 }
 
-impl<S> Agent for SettingsAgent<S>
+impl<S> SettingsAgent<S>
 where
     S: KeyStore + 'static,
 {
     type Input = SettingsInput<S>;
     type Message = ();
     type Output = S::Message;
-    type Reach = Context<Self>;
 
-    fn create(link: AgentLink<Self>) -> Self {
+    fn create(link: ()) -> Self {
         Self {
             link,
             store: Default::default(),
@@ -37,7 +35,7 @@ where
 
     fn update(&mut self, _: Self::Message) {}
 
-    fn handle_input(&mut self, msg: Self::Input, id: HandlerId) {
+    fn handle_input(&mut self, msg: Self::Input, id: ()) {
         match msg {
             SettingsInput::Subscribe(k) => {
                 if let Some(handlers) = self.handlers.get_mut(&k) {
@@ -61,9 +59,9 @@ where
         }
     }
 
-    fn connected(&mut self, _: HandlerId) {}
+    fn connected(&mut self, _: ()) {}
 
-    fn disconnected(&mut self, id: HandlerId) {
+    fn disconnected(&mut self, id: ()) {
         for v in self.handlers.values_mut() {
             v.retain(|handler_id| *handler_id != id);
         }
