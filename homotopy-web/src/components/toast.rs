@@ -104,12 +104,10 @@ impl Component for ToasterComponent {
     fn create(ctx: &Context<Self>) -> Self {
         let link = ctx.link().clone();
         TOASTER.with(move |t| {
-            t.register(link.callback(|e: ToasterState| {
-                if let ToasterMsg::Toast(_) = e.last_msg {
-                    ToasterMsg::SetTimer
-                } else {
-                    e.last_msg
-                }
+            t.register(link.callback(|e: ToasterState| match e.last_msg {
+                ToasterMsg::Toast(_) => ToasterMsg::SetTimer,
+                ToasterMsg::Clear => ToasterMsg::Clear,
+                _ => ToasterMsg::Noop,
             }));
         });
 
