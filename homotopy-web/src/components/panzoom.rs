@@ -2,11 +2,12 @@ use homotopy_core::Direction;
 use yew::prelude::*;
 
 use crate::components::{
-    delta::{Delta, DeltaAgent, DeltaCallback},
+    delta::Delta,
     touch_interface::{TouchAction, TouchInterface},
     Finger, Point, Vector,
 };
 
+#[derive(Clone)]
 pub struct PanZoomState {
     pub translate: Vector,
     pub scale: f64,
@@ -100,7 +101,6 @@ pub struct PanZoomComponent {
     node_ref: NodeRef,
     translate: Vector,
     scale: f64,
-    _delta: Delta<PanZoomState>,
 }
 
 impl Component for PanZoomComponent {
@@ -108,18 +108,17 @@ impl Component for PanZoomComponent {
     type Properties = PanZoomProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let delta = Delta::new();
         let link = ctx.link().clone();
-        delta.register(Box::new(move |agent: &DeltaAgent<PanZoomState>, _| {
-            let state = agent.state();
-            link.send_message(PanZoomMessage::Delta(state.translate, state.scale));
-        }));
+        PANZOOM_STATE.with(|s| {
+            s.register(link.callback(|state: PanZoomState| {
+                PanZoomMessage::Delta(state.translate, state.scale)
+            }))
+        });
 
         Self {
             node_ref: Default::default(),
             translate: Default::default(),
             scale: 1.0,
-            _delta: delta,
         }
     }
 
@@ -188,30 +187,31 @@ impl Component for PanZoomComponent {
     }
 }
 
-pub type PanZoomAgent = DeltaAgent<PanZoomState>;
+std::thread_local! {
+    pub static PANZOOM_STATE: Delta<PanZoomState> = Default::default();
+}
 
-pub struct PanZoom(Delta<PanZoomState>);
+// Delta<PanZoomState>
+pub struct PanZoom();
 
 impl PanZoom {
     pub fn new() -> Self {
-        Self(Delta::new())
+        Self()
     }
 
     pub fn zoom_in(&self) {
-        self.0
-            .emit(TouchAction::MouseWheel(Default::default(), -20.0));
+        PANZOOM_STATE.with(|s| s.emit(TouchAction::MouseWheel(Default::default(), -20.0)));
     }
 
     pub fn zoom_out(&self) {
-        self.0
-            .emit(TouchAction::MouseWheel(Default::default(), 20.0));
+        PANZOOM_STATE.with(|s| s.emit(TouchAction::MouseWheel(Default::default(), 20.0)));
     }
 
     pub fn reset(&self) {
-        self.0.emit(TouchAction::Reset);
+        PANZOOM_STATE.with(|s| s.emit(TouchAction::Reset));
     }
 
-    pub fn register(&self, callback: DeltaCallback<PanZoomState>) {
-        self.0.register(callback);
+    pub fn register(&self, callback: Callback<PanZoomState>) {
+        PANZOOM_STATE.with(|s| s.register(callback));
     }
 }

@@ -17,7 +17,7 @@ pub enum TouchAction {
     Reset,
 }
 
-pub trait TouchInterface: Default + 'static {
+pub trait TouchInterface: Default + Clone + 'static {
     fn mouse_down(&mut self, alt_key: bool, point: Point);
 
     fn mouse_up(&mut self);
@@ -33,6 +33,7 @@ pub trait TouchInterface: Default + 'static {
     fn reset(&mut self);
 
     fn on_mouse_move() -> Callback<MouseEvent> {
+        /*
         let delta = Delta::<Self>::new();
         Callback::from(closure!(|e: MouseEvent| {
             e.prevent_default();
@@ -41,17 +42,23 @@ pub trait TouchInterface: Default + 'static {
                 (f64::from(e.client_x()), f64::from(e.client_y())).into(),
             ));
         }))
+        */
+        Default::default()
     }
 
     fn on_mouse_up() -> Callback<MouseEvent> {
+        /*
         let delta = Delta::<Self>::new();
         Callback::from(closure!(|e: MouseEvent| {
             e.prevent_default();
             delta.emit(TouchAction::MouseUp);
         }))
+        */
+        Default::default()
     }
 
     fn on_mouse_down() -> Callback<MouseEvent> {
+        /*
         let delta = Delta::<Self>::new();
         Callback::from(closure!(|e: MouseEvent| {
             delta.emit(TouchAction::MouseDown(
@@ -59,9 +66,12 @@ pub trait TouchInterface: Default + 'static {
                 (f64::from(e.client_x()), f64::from(e.client_y())).into(),
             ));
         }))
+        */
+        Default::default()
     }
 
     fn on_wheel(node_ref: &NodeRef) -> Callback<WheelEvent> {
+        /*
         let delta = Delta::<Self>::new();
         let node_ref = node_ref.clone();
         Callback::from(move |e: WheelEvent| {
@@ -77,9 +87,12 @@ pub trait TouchInterface: Default + 'static {
 
             delta.emit(TouchAction::MouseWheel((x, y).into(), e.delta_y()));
         })
+        */
+        Default::default()
     }
 
     fn on_touch_move(node_ref: &NodeRef) -> Callback<TouchEvent> {
+        /*
         let delta = Delta::<Self>::new();
         let node_ref = node_ref.clone();
         Callback::from(closure!(|e: TouchEvent| {
@@ -91,9 +104,12 @@ pub trait TouchInterface: Default + 'static {
                     .collect(),
             ));
         }))
+        */
+        Default::default()
     }
 
     fn on_touch_update(node_ref: &NodeRef) -> Callback<TouchEvent> {
+        /*
         let delta = Delta::<Self>::new();
         let node_ref = node_ref.clone();
         Callback::from(closure!(|e: TouchEvent| {
@@ -104,6 +120,8 @@ pub trait TouchInterface: Default + 'static {
                     .collect(),
             ));
         }))
+        */
+        Default::default()
     }
 }
 

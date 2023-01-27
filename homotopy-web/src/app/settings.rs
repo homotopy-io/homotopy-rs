@@ -1,10 +1,7 @@
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-use crate::{
-    components::settings::{KeyStore, Settings},
-    declare_settings,
-};
+use crate::declare_settings;
 
 declare_settings! {
     pub struct AppSettings {
@@ -232,17 +229,16 @@ impl SettingsView {
     fn view_checkbox<G, S>(&self, name: &str, getter: G, setter: S) -> Html
     where
         G: Fn(&AppSettingsKeyStore) -> bool,
-        S: Fn(&AppSettings, bool) + 'static,
+        S: Fn(bool) + 'static,
     {
         let checked = getter(&self.local);
-        let dispatch = AppSettings::new();
 
         html! {
             <div class="settings__toggle-setting">
                 <input
                     type="checkbox"
                     checked={checked}
-                    onclick={Callback::from(move |_| setter(&dispatch, !checked))}
+                    onclick={Callback::from(move |_| setter(!checked))}
                 />
                 {name}
             </div>
@@ -252,10 +248,8 @@ impl SettingsView {
     fn view_slider<G, S>(&self, name: &str, getter: G, setter: S, min: u32, max: u32) -> Html
     where
         G: Fn(&AppSettingsKeyStore) -> u32,
-        S: Fn(&AppSettings, u32) + 'static,
+        S: Fn(u32) + 'static,
     {
-        let dispatch = AppSettings::new();
-
         html! {
             <div class="settings__slider-setting">
                 {name}
@@ -267,7 +261,7 @@ impl SettingsView {
                     onchange={Callback::from(move |e: Event| {
                         let input: HtmlInputElement = e.target_unchecked_into();
                         let updated = input.value().parse::<u32>().unwrap_or(0);
-                        setter(&dispatch, updated);
+                        setter(updated);
                     })}
                 />
             </div>

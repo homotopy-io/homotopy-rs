@@ -52,22 +52,27 @@ pub struct ToasterProps {
     pub timeout: u32,
 }
 
-#[derive(Clone)]
+#[derive(Default, Clone)]
 pub enum ToasterMsg {
     Toast(Toast),
     Clear,
+    SetTimer,
+    #[default]
+    Noop,
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct ToasterState {
     toasts: Vec<Toast>,
     animating: usize,
+    last_msg: ToasterMsg,
 }
 
 impl State for ToasterState {
     type Action = ToasterMsg;
 
     fn update(&mut self, action: &Self::Action) {
+        self.last_msg = action.clone();
         match action {
             ToasterMsg::Toast(props) => {
                 self.animating += 1;
@@ -81,45 +86,39 @@ impl State for ToasterState {
                 self.animating = 0;
                 self.toasts.clear();
             }
+            _ => {}
         }
     }
 }
 
-pub struct ToasterComponent {
-    _delta: Delta<ToasterState>,
-    state: ToasterState,
+std::thread_local! {
+    pub static TOASTER: Delta<ToasterState> = Default::default();
 }
+
+pub struct ToasterComponent {}
 
 impl Component for ToasterComponent {
     type Message = ToasterMsg;
     type Properties = ToasterProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let delta = Delta::new();
-        delta.register({
-            let timeout = ctx.props().timeout;
-            let link = ctx.link().clone();
-            Box::new(move |_, e: &ToasterMsg| {
-                if let ToasterMsg::Toast(_) = e {
-                    let link = link.clone();
-                    Timeout::new(timeout, move || {
-                        link.send_message(ToasterMsg::Clear);
-                    })
-                    .forget();
+        let link = ctx.link().clone();
+        TOASTER.with(move |t| {
+            t.register(link.callback(|e: ToasterState| {
+                if let ToasterMsg::Toast(_) = e.last_msg {
+                    ToasterMsg::SetTimer
+                } else {
+                    ToasterMsg::Noop
                 }
-
-                link.send_message(e.clone());
-            })
+            }));
         });
 
-        Self {
-            _delta: delta,
-            state: Default::default(),
-        }
+        Self {}
     }
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
-        self.state
+        TOASTER
+            .with(|t| t.state())
             .toasts
             .iter()
             .map(|props| {
@@ -135,9 +134,20 @@ impl Component for ToasterComponent {
             .collect()
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
-        self.state.update(&msg);
-        !matches!(msg, ToasterMsg::Clear if self.state.animating > 1)
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        match msg {
+            ToasterMsg::Clear => !TOASTER.with(|t| t.state().animating > 1),
+            ToasterMsg::SetTimer => {
+                let timeout = ctx.props().timeout;
+                let link = ctx.link().clone();
+                Timeout::new(timeout, move || {
+                    link.send_message(ToasterMsg::Clear);
+                })
+                .forget();
+                false
+            }
+            _ => true,
+        }
     }
 }
 
@@ -145,7 +155,7 @@ pub struct Toaster(Delta<ToasterState>);
 
 impl Toaster {
     pub fn new() -> Self {
-        Self(Delta::new())
+        Self(Default::default())
     }
 
     pub fn toast(&mut self, toast: Toast) {

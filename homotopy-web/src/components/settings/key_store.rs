@@ -1,32 +1,3 @@
-use std::hash::Hash;
-
-use serde::{Deserialize, Serialize};
-
-pub trait KeyStore: Serialize + Deserialize<'static> + Default + Clone {
-    type Key: Copy + Eq + Hash + 'static;
-    type Message: Clone;
-
-    fn get(&self, k: Self::Key) -> Self::Message;
-
-    fn set(&mut self, msg: &Self::Message);
-
-    fn key_of(msg: &Self::Message) -> Self::Key;
-}
-
-pub trait Settings {
-    type Store: KeyStore;
-
-    const ALL: &'static [<Self::Store as KeyStore>::Key];
-
-    fn connect(callback: yew::callback::Callback<<Self::Store as KeyStore>::Message>) -> Self;
-
-    fn subscribe(&mut self, keys: &[<Self::Store as KeyStore>::Key]);
-
-    fn unsubscribe(&mut self, keys: &[<Self::Store as KeyStore>::Key]);
-}
-
-pub type Store<S> = <S as Settings>::Store;
-
 #[macro_export]
 macro_rules! declare_settings {
     ($vis:vis struct $name:ident {
@@ -72,32 +43,29 @@ macro_rules! declare_settings {
                 ),*
             }
 
-            impl $crate::components::settings::KeyStore for [<$name KeyStore>] {
-                type Key = [<$name Key>];
-                type Message = [<$name Msg>];
-
-                fn get(
+            impl [<$name KeyStore>] {
+                pub fn get(
                     &self,
-                    k: Self::Key,
-                ) -> Self::Message{
+                    k: [<$name Key>],
+                ) -> [<$name Msg>] {
                     match k {
-                        $(Self::Key::$key => {
-                            Self::Message::$key(self.[<__ $key>].clone())
+                        $([<$name Key>]::$key => {
+                            [<$name Msg>]::$key(self.[<__ $key>].clone())
                         }),*
                     }
                 }
 
-                fn set(&mut self, msg: &Self::Message) {
+                pub fn set(&mut self, msg: &[<$name Msg>]) {
                     match msg {
-                        $(Self::Message::$key(v) => {
+                        $([<$name Msg>]::$key(v) => {
                             self.[<__ $key>] = v.clone();
                         }),*
                     }
                 }
 
-                fn key_of(msg: &Self::Message) -> Self::Key {
+                pub fn key_of(msg: &[<$name Msg>]) -> [<$name Key>] {
                     match msg {
-                        $(Self::Message::$key(_) => Self::Key::$key),*
+                        $([<$name Msg>]::$key(_) => [<$name Key>]::$key),*
                     }
                 }
             }
@@ -115,43 +83,48 @@ macro_rules! declare_settings {
             #[derive(Default)]
             pub struct $name {
                 store: [<$name KeyStore>],
-                handlers: homotopy_common::hash::FastHashMap<[<$name Key>], Vec<Box<yew::callback::Callback<[<$name Msg>]>>>>
+                handlers: homotopy_common::hash::FastHashMap<[<$name Key>], Vec<yew::callback::Callback<[<$name Msg>]>>>
             }
 
-            static SETTINGS : std::sync::RwLock<$name> = std::sync::RwLock::new();
+            thread_local! {
+                static SETTINGS: std::cell::RefCell<$name> = Default::default();
+            }
 
             impl $name {
-                const ALL: &'static [[<$name Key>]] = &[
+                pub const ALL: &'static [[<$name Key>]] = &[
                     $([<$name Key>]::$key),*
                 ];
 
-                fn subscribe(keys: &[[<$name Key>]], callback: yew::callback::Callback<[<$name Msg>]>) {
-                    for key in keys.iter().copied() {
-                        {
-                            let settings = SETTINGS.write().unwrap();
-                            if let Some(handlers) = settings.handlers.get_mut(&key) {
-                                handlers.push(callback);
+                pub fn subscribe(keys: &[[<$name Key>]], callback: yew::callback::Callback<[<$name Msg>]>) {
+                    let msgs: Vec<_> = SETTINGS.with(|s| {
+                        let mut s = s.borrow_mut();
+                        for key in keys.iter() {
+                            if let Some(handlers) = s.handlers.get_mut(&key) {
+                                if !handlers.contains(&callback) {
+                                    handlers.push(callback.clone());
+                                }
                             } else {
-                                settings.handlers.insert(key, vec![callback]);
+                                s.handlers.insert(*key, vec![callback.clone()]);
                             }
                         }
-                        {
-                            let settings = SETTINGS.read().unwrap();
-                            for handler in settings.handlers.as_ref().into_iter() {
-                                handler.dispatch(settings.store.get(key));
-                            }
-                        }
+                        keys.iter().map(|key| s.store.get(*key)).collect()
+                    });
+                    for msg in &msgs {
+                        Self::broadcast(msg);
                     }
                 }
 
-                fn broadcast(msg: &[<$name Msg>]) {
+                pub fn broadcast(msg: &[<$name Msg>]) {
                     {
-                        let settings = SETTINGS.read().unwrap();
-                        if let Some(handlers) = settings.handlers.get(&[<$name Msg>]::key_of(msg)) {
-                            for handler in handlers {
-                                handler.dispatch(settings.store.get(msg));
+                        let key = [<$name KeyStore>]::key_of(msg);
+                        SETTINGS.with(|s| {
+                            let s = s.borrow();
+                            if let Some(handlers) = s.handlers.get(&key) {
+                                for handler in handlers {
+                                    handler.emit(s.store.get(key));
+                                }
                             }
-                        }
+                        })
                     }
                 }
 
@@ -160,11 +133,11 @@ macro_rules! declare_settings {
                     #[inline(always)]
                     pub fn [<set_ $key>](v: $ty) {
                         let msg = [<$name Msg>]::$key(v);
-                        {
-                            let settings = SETTINGS.write().unwrap();
-                            settings.settings.set(msg);
-                        }
-                        Self::broadcast(msg)
+                        SETTINGS.with(|s| {
+                            let mut s = s.borrow_mut();
+                            s.store.set(&msg);
+                        });
+                        Self::broadcast(&msg)
                     }
                 )*
             }

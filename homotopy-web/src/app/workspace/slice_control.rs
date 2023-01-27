@@ -6,7 +6,7 @@ use crate::{
     app::{Icon, IconSize},
     components::{
         bounding_rect,
-        panzoom::{PanZoom, PanZoomAgent},
+        panzoom::{PanZoom, PanZoomState},
     },
 };
 
@@ -23,7 +23,6 @@ pub enum SliceControlMsg {
 }
 
 pub struct SliceControl {
-    _panzoom: PanZoom,
     translate: f64,
     scale: f64,
     node_ref: NodeRef,
@@ -34,15 +33,11 @@ impl Component for SliceControl {
     type Properties = SliceControlProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let panzoom = PanZoom::new();
-        let link = ctx.link().clone();
-        panzoom.register(Box::new(move |agent: &PanZoomAgent, _| {
-            let state = agent.state();
-            link.send_message(SliceControlMsg::Delta(state.translate.y, state.scale));
+        PanZoom::new().register(ctx.link().callback(|state: PanZoomState| {
+            SliceControlMsg::Delta(state.translate.y, state.scale)
         }));
 
         Self {
-            _panzoom: panzoom,
             translate: 0.0,
             scale: 1.0,
             node_ref: Default::default(),

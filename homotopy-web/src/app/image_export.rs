@@ -1,9 +1,6 @@
 use yew::prelude::*;
 
-use crate::{
-    components::settings::{KeyStore, Settings},
-    declare_settings, model,
-};
+use crate::{declare_settings, model};
 
 declare_settings! {
     pub struct ImageExportSettings {
@@ -160,17 +157,16 @@ impl ImageExportView {
     fn view_checkbox<G, S>(&self, name: &str, getter: G, setter: S) -> Html
     where
         G: Fn(&ImageExportSettingsKeyStore) -> bool,
-        S: Fn(&ImageExportSettings, bool) + 'static,
+        S: Fn(bool) + 'static,
     {
         let checked = getter(&self.local);
-        let dispatch = ImageExportSettings::new();
 
         html! {
             <div class="settings__toggle-setting">
                 <input
                     type="checkbox"
                     checked={checked}
-                    onclick={Callback::from(move |_| setter(&dispatch, !checked))}
+                    onclick={Callback::from(move |_| setter(!checked))}
                 />
                 {name}
             </div>

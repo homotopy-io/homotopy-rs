@@ -10,12 +10,10 @@ use yew_macro::function_component;
 
 use crate::{
     app::{
-        diagram_svg::DiagramSvg, sidebar::DrawerViewSize, tex::TexSpan, AppSettings, AppSettingsKey,
+        diagram_svg::DiagramSvg, sidebar::DrawerViewSize, tex::TexSpan, AppSettings,
+        AppSettingsKey, AppSettingsKeyStore, AppSettingsMsg,
     },
-    components::{
-        icon::{Icon, IconSize},
-        settings::{KeyStore, Settings, Store},
-    },
+    components::icon::{Icon, IconSize},
     model::proof::{
         generators::GeneratorInfo, Action, Signature, SignatureEdit, SignatureItem,
         SignatureItemEdit, COLORS, VERTEX_SHAPES,
@@ -146,7 +144,7 @@ pub enum ItemViewMessage {
     SwitchTo(ItemViewMode),
     Edit(SignatureItemEdit),
     CachePreview(bool, Diagram),
-    Setting(<Store<AppSettings> as KeyStore>::Message),
+    Setting(AppSettingsMsg),
     Noop,
 }
 
@@ -191,11 +189,10 @@ fn custom_recolor_button(props: &CustomRecolorButtonProps) -> Html {
 }
 
 pub struct ItemView {
-    local: Store<AppSettings>,
+    local: AppSettingsKeyStore,
     mode: ItemViewMode,
     name: String,
     preview_cache: Option<Preview>,
-    _settings: AppSettings,
 }
 
 impl Component for ItemView {
@@ -205,8 +202,10 @@ impl Component for ItemView {
     fn create(ctx: &Context<Self>) -> Self {
         const ITEM_SUBSCRIPTIONS: &[AppSettingsKey] = &[AppSettingsKey::show_previews];
 
-        let mut settings = AppSettings::connect(ctx.link().callback(ItemViewMessage::Setting));
-        settings.subscribe(ITEM_SUBSCRIPTIONS);
+        AppSettings::subscribe(
+            ITEM_SUBSCRIPTIONS,
+            ctx.link().callback(ItemViewMessage::Setting),
+        );
 
         let name = match &ctx.props().item {
             SignatureItem::Item(info) => info.name.clone(),
@@ -217,7 +216,6 @@ impl Component for ItemView {
             mode: Default::default(),
             name,
             preview_cache: Default::default(),
-            _settings: settings,
         }
     }
 

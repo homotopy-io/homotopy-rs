@@ -339,10 +339,10 @@ impl<const N: usize> Component for DiagramSvg<N> {
                 onmouseup={on_mouse_up}
                 onmousemove={on_mouse_move}
                 ontouchmove={on_touch_move}
-                ontouchstart={on_touch_update}
+                ontouchstart={on_touch_update.clone()}
                 ontouchend={on_touch_update.clone()}
                 ontouchcancel={on_touch_update.clone()}
-                ref={self.props.diagram_ref}
+                ref={self.props.diagram_ref.clone()}
             >
                 <title>{&self.title}</title>
                 {self.prepared.graphic.iter().enumerate().map(|(i, e)| self.view_element(ctx, i, e)).collect::<Html>()}

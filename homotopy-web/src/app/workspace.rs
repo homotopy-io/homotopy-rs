@@ -16,12 +16,9 @@ use crate::{
         diagram_svg::{DiagramSvg, HighlightKind, HighlightSvg},
         info::get_onboarding_message,
         tex::TexSpan,
-        AppSettings, AppSettingsKey,
+        AppSettings, AppSettingsKey, AppSettingsKeyStore, AppSettingsMsg,
     },
-    components::{
-        panzoom::PanZoomComponent,
-        settings::{KeyStore, Settings, Store},
-    },
+    components::panzoom::PanZoomComponent,
     model::{
         proof::{self, homotopy::Homotopy, AttachOption, Metadata, Signature, Workspace},
         Action,
@@ -46,15 +43,14 @@ pub struct Props {
 }
 
 pub enum Message {
-    Setting(<Store<AppSettings> as KeyStore>::Message),
+    Setting(AppSettingsMsg),
 }
 
 pub struct WorkspaceView {
-    local: Store<AppSettings>,
+    local: AppSettingsKeyStore,
     on_select: Callback<(Vec<SliceIndex>, bool)>,
     on_homotopy: Callback<Homotopy>,
     diagram_ref: NodeRef,
-    _settings: AppSettings,
 }
 
 impl Component for WorkspaceView {
@@ -64,8 +60,7 @@ impl Component for WorkspaceView {
     fn create(ctx: &Context<Self>) -> Self {
         const ITEM_SUBSCRIPTIONS: &[AppSettingsKey] = &[AppSettingsKey::weak_units];
 
-        let mut settings = AppSettings::connect(ctx.link().callback(Message::Setting));
-        settings.subscribe(ITEM_SUBSCRIPTIONS);
+        AppSettings::subscribe(ITEM_SUBSCRIPTIONS, ctx.link().callback(Message::Setting));
 
         let on_select = ctx
             .props()
@@ -80,7 +75,6 @@ impl Component for WorkspaceView {
             on_select,
             on_homotopy,
             diagram_ref: Default::default(),
-            _settings: settings,
         }
     }
 

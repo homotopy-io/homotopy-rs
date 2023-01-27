@@ -13,7 +13,7 @@ use self::{
     shaders::Shaders,
 };
 use super::{buffers, orbit_camera::OrbitCamera, DiagramGlProps};
-use crate::{app::AppSettings, components::settings::Store, model::proof::Signature};
+use crate::{app::AppSettingsKeyStore, model::proof::Signature};
 
 mod axes;
 mod gbuffer;
@@ -42,7 +42,7 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(ctx: GlCtx, settings: &Store<AppSettings>, props: &DiagramGlProps) -> Result<Self> {
+    pub fn new(ctx: GlCtx, settings: &AppSettingsKeyStore, props: &DiagramGlProps) -> Result<Self> {
         let animated_3d = *settings.get_animated_3d();
         let cubical_subdivision = *settings.get_cubical_subdivision();
         let smooth_time = *settings.get_smooth_time();
@@ -77,7 +77,7 @@ impl Renderer {
         })
     }
 
-    pub fn update(&mut self, settings: &Store<AppSettings>) -> Result<()> {
+    pub fn update(&mut self, settings: &AppSettingsKeyStore) -> Result<()> {
         let animated_3d = *settings.get_animated_3d();
         let cubical_subdivision = *settings.get_cubical_subdivision();
         let smooth_time = *settings.get_smooth_time();
@@ -116,7 +116,7 @@ impl Renderer {
         Ok(())
     }
 
-    pub fn render(&mut self, camera: &OrbitCamera, settings: &Store<AppSettings>, t: f32) {
+    pub fn render(&mut self, camera: &OrbitCamera, settings: &AppSettingsKeyStore, t: f32) {
         let n = self.scene.view.dimension();
         let animated = n == 4 || n == 3 && self.animated_3d;
 
