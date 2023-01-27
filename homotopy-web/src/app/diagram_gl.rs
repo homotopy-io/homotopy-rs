@@ -57,6 +57,7 @@ pub enum DiagramGlMessage {
     Camera(f32, f32, f32, Vec3),
     Scrub(f32),
     Setting(AppSettingsMsg),
+    Noop,
 }
 
 #[derive(Properties, Clone, PartialEq, Eq)]
@@ -154,18 +155,23 @@ impl Component for DiagramGl {
                 self.t_coord = 2. * t - 1.;
             }
             DiagramGlMessage::Setting(msg) => self.local.set(&msg),
+            DiagramGlMessage::Noop => {}
         }
 
         false
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let on_mouse_move = OrbitCamera::on_mouse_move();
-        let on_mouse_up = OrbitCamera::on_mouse_up();
-        let on_mouse_down = OrbitCamera::on_mouse_down();
-        let on_wheel = OrbitCamera::on_wheel(&self.canvas);
-        let on_touch_move = OrbitCamera::on_touch_move(&self.canvas);
-        let on_touch_update = OrbitCamera::on_touch_update(&self.canvas);
+        let interface_callback = ctx.link().callback(|e: TouchAction| {
+            CAMERA.with(|c| c.emit(e));
+            DiagramGlMessage::Noop
+        });
+        let on_mouse_move = OrbitCamera::on_mouse_move(interface_callback.clone());
+        let on_mouse_up = OrbitCamera::on_mouse_up(interface_callback.clone());
+        let on_mouse_down = OrbitCamera::on_mouse_down(interface_callback.clone());
+        let on_wheel = OrbitCamera::on_wheel(&self.canvas, interface_callback.clone());
+        let on_touch_move = OrbitCamera::on_touch_move(&self.canvas, interface_callback.clone());
+        let on_touch_update = OrbitCamera::on_touch_update(&self.canvas, interface_callback);
 
         let scrub = if self.is_animated(ctx) {
             html! { <ScrubComponent slices={ctx.props().diagram.size().unwrap()} /> }

@@ -95,6 +95,7 @@ pub struct PanZoomProps {
 
 pub enum PanZoomMessage {
     Delta(Vector, f64),
+    Noop,
 }
 
 pub struct PanZoomComponent {
@@ -124,15 +125,17 @@ impl Component for PanZoomComponent {
 
     #[allow(clippy::float_cmp)]
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
-        let PanZoomMessage::Delta(translate, scale) = msg;
+        if let PanZoomMessage::Delta(translate, scale) = msg {
+            if self.translate == translate && self.scale == scale {
+                return false;
+            }
 
-        if self.translate == translate && self.scale == scale {
-            return false;
+            self.translate = translate;
+            self.scale = scale;
+            true
+        } else {
+            false
         }
-
-        self.translate = translate;
-        self.scale = scale;
-        true
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -143,15 +146,22 @@ impl Component for PanZoomComponent {
             s = self.scale
         );
 
-        let on_mouse_move = PanZoomState::on_mouse_move();
-        let on_mouse_up = PanZoomState::on_mouse_up();
-        let on_mouse_down = PanZoomState::on_mouse_down();
+        let interface_callback = ctx.link().callback(|e: TouchAction| {
+            PANZOOM_STATE.with(|s| s.emit(e));
+            PanZoomMessage::Noop
+        });
+        let on_mouse_move = PanZoomState::on_mouse_move(interface_callback.clone());
+        let on_mouse_up = PanZoomState::on_mouse_up(interface_callback.clone());
+        let on_mouse_down = PanZoomState::on_mouse_down(interface_callback.clone());
+        let on_touch_move = PanZoomState::on_touch_move(&self.node_ref, interface_callback.clone());
+        let on_touch_update =
+            PanZoomState::on_touch_update(&self.node_ref, interface_callback.clone());
         let on_wheel = {
             let on_scroll = ctx.props().on_scroll.clone();
             let node_ref = self.node_ref.clone();
             Callback::from(move |e: WheelEvent| {
                 if e.alt_key() {
-                    PanZoomState::on_wheel(&node_ref).emit(e);
+                    PanZoomState::on_wheel(&node_ref, interface_callback.clone()).emit(e);
                 } else if e.delta_y() < 0.0 {
                     on_scroll.emit(Direction::Forward);
                 } else {
@@ -159,8 +169,6 @@ impl Component for PanZoomComponent {
                 }
             })
         };
-        let on_touch_move = PanZoomState::on_touch_move(&self.node_ref);
-        let on_touch_update = PanZoomState::on_touch_update(&self.node_ref);
 
         html! {
             <content
