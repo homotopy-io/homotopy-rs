@@ -108,7 +108,7 @@ impl Component for ToasterComponent {
                 if let ToasterMsg::Toast(_) = e.last_msg {
                     ToasterMsg::SetTimer
                 } else {
-                    ToasterMsg::Noop
+                    e.last_msg
                 }
             }));
         });
@@ -136,29 +136,20 @@ impl Component for ToasterComponent {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            ToasterMsg::Clear => !TOASTER.with(|t| t.state().animating > 1),
             ToasterMsg::SetTimer => {
                 let timeout = ctx.props().timeout;
-                let link = ctx.link().clone();
                 Timeout::new(timeout, move || {
-                    link.send_message(ToasterMsg::Clear);
+                    TOASTER.with(|t| t.emit(&ToasterMsg::Clear));
                 })
                 .forget();
-                false
+                true
             }
+            ToasterMsg::Clear => !TOASTER.with(|t| t.state().animating > 1),
             _ => false,
         }
     }
 }
 
-pub struct Toaster(Delta<ToasterState>);
-
-impl Toaster {
-    pub fn new() -> Self {
-        Self(Default::default())
-    }
-
-    pub fn toast(&mut self, toast: Toast) {
-        self.0.emit(&ToasterMsg::Toast(toast));
-    }
+pub fn toast(toast: Toast) {
+    TOASTER.with(|t| t.emit(&ToasterMsg::Toast(toast)));
 }

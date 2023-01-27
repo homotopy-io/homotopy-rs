@@ -13,7 +13,7 @@ use crate::{
         icon::{Icon, IconSize},
         modal::Modal,
         panzoom::PanZoom,
-        toast::{Toast, Toaster, ToasterComponent},
+        toast::{toast, Toast, ToasterComponent},
     },
     model,
 };
@@ -45,7 +45,6 @@ pub struct App {
     state: model::State,
     loading: bool,
     signature_stylesheet: SignatureStylesheet,
-    toaster: Toaster,
     before_unload: Option<Closure<dyn FnMut(web_sys::BeforeUnloadEvent)>>,
 }
 
@@ -64,7 +63,6 @@ impl Component for App {
             state,
             loading: false,
             signature_stylesheet,
-            toaster: Toaster::new(),
             before_unload: None,
         }
     }
@@ -94,8 +92,7 @@ impl Component for App {
                     ),
                 )) = &action
                 {
-                    self.toaster
-                        .toast(Toast::warn("Oriented generators are experimental"));
+                    toast(Toast::warn("Oriented generators are experimental"));
                 }
 
                 // Determine if the action needs to reset the panzoom
@@ -151,7 +148,7 @@ impl Component for App {
                         .update(self.state.proof().signature.clone());
                 } else if let Err(error) = result {
                     tracing::error!("Error occured: {}", error);
-                    self.toaster.toast(Toast::error(error.to_string()));
+                    toast(Toast::error(error.to_string()));
                 }
 
                 true

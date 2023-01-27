@@ -15,7 +15,7 @@ use crate::{
     app::{AppSettings, AppSettingsKeyStore, AppSettingsMsg},
     components::{
         delta::Delta,
-        toast::{Toast, Toaster},
+        toast::{toast, Toast},
         touch_interface::{TouchAction, TouchInterface},
     },
     model::proof::{Signature, View},
@@ -64,8 +64,6 @@ pub struct DiagramGlProps {
 
 pub struct DiagramGl {
     canvas: NodeRef,
-    toaster: Toaster,
-
     camera: OrbitCamera,
     renderer: Rc<RefCell<Option<Renderer>>>,
     local: AppSettingsKeyStore,
@@ -102,7 +100,6 @@ impl Component for DiagramGl {
 
         Self {
             canvas: Default::default(),
-            toaster: Toaster::new(),
 
             camera: Default::default(),
             renderer: Default::default(),
@@ -205,8 +202,7 @@ impl Component for DiagramGl {
             }
         } else {
             self.render_loop = None;
-            self.toaster
-                .toast(Toast::error("Failed to get WebGL 2.0 context"));
+            toast(Toast::error("Failed to get WebGL 2.0 context"));
         }
     }
 }
