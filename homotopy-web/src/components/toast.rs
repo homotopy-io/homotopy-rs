@@ -146,7 +146,7 @@ impl Component for ToasterComponent {
                 .forget();
                 false
             }
-            _ => true,
+            _ => false,
         }
     }
 }
