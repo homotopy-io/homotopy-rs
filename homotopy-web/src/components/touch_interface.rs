@@ -1,10 +1,6 @@
-use closure::closure;
 use yew::prelude::*;
 
-use crate::components::{
-    delta::{Delta, State},
-    node_midpoint, read_touch_list, Finger, Point,
-};
+use crate::components::{delta::State, node_midpoint, read_touch_list, Finger, Point};
 
 #[derive(Debug, Clone)]
 pub enum TouchAction {
@@ -17,7 +13,7 @@ pub enum TouchAction {
     Reset,
 }
 
-pub trait TouchInterface: Default + 'static {
+pub trait TouchInterface: Default + Clone + 'static {
     fn mouse_down(&mut self, alt_key: bool, point: Point);
 
     fn mouse_up(&mut self);
@@ -32,39 +28,35 @@ pub trait TouchInterface: Default + 'static {
 
     fn reset(&mut self);
 
-    fn on_mouse_move() -> Callback<MouseEvent> {
-        let delta = Delta::<Self>::new();
-        Callback::from(closure!(|e: MouseEvent| {
+    fn on_mouse_move(callback: Callback<TouchAction>) -> Callback<MouseEvent> {
+        callback.reform(|e: MouseEvent| {
             e.prevent_default();
-            delta.emit(TouchAction::MouseMove(
+            TouchAction::MouseMove(
                 e.alt_key(),
                 (f64::from(e.client_x()), f64::from(e.client_y())).into(),
-            ));
-        }))
+            )
+        })
     }
 
-    fn on_mouse_up() -> Callback<MouseEvent> {
-        let delta = Delta::<Self>::new();
-        Callback::from(closure!(|e: MouseEvent| {
+    fn on_mouse_up(callback: Callback<TouchAction>) -> Callback<MouseEvent> {
+        callback.reform(|e: MouseEvent| {
             e.prevent_default();
-            delta.emit(TouchAction::MouseUp);
-        }))
+            TouchAction::MouseUp
+        })
     }
 
-    fn on_mouse_down() -> Callback<MouseEvent> {
-        let delta = Delta::<Self>::new();
-        Callback::from(closure!(|e: MouseEvent| {
-            delta.emit(TouchAction::MouseDown(
+    fn on_mouse_down(callback: Callback<TouchAction>) -> Callback<MouseEvent> {
+        callback.reform(|e: MouseEvent| {
+            TouchAction::MouseDown(
                 e.alt_key(),
                 (f64::from(e.client_x()), f64::from(e.client_y())).into(),
-            ));
-        }))
+            )
+        })
     }
 
-    fn on_wheel(node_ref: &NodeRef) -> Callback<WheelEvent> {
-        let delta = Delta::<Self>::new();
+    fn on_wheel(node_ref: &NodeRef, callback: Callback<TouchAction>) -> Callback<WheelEvent> {
         let node_ref = node_ref.clone();
-        Callback::from(move |e: WheelEvent| {
+        callback.reform(move |e: WheelEvent| {
             e.prevent_default();
 
             let midpoint = node_midpoint(&node_ref).unwrap();
@@ -75,35 +67,36 @@ pub trait TouchInterface: Default + 'static {
             let x = f64::from(e.client_x()) - midpoint.x;
             let y = f64::from(e.client_y()) - midpoint.y;
 
-            delta.emit(TouchAction::MouseWheel((x, y).into(), e.delta_y()));
+            TouchAction::MouseWheel((x, y).into(), e.delta_y())
         })
     }
 
-    fn on_touch_move(node_ref: &NodeRef) -> Callback<TouchEvent> {
-        let delta = Delta::<Self>::new();
+    fn on_touch_move(node_ref: &NodeRef, callback: Callback<TouchAction>) -> Callback<TouchEvent> {
         let node_ref = node_ref.clone();
-        Callback::from(closure!(|e: TouchEvent| {
+        callback.reform(move |e: TouchEvent| {
             e.prevent_default();
             let midpoint = node_midpoint(&node_ref).unwrap();
-            delta.emit(TouchAction::TouchMove(
+            TouchAction::TouchMove(
                 read_touch_list(&e.touches())
                     .map(|(finger, point)| (finger, (point - midpoint).to_point()))
                     .collect(),
-            ));
-        }))
+            )
+        })
     }
 
-    fn on_touch_update(node_ref: &NodeRef) -> Callback<TouchEvent> {
-        let delta = Delta::<Self>::new();
+    fn on_touch_update(
+        node_ref: &NodeRef,
+        callback: Callback<TouchAction>,
+    ) -> Callback<TouchEvent> {
         let node_ref = node_ref.clone();
-        Callback::from(closure!(|e: TouchEvent| {
+        callback.reform(move |e: TouchEvent| {
             let midpoint = node_midpoint(&node_ref).unwrap();
-            delta.emit(TouchAction::TouchUpdate(
+            TouchAction::TouchUpdate(
                 read_touch_list(&e.touches())
                     .map(|(finger, point)| (finger, (point - midpoint).to_point()))
                     .collect(),
-            ));
-        }))
+            )
+        })
     }
 }
 

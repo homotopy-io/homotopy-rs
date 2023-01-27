@@ -1,6 +1,6 @@
 use boundary::BoundaryPreview;
 use gloo_timers::future::TimeoutFuture;
-use settings::{AppSettings, AppSettingsKey};
+use settings::{AppSettings, AppSettingsKey, AppSettingsKeyStore, AppSettingsMsg};
 use sidebar::Sidebar;
 use signature_stylesheet::SignatureStylesheet;
 use wasm_bindgen::{closure::Closure, JsCast};
@@ -13,7 +13,6 @@ use crate::{
         icon::{Icon, IconSize},
         modal::Modal,
         panzoom::PanZoom,
-        settings::Settings,
         toast::{Toast, Toaster, ToasterComponent},
     },
     model,
@@ -45,11 +44,8 @@ pub enum Message {
 pub struct App {
     state: model::State,
     loading: bool,
-    panzoom: PanZoom,
-    orbit_control: GlViewControl,
     signature_stylesheet: SignatureStylesheet,
     toaster: Toaster,
-    _settings: AppSettings,
     before_unload: Option<Closure<dyn FnMut(web_sys::BeforeUnloadEvent)>>,
 }
 
@@ -67,11 +63,8 @@ impl Component for App {
         Self {
             state,
             loading: false,
-            panzoom: PanZoom::new(),
-            orbit_control: GlViewControl::new(),
             signature_stylesheet,
             toaster: Toaster::new(),
-            _settings: AppSettings::connect(Callback::noop()),
             before_unload: None,
         }
     }
@@ -146,8 +139,8 @@ impl Component for App {
 
                 if let Ok(true) = result {
                     if resets_panzoom {
-                        self.panzoom.reset();
-                        self.orbit_control.reset();
+                        PanZoom::reset();
+                        GlViewControl::reset();
                     }
 
                     if self.before_unload.is_none() {

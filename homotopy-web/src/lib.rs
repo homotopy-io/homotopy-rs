@@ -36,6 +36,7 @@ pub fn main_js() -> Result<(), JsValue> {
         .with(fmt_layer)
         .with(perf_layer)
         .init();
-    yew::start_app::<app::App>();
+
+    yew::Renderer::<app::App>::new().render();
     Ok(())
 }

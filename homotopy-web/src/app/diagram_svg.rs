@@ -39,7 +39,6 @@ use crate::{
 pub struct DiagramSvg<const N: usize> {
     props: DiagramSvgProps<N>,
     prepared: PreparedDiagram<N>,
-    node_ref: NodeRef,
     drag_start: Option<Point2D<f32>>,
     title: String,
 }
@@ -61,6 +60,8 @@ pub struct DiagramSvgProps<const N: usize> {
     pub max_width: Option<f32>,
     #[prop_or_default]
     pub max_height: Option<f32>,
+    #[prop_or_default]
+    pub diagram_ref: NodeRef,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -183,13 +184,11 @@ impl<const N: usize> Component for DiagramSvg<N> {
     fn create(ctx: &Context<Self>) -> Self {
         let props = ctx.props().clone();
         let prepared = PreparedDiagram::new(&props.diagram, props.style);
-        let node_ref = NodeRef::default();
         let drag_start = Default::default();
         let title = String::new();
         Self {
             props,
             prepared,
-            node_ref,
             drag_start,
             title,
         }
@@ -249,9 +248,9 @@ impl<const N: usize> Component for DiagramSvg<N> {
         }
     }
 
-    fn changed(&mut self, ctx: &Context<Self>) -> bool {
+    fn changed(&mut self, ctx: &Context<Self>, old_props: &Self::Properties) -> bool {
         // self.props contains the old props
-        if &self.props == ctx.props() {
+        if &self.props == old_props {
             false
         } else {
             if self.props.diagram != ctx.props().diagram || self.props.style != ctx.props().style {
@@ -340,10 +339,10 @@ impl<const N: usize> Component for DiagramSvg<N> {
                 onmouseup={on_mouse_up}
                 onmousemove={on_mouse_move}
                 ontouchmove={on_touch_move}
-                ontouchstart={on_touch_update}
+                ontouchstart={on_touch_update.clone()}
                 ontouchend={on_touch_update.clone()}
                 ontouchcancel={on_touch_update.clone()}
-                ref={self.node_ref.clone()}
+                ref={self.props.diagram_ref.clone()}
             >
                 <title>{&self.title}</title>
                 {self.prepared.graphic.iter().enumerate().map(|(i, e)| self.view_element(ctx, i, e)).collect::<Html>()}
@@ -358,7 +357,8 @@ impl<const N: usize> DiagramSvg<N> {
     /// SVG image. This incorporates translation and zoom of the diagram component.
     fn transform_screen_to_image(&self) -> Transform2D<f32> {
         let rect = self
-            .node_ref
+            .props
+            .diagram_ref
             .cast::<Element>()
             .unwrap()
             .get_bounding_client_rect();

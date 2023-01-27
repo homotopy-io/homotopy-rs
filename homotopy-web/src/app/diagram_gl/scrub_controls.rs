@@ -4,7 +4,7 @@ use yew::prelude::*;
 
 use crate::{
     app::{Icon, IconSize},
-    components::delta::{Delta, DeltaAgent, State},
+    components::delta::{Delta, State},
 };
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -151,7 +151,10 @@ pub enum ScrubMessage {
 
 pub struct ScrubComponent {
     local: ScrubState,
-    _delta: Delta<ScrubState>,
+}
+
+thread_local! {
+    pub static SCRUB: Delta<ScrubState> = Default::default();
 }
 
 impl Component for ScrubComponent {
@@ -159,16 +162,10 @@ impl Component for ScrubComponent {
     type Properties = ScrubProperties;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let delta = Delta::new();
-        let link = ctx.link().clone();
-        delta.register(Box::new(move |agent: &DeltaAgent<ScrubState>, _| {
-            let state = agent.state().clone();
-            link.send_message(ScrubMessage::Delta(state));
-        }));
+        SCRUB.with(|s| s.register(ctx.link().callback(ScrubMessage::Delta)));
 
         Self {
             local: ScrubState::default(),
-            _delta: delta,
         }
     }
 
@@ -184,63 +181,55 @@ impl Component for ScrubComponent {
         const RANGE: i32 = 1000;
 
         let play_pause = {
-            let delta = Delta::<ScrubState>::new();
             let state = if self.local.state == PlayState::Playing {
                 PlayState::Paused
             } else {
                 PlayState::Playing
             };
             Callback::from(move |_: MouseEvent| {
-                delta.emit(ScrubAction::SetState(state));
+                SCRUB.with(|s| s.emit(&ScrubAction::SetState(state)));
             })
         };
         let toggle_looping = {
-            let delta = Delta::<ScrubState>::new();
             let behaviour = if self.local.behaviour == LoopingBehaviour::FillFoward {
                 LoopingBehaviour::Boomerang
             } else {
                 LoopingBehaviour::FillFoward
             };
             Callback::from(move |_: MouseEvent| {
-                delta.emit(ScrubAction::SetLooping(behaviour));
+                SCRUB.with(|s| s.emit(&ScrubAction::SetLooping(behaviour)));
             })
         };
         let rewind = {
-            let delta = Delta::<ScrubState>::new();
             Callback::from(move |_: MouseEvent| {
-                delta.emit(ScrubAction::Scrub(0.));
+                SCRUB.with(|s| s.emit(&ScrubAction::Scrub(0.)));
             })
         };
         let fast_forward = {
-            let delta = Delta::<ScrubState>::new();
             Callback::from(move |_: MouseEvent| {
-                delta.emit(ScrubAction::Scrub(1.));
+                SCRUB.with(|s| s.emit(&ScrubAction::Scrub(1.)));
             })
         };
         let set_speed = {
-            let delta = Delta::<ScrubState>::new();
             Callback::from(move |_: MouseEvent| {
-                delta.emit(ScrubAction::ChangeSpeed);
+                SCRUB.with(|s| s.emit(&ScrubAction::ChangeSpeed));
             })
         };
         let on_mouse_down = {
-            let delta = Delta::<ScrubState>::new();
             Callback::from(move |_: MouseEvent| {
-                delta.emit(ScrubAction::Push);
+                SCRUB.with(|s| s.emit(&ScrubAction::Push));
             })
         };
         let on_mouse_up = {
-            let delta = Delta::<ScrubState>::new();
             Callback::from(move |_: MouseEvent| {
-                delta.emit(ScrubAction::Pop);
+                SCRUB.with(|s| s.emit(&ScrubAction::Pop));
             })
         };
         let scrub = {
-            let delta = Delta::<ScrubState>::new();
             Callback::from(move |e: InputEvent| {
                 let input: HtmlInputElement = e.target_unchecked_into();
                 let updated = input.value().parse::<u32>().unwrap_or(0);
-                delta.emit(ScrubAction::Scrub(updated as f32 / RANGE as f32));
+                SCRUB.with(|s| s.emit(&ScrubAction::Scrub(updated as f32 / RANGE as f32)));
             })
         };
 

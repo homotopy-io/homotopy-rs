@@ -2,11 +2,12 @@ use homotopy_core::Direction;
 use yew::prelude::*;
 
 use crate::components::{
-    delta::{Delta, DeltaAgent, DeltaCallback},
+    delta::Delta,
     touch_interface::{TouchAction, TouchInterface},
     Finger, Point, Vector,
 };
 
+#[derive(Clone)]
 pub struct PanZoomState {
     pub translate: Vector,
     pub scale: f64,
@@ -94,13 +95,13 @@ pub struct PanZoomProps {
 
 pub enum PanZoomMessage {
     Delta(Vector, f64),
+    Noop,
 }
 
 pub struct PanZoomComponent {
     node_ref: NodeRef,
     translate: Vector,
     scale: f64,
-    _delta: Delta<PanZoomState>,
 }
 
 impl Component for PanZoomComponent {
@@ -108,32 +109,33 @@ impl Component for PanZoomComponent {
     type Properties = PanZoomProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let delta = Delta::new();
         let link = ctx.link().clone();
-        delta.register(Box::new(move |agent: &DeltaAgent<PanZoomState>, _| {
-            let state = agent.state();
-            link.send_message(PanZoomMessage::Delta(state.translate, state.scale));
-        }));
+        PANZOOM_STATE.with(|s| {
+            s.register(link.callback(|state: PanZoomState| {
+                PanZoomMessage::Delta(state.translate, state.scale)
+            }));
+        });
 
         Self {
             node_ref: Default::default(),
             translate: Default::default(),
             scale: 1.0,
-            _delta: delta,
         }
     }
 
     #[allow(clippy::float_cmp)]
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
-        let PanZoomMessage::Delta(translate, scale) = msg;
+        if let PanZoomMessage::Delta(translate, scale) = msg {
+            if self.translate == translate && self.scale == scale {
+                return false;
+            }
 
-        if self.translate == translate && self.scale == scale {
-            return false;
+            self.translate = translate;
+            self.scale = scale;
+            true
+        } else {
+            false
         }
-
-        self.translate = translate;
-        self.scale = scale;
-        true
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -144,15 +146,22 @@ impl Component for PanZoomComponent {
             s = self.scale
         );
 
-        let on_mouse_move = PanZoomState::on_mouse_move();
-        let on_mouse_up = PanZoomState::on_mouse_up();
-        let on_mouse_down = PanZoomState::on_mouse_down();
+        let interface_callback = ctx.link().callback(|e: TouchAction| {
+            PANZOOM_STATE.with(|s| s.emit(&e));
+            PanZoomMessage::Noop
+        });
+        let on_mouse_move = PanZoomState::on_mouse_move(interface_callback.clone());
+        let on_mouse_up = PanZoomState::on_mouse_up(interface_callback.clone());
+        let on_mouse_down = PanZoomState::on_mouse_down(interface_callback.clone());
+        let on_touch_move = PanZoomState::on_touch_move(&self.node_ref, interface_callback.clone());
+        let on_touch_update =
+            PanZoomState::on_touch_update(&self.node_ref, interface_callback.clone());
         let on_wheel = {
             let on_scroll = ctx.props().on_scroll.clone();
             let node_ref = self.node_ref.clone();
             Callback::from(move |e: WheelEvent| {
                 if e.alt_key() {
-                    PanZoomState::on_wheel(&node_ref).emit(e);
+                    PanZoomState::on_wheel(&node_ref, interface_callback.clone()).emit(e);
                 } else if e.delta_y() < 0.0 {
                     on_scroll.emit(Direction::Forward);
                 } else {
@@ -160,8 +169,6 @@ impl Component for PanZoomComponent {
                 }
             })
         };
-        let on_touch_move = PanZoomState::on_touch_move(&self.node_ref);
-        let on_touch_update = PanZoomState::on_touch_update(&self.node_ref);
 
         html! {
             <content
@@ -188,30 +195,27 @@ impl Component for PanZoomComponent {
     }
 }
 
-pub type PanZoomAgent = DeltaAgent<PanZoomState>;
+std::thread_local! {
+    pub static PANZOOM_STATE: Delta<PanZoomState> = Default::default();
+}
 
-pub struct PanZoom(Delta<PanZoomState>);
+// Delta<PanZoomState>
+pub struct PanZoom();
 
 impl PanZoom {
-    pub fn new() -> Self {
-        Self(Delta::new())
+    pub fn zoom_in() {
+        PANZOOM_STATE.with(|s| s.emit(&TouchAction::MouseWheel(Default::default(), -20.0)));
     }
 
-    pub fn zoom_in(&self) {
-        self.0
-            .emit(TouchAction::MouseWheel(Default::default(), -20.0));
+    pub fn zoom_out() {
+        PANZOOM_STATE.with(|s| s.emit(&TouchAction::MouseWheel(Default::default(), 20.0)));
     }
 
-    pub fn zoom_out(&self) {
-        self.0
-            .emit(TouchAction::MouseWheel(Default::default(), 20.0));
+    pub fn reset() {
+        PANZOOM_STATE.with(|s| s.emit(&TouchAction::Reset));
     }
 
-    pub fn reset(&self) {
-        self.0.emit(TouchAction::Reset);
-    }
-
-    pub fn register(&self, callback: DeltaCallback<PanZoomState>) {
-        self.0.register(callback);
+    pub fn register(callback: Callback<PanZoomState>) {
+        PANZOOM_STATE.with(|s| s.register(callback));
     }
 }

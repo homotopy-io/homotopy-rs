@@ -99,7 +99,7 @@ impl Component for FolderView {
         Self {}
     }
 
-    fn changed(&mut self, _: &Context<Self>) -> bool {
+    fn changed(&mut self, _: &Context<Self>, _: &Self::Properties) -> bool {
         // This is the critical line.
         true
     }

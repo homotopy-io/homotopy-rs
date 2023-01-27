@@ -8,6 +8,7 @@ use ultraviolet::{
 
 use crate::components::{touch_interface::TouchInterface, Finger, Point};
 
+#[derive(Clone)]
 pub struct OrbitCamera {
     pub phi: f32,
     pub theta: f32,

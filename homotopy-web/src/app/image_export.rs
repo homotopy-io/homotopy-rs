@@ -1,9 +1,6 @@
 use yew::prelude::*;
 
-use crate::{
-    components::settings::{KeyStore, Settings},
-    declare_settings, model,
-};
+use crate::{declare_settings, model};
 
 declare_settings! {
     pub struct ImageExportSettings {
@@ -20,7 +17,6 @@ pub struct Props {
 }
 
 pub struct ImageExportView {
-    _settings: ImageExportSettings,
     // Maintain a local copy of the global app settings in order to display the current settings
     // state correctly.
     local: ImageExportSettingsKeyStore,
@@ -31,12 +27,10 @@ impl Component for ImageExportView {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let mut settings = ImageExportSettings::connect(ctx.link().callback(|x| x));
         // So that we can keep our local copy of the global settings up to date,
         // we're going to need to subscribe to all changes in the global settings state.
-        settings.subscribe(ImageExportSettings::ALL);
+        ImageExportSettings::subscribe(ImageExportSettings::ALL, ctx.link().callback(|x| x));
         Self {
-            _settings: settings,
             local: Default::default(),
         }
     }
@@ -88,14 +82,14 @@ impl ImageExportView {
                             self.view_checkbox(
                                 "Left-right mode",
                                 |local| *local.get_tikz_leftright_mode(),
-                                ImageExportSettingsDispatch::set_tikz_leftright_mode,
+                                ImageExportSettings::set_tikz_leftright_mode,
                             )
                         }
                         {
                             self.view_checkbox(
                                 "Show braidings",
                                 |local| *local.get_tikz_show_braidings(),
-                                ImageExportSettingsDispatch::set_tikz_show_braidings,
+                                ImageExportSettings::set_tikz_show_braidings,
                             )
                         }
                         <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportTikz(leftright_mode,show_braidings))}>{"Export"}</button>
@@ -133,7 +127,7 @@ impl ImageExportView {
                             self.view_checkbox(
                                 "OpenGL renderer",
                                 |local| *local.get_manim_use_opengl(),
-                                ImageExportSettingsDispatch::set_manim_use_opengl,
+                                ImageExportSettings::set_manim_use_opengl,
                             )
                         }
                         <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportManim(use_opengl))}>{"Export"}</button>
@@ -163,17 +157,16 @@ impl ImageExportView {
     fn view_checkbox<G, S>(&self, name: &str, getter: G, setter: S) -> Html
     where
         G: Fn(&ImageExportSettingsKeyStore) -> bool,
-        S: Fn(&ImageExportSettingsDispatch, bool) + 'static,
+        S: Fn(bool) + 'static,
     {
         let checked = getter(&self.local);
-        let dispatch = ImageExportSettingsDispatch::new();
 
         html! {
             <div class="settings__toggle-setting">
                 <input
                     type="checkbox"
                     checked={checked}
-                    onclick={Callback::from(move |_| setter(&dispatch, !checked))}
+                    onclick={Callback::from(move |_| setter(!checked))}
                 />
                 {name}
             </div>

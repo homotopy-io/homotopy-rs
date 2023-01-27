@@ -9,13 +9,12 @@ use yew::prelude::*;
 pub use self::orbit_camera::OrbitCamera;
 use self::{
     renderer::Renderer,
-    scrub_controls::{ScrubAction, ScrubComponent, ScrubState},
+    scrub_controls::{ScrubAction, ScrubComponent, ScrubState, SCRUB},
 };
 use crate::{
-    app::AppSettings,
+    app::{AppSettings, AppSettingsKeyStore, AppSettingsMsg},
     components::{
-        delta::{Delta, DeltaAgent},
-        settings::{KeyStore, Settings, Store},
+        delta::Delta,
         toast::{Toast, Toaster},
         touch_interface::{TouchAction, TouchInterface},
     },
@@ -27,32 +26,24 @@ mod orbit_camera;
 mod renderer;
 mod scrub_controls;
 
-pub struct GlViewControl {
-    camera: Delta<OrbitCamera>,
-    scrub_control: Delta<ScrubState>,
+std::thread_local! {
+    pub static CAMERA: Delta<OrbitCamera> = Default::default();
 }
 
+pub struct GlViewControl {}
+
 impl GlViewControl {
-    pub fn new() -> Self {
-        Self {
-            camera: Delta::new(),
-            scrub_control: Delta::new(),
-        }
+    pub fn zoom_in() {
+        CAMERA.with(|c| c.emit(&TouchAction::MouseWheel(Default::default(), -20.0)));
     }
 
-    pub fn zoom_in(&self) {
-        self.camera
-            .emit(TouchAction::MouseWheel(Default::default(), -20.0));
+    pub fn zoom_out() {
+        CAMERA.with(|c| c.emit(&TouchAction::MouseWheel(Default::default(), 20.0)));
     }
 
-    pub fn zoom_out(&self) {
-        self.camera
-            .emit(TouchAction::MouseWheel(Default::default(), 20.0));
-    }
-
-    pub fn reset(&self) {
-        self.camera.emit(TouchAction::Reset);
-        self.scrub_control.emit(ScrubAction::Scrub(0.));
+    pub fn reset() {
+        CAMERA.with(|c| c.emit(&TouchAction::Reset));
+        SCRUB.with(|s| s.emit(&ScrubAction::Scrub(0.)));
     }
 }
 
@@ -60,7 +51,8 @@ pub enum DiagramGlMessage {
     Render(f64),
     Camera(f32, f32, f32, Vec3),
     Scrub(f32),
-    Setting(<Store<AppSettings> as KeyStore>::Message),
+    Setting(AppSettingsMsg),
+    Noop,
 }
 
 #[derive(Properties, Clone, PartialEq, Eq)]
@@ -73,13 +65,10 @@ pub struct DiagramGlProps {
 pub struct DiagramGl {
     canvas: NodeRef,
     toaster: Toaster,
-    _settings: AppSettings,
-    _camera_delta: Delta<OrbitCamera>,
-    scrub_delta: Delta<ScrubState>,
 
     camera: OrbitCamera,
     renderer: Rc<RefCell<Option<Renderer>>>,
-    local: Store<AppSettings>,
+    local: AppSettingsKeyStore,
     global_t: f32,
     t_coord: f32,
 
@@ -93,35 +82,27 @@ impl Component for DiagramGl {
     type Properties = DiagramGlProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let mut settings = AppSettings::connect(ctx.link().callback(DiagramGlMessage::Setting));
+        AppSettings::subscribe(
+            AppSettings::ALL,
+            ctx.link().callback(DiagramGlMessage::Setting),
+        );
 
-        settings.subscribe(AppSettings::ALL);
+        CAMERA.with(|c| {
+            c.register(ctx.link().callback(|state: OrbitCamera| {
+                DiagramGlMessage::Camera(state.phi, state.theta, state.distance, state.target)
+            }));
+        });
 
-        let camera_delta = Delta::new();
-        let link = ctx.link().clone();
-        camera_delta.register(Box::new(move |agent: &DeltaAgent<OrbitCamera>, _| {
-            let state = agent.state();
-            link.send_message(DiagramGlMessage::Camera(
-                state.phi,
-                state.theta,
-                state.distance,
-                state.target,
-            ));
-        }));
-
-        let scrub_delta = Delta::new();
-        let link = ctx.link().clone();
-        scrub_delta.register(Box::new(move |agent: &DeltaAgent<ScrubState>, _| {
-            let state = agent.state();
-            link.send_message(DiagramGlMessage::Scrub(state.t));
-        }));
+        SCRUB.with(|s| {
+            s.register(
+                ctx.link()
+                    .callback(|state: ScrubState| DiagramGlMessage::Scrub(state.t)),
+            );
+        });
 
         Self {
             canvas: Default::default(),
             toaster: Toaster::new(),
-            _settings: settings,
-            _camera_delta: camera_delta,
-            scrub_delta,
 
             camera: Default::default(),
             renderer: Default::default(),
@@ -141,9 +122,11 @@ impl Component for DiagramGl {
                 self.global_t = t;
                 if self.is_animated(ctx) {
                     // Slow the animation such that we get 1s per cospan
-                    self.scrub_delta.emit(ScrubAction::Advance(
-                        1e-3 * dt / ctx.props().diagram.size().unwrap() as f32,
-                    ));
+                    SCRUB.with(|s| {
+                        s.emit(&ScrubAction::Advance(
+                            1e-3 * dt / ctx.props().diagram.size().unwrap() as f32,
+                        ));
+                    });
                 }
                 // Update camera settings
                 self.camera.set_ortho(*self.local.get_orthographic_3d());
@@ -167,18 +150,23 @@ impl Component for DiagramGl {
                 self.t_coord = 2. * t - 1.;
             }
             DiagramGlMessage::Setting(msg) => self.local.set(&msg),
+            DiagramGlMessage::Noop => {}
         }
 
         false
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let on_mouse_move = OrbitCamera::on_mouse_move();
-        let on_mouse_up = OrbitCamera::on_mouse_up();
-        let on_mouse_down = OrbitCamera::on_mouse_down();
-        let on_wheel = OrbitCamera::on_wheel(&self.canvas);
-        let on_touch_move = OrbitCamera::on_touch_move(&self.canvas);
-        let on_touch_update = OrbitCamera::on_touch_update(&self.canvas);
+        let interface_callback = ctx.link().callback(|e: TouchAction| {
+            CAMERA.with(|c| c.emit(&e));
+            DiagramGlMessage::Noop
+        });
+        let on_mouse_move = OrbitCamera::on_mouse_move(interface_callback.clone());
+        let on_mouse_up = OrbitCamera::on_mouse_up(interface_callback.clone());
+        let on_mouse_down = OrbitCamera::on_mouse_down(interface_callback.clone());
+        let on_wheel = OrbitCamera::on_wheel(&self.canvas, interface_callback.clone());
+        let on_touch_move = OrbitCamera::on_touch_move(&self.canvas, interface_callback.clone());
+        let on_touch_update = OrbitCamera::on_touch_update(&self.canvas, interface_callback);
 
         let scrub = if self.is_animated(ctx) {
             html! { <ScrubComponent slices={ctx.props().diagram.size().unwrap()} /> }
