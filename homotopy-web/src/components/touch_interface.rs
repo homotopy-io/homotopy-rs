@@ -1,4 +1,3 @@
-use closure::closure;
 use yew::prelude::*;
 
 use crate::components::{delta::State, node_midpoint, read_touch_list, Finger, Point};
@@ -40,19 +39,19 @@ pub trait TouchInterface: Default + Clone + 'static {
     }
 
     fn on_mouse_up(callback: Callback<TouchAction>) -> Callback<MouseEvent> {
-        callback.reform(closure!(|e: MouseEvent| {
+        callback.reform(|e: MouseEvent| {
             e.prevent_default();
             TouchAction::MouseUp
-        }))
+        })
     }
 
     fn on_mouse_down(callback: Callback<TouchAction>) -> Callback<MouseEvent> {
-        callback.reform(closure!(|e: MouseEvent| {
+        callback.reform(|e: MouseEvent| {
             TouchAction::MouseDown(
                 e.alt_key(),
                 (f64::from(e.client_x()), f64::from(e.client_y())).into(),
             )
-        }))
+        })
     }
 
     fn on_wheel(node_ref: &NodeRef, callback: Callback<TouchAction>) -> Callback<WheelEvent> {
@@ -74,7 +73,7 @@ pub trait TouchInterface: Default + Clone + 'static {
 
     fn on_touch_move(node_ref: &NodeRef, callback: Callback<TouchAction>) -> Callback<TouchEvent> {
         let node_ref = node_ref.clone();
-        callback.reform(closure!(|e: TouchEvent| {
+        callback.reform(move |e: TouchEvent| {
             e.prevent_default();
             let midpoint = node_midpoint(&node_ref).unwrap();
             TouchAction::TouchMove(
@@ -82,7 +81,7 @@ pub trait TouchInterface: Default + Clone + 'static {
                     .map(|(finger, point)| (finger, (point - midpoint).to_point()))
                     .collect(),
             )
-        }))
+        })
     }
 
     fn on_touch_update(
@@ -90,14 +89,14 @@ pub trait TouchInterface: Default + Clone + 'static {
         callback: Callback<TouchAction>,
     ) -> Callback<TouchEvent> {
         let node_ref = node_ref.clone();
-        callback.reform(closure!(|e: TouchEvent| {
+        callback.reform(move |e: TouchEvent| {
             let midpoint = node_midpoint(&node_ref).unwrap();
             TouchAction::TouchUpdate(
                 read_touch_list(&e.touches())
                     .map(|(finger, point)| (finger, (point - midpoint).to_point()))
                     .collect(),
             )
-        }))
+        })
     }
 }
 
