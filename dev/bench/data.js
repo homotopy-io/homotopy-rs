@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1674598642068,
+  "lastUpdate": 1674834115494,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -45581,6 +45581,72 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 419.8,
             "range": "+/- 1.170",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c56c3ac2aed5c293e6a3335e29955d45a197aeda",
+          "message": "Yew migration (#992)\n\n* Bump yew from 0.19.3 to 0.20.0\r\n\r\nBumps [yew](https://github.com/yewstack/yew) from 0.19.3 to 0.20.0.\r\n- [Release notes](https://github.com/yewstack/yew/releases)\r\n- [Changelog](https://github.com/yewstack/yew/blob/master/CHANGELOG.md)\r\n- [Commits](https://github.com/yewstack/yew/compare/yew-v0.19.3...yew-v0.20.0)\r\n\r\n---\r\nupdated-dependencies:\r\n- dependency-name: yew\r\n  dependency-type: direct:production\r\n  update-type: version-update:semver-minor\r\n...\r\n\r\nSigned-off-by: dependabot[bot] <support@github.com>\r\n\r\n* Yew migration part 1-8\r\n---------\r\n\r\nSigned-off-by: dependabot[bot] <support@github.com>\r\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2023-01-27T15:11:18Z",
+          "tree_id": "f5891c478be9aec2370d1797c8c4863096b67643",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/c56c3ac2aed5c293e6a3335e29955d45a197aeda"
+        },
+        "date": 1674834101531,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 2.1325,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 21.279,
+            "range": "+/- 0.067",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 408.89,
+            "range": "+/- 0.290",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 9.8308,
+            "range": "+/- 0.003",
+            "unit": "s"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 1.034,
+            "range": "+/- 0.005",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 15.18,
+            "range": "+/- 0.036",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 384.06,
+            "range": "+/- 1.200",
             "unit": "ms"
           }
         ]
