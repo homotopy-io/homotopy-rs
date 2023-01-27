@@ -9,7 +9,7 @@ use yew::prelude::*;
 pub use self::orbit_camera::OrbitCamera;
 use self::{
     renderer::Renderer,
-    scrub_controls::{ScrubAction, ScrubComponent, ScrubState},
+    scrub_controls::{ScrubAction, ScrubComponent, ScrubState, SCRUB},
 };
 use crate::{
     app::{AppSettings, AppSettingsKeyStore, AppSettingsMsg},
@@ -28,7 +28,6 @@ mod scrub_controls;
 
 std::thread_local! {
     pub static CAMERA: Delta<OrbitCamera> = Default::default();
-    pub static SCRUB_CONTROL: Delta<ScrubState> = Default::default();
 }
 
 pub struct GlViewControl {}
@@ -48,7 +47,7 @@ impl GlViewControl {
 
     pub fn reset(&self) {
         CAMERA.with(|c| c.emit(TouchAction::Reset));
-        SCRUB_CONTROL.with(|s| s.emit(ScrubAction::Scrub(0.)));
+        SCRUB.with(|s| s.emit(ScrubAction::Scrub(0.)));
     }
 }
 
@@ -98,7 +97,7 @@ impl Component for DiagramGl {
             }))
         });
 
-        SCRUB_CONTROL.with(|s| {
+        SCRUB.with(|s| {
             s.register(
                 ctx.link()
                     .callback(|state: ScrubState| DiagramGlMessage::Scrub(state.t)),
@@ -127,7 +126,7 @@ impl Component for DiagramGl {
                 self.global_t = t;
                 if self.is_animated(ctx) {
                     // Slow the animation such that we get 1s per cospan
-                    SCRUB_CONTROL.with(|s| {
+                    SCRUB.with(|s| {
                         s.emit(ScrubAction::Advance(
                             1e-3 * dt / ctx.props().diagram.size().unwrap() as f32,
                         ))
