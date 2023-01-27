@@ -44,8 +44,6 @@ pub enum Message {
 pub struct App {
     state: model::State,
     loading: bool,
-    panzoom: PanZoom,
-    orbit_control: GlViewControl,
     signature_stylesheet: SignatureStylesheet,
     toaster: Toaster,
     before_unload: Option<Closure<dyn FnMut(web_sys::BeforeUnloadEvent)>>,
@@ -65,8 +63,6 @@ impl Component for App {
         Self {
             state,
             loading: false,
-            panzoom: PanZoom::new(),
-            orbit_control: GlViewControl::new(),
             signature_stylesheet,
             toaster: Toaster::new(),
             before_unload: None,
@@ -143,8 +139,8 @@ impl Component for App {
 
                 if let Ok(true) = result {
                     if resets_panzoom {
-                        self.panzoom.reset();
-                        self.orbit_control.reset();
+                        PanZoom::reset();
+                        GlViewControl::reset();
                     }
 
                     if self.before_unload.is_none() {

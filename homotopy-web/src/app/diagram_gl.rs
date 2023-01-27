@@ -33,21 +33,17 @@ std::thread_local! {
 pub struct GlViewControl {}
 
 impl GlViewControl {
-    pub fn new() -> Self {
-        Self {}
+    pub fn zoom_in() {
+        CAMERA.with(|c| c.emit(&TouchAction::MouseWheel(Default::default(), -20.0)));
     }
 
-    pub fn zoom_in(&self) {
-        CAMERA.with(|c| c.emit(TouchAction::MouseWheel(Default::default(), -20.0)));
+    pub fn zoom_out() {
+        CAMERA.with(|c| c.emit(&TouchAction::MouseWheel(Default::default(), 20.0)));
     }
 
-    pub fn zoom_out(&self) {
-        CAMERA.with(|c| c.emit(TouchAction::MouseWheel(Default::default(), 20.0)));
-    }
-
-    pub fn reset(&self) {
-        CAMERA.with(|c| c.emit(TouchAction::Reset));
-        SCRUB.with(|s| s.emit(ScrubAction::Scrub(0.)));
+    pub fn reset() {
+        CAMERA.with(|c| c.emit(&TouchAction::Reset));
+        SCRUB.with(|s| s.emit(&ScrubAction::Scrub(0.)));
     }
 }
 
@@ -94,14 +90,14 @@ impl Component for DiagramGl {
         CAMERA.with(|c| {
             c.register(ctx.link().callback(|state: OrbitCamera| {
                 DiagramGlMessage::Camera(state.phi, state.theta, state.distance, state.target)
-            }))
+            }));
         });
 
         SCRUB.with(|s| {
             s.register(
                 ctx.link()
                     .callback(|state: ScrubState| DiagramGlMessage::Scrub(state.t)),
-            )
+            );
         });
 
         Self {
@@ -127,9 +123,9 @@ impl Component for DiagramGl {
                 if self.is_animated(ctx) {
                     // Slow the animation such that we get 1s per cospan
                     SCRUB.with(|s| {
-                        s.emit(ScrubAction::Advance(
+                        s.emit(&ScrubAction::Advance(
                             1e-3 * dt / ctx.props().diagram.size().unwrap() as f32,
-                        ))
+                        ));
                     });
                 }
                 // Update camera settings
@@ -162,7 +158,7 @@ impl Component for DiagramGl {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let interface_callback = ctx.link().callback(|e: TouchAction| {
-            CAMERA.with(|c| c.emit(e));
+            CAMERA.with(|c| c.emit(&e));
             DiagramGlMessage::Noop
         });
         let on_mouse_move = OrbitCamera::on_mouse_move(interface_callback.clone());

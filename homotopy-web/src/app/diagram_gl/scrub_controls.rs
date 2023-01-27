@@ -162,7 +162,7 @@ impl Component for ScrubComponent {
     type Properties = ScrubProperties;
 
     fn create(ctx: &Context<Self>) -> Self {
-        SCRUB.with(|s| s.register(ctx.link().callback(|state| ScrubMessage::Delta(state))));
+        SCRUB.with(|s| s.register(ctx.link().callback(ScrubMessage::Delta)));
 
         Self {
             local: ScrubState::default(),
@@ -187,7 +187,7 @@ impl Component for ScrubComponent {
                 PlayState::Playing
             };
             Callback::from(move |_: MouseEvent| {
-                SCRUB.with(|s| s.emit(ScrubAction::SetState(state)));
+                SCRUB.with(|s| s.emit(&ScrubAction::SetState(state)));
             })
         };
         let toggle_looping = {
@@ -197,39 +197,39 @@ impl Component for ScrubComponent {
                 LoopingBehaviour::FillFoward
             };
             Callback::from(move |_: MouseEvent| {
-                SCRUB.with(|s| s.emit(ScrubAction::SetLooping(behaviour)));
+                SCRUB.with(|s| s.emit(&ScrubAction::SetLooping(behaviour)));
             })
         };
         let rewind = {
             Callback::from(move |_: MouseEvent| {
-                SCRUB.with(|s| s.emit(ScrubAction::Scrub(0.)));
+                SCRUB.with(|s| s.emit(&ScrubAction::Scrub(0.)));
             })
         };
         let fast_forward = {
             Callback::from(move |_: MouseEvent| {
-                SCRUB.with(|s| s.emit(ScrubAction::Scrub(1.)));
+                SCRUB.with(|s| s.emit(&ScrubAction::Scrub(1.)));
             })
         };
         let set_speed = {
             Callback::from(move |_: MouseEvent| {
-                SCRUB.with(|s| s.emit(ScrubAction::ChangeSpeed));
+                SCRUB.with(|s| s.emit(&ScrubAction::ChangeSpeed));
             })
         };
         let on_mouse_down = {
             Callback::from(move |_: MouseEvent| {
-                SCRUB.with(|s| s.emit(ScrubAction::Push));
+                SCRUB.with(|s| s.emit(&ScrubAction::Push));
             })
         };
         let on_mouse_up = {
             Callback::from(move |_: MouseEvent| {
-                SCRUB.with(|s| s.emit(ScrubAction::Pop));
+                SCRUB.with(|s| s.emit(&ScrubAction::Pop));
             })
         };
         let scrub = {
             Callback::from(move |e: InputEvent| {
                 let input: HtmlInputElement = e.target_unchecked_into();
                 let updated = input.value().parse::<u32>().unwrap_or(0);
-                SCRUB.with(|s| s.emit(ScrubAction::Scrub(updated as f32 / RANGE as f32)));
+                SCRUB.with(|s| s.emit(&ScrubAction::Scrub(updated as f32 / RANGE as f32)));
             })
         };
 

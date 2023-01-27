@@ -113,7 +113,7 @@ impl Component for PanZoomComponent {
         PANZOOM_STATE.with(|s| {
             s.register(link.callback(|state: PanZoomState| {
                 PanZoomMessage::Delta(state.translate, state.scale)
-            }))
+            }));
         });
 
         Self {
@@ -147,7 +147,7 @@ impl Component for PanZoomComponent {
         );
 
         let interface_callback = ctx.link().callback(|e: TouchAction| {
-            PANZOOM_STATE.with(|s| s.emit(e));
+            PANZOOM_STATE.with(|s| s.emit(&e));
             PanZoomMessage::Noop
         });
         let on_mouse_move = PanZoomState::on_mouse_move(interface_callback.clone());
@@ -203,23 +203,19 @@ std::thread_local! {
 pub struct PanZoom();
 
 impl PanZoom {
-    pub fn new() -> Self {
-        Self()
+    pub fn zoom_in() {
+        PANZOOM_STATE.with(|s| s.emit(&TouchAction::MouseWheel(Default::default(), -20.0)));
     }
 
-    pub fn zoom_in(&self) {
-        PANZOOM_STATE.with(|s| s.emit(TouchAction::MouseWheel(Default::default(), -20.0)));
+    pub fn zoom_out() {
+        PANZOOM_STATE.with(|s| s.emit(&TouchAction::MouseWheel(Default::default(), 20.0)));
     }
 
-    pub fn zoom_out(&self) {
-        PANZOOM_STATE.with(|s| s.emit(TouchAction::MouseWheel(Default::default(), 20.0)));
+    pub fn reset() {
+        PANZOOM_STATE.with(|s| s.emit(&TouchAction::Reset));
     }
 
-    pub fn reset(&self) {
-        PANZOOM_STATE.with(|s| s.emit(TouchAction::Reset));
-    }
-
-    pub fn register(&self, callback: Callback<PanZoomState>) {
+    pub fn register(callback: Callback<PanZoomState>) {
         PANZOOM_STATE.with(|s| s.register(callback));
     }
 }

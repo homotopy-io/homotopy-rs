@@ -33,7 +33,7 @@ impl Component for SliceControl {
     type Properties = SliceControlProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        PanZoom::new().register(ctx.link().callback(|state: PanZoomState| {
+        PanZoom::register(ctx.link().callback(|state: PanZoomState| {
             SliceControlMsg::Delta(state.translate.y, state.scale)
         }));
 

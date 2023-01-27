@@ -118,7 +118,7 @@ impl Component for ToasterComponent {
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
         TOASTER
-            .with(|t| t.state())
+            .with(Delta::state)
             .toasts
             .iter()
             .map(|props| {
@@ -159,6 +159,6 @@ impl Toaster {
     }
 
     pub fn toast(&mut self, toast: Toast) {
-        self.0.emit(ToasterMsg::Toast(toast));
+        self.0.emit(&ToasterMsg::Toast(toast));
     }
 }

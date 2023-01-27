@@ -5,10 +5,7 @@ use crate::{
     components::panzoom::PanZoom,
 };
 
-pub struct ViewControl {
-    panzoom: PanZoom,
-    orbit_control: GlViewControl,
-}
+pub struct ViewControl {}
 
 pub enum ViewMessage {
     ZoomIn,
@@ -21,25 +18,22 @@ impl Component for ViewControl {
     type Properties = ();
 
     fn create(_ctx: &Context<Self>) -> Self {
-        Self {
-            panzoom: PanZoom::new(),
-            orbit_control: GlViewControl::new(),
-        }
+        Self {}
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             ViewMessage::ZoomIn => {
-                self.panzoom.zoom_in();
-                self.orbit_control.zoom_in();
+                PanZoom::zoom_in();
+                GlViewControl::zoom_in();
             }
             ViewMessage::ZoomOut => {
-                self.panzoom.zoom_out();
-                self.orbit_control.zoom_out();
+                PanZoom::zoom_out();
+                GlViewControl::zoom_out();
             }
             ViewMessage::Reset => {
-                self.panzoom.reset();
-                self.orbit_control.reset();
+                PanZoom::reset();
+                GlViewControl::reset();
             }
         }
         false

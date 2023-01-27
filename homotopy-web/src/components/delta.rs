@@ -26,10 +26,10 @@ impl<T> Delta<T>
 where
     T: State,
 {
-    pub fn emit(&self, msg: T::Action) {
+    pub fn emit(&self, msg: &T::Action) {
         let state = {
             let mut inner = self.0.borrow_mut();
-            inner.state.update(&msg);
+            inner.state.update(msg);
             inner.state.clone()
         };
         let handlers = {
