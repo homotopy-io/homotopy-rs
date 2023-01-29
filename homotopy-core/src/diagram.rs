@@ -436,11 +436,8 @@ impl DiagramN {
 
         let height = SliceIndex::Interior(Height::Regular(regular));
 
-        let slice = match self.slice(height) {
-            Some(slice) => slice,
-            None => {
+        let Some(slice) = self.slice(height) else {
                 return false;
-            }
         };
 
         match diagram {

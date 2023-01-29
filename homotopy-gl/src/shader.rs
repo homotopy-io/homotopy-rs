@@ -143,8 +143,7 @@ impl Program {
             for (i, attribute) in attributes.into_iter().enumerate() {
                 if map.insert(attribute, i as u32).is_some() {
                     return Err(GlError::ProgramLink(format!(
-                        "duplicate attribute '{}'",
-                        attribute
+                        "duplicate attribute '{attribute}'"
                     )));
                 }
             }
@@ -194,15 +193,13 @@ impl Program {
                     .with_gl(|gl| gl.get_uniform_location(&program.webgl_program, uniform))
                     .ok_or_else(|| {
                         GlError::Uniform(format!(
-                            "couldn't get the location of the uniform '{}'",
-                            uniform,
+                            "couldn't get the location of the uniform '{uniform}'",
                         ))
                     })?;
 
                 if program.uniforms.insert(uniform, loc).is_some() {
                     return Err(GlError::ProgramLink(format!(
-                        "duplicate uniform '{}'",
-                        uniform,
+                        "duplicate uniform '{uniform}'",
                     )));
                 }
             }

@@ -331,14 +331,10 @@ fn render_vertex(generator_style: &impl GeneratorStyle, color: &str) -> String {
     const SQUARE_SIDELENGTH: f32 = 0.125 / 2.;
 
     match generator_style.shape() {
-        Circle => format!(
-            "Circle(radius={radius},color=C[\"{color}\"],fill_opacity=1)",
-            radius = CIRCLE_RADIUS,
-        ),
-        Square => format!(
-            "Square(side_length={side_length},color=C[\"{color}\"],fill_opacity=1)",
-            side_length = SQUARE_SIDELENGTH,
-        ),
+        Circle => format!("Circle(radius={CIRCLE_RADIUS},color=C[\"{color}\"],fill_opacity=1)",),
+        Square => {
+            format!("Square(side_length={SQUARE_SIDELENGTH},color=C[\"{color}\"],fill_opacity=1)",)
+        }
     }
 }
 

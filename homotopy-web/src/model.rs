@@ -255,9 +255,8 @@ impl State {
 
     /// Handler for [Action::SelectPoint].
     fn select_point(&mut self, point: &[SliceIndex], weak_units: bool) -> Result<(), ModelError> {
-        let workspace = match self.proof().workspace.as_ref() {
-            Some(workspace) => workspace,
-            None => return Ok(()),
+        let Some(workspace) = self.proof().workspace.as_ref() else {
+            return Ok(());
         };
 
         let mut matches: Vector<AttachOption> = Default::default();
