@@ -204,9 +204,7 @@ impl<'a> Frame<'a> {
                     draw.vertex_array.bind(|| {
                         // set all of the uniforms
                         for (name, loc) in draw.program.uniforms() {
-                            let data = if let Some(data) = draw.uniforms.get(name) {
-                                data
-                            } else {
+                            let Some(data) = draw.uniforms.get(name) else {
                                 // an unset uniform is a programmer error, so just panic
                                 panic!("uniform '{name}' is unset");
                             };

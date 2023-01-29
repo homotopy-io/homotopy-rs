@@ -466,15 +466,12 @@ impl<const N: usize> DiagramSvg<N> {
     }
 
     fn view_highlight(&self, ctx: &Context<Self>) -> Html {
-        let highlight = if let Some(highlight) = ctx.props().highlight {
-            highlight
-        } else {
+        let Some(highlight) = ctx.props().highlight else {
             return Default::default();
         };
 
-        let (from, to) = match (self.position(highlight.from), self.position(highlight.to)) {
-            (Some(from), Some(to)) => (from, to),
-            _ => return Default::default(),
+        let (Some(from), Some(to)) = (self.position(highlight.from), self.position(highlight.to)) else {
+            return Default::default();
         };
 
         let padding = match highlight.kind {
@@ -536,9 +533,8 @@ impl<const N: usize> DiagramSvg<N> {
             let angle = diff.angle_from_x_axis();
             self.drag_start = None;
 
-            let simplex = match self.simplex_at(start) {
-                Some(simplex) => simplex,
-                None => return,
+            let Some(simplex) = self.simplex_at(start) else {
+                return;
             };
 
             let homotopy = drag_to_homotopy(
@@ -593,9 +589,8 @@ fn drag_to_homotopy<const N: usize>(
 
     match N {
         1 => {
-            let height = match point[0] {
-                Interior(Singular(height)) => height,
-                _ => return None,
+            let Interior(Singular(height)) = point[0] else {
+                return None;
             };
 
             let direction = if angle.radians <= 0.0 {
