@@ -107,6 +107,7 @@ where
     type Action = TouchAction;
 
     fn update(&mut self, action: &Self::Action) {
+        tracing::warn!("touch interface invoked");
         match action {
             TouchAction::MouseDown(alt_key, point) => self.mouse_down(*alt_key, *point),
             TouchAction::MouseUp => self.mouse_up(),

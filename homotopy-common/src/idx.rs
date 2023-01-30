@@ -256,7 +256,7 @@ where
 
 impl<I, T> IdxVec<I, T>
 where
-    T: Eq,
+    T: PartialEq,
 {
     #[inline]
     pub fn contains(&self, t: &T) -> bool {

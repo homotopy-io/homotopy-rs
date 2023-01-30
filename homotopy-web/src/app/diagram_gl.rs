@@ -14,7 +14,7 @@ use self::{
 use crate::{
     app::{AppSettings, AppSettingsKeyStore, AppSettingsMsg},
     components::{
-        delta::Delta,
+        delta::{CallbackIdx, Delta},
         toast::{toast, Toast},
         touch_interface::{TouchAction, TouchInterface},
     },
@@ -73,6 +73,9 @@ pub struct DiagramGl {
     // If the render task is dropped, we won't get notified about `requestAnimationFrame()`
     // calls, so store a reference to the task here
     render_loop: Option<AnimationFrame>,
+
+    camera_callback: CallbackIdx,
+    scrub_callback: CallbackIdx,
 }
 
 impl Component for DiagramGl {
@@ -85,17 +88,17 @@ impl Component for DiagramGl {
             ctx.link().callback(DiagramGlMessage::Setting),
         );
 
-        CAMERA.with(|c| {
+        let camera_callback = CAMERA.with(|c| {
             c.register(ctx.link().callback(|state: OrbitCamera| {
                 DiagramGlMessage::Camera(state.phi, state.theta, state.distance, state.target)
-            }));
+            }))
         });
 
-        SCRUB.with(|s| {
+        let scrub_callback = SCRUB.with(|s| {
             s.register(
                 ctx.link()
                     .callback(|state: ScrubState| DiagramGlMessage::Scrub(state.t)),
-            );
+            )
         });
 
         Self {
@@ -108,6 +111,9 @@ impl Component for DiagramGl {
             t_coord: Default::default(),
 
             render_loop: None,
+
+            camera_callback,
+            scrub_callback,
         }
     }
 
@@ -151,6 +157,12 @@ impl Component for DiagramGl {
         }
 
         false
+    }
+
+    fn destroy(&mut self, _ctx: &Context<Self>) {
+        CAMERA.with(|c| c.unregister(self.camera_callback));
+
+        SCRUB.with(|s| s.unregister(self.scrub_callback));
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {

@@ -4,7 +4,7 @@ use yew::prelude::*;
 
 use crate::{
     app::{Icon, IconSize},
-    components::delta::{Delta, State},
+    components::delta::{CallbackIdx, Delta, State},
 };
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -151,6 +151,7 @@ pub enum ScrubMessage {
 
 pub struct ScrubComponent {
     local: ScrubState,
+    callback_idx: CallbackIdx,
 }
 
 thread_local! {
@@ -162,10 +163,11 @@ impl Component for ScrubComponent {
     type Properties = ScrubProperties;
 
     fn create(ctx: &Context<Self>) -> Self {
-        SCRUB.with(|s| s.register(ctx.link().callback(ScrubMessage::Delta)));
+        let callback_idx = SCRUB.with(|s| s.register(ctx.link().callback(ScrubMessage::Delta)));
 
         Self {
             local: ScrubState::default(),
+            callback_idx,
         }
     }
 
@@ -175,6 +177,10 @@ impl Component for ScrubComponent {
             self.local = state;
             true
         }
+    }
+
+    fn destroy(&mut self, _ctx: &Context<Self>) {
+        SCRUB.with(|s| s.unregister(self.callback_idx));
     }
 
     fn view(&self, _ctx: &Context<Self>) -> Html {

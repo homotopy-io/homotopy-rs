@@ -1,6 +1,20 @@
 use std::cell::RefCell;
 
+use homotopy_common::idx::{Idx, IdxVec};
 use yew::callback::Callback;
+
+#[derive(Debug, Copy, Clone, Eq, Hash, PartialEq)]
+pub struct CallbackIdx(usize);
+
+impl Idx for CallbackIdx {
+    fn index(&self) -> usize {
+        self.0
+    }
+
+    fn new(index: usize) -> Self {
+        Self(index)
+    }
+}
 
 pub trait State: Default + Clone + Sized + 'static {
     type Action;
@@ -19,7 +33,7 @@ where
     T: State,
 {
     state: T,
-    handlers: Vec<Callback<T>>,
+    handlers: IdxVec<CallbackIdx, Option<Callback<T>>>,
 }
 
 impl<T> Delta<T>
@@ -36,19 +50,36 @@ where
             let inner = self.0.borrow();
             inner.handlers.clone()
         };
-        for handler in handlers {
+        for handler in handlers.values().flatten() {
             handler.emit(state.clone());
         }
     }
 
-    pub fn register(&self, callback: Callback<T>) {
-        let should_register = {
-            let inner = self.0.borrow();
-            !inner.handlers.contains(&callback)
-        };
-        if should_register {
-            let mut inner = self.0.borrow_mut();
-            inner.handlers.push(callback);
+    // Instead of popping from the array, we use a tombstone system.
+    // This does not invalidate other indexes.
+    pub fn register(&self, callback: Callback<T>) -> CallbackIdx {
+        let mut inner = self.0.borrow_mut();
+        tracing::error!("register size: {}", inner.handlers.len());
+        for (i, handler) in inner.handlers.iter_mut() {
+            match handler {
+                None => {
+                    *handler = Some(callback);
+                    return i;
+                }
+                Some(h) if *h == callback => {
+                    return i;
+                }
+                Some(_) => {}
+            }
+        }
+        inner.handlers.push(Some(callback))
+    }
+
+    pub fn unregister(&self, idx: CallbackIdx) {
+        let mut inner = self.0.borrow_mut();
+        tracing::error!("register size: {}", inner.handlers.len());
+        if let Some(h) = inner.handlers.get_mut(idx) {
+            *h = None;
         }
     }
 

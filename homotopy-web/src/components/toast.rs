@@ -3,7 +3,7 @@ use std::fmt;
 use gloo_timers::callback::Timeout;
 use yew::prelude::*;
 
-use crate::components::delta::{Delta, State};
+use crate::components::delta::{CallbackIdx, Delta, State};
 
 macro_rules! declare_toast_kinds {
     ($(($name:ident, $method:ident, $class:literal),)*) => {
@@ -95,7 +95,9 @@ std::thread_local! {
     pub static TOASTER: Delta<ToasterState> = Default::default();
 }
 
-pub struct ToasterComponent {}
+pub struct ToasterComponent {
+    callback_idx: CallbackIdx,
+}
 
 impl Component for ToasterComponent {
     type Message = ToasterMsg;
@@ -103,15 +105,15 @@ impl Component for ToasterComponent {
 
     fn create(ctx: &Context<Self>) -> Self {
         let link = ctx.link().clone();
-        TOASTER.with(move |t| {
+        let callback_idx = TOASTER.with(move |t| {
             t.register(link.callback(|e: ToasterState| match e.last_msg {
                 ToasterMsg::Toast(_) => ToasterMsg::SetTimer,
                 ToasterMsg::Clear => ToasterMsg::Clear,
                 _ => ToasterMsg::Noop,
-            }));
+            }))
         });
 
-        Self {}
+        Self { callback_idx }
     }
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
@@ -145,6 +147,10 @@ impl Component for ToasterComponent {
             ToasterMsg::Clear => !TOASTER.with(|t| t.state().animating > 1),
             _ => false,
         }
+    }
+
+    fn destroy(&mut self, _ctx: &Context<Self>) {
+        TOASTER.with(move |t| t.unregister(self.callback_idx));
     }
 }
 

@@ -2,7 +2,7 @@ use homotopy_core::Direction;
 use yew::prelude::*;
 
 use crate::components::{
-    delta::Delta,
+    delta::{CallbackIdx, Delta},
     touch_interface::{TouchAction, TouchInterface},
     Finger, Point, Vector,
 };
@@ -102,6 +102,7 @@ pub struct PanZoomComponent {
     node_ref: NodeRef,
     translate: Vector,
     scale: f64,
+    callback_idx: CallbackIdx,
 }
 
 impl Component for PanZoomComponent {
@@ -110,16 +111,17 @@ impl Component for PanZoomComponent {
 
     fn create(ctx: &Context<Self>) -> Self {
         let link = ctx.link().clone();
-        PANZOOM_STATE.with(|s| {
+        let callback_idx = PANZOOM_STATE.with(|s| {
             s.register(link.callback(|state: PanZoomState| {
                 PanZoomMessage::Delta(state.translate, state.scale)
-            }));
+            }))
         });
 
         Self {
             node_ref: Default::default(),
             translate: Default::default(),
             scale: 1.0,
+            callback_idx,
         }
     }
 
@@ -136,6 +138,12 @@ impl Component for PanZoomComponent {
         } else {
             false
         }
+    }
+
+    fn destroy(&mut self, _ctx: &Context<Self>) {
+        PANZOOM_STATE.with(|s| {
+            s.unregister(self.callback_idx);
+        });
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -215,7 +223,11 @@ impl PanZoom {
         PANZOOM_STATE.with(|s| s.emit(&TouchAction::Reset));
     }
 
-    pub fn register(callback: Callback<PanZoomState>) {
-        PANZOOM_STATE.with(|s| s.register(callback));
+    pub fn register(callback: Callback<PanZoomState>) -> CallbackIdx {
+        PANZOOM_STATE.with(|s| s.register(callback))
+    }
+
+    pub fn unregister(idx: CallbackIdx) {
+        PANZOOM_STATE.with(|s| s.unregister(idx));
     }
 }

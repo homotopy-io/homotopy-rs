@@ -6,6 +6,7 @@ use crate::{
     app::{Icon, IconSize},
     components::{
         bounding_rect,
+        delta::CallbackIdx,
         panzoom::{PanZoom, PanZoomState},
     },
 };
@@ -26,6 +27,7 @@ pub struct SliceControl {
     translate: f64,
     scale: f64,
     node_ref: NodeRef,
+    callback_idx: CallbackIdx,
 }
 
 impl Component for SliceControl {
@@ -33,7 +35,7 @@ impl Component for SliceControl {
     type Properties = SliceControlProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        PanZoom::register(ctx.link().callback(|state: PanZoomState| {
+        let callback_idx = PanZoom::register(ctx.link().callback(|state: PanZoomState| {
             SliceControlMsg::Delta(state.translate.y, state.scale)
         }));
 
@@ -41,6 +43,7 @@ impl Component for SliceControl {
             translate: 0.0,
             scale: 1.0,
             node_ref: Default::default(),
+            callback_idx,
         }
     }
 
@@ -49,6 +52,10 @@ impl Component for SliceControl {
         self.translate = translate;
         self.scale = scale;
         true
+    }
+
+    fn destroy(&mut self, _ctx: &Context<Self>) {
+        PanZoom::unregister(self.callback_idx);
     }
 
     fn rendered(&mut self, ctx: &Context<Self>, _first_render: bool) {
