@@ -59,7 +59,6 @@ where
     // This does not invalidate other indexes.
     pub fn register(&self, callback: Callback<T>) -> CallbackIdx {
         let mut inner = self.0.borrow_mut();
-        tracing::error!("register size: {}", inner.handlers.len());
         for (i, handler) in inner.handlers.iter_mut() {
             match handler {
                 None => {
@@ -77,7 +76,6 @@ where
 
     pub fn unregister(&self, idx: CallbackIdx) {
         let mut inner = self.0.borrow_mut();
-        tracing::error!("register size: {}", inner.handlers.len());
         if let Some(h) = inner.handlers.get_mut(idx) {
             *h = None;
         }
