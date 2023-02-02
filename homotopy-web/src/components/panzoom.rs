@@ -27,36 +27,48 @@ impl Default for PanZoomState {
 }
 
 impl TouchInterface for PanZoomState {
-    fn mouse_down(&mut self, alt_key: bool, point: Point) {
+    fn mouse_down(&mut self, alt_key: bool, point: Point) -> bool {
         if alt_key {
             self.mouse = Some(point);
+            true
+        } else {
+            false
         }
     }
 
-    fn mouse_up(&mut self) {
-        self.mouse = None;
+    fn mouse_up(&mut self) -> bool {
+        if self.mouse.is_some() {
+            self.mouse = None;
+            true
+        } else {
+            false
+        }
     }
 
-    fn mouse_move(&mut self, _alt_key: bool, next: Point) {
+    fn mouse_move(&mut self, _alt_key: bool, next: Point) -> bool {
         if let Some(prev) = self.mouse {
             self.translate += next - prev;
             self.mouse = Some(next);
+            true
+        } else {
+            false
         }
     }
 
-    fn mouse_wheel(&mut self, point: Point, delta: f64) {
+    fn mouse_wheel(&mut self, point: Point, delta: f64) -> bool {
         let scale = self.scale * if delta < 0.0 { 1.1 } else { 1.0 / 1.1 };
         self.translate = point - (point - self.translate) * (scale / self.scale);
         self.scale = scale;
+        true
     }
 
-    fn touch_move(&mut self, touches: &[(Finger, Point)]) {
+    fn touch_move(&mut self, touches: &[(Finger, Point)]) -> bool {
         let mut touches = touches.to_vec();
         touches.sort_by_key(|(finger, _)| *finger);
 
         if touches.len() != 2 || self.touches.len() != 2 {
             self.touches = touches;
-            return;
+            return false;
         }
 
         let average_next = (touches[0].1.to_vector() + touches[1].1.to_vector()) * 0.5;
@@ -71,17 +83,20 @@ impl TouchInterface for PanZoomState {
         self.translate = average_next - (average_prev - self.translate) * (scale / self.scale);
         self.scale = scale;
         self.touches = touches;
+        true
     }
 
-    fn touch_update(&mut self, touches: &[(Finger, Point)]) {
+    fn touch_update(&mut self, touches: &[(Finger, Point)]) -> bool {
         let mut touches = touches.to_vec();
         touches.sort_by_key(|(finger, _)| *finger);
         self.touches = touches;
+        true
     }
 
-    fn reset(&mut self) {
+    fn reset(&mut self) -> bool {
         self.translate = Default::default();
         self.scale = 1.0;
+        true
     }
 }
 

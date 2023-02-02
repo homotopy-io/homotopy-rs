@@ -19,7 +19,7 @@ impl Idx for CallbackIdx {
 pub trait State: Default + Clone + Sized + 'static {
     type Action;
 
-    fn update(&mut self, action: &Self::Action);
+    fn update(&mut self, action: &Self::Action) -> bool;
 }
 
 #[derive(Default)]
@@ -43,7 +43,10 @@ where
     pub fn emit(&self, msg: &T::Action) {
         let state = {
             let mut inner = self.0.borrow_mut();
-            inner.state.update(msg);
+            // If the state update did not do anything, do not emit to handlers.
+            if !inner.state.update(msg) {
+                return;
+            }
             inner.state.clone()
         };
         let handlers = {

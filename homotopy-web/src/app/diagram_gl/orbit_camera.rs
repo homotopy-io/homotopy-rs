@@ -105,15 +105,21 @@ impl Default for OrbitCamera {
 }
 
 impl TouchInterface for OrbitCamera {
-    fn mouse_down(&mut self, _alt_key: bool, point: Point) {
+    fn mouse_down(&mut self, _alt_key: bool, point: Point) -> bool {
         self.mouse = Some(Vec2::new(point.x as f32, point.y as f32));
+        true
     }
 
-    fn mouse_up(&mut self) {
-        self.mouse = None;
+    fn mouse_up(&mut self) -> bool {
+        if self.mouse.is_some() {
+            self.mouse = None;
+            true
+        } else {
+            false
+        }
     }
 
-    fn mouse_move(&mut self, alt_key: bool, next: Point) {
+    fn mouse_move(&mut self, alt_key: bool, next: Point) -> bool {
         let next = Vec2::new(next.x as f32, next.y as f32);
         if let Some(prev) = self.mouse {
             let delta = next - prev;
@@ -124,22 +130,29 @@ impl TouchInterface for OrbitCamera {
                 self.apply_angle_delta(4e-3 * delta);
             }
             self.mouse = Some(next);
+            true
+        } else {
+            false
         }
     }
 
-    fn mouse_wheel(&mut self, _: Point, delta: f64) {
+    fn mouse_wheel(&mut self, _: Point, delta: f64) -> bool {
         self.apply_distance_delta(delta as f32);
+        true
     }
 
-    fn touch_move(&mut self, _touches: &[(Finger, Point)]) {
+    fn touch_move(&mut self, _touches: &[(Finger, Point)]) -> bool {
+        // TODO(@doctorn) touch contorls
+        false
+    }
+
+    fn touch_update(&mut self, _touches: &[(Finger, Point)]) -> bool {
+        false
         // TODO(@doctorn) touch contorls
     }
 
-    fn touch_update(&mut self, _touches: &[(Finger, Point)]) {
-        // TODO(@doctorn) touch contorls
-    }
-
-    fn reset(&mut self) {
+    fn reset(&mut self) -> bool {
         *self = Default::default();
+        true
     }
 }

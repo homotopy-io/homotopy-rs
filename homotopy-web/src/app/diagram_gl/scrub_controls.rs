@@ -79,7 +79,7 @@ pub struct ScrubState {
 impl State for ScrubState {
     type Action = ScrubAction;
 
-    fn update(&mut self, action: &Self::Action) {
+    fn update(&mut self, action: &Self::Action) -> bool {
         match *action {
             ScrubAction::SetState(state) => self.state = state,
             ScrubAction::Push => {
@@ -124,6 +124,7 @@ impl State for ScrubState {
             }
             ScrubAction::Advance(_) => {}
         }
+        true
     }
 }
 

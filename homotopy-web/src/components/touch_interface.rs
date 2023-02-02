@@ -14,19 +14,19 @@ pub enum TouchAction {
 }
 
 pub trait TouchInterface: Default + Clone + 'static {
-    fn mouse_down(&mut self, alt_key: bool, point: Point);
+    fn mouse_down(&mut self, alt_key: bool, point: Point) -> bool;
 
-    fn mouse_up(&mut self);
+    fn mouse_up(&mut self) -> bool;
 
-    fn mouse_move(&mut self, alt_key: bool, next: Point);
+    fn mouse_move(&mut self, alt_key: bool, next: Point) -> bool;
 
-    fn mouse_wheel(&mut self, point: Point, delta: f64);
+    fn mouse_wheel(&mut self, point: Point, delta: f64) -> bool;
 
-    fn touch_move(&mut self, touches: &[(Finger, Point)]);
+    fn touch_move(&mut self, touches: &[(Finger, Point)]) -> bool;
 
-    fn touch_update(&mut self, touches: &[(Finger, Point)]);
+    fn touch_update(&mut self, touches: &[(Finger, Point)]) -> bool;
 
-    fn reset(&mut self);
+    fn reset(&mut self) -> bool;
 
     fn on_mouse_move(callback: Callback<TouchAction>) -> Callback<MouseEvent> {
         callback.reform(|e: MouseEvent| {
@@ -106,7 +106,7 @@ where
 {
     type Action = TouchAction;
 
-    fn update(&mut self, action: &Self::Action) {
+    fn update(&mut self, action: &Self::Action) -> bool {
         match action {
             TouchAction::MouseDown(alt_key, point) => self.mouse_down(*alt_key, *point),
             TouchAction::MouseUp => self.mouse_up(),
