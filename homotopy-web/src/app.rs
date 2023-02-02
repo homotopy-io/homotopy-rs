@@ -1,5 +1,4 @@
 use boundary::BoundaryPreview;
-use gloo_timers::future::TimeoutFuture;
 use settings::{AppSettings, AppSettingsKey, AppSettingsKeyStore, AppSettingsMsg};
 use sidebar::Sidebar;
 use signature_stylesheet::SignatureStylesheet;
@@ -38,6 +37,7 @@ mod workspace;
 
 pub enum Message {
     BlockingDispatch(model::Action),
+    #[allow(dead_code)]
     Dispatch(model::Action),
 }
 
@@ -67,21 +67,9 @@ impl Component for App {
         }
     }
 
-    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Message::BlockingDispatch(action) => {
-                self.loading = true;
-
-                ctx.link().send_future(async move {
-                    //TODO: remove this too
-                    std::panic::set_hook(Box::new(crate::panic::panic_handler));
-
-                    TimeoutFuture::new(0).await; // TODO: remove this awful hack
-                    Message::Dispatch(action)
-                });
-                true
-            }
-            Message::Dispatch(action) => {
+            Message::BlockingDispatch(action) | Message::Dispatch(action) => {
                 tracing::info!("Received action: {:?}", action);
 
                 // Intercept 'MakeOriented' actions to show warning.
