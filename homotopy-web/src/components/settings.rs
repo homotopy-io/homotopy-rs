@@ -95,6 +95,7 @@ macro_rules! declare_settings {
                     $([<$name Key>]::$key),*
                 ];
 
+                //TODO fix leak
                 pub fn subscribe(keys: &[[<$name Key>]], callback: yew::callback::Callback<[<$name Msg>]>) {
                     let msgs: Vec<_> = SETTINGS.with(|s| {
                         let mut s = s.borrow_mut();
@@ -109,6 +110,7 @@ macro_rules! declare_settings {
                         }
                         keys.iter().map(|key| s.store.get(*key)).collect()
                     });
+                    //TODO is this really needed?
                     for msg in &msgs {
                         Self::broadcast(msg);
                     }
