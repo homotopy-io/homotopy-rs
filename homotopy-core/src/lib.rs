@@ -16,6 +16,7 @@ pub mod examples;
 pub mod expansion;
 pub mod factorization;
 pub mod layout;
+pub mod manifold;
 pub mod mesh;
 pub mod migration;
 pub mod monotone;
