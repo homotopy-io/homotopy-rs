@@ -196,7 +196,6 @@ pub struct ItemView {
     name: String,
     preview_cache: Option<Preview>,
     callback_idx: CallbackIdx,
-    show_previews: bool,
 }
 
 impl Component for ItemView {
@@ -210,7 +209,6 @@ impl Component for ItemView {
             ITEM_SUBSCRIPTIONS,
             ctx.link().callback(ItemViewMessage::Setting),
         )[0];
-        let show_previews = AppSettings::get_show_previews();
 
         let name = match &ctx.props().item {
             SignatureItem::Item(info) => info.name.clone(),
@@ -221,7 +219,6 @@ impl Component for ItemView {
             name,
             preview_cache: Default::default(),
             callback_idx,
-            show_previews,
         }
     }
 
@@ -242,8 +239,7 @@ impl Component for ItemView {
                 self.cache_preview(ctx, show_single_preview, &diagram);
                 return true;
             }
-            ItemViewMessage::Setting(AppSettingsMsg::show_previews(v)) => {
-                self.show_previews = v;
+            ItemViewMessage::Setting(AppSettingsMsg::show_previews(_)) => {
                 return true;
             }
             ItemViewMessage::Setting(_) | ItemViewMessage::Noop => {}
@@ -458,7 +454,7 @@ impl ItemView {
     }
 
     fn view_preview(&self, ctx: &Context<Self>) -> Html {
-        if !self.show_previews {
+        if !AppSettings::get_show_previews() {
             return html! {};
         }
 
@@ -822,7 +818,7 @@ impl ItemView {
                         color={color.clone()}
                         onclick={toggle_single_preview}
                         checked={!info.single_preview}
-                        disabled={!self.show_previews}
+                        disabled={!AppSettings::get_show_previews()}
                     />
                     <GeneratorPreferenceCheckbox
                         left="Directed"
