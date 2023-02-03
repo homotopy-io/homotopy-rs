@@ -253,7 +253,7 @@ impl SettingsView {
                     value={current.to_string()}
                     onchange={Callback::from(move |e: Event| {
                         let input: HtmlInputElement = e.target_unchecked_into();
-                        let updated = input.value().parse::<u32>().unwrap_or(0);
+                        let updated = input.value().parse::<u32>().unwrap_or(min);
                         setter(updated);
                     })}
                 />

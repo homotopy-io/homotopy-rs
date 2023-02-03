@@ -150,7 +150,12 @@ impl Component for DiagramGl {
                 // Scrub controls are [0,1], but animation is [-1,1] so map between
                 self.t_coord = 2. * t - 1.;
             }
-            DiagramGlMessage::Setting(_) | DiagramGlMessage::Noop => {}
+            DiagramGlMessage::Setting(msg) => {
+                if let AppSettingsMsg::animated_3d(_) = msg {
+                    return true;
+                }
+            }
+            DiagramGlMessage::Noop => {}
         }
 
         false
