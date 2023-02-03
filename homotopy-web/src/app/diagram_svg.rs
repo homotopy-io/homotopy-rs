@@ -37,7 +37,6 @@ use crate::{
 };
 
 pub struct DiagramSvg<const N: usize> {
-    props: DiagramSvgProps<N>,
     prepared: PreparedDiagram<N>,
     drag_start: Option<Point2D<f32>>,
     title: String,
@@ -182,12 +181,10 @@ impl<const N: usize> Component for DiagramSvg<N> {
     type Properties = DiagramSvgProps<N>;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let props = ctx.props().clone();
-        let prepared = PreparedDiagram::new(&props.diagram, props.style);
+        let prepared = PreparedDiagram::new(&ctx.props().diagram, ctx.props().style);
         let drag_start = Default::default();
         let title = String::new();
         Self {
-            props,
             prepared,
             drag_start,
             title,
@@ -203,7 +200,7 @@ impl<const N: usize> Component for DiagramSvg<N> {
             DiagramSvgMessage::OnMouseMove(point, shift_key) => {
                 self.pointer_move(ctx, point, shift_key);
                 self.title = {
-                    let point = self.transform_screen_to_image().transform_point(point);
+                    let point = self.transform_screen_to_image(ctx).transform_point(point);
                     let element = self.prepared.graphic.iter().rev().find(|element| {
                         element
                             .transformed(&self.prepared.transform)
@@ -249,28 +246,22 @@ impl<const N: usize> Component for DiagramSvg<N> {
     }
 
     fn changed(&mut self, ctx: &Context<Self>, old_props: &Self::Properties) -> bool {
-        // self.props contains the old props
-        if &self.props == old_props {
-            false
-        } else {
-            if self.props.diagram != ctx.props().diagram || self.props.style != ctx.props().style {
-                // re-layout
-                self.prepared = PreparedDiagram::new(&ctx.props().diagram, ctx.props().style);
-            }
-            self.props = ctx.props().clone();
-            true
+        if old_props.diagram != ctx.props().diagram || old_props.style != ctx.props().style {
+            // re-layout
+            self.prepared = PreparedDiagram::new(&ctx.props().diagram, ctx.props().style);
         }
+        true
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let size = self.prepared.dimensions;
 
-        let width = match self.props.max_width {
+        let width = match ctx.props().max_width {
             Some(width) => width.min(size.width),
             None => size.width,
         };
 
-        let height = match self.props.max_height {
+        let height = match ctx.props().max_height {
             Some(height) => height.min(size.height),
             None => size.height,
         };
@@ -342,7 +333,7 @@ impl<const N: usize> Component for DiagramSvg<N> {
                 ontouchstart={on_touch_update.clone()}
                 ontouchend={on_touch_update.clone()}
                 ontouchcancel={on_touch_update.clone()}
-                ref={self.props.diagram_ref.clone()}
+                ref={ctx.props().diagram_ref.clone()}
             >
                 <title>{&self.title}</title>
                 {self.prepared.graphic.iter().enumerate().map(|(i, e)| self.view_element(ctx, i, e)).collect::<Html>()}
@@ -355,9 +346,9 @@ impl<const N: usize> Component for DiagramSvg<N> {
 impl<const N: usize> DiagramSvg<N> {
     /// Transform coordinates on the screen (such as those in `MouseEvent`s) to coordinates in the
     /// SVG image. This incorporates translation and zoom of the diagram component.
-    fn transform_screen_to_image(&self) -> Transform2D<f32> {
-        let rect = self
-            .props
+    fn transform_screen_to_image(&self, ctx: &Context<Self>) -> Transform2D<f32> {
+        let rect = ctx
+            .props()
             .diagram_ref
             .cast::<Element>()
             .unwrap()
@@ -512,8 +503,8 @@ impl<const N: usize> DiagramSvg<N> {
         Some(self.prepared.transform.transform_point(point))
     }
 
-    fn simplex_at(&self, point: Point2D<f32>) -> Option<Simplex<N>> {
-        let point = self.transform_screen_to_image().transform_point(point);
+    fn simplex_at(&self, ctx: &Context<Self>, point: Point2D<f32>) -> Option<Simplex<N>> {
+        let point = self.transform_screen_to_image(ctx).transform_point(point);
         self.prepared
             .actions
             .iter()
@@ -533,7 +524,7 @@ impl<const N: usize> DiagramSvg<N> {
             let angle = diff.angle_from_x_axis();
             self.drag_start = None;
 
-            let Some(simplex) = self.simplex_at(start) else {
+            let Some(simplex) = self.simplex_at(ctx,start) else {
                 return;
             };
 
@@ -560,7 +551,7 @@ impl<const N: usize> DiagramSvg<N> {
         // a separate onclick handler since drags aren't interpreted as clicks anymore.
         if let Some(point) = self.drag_start {
             self.drag_start = None;
-            if let Some(simplex) = self.simplex_at(point) {
+            if let Some(simplex) = self.simplex_at(ctx, point) {
                 ctx.props()
                     .on_select
                     .emit(simplex.into_iter().next().unwrap().to_vec());

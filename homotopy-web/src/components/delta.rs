@@ -19,7 +19,27 @@ impl Idx for CallbackIdx {
 pub trait State: Default + Clone + Sized + 'static {
     type Action;
 
-    fn update(&mut self, action: &Self::Action);
+    fn update(&mut self, action: &Self::Action) -> bool;
+}
+
+impl State for bool {
+    type Action = bool;
+
+    fn update(&mut self, action: &Self::Action) -> bool {
+        let ret = self != action;
+        *self = *action;
+        ret
+    }
+}
+
+impl State for u32 {
+    type Action = u32;
+
+    fn update(&mut self, action: &Self::Action) -> bool {
+        let ret = self != action;
+        *self = *action;
+        ret
+    }
 }
 
 #[derive(Default)]
@@ -40,10 +60,20 @@ impl<T> Delta<T>
 where
     T: State,
 {
+    pub fn new(state: T) -> Self {
+        Delta(RefCell::new(DeltaInner {
+            state,
+            handlers: IdxVec::new(),
+        }))
+    }
+
     pub fn emit(&self, msg: &T::Action) {
         let state = {
             let mut inner = self.0.borrow_mut();
-            inner.state.update(msg);
+            // If the state update did not do anything, do not emit to handlers.
+            if !inner.state.update(msg) {
+                return;
+            }
             inner.state.clone()
         };
         let handlers = {

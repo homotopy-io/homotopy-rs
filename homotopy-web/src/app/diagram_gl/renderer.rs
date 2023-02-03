@@ -13,7 +13,7 @@ use self::{
     shaders::Shaders,
 };
 use super::{buffers, orbit_camera::OrbitCamera, DiagramGlProps};
-use crate::{app::AppSettingsKeyStore, model::proof::Signature};
+use crate::{app::AppSettings, model::proof::Signature};
 
 mod axes;
 mod gbuffer;
@@ -42,12 +42,12 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(ctx: GlCtx, settings: &AppSettingsKeyStore, props: &DiagramGlProps) -> Result<Self> {
-        let animated_3d = *settings.get_animated_3d();
-        let cubical_subdivision = *settings.get_cubical_subdivision();
-        let smooth_time = *settings.get_smooth_time();
-        let subdivision_depth = *settings.get_subdivision_depth() as u8;
-        let samples = *settings.get_geometry_samples() as u8;
+    pub fn new(ctx: GlCtx, props: &DiagramGlProps) -> Result<Self> {
+        let animated_3d = AppSettings::get_animated_3d();
+        let cubical_subdivision = AppSettings::get_cubical_subdivision();
+        let smooth_time = AppSettings::get_smooth_time();
+        let subdivision_depth = AppSettings::get_subdivision_depth() as u8;
+        let samples = AppSettings::get_geometry_samples() as u8;
         let signature = props.signature.clone();
 
         Ok(Self {
@@ -77,13 +77,13 @@ impl Renderer {
         })
     }
 
-    pub fn update(&mut self, settings: &AppSettingsKeyStore) -> Result<()> {
-        let animated_3d = *settings.get_animated_3d();
-        let cubical_subdivision = *settings.get_cubical_subdivision();
-        let smooth_time = *settings.get_smooth_time();
-        let subdivision_depth = *settings.get_subdivision_depth() as u8;
-        let samples = *settings.get_geometry_samples() as u8;
-        let pixel_ratio = if *settings.get_dpr_scale() {
+    pub fn update(&mut self) -> Result<()> {
+        let animated_3d = AppSettings::get_animated_3d();
+        let cubical_subdivision = AppSettings::get_cubical_subdivision();
+        let smooth_time = AppSettings::get_smooth_time();
+        let subdivision_depth = AppSettings::get_subdivision_depth() as u8;
+        let samples = AppSettings::get_geometry_samples() as u8;
+        let pixel_ratio = if AppSettings::get_dpr_scale() {
             web_sys::window().unwrap().device_pixel_ratio()
         } else {
             1.
@@ -116,11 +116,11 @@ impl Renderer {
         Ok(())
     }
 
-    pub fn render(&mut self, camera: &OrbitCamera, settings: &AppSettingsKeyStore, t: f32) {
+    pub fn render(&mut self, camera: &OrbitCamera, t: f32) {
         let n = self.scene.view.dimension();
         let animated = n == 4 || n == 3 && self.animated_3d;
 
-        let geometry_scale = *settings.get_geometry_scale() as f32 / 10.;
+        let geometry_scale = AppSettings::get_geometry_scale() as f32 / 10.;
 
         let v = camera.view_transform(&self.ctx);
         let p = camera.perspective_transform(&self.ctx);
@@ -137,7 +137,7 @@ impl Renderer {
                 .with_frame_buffer(&self.cylinder_buffer.framebuffer)
                 .with_clear_color(Vec4::new(0., 0., 0., 0.));
 
-            if !*settings.get_mesh_hidden() {
+            if !AppSettings::get_mesh_hidden() {
                 for Component {
                     vertices, albedo, ..
                 } in &self.scene.cylinder_components
@@ -158,7 +158,7 @@ impl Renderer {
                 .with_frame_buffer(&self.gbuffer.framebuffer)
                 .with_clear_color(Vec4::new(0., 0., 0., 0.));
 
-            if !*settings.get_mesh_hidden() {
+            if !AppSettings::get_mesh_hidden() {
                 for Component {
                     vertices, albedo, ..
                 } in &self.scene.components
@@ -188,8 +188,8 @@ impl Renderer {
                         }
                     }
 
-                    if *settings.get_animate_singularities() {
-                        let radius = *settings.get_singularity_duration() as f32 / 10.;
+                    if AppSettings::get_animate_singularities() {
+                        let radius = AppSettings::get_singularity_duration() as f32 / 10.;
 
                         for singularity in &self.scene.animation_singularities {
                             if let Some(vertex_shape) = &singularity.vertex_shape {
@@ -243,17 +243,17 @@ impl Renderer {
                     g_position: 0,
                     g_normal: 1,
                     g_albedo: 2,
-                    disable_lighting: *settings.get_disable_lighting(),
-                    debug_normals: *settings.get_debug_normals(),
-                    spec: 1e-2 * *settings.get_specularity() as f32,
-                    alpha: *settings.get_shininess() as f32,
-                    gamma: 0.1 * *settings.get_gamma() as f32,
+                    disable_lighting: AppSettings::get_disable_lighting(),
+                    debug_normals: AppSettings::get_debug_normals(),
+                    spec: 1e-2 * AppSettings::get_specularity() as f32,
+                    alpha: AppSettings::get_shininess() as f32,
+                    gamma: 0.1 * AppSettings::get_gamma() as f32,
                     camera_pos: camera.position(),
                 }
             });
 
             // Add in relevant wireframes
-            if *settings.get_wireframe_3d() {
+            if AppSettings::get_wireframe_3d() {
                 for array in &self.scene.wireframe_components {
                     frame.draw(draw! {
                         &self.shaders.wireframe,
@@ -269,7 +269,7 @@ impl Renderer {
             }
 
             // Render axes
-            if *settings.get_debug_axes() {
+            if AppSettings::get_debug_axes() {
                 frame.draw(draw! {
                     &self.shaders.wireframe,
                     &self.axes.array,

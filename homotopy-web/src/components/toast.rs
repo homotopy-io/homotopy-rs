@@ -71,7 +71,7 @@ pub struct ToasterState {
 impl State for ToasterState {
     type Action = ToasterMsg;
 
-    fn update(&mut self, action: &Self::Action) {
+    fn update(&mut self, action: &Self::Action) -> bool {
         self.last_msg = action.clone();
         match action {
             ToasterMsg::Toast(props) => {
@@ -88,6 +88,7 @@ impl State for ToasterState {
             }
             _ => {}
         }
+        true
     }
 }
 

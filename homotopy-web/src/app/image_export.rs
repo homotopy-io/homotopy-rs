@@ -1,6 +1,6 @@
 use yew::prelude::*;
 
-use crate::{declare_settings, model};
+use crate::{components::delta::CallbackIdx, declare_settings, model};
 
 declare_settings! {
     pub struct ImageExportSettings {
@@ -19,7 +19,7 @@ pub struct Props {
 pub struct ImageExportView {
     // Maintain a local copy of the global app settings in order to display the current settings
     // state correctly.
-    local: ImageExportSettingsKeyStore,
+    callback_idxs: Vec<CallbackIdx>,
 }
 
 impl Component for ImageExportView {
@@ -29,15 +29,17 @@ impl Component for ImageExportView {
     fn create(ctx: &Context<Self>) -> Self {
         // So that we can keep our local copy of the global settings up to date,
         // we're going to need to subscribe to all changes in the global settings state.
-        ImageExportSettings::subscribe(ImageExportSettings::ALL, ctx.link().callback(|x| x));
-        Self {
-            local: Default::default(),
-        }
+        let callback_idxs =
+            ImageExportSettings::subscribe(ImageExportSettings::ALL, ctx.link().callback(|x| x));
+        Self { callback_idxs }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
-        self.local.set(&msg);
+    fn update(&mut self, _ctx: &Context<Self>, _msg: Self::Message) -> bool {
         true
+    }
+
+    fn destroy(&mut self, _ctx: &Context<Self>) {
+        ImageExportSettings::unsubscribe(ImageExportSettings::ALL, &self.callback_idxs);
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -52,9 +54,9 @@ impl Component for ImageExportView {
                 </p>
             }
         };
-        let tikz = self.view_tikz(ctx);
+        let tikz = Self::view_tikz(ctx);
         let svg = Self::view_svg(ctx);
-        let manim = self.view_manim(ctx);
+        let manim = Self::view_manim(ctx);
         let stl = Self::view_stl(ctx);
         html! {
             <div class="settings">
@@ -70,25 +72,25 @@ impl Component for ImageExportView {
 }
 
 impl ImageExportView {
-    fn view_tikz(&self, ctx: &Context<Self>) -> Html {
-        let show_braidings = *self.local.get_tikz_show_braidings();
-        let leftright_mode = *self.local.get_tikz_leftright_mode();
+    fn view_tikz(ctx: &Context<Self>) -> Html {
+        let show_braidings = ImageExportSettings::get_tikz_show_braidings();
+        let leftright_mode = ImageExportSettings::get_tikz_leftright_mode();
         if ctx.props().view_dim == 2 {
             html! {
                 <>
                     <h3>{"Export to TikZ"}</h3>
                     <div class="settings__segment">
                         {
-                            self.view_checkbox(
+                            Self::view_checkbox(
                                 "Left-right mode",
-                                |local| *local.get_tikz_leftright_mode(),
+                                ImageExportSettings::get_tikz_leftright_mode(),
                                 ImageExportSettings::set_tikz_leftright_mode,
                             )
                         }
                         {
-                            self.view_checkbox(
+                            Self::view_checkbox(
                                 "Show braidings",
-                                |local| *local.get_tikz_show_braidings(),
+                                ImageExportSettings::get_tikz_show_braidings(),
                                 ImageExportSettings::set_tikz_show_braidings,
                             )
                         }
@@ -116,17 +118,17 @@ impl ImageExportView {
         }
     }
 
-    fn view_manim(&self, ctx: &Context<Self>) -> Html {
-        let use_opengl = *self.local.get_manim_use_opengl();
+    fn view_manim(ctx: &Context<Self>) -> Html {
+        let use_opengl = ImageExportSettings::get_manim_use_opengl();
         if ctx.props().view_dim == 2 {
             html! {
                 <>
                     <h3>{"Export to Manim"}</h3>
                     <div class="settings__segment">
                         {
-                            self.view_checkbox(
+                            Self::view_checkbox(
                                 "OpenGL renderer",
-                                |local| *local.get_manim_use_opengl(),
+                                ImageExportSettings::get_manim_use_opengl(),
                                 ImageExportSettings::set_manim_use_opengl,
                             )
                         }
@@ -154,19 +156,16 @@ impl ImageExportView {
         }
     }
 
-    fn view_checkbox<G, S>(&self, name: &str, getter: G, setter: S) -> Html
+    fn view_checkbox<S>(name: &str, current: bool, setter: S) -> Html
     where
-        G: Fn(&ImageExportSettingsKeyStore) -> bool,
         S: Fn(bool) + 'static,
     {
-        let checked = getter(&self.local);
-
         html! {
             <div class="settings__toggle-setting">
                 <input
                     type="checkbox"
-                    checked={checked}
-                    onclick={Callback::from(move |_| setter(!checked))}
+                    checked={current}
+                    onclick={Callback::from(move |_| setter(!current))}
                 />
                 {name}
             </div>

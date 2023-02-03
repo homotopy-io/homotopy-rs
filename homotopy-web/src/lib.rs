@@ -1,6 +1,8 @@
 #![recursion_limit = "1024"]
 
+use tracing::metadata::Metadata;
 use tracing_subscriber::{
+    filter::{FilterFn, LevelFilter},
     fmt::{format::Pretty, time::UtcTime},
     prelude::__tracing_subscriber_SubscriberExt,
     util::SubscriberInitExt,
@@ -13,6 +15,10 @@ mod components;
 mod panic;
 // Model has to be public for tests to work
 pub mod model;
+
+fn tracing_filter(meta: &Metadata<'_>) -> bool {
+    meta.target().contains("homotopy")
+}
 
 // This is like the `main` function, except for JavaScript.
 #[wasm_bindgen(start)]
@@ -33,6 +39,8 @@ pub fn main_js() -> Result<(), JsValue> {
     let perf_layer = performance_layer().with_details_from_fields(Pretty::default());
 
     tracing_subscriber::registry()
+        .with(LevelFilter::DEBUG)
+        .with(FilterFn::new(tracing_filter))
         .with(fmt_layer)
         .with(perf_layer)
         .init();

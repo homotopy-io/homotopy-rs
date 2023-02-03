@@ -12,7 +12,7 @@ use self::{
     scrub_controls::{ScrubAction, ScrubComponent, ScrubState, SCRUB},
 };
 use crate::{
-    app::{AppSettings, AppSettingsKeyStore, AppSettingsMsg},
+    app::{AppSettings, AppSettingsMsg},
     components::{
         delta::{CallbackIdx, Delta},
         toast::{toast, Toast},
@@ -66,7 +66,6 @@ pub struct DiagramGl {
     canvas: NodeRef,
     camera: OrbitCamera,
     renderer: Rc<RefCell<Option<Renderer>>>,
-    local: AppSettingsKeyStore,
     global_t: f32,
     t_coord: f32,
 
@@ -106,7 +105,6 @@ impl Component for DiagramGl {
 
             camera: Default::default(),
             renderer: Default::default(),
-            local: Default::default(),
             global_t: Default::default(),
             t_coord: Default::default(),
 
@@ -123,7 +121,7 @@ impl Component for DiagramGl {
                 let t = t as f32;
                 let dt = t - self.global_t;
                 self.global_t = t;
-                if self.is_animated(ctx) {
+                if Self::is_animated(ctx) {
                     // Slow the animation such that we get 1s per cospan
                     SCRUB.with(|s| {
                         s.emit(&ScrubAction::Advance(
@@ -132,11 +130,11 @@ impl Component for DiagramGl {
                     });
                 }
                 // Update camera settings
-                self.camera.set_ortho(*self.local.get_orthographic_3d());
+                self.camera.set_ortho(AppSettings::get_orthographic_3d());
 
                 if let Some(renderer) = &mut *self.renderer.borrow_mut() {
-                    renderer.update(&self.local).unwrap();
-                    renderer.render(&self.camera, &self.local, self.t_coord);
+                    renderer.update().unwrap();
+                    renderer.render(&self.camera, self.t_coord);
                 }
 
                 // Schedule the next frame
@@ -152,8 +150,7 @@ impl Component for DiagramGl {
                 // Scrub controls are [0,1], but animation is [-1,1] so map between
                 self.t_coord = 2. * t - 1.;
             }
-            DiagramGlMessage::Setting(msg) => self.local.set(&msg),
-            DiagramGlMessage::Noop => {}
+            DiagramGlMessage::Setting(_) | DiagramGlMessage::Noop => {}
         }
 
         false
@@ -177,7 +174,7 @@ impl Component for DiagramGl {
         let on_touch_move = OrbitCamera::on_touch_move(&self.canvas, interface_callback.clone());
         let on_touch_update = OrbitCamera::on_touch_update(&self.canvas, interface_callback);
 
-        let scrub = if self.is_animated(ctx) {
+        let scrub = if Self::is_animated(ctx) {
             html! { <ScrubComponent slices={ctx.props().diagram.size().unwrap()} /> }
         } else {
             Default::default()
@@ -205,8 +202,7 @@ impl Component for DiagramGl {
     fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
         if let Ok(gl_ctx) = GlCtx::attach(&self.canvas) {
             {
-                *self.renderer.borrow_mut() =
-                    Some(Renderer::new(gl_ctx, &self.local, ctx.props()).unwrap());
+                *self.renderer.borrow_mut() = Some(Renderer::new(gl_ctx, ctx.props()).unwrap());
             }
 
             if first_render {
@@ -220,9 +216,9 @@ impl Component for DiagramGl {
 }
 
 impl DiagramGl {
-    fn is_animated(&self, ctx: &Context<Self>) -> bool {
+    fn is_animated(ctx: &Context<Self>) -> bool {
         let n = ctx.props().view.dimension();
-        n == 4 || n == 3 && *self.local.get_animated_3d()
+        n == 4 || n == 3 && AppSettings::get_animated_3d()
     }
 
     fn schedule_frame(&mut self, ctx: &Context<Self>) {
