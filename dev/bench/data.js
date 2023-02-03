@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1675094664642,
+  "lastUpdate": 1675444369584,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -45977,6 +45977,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 394.3,
             "range": "+/- 4.530",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e41f23cdb376792581acfa9c3b44a827a31ec7c6",
+          "message": "Performance tests (#1002)\n\n* Removed spinner.\r\n\r\n* Do not emit callbacks if not necessary\r\n\r\n* Fixed slice controls bug (#1001).\r\n\r\n* Fixed callback leak through settings.\r\n\r\n* Reduced tracing spam.\r\n\r\n---------\r\n\r\nCo-authored-by: Calin Tataru <calintat@gmail.com>",
+          "timestamp": "2023-02-03T16:51:55Z",
+          "tree_id": "9cfd720081e7d36719624ff9c55bba642c4436a2",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/e41f23cdb376792581acfa9c3b44a827a31ec7c6"
+        },
+        "date": 1675444357253,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 1.7047,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 14.504,
+            "range": "+/- 0.031",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 235.2,
+            "range": "+/- 0.230",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 5.0217,
+            "range": "+/- 0.002",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 13.585,
+            "range": "+/- 0.097",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 343.83,
+            "range": "+/- 1.200",
             "unit": "ms"
           }
         ]
