@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1675444369584,
+  "lastUpdate": 1675460023247,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -46037,6 +46037,72 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 343.83,
             "range": "+/- 1.200",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "10261075e24498a0d79956ae048828b01f2b7bc0",
+          "message": "Update scrub control when rendering animated 3d diagrams",
+          "timestamp": "2023-02-03T21:08:42Z",
+          "tree_id": "4355e875e01e8e81d3c8eb2e482b8e72a2359aab",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/10261075e24498a0d79956ae048828b01f2b7bc0"
+        },
+        "date": 1675460008293,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 1.9385,
+            "range": "+/- 0.023",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 16.737,
+            "range": "+/- 0.179",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 271.51,
+            "range": "+/- 2.160",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 5.864,
+            "range": "+/- 0.047",
+            "unit": "s"
+          },
+          {
+            "name": "contract beads/contract",
+            "value": 1.0166,
+            "range": "+/- 0.014",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 16.102,
+            "range": "+/- 0.106",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 396.83,
+            "range": "+/- 4.700",
             "unit": "ms"
           }
         ]
