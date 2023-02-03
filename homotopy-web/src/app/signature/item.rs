@@ -11,9 +11,12 @@ use yew_macro::function_component;
 use crate::{
     app::{
         diagram_svg::DiagramSvg, sidebar::DrawerViewSize, tex::TexSpan, AppSettings,
-        AppSettingsKey, AppSettingsKeyStore, AppSettingsMsg,
+        AppSettingsKey, AppSettingsMsg,
     },
-    components::icon::{Icon, IconSize},
+    components::{
+        delta::CallbackIdx,
+        icon::{Icon, IconSize},
+    },
     model::proof::{
         generators::GeneratorInfo, Action, Signature, SignatureEdit, SignatureItem,
         SignatureItemEdit, COLORS, VERTEX_SHAPES,
@@ -189,10 +192,11 @@ fn custom_recolor_button(props: &CustomRecolorButtonProps) -> Html {
 }
 
 pub struct ItemView {
-    local: AppSettingsKeyStore,
     mode: ItemViewMode,
     name: String,
     preview_cache: Option<Preview>,
+    callback_idx: CallbackIdx,
+    show_previews: bool,
 }
 
 impl Component for ItemView {
@@ -202,20 +206,22 @@ impl Component for ItemView {
     fn create(ctx: &Context<Self>) -> Self {
         const ITEM_SUBSCRIPTIONS: &[AppSettingsKey] = &[AppSettingsKey::show_previews];
 
-        AppSettings::subscribe(
+        let callback_idx = AppSettings::subscribe(
             ITEM_SUBSCRIPTIONS,
             ctx.link().callback(ItemViewMessage::Setting),
-        );
+        )[0];
+        let show_previews = AppSettings::get_show_previews();
 
         let name = match &ctx.props().item {
             SignatureItem::Item(info) => info.name.clone(),
             SignatureItem::Folder(info) => info.name.clone(),
         };
         Self {
-            local: Default::default(),
             mode: Default::default(),
             name,
             preview_cache: Default::default(),
+            callback_idx,
+            show_previews,
         }
     }
 
@@ -236,14 +242,19 @@ impl Component for ItemView {
                 self.cache_preview(ctx, show_single_preview, &diagram);
                 return true;
             }
-            ItemViewMessage::Setting(msg) => {
-                self.local.set(&msg);
+            ItemViewMessage::Setting(AppSettingsMsg::show_previews(v)) => {
+                self.show_previews = v;
                 return true;
             }
-            ItemViewMessage::Noop => {}
+            ItemViewMessage::Setting(_) | ItemViewMessage::Noop => {}
         }
 
         false
+    }
+
+    fn destroy(&mut self, _ctx: &Context<Self>) {
+        const ITEM_SUBSCRIPTIONS: &[AppSettingsKey] = &[AppSettingsKey::show_previews];
+        AppSettings::unsubscribe(ITEM_SUBSCRIPTIONS, &[self.callback_idx]);
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -447,7 +458,7 @@ impl ItemView {
     }
 
     fn view_preview(&self, ctx: &Context<Self>) -> Html {
-        if !self.local.get_show_previews() {
+        if !self.show_previews {
             return html! {};
         }
 
@@ -811,7 +822,7 @@ impl ItemView {
                         color={color.clone()}
                         onclick={toggle_single_preview}
                         checked={!info.single_preview}
-                        disabled={!self.local.get_show_previews()}
+                        disabled={!self.show_previews}
                     />
                     <GeneratorPreferenceCheckbox
                         left="Directed"

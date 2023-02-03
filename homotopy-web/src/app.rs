@@ -1,5 +1,5 @@
 use boundary::BoundaryPreview;
-use settings::{AppSettings, AppSettingsKey, AppSettingsKeyStore, AppSettingsMsg};
+use settings::{AppSettings, AppSettingsKey, AppSettingsMsg};
 use sidebar::Sidebar;
 use signature_stylesheet::SignatureStylesheet;
 use wasm_bindgen::{closure::Closure, JsCast};

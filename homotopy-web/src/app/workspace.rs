@@ -16,9 +16,9 @@ use crate::{
         diagram_svg::{DiagramSvg, HighlightKind, HighlightSvg},
         info::get_onboarding_message,
         tex::TexSpan,
-        AppSettings, AppSettingsKey, AppSettingsKeyStore, AppSettingsMsg,
+        AppSettings, AppSettingsKey, AppSettingsMsg,
     },
-    components::panzoom::PanZoomComponent,
+    components::{delta::CallbackIdx, panzoom::PanZoomComponent},
     model::{
         proof::{self, homotopy::Homotopy, AttachOption, Metadata, Signature, Workspace},
         Action,
@@ -47,10 +47,11 @@ pub enum Message {
 }
 
 pub struct WorkspaceView {
-    local: AppSettingsKeyStore,
     on_select: Callback<(Vec<SliceIndex>, bool)>,
     on_homotopy: Callback<Homotopy>,
     diagram_ref: NodeRef,
+    weak_units_callback: CallbackIdx,
+    weak_units: bool,
 }
 
 impl Component for WorkspaceView {
@@ -60,7 +61,9 @@ impl Component for WorkspaceView {
     fn create(ctx: &Context<Self>) -> Self {
         const ITEM_SUBSCRIPTIONS: &[AppSettingsKey] = &[AppSettingsKey::weak_units];
 
-        AppSettings::subscribe(ITEM_SUBSCRIPTIONS, ctx.link().callback(Message::Setting));
+        let weak_units_callback =
+            AppSettings::subscribe(ITEM_SUBSCRIPTIONS, ctx.link().callback(Message::Setting))[0];
+        let weak_units = AppSettings::get_weak_units();
 
         let on_select = ctx
             .props()
@@ -71,20 +74,26 @@ impl Component for WorkspaceView {
             .dispatch
             .reform(|homotopy| Action::Proof(proof::Action::Homotopy(homotopy)));
         Self {
-            local: Default::default(),
             on_select,
             on_homotopy,
             diagram_ref: Default::default(),
+            weak_units_callback,
+            weak_units,
         }
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Message::Setting(msg) => {
-                self.local.set(&msg);
+            Message::Setting(AppSettingsMsg::weak_units(v)) => {
+                self.weak_units = v;
                 true
             }
+            Message::Setting(_) => false,
         }
+    }
+
+    fn destroy(&mut self, _ctx: &Context<Self>) {
+        AppSettings::unsubscribe(&[AppSettingsKey::weak_units], &[self.weak_units_callback]);
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -172,7 +181,7 @@ impl WorkspaceView {
 
     fn view_diagram_svg<const N: usize>(&self, ctx: &Context<Self>) -> Html {
         if let Some(ref ws) = ctx.props().workspace {
-            let weak_units = *self.local.get_weak_units();
+            let weak_units = self.weak_units;
             let attachment_highlight = match N {
                 0 => None,
                 _ => ctx
