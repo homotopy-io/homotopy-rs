@@ -12,7 +12,7 @@ use self::{
     scrub_controls::{ScrubAction, ScrubComponent, ScrubState, SCRUB},
 };
 use crate::{
-    app::{AppSettings, AppSettingsMsg},
+    app::{AppSettings, AppSettingsKey, AppSettingsMsg},
     components::{
         delta::{CallbackIdx, Delta},
         toast::{toast, Toast},
@@ -73,6 +73,7 @@ pub struct DiagramGl {
     // calls, so store a reference to the task here
     render_loop: Option<AnimationFrame>,
 
+    setting_callback: CallbackIdx,
     camera_callback: CallbackIdx,
     scrub_callback: CallbackIdx,
 }
@@ -82,10 +83,10 @@ impl Component for DiagramGl {
     type Properties = DiagramGlProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        AppSettings::subscribe(
-            AppSettings::ALL,
+        let setting_callback = AppSettings::subscribe(
+            &[AppSettingsKey::animated_3d],
             ctx.link().callback(DiagramGlMessage::Setting),
-        );
+        )[0];
 
         let camera_callback = CAMERA.with(|c| {
             c.register(ctx.link().callback(|state: OrbitCamera| {
@@ -110,6 +111,7 @@ impl Component for DiagramGl {
 
             render_loop: None,
 
+            setting_callback,
             camera_callback,
             scrub_callback,
         }
@@ -162,8 +164,8 @@ impl Component for DiagramGl {
     }
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
+        AppSettings::unsubscribe(&[AppSettingsKey::animated_3d], &[self.setting_callback]);
         CAMERA.with(|c| c.unregister(self.camera_callback));
-
         SCRUB.with(|s| s.unregister(self.scrub_callback));
     }
 
