@@ -303,6 +303,7 @@
               nativeBuildInputs = oldAttrs.nativeBuildInputs ++ (with pkgs; [ wasm-bindgen-cli ]);
               buildInputs = oldAttrs.buildInputs ++ ([ packages.highs ]);
               postBuild = ''
+                RUST_BACKTRACE=1 \
                 ${pkgs.wasm-bindgen-cli}/bin/wasm-bindgen --out-dir $out --no-typescript --target web target/wasm32-unknown-unknown/release/homotopy_web.wasm
               '';
               installPhase = ''
