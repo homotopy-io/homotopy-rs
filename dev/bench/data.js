@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1675463662872,
+  "lastUpdate": 1675539138491,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -46229,6 +46229,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 333.2,
             "range": "+/- 1.230",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "db9421fe9303694b666fcfaa9d05577a34478c64",
+          "message": "Bump wasm-bindgen from 0.2.83 to 0.2.84 (#999)\n\n* Bump wasm-bindgen from 0.2.83 to 0.2.84\r\n\r\nBumps [wasm-bindgen](https://github.com/rustwasm/wasm-bindgen) from 0.2.83 to 0.2.84.\r\n- [Release notes](https://github.com/rustwasm/wasm-bindgen/releases)\r\n- [Changelog](https://github.com/rustwasm/wasm-bindgen/blob/main/CHANGELOG.md)\r\n- [Commits](https://github.com/rustwasm/wasm-bindgen/compare/0.2.83...0.2.84)\r\n\r\n---\r\nupdated-dependencies:\r\n- dependency-name: wasm-bindgen\r\n  dependency-type: direct:production\r\n  update-type: version-update:semver-patch\r\n...\r\n\r\nSigned-off-by: dependabot[bot] <support@github.com>\r\n\r\n* Updated js-sys.\r\n\r\n* Flake update.\r\n\r\n---------\r\n\r\nSigned-off-by: dependabot[bot] <support@github.com>\r\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\r\nCo-authored-by: regular-citizen <7887982+regular-citizen@users.noreply.github.com>",
+          "timestamp": "2023-02-04T19:11:26Z",
+          "tree_id": "14665d432e80abc8398cf5578edf5012bf39a536",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/db9421fe9303694b666fcfaa9d05577a34478c64"
+        },
+        "date": 1675539125240,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 1.7391,
+            "range": "+/- 0.005",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 14.692,
+            "range": "+/- 0.030",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 237.73,
+            "range": "+/- 0.310",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 5.0652,
+            "range": "+/- 0.003",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 13.51,
+            "range": "+/- 0.081",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 342.22,
+            "range": "+/- 1.800",
             "unit": "ms"
           }
         ]
