@@ -5,13 +5,13 @@ use serde::Serialize;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct GeneratorInfo {
     pub generator: Generator,
-    pub name: String,
     pub oriented: bool,
     pub invertible: bool,
     pub single_preview: bool,
     pub color: Color,
     pub shape: VertexShape,
     pub diagram: Diagram,
+    pub name: String,
 }
 
 impl GeneratorStyle for GeneratorInfo {

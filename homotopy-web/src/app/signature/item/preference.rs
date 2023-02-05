@@ -2,14 +2,14 @@ use yew::prelude::*;
 
 #[derive(Properties, Debug, Clone, PartialEq)]
 pub struct GeneratorPreferenceCheckboxProps {
+    pub checked: bool,
+    #[prop_or(false)]
+    pub disabled: bool,
     pub left: &'static str,
     pub right: &'static str,
     pub tooltip: Option<&'static str>,
     pub color: String,
-    pub checked: bool,
     pub onclick: Callback<MouseEvent>,
-    #[prop_or(false)]
-    pub disabled: bool,
 }
 
 pub struct GeneratorPreferenceCheckbox;

@@ -16,8 +16,8 @@ declare_idx! {
 #[derive(Debug, Clone, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub struct NodeData<T> {
     data: T,
-    children: Vec<Node>,
     parent: Option<Node>,
+    children: Vec<Node>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]

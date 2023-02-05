@@ -35,20 +35,11 @@ impl View {
     }
 }
 
-#[cfg(feature = "fuzz")]
-impl<'a> arbitrary::Arbitrary<'a> for View {
-    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-        Ok(Self {
-            dimension: u.int_in_range(0..=4)?,
-        })
-    }
-}
-
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Workspace {
+    pub view: View,
     pub diagram: Diagram,
     pub path: Vector<SliceIndex>,
-    pub view: View,
 }
 
 impl Workspace {
@@ -56,9 +47,9 @@ impl Workspace {
         // Default to 2D unless the diagram has dimension 0 or 1.
         let dimension = diagram.dimension().min(2) as u8;
         Self {
+            view: View { dimension },
             diagram,
             path: Default::default(),
-            view: View { dimension },
         }
     }
 
@@ -90,7 +81,6 @@ pub struct ProofState {
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
-#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub enum Action {
     /// Create a new generator of dimension zero.
     CreateGeneratorZero,
@@ -824,30 +814,13 @@ impl ProofState {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct AttachOption {
     pub generator: Generator,
-    pub diagram: DiagramN,
-    pub tag: Option<String>,
     pub boundary_path: Option<BoundaryPath>,
     pub embedding: Vector<usize>,
-}
-
-#[cfg(feature = "fuzz")]
-impl<'a> arbitrary::Arbitrary<'a> for AttachOption {
-    fn arbitrary(_u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-        /*
-        Ok(AttachOption {
-            generator: u.arbitrary()?,
-            diagram: u.arbitrary()?,
-            tag: u.arbitrary()?,
-            boundary_path: u.arbitrary()?,
-            embedding: Vector::from(u.arbitrary::<Vec<_>>()?),
-        })
-        */
-        Err(arbitrary::Error::EmptyChoose)
-    }
+    pub tag: Option<String>,
+    pub diagram: DiagramN,
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub struct SerializedData(pub Vec<u8>);
 
 impl std::fmt::Debug for SerializedData {

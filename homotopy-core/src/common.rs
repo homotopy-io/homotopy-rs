@@ -17,7 +17,6 @@ thread_local! {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
-#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub struct Generator {
     pub id: usize,
     pub dimension: usize,
@@ -36,7 +35,6 @@ impl fmt::Debug for Generator {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub enum Boundary {
     Source,
     Target,
@@ -65,14 +63,6 @@ impl Height {
     /// Create an iterator over all heights in a diagram of a specified size.
     pub fn for_size(size: usize) -> impl DoubleEndedIterator<Item = Height> {
         (0..2 * size + 1).map(Height::from)
-    }
-}
-
-#[cfg(feature = "fuzz")]
-impl<'a> arbitrary::Arbitrary<'a> for Height {
-    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-        let h: usize = u.int_in_range(0..=2047)?;
-        Ok(Height::from(h))
     }
 }
 
@@ -119,7 +109,6 @@ impl Ord for Height {
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 #[serde(untagged)]
-#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub enum SliceIndex {
     Boundary(Boundary),
     Interior(Height),
@@ -259,7 +248,6 @@ impl<T> IndexMut<SliceIndex> for Vec<T> {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub struct BoundaryPath(pub Boundary, pub usize);
 
 impl BoundaryPath {
@@ -298,7 +286,6 @@ impl From<Boundary> for BoundaryPath {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub enum Direction {
     Forward,
     Backward,
@@ -315,7 +302,6 @@ pub enum Mode {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
-#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
 pub enum Orientation {
     Negative,
     Zero,

@@ -49,21 +49,7 @@ pub enum SignatureItemEdit {
     ShowSourceTarget(bool),
 }
 
-#[cfg(feature = "fuzz")]
-impl<'a> arbitrary::Arbitrary<'a> for SignatureItemEdit {
-    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-        let flag: bool = *u.choose(&[false, true])?;
-        u.choose(&[
-            SignatureItemEdit::MakeOriented(flag),
-            SignatureItemEdit::MakeInvertible(flag),
-            SignatureItemEdit::ShowSourceTarget(flag),
-        ])
-        .map(|s| s.clone())
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum SignatureEdit {
     Edit(Node, SignatureItemEdit),
     MoveBefore(Node, Node),
@@ -348,7 +334,6 @@ impl Metadata {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum MetadataEdit {
     Title(String),
     Author(String),
@@ -365,6 +350,6 @@ pub enum MetadataViewMessage {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FolderInfo {
     pub id: usize,
-    pub name: String,
     pub open: bool,
+    pub name: String,
 }

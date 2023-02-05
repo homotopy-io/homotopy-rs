@@ -89,13 +89,6 @@ macro_rules! declare_idx {
                 }
             }
 
-            #[cfg(feature = "fuzz")]
-            impl<'a> arbitrary::Arbitrary<'a> for $name {
-                fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
-                    Ok($crate::idx::Idx::new(u.int_in_range(0..=4095)?))
-                }
-            }
-
             unsafe impl petgraph::graph::IndexType for $name {
                 #[inline(always)]
                 fn new(x: usize) -> Self {
