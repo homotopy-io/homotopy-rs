@@ -90,5 +90,5 @@ features = [
 # These crates are used for running unit tests.
 [dev-dependencies]
 cargo-husky = { features = ["precommit-hook", "run-cargo-check", "run-cargo-test", "run-cargo-fmt", "run-cargo-clippy"], version = "1.5.0" }
-wasm-bindgen-test = "0.3.33"
+wasm-bindgen-test = "0.3.34"
 futures = "0.3.26"
