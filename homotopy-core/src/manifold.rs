@@ -48,18 +48,6 @@ impl Complex {
         self.facets.iter().flatten().unique().copied().collect()
     }
 
-    // fn contains(&self, face: &Simplex) -> bool {
-    //     if self.facets.contains(face) {
-    //         return true;
-    //     }
-    //     for facet in &self.facets {
-    //         if facet.is_superset(face) {
-    //             return true;
-    //         }
-    //     }
-    //     false
-    // }
-
     fn count_cofaces(&self, face: &Simplex) -> usize {
         let mut count = 0;
         for facet in &self.facets {
