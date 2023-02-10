@@ -62,14 +62,11 @@ mkdir -p dist
 '''
 
 [tasks.devserver]
-command = "devserver"
+command = "sfz"
 args = [
-  "--path"
+  "--render-index"
+  "--coi"
 , "dist"
-, "--header"
-, "Cross-Origin-Opener-Policy=same-origin"
-, "--header"
-, "Cross-Origin-Embedder-Policy=require-corp"
 ]
 
 # for testing Firebase components locally
