@@ -65,8 +65,8 @@ mkdir -p dist
 command = "sfz"
 args = [
   "--render-index"
-  "--coi"
-, "dist"
+,  "--coi"
+, "dist/"
 ]
 
 # for testing Firebase components locally
