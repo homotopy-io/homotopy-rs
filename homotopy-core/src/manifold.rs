@@ -1,8 +1,7 @@
-use im::HashSet;
-use std::collections::BTreeSet;
-use std::convert::Into;
+use std::{collections::BTreeSet, convert::Into};
 
 use homotopy_common::idx::IdxVec;
+use im::HashSet;
 use itertools::Itertools;
 use petgraph::{graph::NodeIndex, visit::EdgeRef};
 use tracing::log;
@@ -179,8 +178,7 @@ fn collapse_edge(edge: &Simplex, complex: &Complex) -> Complex {
     if let [u, v] = edge.iter().copied().collect::<Vec<NodeIndex>>()[..] {
         for face in &complex.facets {
             let mut newface = face.clone();
-            if newface.contains(&v) {
-                newface.remove(&v);
+            if newface.remove(&v) {
                 newface.insert(u);
             }
             result.insert(newface);
