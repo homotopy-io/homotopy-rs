@@ -4,7 +4,6 @@ use homotopy_common::idx::IdxVec;
 use im::HashSet;
 use itertools::Itertools;
 use petgraph::{graph::NodeIndex, visit::EdgeRef};
-use tracing::log;
 
 pub use crate::common::Mode;
 use crate::{
@@ -160,7 +159,7 @@ fn simplex_boundary(simplex: &Simplex) -> HashSet<Simplex> {
 }
 
 fn is_unit_sphere(complex: &Complex, dim: usize) -> bool {
-    log::info!("is_unit_sphere: {:#?}, dim: {}", complex, dim);
+    tracing::info!("is_unit_sphere: {:#?}, dim: {}", complex, dim);
 
     let vertices = complex.vertices();
     if complex.facets.len() != dim + 2 || vertices.len() != dim + 2 {
@@ -188,10 +187,10 @@ fn collapse_edge(edge: &Simplex, complex: &Complex) -> Complex {
 }
 
 fn is_sphere(complex: &Complex, dim: usize) -> bool {
-    log::info!("entering is_sphere for {:#?}", complex);
+    tracing::info!("entering is_sphere for {:#?}", complex);
 
     if is_unit_sphere(complex, dim) {
-        log::info!("unit sphere");
+        tracing::info!("unit sphere");
         return true;
     }
 
@@ -208,11 +207,11 @@ fn is_sphere(complex: &Complex, dim: usize) -> bool {
     }
 
     for edge in complex.edges() {
-        log::info!("collapse {:#?}", edge);
+        tracing::info!("collapse {:#?}", edge);
         if is_sphere(&collapse_edge(&edge, complex), dim) {
             return true;
         }
-        log::info!("uncollapse");
+        tracing::info!("uncollapse");
     }
     false
 }
@@ -228,7 +227,7 @@ pub fn is_manifold(diagram: Diagram) -> bool {
         .node_indices()
         .filter(|n| is_visible(&scaffold[*n].key))
         .collect();
-    log::info!("visible nodes: {:#?}", &visible_nodes);
+    tracing::info!("visible nodes: {:#?}", &visible_nodes);
 
     let neighbourhoods = neighbourhoods(&scaffold);
 
@@ -239,7 +238,7 @@ pub fn is_manifold(diagram: Diagram) -> bool {
                 .map(|t| t.iter().copied().collect())
                 .collect();
 
-            log::info!("neighbourhood of {:#?}: {:#?}", &n, &neighbourhood);
+            tracing::info!("neighbourhood of {:#?}: {:#?}", &n, &neighbourhood);
 
             let mut visible_nodes = visible_nodes.clone();
             visible_nodes.retain(|&x| x != n);
