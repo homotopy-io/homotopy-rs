@@ -32,8 +32,8 @@ Please adhere to Rust stable and lint all code with `nix run github:homotopy-io/
 
 ## Development server
 
-From the root of the project, run `cargo make serve`. This will build the app into `/dist`, and concurrently run a development server on http://localhost:8080, which refreshes whenever the code changes.
-Alternatively, the project can be built with `nix build`, with the development server invoked by `devserver --path result/`, where `result/` is the nix-build output folder.
+From the root of the project, run `cargo make serve`. This will build the app into `/dist`, and concurrently run a development server on http://localhost:5000, which refreshes whenever the code changes.
+Alternatively, the project can be built with `nix build`, with the development server invoked by `sfz -r result/`, where `result/` is the nix-build output folder.
 
 ## Nix & GitHub Actions
 

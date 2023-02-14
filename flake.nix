@@ -76,7 +76,7 @@
                 { package = cargo-nextest; }
                 { package = cargo-rr; }
                 { package = cargo-watch; }
-                { package = devserver; }
+                { package = sfz; }
                 { package = gdb; }
                 { package = rust-analyzer; }
                 { package = wasm-bindgen-cli; }
@@ -139,7 +139,7 @@
             program = toString (pkgs.writeShellScript
               "homotopy-web"
               ''
-                ${pkgs.devserver}/bin/devserver --path ${defaultPackage} --header Cross-Origin-Opener-Policy=same-origin --header Cross-Origin-Embedder-Policy=require-corp
+                ${pkgs.sfz}/bin/sfz --render-index --coi ${defaultPackage}
               '');
           };
         };
