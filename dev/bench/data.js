@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1675625601341,
+  "lastUpdate": 1676367263429,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -46409,6 +46409,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 349.9,
             "range": "+/- 1.330",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ae288b15f6d635edac3b080ba6d9e4f3be1cdb34",
+          "message": "New devserver (#1013)\n\n* Replaced devserver with sfz.\r\n\r\n* Fixed typo.",
+          "timestamp": "2023-02-14T09:09:51Z",
+          "tree_id": "5a05ea33e64b798a872f99207bc5f7f140340fca",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/ae288b15f6d635edac3b080ba6d9e4f3be1cdb34"
+        },
+        "date": 1676367249338,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 1.7336,
+            "range": "+/- 0.002",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 16.536,
+            "range": "+/- 0.011",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 302.74,
+            "range": "+/- 0.540",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 7.0259,
+            "range": "+/- 0.005",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 12.987,
+            "range": "+/- 0.024",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 322.98,
+            "range": "+/- 0.450",
             "unit": "ms"
           }
         ]
