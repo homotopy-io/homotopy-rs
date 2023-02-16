@@ -117,7 +117,7 @@ pub enum GraphicElement<const N: usize> {
     /// A surface given by a closed path to be filled.
     Surface(Diagram0, Path),
     /// A wire given by a depth and a path to be stroked.
-    Wire(Diagram0, usize, Path, Vec<Path>),
+    Wire(Diagram0, usize, Path, Vec<Path>, Option<Point>),
     /// A point that is drawn as determined by its vertex_shape
     Point(Diagram0, Point),
 }
@@ -129,13 +129,14 @@ impl<const N: usize> GraphicElement<N> {
         use GraphicElement::{Point, Surface, Wire};
         match self {
             Surface(g, path) => Surface(*g, path.clone().transformed(transform)),
-            Wire(g, depth, path, mask) => {
+            Wire(g, depth, path, mask, arrow) => {
                 let path = path.clone().transformed(transform);
                 let mask = mask
                     .iter()
                     .map(|mask| mask.clone().transformed(transform))
                     .collect();
-                Wire(*g, *depth, path, mask)
+                let arrow = arrow.map(|arrow| transform.transform_point(arrow));
+                Wire(*g, *depth, path, mask, arrow)
             }
             Point(g, point) => Point(*g, transform.transform_point(*point)),
         }
@@ -144,14 +145,14 @@ impl<const N: usize> GraphicElement<N> {
     pub fn generator(&self) -> Generator {
         use GraphicElement::{Point, Surface, Wire};
         match self {
-            Surface(d, _) | Wire(d, _, _, _) | Point(d, _) => d.generator,
+            Surface(d, _) | Wire(d, _, _, _, _) | Point(d, _) => d.generator,
         }
     }
 
     pub fn orientation(&self) -> Orientation {
         use GraphicElement::{Point, Surface, Wire};
         match self {
-            Surface(d, _) | Wire(d, _, _, _) | Point(d, _) => d.orientation,
+            Surface(d, _) | Wire(d, _, _, _, _) | Point(d, _) => d.orientation,
         }
     }
 
@@ -197,11 +198,15 @@ impl<const N: usize> GraphicElement<N> {
                         ),
                         None => (0, vec![]),
                     };
+
+                    let arrow = arrow_location(layout, ps);
+
                     wire_elements.push(Self::Wire(
                         generator,
                         depth,
                         build_path(&orient_wire(ps), false, layout, projection),
                         mask,
+                        arrow,
                     ));
                 }
                 Simplex::Point([p]) => {
@@ -235,7 +240,9 @@ impl<const N: usize> GraphicElement<N> {
     pub fn to_shape(&self, wire_thickness: f32, point_radius: f32) -> Shape {
         match self {
             GraphicElement::Surface(_, path) => Fill::new(path.clone()).into(),
-            GraphicElement::Wire(_, _, path, _) => Stroke::new(path.clone(), wire_thickness).into(),
+            GraphicElement::Wire(_, _, path, _, _) => {
+                Stroke::new(path.clone(), wire_thickness).into()
+            }
             GraphicElement::Point(_, point) => Circle::new(*point, point_radius).into(),
         }
     }
@@ -269,6 +276,36 @@ fn orient_surface<const N: usize>(surface: &[Coordinate<N>; 3]) -> [Coordinate<N
         [surface[1], surface[0], surface[2]]
     } else {
         *surface
+    }
+}
+
+fn arrow_location<const N: usize>(layout: &Layout<N>, ps: &[Coordinate<N>; 2]) -> Option<Point> {
+    use Height::Regular;
+    use SliceIndex::Interior;
+
+    let p_start: Point = project_2d(*layout.get(&ps[0])?).into();
+    let p_end: Point = project_2d(*layout.get(&ps[1])?).into();
+
+    match N {
+        1 => match [ps[0].get(0).unwrap(), ps[1].get(0).unwrap()] {
+            [Interior(Regular(_)), _] => Some(p_start),
+            [_, Interior(Regular(_))] => Some(p_end),
+            _ => None,
+        },
+        2 => match [
+            [ps[0].get(0).unwrap(), ps[0].get(1).unwrap()],
+            [ps[1].get(0).unwrap(), ps[1].get(1).unwrap()],
+        ] {
+            [[Interior(Regular(_)), _] | [_, Interior(Regular(_))], _] => Some(p_start),
+            [_, [Interior(Regular(_)), _] | [_, Interior(Regular(_))]] => Some(p_end),
+            _ => None,
+        },
+        // 2 => match [[ps[0].get_unchecked(0),], ps.get_unchecked(1)] {
+        //     [[Interior(Regular)], _] => Some(p_start),
+        //     [_, [Interior(Regular)]] => Some(p_end),],
+        //     _ => None,
+        // }
+        _ => None,
     }
 }
 
@@ -457,7 +494,7 @@ impl<const N: usize> From<GraphicElement<N>> for GeneratorRepresentation {
     fn from(element: GraphicElement<N>) -> Self {
         match element {
             GraphicElement::Point(_, _) => Self::Point,
-            GraphicElement::Wire(_, _, _, _) => Self::Wire,
+            GraphicElement::Wire(_, _, _, _, _) => Self::Wire,
             GraphicElement::Surface(_, _) => Self::Surface,
         }
     }
