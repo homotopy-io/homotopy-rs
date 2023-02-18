@@ -730,19 +730,23 @@ impl ProofState {
 
         let mut new_signature: Signature = Default::default();
 
+        // New generators need to be fresh
         let id = self.signature.next_generator_id();
         let source = Generator::new(id, 0);
         let target = Generator::new(id + 1, 0);
         new_signature.insert(source, Diagram0::from(source), "Base Source", false);
         new_signature.insert(target, Diagram0::from(target), "Base Target", false);
 
+        // We are shifting nodes in the tree
+        // so we have to remap the parents correctly
         let mut node_mappings: FastHashMap<Node, Node> = Default::default();
         node_mappings.insert(
             self.signature.as_tree().root(),
             new_signature.as_tree().root(),
         );
 
-        for (node, data) in self.signature.as_tree().iter() {
+        // Skip the root node
+        for (node, data) in self.signature.as_tree().iter().skip(1) {
             let mapped_node = if let Some(parent) = data.parent() {
                 node_mappings[&parent]
             } else {
@@ -757,8 +761,8 @@ impl ProofState {
                 }
                 SignatureItem::Item(g) => {
                     let mut g = g.clone();
+                    g.generator.dimension += 1;
                     g.diagram = g.diagram.suspend(source, target);
-                    g.generator.id += 2;
                     new_signature.push_onto(mapped_node, SignatureItem::Item(g));
                 }
             }
