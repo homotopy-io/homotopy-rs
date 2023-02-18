@@ -1,13 +1,14 @@
 use std::convert::{Into, TryFrom};
 
 use homotopy::Homotopy;
+use homotopy_common::hash::FastHashMap;
 use homotopy_core::{
     common::{Boundary, BoundaryPath, Direction, Generator, Height, Mode, SliceIndex},
     contraction::ContractionError,
     diagram::{AttachmentError, NewDiagramError},
     expansion::ExpansionError,
     signature::Signature as S,
-    Diagram, DiagramN,
+    Diagram, Diagram0, DiagramN,
 };
 use im::Vector;
 use serde::{Deserialize, Serialize};
@@ -134,6 +135,8 @@ pub enum Action {
 
     Theorem,
 
+    Suspend,
+
     ImportProof(SerializedData),
 
     EditSignature(SignatureEdit),
@@ -225,6 +228,7 @@ impl Action {
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.diagram.dimension() > 0),
+            Self::Suspend => true,
             Self::ImportProof(_) => true,
             Self::EditSignature(_) | Self::EditMetadata(_) => true, /* technically the edits could be trivial but do not worry about that for now */
             Self::FlipBoundary | Self::RecoverBoundary => proof.boundary.is_some(),
@@ -278,6 +282,7 @@ impl ProofState {
             Action::Invert => self.invert()?,
             Action::Restrict => self.restrict(),
             Action::Theorem => self.theorem()?,
+            Action::Suspend => self.suspend(),
             Action::EditSignature(edit) => self.edit_signature(edit),
             Action::FlipBoundary => self.flip_boundary(),
             Action::RecoverBoundary => self.recover_boundary(),
@@ -717,6 +722,50 @@ impl ProofState {
             .create_generator(singleton.into(), diagram.into(), "Proof", true)?;
 
         Ok(true)
+    }
+
+    /// Handler for [Action::Suspend].
+    fn suspend(&mut self) -> bool {
+        use homotopy_common::tree::Node;
+
+        let mut new_signature: Signature = Default::default();
+
+        let id = self.signature.next_generator_id();
+        let source = Generator::new(id, 0);
+        let target = Generator::new(id + 1, 0);
+        new_signature.insert(source, Diagram0::from(source), "Base Source", false);
+        new_signature.insert(target, Diagram0::from(target), "Base Target", false);
+
+        let mut node_mappings: FastHashMap<Node, Node> = Default::default();
+        node_mappings.insert(
+            self.signature.as_tree().root(),
+            new_signature.as_tree().root(),
+        );
+
+        for (node, data) in self.signature.as_tree().iter() {
+            let mapped_node = if let Some(parent) = data.parent() {
+                node_mappings[&parent]
+            } else {
+                new_signature.as_tree().root()
+            };
+            match data.inner() {
+                SignatureItem::Folder(_) => {
+                    let new_node = new_signature
+                        .push_onto(mapped_node, data.inner().clone())
+                        .unwrap();
+                    node_mappings.insert(node, new_node);
+                }
+                SignatureItem::Item(g) => {
+                    let mut g = g.clone();
+                    g.diagram = g.diagram.suspend(source, target);
+                    g.generator.id += 2;
+                    new_signature.push_onto(mapped_node, SignatureItem::Item(g));
+                }
+            }
+        }
+        self.signature = new_signature;
+
+        true
     }
 
     /// Handler for [Action::ImportProof].

@@ -70,7 +70,7 @@ impl Signature {
         })
     }
 
-    fn next_generator_id(&self) -> usize {
+    pub(crate) fn next_generator_id(&self) -> usize {
         self.iter()
             .map(|info| info.generator.id)
             .max()
@@ -89,7 +89,7 @@ impl Signature {
             .map_or(0, |id| id + 1)
     }
 
-    fn insert(
+    pub(crate) fn insert(
         &mut self,
         generator: Generator,
         diagram: impl Into<Diagram>,
@@ -113,6 +113,10 @@ impl Signature {
 
     pub fn insert_item(&mut self, item: SignatureItem) {
         self.0.push_onto(self.0.root(), item);
+    }
+
+    pub fn push_onto(&mut self, node: Node, item: SignatureItem) -> Option<Node> {
+        self.0.push_onto(node, item)
     }
 
     fn find_node(&self, generator: Generator) -> Option<Node> {

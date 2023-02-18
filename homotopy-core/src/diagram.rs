@@ -17,7 +17,7 @@ use crate::{
         Boundary, BoundaryPath, DimensionError, Direction, Generator, Height, Mode, RegularHeight,
         SliceIndex,
     },
-    rewrite::{Cospan, Rewrite, RewriteN},
+    rewrite::{Cospan, Rewrite, Rewrite0, RewriteN},
     signature::{GeneratorInfo, Signature},
     Orientation,
 };
@@ -212,6 +212,15 @@ impl Diagram {
             }
         }
     }
+
+    #[inline]
+    #[must_use]
+    pub fn suspend(&self, s: Generator, t: Generator) -> Self {
+        match self {
+            Self::Diagram0(g) => Self::DiagramN(g.suspend(s, t)),
+            Self::DiagramN(d) => Self::DiagramN(d.suspend(s, t)),
+        }
+    }
 }
 
 pub(crate) fn globularity(s: &Diagram, t: &Diagram) -> bool {
@@ -239,6 +248,19 @@ impl Diagram0 {
 
     pub fn identity(self) -> DiagramN {
         Diagram::from(self).identity()
+    }
+
+    pub fn suspend(&self, s: Generator, t: Generator) -> DiagramN {
+        let source: Diagram0 = s.into();
+        let target: Diagram0 = t.into();
+        let mut diagram = *self;
+        // Do not lose orientation information
+        diagram.generator.dimension += 1;
+        //TODO @calintat work out what the labels should be
+        let forward: Rewrite = Rewrite0::new(source, diagram, None).into();
+        let backward: Rewrite = Rewrite0::new(target, diagram, None).into();
+        let cospan = Cospan { forward, backward };
+        DiagramN::new(source.into(), vec![cospan])
     }
 
     #[must_use]
@@ -333,6 +355,21 @@ impl DiagramN {
     /// Unsafe version of `new` which does not check if the diagram is well-formed.
     #[inline]
     pub(crate) fn new_unsafe(source: Diagram, cospans: Vec<Cospan>) -> Self {
+        Self(DIAGRAM_FACTORY.with(|factory| {
+            factory.borrow_mut().mk(DiagramInternal {
+                source,
+                cospans,
+                max_generator: OnceCell::new(),
+            })
+        }))
+    }
+
+    #[must_use]
+    pub fn suspend(&self, s: Generator, t: Generator) -> DiagramN {
+        // Suspend source
+        // Then suspend each cospan
+        let source = self.source().suspend(s, t);
+        let cospans: Vec<_> = self.cospans().iter().map(|c| c.suspend(s, t)).collect();
         Self(DIAGRAM_FACTORY.with(|factory| {
             factory.borrow_mut().mk(DiagramInternal {
                 source,

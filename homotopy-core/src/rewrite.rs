@@ -45,6 +45,13 @@ impl Cospan {
     }
 
     #[inline]
+    pub(crate) fn suspend(&self, s: Generator, t: Generator) -> Self {
+        let forward = self.forward.suspend(s, t);
+        let backward = self.backward.suspend(s, t);
+        Self { forward, backward }
+    }
+
+    #[inline]
     pub fn is_identity(&self) -> bool {
         self.forward.is_identity() && self.backward.is_identity()
     }
@@ -213,6 +220,16 @@ impl Rewrite {
         }
     }
 
+    #[inline]
+    #[must_use]
+    pub fn suspend(&self, s: Generator, t: Generator) -> Self {
+        use Rewrite::{Rewrite0, RewriteN};
+        match self {
+            Rewrite0(r) => RewriteN(r.suspend(s, t)),
+            RewriteN(r) => RewriteN(r.suspend(s, t)),
+        }
+    }
+
     #[must_use]
     pub fn orientation_transform(&self, k: Orientation) -> Self {
         self.orientation_transform_above(k, self.dimension())
@@ -300,6 +317,31 @@ impl Rewrite0 {
             Self(None)
         } else {
             Self(Some((source, target, label)))
+        }
+    }
+
+    pub fn suspend(&self, s: Generator, t: Generator) -> RewriteN {
+        match self {
+            Self(None) => RewriteN::identity(1),
+            Self(Some((source, target, _label))) => {
+                let source = source.suspend(s, t);
+                let target = target.suspend(s, t);
+                let source_cospans: Vec<Cospan> = source.cospans().to_vec();
+                let target_cospan: Cospan = target.cospans()[0].clone();
+                let regular_slices: Vec<Rewrite> = vec![
+                    target.cospans()[0].forward.clone(),
+                    target.cospans()[0].backward.clone(),
+                ];
+                let singular_slice = Rewrite::Rewrite0(self.clone());
+                let cone = Cone::new(
+                    0,
+                    source_cospans,
+                    target_cospan,
+                    regular_slices,
+                    vec![singular_slice],
+                );
+                RewriteN::new(1, vec![cone])
+            }
         }
     }
 
@@ -478,6 +520,12 @@ impl RewriteN {
         }
 
         Self::new_unsafe(dimension, cones)
+    }
+
+    #[must_use]
+    pub fn suspend(&self, s: Generator, t: Generator) -> Self {
+        let cones = self.cones().iter().map(|cone| cone.suspend(s, t)).collect();
+        Self::new(self.dimension() + 1, cones)
     }
 
     pub(crate) fn collect_garbage() {
@@ -1057,6 +1105,27 @@ impl Cone {
             ),
             None => self.clone(),
         }
+    }
+
+    fn suspend(&self, s: Generator, t: Generator) -> Self {
+        let source = self.source().iter().map(|c| c.suspend(s, t)).collect();
+        let regular_slices = self
+            .regular_slices()
+            .iter()
+            .map(|r| r.suspend(s, t))
+            .collect();
+        let singular_slices = self
+            .singular_slices()
+            .iter()
+            .map(|r| r.suspend(s, t))
+            .collect();
+        Self::new(
+            self.index,
+            source,
+            self.target().suspend(s, t),
+            regular_slices,
+            singular_slices,
+        )
     }
 }
 
