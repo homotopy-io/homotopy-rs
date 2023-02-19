@@ -54,7 +54,7 @@ impl Component for ProjectView {
                 <label for="import" class="button">
                     {"Import"}
                 </label>
-                <input type="file" accept="application/msgpack,.hom,.json" class="visually-hidden" id="import" onchange={import}/>
+                <input type="file" accept="application/msgpack,application/octet-stream,.hom,.json" class="visually-hidden" id="import" onchange={import}/>
                 <div class="metadata__details">
                     <TexSpan
                         class="metadata__title"
