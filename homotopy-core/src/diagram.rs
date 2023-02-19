@@ -213,7 +213,6 @@ impl Diagram {
         }
     }
 
-    #[inline]
     #[must_use]
     pub fn suspend(&self, s: Generator, t: Generator) -> Self {
         match self {
@@ -250,12 +249,17 @@ impl Diagram0 {
         Diagram::from(self).identity()
     }
 
+    pub(crate) fn with_suspended_generator(&self) -> Diagram0 {
+        let mut diagram = *self;
+        diagram.generator.dimension += 1;
+        diagram
+    }
+
     pub fn suspend(&self, s: Generator, t: Generator) -> DiagramN {
         let source: Diagram0 = s.into();
         let target: Diagram0 = t.into();
-        let mut diagram = *self;
-        // Do not lose orientation information
-        diagram.generator.dimension += 1;
+        let diagram = self.with_suspended_generator();
+
         //TODO @calintat work out what the labels should be
         let forward: Rewrite = Rewrite0::new(source, diagram, None).into();
         let backward: Rewrite = Rewrite0::new(target, diagram, None).into();

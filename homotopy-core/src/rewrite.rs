@@ -220,7 +220,6 @@ impl Rewrite {
         }
     }
 
-    #[inline]
     #[must_use]
     pub fn suspend(&self, s: Generator, t: Generator) -> Self {
         use Rewrite::{Rewrite0, RewriteN};
@@ -324,15 +323,20 @@ impl Rewrite0 {
         match self {
             Self(None) => RewriteN::identity(1),
             Self(Some((source, target, _label))) => {
-                let source = source.suspend(s, t);
-                let target = target.suspend(s, t);
-                let source_cospans: Vec<Cospan> = source.cospans().to_vec();
-                let target_cospan: Cospan = target.cospans()[0].clone();
+                let new_source = source.suspend(s, t);
+                let new_target = target.suspend(s, t);
+                let source_cospans: Vec<Cospan> = new_source.cospans().to_vec();
+                let target_cospan: Cospan = new_target.cospans()[0].clone();
                 let regular_slices: Vec<Rewrite> = vec![
-                    target.cospans()[0].forward.clone(),
-                    target.cospans()[0].backward.clone(),
+                    new_target.cospans()[0].forward.clone(),
+                    new_target.cospans()[0].backward.clone(),
                 ];
-                let singular_slice = Rewrite::Rewrite0(self.clone());
+                let singular_slice: Rewrite = Rewrite0::new(
+                    source.with_suspended_generator(),
+                    target.with_suspended_generator(),
+                    None,
+                )
+                .into();
                 let cone = Cone::new(
                     0,
                     source_cospans,
