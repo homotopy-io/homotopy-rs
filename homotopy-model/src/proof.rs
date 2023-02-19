@@ -763,6 +763,8 @@ impl ProofState {
                     let mut g = g.clone();
                     g.generator.dimension += 1;
                     g.diagram = g.diagram.suspend(source, target);
+                    //TODO remove when label logic is implemented
+                    g.oriented = true;
                     new_signature.push_onto(mapped_node, SignatureItem::Item(g));
                 }
             }
