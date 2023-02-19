@@ -768,6 +768,12 @@ impl ProofState {
             }
         }
         self.signature = new_signature;
+        if let Some(ws) = &self.workspace {
+            self.workspace = Some(Workspace::new(ws.diagram.suspend(source, target)));
+        }
+        if let Some(bd) = &mut self.boundary {
+            bd.diagram = bd.diagram.suspend(source, target);
+        }
 
         true
     }
