@@ -249,16 +249,17 @@ impl Diagram0 {
         Diagram::from(self).identity()
     }
 
-    pub(crate) fn with_suspended_generator(&self) -> Diagram0 {
-        let mut diagram = *self;
-        diagram.generator.dimension += 1;
-        diagram
+    pub(crate) fn suspended(&self) -> Self {
+        Self {
+            generator: self.generator.suspended(),
+            ..*self
+        }
     }
 
     pub fn suspend(&self, s: Generator, t: Generator) -> DiagramN {
         let source: Diagram0 = s.into();
         let target: Diagram0 = t.into();
-        let diagram = self.with_suspended_generator();
+        let diagram = self.suspended();
 
         //TODO @calintat work out what the labels should be
         let forward: Rewrite = Rewrite0::new(source, diagram, None).into();

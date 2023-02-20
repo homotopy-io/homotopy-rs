@@ -331,12 +331,8 @@ impl Rewrite0 {
                     new_target.cospans()[0].forward.clone(),
                     new_target.cospans()[0].backward.clone(),
                 ];
-                let singular_slice: Rewrite = Rewrite0::new(
-                    source.with_suspended_generator(),
-                    target.with_suspended_generator(),
-                    None,
-                )
-                .into();
+                let singular_slice: Rewrite =
+                    Rewrite0::new(source.suspended(), target.suspended(), None).into();
                 let cone = Cone::new(
                     0,
                     source_cospans,

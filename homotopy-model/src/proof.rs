@@ -16,7 +16,7 @@ pub use signature::*;
 use thiserror::Error;
 
 use self::homotopy::{Contract, Expand};
-use crate::{migration, serialize};
+use crate::{migration, proof::generators::GeneratorInfo, serialize};
 
 mod signature;
 
@@ -760,12 +760,14 @@ impl ProofState {
                     node_mappings.insert(node, new_node);
                 }
                 SignatureItem::Item(g) => {
-                    let mut g = g.clone();
-                    g.generator.dimension += 1;
-                    g.diagram = g.diagram.suspend(source, target);
-                    //TODO remove when label logic is implemented
-                    g.oriented = true;
-                    new_signature.push_onto(mapped_node, SignatureItem::Item(g));
+                    let gen: GeneratorInfo = GeneratorInfo {
+                        generator: g.generator.suspended(),
+                        diagram: g.diagram.suspend(source, target),
+                        //TODO remove when label logic is implemented
+                        oriented: true,
+                        ..g.clone()
+                    };
+                    new_signature.push_onto(mapped_node, SignatureItem::Item(gen));
                 }
             }
         }
