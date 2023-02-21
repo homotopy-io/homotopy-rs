@@ -49,7 +49,8 @@ impl Component for DebugView {
         html! {
             <>
                 <div>
-                    <button onclick={ctx.props().dispatch.reform(move |_| Action::Proof(proof::Action::Suspend))}>{"Suspend Signature"}</button>
+                    <button onclick={ctx.props().dispatch.reform(move |_| Action::Proof(proof::Action::Suspend(true)))}>{"Suspend Signature Standard"}</button>
+                    <button onclick={ctx.props().dispatch.reform(move |_| Action::Proof(proof::Action::Suspend(false)))}>{"Suspend Signature General"}</button>
                 </div>
                 <div>
                     <button onclick={Callback::from(move |_| web_sys::console::dir_2(&"Workspace diagram:".into(), &serde_wasm_bindgen::to_value(&diagram).unwrap()))}>{"Dump workspace diagram"}</button>

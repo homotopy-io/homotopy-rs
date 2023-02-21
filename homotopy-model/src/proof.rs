@@ -135,7 +135,7 @@ pub enum Action {
 
     Theorem,
 
-    Suspend,
+    Suspend(bool),
 
     ImportProof(SerializedData),
 
@@ -228,7 +228,7 @@ impl Action {
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.diagram.dimension() > 0),
-            Self::Suspend => true,
+            Self::Suspend(_) => true,
             Self::ImportProof(_) => true,
             Self::EditSignature(_) | Self::EditMetadata(_) => true, /* technically the edits could be trivial but do not worry about that for now */
             Self::FlipBoundary | Self::RecoverBoundary => proof.boundary.is_some(),
@@ -282,7 +282,7 @@ impl ProofState {
             Action::Invert => self.invert()?,
             Action::Restrict => self.restrict(),
             Action::Theorem => self.theorem()?,
-            Action::Suspend => self.suspend(),
+            Action::Suspend(unique) => self.suspend(*unique),
             Action::EditSignature(edit) => self.edit_signature(edit),
             Action::FlipBoundary => self.flip_boundary(),
             Action::RecoverBoundary => self.recover_boundary(),
@@ -725,7 +725,7 @@ impl ProofState {
     }
 
     /// Handler for [Action::Suspend].
-    fn suspend(&mut self) -> bool {
+    fn suspend(&mut self, unique_base: bool) -> bool {
         use homotopy_common::tree::Node;
 
         let mut new_signature: Signature = Default::default();
@@ -733,9 +733,15 @@ impl ProofState {
         // New generators need to be fresh
         let id = self.signature.next_generator_id();
         let source = Generator::new(id, 0);
-        let target = Generator::new(id + 1, 0);
-        new_signature.insert(source, Diagram0::from(source), "Base Source", false);
-        new_signature.insert(target, Diagram0::from(target), "Base Target", false);
+        let target = if unique_base {
+            new_signature.insert(source, Diagram0::from(source), "Base", false);
+            source
+        } else {
+            new_signature.insert(source, Diagram0::from(source), "Base Source", false);
+            let target = Generator::new(id + 1, 0);
+            new_signature.insert(target, Diagram0::from(target), "Base Target", false);
+            target
+        };
 
         // We are shifting nodes in the tree
         // so we have to remap the parents correctly
