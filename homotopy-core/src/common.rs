@@ -28,16 +28,16 @@ impl Generator {
     }
 
     #[must_use]
-    pub fn suspended(&self) -> Self {
+    pub fn suspended(self) -> Self {
         Self {
             dimension: self.dimension + 1,
-            ..*self
+            ..self
         }
     }
 
     #[must_use]
-    pub fn abelianized(&self, b: Generator) -> Self {
-        if *self == b {
+    pub fn abelianized(self, b: Generator) -> Self {
+        if self == b {
             b
         } else {
             self.suspended()

@@ -256,21 +256,24 @@ impl Diagram0 {
         Diagram::from(self).identity()
     }
 
-    pub(crate) fn suspended(&self) -> Self {
+    pub(crate) fn suspended(self) -> Self {
         Self {
             generator: self.generator.suspended(),
-            ..*self
+            ..self
         }
     }
 
-    pub(crate) fn abelianized(&self, b: Generator) -> Self {
+    pub(crate) fn abelianized(self, b: Generator) -> Self {
         Self {
             generator: self.generator.abelianized(b),
-            ..*self
+            ..self
         }
     }
 
     pub fn suspend(&self, s: Generator, t: Generator) -> DiagramN {
+        assert_eq!(s.dimension, 0);
+        assert_eq!(t.dimension, 0);
+
         let source: Diagram0 = s.into();
         let target: Diagram0 = t.into();
         let diagram = self.suspended();
@@ -283,6 +286,7 @@ impl Diagram0 {
     }
 
     pub fn abelianize(&self, b: Generator) -> DiagramN {
+        assert_eq!(b.dimension, 0);
         if self.generator == b {
             self.identity()
         } else {
