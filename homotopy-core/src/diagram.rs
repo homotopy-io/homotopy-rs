@@ -220,13 +220,6 @@ impl Diagram {
             Self::DiagramN(d) => d.suspend(s, t),
         }
     }
-
-    pub fn abelianize(&self, b: Generator) -> DiagramN {
-        match self {
-            Self::Diagram0(d) => d.abelianize(b),
-            Self::DiagramN(d) => d.abelianize(b),
-        }
-    }
 }
 
 pub(crate) fn globularity(s: &Diagram, t: &Diagram) -> bool {
@@ -263,34 +256,25 @@ impl Diagram0 {
         }
     }
 
-    pub(crate) fn abelianized(self, b: Generator) -> Self {
-        Self {
-            generator: self.generator.abelianized(b),
-            ..self
-        }
-    }
-
     pub fn suspend(&self, s: Generator, t: Generator) -> DiagramN {
         assert_eq!(s.dimension, 0);
         assert_eq!(t.dimension, 0);
 
-        let source: Diagram0 = s.into();
-        let target: Diagram0 = t.into();
-        let diagram = self.suspended();
-
-        //TODO @calintat work out what the labels should be
-        let forward: Rewrite = Rewrite0::new(source, diagram, None).into();
-        let backward: Rewrite = Rewrite0::new(target, diagram, None).into();
-        let cospan = Cospan { forward, backward };
-        DiagramN::new(source.into(), vec![cospan])
-    }
-
-    pub fn abelianize(&self, b: Generator) -> DiagramN {
-        assert_eq!(b.dimension, 0);
-        if self.generator == b {
+        if s == t && self.generator == s {
             self.identity()
         } else {
-            self.suspend(b, b)
+            assert_ne!(s, self.generator);
+            assert_ne!(t, self.generator);
+
+            let source: Diagram0 = s.into();
+            let target: Diagram0 = t.into();
+            let diagram = self.suspended();
+
+            //TODO @calintat work out what the labels should be
+            let forward: Rewrite = Rewrite0::new(source, diagram, None).into();
+            let backward: Rewrite = Rewrite0::new(target, diagram, None).into();
+            let cospan = Cospan { forward, backward };
+            DiagramN::new(source.into(), vec![cospan])
         }
     }
 
@@ -404,17 +388,6 @@ impl DiagramN {
             .cospans()
             .iter()
             .map(|c| c.map(|r| r.suspend(s, t).into()))
-            .collect();
-        Self::new(source.into(), cospans)
-    }
-
-    #[must_use]
-    pub fn abelianize(&self, b: Generator) -> DiagramN {
-        let source = self.source().abelianize(b);
-        let cospans: Vec<_> = self
-            .cospans()
-            .iter()
-            .map(|c| c.map(|r| r.abelianize(b).into()))
             .collect();
         Self::new(source.into(), cospans)
     }

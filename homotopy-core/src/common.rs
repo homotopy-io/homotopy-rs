@@ -34,15 +34,6 @@ impl Generator {
             ..self
         }
     }
-
-    #[must_use]
-    pub fn abelianized(self, b: Generator) -> Self {
-        if self == b {
-            b
-        } else {
-            self.suspended()
-        }
-    }
 }
 
 impl fmt::Debug for Generator {

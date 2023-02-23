@@ -222,14 +222,6 @@ impl Rewrite {
     }
 
     #[must_use]
-    pub fn abelianize(&self, b: Generator) -> RewriteN {
-        match self {
-            Self::Rewrite0(r) => r.abelianize(b),
-            Self::RewriteN(r) => r.abelianize(b),
-        }
-    }
-
-    #[must_use]
     pub fn orientation_transform(&self, k: Orientation) -> Self {
         self.orientation_transform_above(k, self.dimension())
     }
@@ -323,43 +315,26 @@ impl Rewrite0 {
         match self {
             Self(None) => RewriteN::identity(1),
             Self(Some((source, target, _label))) => {
-                let target_cospan = target.suspend(s, t).cospans()[0].clone();
-                let regular_slices = vec![
-                    target_cospan.forward.clone(),
-                    target_cospan.backward.clone(),
-                ];
-                let singular_slice =
-                    Rewrite0::new(source.suspended(), target.suspended(), None).into();
-                RewriteN::from_slices(
-                    1,
-                    source.suspend(s, t).cospans(),
-                    &[target_cospan],
-                    vec![regular_slices],
-                    vec![vec![singular_slice]],
-                )
-            }
-        }
-    }
-
-    pub fn abelianize(&self, b: Generator) -> RewriteN {
-        match self {
-            Self(None) => RewriteN::identity(1),
-            Self(Some((source, target, _label))) => {
-                let regular_slice: Rewrite = Rewrite0::new(b, target.suspended(), None).into();
-                let (r, s) = if source.generator == b {
-                    (vec![regular_slice], vec![])
+                let (regular_slices, singular_slices) = if s == t && source.generator == s {
+                    (
+                        vec![Rewrite0::new(s, target.suspended(), None).into()],
+                        vec![],
+                    )
                 } else {
                     (
-                        vec![regular_slice.clone(), regular_slice],
-                        vec![Rewrite0::new(source.abelianized(b), target.suspended(), None).into()],
+                        vec![
+                            Rewrite0::new(s, target.suspended(), None).into(),
+                            Rewrite0::new(t, target.suspended(), None).into(),
+                        ],
+                        vec![Rewrite0::new(source.suspended(), target.suspended(), None).into()],
                     )
                 };
                 RewriteN::from_slices(
                     1,
-                    source.abelianize(b).cospans(),
-                    target.abelianize(b).cospans(),
-                    vec![r],
-                    vec![s],
+                    source.suspend(s, t).cospans(),
+                    target.suspend(s, t).cospans(),
+                    vec![regular_slices],
+                    vec![singular_slices],
                 )
             }
         }
@@ -545,12 +520,6 @@ impl RewriteN {
     #[must_use]
     pub fn suspend(&self, s: Generator, t: Generator) -> Self {
         let cones = self.cones().iter().map(|cone| cone.suspend(s, t)).collect();
-        Self::new(self.dimension() + 1, cones)
-    }
-
-    #[must_use]
-    pub fn abelianize(&self, b: Generator) -> Self {
-        let cones = self.cones().iter().map(|cone| cone.abelianize(b)).collect();
         Self::new(self.dimension() + 1, cones)
     }
 
@@ -1152,11 +1121,6 @@ impl Cone {
     #[must_use]
     fn suspend(&self, s: Generator, t: Generator) -> Self {
         self.map(|r| r.suspend(s, t).into())
-    }
-
-    #[must_use]
-    fn abelianize(&self, b: Generator) -> Self {
-        self.map(|r| r.abelianize(b).into())
     }
 }
 

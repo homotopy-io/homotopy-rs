@@ -821,28 +821,28 @@ impl ProofState {
         // Skip the root node
         for (_node, data) in self.signature.as_tree().iter().skip(1) {
             match (data.parent(), data.inner()) {
-                (Some(p), SignatureItem::Folder(_)) => {
-                    new_signature.push_onto(p, data.inner().clone()).unwrap();
-                }
-                (Some(p), SignatureItem::Item(g)) => {
+                (Some(p), SignatureItem::Item(g)) if g.generator != base => {
                     let gen: GeneratorInfo = GeneratorInfo {
-                        generator: g.generator.abelianized(base),
-                        diagram: g.diagram.abelianize(base).into(),
+                        generator: g.generator.suspended(),
+                        diagram: g.diagram.suspend(base, base).into(),
                         //TODO remove when label logic is implemented
                         oriented: g.generator != base,
                         ..g.clone()
                     };
                     new_signature.push_onto(p, SignatureItem::Item(gen));
                 }
+                (Some(p), _) => {
+                    new_signature.push_onto(p, data.inner().clone()).unwrap();
+                }
                 (None, _) => {}
             }
         }
         self.signature = new_signature;
         if let Some(ws) = &self.workspace {
-            self.workspace = Some(Workspace::new(ws.diagram.abelianize(base).into()));
+            self.workspace = Some(Workspace::new(ws.diagram.suspend(base, base).into()));
         }
         if let Some(bd) = &mut self.boundary {
-            bd.diagram = bd.diagram.abelianize(base).into();
+            bd.diagram = bd.diagram.suspend(base, base).into();
         }
 
         true
