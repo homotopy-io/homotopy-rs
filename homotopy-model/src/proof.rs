@@ -137,6 +137,8 @@ pub enum Action {
 
     Suspend(bool),
 
+    Abelianize,
+
     ImportProof(SerializedData),
 
     EditSignature(SignatureEdit),
@@ -228,7 +230,7 @@ impl Action {
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.diagram.dimension() > 0),
-            Self::Suspend(_) => true,
+            Self::Suspend(_) | Self::Abelianize => true,
             Self::ImportProof(_) => true,
             Self::EditSignature(_) | Self::EditMetadata(_) => true, /* technically the edits could be trivial but do not worry about that for now */
             Self::FlipBoundary | Self::RecoverBoundary => proof.boundary.is_some(),
@@ -282,7 +284,8 @@ impl ProofState {
             Action::Invert => self.invert()?,
             Action::Restrict => self.restrict(),
             Action::Theorem => self.theorem()?,
-            Action::Suspend(unique) => self.suspend(*unique),
+            Action::Suspend(l) => self.suspend(*l),
+            Action::Abelianize => self.abelianize(),
             Action::EditSignature(edit) => self.edit_signature(edit),
             Action::FlipBoundary => self.flip_boundary(),
             Action::RecoverBoundary => self.recover_boundary(),
@@ -725,7 +728,7 @@ impl ProofState {
     }
 
     /// Handler for [Action::Suspend].
-    fn suspend(&mut self, unique_base: bool) -> bool {
+    fn suspend(&mut self, loop_mode: bool) -> bool {
         use homotopy_common::tree::Node;
 
         let mut new_signature: Signature = Default::default();
@@ -733,7 +736,7 @@ impl ProofState {
         // New generators need to be fresh
         let id = self.signature.next_generator_id();
         let source = Generator::new(id, 0);
-        let target = if unique_base {
+        let target = if loop_mode {
             new_signature.insert(source, Diagram0::from(source), "Base", false);
             source
         } else {
@@ -783,6 +786,72 @@ impl ProofState {
         }
         if let Some(bd) = &mut self.boundary {
             bd.diagram = bd.diagram.suspend(source, target);
+        }
+
+        true
+    }
+
+    /// Handler for [Action::Abelianize].
+    fn abelianize(&mut self) -> bool {
+        let generators: Vec<Generator> = self
+            .signature
+            .as_tree()
+            .iter()
+            .filter_map(|(_, d)| {
+                if let SignatureItem::Item(g) = d.inner() {
+                    if g.generator.dimension == 0 {
+                        Some(g.generator)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .take(2)
+            .collect();
+
+        // If signature is empty quit
+        // If there is not a unique 0-cell fall back to suspension
+        if generators.len() == 0 {
+            return false;
+        }
+        if generators.len() > 1 {
+            return self.suspend(true);
+        }
+
+        let base = generators[0];
+
+        let mut new_signature: Signature = Default::default();
+
+        // Skip the root node
+        for (_node, data) in self.signature.as_tree().iter().skip(1) {
+            match (data.parent(), data.inner()) {
+                (Some(p), SignatureItem::Folder(_)) => {
+                    new_signature.push_onto(p, data.inner().clone()).unwrap();
+                }
+                (Some(p), SignatureItem::Item(g)) if g.generator == base => {
+                    new_signature.push_onto(p, SignatureItem::Item(g.clone()));
+                }
+                (Some(p), SignatureItem::Item(g)) => {
+                    let gen: GeneratorInfo = GeneratorInfo {
+                        generator: g.generator.suspended(),
+                        diagram: g.diagram.abelianize(base),
+                        //TODO remove when label logic is implemented
+                        oriented: true,
+                        ..g.clone()
+                    };
+                    new_signature.push_onto(p, SignatureItem::Item(gen));
+                }
+                (None, _) => {}
+            }
+        }
+        self.signature = new_signature;
+        if let Some(ws) = &self.workspace {
+            self.workspace = Some(Workspace::new(ws.diagram.abelianize(base)));
+        }
+        if let Some(bd) = &mut self.boundary {
+            bd.diagram = bd.diagram.abelianize(base);
         }
 
         true

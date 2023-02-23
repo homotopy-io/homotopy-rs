@@ -220,6 +220,14 @@ impl Diagram {
             Self::DiagramN(d) => Self::DiagramN(d.suspend(s, t)),
         }
     }
+
+    #[must_use]
+    pub fn abelianize(&self, b: Generator) -> Self {
+        match self {
+            Self::Diagram0(d) => Self::DiagramN(d.abelianize(b)),
+            Self::DiagramN(d) => Self::DiagramN(d.abelianize(b)),
+        }
+    }
 }
 
 pub(crate) fn globularity(s: &Diagram, t: &Diagram) -> bool {
@@ -266,6 +274,14 @@ impl Diagram0 {
         let backward: Rewrite = Rewrite0::new(target, diagram, None).into();
         let cospan = Cospan { forward, backward };
         DiagramN::new(source.into(), vec![cospan])
+    }
+
+    pub fn abelianize(&self, b: Generator) -> DiagramN {
+        if self.generator == b {
+            self.identity()
+        } else {
+            self.suspend(b, b)
+        }
     }
 
     #[must_use]
@@ -374,14 +390,36 @@ impl DiagramN {
         // Suspend source
         // Then suspend each cospan
         let source = self.source().suspend(s, t);
-        let cospans: Vec<_> = self.cospans().iter().map(|c| c.suspend(s, t)).collect();
-        Self(DIAGRAM_FACTORY.with(|factory| {
-            factory.borrow_mut().mk(DiagramInternal {
-                source,
-                cospans,
-                max_generator: OnceCell::new(),
-            })
-        }))
+        let cospans: Vec<_> = self
+            .cospans()
+            .iter()
+            .map(|c| c.map(|r| r.suspend(s, t)))
+            .collect();
+        Self::new(source, cospans)
+    }
+
+    #[must_use]
+    pub fn abelianize(&self, b: Generator) -> DiagramN {
+        match self.dimension() {
+            1 => {
+                let source = self.source().identity().into();
+                let cospans: Vec<_> = self
+                    .cospans()
+                    .iter()
+                    .map(|c| c.map(|r| r.abelianize(b)))
+                    .collect();
+                Self::new(source, cospans)
+            }
+            _ => {
+                let source = self.source().abelianize(b);
+                let cospans: Vec<_> = self
+                    .cospans()
+                    .iter()
+                    .map(|c| c.map(|r| r.abelianize(b)))
+                    .collect();
+                Self::new(source, cospans)
+            }
+        }
     }
 
     pub(crate) fn collect_garbage() {
