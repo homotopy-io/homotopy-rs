@@ -70,6 +70,10 @@ impl Signature {
         })
     }
 
+    pub fn has_generators(&self) -> bool {
+        self.iter().next().is_some()
+    }
+
     pub(crate) fn next_generator_id(&self) -> usize {
         self.iter()
             .map(|info| info.generator.id)

@@ -214,18 +214,17 @@ impl Diagram {
     }
 
     #[must_use]
-    pub fn suspend(&self, s: Generator, t: Generator) -> Self {
+    pub fn suspend(&self, s: Generator, t: Generator) -> DiagramN {
         match self {
-            Self::Diagram0(g) => Self::DiagramN(g.suspend(s, t)),
-            Self::DiagramN(d) => Self::DiagramN(d.suspend(s, t)),
+            Self::Diagram0(d) => d.suspend(s, t),
+            Self::DiagramN(d) => d.suspend(s, t),
         }
     }
 
-    #[must_use]
-    pub fn abelianize(&self, b: Generator) -> Self {
+    pub fn abelianize(&self, b: Generator) -> DiagramN {
         match self {
-            Self::Diagram0(d) => Self::DiagramN(d.abelianize(b)),
-            Self::DiagramN(d) => Self::DiagramN(d.abelianize(b)),
+            Self::Diagram0(d) => d.abelianize(b),
+            Self::DiagramN(d) => d.abelianize(b),
         }
     }
 }
@@ -393,33 +392,20 @@ impl DiagramN {
         let cospans: Vec<_> = self
             .cospans()
             .iter()
-            .map(|c| c.map(|r| r.suspend(s, t)))
+            .map(|c| c.map(|r| r.suspend(s, t).into()))
             .collect();
-        Self::new(source, cospans)
+        Self::new(source.into(), cospans)
     }
 
     #[must_use]
     pub fn abelianize(&self, b: Generator) -> DiagramN {
-        match self.dimension() {
-            1 => {
-                let source = self.source().identity().into();
-                let cospans: Vec<_> = self
-                    .cospans()
-                    .iter()
-                    .map(|c| c.map(|r| r.abelianize(b)))
-                    .collect();
-                Self::new(source, cospans)
-            }
-            _ => {
-                let source = self.source().abelianize(b);
-                let cospans: Vec<_> = self
-                    .cospans()
-                    .iter()
-                    .map(|c| c.map(|r| r.abelianize(b)))
-                    .collect();
-                Self::new(source, cospans)
-            }
-        }
+        let source = self.source().abelianize(b);
+        let cospans: Vec<_> = self
+            .cospans()
+            .iter()
+            .map(|c| c.map(|r| r.abelianize(b).into()))
+            .collect();
+        Self::new(source.into(), cospans)
     }
 
     pub(crate) fn collect_garbage() {

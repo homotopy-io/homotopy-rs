@@ -230,7 +230,7 @@ impl Action {
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.diagram.dimension() > 0),
-            Self::Suspend(_) | Self::Abelianize => true,
+            Self::Suspend(_) | Self::Abelianize => proof.signature.has_generators(),
             Self::ImportProof(_) => true,
             Self::EditSignature(_) | Self::EditMetadata(_) => true, /* technically the edits could be trivial but do not worry about that for now */
             Self::FlipBoundary | Self::RecoverBoundary => proof.boundary.is_some(),
@@ -771,7 +771,7 @@ impl ProofState {
                 SignatureItem::Item(g) => {
                     let gen: GeneratorInfo = GeneratorInfo {
                         generator: g.generator.suspended(),
-                        diagram: g.diagram.suspend(source, target),
+                        diagram: g.diagram.suspend(source, target).into(),
                         //TODO remove when label logic is implemented
                         oriented: true,
                         ..g.clone()
@@ -782,10 +782,10 @@ impl ProofState {
         }
         self.signature = new_signature;
         if let Some(ws) = &self.workspace {
-            self.workspace = Some(Workspace::new(ws.diagram.suspend(source, target)));
+            self.workspace = Some(Workspace::new(ws.diagram.suspend(source, target).into()));
         }
         if let Some(bd) = &mut self.boundary {
-            bd.diagram = bd.diagram.suspend(source, target);
+            bd.diagram = bd.diagram.suspend(source, target).into();
         }
 
         true
@@ -793,17 +793,18 @@ impl ProofState {
 
     /// Handler for [Action::Abelianize].
     fn abelianize(&mut self) -> bool {
+        // If signature is empty quit
+        // If there is not a unique 0-cell fall back to suspension
+        if !self.signature.has_generators() {
+            return false;
+        }
+
         let generators: Vec<Generator> = self
             .signature
-            .as_tree()
             .iter()
-            .filter_map(|(_, d)| {
-                if let SignatureItem::Item(g) = d.inner() {
-                    if g.generator.dimension == 0 {
-                        Some(g.generator)
-                    } else {
-                        None
-                    }
+            .filter_map(|g| {
+                if g.generator.dimension == 0 {
+                    Some(g.generator)
                 } else {
                     None
                 }
@@ -811,17 +812,10 @@ impl ProofState {
             .take(2)
             .collect();
 
-        // If signature is empty quit
-        // If there is not a unique 0-cell fall back to suspension
-        if generators.len() == 0 {
-            return false;
-        }
         if generators.len() > 1 {
             return self.suspend(true);
         }
-
         let base = generators[0];
-
         let mut new_signature: Signature = Default::default();
 
         // Skip the root node
@@ -836,7 +830,7 @@ impl ProofState {
                 (Some(p), SignatureItem::Item(g)) => {
                     let gen: GeneratorInfo = GeneratorInfo {
                         generator: g.generator.suspended(),
-                        diagram: g.diagram.abelianize(base),
+                        diagram: g.diagram.abelianize(base).into(),
                         //TODO remove when label logic is implemented
                         oriented: true,
                         ..g.clone()
@@ -848,10 +842,10 @@ impl ProofState {
         }
         self.signature = new_signature;
         if let Some(ws) = &self.workspace {
-            self.workspace = Some(Workspace::new(ws.diagram.abelianize(base)));
+            self.workspace = Some(Workspace::new(ws.diagram.abelianize(base).into()));
         }
         if let Some(bd) = &mut self.boundary {
-            bd.diagram = bd.diagram.abelianize(base);
+            bd.diagram = bd.diagram.abelianize(base).into();
         }
 
         true

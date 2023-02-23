@@ -214,18 +214,18 @@ impl Rewrite {
     }
 
     #[must_use]
-    pub fn suspend(&self, s: Generator, t: Generator) -> Self {
+    pub fn suspend(&self, s: Generator, t: Generator) -> RewriteN {
         match self {
-            Self::Rewrite0(r) => Self::RewriteN(r.suspend(s, t)),
-            Self::RewriteN(r) => Self::RewriteN(r.suspend(s, t)),
+            Self::Rewrite0(r) => r.suspend(s, t),
+            Self::RewriteN(r) => r.suspend(s, t),
         }
     }
 
     #[must_use]
-    pub fn abelianize(&self, b: Generator) -> Self {
+    pub fn abelianize(&self, b: Generator) -> RewriteN {
         match self {
-            Self::Rewrite0(r) => Self::RewriteN(r.abelianize(b)),
-            Self::RewriteN(r) => Self::RewriteN(r.abelianize(b)),
+            Self::Rewrite0(r) => r.abelianize(b),
+            Self::RewriteN(r) => r.abelianize(b),
         }
     }
 
@@ -349,20 +349,18 @@ impl Rewrite0 {
         match self {
             Self(None) => RewriteN::identity(1),
             Self(Some((source, target, _label))) if source.generator == b => {
-                //TODO figure out labels
                 let new_target = target.abelianize(b);
                 let new_self: Rewrite = Rewrite0::new(*source, target.suspended(), None).into();
                 let source_cospans: Vec<Cospan> = vec![];
                 //TODO copy this
                 //let source_cospans: Vec<Cospan> = new_source.cospans().to_vec();
                 let target_cospan = new_target.cospans()[0].clone();
-                let regular_slices: Vec<Rewrite> = vec![new_self.clone()];
+                let regular_slices: Vec<Rewrite> = vec![new_self];
                 // Use unit cone constructor
                 let cone = Cone::new(0, source_cospans, target_cospan, regular_slices, vec![]);
                 RewriteN::new(1, vec![cone])
             }
             Self(Some((source, target, _label))) => {
-                //TODO figure out labels
                 let new_source = source.abelianize(b);
                 let new_target = target.abelianize(b);
                 let new_self: Rewrite =
@@ -370,7 +368,7 @@ impl Rewrite0 {
                 let new_regular: Rewrite = Rewrite0::new(b, target.suspended(), None).into();
                 let source_cospans: Vec<Cospan> = new_source.cospans().to_vec();
                 let target_cospan = new_target.cospans()[0].clone();
-                let regular_slices: Vec<Rewrite> = vec![new_regular.clone(), new_regular.clone()];
+                let regular_slices: Vec<Rewrite> = vec![new_regular.clone(), new_regular];
                 let cone = Cone::new(
                     0,
                     source_cospans,
@@ -1169,12 +1167,12 @@ impl Cone {
 
     #[must_use]
     fn suspend(&self, s: Generator, t: Generator) -> Self {
-        self.map(|r| r.suspend(s, t))
+        self.map(|r| r.suspend(s, t).into())
     }
 
     #[must_use]
     fn abelianize(&self, b: Generator) -> Self {
-        self.map(|r| r.abelianize(b))
+        self.map(|r| r.abelianize(b).into())
     }
 }
 
