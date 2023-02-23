@@ -263,6 +263,13 @@ impl Diagram0 {
         }
     }
 
+    pub(crate) fn abelianized(&self, b: Generator) -> Self {
+        Self {
+            generator: self.generator.abelianized(b),
+            ..*self
+        }
+    }
+
     pub fn suspend(&self, s: Generator, t: Generator) -> DiagramN {
         let source: Diagram0 = s.into();
         let target: Diagram0 = t.into();

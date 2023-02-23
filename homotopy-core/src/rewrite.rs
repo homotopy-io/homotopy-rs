@@ -323,24 +323,20 @@ impl Rewrite0 {
         match self {
             Self(None) => RewriteN::identity(1),
             Self(Some((source, target, _label))) => {
-                let new_source = source.suspend(s, t);
-                let new_target = target.suspend(s, t);
-                let source_cospans: Vec<Cospan> = new_source.cospans().to_vec();
-                let target_cospan: Cospan = new_target.cospans()[0].clone();
-                let regular_slices: Vec<Rewrite> = vec![
-                    new_target.cospans()[0].forward.clone(),
-                    new_target.cospans()[0].backward.clone(),
+                let target_cospan = target.suspend(s, t).cospans()[0].clone();
+                let regular_slices = vec![
+                    target_cospan.forward.clone(),
+                    target_cospan.backward.clone(),
                 ];
-                let singular_slice: Rewrite =
+                let singular_slice =
                     Rewrite0::new(source.suspended(), target.suspended(), None).into();
-                let cone = Cone::new(
-                    0,
-                    source_cospans,
-                    target_cospan,
-                    regular_slices,
-                    vec![singular_slice],
-                );
-                RewriteN::new(1, vec![cone])
+                RewriteN::from_slices(
+                    1,
+                    source.suspend(s, t).cospans(),
+                    &[target_cospan],
+                    vec![regular_slices],
+                    vec![vec![singular_slice]],
+                )
             }
         }
     }
@@ -348,35 +344,23 @@ impl Rewrite0 {
     pub fn abelianize(&self, b: Generator) -> RewriteN {
         match self {
             Self(None) => RewriteN::identity(1),
-            Self(Some((source, target, _label))) if source.generator == b => {
-                let new_target = target.abelianize(b);
-                let new_self: Rewrite = Rewrite0::new(*source, target.suspended(), None).into();
-                let source_cospans: Vec<Cospan> = vec![];
-                //TODO copy this
-                //let source_cospans: Vec<Cospan> = new_source.cospans().to_vec();
-                let target_cospan = new_target.cospans()[0].clone();
-                let regular_slices: Vec<Rewrite> = vec![new_self];
-                // Use unit cone constructor
-                let cone = Cone::new(0, source_cospans, target_cospan, regular_slices, vec![]);
-                RewriteN::new(1, vec![cone])
-            }
             Self(Some((source, target, _label))) => {
-                let new_source = source.abelianize(b);
-                let new_target = target.abelianize(b);
-                let new_self: Rewrite =
-                    Rewrite0::new(source.suspended(), target.suspended(), None).into();
-                let new_regular: Rewrite = Rewrite0::new(b, target.suspended(), None).into();
-                let source_cospans: Vec<Cospan> = new_source.cospans().to_vec();
-                let target_cospan = new_target.cospans()[0].clone();
-                let regular_slices: Vec<Rewrite> = vec![new_regular.clone(), new_regular];
-                let cone = Cone::new(
-                    0,
-                    source_cospans,
-                    target_cospan,
-                    regular_slices,
-                    vec![new_self],
-                );
-                RewriteN::new(1, vec![cone])
+                let regular_slice: Rewrite = Rewrite0::new(b, target.suspended(), None).into();
+                let (r, s) = if source.generator == b {
+                    (vec![regular_slice], vec![])
+                } else {
+                    (
+                        vec![regular_slice.clone(), regular_slice],
+                        vec![Rewrite0::new(source.abelianized(b), target.suspended(), None).into()],
+                    )
+                };
+                RewriteN::from_slices(
+                    1,
+                    source.abelianize(b).cospans(),
+                    target.abelianize(b).cospans(),
+                    vec![r],
+                    vec![s],
+                )
             }
         }
     }

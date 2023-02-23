@@ -284,7 +284,7 @@ impl ProofState {
             Action::Invert => self.invert()?,
             Action::Restrict => self.restrict(),
             Action::Theorem => self.theorem()?,
-            Action::Suspend(l) => self.suspend(*l),
+            Action::Suspend(r) => self.suspend(*r),
             Action::Abelianize => self.abelianize(),
             Action::EditSignature(edit) => self.edit_signature(edit),
             Action::FlipBoundary => self.flip_boundary(),
@@ -728,7 +728,7 @@ impl ProofState {
     }
 
     /// Handler for [Action::Suspend].
-    fn suspend(&mut self, loop_mode: bool) -> bool {
+    fn suspend(&mut self, reduced: bool) -> bool {
         use homotopy_common::tree::Node;
 
         let mut new_signature: Signature = Default::default();
@@ -736,7 +736,7 @@ impl ProofState {
         // New generators need to be fresh
         let id = self.signature.next_generator_id();
         let source = Generator::new(id, 0);
-        let target = if loop_mode {
+        let target = if reduced {
             new_signature.insert(source, Diagram0::from(source), "Base", false);
             source
         } else {
@@ -824,15 +824,12 @@ impl ProofState {
                 (Some(p), SignatureItem::Folder(_)) => {
                     new_signature.push_onto(p, data.inner().clone()).unwrap();
                 }
-                (Some(p), SignatureItem::Item(g)) if g.generator == base => {
-                    new_signature.push_onto(p, SignatureItem::Item(g.clone()));
-                }
                 (Some(p), SignatureItem::Item(g)) => {
                     let gen: GeneratorInfo = GeneratorInfo {
-                        generator: g.generator.suspended(),
+                        generator: g.generator.abelianized(base),
                         diagram: g.diagram.abelianize(base).into(),
                         //TODO remove when label logic is implemented
-                        oriented: true,
+                        oriented: g.generator != base,
                         ..g.clone()
                     };
                     new_signature.push_onto(p, SignatureItem::Item(gen));
