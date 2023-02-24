@@ -49,9 +49,9 @@ impl Component for DebugView {
         html! {
             <>
                 <div>
-                    <button onclick={ctx.props().dispatch.reform(move |_| Action::Proof(proof::Action::Abelianize))}>{"Abelianize"}</button>
-                    <button onclick={ctx.props().dispatch.reform(move |_| Action::Proof(proof::Action::Suspend(false)))}>{"Suspend"}</button>
-                    <button onclick={ctx.props().dispatch.reform(move |_| Action::Proof(proof::Action::Suspend(true)))}>{"Suspend Reduced"}</button>
+                    <button onclick={ctx.props().dispatch.reform(move |_| proof::Action::Suspend(proof::SuspensionKind::Abelian).into())}>{"Abelianize"}</button>
+                    <button onclick={ctx.props().dispatch.reform(move |_| proof::Action::Suspend(proof::SuspensionKind::Standard).into())}>{"Suspend"}</button>
+                    <button onclick={ctx.props().dispatch.reform(move |_| proof::Action::Suspend(proof::SuspensionKind::Reduced).into())}>{"Suspend Reduced"}</button>
                 </div>
                 <div>
                     <button onclick={Callback::from(move |_| web_sys::console::dir_2(&"Workspace diagram:".into(), &serde_wasm_bindgen::to_value(&diagram).unwrap()))}>{"Dump workspace diagram"}</button>
