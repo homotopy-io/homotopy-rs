@@ -1,4 +1,5 @@
 use folder::FolderView;
+use homotopy_model::proof;
 use yew::prelude::*;
 use yew_macro::function_component;
 
@@ -22,10 +23,14 @@ pub fn signature_view(props: &Props) -> Html {
     // TODO: Add search
     // TODO: On mobile, drag to the side to delete
     html! {
-        <FolderView
-            dispatch={props.dispatch.clone()}
-            signature={props.signature.clone()}
-            drawer_view_size={props.drawer_view_size}
-        />
+        <div>
+            <button onclick={props.dispatch.reform(move |_| proof::Action::Suspend(proof::SuspensionKind::Standard).into())}>{"Suspend"}</button>
+            <button onclick={props.dispatch.reform(move |_| proof::Action::Suspend(proof::SuspensionKind::Abelian).into())}>{"Abelianize"}</button>
+            <FolderView
+                dispatch={props.dispatch.clone()}
+                signature={props.signature.clone()}
+                drawer_view_size={props.drawer_view_size}
+            />
+        </div>
     }
 }

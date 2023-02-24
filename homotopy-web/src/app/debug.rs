@@ -1,5 +1,4 @@
 use closure::closure;
-use homotopy_model::proof;
 use web_sys::{File, HtmlInputElement};
 use yew::prelude::*;
 
@@ -48,11 +47,6 @@ impl Component for DebugView {
         let signature = ctx.props().proof.signature.clone();
         html! {
             <>
-                <div>
-                    <button onclick={ctx.props().dispatch.reform(move |_| proof::Action::Suspend(proof::SuspensionKind::Abelian).into())}>{"Abelianize"}</button>
-                    <button onclick={ctx.props().dispatch.reform(move |_| proof::Action::Suspend(proof::SuspensionKind::Standard).into())}>{"Suspend"}</button>
-                    <button onclick={ctx.props().dispatch.reform(move |_| proof::Action::Suspend(proof::SuspensionKind::Reduced).into())}>{"Suspend Reduced"}</button>
-                </div>
                 <div>
                     <button onclick={Callback::from(move |_| web_sys::console::dir_2(&"Workspace diagram:".into(), &serde_wasm_bindgen::to_value(&diagram).unwrap()))}>{"Dump workspace diagram"}</button>
                 </div>
