@@ -22,10 +22,19 @@ pub struct Props {
 pub fn signature_view(props: &Props) -> Html {
     // TODO: Add search
     // TODO: On mobile, drag to the side to delete
+    let suspension_controls = if props.signature.has_generators() {
+        html! {
+            <div>
+                <button onclick={props.dispatch.reform(move |_| proof::Action::Suspend(proof::SuspensionKind::Standard).into())}>{"Suspend"}</button>
+                <button onclick={props.dispatch.reform(move |_| proof::Action::Suspend(proof::SuspensionKind::Abelian).into())}>{"Abelianize"}</button>
+            </div>
+        }
+    } else {
+        Default::default()
+    };
     html! {
         <div>
-            <button onclick={props.dispatch.reform(move |_| proof::Action::Suspend(proof::SuspensionKind::Standard).into())}>{"Suspend"}</button>
-            <button onclick={props.dispatch.reform(move |_| proof::Action::Suspend(proof::SuspensionKind::Abelian).into())}>{"Abelianize"}</button>
+            {suspension_controls}
             <FolderView
                 dispatch={props.dispatch.clone()}
                 signature={props.signature.clone()}
