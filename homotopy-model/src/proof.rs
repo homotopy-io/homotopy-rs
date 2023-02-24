@@ -801,15 +801,10 @@ impl ProofState {
 
         let generators: Vec<Generator> = self
             .signature
-            .iter()
-            .filter_map(|g| {
-                if g.generator.dimension == 0 {
-                    Some(g.generator)
-                } else {
-                    None
-                }
-            })
+            .generator_iter()
+            .filter(|g| g.dimension == 0)
             .take(2)
+            .copied()
             .collect();
 
         if generators.len() > 1 {
