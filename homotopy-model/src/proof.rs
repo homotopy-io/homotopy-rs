@@ -731,21 +731,19 @@ impl ProofState {
         let mut kind = kind;
         let mut new_signature: Signature = Default::default();
         let id = self.signature.next_generator_id();
-        let genz_count = self
+        let bases: Vec<_> = self
             .signature
             .generator_iter()
             .filter(|g| g.dimension == 0)
-            .count();
-        let (source, target) = match (genz_count, kind) {
+            .take(2)
+            .collect();
+        let (source, target) = match (bases.len(), kind) {
             // If signature is empty quit
             (0, _) => {
                 return false;
             }
             // If there is not a unique 0-cell we perform a reduced suspension
-            (1, SuspensionKind::Abelian) => {
-                let base = *self.signature.generator_iter().next().unwrap();
-                (base, base)
-            }
+            (1, SuspensionKind::Abelian) => (*bases[0], *bases[0]),
             (_, SuspensionKind::Standard) => {
                 // New generators need to be fresh
                 let source = Generator::new(id, 0);
