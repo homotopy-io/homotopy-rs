@@ -14,8 +14,8 @@ use thiserror::Error;
 use crate::{
     attach::attach,
     common::{
-        Boundary, BoundaryPath, DimensionError, Direction, Generator, Height, Mode, RegularHeight,
-        SliceIndex,
+        Boundary, BoundaryPath, DimensionError, Direction, Generator, Height, Label, Mode,
+        RegularHeight, SliceIndex,
     },
     rewrite::{Cospan, Rewrite, Rewrite0, RewriteN},
     signature::{GeneratorInfo, Signature},
@@ -266,13 +266,26 @@ impl Diagram0 {
             assert_ne!(s, self.generator);
             assert_ne!(t, self.generator);
 
-            let source: Diagram0 = s.into();
-            let target: Diagram0 = t.into();
-            let diagram = self.suspended();
+            let forward: Rewrite = Rewrite0::new(
+                s,
+                self.suspended(),
+                Some(Label::new(
+                    BoundaryPath(Boundary::Source, self.generator.dimension),
+                    std::iter::once(vec![]).collect(),
+                )),
+            )
+            .into();
+            let backward: Rewrite = Rewrite0::new(
+                t,
+                self.suspended(),
+                Some(Label::new(
+                    BoundaryPath(Boundary::Target, self.generator.dimension),
+                    std::iter::once(vec![]).collect(),
+                )),
+            )
+            .into();
 
-            //TODO @calintat work out what the labels should be
-            let forward: Rewrite = Rewrite0::new(source, diagram, None).into();
-            let backward: Rewrite = Rewrite0::new(target, diagram, None).into();
+            let source: Diagram0 = s.into();
             let cospan = Cospan { forward, backward };
             DiagramN::new(source.into(), vec![cospan])
         }

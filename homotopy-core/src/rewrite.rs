@@ -312,21 +312,44 @@ impl Rewrite0 {
     }
 
     pub fn suspend(&self, s: Generator, t: Generator) -> RewriteN {
+        use Height::{Regular, Singular};
+
         match self {
             Self(None) => RewriteN::identity(1),
-            Self(Some((source, target, _label))) => {
+            Self(Some((source, target, label))) => {
+                let label = |height| {
+                    label.as_ref().map(|label| {
+                        Label::new(
+                            label.boundary_path(),
+                            label
+                                .coords()
+                                .iter()
+                                .map(|coord| {
+                                    let mut coord = coord.to_owned();
+                                    coord.push(height);
+                                    coord
+                                })
+                                .collect(),
+                        )
+                    })
+                };
                 let (regular_slices, singular_slices) = if s == t && source.generator == s {
                     (
-                        vec![Rewrite0::new(s, target.suspended(), None).into()],
+                        vec![Rewrite0::new(s, target.suspended(), label(Regular(0))).into()],
                         vec![],
                     )
                 } else {
                     (
                         vec![
-                            Rewrite0::new(s, target.suspended(), None).into(),
-                            Rewrite0::new(t, target.suspended(), None).into(),
+                            Rewrite0::new(s, target.suspended(), label(Regular(0))).into(),
+                            Rewrite0::new(t, target.suspended(), label(Regular(1))).into(),
                         ],
-                        vec![Rewrite0::new(source.suspended(), target.suspended(), None).into()],
+                        vec![Rewrite0::new(
+                            source.suspended(),
+                            target.suspended(),
+                            label(Singular(0)),
+                        )
+                        .into()],
                     )
                 };
                 RewriteN::from_slices(

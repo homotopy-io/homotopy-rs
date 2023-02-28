@@ -789,8 +789,7 @@ impl ProofState {
                     let gen: GeneratorInfo = GeneratorInfo {
                         generator: g.generator.suspended(),
                         diagram: g.diagram.suspend(source, target).into(),
-                        //TODO remove when label logic is implemented
-                        oriented: true,
+                        oriented: false,
                         ..g.clone()
                     };
                     new_signature.push_onto(mapped_node, SignatureItem::Item(gen));
