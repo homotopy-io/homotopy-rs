@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1676815723448,
+  "lastUpdate": 1677663229275,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -46528,6 +46528,66 @@ window.BENCHMARK_DATA = {
           {
             "name": "contract high dimensions/4",
             "value": 331.95,
+            "range": "+/- 1.620",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4ad6c9a380b03e86431b9cd057b7c14fa7526ed8",
+          "message": "Attempt at fixing CI. (#1029)",
+          "timestamp": "2023-03-01T09:12:15Z",
+          "tree_id": "61dae1fb1ed80954288eb40b3ad21abbfd3871c5",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/4ad6c9a380b03e86431b9cd057b7c14fa7526ed8"
+        },
+        "date": 1677663216678,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 1.712,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 14.655,
+            "range": "+/- 0.037",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 235.29,
+            "range": "+/- 0.520",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 5.0213,
+            "range": "+/- 0.003",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 13.498,
+            "range": "+/- 0.129",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 333.87,
             "range": "+/- 1.620",
             "unit": "ms"
           }
