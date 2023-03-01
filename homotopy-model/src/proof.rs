@@ -1,7 +1,6 @@
 use std::convert::{Into, TryFrom};
 
 use homotopy::Homotopy;
-use homotopy_common::hash::FastHashMap;
 use homotopy_core::{
     common::{Boundary, BoundaryPath, Direction, Generator, Height, Mode, SliceIndex},
     contraction::ContractionError,
@@ -135,7 +134,9 @@ pub enum Action {
 
     Theorem,
 
-    Suspend(SuspensionKind),
+    SuspendSignature,
+
+    Suspend(Generator, Generator),
 
     ImportProof(SerializedData),
 
@@ -228,7 +229,7 @@ impl Action {
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.diagram.dimension() > 0),
-            Self::Suspend(_) => proof.signature.has_generators(),
+            Self::Suspend(_, _) | Self::SuspendSignature => proof.signature.has_generators(),
             Self::ImportProof(_) => true,
             Self::EditSignature(_) | Self::EditMetadata(_) => true, /* technically the edits could be trivial but do not worry about that for now */
             Self::FlipBoundary | Self::RecoverBoundary => proof.boundary.is_some(),
@@ -282,7 +283,8 @@ impl ProofState {
             Action::Invert => self.invert()?,
             Action::Restrict => self.restrict(),
             Action::Theorem => self.theorem()?,
-            Action::Suspend(s) => self.suspend(*s),
+            Action::SuspendSignature => self.suspend_signature(),
+            Action::Suspend(s, t) => self.suspend(*s, *t),
             Action::EditSignature(edit) => self.edit_signature(edit),
             Action::FlipBoundary => self.flip_boundary(),
             Action::RecoverBoundary => self.recover_boundary(),
@@ -724,75 +726,45 @@ impl ProofState {
         Ok(true)
     }
 
-    /// Handler for [Action::Suspend].
-    fn suspend(&mut self, kind: SuspensionKind) -> bool {
-        use homotopy_common::tree::Node;
-
-        let mut kind = kind;
-        let mut new_signature: Signature = Default::default();
+    /// Handler for [Action::SuspendSignature].
+    fn suspend_signature(&mut self) -> bool {
+        // New generators need to be fresh
         let id = self.signature.next_generator_id();
-        let bases: Vec<_> = self
-            .signature
-            .generator_iter()
-            .filter(|g| g.dimension == 0)
-            .take(2)
-            .collect();
-        let (source, target) = match (bases.len(), kind) {
-            // If signature is empty quit
-            (0, _) => {
-                return false;
-            }
-            // If there is not a unique 0-cell we perform a reduced suspension
-            (1, SuspensionKind::Abelian) => (*bases[0], *bases[0]),
-            (_, SuspensionKind::Standard) => {
-                // New generators need to be fresh
-                let source = Generator::new(id, 0);
-                let target = Generator::new(id + 1, 0);
-                new_signature.insert(source, Diagram0::from(source), "Base Source", false);
-                new_signature.insert(target, Diagram0::from(target), "Base Target", false);
-                (source, target)
-            }
-            (_, SuspensionKind::Abelian | SuspensionKind::Reduced) => {
-                kind = SuspensionKind::Reduced;
-                let source = Generator::new(id, 0);
-                new_signature.insert(source, Diagram0::from(source), "Base", false);
-                (source, source)
-            }
-        };
+        let source = Generator::new(id, 0);
+        let target = Generator::new(id + 1, 0);
+        self.signature
+            .insert(source, Diagram0::from(source), "Base Source", false);
+        self.signature
+            .insert(target, Diagram0::from(target), "Base Target", false);
+        self.suspend(source, target)
+    }
 
-        // We are shifting nodes in the tree
-        // so we have to remap the parents correctly
-        let mut node_mappings: FastHashMap<Node, Node> = Default::default();
-        node_mappings.insert(
-            self.signature.as_tree().root(),
-            new_signature.as_tree().root(),
-        );
+    /// Handler for [Action::Suspend].
+    fn suspend(&mut self, source: Generator, target: Generator) -> bool {
+        let mut new_signature: Signature = Default::default();
 
         // Skip the root node
-        for (node, data) in self.signature.as_tree().iter().skip(1) {
-            let mapped_node = if let Some(parent) = data.parent() {
-                node_mappings[&parent]
-            } else {
-                new_signature.as_tree().root()
-            };
-            match (data.inner(), kind) {
-                (SignatureItem::Folder(_), _) => {
-                    let new_node = new_signature
-                        .push_onto(mapped_node, data.inner().clone())
-                        .unwrap();
-                    node_mappings.insert(node, new_node);
+        //TODO Potentially need to know whether suspension is abelian to work
+        let root = new_signature.as_tree().root();
+        for (_, data) in self.signature.as_tree().iter().skip(1) {
+            let parent = data.parent().unwrap_or(root);
+            match data.inner() {
+                SignatureItem::Folder(_) => {
+                    new_signature.push_onto(parent, data.inner().clone());
                 }
-                (SignatureItem::Item(g), SuspensionKind::Abelian) if g.generator == source => {
-                    new_signature.push_onto(mapped_node, data.inner().clone());
+                SignatureItem::Item(info)
+                    if info.generator == source || info.generator == target =>
+                {
+                    new_signature.push_onto(parent, data.inner().clone());
                 }
-                (SignatureItem::Item(g), _) => {
+                SignatureItem::Item(info) => {
                     let gen: GeneratorInfo = GeneratorInfo {
-                        generator: g.generator.suspended(),
-                        diagram: g.diagram.suspend(source, target).into(),
+                        generator: info.generator.suspended(),
+                        diagram: info.diagram.suspend(source, target).into(),
                         oriented: false,
-                        ..g.clone()
+                        ..info.clone()
                     };
-                    new_signature.push_onto(mapped_node, SignatureItem::Item(gen));
+                    new_signature.push_onto(parent, SignatureItem::Item(gen));
                 }
             }
         }
@@ -927,11 +899,4 @@ impl From<SerializedData> for Vec<u8> {
     fn from(data: SerializedData) -> Self {
         data.0
     }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum SuspensionKind {
-    Standard, // x : * goes to x: s -> t
-    Reduced,  // x : * goes to x: b -> b
-    Abelian,  // f: x -> x goes to f: 1_x -> 1_x
 }

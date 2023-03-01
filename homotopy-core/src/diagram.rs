@@ -271,7 +271,7 @@ impl Diagram0 {
                 self.suspended(),
                 Some(Label::new(
                     BoundaryPath(Boundary::Source, self.generator.dimension),
-                    std::iter::once(vec![]).collect(),
+                    Default::default(),
                 )),
             )
             .into();
@@ -280,7 +280,7 @@ impl Diagram0 {
                 self.suspended(),
                 Some(Label::new(
                     BoundaryPath(Boundary::Target, self.generator.dimension),
-                    std::iter::once(vec![]).collect(),
+                    Default::default(),
                 )),
             )
             .into();

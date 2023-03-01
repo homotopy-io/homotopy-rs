@@ -25,8 +25,7 @@ pub fn signature_view(props: &Props) -> Html {
     let suspension_controls = if props.signature.has_generators() {
         html! {
             <div>
-                <button onclick={props.dispatch.reform(move |_| proof::Action::Suspend(proof::SuspensionKind::Standard).into())}>{"Suspend"}</button>
-                <button onclick={props.dispatch.reform(move |_| proof::Action::Suspend(proof::SuspensionKind::Abelian).into())}>{"Abelianize"}</button>
+                <button onclick={props.dispatch.reform(move |_| proof::Action::SuspendSignature)}>{"Suspend"}</button>
             </div>
         }
     } else {

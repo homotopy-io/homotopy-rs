@@ -325,9 +325,7 @@ impl Rewrite0 {
                                 .coords()
                                 .iter()
                                 .map(|coord| {
-                                    let mut coord = coord.to_owned();
-                                    coord.push(height);
-                                    coord
+                                    coord.iter().chain(&[height]).copied().collect::<Vec<_>>()
                                 })
                                 .collect(),
                         )

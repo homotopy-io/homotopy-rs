@@ -808,8 +808,15 @@ impl ItemView {
             info.color.hex()
         };
 
-        match info.generator.dimension {
-            0 => Html::default(),
+        let generator = info.generator;
+        let suspension_button = html! {
+            <div>
+                <button onclick={ctx.props().dispatch.reform(move |_| Action::Suspend(generator, generator))}>{"Suspend"}</button>
+            </div>
+        };
+
+        match generator.dimension {
+            0 => suspension_button,
             _ => html! {
                 <div class="signature__generator-preferences-wrapper">
                     <GeneratorPreferenceCheckbox
