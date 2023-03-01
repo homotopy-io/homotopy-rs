@@ -188,6 +188,30 @@ impl Diagram {
             .filter(|g| g.dimension >= self.dimension())
             .all(|g| signature.generator_info(*g).unwrap().is_invertible())
     }
+
+    pub fn contains_point(&self, point: &[Height], embedding: &[RegularHeight]) -> bool {
+        use Diagram::{Diagram0, DiagramN};
+
+        match (point.split_first(), self) {
+            (None, _) => true,
+            (Some(_), Diagram0(_)) => false,
+            (Some((height, point)), DiagramN(diagram)) => {
+                let (shift, embedding) = embedding.split_first().unwrap_or((&0, &[]));
+                let shift = Height::Regular(*shift);
+
+                if *height < shift {
+                    return false;
+                }
+
+                let height = Height::from(usize::from(*height) - usize::from(shift));
+
+                match diagram.slice(height) {
+                    Some(slice) => slice.contains_point(point, embedding),
+                    None => false,
+                }
+            }
+        }
+    }
 }
 
 pub(crate) fn globularity(s: &Diagram, t: &Diagram) -> bool {

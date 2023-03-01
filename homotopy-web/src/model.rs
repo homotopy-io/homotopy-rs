@@ -1,9 +1,6 @@
 pub use history::Proof;
 use history::{History, UndoState};
-use homotopy_core::{
-    common::{BoundaryPath, RegularHeight},
-    Boundary, Diagram, DiagramN, Height, SliceIndex,
-};
+use homotopy_core::{common::BoundaryPath, Boundary, Diagram, DiagramN, SliceIndex};
 use homotopy_graphics::{manim, stl, svg, tikz};
 use homotopy_model::proof::AttachOption;
 pub use homotopy_model::{history, migration, proof, serialize};
@@ -286,7 +283,7 @@ impl State {
                     matches.extend(
                         haystack
                             .embeddings(&needle)
-                            .filter(|embedding| contains_point(&needle, &point, embedding))
+                            .filter(|embedding| needle.contains_point(&point, embedding))
                             .map(|embedding| AttachOption {
                                 generator: info.generator,
                                 diagram: $diagram,
@@ -421,28 +418,4 @@ pub fn generate_download(name: &str, ext: &str, data: &[u8]) -> Result<(), wasm_
     a.click();
     a.remove();
     web_sys::Url::revoke_object_url(&url)
-}
-
-fn contains_point(diagram: &Diagram, point: &[Height], embedding: &[RegularHeight]) -> bool {
-    use Diagram::{Diagram0, DiagramN};
-
-    match (point.split_first(), diagram) {
-        (None, _) => true,
-        (Some(_), Diagram0(_)) => false,
-        (Some((height, point)), DiagramN(diagram)) => {
-            let (shift, embedding) = embedding.split_first().unwrap_or((&0, &[]));
-            let shift = Height::Regular(*shift);
-
-            if usize::from(*height) < usize::from(shift) {
-                return false;
-            }
-
-            let height = Height::from(usize::from(*height) - usize::from(shift));
-
-            match diagram.slice(height) {
-                Some(slice) => contains_point(&slice, point, embedding),
-                None => false,
-            }
-        }
-    }
 }
