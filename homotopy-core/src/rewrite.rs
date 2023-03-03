@@ -214,6 +214,14 @@ impl Rewrite {
     }
 
     #[must_use]
+    pub fn suspend(&self, s: Generator, t: Generator) -> RewriteN {
+        match self {
+            Self::Rewrite0(r) => r.suspend(s, t),
+            Self::RewriteN(r) => r.suspend(s, t),
+        }
+    }
+
+    #[must_use]
     pub fn orientation_transform(&self, k: Orientation) -> Self {
         self.orientation_transform_above(k, self.dimension())
     }
@@ -300,6 +308,56 @@ impl Rewrite0 {
             Self(None)
         } else {
             Self(Some((source, target, label)))
+        }
+    }
+
+    pub fn suspend(&self, s: Generator, t: Generator) -> RewriteN {
+        use Height::{Regular, Singular};
+
+        match self {
+            Self(None) => RewriteN::identity(1),
+            Self(Some((source, target, label))) => {
+                let label = |height| {
+                    label.as_ref().map(|label| {
+                        Label::new(
+                            label.boundary_path(),
+                            label
+                                .coords()
+                                .iter()
+                                .map(|coord| {
+                                    coord.iter().chain(&[height]).copied().collect::<Vec<_>>()
+                                })
+                                .collect(),
+                        )
+                    })
+                };
+                let (regular_slices, singular_slices) = if s == t && source.generator == s {
+                    (
+                        vec![Rewrite0::new(s, target.suspended(), label(Regular(0))).into()],
+                        vec![],
+                    )
+                } else {
+                    (
+                        vec![
+                            Rewrite0::new(s, target.suspended(), label(Regular(0))).into(),
+                            Rewrite0::new(t, target.suspended(), label(Regular(1))).into(),
+                        ],
+                        vec![Rewrite0::new(
+                            source.suspended(),
+                            target.suspended(),
+                            label(Singular(0)),
+                        )
+                        .into()],
+                    )
+                };
+                RewriteN::from_slices(
+                    1,
+                    source.suspend(s, t).cospans(),
+                    target.suspend(s, t).cospans(),
+                    vec![regular_slices],
+                    vec![singular_slices],
+                )
+            }
         }
     }
 
@@ -478,6 +536,12 @@ impl RewriteN {
         }
 
         Self::new_unsafe(dimension, cones)
+    }
+
+    #[must_use]
+    pub fn suspend(&self, s: Generator, t: Generator) -> Self {
+        let cones = self.cones().iter().map(|cone| cone.suspend(s, t)).collect();
+        Self::new(self.dimension() + 1, cones)
     }
 
     pub(crate) fn collect_garbage() {
@@ -1057,6 +1121,27 @@ impl Cone {
             ),
             None => self.clone(),
         }
+    }
+    #[must_use]
+    pub fn map<F>(&self, f: F) -> Self
+    where
+        F: Fn(&Rewrite) -> Rewrite,
+    {
+        let source = self.source().iter().map(|c| c.map(&f)).collect();
+        let regular_slices = self.regular_slices().iter().map(&f).collect();
+        let singular_slices = self.singular_slices().iter().map(&f).collect();
+        Self::new(
+            self.index,
+            source,
+            self.target().map(&f),
+            regular_slices,
+            singular_slices,
+        )
+    }
+
+    #[must_use]
+    fn suspend(&self, s: Generator, t: Generator) -> Self {
+        self.map(|r| r.suspend(s, t).into())
     }
 }
 

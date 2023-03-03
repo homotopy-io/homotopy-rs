@@ -28,6 +28,13 @@ fn construct_braiding_half_bubbles() {
 }
 
 #[test]
+fn construct_symmetric_monoidal() {
+    let action_dump = include_str!("examples/symmetric_monoidal_abelianize.json");
+
+    let _proof = actions_test_helper(action_dump);
+}
+
+#[test]
 fn construct_adjoint_equivalence() {
     let action_dump = include_str!("examples/equivalence_to_adjoint_equivalence.json");
 

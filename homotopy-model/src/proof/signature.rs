@@ -70,26 +70,36 @@ impl Signature {
         })
     }
 
-    fn next_generator_id(&self) -> usize {
-        self.iter()
-            .map(|info| info.generator.id)
+    pub fn folder_iter(&self) -> impl Iterator<Item = &FolderInfo> {
+        self.0.iter().filter_map(|(_, data)| match data.inner() {
+            SignatureItem::Folder(info) => Some(info),
+            SignatureItem::Item(_) => None,
+        })
+    }
+
+    pub fn generator_iter(&self) -> impl Iterator<Item = &Generator> {
+        self.iter().map(|info| &info.generator)
+    }
+
+    pub fn has_generators(&self) -> bool {
+        self.iter().next().is_some()
+    }
+
+    pub(crate) fn next_generator_id(&self) -> usize {
+        self.generator_iter()
+            .map(|g| g.id)
             .max()
             .map_or(0, |id| id + 1)
     }
 
     fn next_folder_id(&self) -> usize {
-        self.0
-            .iter()
-            .filter_map(|(_, data)| match data.inner() {
-                SignatureItem::Item(_) => None,
-                SignatureItem::Folder(info) => Some(info),
-            })
+        self.folder_iter()
             .map(|info| info.id)
             .max()
             .map_or(0, |id| id + 1)
     }
 
-    fn insert(
+    pub(crate) fn insert(
         &mut self,
         generator: Generator,
         diagram: impl Into<Diagram>,
@@ -113,6 +123,10 @@ impl Signature {
 
     pub fn insert_item(&mut self, item: SignatureItem) {
         self.0.push_onto(self.0.root(), item);
+    }
+
+    pub fn push_onto(&mut self, node: Node, item: SignatureItem) -> Option<Node> {
+        self.0.push_onto(node, item)
     }
 
     fn find_node(&self, generator: Generator) -> Option<Node> {
@@ -282,7 +296,7 @@ impl homotopy_core::signature::Signature for Signature {
     type Info = GeneratorInfo;
 
     fn generators(&self) -> Box<dyn Iterator<Item = Generator> + '_> {
-        Box::new(self.iter().map(|info| info.generator))
+        Box::new(self.generator_iter().copied())
     }
 
     fn generator_info(&self, g: Generator) -> Option<&GeneratorInfo> {

@@ -26,6 +26,14 @@ impl Generator {
     pub fn new(id: usize, dimension: usize) -> Self {
         Self { id, dimension }
     }
+
+    #[must_use]
+    pub fn suspended(self) -> Self {
+        Self {
+            dimension: self.dimension + 1,
+            ..self
+        }
+    }
 }
 
 impl fmt::Debug for Generator {

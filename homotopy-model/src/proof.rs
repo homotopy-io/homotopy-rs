@@ -7,7 +7,7 @@ use homotopy_core::{
     diagram::{AttachmentError, NewDiagramError},
     expansion::ExpansionError,
     signature::Signature as S,
-    Diagram, DiagramN,
+    Diagram, Diagram0, DiagramN,
 };
 use im::Vector;
 use serde::{Deserialize, Serialize};
@@ -15,7 +15,7 @@ pub use signature::*;
 use thiserror::Error;
 
 use self::homotopy::{Contract, Expand};
-use crate::{migration, serialize};
+use crate::{migration, proof::generators::GeneratorInfo, serialize};
 
 mod signature;
 
@@ -134,6 +134,10 @@ pub enum Action {
 
     Theorem,
 
+    SuspendSignature,
+
+    Suspend(Generator, Generator),
+
     ImportProof(SerializedData),
 
     EditSignature(SignatureEdit),
@@ -225,6 +229,7 @@ impl Action {
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.diagram.dimension() > 0),
+            Self::Suspend(_, _) | Self::SuspendSignature => proof.signature.has_generators(),
             Self::ImportProof(_) => true,
             Self::EditSignature(_) | Self::EditMetadata(_) => true, /* technically the edits could be trivial but do not worry about that for now */
             Self::FlipBoundary | Self::RecoverBoundary => proof.boundary.is_some(),
@@ -278,6 +283,8 @@ impl ProofState {
             Action::Invert => self.invert()?,
             Action::Restrict => self.restrict(),
             Action::Theorem => self.theorem()?,
+            Action::SuspendSignature => self.suspend_signature(),
+            Action::Suspend(s, t) => self.suspend(*s, *t),
             Action::EditSignature(edit) => self.edit_signature(edit),
             Action::FlipBoundary => self.flip_boundary(),
             Action::RecoverBoundary => self.recover_boundary(),
@@ -717,6 +724,59 @@ impl ProofState {
             .create_generator(singleton.into(), diagram.into(), "Proof", true)?;
 
         Ok(true)
+    }
+
+    /// Handler for [Action::SuspendSignature].
+    fn suspend_signature(&mut self) -> bool {
+        // New generators need to be fresh
+        let id = self.signature.next_generator_id();
+        let source = Generator::new(id, 0);
+        let target = Generator::new(id + 1, 0);
+        self.signature
+            .insert(source, Diagram0::from(source), "Base Source", false);
+        self.signature
+            .insert(target, Diagram0::from(target), "Base Target", false);
+        self.suspend(source, target)
+    }
+
+    /// Handler for [Action::Suspend].
+    fn suspend(&mut self, source: Generator, target: Generator) -> bool {
+        let mut new_signature: Signature = Default::default();
+
+        // Skip the root node
+        //TODO Potentially need to know whether suspension is abelian to work
+        let root = new_signature.as_tree().root();
+        for (_, data) in self.signature.as_tree().iter().skip(1) {
+            let parent = data.parent().unwrap_or(root);
+            match data.inner() {
+                SignatureItem::Folder(_) => {
+                    new_signature.push_onto(parent, data.inner().clone());
+                }
+                SignatureItem::Item(info)
+                    if info.generator == source || info.generator == target =>
+                {
+                    new_signature.push_onto(parent, data.inner().clone());
+                }
+                SignatureItem::Item(info) => {
+                    let gen: GeneratorInfo = GeneratorInfo {
+                        generator: info.generator.suspended(),
+                        diagram: info.diagram.suspend(source, target).into(),
+                        oriented: false,
+                        ..info.clone()
+                    };
+                    new_signature.push_onto(parent, SignatureItem::Item(gen));
+                }
+            }
+        }
+        self.signature = new_signature;
+        if let Some(ws) = &self.workspace {
+            self.workspace = Some(Workspace::new(ws.diagram.suspend(source, target).into()));
+        }
+        if let Some(bd) = &mut self.boundary {
+            bd.diagram = bd.diagram.suspend(source, target).into();
+        }
+
+        true
     }
 
     /// Handler for [Action::ImportProof].

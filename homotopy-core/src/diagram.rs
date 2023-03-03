@@ -14,10 +14,10 @@ use thiserror::Error;
 use crate::{
     attach::attach,
     common::{
-        Boundary, BoundaryPath, DimensionError, Direction, Generator, Height, Mode, RegularHeight,
-        SliceIndex,
+        Boundary, BoundaryPath, DimensionError, Direction, Generator, Height, Label, Mode,
+        RegularHeight, SliceIndex,
     },
-    rewrite::{Cospan, Rewrite, RewriteN},
+    rewrite::{Cospan, Rewrite, Rewrite0, RewriteN},
     signature::{GeneratorInfo, Signature},
     Orientation,
 };
@@ -212,6 +212,14 @@ impl Diagram {
             }
         }
     }
+
+    #[must_use]
+    pub fn suspend(&self, s: Generator, t: Generator) -> DiagramN {
+        match self {
+            Self::Diagram0(d) => d.suspend(s, t),
+            Self::DiagramN(d) => d.suspend(s, t),
+        }
+    }
 }
 
 pub(crate) fn globularity(s: &Diagram, t: &Diagram) -> bool {
@@ -239,6 +247,48 @@ impl Diagram0 {
 
     pub fn identity(self) -> DiagramN {
         Diagram::from(self).identity()
+    }
+
+    pub(crate) fn suspended(self) -> Self {
+        Self {
+            generator: self.generator.suspended(),
+            ..self
+        }
+    }
+
+    pub fn suspend(&self, s: Generator, t: Generator) -> DiagramN {
+        assert_eq!(s.dimension, 0);
+        assert_eq!(t.dimension, 0);
+
+        if s == t && self.generator == s {
+            self.identity()
+        } else {
+            assert_ne!(s, self.generator);
+            assert_ne!(t, self.generator);
+
+            let forward: Rewrite = Rewrite0::new(
+                s,
+                self.suspended(),
+                Some(Label::new(
+                    BoundaryPath(Boundary::Source, self.generator.dimension),
+                    Default::default(),
+                )),
+            )
+            .into();
+            let backward: Rewrite = Rewrite0::new(
+                t,
+                self.suspended(),
+                Some(Label::new(
+                    BoundaryPath(Boundary::Target, self.generator.dimension),
+                    Default::default(),
+                )),
+            )
+            .into();
+
+            let source: Diagram0 = s.into();
+            let cospan = Cospan { forward, backward };
+            DiagramN::new(source.into(), vec![cospan])
+        }
     }
 
     #[must_use]
@@ -340,6 +390,19 @@ impl DiagramN {
                 max_generator: OnceCell::new(),
             })
         }))
+    }
+
+    #[must_use]
+    pub fn suspend(&self, s: Generator, t: Generator) -> DiagramN {
+        // Suspend source
+        // Then suspend each cospan
+        let source = self.source().suspend(s, t);
+        let cospans: Vec<_> = self
+            .cospans()
+            .iter()
+            .map(|c| c.map(|r| r.suspend(s, t).into()))
+            .collect();
+        Self::new(source.into(), cospans)
     }
 
     pub(crate) fn collect_garbage() {

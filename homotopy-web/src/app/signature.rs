@@ -1,4 +1,5 @@
 use folder::FolderView;
+use homotopy_model::proof;
 use yew::prelude::*;
 use yew_macro::function_component;
 
@@ -21,11 +22,23 @@ pub struct Props {
 pub fn signature_view(props: &Props) -> Html {
     // TODO: Add search
     // TODO: On mobile, drag to the side to delete
+    let suspension_controls = if props.signature.has_generators() {
+        html! {
+            <div>
+                <button onclick={props.dispatch.reform(move |_| proof::Action::SuspendSignature)}>{"Suspend"}</button>
+            </div>
+        }
+    } else {
+        Default::default()
+    };
     html! {
-        <FolderView
-            dispatch={props.dispatch.clone()}
-            signature={props.signature.clone()}
-            drawer_view_size={props.drawer_view_size}
-        />
+        <div>
+            {suspension_controls}
+            <FolderView
+                dispatch={props.dispatch.clone()}
+                signature={props.signature.clone()}
+                drawer_view_size={props.drawer_view_size}
+            />
+        </div>
     }
 }
