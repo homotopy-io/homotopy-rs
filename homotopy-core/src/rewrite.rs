@@ -221,6 +221,14 @@ impl Rewrite {
     }
 
     #[must_use]
+    pub fn replace(&self, s: Generator, t: Generator, a: Generator) -> Self {
+        match self {
+            Self::Rewrite0(r) => Self::Rewrite0(r.replace(s, t, a)),
+            Self::RewriteN(r) => Self::RewriteN(r.replace(s, t, a)),
+        }
+    }
+
+    #[must_use]
     pub fn orientation_transform(&self, k: Orientation) -> Self {
         self.orientation_transform_above(k, self.dimension())
     }
@@ -357,6 +365,19 @@ impl Rewrite0 {
                     vec![singular_slices],
                 )
             }
+        }
+    }
+
+    #[must_use]
+    pub fn replace(&self, s: Generator, t: Generator, a: Generator) -> Self {
+        if let Some((source, target, label)) = &self.0 {
+            Rewrite0::new(
+                source.replace(s, t, a),
+                target.replace(s, t, a),
+                label.clone(),
+            )
+        } else {
+            Rewrite0::identity()
         }
     }
 
@@ -541,6 +562,16 @@ impl RewriteN {
     pub fn suspend(&self, s: Generator, t: Generator) -> Self {
         let cones = self.cones().iter().map(|cone| cone.suspend(s, t)).collect();
         Self::new(self.dimension() + 1, cones)
+    }
+
+    #[must_use]
+    pub fn replace(&self, s: Generator, t: Generator, a: Generator) -> Self {
+        let cones = self
+            .cones()
+            .iter()
+            .map(|cone| cone.replace(s, t, a))
+            .collect();
+        Self::new(self.dimension(), cones)
     }
 
     pub(crate) fn collect_garbage() {
@@ -1141,6 +1172,11 @@ impl Cone {
     #[must_use]
     fn suspend(&self, s: Generator, t: Generator) -> Self {
         self.map(|r| r.suspend(s, t).into())
+    }
+
+    #[must_use]
+    fn replace(&self, s: Generator, t: Generator, a: Generator) -> Self {
+        self.map(|r| r.replace(s, t, a))
     }
 }
 

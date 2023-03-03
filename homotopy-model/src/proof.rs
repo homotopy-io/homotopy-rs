@@ -104,6 +104,10 @@ pub enum Action {
     /// load the generator's diagram into the workspace; else do nothing.
     SelectGenerator(Generator),
 
+    /// Strictify generator by replacing it with an identity
+    /// Meaningful only if source and target are atomic diagrams
+    Strictify(Generator),
+
     /// Ascend by a number of slices in the currently selected diagram in the workspace. If there
     /// is no diagram in the workspace or it is already displayed in its original dimension,
     /// nothing happens.
@@ -165,6 +169,7 @@ impl Action {
             Self::ClearWorkspace => proof.workspace.is_some(),
             Self::ClearBoundary => proof.boundary.is_some(),
             Self::SelectGenerator(_) => true,
+            Self::Strictify(g) => g.dimension > 0,
             Self::AscendSlice(count) => {
                 *count > 0
                     && proof
@@ -270,6 +275,7 @@ impl ProofState {
             Action::ClearWorkspace => self.clear_workspace(),
             Action::ClearBoundary => self.clear_boundary(),
             Action::SelectGenerator(generator) => self.select_generator(*generator)?,
+            Action::Strictify(generator) => self.strictify(*generator)?,
             Action::AscendSlice(count) => self.ascend_slice(*count),
             Action::DescendSlice(slice) => self.descend_slice(*slice)?,
             Action::SwitchSlice(direction) => self.switch_slice(*direction),
@@ -387,6 +393,55 @@ impl ProofState {
             .ok_or(ProofError::UnknownGeneratorSelected)?;
 
         self.workspace = Some(Workspace::new(info.diagram.clone()));
+
+        Ok(true)
+    }
+
+    /// Handler for [Action::Strictify].
+    ///
+    /// Returns an error if generator has dimension zero,
+    /// the generator is not in the signature or the boundaries are not atomic
+    fn strictify(&mut self, generator: Generator) -> Result<bool, ProofError> {
+        let info = self
+            .signature
+            .generator_info(generator)
+            .ok_or(ProofError::UnknownGeneratorSelected)?;
+
+        let Some((source, target)) = info.diagram.atomic_boundaries() else {
+            return Ok(false);
+        };
+        if source.dimension != target.dimension || source == target {
+            return Ok(false);
+        }
+
+        let root = self.signature.as_tree().root();
+        let mut new_signature: Signature = Default::default();
+        for (_node, data) in self.signature.as_tree().iter().skip(1) {
+            let parent = data.parent().unwrap_or(root);
+            match data.inner() {
+                SignatureItem::Folder(_) => {
+                    new_signature.push_onto(parent, data.inner().clone());
+                }
+                SignatureItem::Item(info)
+                    if info.generator == target || info.generator == generator => {}
+                SignatureItem::Item(info) => {
+                    let gen: GeneratorInfo = GeneratorInfo {
+                        diagram: info.diagram.replace(target, source, generator),
+                        ..info.clone()
+                    };
+                    new_signature.push_onto(parent, SignatureItem::Item(gen));
+                }
+            }
+        }
+        self.signature = new_signature;
+        if let Some(ws) = &self.workspace {
+            self.workspace = Some(Workspace::new(
+                ws.diagram.replace(target, source, generator),
+            ));
+        }
+        if let Some(bd) = &mut self.boundary {
+            bd.diagram = bd.diagram.replace(target, source, generator);
+        }
 
         Ok(true)
     }
