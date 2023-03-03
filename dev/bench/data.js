@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1677684302348,
+  "lastUpdate": 1677864648252,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -46649,6 +46649,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 342.98,
             "range": "+/- 1.190",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3dd3b915e9bca93d78ce94e811df94d7b9b96a1c",
+          "message": "Signature suspension (#198) (#1022)\n\n* First stab at implementing signature suspension.\r\n\r\n* Fixed low-dimensional bugs.\r\n\r\n* Suspend also workspace and boundary diagrams.\r\n\r\n* Fixed generator dimension problem.\r\n\r\n* Mark suspended generators as oriented.\r\n\r\n* Minor refactor.\r\n\r\n* Implement suspension over a unique generator.\r\n\r\n* Implemented abelianization.\r\n\r\n* Refactor.\r\n\r\n* Refactor.\r\n\r\n* Minor cleanup\r\n\r\n* Combine suspend and abelianize functions\r\n\r\n* Minor refactor.\r\n\r\n* Unified suspension action handlers.\r\n\r\n* Moved suspension UI to signature panel.\r\n\r\n* Removed suspension buttons from view if signature is empty.\r\n\r\n* Added test for abelianization.\r\n\r\n* Fixed suspension UI bug.\r\n\r\n* Implement label logic\r\n\r\n* Suspension UI change, refactored, fixed test.\r\n\r\n---------\r\n\r\nCo-authored-by: Calin Tataru <calintat@gmail.com>",
+          "timestamp": "2023-03-03T17:06:33Z",
+          "tree_id": "26aa40e0290d1d9fef8a190d505b42b2c704ebbe",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/3dd3b915e9bca93d78ce94e811df94d7b9b96a1c"
+        },
+        "date": 1677864627206,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 2.1626,
+            "range": "+/- 0.035",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 17.925,
+            "range": "+/- 0.365",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 281.26,
+            "range": "+/- 4.210",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 5.7448,
+            "range": "+/- 0.113",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 14.886,
+            "range": "+/- 0.310",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 381.01,
+            "range": "+/- 7.830",
             "unit": "ms"
           }
         ]
