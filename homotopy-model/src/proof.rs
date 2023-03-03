@@ -414,26 +414,16 @@ impl ProofState {
             return Ok(false);
         }
 
-        let root = self.signature.as_tree().root();
-        let mut new_signature: Signature = Default::default();
-        for (_node, data) in self.signature.as_tree().iter().skip(1) {
-            let parent = data.parent().unwrap_or(root);
-            match data.inner() {
-                SignatureItem::Folder(_) => {
-                    new_signature.push_onto(parent, data.inner().clone());
-                }
-                SignatureItem::Item(info)
-                    if info.generator == target || info.generator == generator => {}
-                SignatureItem::Item(info) => {
-                    let gen: GeneratorInfo = GeneratorInfo {
-                        diagram: info.diagram.replace(target, source, generator),
-                        ..info.clone()
-                    };
-                    new_signature.push_onto(parent, SignatureItem::Item(gen));
-                }
+        self.signature = self.signature.filter_map(|info| {
+            if info.generator != target && info.generator != generator {
+                Some(GeneratorInfo {
+                    diagram: info.diagram.replace(target, source, generator),
+                    ..info.clone()
+                })
+            } else {
+                None
             }
-        }
-        self.signature = new_signature;
+        });
         if let Some(ws) = &self.workspace {
             self.workspace = Some(Workspace::new(
                 ws.diagram.replace(target, source, generator),
@@ -796,34 +786,18 @@ impl ProofState {
 
     /// Handler for [Action::Suspend].
     fn suspend(&mut self, source: Generator, target: Generator) -> bool {
-        let mut new_signature: Signature = Default::default();
-
-        // Skip the root node
-        //TODO Potentially need to know whether suspension is abelian to work
-        let root = new_signature.as_tree().root();
-        for (_, data) in self.signature.as_tree().iter().skip(1) {
-            let parent = data.parent().unwrap_or(root);
-            match data.inner() {
-                SignatureItem::Folder(_) => {
-                    new_signature.push_onto(parent, data.inner().clone());
-                }
-                SignatureItem::Item(info)
-                    if info.generator == source || info.generator == target =>
-                {
-                    new_signature.push_onto(parent, data.inner().clone());
-                }
-                SignatureItem::Item(info) => {
-                    let gen: GeneratorInfo = GeneratorInfo {
-                        generator: info.generator.suspended(),
-                        diagram: info.diagram.suspend(source, target).into(),
-                        oriented: false,
-                        ..info.clone()
-                    };
-                    new_signature.push_onto(parent, SignatureItem::Item(gen));
-                }
+        self.signature = self.signature.filter_map(|info| {
+            if info.generator == source || info.generator == target {
+                Some(info.clone())
+            } else {
+                Some(GeneratorInfo {
+                    generator: info.generator.suspended(),
+                    diagram: info.diagram.suspend(source, target).into(),
+                    oriented: false,
+                    ..info.clone()
+                })
             }
-        }
-        self.signature = new_signature;
+        });
         if let Some(ws) = &self.workspace {
             self.workspace = Some(Workspace::new(ws.diagram.suspend(source, target).into()));
         }

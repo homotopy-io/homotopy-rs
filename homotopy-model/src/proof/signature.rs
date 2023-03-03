@@ -99,6 +99,29 @@ impl Signature {
             .map_or(0, |id| id + 1)
     }
 
+    #[must_use]
+    pub fn filter_map<F>(&self, f: F) -> Signature
+    where
+        F: Fn(&GeneratorInfo) -> Option<GeneratorInfo>,
+    {
+        let mut output: Signature = Default::default();
+        let root = output.as_tree().root();
+        for (_, data) in self.as_tree().iter().skip(1) {
+            let parent = data.parent().unwrap_or(root);
+            match data.inner() {
+                SignatureItem::Folder(_) => {
+                    output.push_onto(parent, data.inner().clone());
+                }
+                SignatureItem::Item(info) => {
+                    if let Some(new_info) = f(info) {
+                        output.push_onto(parent, SignatureItem::Item(new_info));
+                    }
+                }
+            }
+        }
+        output
+    }
+
     pub(crate) fn insert(
         &mut self,
         generator: Generator,
