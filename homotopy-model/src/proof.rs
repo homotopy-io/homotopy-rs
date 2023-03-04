@@ -255,6 +255,8 @@ pub enum ProofError {
     InvalidSlice,
     #[error("the diagram cannot be inverted because not all generators are defined as invertible")]
     NotInvertible,
+    #[error("attempted to strictify generator without atomic boundaries")]
+    NotAtomic,
     #[error(transparent)]
     ExpansionError(#[from] ExpansionError),
     #[error(transparent)]
@@ -407,17 +409,15 @@ impl ProofState {
             .generator_info(generator)
             .ok_or(ProofError::UnknownGeneratorSelected)?;
 
-        let Some((source, target)) = info.diagram.atomic_boundaries() else {
-            return Ok(false);
-        };
-        if source.dimension != target.dimension || source == target {
-            return Ok(false);
-        }
+        let (source, target) = info
+            .diagram
+            .atomic_distinct_boundaries()
+            .ok_or(ProofError::NotAtomic)?;
 
         self.signature = self.signature.filter_map(|info| {
-            if info.generator != target && info.generator != generator {
+            if info.generator != generator && info.generator != target {
                 Some(GeneratorInfo {
-                    diagram: info.diagram.replace(target, source, generator),
+                    diagram: info.diagram.replace(source, target, generator),
                     ..info.clone()
                 })
             } else {
@@ -426,11 +426,11 @@ impl ProofState {
         });
         if let Some(ws) = &self.workspace {
             self.workspace = Some(Workspace::new(
-                ws.diagram.replace(target, source, generator),
+                ws.diagram.replace(source, target, generator),
             ));
         }
         if let Some(bd) = &mut self.boundary {
-            bd.diagram = bd.diagram.replace(target, source, generator);
+            bd.diagram = bd.diagram.replace(source, target, generator);
         }
 
         Ok(true)

@@ -224,7 +224,6 @@ impl Diagram {
     pub fn atomic_generator(&self) -> Option<Generator> {
         match self {
             Self::Diagram0(d) => Some(d.generator),
-            Self::DiagramN(d) if d.cospans().is_empty() => d.source().atomic_generator(),
             Self::DiagramN(d) if d.cospans().len() == 1 => d
                 .source()
                 .rewrite_forward(&d.cospans()[0].forward)
@@ -236,12 +235,18 @@ impl Diagram {
 
     pub fn atomic_boundaries(&self) -> Option<(Generator, Generator)> {
         if let Self::DiagramN(d) = self {
-            match (d.source().atomic_generator(), d.target().atomic_generator()) {
-                (Some(g1), Some(g2)) => Some((g1, g2)),
-                (_, _) => None,
-            }
+            d.source()
+                .atomic_generator()
+                .zip(d.target().atomic_generator())
         } else {
             None
+        }
+    }
+
+    pub fn atomic_distinct_boundaries(&self) -> Option<(Generator, Generator)> {
+        match self.atomic_boundaries() {
+            Some((s, t)) if s != t => Some((s, t)),
+            _ => None,
         }
     }
 
@@ -325,8 +330,8 @@ impl Diagram0 {
 
     #[must_use]
     pub fn replace(&self, s: Generator, t: Generator, a: Generator) -> Self {
-        if self.generator == s || self.generator == a {
-            Self::new(t, self.orientation)
+        if self.generator == a || self.generator == t {
+            Self::new(s, self.orientation)
         } else {
             *self
         }
@@ -434,27 +439,23 @@ impl DiagramN {
     }
 
     #[must_use]
+    pub fn map<F, G>(&self, f: F, g: G) -> Self
+    where
+        F: Fn(&Diagram) -> Diagram,
+        G: Fn(&Rewrite) -> Rewrite,
+    {
+        let cospans: Vec<_> = self.cospans().iter().map(|c| c.map(|r| g(r))).collect();
+        Self::new(f(&self.source()), cospans)
+    }
+
+    #[must_use]
     pub fn suspend(&self, s: Generator, t: Generator) -> Self {
-        // Suspend source
-        // Then suspend each cospan
-        let source = self.source().suspend(s, t);
-        let cospans: Vec<_> = self
-            .cospans()
-            .iter()
-            .map(|c| c.map(|r| r.suspend(s, t).into()))
-            .collect();
-        Self::new(source.into(), cospans)
+        self.map(|d| d.suspend(s, t).into(), |r| r.suspend(s, t).into())
     }
 
     #[must_use]
     pub fn replace(&self, s: Generator, t: Generator, a: Generator) -> Self {
-        let source = self.source().replace(s, t, a);
-        let cospans: Vec<_> = self
-            .cospans()
-            .iter()
-            .map(|c| c.map(|r| r.replace(s, t, a)))
-            .collect();
-        Self::new(source, cospans)
+        self.map(|d| d.replace(s, t, a), |r| r.replace(s, t, a))
     }
 
     pub(crate) fn collect_garbage() {

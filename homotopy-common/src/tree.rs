@@ -215,6 +215,21 @@ impl<T> Tree<T> {
     }
 
     #[inline]
+    pub fn filter_map<F, U>(self, mut f: F) -> Tree<U>
+    where
+        F: FnMut(&T) -> Option<U>,
+        U: Default,
+    {
+        let mut result: Tree<U> = Default::default();
+        for (_, data) in self.iter().skip(1) {
+            if let Some(d) = f(data.inner()) {
+                result.push_onto(data.parent().unwrap_or(result.root), d);
+            }
+        }
+        result
+    }
+
+    #[inline]
     pub fn root(&self) -> Node {
         self.root
     }

@@ -104,22 +104,13 @@ impl Signature {
     where
         F: Fn(&GeneratorInfo) -> Option<GeneratorInfo>,
     {
-        let mut output: Signature = Default::default();
-        let root = output.as_tree().root();
-        for (_, data) in self.as_tree().iter().skip(1) {
-            let parent = data.parent().unwrap_or(root);
-            match data.inner() {
-                SignatureItem::Folder(_) => {
-                    output.push_onto(parent, data.inner().clone());
-                }
-                SignatureItem::Item(info) => {
-                    if let Some(new_info) = f(info) {
-                        output.push_onto(parent, SignatureItem::Item(new_info));
-                    }
-                }
+        Self(self.as_tree().filter_map(|data| {
+            if let SignatureItem::Item(info) = data {
+                Some(SignatureItem::Item(f(info)?))
+            } else {
+                Some(data.clone())
             }
-        }
-        output
+        }))
     }
 
     pub(crate) fn insert(

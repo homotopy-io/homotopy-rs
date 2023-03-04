@@ -40,3 +40,10 @@ fn construct_adjoint_equivalence() {
 
     let _proof = actions_test_helper(action_dump);
 }
+
+#[test]
+fn strictify_away_generators() {
+    let action_dump = include_str!("examples/strictify_multiple.json");
+
+    let _proof = actions_test_helper(action_dump);
+}
