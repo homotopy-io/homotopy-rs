@@ -169,7 +169,7 @@ impl Action {
             Self::ClearWorkspace => proof.workspace.is_some(),
             Self::ClearBoundary => proof.boundary.is_some(),
             Self::SelectGenerator(_) => true,
-            Self::Strictify(g) => g.dimension > 0,
+            Self::Strictify(g) => proof.strictify_boundaries(*g).is_ok(),
             Self::AscendSlice(count) => {
                 *count > 0
                     && proof
@@ -404,15 +404,7 @@ impl ProofState {
     /// Returns an error if generator has dimension zero,
     /// the generator is not in the signature or the boundaries are not atomic
     fn strictify(&mut self, generator: Generator) -> Result<bool, ProofError> {
-        let info = self
-            .signature
-            .generator_info(generator)
-            .ok_or(ProofError::UnknownGeneratorSelected)?;
-
-        let (source, target) = info
-            .diagram
-            .atomic_distinct_boundaries()
-            .ok_or(ProofError::NotAtomic)?;
+        let (source, target) = self.strictify_boundaries(generator)?;
 
         self.signature = self.signature.filter_map(|info| {
             if info.generator != generator && info.generator != target {
@@ -434,6 +426,18 @@ impl ProofState {
         }
 
         Ok(true)
+    }
+
+    fn strictify_boundaries(
+        &self,
+        generator: Generator,
+    ) -> Result<(Generator, Generator), ProofError> {
+        self.signature
+            .generator_info(generator)
+            .ok_or(ProofError::UnknownGeneratorSelected)?
+            .diagram
+            .atomic_distinct_boundaries()
+            .ok_or(ProofError::NotAtomic)
     }
 
     /// Handler for [Action::AscendSlice].
