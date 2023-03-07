@@ -13,8 +13,11 @@
   --s5: calc(var(--s4) * var(--ratio));
 
   --measure: 60ch;
+
   --font-size: 1rem;
-  --font-size-big: 1.75rem;
+  --font-ratio: 1.15;
+  --font-size-h3: calc(var(--font-size) * var(--font-ratio));
+  --font-size-h2: calc(var(--font-size-h3) * var(--font-ratio));
 
   --sidebar-background: #0A0E14;
   --sidebar-foreground: #FAFAFA;
@@ -62,6 +65,15 @@ footer {
   max-inline-size: none;
 }
 
+h2 {
+  font-size: var(--font-size-h2);
+}
+
+h3 {
+  font-size: var(--font-size-h3);
+}
+
+
 body, html {
   margin: 0;
   padding: 0;
@@ -99,6 +111,22 @@ button, .button {
   cursor: pointer;
 }
 
+.sidebar_primary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+}
+
+.sidebar_primary > :first-child {
+  flex-grow: 1;
+}
+
+.sidebar_primary > :last-child {
+  flex-basis: 0;
+  flex-grow: 999;
+  min-inline-size: 80%;
+}
+
 /* Sidebar */
 
 .sidebar {
@@ -106,10 +134,8 @@ button, .button {
   background: var(--sidebar-background);
   border: var(--sidebar-border) 1px solid;
   color: var(--sidebar-foreground);
-  overflow: none;
   display: flex;
   flex-direction: column;
-  z-index: 1001;
   box-sizing: border-box;
 }
 
@@ -138,7 +164,6 @@ button, .button {
   padding: var(--s-2);
   text-align: center;
 }
-
 
 @media (pointer: fine) {
   .sidebar__button:hover {
@@ -281,7 +306,7 @@ button, .button {
 
 .tex__wrapper.workspace__project-title span {
   white-space: nowrap;
-  font-size: var(--font-size-big);
+  font-size: var(--font-size-h2);
 }
 
 .workspace__toolbar {
@@ -462,7 +487,6 @@ button, .button {
   width: 100%;
   max-width: calc(100% - var(--drawer-resize-bar-width));
   height: 100%;
-  overflow: none;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -480,12 +504,7 @@ button, .button {
 }
 
 .drawer__title {
-  width: 100%;
-  font-size: 1.2em;
   padding: var(--s-3);
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
 
 .drawer__content {
@@ -1115,10 +1134,9 @@ svg {
 
 /* Settings */
 
-.settings h3 {
+.settings {
   margin 0;
   margin-bottom: var(--s-1);
-  font-size: var(--font-size-big);
 }
 
 .settings__segment {
