@@ -73,16 +73,16 @@ h3 {
   font-size: var(--font-size-h3);
 }
 
-
-body, html {
-  margin: 0;
-  padding: 0;
+html {
   height: 100%;
-  width: 100%;
-  font-family: 'IBM Plex Sans', 'sans';
+  display: flex;
+}
+
+body {
+  margin: 0;
   display: flex;
   flex: 1;
-  overflow: hidden;
+  font-family: 'IBM Plex Sans', 'sans';
   -webkit-user-select: none; /* Safari */
   -ms-user-select: none; /* IE 10 and IE 11 */
   user-select: none; /* Standard syntax */
@@ -100,7 +100,6 @@ input, textarea, button {
 .app {
   display: flex;
   flex: 1;
-  position: relative;
 }
 
 button, .button {
