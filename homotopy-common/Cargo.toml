@@ -12,7 +12,7 @@ build = true
 [dependencies]
 rustc-hash = "1.1.0"
 petgraph = "0.6.2"
-serde = { features = ["derive"], version = "1.0.152" }
+serde = { features = ["derive"], version = "1.0.153" }
 
 [dev-dependencies]
 cargo-husky = { features = ["precommit-hook", "run-cargo-check", "run-cargo-test", "run-cargo-fmt", "run-cargo-clippy"], version = "1.5.0" }
