@@ -14,10 +14,13 @@
 
   --measure: 60ch;
 
-  --font-size: 1rem;
   --font-ratio: 1.15;
-  --font-size-h3: calc(var(--font-size) * var(--font-ratio));
-  --font-size-h2: calc(var(--font-size-h3) * var(--font-ratio));
+  --f-1: calc(var(--f0) / var(--font-ratio));
+  --f0: 1rem;
+  --f1: calc(var(--f0) * var(--font-ratio));
+  --f2: calc(var(--f1) * var(--font-ratio));
+  --f3: calc(var(--f2) * var(--font-ratio));
+  --f4: calc(var(--f3) * var(--font-ratio));
 
   --sidebar-background: #0A0E14;
   --sidebar-foreground: #FAFAFA;
@@ -52,7 +55,7 @@
 
 * {
   max-inline-size: var(--measure);
-  font-size: var(--font-size);
+  font-size: var(--f0);
 }
 
 html,
@@ -61,16 +64,17 @@ div,
 header,
 nav,
 main,
-footer {
+footer,
+canvas {
   max-inline-size: none;
 }
 
-h2 {
-  font-size: var(--font-size-h2);
+h3 {
+  font-size: var(--f1);
 }
 
-h3 {
-  font-size: var(--font-size-h3);
+h2 {
+  font-size: var(--f2);
 }
 
 html {
@@ -174,8 +178,6 @@ button, .button {
 
 .panzoom {
   touch-action: none;
-  width: 100%;
-  height: 100%;
 }
 
 .panzoom__inner {
@@ -246,7 +248,7 @@ button, .button {
   align-items: stretch;
   width: 100%;
   height: 100%;
-  /*position: fixed;*/
+  position: relative;
   overflow: hidden;
 }
 
@@ -299,13 +301,14 @@ button, .button {
   color: #2224;
   padding: 6px;
   user-select: text;
+  width: 35%;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .tex__wrapper.workspace__project-title span {
   white-space: nowrap;
-  font-size: var(--font-size-h2);
+  font-size: var(--f4);
 }
 
 .workspace__toolbar {
@@ -560,22 +563,21 @@ button, .button {
 }
 
 .metadata__title {
-  min-height: 65px;
-  font-size: 1.3em;
+  min-height: var(--s5);
+  font-size: var(--f2);
 }
 
 .metadata__author {
-  min-height: 45px;
+  min-height: var(--s4);
   font-weight: bold;
 }
 
 .metadata__abstract {
-  min-height: 200px;
-  font-weight: light;
+  min-height: var(--s5);
 }
 
 .katex {
-  font-size: 1em;
+  font-size: var(--f0);
 }
 
 .tex__wrapper {
