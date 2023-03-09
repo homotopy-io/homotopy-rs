@@ -139,10 +139,6 @@ impl Signature {
         self.0.push_onto(self.0.root(), item);
     }
 
-    pub fn push_onto(&mut self, node: Node, item: SignatureItem) -> Option<Node> {
-        self.0.push_onto(node, item)
-    }
-
     fn find_node(&self, generator: Generator) -> Option<Node> {
         self.0.iter().find_map(|(node, item)| match item.inner() {
             SignatureItem::Item(info) if info.generator == generator => Some(node),
