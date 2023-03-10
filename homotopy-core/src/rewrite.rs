@@ -221,10 +221,16 @@ impl Rewrite {
     }
 
     #[must_use]
-    pub fn replace(&self, s: Generator, t: Generator, a: Generator) -> Self {
+    pub fn replace(
+        &self,
+        s: Generator,
+        t: Generator,
+        a: Generator,
+        map: &FastHashMap<Label, Option<Label>>,
+    ) -> Self {
         match self {
-            Self::Rewrite0(r) => Self::Rewrite0(r.replace(s, t, a)),
-            Self::RewriteN(r) => Self::RewriteN(r.replace(s, t, a)),
+            Self::Rewrite0(r) => Self::Rewrite0(r.replace(s, t, a, map)),
+            Self::RewriteN(r) => Self::RewriteN(r.replace(s, t, a, map)),
         }
     }
 
@@ -369,12 +375,20 @@ impl Rewrite0 {
     }
 
     #[must_use]
-    pub fn replace(&self, s: Generator, t: Generator, a: Generator) -> Self {
+    pub fn replace(
+        &self,
+        s: Generator,
+        t: Generator,
+        a: Generator,
+        map: &FastHashMap<Label, Option<Label>>,
+    ) -> Self {
         if let Some((source, target, label)) = &self.0 {
             Rewrite0::new(
                 source.replace(s, t, a),
                 target.replace(s, t, a),
-                label.clone(),
+                label
+                    .clone()
+                    .and_then(|l| map.get(&l).cloned().unwrap_or(label.clone())),
             )
         } else {
             Rewrite0::identity()
@@ -565,11 +579,17 @@ impl RewriteN {
     }
 
     #[must_use]
-    pub fn replace(&self, s: Generator, t: Generator, a: Generator) -> Self {
+    pub fn replace(
+        &self,
+        s: Generator,
+        t: Generator,
+        a: Generator,
+        map: &FastHashMap<Label, Option<Label>>,
+    ) -> Self {
         let cones = self
             .cones()
             .iter()
-            .map(|cone| cone.replace(s, t, a))
+            .map(|cone| cone.replace(s, t, a, map))
             .collect();
         Self::new(self.dimension(), cones)
     }
@@ -1142,13 +1162,10 @@ impl Cone {
 
     pub(crate) fn pad(&self, embedding: &[usize]) -> Self {
         match embedding.split_first() {
-            Some((offset, rest)) => Self::new(
-                self.index + offset,
-                self.source().iter().map(|c| c.pad(rest)).collect(),
-                self.target().pad(rest),
-                self.regular_slices().iter().map(|r| r.pad(rest)).collect(),
-                self.singular_slices().iter().map(|r| r.pad(rest)).collect(),
-            ),
+            Some((offset, rest)) => Self {
+                index: self.index + offset,
+                internal: self.map(|r| r.pad(rest)).internal,
+            },
             None => self.clone(),
         }
     }
@@ -1175,8 +1192,14 @@ impl Cone {
     }
 
     #[must_use]
-    fn replace(&self, s: Generator, t: Generator, a: Generator) -> Self {
-        self.map(|r| r.replace(s, t, a))
+    fn replace(
+        &self,
+        s: Generator,
+        t: Generator,
+        a: Generator,
+        map: &FastHashMap<Label, Option<Label>>,
+    ) -> Self {
+        self.map(|r| r.replace(s, t, a, map))
     }
 }
 

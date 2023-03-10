@@ -6,7 +6,7 @@ use std::{
 };
 
 use hashconsing::{HConsed, HConsign, HashConsign};
-use homotopy_common::hash::FastHashSet;
+use homotopy_common::hash::{FastHashMap, FastHashSet};
 use once_cell::unsync::OnceCell;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -251,10 +251,16 @@ impl Diagram {
     }
 
     #[must_use]
-    pub fn replace(&self, source: Generator, target: Generator, apex: Generator) -> Diagram {
+    pub fn replace(
+        &self,
+        source: Generator,
+        target: Generator,
+        apex: Generator,
+        map: &FastHashMap<Label, Option<Label>>,
+    ) -> Diagram {
         match self {
             Self::Diagram0(d) => Self::Diagram0(d.replace(source, target, apex)),
-            Self::DiagramN(d) => Self::DiagramN(d.replace(source, target, apex)),
+            Self::DiagramN(d) => Self::DiagramN(d.replace(source, target, apex, map)),
         }
     }
 }
@@ -454,8 +460,14 @@ impl DiagramN {
     }
 
     #[must_use]
-    pub fn replace(&self, s: Generator, t: Generator, a: Generator) -> Self {
-        self.map(|d| d.replace(s, t, a), |r| r.replace(s, t, a))
+    pub fn replace(
+        &self,
+        s: Generator,
+        t: Generator,
+        a: Generator,
+        map: &FastHashMap<Label, Option<Label>>,
+    ) -> Self {
+        self.map(|d| d.replace(s, t, a, map), |r| r.replace(s, t, a, map))
     }
 
     pub(crate) fn collect_garbage() {

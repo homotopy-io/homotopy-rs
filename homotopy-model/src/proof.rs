@@ -404,12 +404,16 @@ impl ProofState {
     /// Returns an error if generator has dimension zero,
     /// the generator is not in the signature or the boundaries are not atomic
     fn strictify(&mut self, generator: Generator) -> Result<bool, ProofError> {
-        let (source, target) = self.strictify_boundaries(generator)?;
+        let (source, target, diagram, source_diagram) = self.strictify_boundaries(generator)?;
+
+        let weak_id = source_diagram.weak_identity();
+
+        let map = diagram.match_labels(weak_id.into()).unwrap();
 
         self.signature = self.signature.filter_map(|info| {
             if info.generator != generator && info.generator != target {
                 Some(GeneratorInfo {
-                    diagram: info.diagram.replace(source, target, generator),
+                    diagram: info.diagram.replace(source, target, generator, &map),
                     ..info.clone()
                 })
             } else {
@@ -418,11 +422,11 @@ impl ProofState {
         });
         if let Some(ws) = &self.workspace {
             self.workspace = Some(Workspace::new(
-                ws.diagram.replace(source, target, generator),
+                ws.diagram.replace(source, target, generator, &map),
             ));
         }
         if let Some(bd) = &mut self.boundary {
-            bd.diagram = bd.diagram.replace(source, target, generator);
+            bd.diagram = bd.diagram.replace(source, target, generator, &map);
         }
 
         Ok(true)
@@ -431,13 +435,23 @@ impl ProofState {
     fn strictify_boundaries(
         &self,
         generator: Generator,
-    ) -> Result<(Generator, Generator), ProofError> {
-        self.signature
+    ) -> Result<(Generator, Generator, Diagram, Diagram), ProofError> {
+        let diagram = self
+            .signature
             .generator_info(generator)
             .ok_or(ProofError::UnknownGeneratorSelected)?
             .diagram
+            .clone();
+        let (source, target) = diagram
             .atomic_distinct_boundaries()
-            .ok_or(ProofError::NotAtomic)
+            .ok_or(ProofError::NotAtomic)?;
+        let source_diagram = self
+            .signature
+            .generator_info(source)
+            .ok_or(ProofError::UnknownGeneratorSelected)?
+            .diagram
+            .clone();
+        Ok((source, target, diagram, source_diagram))
     }
 
     /// Handler for [Action::AscendSlice].
