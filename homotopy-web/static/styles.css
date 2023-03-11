@@ -621,20 +621,8 @@ button, .button {
   width: 100%;
 }
 
-.signature__generator .signature__item-contents {
-}
-
-.signature__item.signature__generator-editing {
-}
-
-.signature__item.signature__generator-editing.signature__generator-0d {
-}
-
 .drawer-expanded .signature__item {
   height: calc(2 * var(--signature-height));
-}
-
-.drawer-expanded .signature__item.signature__generator-editing.signature__generator-0d {
 }
 
 .drawer-expanded .signature__item.signature__generator-editing {
@@ -1352,16 +1340,11 @@ svg {
 	align-items: center;
 }
 
-.help table {}
-
 .help-action {
 	text-align: right;
 }
 
-.help-description {}
-
 /* https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#using_a_label_element_to_trigger_a_hidden_file_input_element */
-
 .visually-hidden {
   position: absolute !important;
   height: 1px;
