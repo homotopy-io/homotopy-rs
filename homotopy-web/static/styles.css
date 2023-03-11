@@ -12,7 +12,7 @@
   --s4: calc(var(--s3) * var(--ratio));
   --s5: calc(var(--s4) * var(--ratio));
 
-  --measure: 60ch;
+  --measure: 76ch;
 
   --font-ratio: 1.15;
   --f-1: calc(var(--f0) / var(--font-ratio));
@@ -1303,58 +1303,59 @@ svg {
 .modal-dialog {
   display: table-cell;
   vertical-align: middle;
+  z-index: 1003;
+  position: relative;
 }
 
 /* The modal's content */
-.modal-dialog .modal-content {
-  margin: auto;
+.modal-content {
+  box-sizing: content-box;
+  margin-inline: auto;
+  width: fit-content;
+  min-width: 40vw;
   background-color: #f3f3f3;
-  border: 1px #777 solid;
-  width: 680px;
-  height: 760px;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-  z-index: 1003;
-  position: relative;
 }
 
 .modal-content > header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-left: 16px;
-  padding-right: 16px;
+  padding-left: var(--s1);
+  padding-right: var(--s1);
   color: var(--sidebar-foreground);
   background-color: var(--sidebar-background);
 }
 
+.modal-content > div {
+	padding-left: var(--s-2);
+	padding-bottom: var(--s0);
+}
+
 .modal-button {
-  text-decoration: none;
   color: var(--sidebar-foreground);
 }
 
 .modal-close {
-  z-index: 1002;
-  display: block;
   position: fixed;
   width: 100%;
   height: 100%;
+  z-index: 1002;
 }
 
 .help {
-  text-align: center;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 }
 
-.help table {
-  margin: auto;
-}
+.help table {}
 
 .help-action {
 	text-align: right;
 }
 
-.help-description {
-	text-align: left;
-}
+.help-description {}
 
 /* https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#using_a_label_element_to_trigger_a_hidden_file_input_element */
 
