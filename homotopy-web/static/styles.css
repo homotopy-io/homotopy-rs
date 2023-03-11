@@ -65,6 +65,7 @@ header,
 nav,
 main,
 footer,
+content,
 canvas {
   max-inline-size: none;
 }
@@ -178,6 +179,8 @@ button, .button {
 
 .panzoom {
   touch-action: none;
+  width: 100%;
+  height: 100%;
 }
 
 .panzoom__inner {
