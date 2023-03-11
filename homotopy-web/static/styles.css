@@ -824,7 +824,7 @@ input.signature__item-name {
 
 .signature__generator-color-sliver {
   flex: 0 0 auto;
-  width: 6px;
+  width: var(--s-2);
   box-sizing: border-box;
 }
 
