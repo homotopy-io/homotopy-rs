@@ -161,7 +161,6 @@ impl Rewrite {
                 let mut regular_slices: Vec<_> = Default::default();
                 let mut singular_slices: Vec<_> = Default::default();
                 base.slices()
-                    .into_iter()
                     .enumerate()
                     .for_each(|(i, slice)| match Height::from(i) {
                         Regular(i) => regular_slices.push(Self::cone_over_generator(

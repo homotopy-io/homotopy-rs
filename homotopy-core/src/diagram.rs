@@ -575,7 +575,7 @@ impl DiagramN {
         self.regular_slices()
             .enumerate()
             .flat_map(move |(index, slice)| {
-                slice.embeddings(&diagram).into_iter().map(move |mut emb| {
+                slice.embeddings(&diagram).map(move |mut emb| {
                     emb.insert(0, index);
                     emb
                 })
