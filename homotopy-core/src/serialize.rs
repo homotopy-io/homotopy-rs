@@ -294,7 +294,6 @@ enum RewriteSer {
     },
 }
 
-#[allow(clippy::derive_hash_xor_eq)]
 impl Hash for RewriteSer {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         match self {
@@ -338,7 +337,6 @@ struct ConeSer {
     singular_slices: Vec<Key<Rewrite>>,
 }
 
-#[allow(clippy::derive_hash_xor_eq)]
 impl Hash for ConeSer {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         state.write_u32(self.source.len() as u32);
