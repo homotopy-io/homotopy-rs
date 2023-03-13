@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1678186144969,
+  "lastUpdate": 1678709173540,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -46781,6 +46781,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 437.36,
             "range": "+/- 6.350",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f0f95a2cf3369f0c39f4d16899b30d48173d695a",
+          "message": "CSS changes (#1041)\n\n* Minor CSS setup changes.\r\n\r\n* Minor sidebar CSS changes.\r\n\r\n* More sidebar CSS changes.\r\n\r\n* Fixed font sizes and workspace zooms.\r\n\r\n* Fixed modal CSS.\r\n\r\n* Fixed panzoom problem.\r\n\r\n* Minor signature edit.\r\n\r\n* Removed dead code.\r\n\r\n* Removed dead code.",
+          "timestamp": "2023-03-13T11:43:19Z",
+          "tree_id": "1c6fb2f18751b14af74d5c7749e58a19476d678d",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/f0f95a2cf3369f0c39f4d16899b30d48173d695a"
+        },
+        "date": 1678709158594,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 1.7217,
+            "range": "+/- 0.002",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 15.382,
+            "range": "+/- 0.059",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 267.94,
+            "range": "+/- 0.340",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 6.019,
+            "range": "+/- 0.004",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 14.032,
+            "range": "+/- 0.045",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 372.57,
+            "range": "+/- 1.730",
             "unit": "ms"
           }
         ]
