@@ -233,9 +233,7 @@ impl Component for SidebarDrawer {
                 >
                 <div class="drawer__inner">
                     <div class="drawer__header">
-                        <span class="drawer__title">
-                            {ctx.props().title}
-                        </span>
+                        <h3 class="drawer__title">{ctx.props().title}</h3>
                         if let (Some(icon), Some(action)) = (ctx.props().icon, ctx.props().on_click.as_ref().cloned()) {
                             <span
                                 class="drawer__icon"
