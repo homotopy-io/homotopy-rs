@@ -245,7 +245,7 @@ impl Diagram {
 
     pub fn atomic_distinct_boundaries(&self) -> Option<(Generator, Generator)> {
         match self.atomic_boundaries() {
-            Some((s, t)) if s != t => Some((s, t)),
+            Some((s, t)) if s != t && s.dimension == t.dimension => Some((s, t)),
             _ => None,
         }
     }
