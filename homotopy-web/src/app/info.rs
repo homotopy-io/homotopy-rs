@@ -121,7 +121,7 @@ pub fn get_about_message() -> Html {
             </p>
             <h3>{"License"}</h3>
             <p>{"homotopy.io source code is published under the terms of the BSD 3-Clause License."}</p>
-            <pre style="font-size: var(--s-1);">{include_str!("../../../LICENSE")}</pre>
+            <pre>{include_str!("../../../LICENSE")}</pre>
             {"homotopy.io documentation is licensed under a "}
             <a rel="license" href="https://creativecommons.org/licenses/by/4.0/">
                 {"Creative Commons Attribution 4.0 International License"}
