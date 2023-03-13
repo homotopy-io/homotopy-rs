@@ -1,7 +1,11 @@
 //! Functions to collapse diagram scaffolds; used in contraction, typechecking etc.
 use std::ops::{AddAssign, Index};
 
-use homotopy_common::{declare_idx, hash::FastHashSet, idx::Idx};
+use homotopy_common::{
+    declare_idx,
+    hash::{FastHashMap, FastHashSet},
+    idx::Idx,
+};
 use im::OrdSet;
 use itertools::Itertools;
 use once_cell::unsync::OnceCell;
@@ -20,7 +24,7 @@ use petgraph::{
 use crate::{
     common::{Label, LabelIdentifications},
     scaffold::{Explodable, Scaffold, ScaffoldGraph, ScaffoldNode, StableScaffold},
-    Diagram, Height, Rewrite0, SliceIndex,
+    Diagram, Height, Rewrite, Rewrite0, SliceIndex,
 };
 
 /// Trait for objects which have associated coordinates in `C`.
@@ -385,6 +389,48 @@ impl Diagram {
                 .into_iter()
             })
             .collect()
+    }
+
+    pub fn match_labels(self, other: Self) -> Option<FastHashMap<Label, Option<Label>>> {
+        let labels_lhs = self.fully_explode::<Scaffold<Vec<Height>>>();
+        let labels_rhs = other.fully_explode::<Scaffold<Vec<Height>>>();
+        if labels_lhs.edge_count() == labels_rhs.edge_count() {
+            let mut result: FastHashMap<Label, Option<Label>> = Default::default();
+            for (lhs, rhs) in labels_lhs
+                .raw_edges()
+                .iter()
+                .zip(labels_rhs.raw_edges().iter())
+            {
+                match (&lhs.weight.rewrite, &rhs.weight.rewrite) {
+                    (
+                        Rewrite::Rewrite0(Rewrite0(Some((_, _, None)))),
+                        Rewrite::Rewrite0(Rewrite0(Some((_, _, Some(_))))),
+                    )
+                    | (
+                        Rewrite::Rewrite0(Rewrite0(None)),
+                        Rewrite::Rewrite0(Rewrite0(Some((_, _, _)))),
+                    )
+                    | (Rewrite::RewriteN(_), Rewrite::Rewrite0(_))
+                    | (Rewrite::Rewrite0(_), Rewrite::RewriteN(_)) => {
+                        return None;
+                    }
+                    (
+                        Rewrite::Rewrite0(Rewrite0(Some((_, _, Some(l1))))),
+                        Rewrite::Rewrite0(Rewrite0(Some((_, _, Some(l2))))),
+                    ) if l1 == l2 => {}
+                    (
+                        Rewrite::Rewrite0(Rewrite0(Some((_, _, Some(l1))))),
+                        Rewrite::Rewrite0(Rewrite0(Some((_, _, l2)))),
+                    ) => {
+                        result.insert(l1.clone(), l2.clone());
+                    }
+                    (_, _) => {}
+                }
+            }
+            Some(result)
+        } else {
+            None
+        }
     }
 }
 
