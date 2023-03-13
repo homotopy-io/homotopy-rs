@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1678709173540,
+  "lastUpdate": 1678716588288,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -46841,6 +46841,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 372.57,
             "range": "+/- 1.730",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f914f4defca7136a884ecad32810f0577590c231",
+          "message": "Generator identifications (#523) (#1031)\n\n* Implemented generator identifications.\r\n\r\n* Refactor.\r\n\r\n* Added test, implemented review changes.\r\n\r\n* Implement more reviews.\r\n\r\n* Fixed bug in filter map (#1040).\r\n\r\n* Handle labels properly during strictification.\r\n\r\n* Fixed bug, updated tests.",
+          "timestamp": "2023-03-13T13:46:19Z",
+          "tree_id": "bc7b952d8c89b7270de80041f5f0f269cd775fdf",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/f914f4defca7136a884ecad32810f0577590c231"
+        },
+        "date": 1678716572546,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 1.7202,
+            "range": "+/- 0.007",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 16.139,
+            "range": "+/- 0.079",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 285.78,
+            "range": "+/- 4.410",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 6.3437,
+            "range": "+/- 0.010",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 13.263,
+            "range": "+/- 0.033",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 339.95,
+            "range": "+/- 1.040",
             "unit": "ms"
           }
         ]
