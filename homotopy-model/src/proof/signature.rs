@@ -99,20 +99,6 @@ impl Signature {
             .map_or(0, |id| id + 1)
     }
 
-    #[must_use]
-    pub fn filter_map<F>(&self, f: F) -> Signature
-    where
-        F: Fn(&GeneratorInfo) -> Option<GeneratorInfo>,
-    {
-        Self(self.as_tree().filter_map(|data| {
-            if let SignatureItem::Item(info) = data {
-                Some(SignatureItem::Item(f(info)?))
-            } else {
-                Some(data.clone())
-            }
-        }))
-    }
-
     pub(crate) fn insert(
         &mut self,
         generator: Generator,
@@ -137,6 +123,10 @@ impl Signature {
 
     pub fn insert_item(&mut self, item: SignatureItem) {
         self.0.push_onto(self.0.root(), item);
+    }
+
+    pub fn push_onto(&mut self, node: Node, item: SignatureItem) -> Option<Node> {
+        self.0.push_onto(node, item)
     }
 
     fn find_node(&self, generator: Generator) -> Option<Node> {

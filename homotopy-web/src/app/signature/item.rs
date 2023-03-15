@@ -814,11 +814,6 @@ impl ItemView {
                 <button onclick={ctx.props().dispatch.reform(move |_| Action::Suspend(generator, generator))}>{"Suspend"}</button>
             </div>
         };
-        let strictification_button = html! {
-            <div>
-                <button onclick={ctx.props().dispatch.reform(move |_| Action::Strictify(generator))}>{"Strictify"}</button>
-            </div>
-        };
 
         match generator.dimension {
             0 => suspension_button,
@@ -848,7 +843,6 @@ impl ItemView {
                         checked={info.oriented}
                         disabled={info.oriented}
                     />
-                    {strictification_button}
                 </div>
             },
         }

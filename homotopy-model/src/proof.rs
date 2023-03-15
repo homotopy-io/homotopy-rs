@@ -104,10 +104,6 @@ pub enum Action {
     /// load the generator's diagram into the workspace; else do nothing.
     SelectGenerator(Generator),
 
-    /// Strictify generator by replacing it with an identity
-    /// Meaningful only if source and target are atomic diagrams
-    Strictify(Generator),
-
     /// Ascend by a number of slices in the currently selected diagram in the workspace. If there
     /// is no diagram in the workspace or it is already displayed in its original dimension,
     /// nothing happens.
@@ -169,7 +165,6 @@ impl Action {
             Self::ClearWorkspace => proof.workspace.is_some(),
             Self::ClearBoundary => proof.boundary.is_some(),
             Self::SelectGenerator(_) => true,
-            Self::Strictify(g) => proof.strictify_boundaries(*g).is_ok(),
             Self::AscendSlice(count) => {
                 *count > 0
                     && proof
@@ -255,8 +250,6 @@ pub enum ProofError {
     InvalidSlice,
     #[error("the diagram cannot be inverted because not all generators are defined as invertible")]
     NotInvertible,
-    #[error("attempted to strictify generator without atomic boundaries")]
-    NotAtomic,
     #[error(transparent)]
     ExpansionError(#[from] ExpansionError),
     #[error(transparent)]
@@ -277,7 +270,6 @@ impl ProofState {
             Action::ClearWorkspace => self.clear_workspace(),
             Action::ClearBoundary => self.clear_boundary(),
             Action::SelectGenerator(generator) => self.select_generator(*generator)?,
-            Action::Strictify(generator) => self.strictify(*generator)?,
             Action::AscendSlice(count) => self.ascend_slice(*count),
             Action::DescendSlice(slice) => self.descend_slice(*slice)?,
             Action::SwitchSlice(direction) => self.switch_slice(*direction),
@@ -397,61 +389,6 @@ impl ProofState {
         self.workspace = Some(Workspace::new(info.diagram.clone()));
 
         Ok(true)
-    }
-
-    /// Handler for [Action::Strictify].
-    ///
-    /// Returns an error if generator has dimension zero,
-    /// the generator is not in the signature or the boundaries are not atomic
-    fn strictify(&mut self, generator: Generator) -> Result<bool, ProofError> {
-        let (source, target, diagram, source_diagram) = self.strictify_boundaries(generator)?;
-
-        let weak_id = source_diagram.weak_identity();
-
-        let map = diagram.match_labels(weak_id.into()).unwrap();
-
-        self.signature = self.signature.filter_map(|info| {
-            if info.generator != generator && info.generator != target {
-                Some(GeneratorInfo {
-                    diagram: info.diagram.replace(source, target, generator, &map),
-                    ..info.clone()
-                })
-            } else {
-                None
-            }
-        });
-        if let Some(ws) = &self.workspace {
-            self.workspace = Some(Workspace::new(
-                ws.diagram.replace(source, target, generator, &map),
-            ));
-        }
-        if let Some(bd) = &mut self.boundary {
-            bd.diagram = bd.diagram.replace(source, target, generator, &map);
-        }
-
-        Ok(true)
-    }
-
-    fn strictify_boundaries(
-        &self,
-        generator: Generator,
-    ) -> Result<(Generator, Generator, Diagram, Diagram), ProofError> {
-        let diagram = self
-            .signature
-            .generator_info(generator)
-            .ok_or(ProofError::UnknownGeneratorSelected)?
-            .diagram
-            .clone();
-        let (source, target) = diagram
-            .atomic_distinct_boundaries()
-            .ok_or(ProofError::NotAtomic)?;
-        let source_diagram = self
-            .signature
-            .generator_info(source)
-            .ok_or(ProofError::UnknownGeneratorSelected)?
-            .diagram
-            .clone();
-        Ok((source, target, diagram, source_diagram))
     }
 
     /// Handler for [Action::AscendSlice].
@@ -804,18 +741,34 @@ impl ProofState {
 
     /// Handler for [Action::Suspend].
     fn suspend(&mut self, source: Generator, target: Generator) -> bool {
-        self.signature = self.signature.filter_map(|info| {
-            if info.generator == source || info.generator == target {
-                Some(info.clone())
-            } else {
-                Some(GeneratorInfo {
-                    generator: info.generator.suspended(),
-                    diagram: info.diagram.suspend(source, target).into(),
-                    oriented: false,
-                    ..info.clone()
-                })
+        let mut new_signature: Signature = Default::default();
+
+        // Skip the root node
+        //TODO Potentially need to know whether suspension is abelian to work
+        let root = new_signature.as_tree().root();
+        for (_, data) in self.signature.as_tree().iter().skip(1) {
+            let parent = data.parent().unwrap_or(root);
+            match data.inner() {
+                SignatureItem::Folder(_) => {
+                    new_signature.push_onto(parent, data.inner().clone());
+                }
+                SignatureItem::Item(info)
+                    if info.generator == source || info.generator == target =>
+                {
+                    new_signature.push_onto(parent, data.inner().clone());
+                }
+                SignatureItem::Item(info) => {
+                    let gen: GeneratorInfo = GeneratorInfo {
+                        generator: info.generator.suspended(),
+                        diagram: info.diagram.suspend(source, target).into(),
+                        oriented: false,
+                        ..info.clone()
+                    };
+                    new_signature.push_onto(parent, SignatureItem::Item(gen));
+                }
             }
-        });
+        }
+        self.signature = new_signature;
         if let Some(ws) = &self.workspace {
             self.workspace = Some(Workspace::new(ws.diagram.suspend(source, target).into()));
         }

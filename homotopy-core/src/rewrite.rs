@@ -221,20 +221,6 @@ impl Rewrite {
     }
 
     #[must_use]
-    pub fn replace(
-        &self,
-        s: Generator,
-        t: Generator,
-        a: Generator,
-        map: &FastHashMap<Label, Option<Label>>,
-    ) -> Self {
-        match self {
-            Self::Rewrite0(r) => Self::Rewrite0(r.replace(s, t, a, map)),
-            Self::RewriteN(r) => Self::RewriteN(r.replace(s, t, a, map)),
-        }
-    }
-
-    #[must_use]
     pub fn orientation_transform(&self, k: Orientation) -> Self {
         self.orientation_transform_above(k, self.dimension())
     }
@@ -371,27 +357,6 @@ impl Rewrite0 {
                     vec![singular_slices],
                 )
             }
-        }
-    }
-
-    #[must_use]
-    pub fn replace(
-        &self,
-        s: Generator,
-        t: Generator,
-        a: Generator,
-        map: &FastHashMap<Label, Option<Label>>,
-    ) -> Self {
-        if let Some((source, target, label)) = &self.0 {
-            Rewrite0::new(
-                source.replace(s, t, a),
-                target.replace(s, t, a),
-                label
-                    .clone()
-                    .and_then(|l| map.get(&l).cloned().unwrap_or(label.clone())),
-            )
-        } else {
-            Rewrite0::identity()
         }
     }
 
@@ -576,22 +541,6 @@ impl RewriteN {
     pub fn suspend(&self, s: Generator, t: Generator) -> Self {
         let cones = self.cones().iter().map(|cone| cone.suspend(s, t)).collect();
         Self::new(self.dimension() + 1, cones)
-    }
-
-    #[must_use]
-    pub fn replace(
-        &self,
-        s: Generator,
-        t: Generator,
-        a: Generator,
-        map: &FastHashMap<Label, Option<Label>>,
-    ) -> Self {
-        let cones = self
-            .cones()
-            .iter()
-            .map(|cone| cone.replace(s, t, a, map))
-            .collect();
-        Self::new(self.dimension(), cones)
     }
 
     pub(crate) fn collect_garbage() {
@@ -1162,10 +1111,13 @@ impl Cone {
 
     pub(crate) fn pad(&self, embedding: &[usize]) -> Self {
         match embedding.split_first() {
-            Some((offset, rest)) => Self {
-                index: self.index + offset,
-                internal: self.map(|r| r.pad(rest)).internal,
-            },
+            Some((offset, rest)) => Self::new(
+                self.index + offset,
+                self.source().iter().map(|c| c.pad(rest)).collect(),
+                self.target().pad(rest),
+                self.regular_slices().iter().map(|r| r.pad(rest)).collect(),
+                self.singular_slices().iter().map(|r| r.pad(rest)).collect(),
+            ),
             None => self.clone(),
         }
     }
@@ -1189,17 +1141,6 @@ impl Cone {
     #[must_use]
     fn suspend(&self, s: Generator, t: Generator) -> Self {
         self.map(|r| r.suspend(s, t).into())
-    }
-
-    #[must_use]
-    fn replace(
-        &self,
-        s: Generator,
-        t: Generator,
-        a: Generator,
-        map: &FastHashMap<Label, Option<Label>>,
-    ) -> Self {
-        self.map(|r| r.replace(s, t, a, map))
     }
 }
 
