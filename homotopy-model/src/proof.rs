@@ -138,6 +138,8 @@ pub enum Action {
 
     Suspend(Generator, Generator),
 
+    Merge(Generator, Generator),
+
     ImportProof(SerializedData),
 
     EditSignature(SignatureEdit),
@@ -230,6 +232,7 @@ impl Action {
                 .as_ref()
                 .map_or(false, |ws| ws.diagram.dimension() > 0),
             Self::Suspend(_, _) | Self::SuspendSignature => proof.signature.has_generators(),
+            Self::Merge(_, _) => true,
             Self::ImportProof(_) => true,
             Self::EditSignature(_) | Self::EditMetadata(_) => true, /* technically the edits could be trivial but do not worry about that for now */
             Self::FlipBoundary | Self::RecoverBoundary => proof.boundary.is_some(),
@@ -285,6 +288,7 @@ impl ProofState {
             Action::Theorem => self.theorem()?,
             Action::SuspendSignature => self.suspend_signature(),
             Action::Suspend(s, t) => self.suspend(*s, *t),
+            Action::Merge(from, to) => self.merge(*from, *to)?,
             Action::EditSignature(edit) => self.edit_signature(edit),
             Action::FlipBoundary => self.flip_boundary(),
             Action::RecoverBoundary => self.recover_boundary(),
@@ -744,7 +748,6 @@ impl ProofState {
         let mut new_signature: Signature = Default::default();
 
         // Skip the root node
-        //TODO Potentially need to know whether suspension is abelian to work
         let root = new_signature.as_tree().root();
         for (_, data) in self.signature.as_tree().iter().skip(1) {
             let parent = data.parent().unwrap_or(root);
@@ -779,6 +782,65 @@ impl ProofState {
         true
     }
 
+    /// Handler for [Action::Merge].
+    fn merge(&mut self, from: Generator, to: Generator) -> Result<bool, ProofError> {
+        let info_from = self
+            .signature
+            .generator_info(from)
+            .ok_or(ProofError::UnknownGeneratorSelected)?;
+        let info_to = self
+            .signature
+            .generator_info(to)
+            .ok_or(ProofError::UnknownGeneratorSelected)?;
+        let invertible = info_from.invertible || info_to.invertible;
+        let oriented = info_from.oriented || info_to.oriented;
+
+        let mut new_signature: Signature = Default::default();
+
+        // Skip the root node
+        let root = new_signature.as_tree().root();
+        for (_, data) in self.signature.as_tree().iter().skip(1) {
+            let parent = data.parent().unwrap_or(root);
+            match data.inner() {
+                SignatureItem::Folder(_) => {
+                    new_signature.push_onto(parent, data.inner().clone());
+                }
+                SignatureItem::Item(info) if info.generator == from => {}
+                SignatureItem::Item(info) if info.generator == to => {
+                    new_signature.push_onto(
+                        parent,
+                        SignatureItem::Item(GeneratorInfo {
+                            oriented,
+                            invertible,
+                            ..info.clone()
+                        }),
+                    );
+                }
+                SignatureItem::Item(info) => {
+                    let mut diagram = info.diagram.replace(from, to);
+                    if oriented {
+                        diagram = diagram.remove_framing(to);
+                    }
+                    new_signature.push_onto(
+                        parent,
+                        SignatureItem::Item(GeneratorInfo {
+                            diagram,
+                            ..info.clone()
+                        }),
+                    );
+                }
+            }
+        }
+        self.signature = new_signature;
+        if let Some(ws) = &self.workspace {
+            self.workspace = Some(Workspace::new(ws.diagram.replace(from, to)));
+        }
+        if let Some(bd) = &mut self.boundary {
+            bd.diagram = bd.diagram.replace(from, to);
+        }
+
+        Ok(true)
+    }
     /// Handler for [Action::ImportProof].
     fn import_proof(&mut self, data: &SerializedData) -> Result<bool, ProofError> {
         let ((signature, workspace), metadata) = serialize::deserialize(&data.0)

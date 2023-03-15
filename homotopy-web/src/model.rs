@@ -1,10 +1,13 @@
 pub use history::Proof;
 use history::{History, UndoState};
-use homotopy_core::{common::BoundaryPath, Boundary, Diagram, DiagramN, SliceIndex};
+use homotopy_core::{
+    common::{BoundaryPath, Generator},
+    signature::Signature,
+    Boundary, Diagram, DiagramN, SliceIndex,
+};
 use homotopy_graphics::{manim, stl, svg, tikz};
 use homotopy_model::proof::AttachOption;
 pub use homotopy_model::{history, migration, proof, serialize};
-use im::Vector;
 use serde::Serialize;
 use thiserror::Error;
 use wasm_bindgen::JsCast;
@@ -20,9 +23,10 @@ pub enum Action {
     ExportSvg,
     ExportManim(bool),
     ExportStl,
-    Select(usize),
 
-    ClearAttach,
+    Select(usize),
+    ClearSelections,
+    Merge(Generator),
     SelectPoint(Vec<SliceIndex>, bool),
     HighlightAttachment(Option<AttachOption>),
     HighlightSlice(Option<SliceIndex>),
@@ -62,10 +66,25 @@ impl From<history::Action> for Action {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Selectables {
+    Merge(Generator, Vec<Generator>),
+    Attach(Vec<AttachOption>),
+}
+
+impl Selectables {
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::Attach(_) => "Attach",
+            Self::Merge(_, _) => "Merge",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct State {
     pub history: History,
-    pub attach: Option<Vector<AttachOption>>,
+    pub options: Option<Selectables>,
     pub attachment_highlight: Option<AttachOption>,
     pub slice_highlight: Option<SliceIndex>,
 }
@@ -93,7 +112,7 @@ impl State {
                     }
                     self.history.add(action, proof);
                 }
-                self.clear_attach();
+                self.clear_selections();
             }
 
             Action::History(history::Action::Move(dir)) => {
@@ -117,7 +136,7 @@ impl State {
                         }
                     }
                 };
-                self.clear_attach();
+                self.clear_selections();
             }
 
             Action::ExportTikz(leftright, with_braid) => {
@@ -223,7 +242,7 @@ impl State {
             }
 
             Action::Select(index) => {
-                let action = match self.attach.as_ref() {
+                let action = match self.options.as_ref() {
                     // Select a generator.
                     None => proof::Action::SelectGenerator(
                         self.proof()
@@ -234,8 +253,12 @@ impl State {
                             .generator,
                     ),
                     // Select an attachment option.
-                    Some(att) => proof::Action::Attach(
+                    Some(Selectables::Attach(att)) => proof::Action::Attach(
                         att.get(index).ok_or(ModelError::IndexOutOfBounds)?.clone(),
+                    ),
+                    Some(Selectables::Merge(from, tos)) => proof::Action::Merge(
+                        *from,
+                        *tos.get(index).ok_or(ModelError::IndexOutOfBounds)?,
                     ),
                 };
                 self.update(Action::Proof(action))?;
@@ -243,7 +266,8 @@ impl State {
             Action::SelectPoint(point, weak_units) => self.select_point(&point, weak_units)?,
             Action::HighlightAttachment(option) => self.highlight_attachment(option),
             Action::HighlightSlice(slice) => self.highlight_slice(slice),
-            Action::ClearAttach => self.clear_attach(),
+            Action::ClearSelections => self.clear_selections(),
+            Action::Merge(generator) => self.merge_options(generator),
             Action::Help => help()?,
         }
 
@@ -256,7 +280,7 @@ impl State {
             return Ok(());
         };
 
-        let mut matches: Vector<AttachOption> = Default::default();
+        let mut matches: Vec<AttachOption> = Default::default();
 
         let point = {
             let mut point_with_path: Vec<SliceIndex> = workspace.path.iter().copied().collect();
@@ -336,17 +360,17 @@ impl State {
 
         match matches.len() {
             0 => {
-                self.clear_attach();
+                self.clear_selections();
                 return Err(ModelError::NoAttachment);
             }
             1 => {
-                self.clear_attach();
+                self.clear_selections();
                 self.update(Action::Proof(proof::Action::Attach(
                     matches.into_iter().next().unwrap(),
                 )))?;
             }
             _ => {
-                self.attach = Some(matches);
+                self.options = Some(Selectables::Attach(matches));
                 self.attachment_highlight = None;
                 self.slice_highlight = None;
             }
@@ -365,11 +389,19 @@ impl State {
         self.slice_highlight = option;
     }
 
-    /// Handler for [Action::ClearAttach].
-    fn clear_attach(&mut self) {
-        self.attach = None;
+    /// Handler for [Action::ClearSelections].
+    fn clear_selections(&mut self) {
+        self.options = None;
         self.attachment_highlight = None;
         self.slice_highlight = None;
+    }
+
+    /// Handler for [Action::MergeOptions].
+    fn merge_options(&mut self, generator: Generator) {
+        let result = self.proof().signature.globular_pairs(generator);
+        if !result.is_empty() {
+            self.options = Some(Selectables::Merge(generator, result));
+        }
     }
 }
 

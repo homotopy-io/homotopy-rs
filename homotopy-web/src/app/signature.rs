@@ -5,7 +5,7 @@ use yew_macro::function_component;
 
 use crate::{
     app::sidebar::DrawerViewSize,
-    model::proof::{Action, Signature},
+    model::{proof::Signature, Action},
 };
 
 mod folder;
@@ -25,7 +25,7 @@ pub fn signature_view(props: &Props) -> Html {
     let suspension_controls = if props.signature.has_generators() {
         html! {
             <div>
-                <button onclick={props.dispatch.reform(move |_| proof::Action::SuspendSignature)}>{"Suspend"}</button>
+                <button onclick={props.dispatch.reform(move |_| proof::Action::SuspendSignature.into())}>{"Suspend"}</button>
             </div>
         }
     } else {

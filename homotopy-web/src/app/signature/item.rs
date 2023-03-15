@@ -17,9 +17,12 @@ use crate::{
         delta::CallbackIdx,
         icon::{Icon, IconSize},
     },
-    model::proof::{
-        generators::GeneratorInfo, Action, Signature, SignatureEdit, SignatureItem,
-        SignatureItemEdit, COLORS, VERTEX_SHAPES,
+    model::{
+        proof::{
+            self, generators::GeneratorInfo, Signature, SignatureEdit, SignatureItem,
+            SignatureItemEdit, COLORS, VERTEX_SHAPES,
+        },
+        Action,
     },
 };
 
@@ -84,7 +87,7 @@ pub enum NewFolderKind {
 
 #[derive(Properties, Debug, Clone, PartialEq)]
 pub struct NewFolderButtonProps {
-    pub dispatch: Callback<Action>,
+    pub dispatch: Callback<proof::Action>,
     pub kind: NewFolderKind,
     pub node: Node,
 }
@@ -94,7 +97,7 @@ pub fn new_folder_button(props: &NewFolderButtonProps) -> Html {
     let node = props.node;
     let on_click = props
         .dispatch
-        .reform(move |_| Action::EditSignature(SignatureEdit::NewFolder(node)));
+        .reform(move |_| proof::Action::EditSignature(SignatureEdit::NewFolder(node)));
 
     html! {
         <ItemViewButton
@@ -151,8 +154,10 @@ pub enum ItemViewMessage {
     Noop,
 }
 
-fn apply_edit(dispatch: &Callback<Action>, node: Node, edit: SignatureItemEdit) -> bool {
-    dispatch.emit(Action::EditSignature(SignatureEdit::Edit(node, edit)));
+fn apply_edit(dispatch: &Callback<proof::Action>, node: Node, edit: SignatureItemEdit) -> bool {
+    dispatch.emit(proof::Action::EditSignature(SignatureEdit::Edit(
+        node, edit,
+    )));
     true
 }
 
@@ -233,7 +238,11 @@ impl Component for ItemView {
                     return true;
                 };
 
-                return apply_edit(&ctx.props().dispatch, ctx.props().node, edit);
+                return apply_edit(
+                    &ctx.props().dispatch.reform(Action::Proof),
+                    ctx.props().node,
+                    edit,
+                );
             }
             ItemViewMessage::CachePreview(show_single_preview, diagram) => {
                 self.cache_preview(ctx, show_single_preview, &diagram);
@@ -303,7 +312,7 @@ impl Component for ItemView {
                 let generator = info.generator;
                 ctx.props()
                     .dispatch
-                    .reform(move |_| Action::SelectGenerator(generator))
+                    .reform(move |_| proof::Action::SelectGenerator(generator).into())
             }
             _ => Callback::noop(),
         };
@@ -349,7 +358,7 @@ impl ItemView {
             };
             if &self.name != prev_name {
                 apply_edit(
-                    &ctx.props().dispatch,
+                    &ctx.props().dispatch.reform(Action::Proof),
                     ctx.props().node,
                     SignatureItemEdit::Rename(self.name.clone()),
                 );
@@ -575,10 +584,9 @@ impl ItemView {
             SignatureItem::Folder(info) => {
                 let icon = if info.open { "folder_open" } else { "folder" };
                 let node = ctx.props().node;
-                let toggle = ctx
-                    .props()
-                    .dispatch
-                    .reform(move |_| Action::EditSignature(SignatureEdit::ToggleFolder(node)));
+                let toggle = ctx.props().dispatch.reform(move |_| {
+                    proof::Action::EditSignature(SignatureEdit::ToggleFolder(node)).into()
+                });
 
                 html! {
                     <>
@@ -642,7 +650,7 @@ impl ItemView {
                             } />
                         <ItemViewButton icon={"delete"} light={icon_light} on_click={
                             ctx.props().dispatch.reform(
-                                move |_| Action::EditSignature(SignatureEdit::Remove(node))
+                                move |_| proof::Action::EditSignature(SignatureEdit::Remove(node)).into()
                                 )
                         } />
                         </>
@@ -677,7 +685,7 @@ impl ItemView {
                     let new_folder = if info.open {
                         html! {
                             <NewFolderButton
-                                dispatch={ctx.props().dispatch.clone()}
+                                dispatch={ctx.props().dispatch.reform(Action::Proof)}
                                 node={ctx.props().node}
                                 kind={NewFolderKind::Inline}
                             />
@@ -705,7 +713,7 @@ impl ItemView {
                     <>
                         <ItemViewButton icon={"delete"} on_click={
                             ctx.props().dispatch.reform(
-                                move |_| Action::EditSignature(SignatureEdit::Remove(node))
+                                move |_| proof::Action::EditSignature(SignatureEdit::Remove(node)).into()
                             )
                         } />
                         <ItemViewButton icon={"done"} on_click={
@@ -811,12 +819,22 @@ impl ItemView {
         let generator = info.generator;
         let suspension_button = html! {
             <div>
-                <button onclick={ctx.props().dispatch.reform(move |_| Action::Suspend(generator, generator))}>{"Suspend"}</button>
+                <button onclick={ctx.props().dispatch.reform(move |_| proof::Action::Suspend(generator, generator).into())}>{"Suspend"}</button>
+            </div>
+        };
+        let merge_button = html! {
+            <div>
+                <button onclick={ctx.props().dispatch.reform(move |_| Action::Merge(generator))}>{"Merge"}</button>
             </div>
         };
 
         match generator.dimension {
-            0 => suspension_button,
+            0 => html! {
+                <>
+                    {suspension_button}
+                    {merge_button}
+                </>
+            },
             _ => html! {
                 <div class="signature__generator-preferences-wrapper">
                     <GeneratorPreferenceCheckbox
@@ -843,6 +861,7 @@ impl ItemView {
                         checked={info.oriented}
                         disabled={info.oriented}
                     />
+                    {merge_button}
                 </div>
             },
         }

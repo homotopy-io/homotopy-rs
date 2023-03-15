@@ -220,6 +220,13 @@ impl Diagram {
             Self::DiagramN(d) => d.suspend(s, t),
         }
     }
+    #[must_use]
+    pub fn replace(&self, from: Generator, to: Generator) -> Diagram {
+        match self {
+            Self::Diagram0(d) => Self::Diagram0(d.replace(from, to)),
+            Self::DiagramN(d) => Self::DiagramN(d.replace(from, to)),
+        }
+    }
 }
 
 pub(crate) fn globularity(s: &Diagram, t: &Diagram) -> bool {
@@ -288,6 +295,15 @@ impl Diagram0 {
             let source: Diagram0 = s.into();
             let cospan = Cospan { forward, backward };
             DiagramN::new(source.into(), vec![cospan])
+        }
+    }
+
+    #[must_use]
+    pub fn replace(&self, from: Generator, to: Generator) -> Self {
+        if self.generator == from {
+            Self::new(to, self.orientation)
+        } else {
+            *self
         }
     }
 
@@ -393,16 +409,23 @@ impl DiagramN {
     }
 
     #[must_use]
-    pub fn suspend(&self, s: Generator, t: Generator) -> DiagramN {
-        // Suspend source
-        // Then suspend each cospan
-        let source = self.source().suspend(s, t);
-        let cospans: Vec<_> = self
-            .cospans()
-            .iter()
-            .map(|c| c.map(|r| r.suspend(s, t).into()))
-            .collect();
-        Self::new(source.into(), cospans)
+    pub fn map<F, G>(&self, f: F, g: G) -> Self
+    where
+        F: Fn(&Diagram) -> Diagram,
+        G: Fn(&Rewrite) -> Rewrite,
+    {
+        let cospans: Vec<_> = self.cospans().iter().map(|c| c.map(|r| g(r))).collect();
+        Self::new(f(&self.source()), cospans)
+    }
+
+    #[must_use]
+    pub fn suspend(&self, s: Generator, t: Generator) -> Self {
+        self.map(|d| d.suspend(s, t).into(), |r| r.suspend(s, t).into())
+    }
+
+    #[must_use]
+    pub fn replace(&self, from: Generator, to: Generator) -> Self {
+        self.map(|d| d.replace(from, to), |r| r.replace(from, to))
     }
 
     pub(crate) fn collect_garbage() {

@@ -221,6 +221,14 @@ impl Rewrite {
     }
 
     #[must_use]
+    pub fn replace(&self, from: Generator, to: Generator) -> Self {
+        match self {
+            Self::Rewrite0(r) => Self::Rewrite0(r.replace(from, to)),
+            Self::RewriteN(r) => Self::RewriteN(r.replace(from, to)),
+        }
+    }
+
+    #[must_use]
     pub fn orientation_transform(&self, k: Orientation) -> Self {
         self.orientation_transform_above(k, self.dimension())
     }
@@ -357,6 +365,19 @@ impl Rewrite0 {
                     vec![singular_slices],
                 )
             }
+        }
+    }
+
+    #[must_use]
+    pub fn replace(&self, from: Generator, to: Generator) -> Self {
+        if let Some((source, target, label)) = &self.0 {
+            Rewrite0::new(
+                source.replace(from, to),
+                target.replace(from, to),
+                label.clone(),
+            )
+        } else {
+            Rewrite0::identity()
         }
     }
 
@@ -541,6 +562,16 @@ impl RewriteN {
     pub fn suspend(&self, s: Generator, t: Generator) -> Self {
         let cones = self.cones().iter().map(|cone| cone.suspend(s, t)).collect();
         Self::new(self.dimension() + 1, cones)
+    }
+
+    #[must_use]
+    pub fn replace(&self, from: Generator, to: Generator) -> Self {
+        let cones = self
+            .cones()
+            .iter()
+            .map(|cone| cone.replace(from, to))
+            .collect();
+        Self::new(self.dimension(), cones)
     }
 
     pub(crate) fn collect_garbage() {
@@ -1111,13 +1142,10 @@ impl Cone {
 
     pub(crate) fn pad(&self, embedding: &[usize]) -> Self {
         match embedding.split_first() {
-            Some((offset, rest)) => Self::new(
-                self.index + offset,
-                self.source().iter().map(|c| c.pad(rest)).collect(),
-                self.target().pad(rest),
-                self.regular_slices().iter().map(|r| r.pad(rest)).collect(),
-                self.singular_slices().iter().map(|r| r.pad(rest)).collect(),
-            ),
+            Some((offset, rest)) => Self {
+                index: self.index + offset,
+                internal: self.map(|r| r.pad(rest)).internal,
+            },
             None => self.clone(),
         }
     }
@@ -1141,6 +1169,11 @@ impl Cone {
     #[must_use]
     fn suspend(&self, s: Generator, t: Generator) -> Self {
         self.map(|r| r.suspend(s, t).into())
+    }
+
+    #[must_use]
+    fn replace(&self, from: Generator, to: Generator) -> Self {
+        self.map(|r| r.replace(from, to))
     }
 }
 

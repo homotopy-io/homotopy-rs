@@ -5,7 +5,10 @@ use super::item::ItemView;
 use crate::{
     app::sidebar::DrawerViewSize,
     components::{add_class, remove_class},
-    model::proof::{Action, Signature, SignatureEdit, SignatureItem},
+    model::{
+        proof::{self, Signature, SignatureEdit, SignatureItem},
+        Action,
+    },
 };
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -80,9 +83,10 @@ where
         e.data_transfer()
             .and_then(|dt| dt.get_data("text/plain").ok())
             .and_then(|data| data.parse().ok())
-            .map_or(Action::Nothing, |from| {
-                Action::EditSignature(f(Node::new(from)))
+            .map_or(proof::Action::Nothing, |from| {
+                proof::Action::EditSignature(f(Node::new(from)))
             })
+            .into()
     }
 }
 

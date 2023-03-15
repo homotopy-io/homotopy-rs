@@ -4,7 +4,6 @@ use homotopy_core::{
     common::{Boundary, Height, SliceIndex},
     DiagramN,
 };
-use im::Vector;
 use path_control::PathControl;
 use slice_control::SliceControl;
 use view_control::ViewControl;
@@ -37,7 +36,6 @@ pub struct Props {
     pub dispatch: Callback<Action>,
     pub signature: Signature,
     pub metadata: Metadata,
-    pub attach: Option<Vector<AttachOption>>,
     pub attachment_highlight: Option<AttachOption>,
     pub slice_highlight: Option<SliceIndex>,
 }

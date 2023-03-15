@@ -1,18 +1,18 @@
-use homotopy_core::signature::Signature as S;
+use homotopy_core::{common::Generator, signature::Signature as S};
 use yew::prelude::*;
 
 use crate::{
     app::tex::TexSpan,
     model::{
         proof::{self, AttachOption, Signature},
-        Action,
+        Action, Selectables,
     },
 };
 
 #[derive(Debug, Clone, PartialEq, Properties)]
 pub struct Props {
     pub dispatch: Callback<Action>,
-    pub options: im::Vector<AttachOption>,
+    pub options: Selectables,
     pub signature: Signature,
 }
 
@@ -34,14 +34,19 @@ impl Component for AttachView {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        html! {
-            { for ctx.props().options.iter().map(|option| Self::view_option(ctx, option)) }
+        match &ctx.props().options {
+            Selectables::Attach(att) => html! {
+                { for att.iter().map(|option| Self::view_attach_option(ctx, option)) }
+            },
+            Selectables::Merge(from, tos) => html! {
+                { for tos.iter().map(|&to| Self::view_merge_option(ctx, *from, to)) }
+            },
         }
     }
 }
 
 impl AttachView {
-    pub fn view_option(ctx: &Context<Self>, option: &AttachOption) -> Html {
+    pub fn view_attach_option(ctx: &Context<Self>, option: &AttachOption) -> Html {
         let info = ctx
             .props()
             .signature
@@ -81,6 +86,34 @@ impl AttachView {
                     error_color="#c004"
                     raw_tex={
                         format!("{}{}", info.name, option.tag.as_ref().map_or(Default::default(), |t| format!(" ({t})")))
+                    }
+                />
+            </li>
+        }
+    }
+
+    pub fn view_merge_option(ctx: &Context<Self>, from: Generator, to: Generator) -> Html {
+        let info = ctx.props().signature.generator_info(to).unwrap();
+
+        let onclick = ctx
+            .props()
+            .dispatch
+            .reform(move |_| Action::Proof(proof::Action::Merge(from, to)));
+
+        html! {
+            <li
+                class="attach__option"
+                onclick={onclick}
+            >
+                <span
+                    class="attach__option-color"
+                    style={format!("background: {}", info.color)}
+                />
+                <TexSpan
+                    class="attach__option-name"
+                    error_color="#c004"
+                    raw_tex={
+                        format!("{}", info.name)
                     }
                 />
             </li>
