@@ -745,33 +745,19 @@ impl ProofState {
 
     /// Handler for [Action::Suspend].
     fn suspend(&mut self, source: Generator, target: Generator) -> bool {
-        let mut new_signature: Signature = Default::default();
-
-        // Skip the root node
-        let root = new_signature.as_tree().root();
-        for (_, data) in self.signature.as_tree().iter().skip(1) {
-            let parent = data.parent().unwrap_or(root);
-            match data.inner() {
-                SignatureItem::Folder(_) => {
-                    new_signature.push_onto(parent, data.inner().clone());
-                }
-                SignatureItem::Item(info)
-                    if info.generator == source || info.generator == target =>
-                {
-                    new_signature.push_onto(parent, data.inner().clone());
-                }
-                SignatureItem::Item(info) => {
-                    let gen: GeneratorInfo = GeneratorInfo {
-                        generator: info.generator.suspended(),
-                        diagram: info.diagram.suspend(source, target).into(),
-                        oriented: false,
-                        ..info.clone()
-                    };
-                    new_signature.push_onto(parent, SignatureItem::Item(gen));
-                }
+        self.signature = self.signature.filter_map(|info| {
+            if info.generator == source || info.generator == target {
+                Some(info.clone())
+            } else {
+                Some(GeneratorInfo {
+                    generator: info.generator.suspended(),
+                    diagram: info.diagram.suspend(source, target).into(),
+                    oriented: false,
+                    ..info.clone()
+                })
             }
-        }
-        self.signature = new_signature;
+        });
+
         if let Some(ws) = &self.workspace {
             self.workspace = Some(Workspace::new(ws.diagram.suspend(source, target).into()));
         }
@@ -795,40 +781,24 @@ impl ProofState {
         let invertible = info_from.invertible || info_to.invertible;
         let oriented = info_from.oriented || info_to.oriented;
 
-        let mut new_signature: Signature = Default::default();
-
-        // Skip the root node
-        let root = new_signature.as_tree().root();
-        for (_, data) in self.signature.as_tree().iter().skip(1) {
-            let parent = data.parent().unwrap_or(root);
-            match data.inner() {
-                SignatureItem::Folder(_) => {
-                    new_signature.push_onto(parent, data.inner().clone());
-                }
-                SignatureItem::Item(info) if info.generator == from => {}
-                SignatureItem::Item(info) if info.generator == to => {
-                    new_signature.push_onto(
-                        parent,
-                        SignatureItem::Item(GeneratorInfo {
-                            diagram: info.diagram.replace(from, to, oriented),
-                            oriented,
-                            invertible,
-                            ..info.clone()
-                        }),
-                    );
-                }
-                SignatureItem::Item(info) => {
-                    new_signature.push_onto(
-                        parent,
-                        SignatureItem::Item(GeneratorInfo {
-                            diagram: info.diagram.replace(from, to, oriented),
-                            ..info.clone()
-                        }),
-                    );
-                }
+        self.signature = self.signature.filter_map(|info| {
+            if info.generator == from {
+                None
+            } else {
+                let (oriented, invertible) = if info.generator == to {
+                    (oriented, invertible)
+                } else {
+                    (info.oriented, info.invertible)
+                };
+                Some(GeneratorInfo {
+                    diagram: info.diagram.replace(from, to, oriented),
+                    oriented,
+                    invertible,
+                    ..info.clone()
+                })
             }
-        }
-        self.signature = new_signature;
+        });
+
         if let Some(ws) = &self.workspace {
             self.workspace = Some(Workspace::new(ws.diagram.replace(from, to, oriented)));
         }

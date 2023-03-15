@@ -5,7 +5,7 @@ use std::{
     ops::{Deref, DerefMut, Index, IndexMut},
 };
 
-use crate::{declare_idx, idx::IdxVec};
+use crate::{declare_idx, hash::FastHashMap, idx::IdxVec};
 
 declare_idx! {
     #[derive(serde::Serialize, serde::Deserialize)]
@@ -212,6 +212,27 @@ impl<T> Tree<T> {
             root: self.root,
             nodes: self.nodes.map(|nd| nd.map(|x| f(x))),
         }
+    }
+
+    pub fn filter_map<F, U>(self, mut f: F) -> Tree<U>
+    where
+        F: FnMut(&T) -> Option<U>,
+        U: Default,
+    {
+        let mut result: Tree<U> = Default::default();
+        let mut node_mappings: FastHashMap<Node, Node> = Default::default();
+        node_mappings.insert(self.root, result.root);
+        for (node, data) in self.iter().skip(1) {
+            let parent = if let Some(parent) = data.parent() {
+                node_mappings[&parent]
+            } else {
+                result.root
+            };
+            if let Some(d) = f(data.inner()) {
+                node_mappings.insert(node, result.push_onto(parent, d).unwrap());
+            }
+        }
+        result
     }
 
     #[inline]
