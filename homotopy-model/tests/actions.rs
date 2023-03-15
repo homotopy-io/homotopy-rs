@@ -40,3 +40,10 @@ fn construct_adjoint_equivalence() {
 
     let _proof = actions_test_helper(action_dump);
 }
+
+#[test]
+fn merge_contract_r1() {
+    let action_dump = include_str!("examples/merge_contract_RI.json");
+
+    let _proof = actions_test_helper(action_dump);
+}

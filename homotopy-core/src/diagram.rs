@@ -221,10 +221,15 @@ impl Diagram {
         }
     }
     #[must_use]
-    pub fn replace(&self, from: Generator, to: Generator) -> Diagram {
-        match self {
+    pub fn replace(&self, from: Generator, to: Generator, remove_framing: bool) -> Diagram {
+        let diagram = match self {
             Self::Diagram0(d) => Self::Diagram0(d.replace(from, to)),
             Self::DiagramN(d) => Self::DiagramN(d.replace(from, to)),
+        };
+        if remove_framing {
+            diagram.remove_framing(to)
+        } else {
+            diagram
         }
     }
 }
@@ -425,7 +430,7 @@ impl DiagramN {
 
     #[must_use]
     pub fn replace(&self, from: Generator, to: Generator) -> Self {
-        self.map(|d| d.replace(from, to), |r| r.replace(from, to))
+        self.map(|d| d.replace(from, to, false), |r| r.replace(from, to))
     }
 
     pub(crate) fn collect_garbage() {

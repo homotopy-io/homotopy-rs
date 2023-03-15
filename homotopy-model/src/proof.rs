@@ -810,6 +810,7 @@ impl ProofState {
                     new_signature.push_onto(
                         parent,
                         SignatureItem::Item(GeneratorInfo {
+                            diagram: info.diagram.replace(from, to, oriented),
                             oriented,
                             invertible,
                             ..info.clone()
@@ -817,14 +818,10 @@ impl ProofState {
                     );
                 }
                 SignatureItem::Item(info) => {
-                    let mut diagram = info.diagram.replace(from, to);
-                    if oriented {
-                        diagram = diagram.remove_framing(to);
-                    }
                     new_signature.push_onto(
                         parent,
                         SignatureItem::Item(GeneratorInfo {
-                            diagram,
+                            diagram: info.diagram.replace(from, to, oriented),
                             ..info.clone()
                         }),
                     );
@@ -833,10 +830,10 @@ impl ProofState {
         }
         self.signature = new_signature;
         if let Some(ws) = &self.workspace {
-            self.workspace = Some(Workspace::new(ws.diagram.replace(from, to)));
+            self.workspace = Some(Workspace::new(ws.diagram.replace(from, to, oriented)));
         }
         if let Some(bd) = &mut self.boundary {
-            bd.diagram = bd.diagram.replace(from, to);
+            bd.diagram = bd.diagram.replace(from, to, oriented);
         }
 
         Ok(true)
