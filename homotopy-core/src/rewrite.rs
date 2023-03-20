@@ -221,10 +221,10 @@ impl Rewrite {
     }
 
     #[must_use]
-    pub fn replace(&self, from: Generator, to: Generator) -> Self {
+    pub fn replace(&self, from: Generator, to: Generator, oriented: bool) -> Self {
         match self {
-            Self::Rewrite0(r) => Self::Rewrite0(r.replace(from, to)),
-            Self::RewriteN(r) => Self::RewriteN(r.replace(from, to)),
+            Self::Rewrite0(r) => Self::Rewrite0(r.replace(from, to, oriented)),
+            Self::RewriteN(r) => Self::RewriteN(r.replace(from, to, oriented)),
         }
     }
 
@@ -369,15 +369,17 @@ impl Rewrite0 {
     }
 
     #[must_use]
-    pub fn replace(&self, from: Generator, to: Generator) -> Self {
-        if let Some((source, target, label)) = &self.0 {
-            Rewrite0::new(
+    pub fn replace(&self, from: Generator, to: Generator, oriented: bool) -> Self {
+        match &self.0 {
+            None => Self(None),
+            Some((source, target, label)) => Self::new(
                 source.replace(from, to),
                 target.replace(from, to),
-                label.clone(),
-            )
-        } else {
-            Rewrite0::identity()
+                label
+                    .as_ref()
+                    .filter(|_| oriented && target.generator == to)
+                    .cloned(),
+            ),
         }
     }
 
@@ -565,11 +567,11 @@ impl RewriteN {
     }
 
     #[must_use]
-    pub fn replace(&self, from: Generator, to: Generator) -> Self {
+    pub fn replace(&self, from: Generator, to: Generator, oriented: bool) -> Self {
         let cones = self
             .cones()
             .iter()
-            .map(|cone| cone.replace(from, to))
+            .map(|cone| cone.replace(from, to, oriented))
             .collect();
         Self::new(self.dimension(), cones)
     }
@@ -1172,8 +1174,8 @@ impl Cone {
     }
 
     #[must_use]
-    fn replace(&self, from: Generator, to: Generator) -> Self {
-        self.map(|r| r.replace(from, to))
+    fn replace(&self, from: Generator, to: Generator, oriented: bool) -> Self {
+        self.map(|r| r.replace(from, to, oriented))
     }
 }
 
