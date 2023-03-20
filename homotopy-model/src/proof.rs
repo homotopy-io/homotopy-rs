@@ -78,6 +78,7 @@ pub struct ProofState {
     pub workspace: Option<Workspace>,
     pub metadata: Metadata,
     pub boundary: Option<SelectedBoundary>,
+    pub stack: Vector<Workspace>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
@@ -149,6 +150,10 @@ pub enum Action {
     FlipBoundary,
 
     RecoverBoundary,
+
+    Stash,
+
+    StashPop,
 
     Nothing,
 }
@@ -236,6 +241,8 @@ impl Action {
             Self::ImportProof(_) => true,
             Self::EditSignature(_) | Self::EditMetadata(_) => true, /* technically the edits could be trivial but do not worry about that for now */
             Self::FlipBoundary | Self::RecoverBoundary => proof.boundary.is_some(),
+            Self::Stash => proof.workspace.is_some(),
+            Self::StashPop => !proof.stack.is_empty(),
             Self::Nothing => false,
         }
     }
@@ -294,6 +301,8 @@ impl ProofState {
             Action::EditSignature(edit) => self.edit_signature(edit)?,
             Action::FlipBoundary => self.flip_boundary(),
             Action::RecoverBoundary => self.recover_boundary(),
+            Action::Stash => self.stash_push(),
+            Action::StashPop => self.stash_pop(),
             Action::ImportProof(data) => self.import_proof(data)?,
             Action::EditMetadata(edit) => self.edit_metadata(edit),
             Action::Nothing => false,
@@ -930,6 +939,24 @@ impl ProofState {
     fn recover_boundary(&mut self) -> bool {
         let Some(selected) = self.boundary.as_ref() else { return false };
         self.workspace = Some(Workspace::new(selected.diagram.clone()));
+        true
+    }
+
+    /// Handler for [Action::StashPush].
+    ///
+    /// Invalid if the workspace is empty.
+    fn stash_push(&mut self) -> bool {
+        let Some(ws) = self.workspace.take() else { return false };
+        self.stack.push_back(ws);
+        true
+    }
+
+    /// Handler for [Action::StashPop].
+    ///
+    /// Invalid if the stack is empty.
+    fn stash_pop(&mut self) -> bool {
+        let Some(stashed) = self.stack.pop_back() else { return false };
+        self.workspace = Some(stashed);
         true
     }
 }
