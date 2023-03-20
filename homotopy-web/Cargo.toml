@@ -43,7 +43,7 @@ tracing-web = "0.1.2"
 tracing = { version = "0.1.37", features = ["log"] }
 tracing-subscriber = { version = "0.3.16", features = ["time"] }
 euclid = "0.22.7"
-ultraviolet = "0.9.0"
+ultraviolet = "0.9.1"
 lyon_path = "1.0.3"
 thiserror = "1.0.40"
 katex = { version = "0.4", features = ["wasm-js"], default-features = false }
