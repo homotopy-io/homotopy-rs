@@ -1,4 +1,7 @@
-use crate::{diagram::NewDiagramError, Diagram, Diagram0, DiagramN, Generator};
+use crate::{
+    diagram::{globularity, NewDiagramError},
+    Diagram, Diagram0, DiagramN, Generator,
+};
 
 pub trait GeneratorInfo {
     fn diagram(&self) -> &Diagram;
@@ -15,6 +18,15 @@ pub trait Signature {
         source: impl Into<Diagram>,
         target: impl Into<Diagram>,
     ) -> Result<DiagramN, NewDiagramError>;
+
+    fn globular_pairs(&self, generator: Generator) -> Vec<Generator> {
+        let diagram = self.generator_info(generator).unwrap().diagram();
+        self.generators()
+            .filter(|&g| {
+                g != generator && globularity(self.generator_info(g).unwrap().diagram(), diagram)
+            })
+            .collect()
+    }
 }
 
 /// Helper struct for building signatures in tests and benchmarks.

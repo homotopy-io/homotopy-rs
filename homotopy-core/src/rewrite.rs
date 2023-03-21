@@ -221,16 +221,10 @@ impl Rewrite {
     }
 
     #[must_use]
-    pub fn replace(
-        &self,
-        s: Generator,
-        t: Generator,
-        a: Generator,
-        map: &FastHashMap<Label, Option<Label>>,
-    ) -> Self {
+    pub fn replace(&self, from: Generator, to: Generator, oriented: bool) -> Self {
         match self {
-            Self::Rewrite0(r) => Self::Rewrite0(r.replace(s, t, a, map)),
-            Self::RewriteN(r) => Self::RewriteN(r.replace(s, t, a, map)),
+            Self::Rewrite0(r) => Self::Rewrite0(r.replace(from, to, oriented)),
+            Self::RewriteN(r) => Self::RewriteN(r.replace(from, to, oriented)),
         }
     }
 
@@ -375,23 +369,17 @@ impl Rewrite0 {
     }
 
     #[must_use]
-    pub fn replace(
-        &self,
-        s: Generator,
-        t: Generator,
-        a: Generator,
-        map: &FastHashMap<Label, Option<Label>>,
-    ) -> Self {
-        if let Some((source, target, label)) = &self.0 {
-            Rewrite0::new(
-                source.replace(s, t, a),
-                target.replace(s, t, a),
+    pub fn replace(&self, from: Generator, to: Generator, oriented: bool) -> Self {
+        match &self.0 {
+            None => Self(None),
+            Some((source, target, label)) => Self::new(
+                source.replace(from, to),
+                target.replace(from, to),
                 label
-                    .clone()
-                    .and_then(|l| map.get(&l).cloned().unwrap_or(label.clone())),
-            )
-        } else {
-            Rewrite0::identity()
+                    .as_ref()
+                    .filter(|_| !oriented || target.generator != from && target.generator != to)
+                    .cloned(),
+            ),
         }
     }
 
@@ -457,14 +445,14 @@ impl Rewrite0 {
     pub fn remove_framing(&self, generator: Generator) -> Self {
         match &self.0 {
             None => Self(None),
-            Some((source, target, label)) => {
-                let new_label = if target.generator == generator {
-                    None
-                } else {
-                    label.clone()
-                };
-                Self::new(*source, *target, new_label)
-            }
+            Some((source, target, label)) => Self::new(
+                *source,
+                *target,
+                label
+                    .as_ref()
+                    .filter(|_| target.generator != generator)
+                    .cloned(),
+            ),
         }
     }
 }
@@ -579,17 +567,11 @@ impl RewriteN {
     }
 
     #[must_use]
-    pub fn replace(
-        &self,
-        s: Generator,
-        t: Generator,
-        a: Generator,
-        map: &FastHashMap<Label, Option<Label>>,
-    ) -> Self {
+    pub fn replace(&self, from: Generator, to: Generator, oriented: bool) -> Self {
         let cones = self
             .cones()
             .iter()
-            .map(|cone| cone.replace(s, t, a, map))
+            .map(|cone| cone.replace(from, to, oriented))
             .collect();
         Self::new(self.dimension(), cones)
     }
@@ -1192,14 +1174,8 @@ impl Cone {
     }
 
     #[must_use]
-    fn replace(
-        &self,
-        s: Generator,
-        t: Generator,
-        a: Generator,
-        map: &FastHashMap<Label, Option<Label>>,
-    ) -> Self {
-        self.map(|r| r.replace(s, t, a, map))
+    fn replace(&self, from: Generator, to: Generator, oriented: bool) -> Self {
+        self.map(|r| r.replace(from, to, oriented))
     }
 }
 

@@ -137,7 +137,7 @@ declare_sidebar_drawers! {
         |dispatch: &Callback<model::Action>, proof: &Proof, drawer_view_size: DrawerViewSize| html! {
             <SignatureView
                 signature={proof.signature.clone()}
-                dispatch={dispatch.reform(model::Action::Proof)}
+                dispatch={dispatch.clone()}
                 drawer_view_size={drawer_view_size}
             />
         },

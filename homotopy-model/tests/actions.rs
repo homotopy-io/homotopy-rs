@@ -42,8 +42,8 @@ fn construct_adjoint_equivalence() {
 }
 
 #[test]
-fn strictify_away_generators() {
-    let action_dump = include_str!("examples/strictify_multiple.json");
+fn merge_contract_r1() {
+    let action_dump = include_str!("examples/merge_contract_RI.json");
 
     let _proof = actions_test_helper(action_dump);
 }

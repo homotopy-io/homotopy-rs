@@ -6,7 +6,7 @@ use std::{
 };
 
 use hashconsing::{HConsed, HConsign, HashConsign};
-use homotopy_common::hash::{FastHashMap, FastHashSet};
+use homotopy_common::hash::FastHashSet;
 use once_cell::unsync::OnceCell;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -220,47 +220,11 @@ impl Diagram {
             Self::DiagramN(d) => d.suspend(s, t),
         }
     }
-
-    pub fn atomic_generator(&self) -> Option<Generator> {
-        match self {
-            Self::Diagram0(d) => Some(d.generator),
-            Self::DiagramN(d) if d.cospans().len() == 1 => d
-                .source()
-                .rewrite_forward(&d.cospans()[0].forward)
-                .unwrap()
-                .atomic_generator(),
-            Self::DiagramN(_) => None,
-        }
-    }
-
-    pub fn atomic_boundaries(&self) -> Option<(Generator, Generator)> {
-        if let Self::DiagramN(d) = self {
-            d.source()
-                .atomic_generator()
-                .zip(d.target().atomic_generator())
-        } else {
-            None
-        }
-    }
-
-    pub fn atomic_distinct_boundaries(&self) -> Option<(Generator, Generator)> {
-        match self.atomic_boundaries() {
-            Some((s, t)) if s != t && s.dimension == t.dimension => Some((s, t)),
-            _ => None,
-        }
-    }
-
     #[must_use]
-    pub fn replace(
-        &self,
-        source: Generator,
-        target: Generator,
-        apex: Generator,
-        map: &FastHashMap<Label, Option<Label>>,
-    ) -> Diagram {
+    pub fn replace(&self, from: Generator, to: Generator, oriented: bool) -> Diagram {
         match self {
-            Self::Diagram0(d) => Self::Diagram0(d.replace(source, target, apex)),
-            Self::DiagramN(d) => Self::DiagramN(d.replace(source, target, apex, map)),
+            Self::Diagram0(d) => Self::Diagram0(d.replace(from, to)),
+            Self::DiagramN(d) => Self::DiagramN(d.replace(from, to, oriented)),
         }
     }
 }
@@ -335,9 +299,9 @@ impl Diagram0 {
     }
 
     #[must_use]
-    pub fn replace(&self, s: Generator, t: Generator, a: Generator) -> Self {
-        if self.generator == a || self.generator == t {
-            Self::new(s, self.orientation)
+    pub fn replace(&self, from: Generator, to: Generator) -> Self {
+        if self.generator == from {
+            Self::new(to, self.orientation)
         } else {
             *self
         }
@@ -460,14 +424,11 @@ impl DiagramN {
     }
 
     #[must_use]
-    pub fn replace(
-        &self,
-        s: Generator,
-        t: Generator,
-        a: Generator,
-        map: &FastHashMap<Label, Option<Label>>,
-    ) -> Self {
-        self.map(|d| d.replace(s, t, a, map), |r| r.replace(s, t, a, map))
+    pub fn replace(&self, from: Generator, to: Generator, oriented: bool) -> Self {
+        self.map(
+            |d| d.replace(from, to, oriented),
+            |r| r.replace(from, to, oriented),
+        )
     }
 
     pub(crate) fn collect_garbage() {

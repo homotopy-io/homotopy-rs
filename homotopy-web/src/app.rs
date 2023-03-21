@@ -176,7 +176,6 @@ impl App {
                 signature={proof.signature.clone()}
                 metadata={proof.metadata.clone()}
                 dispatch={dispatch.clone()}
-                attach={state.attach.clone()}
                 attachment_highlight={state.attachment_highlight.clone()}
                 slice_highlight={state.slice_highlight}
             />
@@ -205,7 +204,7 @@ impl App {
                 <Sidebar
                     dispatch={dispatch}
                     proof={proof.clone()}
-                    attach={state.attach.clone()}
+                    options={state.options.clone()}
                 />
                 <div class="toaster">
                     <ToasterComponent timeout={3000} />
