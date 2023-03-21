@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1678723306235,
+  "lastUpdate": 1679412118294,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -46961,6 +46961,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 340.14,
             "range": "+/- 1.410",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "Chiara Sarti",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "51b10611bc8144d639e5d6df70230cbe39c1a7ee",
+          "message": "Generator identifications (#1049)\n\n* Revert \"Generator identifications (#523) (#1031)\"\r\n\r\nThis reverts commit f914f4defca7136a884ecad32810f0577590c231.\r\n\r\n* Implemented new merge UI.\r\n\r\n* Fixed orientation bugs, added test.\r\n\r\n* Fixed bug in filter map.\r\n\r\n* Remove framing in the same recursive call\r\n\r\n* Fix remove framing logic\r\n\r\n* Fix remove framing logic - part 2.\r\n\r\n---------\r\n\r\nCo-authored-by: Calin Tataru <calintat@gmail.com>",
+          "timestamp": "2023-03-21T14:58:08Z",
+          "tree_id": "52f25bd6d9522eb90a66240b83c0f65b35c544b7",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/51b10611bc8144d639e5d6df70230cbe39c1a7ee"
+        },
+        "date": 1679412102668,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 1.9577,
+            "range": "+/- 0.020",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 16.593,
+            "range": "+/- 0.213",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 267.8,
+            "range": "+/- 2.610",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 5.7303,
+            "range": "+/- 0.033",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 15.798,
+            "range": "+/- 0.186",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 408.57,
+            "range": "+/- 4.420",
             "unit": "ms"
           }
         ]
