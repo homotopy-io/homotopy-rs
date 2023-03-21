@@ -29,5 +29,8 @@ arrayvec = "0.7.2"
 [dev-dependencies]
 insta = "1.28.0"
 
+[package.metadata.nix]
+build = true
+
 [features]
 default = []
