@@ -377,7 +377,7 @@ impl Rewrite0 {
                 target.replace(from, to),
                 label
                     .as_ref()
-                    .filter(|_| oriented && target.generator == to)
+                    .filter(|_| oriented && (target.generator == from || target.generator == to))
                     .cloned(),
             ),
         }
