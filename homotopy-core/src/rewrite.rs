@@ -377,7 +377,7 @@ impl Rewrite0 {
                 target.replace(from, to),
                 label
                     .as_ref()
-                    .filter(|_| oriented && (target.generator == from || target.generator == to))
+                    .filter(|_| !oriented || (target.generator != to && target.generator != from))
                     .cloned(),
             ),
         }
@@ -445,14 +445,14 @@ impl Rewrite0 {
     pub fn remove_framing(&self, generator: Generator) -> Self {
         match &self.0 {
             None => Self(None),
-            Some((source, target, label)) => {
-                let new_label = if target.generator == generator {
-                    None
-                } else {
-                    label.clone()
-                };
-                Self::new(*source, *target, new_label)
-            }
+            Some((source, target, label)) => Self::new(
+                *source,
+                *target,
+                label
+                    .as_ref()
+                    .filter(|_| target.generator != generator)
+                    .cloned(),
+            ),
         }
     }
 }
