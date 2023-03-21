@@ -32,6 +32,7 @@ jobs:
           set -euo pipefail
           $NIX_BUILD_UNCACHED https://github.com/homotopy-io/homotopy-rs/archive/$GITHUB_SHA.tar.gz -A checks.x86_64-linux.homotopy-common-tests
           $NIX_BUILD_UNCACHED https://github.com/homotopy-io/homotopy-rs/archive/$GITHUB_SHA.tar.gz -A checks.x86_64-linux.homotopy-core-tests
+          $NIX_BUILD_UNCACHED https://github.com/homotopy-io/homotopy-rs/archive/$GITHUB_SHA.tar.gz -A checks.x86_64-linux.homotopy-model-tests
           $NIX_BUILD_UNCACHED https://github.com/homotopy-io/homotopy-rs/archive/$GITHUB_SHA.tar.gz -A checks.x86_64-linux.homotopy-graphics-tests
 
   lint:
