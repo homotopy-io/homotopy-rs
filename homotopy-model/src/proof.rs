@@ -957,7 +957,7 @@ impl ProofState {
         true
     }
 
-    /// Handler for [Action::StashPush].
+    /// Handler for [Action::Stash].
     ///
     /// Invalid if the workspace is empty.
     fn stash_push(&mut self) -> bool {
