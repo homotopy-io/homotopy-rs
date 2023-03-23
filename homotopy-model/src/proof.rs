@@ -769,11 +769,14 @@ impl ProofState {
             }
         });
 
-        if let Some(ws) = &self.workspace {
-            self.workspace = Some(Workspace::new(ws.diagram.suspend(source, target).into()));
+        if let Some(ws) = &mut self.workspace {
+            ws.diagram = ws.diagram.suspend(source, target).into();
         }
         if let Some(bd) = &mut self.boundary {
             bd.diagram = bd.diagram.suspend(source, target).into();
+        }
+        for ws in self.stack.iter_mut() {
+            ws.diagram = ws.diagram.suspend(source, target).into();
         }
 
         true
@@ -810,11 +813,14 @@ impl ProofState {
             }
         });
 
-        if let Some(ws) = &self.workspace {
-            self.workspace = Some(Workspace::new(ws.diagram.replace(from, to, oriented)));
+        if let Some(ws) = &mut self.workspace {
+            ws.diagram = ws.diagram.replace(from, to, oriented);
         }
         if let Some(bd) = &mut self.boundary {
             bd.diagram = bd.diagram.replace(from, to, oriented);
+        }
+        for ws in self.stack.iter_mut() {
+            ws.diagram = ws.diagram.replace(from, to, oriented);
         }
 
         Ok(true)
@@ -858,6 +864,10 @@ impl ProofState {
                     self.boundary = None;
                 }
             }
+
+            // remove from stashed workspaces
+            self.stack
+                .retain(|ws| !self.signature.has_descendents_in(*node, &ws.diagram));
         }
 
         if let SignatureEdit::Edit(node, SignatureItemEdit::MakeOriented(true)) = edit {
@@ -870,6 +880,11 @@ impl ProofState {
                 // remove framing from the boundary
                 if let Some(selected) = &mut self.boundary {
                     selected.diagram = selected.diagram.remove_framing(generator);
+                }
+
+                // remove framing from stashed workspaces
+                for ws in self.stack.iter_mut() {
+                    ws.diagram = ws.diagram.remove_framing(generator);
                 }
             } else {
                 return Ok(false);
