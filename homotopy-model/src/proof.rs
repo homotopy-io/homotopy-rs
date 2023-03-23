@@ -78,7 +78,7 @@ pub struct ProofState {
     pub workspace: Option<Workspace>,
     pub metadata: Metadata,
     pub boundary: Option<SelectedBoundary>,
-    pub stack: Vector<Workspace>,
+    pub stash: Vector<Workspace>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
@@ -153,7 +153,11 @@ pub enum Action {
 
     Stash,
 
+    StashDrop,
+
     StashPop,
+
+    StashApply,
 
     Nothing,
 }
@@ -242,7 +246,7 @@ impl Action {
             Self::EditSignature(_) | Self::EditMetadata(_) => true, /* technically the edits could be trivial but do not worry about that for now */
             Self::FlipBoundary | Self::RecoverBoundary => proof.boundary.is_some(),
             Self::Stash => proof.workspace.is_some(),
-            Self::StashPop => !proof.stack.is_empty(),
+            Self::StashDrop | Self::StashPop | Self::StashApply => !proof.stash.is_empty(),
             Self::Nothing => false,
         }
     }
@@ -302,7 +306,9 @@ impl ProofState {
             Action::FlipBoundary => self.flip_boundary(),
             Action::RecoverBoundary => self.recover_boundary(),
             Action::Stash => self.stash_push(),
+            Action::StashDrop => self.stash_drop(),
             Action::StashPop => self.stash_pop(),
+            Action::StashApply => self.stash_apply(),
             Action::ImportProof(data) => self.import_proof(data)?,
             Action::EditMetadata(edit) => self.edit_metadata(edit),
             Action::Nothing => false,
@@ -775,7 +781,7 @@ impl ProofState {
         if let Some(bd) = &mut self.boundary {
             bd.diagram = bd.diagram.suspend(source, target).into();
         }
-        for ws in self.stack.iter_mut() {
+        for ws in self.stash.iter_mut() {
             ws.diagram = ws.diagram.suspend(source, target).into();
         }
 
@@ -819,7 +825,7 @@ impl ProofState {
         if let Some(bd) = &mut self.boundary {
             bd.diagram = bd.diagram.replace(from, to, oriented);
         }
-        for ws in self.stack.iter_mut() {
+        for ws in self.stash.iter_mut() {
             ws.diagram = ws.diagram.replace(from, to, oriented);
         }
 
@@ -845,6 +851,7 @@ impl ProofState {
         self.workspace = workspace;
         self.metadata = metadata;
         self.boundary = None;
+        self.stash = Vector::new();
         Ok(true)
     }
 
@@ -866,7 +873,7 @@ impl ProofState {
             }
 
             // remove from stashed workspaces
-            self.stack
+            self.stash
                 .retain(|ws| !self.signature.has_descendents_in(*node, &ws.diagram));
         }
 
@@ -883,7 +890,7 @@ impl ProofState {
                 }
 
                 // remove framing from stashed workspaces
-                for ws in self.stack.iter_mut() {
+                for ws in self.stash.iter_mut() {
                     ws.diagram = ws.diagram.remove_framing(generator);
                 }
             } else {
@@ -962,16 +969,32 @@ impl ProofState {
     /// Invalid if the workspace is empty.
     fn stash_push(&mut self) -> bool {
         let Some(ws) = self.workspace.take() else { return false };
-        self.stack.push_back(ws);
+        self.stash.push_back(ws);
         true
+    }
+
+    /// Handler for [Action::StashDrop].
+    ///
+    /// Invalid if the stash is empty.
+    fn stash_drop(&mut self) -> bool {
+        self.stash.pop_back().is_some()
     }
 
     /// Handler for [Action::StashPop].
     ///
-    /// Invalid if the stack is empty.
+    /// Invalid if the stash is empty.
     fn stash_pop(&mut self) -> bool {
-        let Some(stashed) = self.stack.pop_back() else { return false };
+        let Some(stashed) = self.stash.pop_back() else { return false };
         self.workspace = Some(stashed);
+        true
+    }
+
+    /// Handler for [Action::StashApply].
+    ///
+    /// Invalid if the stash is empty.
+    fn stash_apply(&mut self) -> bool {
+        let Some(stashed) = self.stash.back() else { return false };
+        self.workspace = Some(stashed.clone());
         true
     }
 }
