@@ -29,4 +29,4 @@ ultraviolet = "0.9.1"
 
 [dev-dependencies]
 cargo-husky = { features = ["precommit-hook", "run-cargo-check", "run-cargo-test", "run-cargo-fmt", "run-cargo-clippy"], version = "1.5.0" }
-insta = "1.28.0"
+insta = "1.29.0"
