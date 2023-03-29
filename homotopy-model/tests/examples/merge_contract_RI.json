@@ -1,1 +1,765 @@
-[true,["CreateGeneratorZero",{"SelectGenerator":{"id":0,"dimension":0}},"TakeIdentityDiagram",{"SetBoundary":"Source"},{"SelectGenerator":{"id":0,"dimension":0}},"TakeIdentityDiagram",{"SetBoundary":"Target"},{"SelectGenerator":{"id":0,"dimension":0}},"TakeIdentityDiagram",{"SetBoundary":"Source"},{"SelectGenerator":{"id":0,"dimension":0}},"TakeIdentityDiagram",{"SetBoundary":"Target"},{"SelectGenerator":{"id":0,"dimension":0}},"TakeIdentityDiagram",{"SetBoundary":"Source"},{"SelectGenerator":{"id":0,"dimension":0}},"TakeIdentityDiagram",{"SetBoundary":"Target"},{"EditSignature":{"Edit":[2,{"MakeInvertible":true}]}},{"EditSignature":{"Edit":[3,{"MakeInvertible":true}]}},{"EditSignature":{"Edit":[4,{"MakeInvertible":true}]}},{"EditSignature":{"Edit":[4,{"MakeOriented":true}]}},{"SelectGenerator":{"id":3,"dimension":2}},{"SelectGenerator":{"id":2,"dimension":2}},"TakeIdentityDiagram",{"AscendSlice":1},{"Attach":{"generator":{"id":2,"dimension":2},"boundary_path":["Target",1],"embedding":[0],"tag":"inverse","diagram":{"source":{"DiagramN":{"source":{"Diagram0":{"generator":{"id":0,"dimension":0},"orientation":"Positive"}},"cospans":[]}},"cospans":[{"forward":{"RewriteN":{"dimension":1,"cones":[{"index":0,"internal":{"source":[],"target":{"forward":{"Rewrite0":[{"generator":{"id":0,"dimension":0},"orientation":"Positive"},{"generator":{"id":2,"dimension":2},"orientation":"Negative"},[["Source",1],[[]]]]},"backward":{"Rewrite0":[{"generator":{"id":0,"dimension":0},"orientation":"Positive"},{"generator":{"id":2,"dimension":2},"orientation":"Negative"},[["Target",1],[[]]]]}},"regular_slices":[{"Rewrite0":[{"generator":{"id":0,"dimension":0},"orientation":"Positive"},{"generator":{"id":2,"dimension":2},"orientation":"Negative"},[["Target",0],[[{"Regular":0}]]]]}],"singular_slices":[]}}]}},"backward":{"RewriteN":{"dimension":1,"cones":[{"index":0,"internal":{"source":[],"target":{"forward":{"Rewrite0":[{"generator":{"id":0,"dimension":0},"orientation":"Positive"},{"generator":{"id":2,"dimension":2},"orientation":"Negative"},[["Source",1],[[]]]]},"backward":{"Rewrite0":[{"generator":{"id":0,"dimension":0},"orientation":"Positive"},{"generator":{"id":2,"dimension":2},"orientation":"Negative"},[["Target",1],[[]]]]}},"regular_slices":[{"Rewrite0":[{"generator":{"id":0,"dimension":0},"orientation":"Positive"},{"generator":{"id":2,"dimension":2},"orientation":"Negative"},[["Source",0],[[{"Regular":0}]]]]}],"singular_slices":[]}}]}}}]}}},{"Homotopy":{"Contract":{"height":1,"direction":"Backward","bias":"Lower","location":["Target"]}}},{"Homotopy":{"Expand":{"point":[{"Singular":0},{"Singular":0}],"direction":"Backward","location":["Target"]}}},{"Homotopy":{"Contract":{"height":1,"direction":"Backward","bias":"Lower","location":[]}}},{"Homotopy":{"Contract":{"height":0,"direction":"Forward","bias":"Same","location":["Target"]}}},{"Merge":[{"id":2,"dimension":2},{"id":3,"dimension":2}]},{"Homotopy":{"Contract":{"height":1,"direction":"Backward","bias":"Lower","location":[]}}},"ClearWorkspace",{"SelectGenerator":{"id":1,"dimension":2}},"TakeIdentityDiagram",{"AscendSlice":1},{"Attach":{"generator":{"id":1,"dimension":2},"boundary_path":["Target",1],"embedding":[0],"tag":"inverse","diagram":{"source":{"DiagramN":{"source":{"Diagram0":{"generator":{"id":0,"dimension":0},"orientation":"Positive"}},"cospans":[]}},"cospans":[{"forward":{"RewriteN":{"dimension":1,"cones":[{"index":0,"internal":{"source":[],"target":{"forward":{"Rewrite0":[{"generator":{"id":0,"dimension":0},"orientation":"Positive"},{"generator":{"id":1,"dimension":2},"orientation":"Negative"},[["Source",1],[[]]]]},"backward":{"Rewrite0":[{"generator":{"id":0,"dimension":0},"orientation":"Positive"},{"generator":{"id":1,"dimension":2},"orientation":"Negative"},[["Target",1],[[]]]]}},"regular_slices":[{"Rewrite0":[{"generator":{"id":0,"dimension":0},"orientation":"Positive"},{"generator":{"id":1,"dimension":2},"orientation":"Negative"},[["Target",0],[[{"Regular":0}]]]]}],"singular_slices":[]}}]}},"backward":{"RewriteN":{"dimension":1,"cones":[{"index":0,"internal":{"source":[],"target":{"forward":{"Rewrite0":[{"generator":{"id":0,"dimension":0},"orientation":"Positive"},{"generator":{"id":1,"dimension":2},"orientation":"Negative"},[["Source",1],[[]]]]},"backward":{"Rewrite0":[{"generator":{"id":0,"dimension":0},"orientation":"Positive"},{"generator":{"id":1,"dimension":2},"orientation":"Negative"},[["Target",1],[[]]]]}},"regular_slices":[{"Rewrite0":[{"generator":{"id":0,"dimension":0},"orientation":"Positive"},{"generator":{"id":1,"dimension":2},"orientation":"Negative"},[["Source",0],[[{"Regular":0}]]]]}],"singular_slices":[]}}]}}}]}}},{"Homotopy":{"Contract":{"height":1,"direction":"Backward","bias":"Lower","location":["Target"]}}},{"Homotopy":{"Expand":{"point":[{"Singular":0},{"Singular":0}],"direction":"Backward","location":["Target"]}}},{"Homotopy":{"Contract":{"height":1,"direction":"Backward","bias":"Lower","location":[]}}},{"Homotopy":{"Contract":{"height":0,"direction":"Forward","bias":"Same","location":["Target"]}}},{"Merge":[{"id":3,"dimension":2},{"id":1,"dimension":2}]},{"Homotopy":{"Contract":{"height":1,"direction":"Backward","bias":"Lower","location":[]}}}]]
+[
+    true,
+    [
+      "CreateGeneratorZero",
+      {
+        "SelectGenerator": {
+          "id": 0,
+          "dimension": 0
+        }
+      },
+      "TakeIdentityDiagram",
+      {
+        "SetBoundary": "Source"
+      },
+      {
+        "SelectGenerator": {
+          "id": 0,
+          "dimension": 0
+        }
+      },
+      "TakeIdentityDiagram",
+      {
+        "SetBoundary": "Target"
+      },
+      {
+        "SelectGenerator": {
+          "id": 0,
+          "dimension": 0
+        }
+      },
+      "TakeIdentityDiagram",
+      {
+        "SetBoundary": "Source"
+      },
+      {
+        "SelectGenerator": {
+          "id": 0,
+          "dimension": 0
+        }
+      },
+      "TakeIdentityDiagram",
+      {
+        "SetBoundary": "Target"
+      },
+      {
+        "SelectGenerator": {
+          "id": 0,
+          "dimension": 0
+        }
+      },
+      "TakeIdentityDiagram",
+      {
+        "SetBoundary": "Source"
+      },
+      {
+        "SelectGenerator": {
+          "id": 0,
+          "dimension": 0
+        }
+      },
+      "TakeIdentityDiagram",
+      {
+        "SetBoundary": "Target"
+      },
+      {
+        "EditSignature": {
+          "Edit": [
+            2,
+            {
+              "MakeInvertible": true
+            }
+          ]
+        }
+      },
+      {
+        "EditSignature": {
+          "Edit": [
+            3,
+            {
+              "MakeInvertible": true
+            }
+          ]
+        }
+      },
+      {
+        "EditSignature": {
+          "Edit": [
+            4,
+            {
+              "MakeInvertible": true
+            }
+          ]
+        }
+      },
+      {
+        "EditSignature": {
+          "Edit": [
+            4,
+            {
+              "MakeOriented": true
+            }
+          ]
+        }
+      },
+      {
+        "SelectGenerator": {
+          "id": 3,
+          "dimension": 2
+        }
+      },
+      {
+        "SelectGenerator": {
+          "id": 2,
+          "dimension": 2
+        }
+      },
+      "TakeIdentityDiagram",
+      {
+        "AscendSlice": 1
+      },
+      {
+        "Attach": {
+          "generator": {
+            "id": 2,
+            "dimension": 2
+          },
+          "boundary_path": [
+            "Target",
+            1
+          ],
+          "embedding": [
+            0
+          ],
+          "tag": "inverse",
+          "diagram": {
+            "source": {
+              "DiagramN": {
+                "source": {
+                  "Diagram0": {
+                    "generator": {
+                      "id": 0,
+                      "dimension": 0
+                    },
+                    "orientation": "Positive"
+                  }
+                },
+                "cospans": []
+              }
+            },
+            "cospans": [
+              {
+                "forward": {
+                  "RewriteN": {
+                    "dimension": 1,
+                    "cones": [
+                      {
+                        "index": 0,
+                        "internal": {
+                          "source": [],
+                          "target": {
+                            "forward": {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 2,
+                                    "dimension": 2
+                                  },
+                                  "orientation": "Negative"
+                                },
+                                [
+                                  [
+                                    "Source",
+                                    1
+                                  ],
+                                  [
+                                    []
+                                  ]
+                                ]
+                              ]
+                            },
+                            "backward": {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 2,
+                                    "dimension": 2
+                                  },
+                                  "orientation": "Negative"
+                                },
+                                [
+                                  [
+                                    "Target",
+                                    1
+                                  ],
+                                  [
+                                    []
+                                  ]
+                                ]
+                              ]
+                            }
+                          },
+                          "regular_slices": [
+                            {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 2,
+                                    "dimension": 2
+                                  },
+                                  "orientation": "Negative"
+                                },
+                                [
+                                  [
+                                    "Target",
+                                    0
+                                  ],
+                                  [
+                                    [
+                                      {
+                                        "Regular": 0
+                                      }
+                                    ]
+                                  ]
+                                ]
+                              ]
+                            }
+                          ],
+                          "singular_slices": []
+                        }
+                      }
+                    ]
+                  }
+                },
+                "backward": {
+                  "RewriteN": {
+                    "dimension": 1,
+                    "cones": [
+                      {
+                        "index": 0,
+                        "internal": {
+                          "source": [],
+                          "target": {
+                            "forward": {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 2,
+                                    "dimension": 2
+                                  },
+                                  "orientation": "Negative"
+                                },
+                                [
+                                  [
+                                    "Source",
+                                    1
+                                  ],
+                                  [
+                                    []
+                                  ]
+                                ]
+                              ]
+                            },
+                            "backward": {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 2,
+                                    "dimension": 2
+                                  },
+                                  "orientation": "Negative"
+                                },
+                                [
+                                  [
+                                    "Target",
+                                    1
+                                  ],
+                                  [
+                                    []
+                                  ]
+                                ]
+                              ]
+                            }
+                          },
+                          "regular_slices": [
+                            {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 2,
+                                    "dimension": 2
+                                  },
+                                  "orientation": "Negative"
+                                },
+                                [
+                                  [
+                                    "Source",
+                                    0
+                                  ],
+                                  [
+                                    [
+                                      {
+                                        "Regular": 0
+                                      }
+                                    ]
+                                  ]
+                                ]
+                              ]
+                            }
+                          ],
+                          "singular_slices": []
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "Homotopy": {
+          "Contract": {
+            "height": 1,
+            "direction": "Backward",
+            "bias": "Lower",
+            "location": [
+              "Target"
+            ]
+          }
+        }
+      },
+      {
+        "Homotopy": {
+          "Expand": {
+            "point": [
+              {
+                "Singular": 0
+              },
+              {
+                "Singular": 0
+              }
+            ],
+            "direction": "Backward",
+            "location": [
+              "Target"
+            ]
+          }
+        }
+      },
+      {
+        "Homotopy": {
+          "Contract": {
+            "height": 1,
+            "direction": "Backward",
+            "bias": "Lower",
+            "location": []
+          }
+        }
+      },
+      {
+        "Homotopy": {
+          "Contract": {
+            "height": 0,
+            "direction": "Forward",
+            "bias": "Same",
+            "location": [
+              "Target"
+            ]
+          }
+        }
+      },
+      {
+        "Merge": [
+          {
+            "id": 2,
+            "dimension": 2
+          },
+          {
+            "id": 3,
+            "dimension": 2
+          }
+        ]
+      },
+      {
+        "Homotopy": {
+          "Contract": {
+            "height": 1,
+            "direction": "Backward",
+            "bias": "Lower",
+            "location": []
+          }
+        }
+      },
+      "ClearWorkspace",
+      {
+        "SelectGenerator": {
+          "id": 1,
+          "dimension": 2
+        }
+      },
+      "TakeIdentityDiagram",
+      {
+        "AscendSlice": 1
+      },
+      {
+        "Attach": {
+          "generator": {
+            "id": 1,
+            "dimension": 2
+          },
+          "boundary_path": [
+            "Target",
+            1
+          ],
+          "embedding": [
+            0
+          ],
+          "tag": "inverse",
+          "diagram": {
+            "source": {
+              "DiagramN": {
+                "source": {
+                  "Diagram0": {
+                    "generator": {
+                      "id": 0,
+                      "dimension": 0
+                    },
+                    "orientation": "Positive"
+                  }
+                },
+                "cospans": []
+              }
+            },
+            "cospans": [
+              {
+                "forward": {
+                  "RewriteN": {
+                    "dimension": 1,
+                    "cones": [
+                      {
+                        "index": 0,
+                        "internal": {
+                          "source": [],
+                          "target": {
+                            "forward": {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 1,
+                                    "dimension": 2
+                                  },
+                                  "orientation": "Negative"
+                                },
+                                [
+                                  [
+                                    "Source",
+                                    1
+                                  ],
+                                  [
+                                    []
+                                  ]
+                                ]
+                              ]
+                            },
+                            "backward": {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 1,
+                                    "dimension": 2
+                                  },
+                                  "orientation": "Negative"
+                                },
+                                [
+                                  [
+                                    "Target",
+                                    1
+                                  ],
+                                  [
+                                    []
+                                  ]
+                                ]
+                              ]
+                            }
+                          },
+                          "regular_slices": [
+                            {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 1,
+                                    "dimension": 2
+                                  },
+                                  "orientation": "Negative"
+                                },
+                                [
+                                  [
+                                    "Target",
+                                    0
+                                  ],
+                                  [
+                                    [
+                                      {
+                                        "Regular": 0
+                                      }
+                                    ]
+                                  ]
+                                ]
+                              ]
+                            }
+                          ],
+                          "singular_slices": []
+                        }
+                      }
+                    ]
+                  }
+                },
+                "backward": {
+                  "RewriteN": {
+                    "dimension": 1,
+                    "cones": [
+                      {
+                        "index": 0,
+                        "internal": {
+                          "source": [],
+                          "target": {
+                            "forward": {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 1,
+                                    "dimension": 2
+                                  },
+                                  "orientation": "Negative"
+                                },
+                                [
+                                  [
+                                    "Source",
+                                    1
+                                  ],
+                                  [
+                                    []
+                                  ]
+                                ]
+                              ]
+                            },
+                            "backward": {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 1,
+                                    "dimension": 2
+                                  },
+                                  "orientation": "Negative"
+                                },
+                                [
+                                  [
+                                    "Target",
+                                    1
+                                  ],
+                                  [
+                                    []
+                                  ]
+                                ]
+                              ]
+                            }
+                          },
+                          "regular_slices": [
+                            {
+                              "Rewrite0": [
+                                {
+                                  "generator": {
+                                    "id": 0,
+                                    "dimension": 0
+                                  },
+                                  "orientation": "Positive"
+                                },
+                                {
+                                  "generator": {
+                                    "id": 1,
+                                    "dimension": 2
+                                  },
+                                  "orientation": "Negative"
+                                },
+                                [
+                                  [
+                                    "Source",
+                                    0
+                                  ],
+                                  [
+                                    [
+                                      {
+                                        "Regular": 0
+                                      }
+                                    ]
+                                  ]
+                                ]
+                              ]
+                            }
+                          ],
+                          "singular_slices": []
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "Homotopy": {
+          "Contract": {
+            "height": 1,
+            "direction": "Backward",
+            "bias": "Lower",
+            "location": [
+              "Target"
+            ]
+          }
+        }
+      },
+      {
+        "Homotopy": {
+          "Expand": {
+            "point": [
+              {
+                "Singular": 0
+              },
+              {
+                "Singular": 0
+              }
+            ],
+            "direction": "Backward",
+            "location": [
+              "Target"
+            ]
+          }
+        }
+      },
+      {
+        "Homotopy": {
+          "Contract": {
+            "height": 1,
+            "direction": "Backward",
+            "bias": "Lower",
+            "location": []
+          }
+        }
+      },
+      {
+        "Homotopy": {
+          "Contract": {
+            "height": 0,
+            "direction": "Forward",
+            "bias": "Same",
+            "location": [
+              "Target"
+            ]
+          }
+        }
+      },
+      {
+        "Merge": [
+          {
+            "id": 3,
+            "dimension": 2
+          },
+          {
+            "id": 1,
+            "dimension": 2
+          }
+        ]
+      },
+      {
+        "Homotopy": {
+          "Contract": {
+            "height": 1,
+            "direction": "Backward",
+            "bias": "Lower",
+            "location": []
+          }
+        }
+      }
+    ]
+  ]
