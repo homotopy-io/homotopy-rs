@@ -78,6 +78,7 @@ pub struct ProofState {
     pub workspace: Option<Workspace>,
     pub metadata: Metadata,
     pub boundary: Option<SelectedBoundary>,
+    pub stash: Vector<Workspace>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
@@ -149,6 +150,14 @@ pub enum Action {
     FlipBoundary,
 
     RecoverBoundary,
+
+    Stash,
+
+    StashDrop,
+
+    StashPop,
+
+    StashApply,
 
     Nothing,
 }
@@ -236,6 +245,8 @@ impl Action {
             Self::ImportProof(_) => true,
             Self::EditSignature(_) | Self::EditMetadata(_) => true, /* technically the edits could be trivial but do not worry about that for now */
             Self::FlipBoundary | Self::RecoverBoundary => proof.boundary.is_some(),
+            Self::Stash => proof.workspace.is_some(),
+            Self::StashDrop | Self::StashPop | Self::StashApply => !proof.stash.is_empty(),
             Self::Nothing => false,
         }
     }
@@ -294,6 +305,10 @@ impl ProofState {
             Action::EditSignature(edit) => self.edit_signature(edit)?,
             Action::FlipBoundary => self.flip_boundary(),
             Action::RecoverBoundary => self.recover_boundary(),
+            Action::Stash => self.stash_push(),
+            Action::StashDrop => self.stash_drop(),
+            Action::StashPop => self.stash_pop(),
+            Action::StashApply => self.stash_apply(),
             Action::ImportProof(data) => self.import_proof(data)?,
             Action::EditMetadata(edit) => self.edit_metadata(edit),
             Action::Nothing => false,
@@ -760,11 +775,14 @@ impl ProofState {
             }
         });
 
-        if let Some(ws) = &self.workspace {
-            self.workspace = Some(Workspace::new(ws.diagram.suspend(source, target).into()));
+        if let Some(ws) = &mut self.workspace {
+            ws.diagram = ws.diagram.suspend(source, target).into();
         }
         if let Some(bd) = &mut self.boundary {
             bd.diagram = bd.diagram.suspend(source, target).into();
+        }
+        for ws in self.stash.iter_mut() {
+            ws.diagram = ws.diagram.suspend(source, target).into();
         }
 
         true
@@ -801,11 +819,14 @@ impl ProofState {
             }
         });
 
-        if let Some(ws) = &self.workspace {
-            self.workspace = Some(Workspace::new(ws.diagram.replace(from, to, oriented)));
+        if let Some(ws) = &mut self.workspace {
+            ws.diagram = ws.diagram.replace(from, to, oriented);
         }
         if let Some(bd) = &mut self.boundary {
             bd.diagram = bd.diagram.replace(from, to, oriented);
+        }
+        for ws in self.stash.iter_mut() {
+            ws.diagram = ws.diagram.replace(from, to, oriented);
         }
 
         Ok(true)
@@ -830,6 +851,7 @@ impl ProofState {
         self.workspace = workspace;
         self.metadata = metadata;
         self.boundary = None;
+        self.stash = Vector::new();
         Ok(true)
     }
 
@@ -849,6 +871,10 @@ impl ProofState {
                     self.boundary = None;
                 }
             }
+
+            // remove from stashed workspaces
+            self.stash
+                .retain(|ws| !self.signature.has_descendents_in(*node, &ws.diagram));
         }
 
         if let SignatureEdit::Edit(node, SignatureItemEdit::MakeOriented(true)) = edit {
@@ -861,6 +887,11 @@ impl ProofState {
                 // remove framing from the boundary
                 if let Some(selected) = &mut self.boundary {
                     selected.diagram = selected.diagram.remove_framing(generator);
+                }
+
+                // remove framing from stashed workspaces
+                for ws in self.stash.iter_mut() {
+                    ws.diagram = ws.diagram.remove_framing(generator);
                 }
             } else {
                 return Ok(false);
@@ -893,6 +924,17 @@ impl ProofState {
                             SignatureError::CannotBeMadeDirected,
                         ));
                     }
+                }
+
+                if self.stash.iter().any(|ws| {
+                    ws.diagram
+                        .generators()
+                        .get(&generator)
+                        .map_or(false, |os| os.contains(&Orientation::Negative))
+                }) {
+                    return Err(ProofError::SignatureError(
+                        SignatureError::CannotBeMadeDirected,
+                    ));
                 }
             } else {
                 return Ok(false);
@@ -930,6 +972,40 @@ impl ProofState {
     fn recover_boundary(&mut self) -> bool {
         let Some(selected) = self.boundary.as_ref() else { return false };
         self.workspace = Some(Workspace::new(selected.diagram.clone()));
+        true
+    }
+
+    /// Handler for [Action::Stash].
+    ///
+    /// Invalid if the workspace is empty.
+    fn stash_push(&mut self) -> bool {
+        let Some(ws) = self.workspace.take() else { return false };
+        self.stash.push_back(ws);
+        true
+    }
+
+    /// Handler for [Action::StashDrop].
+    ///
+    /// Invalid if the stash is empty.
+    fn stash_drop(&mut self) -> bool {
+        self.stash.pop_back().is_some()
+    }
+
+    /// Handler for [Action::StashPop].
+    ///
+    /// Invalid if the stash is empty.
+    fn stash_pop(&mut self) -> bool {
+        let Some(stashed) = self.stash.pop_back() else { return false };
+        self.workspace = Some(stashed);
+        true
+    }
+
+    /// Handler for [Action::StashApply].
+    ///
+    /// Invalid if the stash is empty.
+    fn stash_apply(&mut self) -> bool {
+        let Some(stashed) = self.stash.back() else { return false };
+        self.workspace = Some(stashed.clone());
         true
     }
 }
