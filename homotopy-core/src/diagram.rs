@@ -6,7 +6,7 @@ use std::{
 };
 
 use hashconsing::{HConsed, HConsign, HashConsign};
-use homotopy_common::hash::FastHashSet;
+use homotopy_common::hash::{FastHashMap, FastHashSet};
 use once_cell::unsync::OnceCell;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -49,16 +49,19 @@ impl Diagram {
     }
 
     /// Returns all the generators mentioned by this diagram.
-    pub fn generators(&self) -> FastHashSet<Generator> {
+    pub fn generators(&self) -> FastHashMap<Generator, FastHashSet<Orientation>> {
         use Diagram::{Diagram0, DiagramN};
         fn add_generators(
             diagram: &Diagram,
-            generators: &mut FastHashSet<Generator>,
+            generators: &mut FastHashMap<Generator, FastHashSet<Orientation>>,
             visited: &mut FastHashSet<Diagram>,
         ) {
             match diagram {
                 Diagram0(d) => {
-                    generators.insert(d.generator);
+                    generators
+                        .entry(d.generator)
+                        .or_default()
+                        .insert(d.orientation);
                     visited.insert(diagram.clone());
                 }
                 DiagramN(d) => {
@@ -71,7 +74,7 @@ impl Diagram {
                 }
             }
         }
-        let mut gs: FastHashSet<Generator> = Default::default();
+        let mut gs: FastHashMap<Generator, FastHashSet<Orientation>> = Default::default();
         let mut visited: FastHashSet<Self> = Default::default();
         add_generators(self, &mut gs, &mut visited);
         gs
@@ -184,7 +187,7 @@ impl Diagram {
 
     pub fn is_invertible(&self, signature: &impl Signature) -> bool {
         self.generators()
-            .iter()
+            .keys()
             .filter(|g| g.dimension >= self.dimension())
             .all(|g| signature.generator_info(*g).unwrap().is_invertible())
     }

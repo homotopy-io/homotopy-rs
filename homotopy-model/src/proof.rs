@@ -7,7 +7,7 @@ use homotopy_core::{
     diagram::{AttachmentError, NewDiagramError},
     expansion::ExpansionError,
     signature::Signature as S,
-    Diagram, Diagram0, DiagramN,
+    Diagram, Diagram0, DiagramN, Orientation,
 };
 use im::Vector;
 use serde::{Deserialize, Serialize};
@@ -259,6 +259,8 @@ pub enum ProofError {
     ContractionError(#[from] ContractionError),
     #[error("import failed")]
     Import,
+    #[error(transparent)]
+    SignatureError(#[from] SignatureError),
 }
 
 impl ProofState {
@@ -289,7 +291,7 @@ impl ProofState {
             Action::SuspendSignature => self.suspend_signature(),
             Action::Suspend(s, t) => self.suspend(*s, *t),
             Action::Merge(from, to) => self.merge(*from, *to)?,
-            Action::EditSignature(edit) => self.edit_signature(edit),
+            Action::EditSignature(edit) => self.edit_signature(edit)?,
             Action::FlipBoundary => self.flip_boundary(),
             Action::RecoverBoundary => self.recover_boundary(),
             Action::ImportProof(data) => self.import_proof(data)?,
@@ -832,7 +834,7 @@ impl ProofState {
     }
 
     /// Handler for [Action::EditSignature].
-    fn edit_signature(&mut self, edit: &SignatureEdit) -> bool {
+    fn edit_signature(&mut self, edit: &SignatureEdit) -> Result<bool, ProofError> {
         // intercept remove events in order to clean-up workspace and boundaries
         if let SignatureEdit::Remove(node) = edit {
             // remove from the workspace
@@ -861,13 +863,45 @@ impl ProofState {
                     selected.diagram = selected.diagram.remove_framing(generator);
                 }
             } else {
-                return false;
+                return Ok(false);
             }
         }
 
-        self.signature.update(edit);
+        if let SignatureEdit::Edit(node, SignatureItemEdit::MakeInvertible(false)) = edit {
+            if let Some(generator) = self.signature.find_generator(*node) {
+                if let Some(ws) = &self.workspace {
+                    if ws
+                        .diagram
+                        .generators()
+                        .get(&generator)
+                        .map_or(false, |os| os.contains(&Orientation::Negative))
+                    {
+                        return Err(ProofError::SignatureError(
+                            SignatureError::CannotBeMadeDirected,
+                        ));
+                    }
+                }
 
-        true
+                if let Some(selected) = &self.boundary {
+                    if selected
+                        .diagram
+                        .generators()
+                        .get(&generator)
+                        .map_or(false, |os| os.contains(&Orientation::Negative))
+                    {
+                        return Err(ProofError::SignatureError(
+                            SignatureError::CannotBeMadeDirected,
+                        ));
+                    }
+                }
+            } else {
+                return Ok(false);
+            }
+        }
+
+        self.signature.update(edit)?;
+
+        Ok(true)
     }
 
     /// Handler for [Action::EditMetadata].

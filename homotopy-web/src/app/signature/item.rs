@@ -851,7 +851,6 @@ impl ItemView {
                         color={color.clone()}
                         onclick={toggle_invertible}
                         checked={info.invertible}
-                        disabled={info.invertible}
                     />
                     <GeneratorPreferenceCheckbox
                         left="Framed"

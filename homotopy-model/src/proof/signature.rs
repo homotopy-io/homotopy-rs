@@ -2,11 +2,12 @@ use std::{collections::VecDeque, str::FromStr};
 
 use homotopy_common::tree::{Node, Tree};
 use homotopy_core::{
-    common::Generator, diagram::NewDiagramError, signature::Signature as S, Diagram, Diagram0,
-    DiagramN,
+    diagram::NewDiagramError, signature::Signature as S, Diagram, Diagram0, DiagramN, Generator,
+    Orientation,
 };
 use homotopy_graphics::style::{Color, SignatureStyleData, VertexShape};
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use crate::proof::generators::GeneratorInfo;
 
@@ -57,6 +58,12 @@ pub enum SignatureEdit {
     ToggleFolder(Node),
     NewFolder(Node),
     Remove(Node),
+}
+
+#[derive(Debug, Error)]
+pub enum SignatureError {
+    #[error("generator cannot be marked as directed because its inverse is being used")]
+    CannotBeMadeDirected,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize)]
@@ -164,7 +171,7 @@ impl Signature {
             (SignatureItem::Item(info), Recolor(color)) => info.color = color,
             (SignatureItem::Item(info), Reshape(shape)) => info.shape = shape,
             (SignatureItem::Item(info), MakeOriented(true)) => info.oriented = true,
-            (SignatureItem::Item(info), MakeInvertible(true)) => info.invertible = true,
+            (SignatureItem::Item(info), MakeInvertible(invertible)) => info.invertible = invertible,
             (SignatureItem::Item(info), ShowSourceTarget(show)) => info.single_preview = !show,
             (SignatureItem::Folder(info), Rename(name)) => info.name = name,
             (_, _) => {}
@@ -176,7 +183,7 @@ impl Signature {
             self.0
                 .with(node, |n| {
                     if let SignatureItem::Item(info) = n.inner() {
-                        diagram.generators().contains(&info.generator)
+                        diagram.generators().contains_key(&info.generator)
                     } else {
                         false
                     }
@@ -213,7 +220,7 @@ impl Signature {
         }
     }
 
-    pub fn update(&mut self, edit: &SignatureEdit) {
+    pub fn update(&mut self, edit: &SignatureEdit) -> Result<(), SignatureError> {
         match edit {
             SignatureEdit::Edit(node, edit) => {
                 // Intercept edit in order to update the whole signature.
@@ -226,6 +233,19 @@ impl Signature {
                         }),
                         SignatureItem::Folder(_) => item,
                     });
+                }
+                if let SignatureItemEdit::MakeInvertible(false) = edit {
+                    let generator = self.find_generator(*node).unwrap();
+                    for info in self.iter() {
+                        if info
+                            .diagram
+                            .generators()
+                            .get(&generator)
+                            .map_or(false, |os| os.contains(&Orientation::Negative))
+                        {
+                            return Err(SignatureError::CannotBeMadeDirected);
+                        }
+                    }
                 }
                 self.edit(*node, edit.clone());
             }
@@ -283,6 +303,8 @@ impl Signature {
                 }
             }
         }
+
+        Ok(())
     }
 
     pub fn as_tree(&self) -> Tree<SignatureItem> {
