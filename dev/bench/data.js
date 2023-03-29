@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1679432621679,
+  "lastUpdate": 1680122117483,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -47141,6 +47141,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 363.74,
             "range": "+/- 1.590",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "ea6b7eb0e85758123a565439f36356fb0e710788",
+          "message": "Allow making a generator non-invertible (fix #916)",
+          "timestamp": "2023-03-29T21:07:34+01:00",
+          "tree_id": "7c73b4fddc3392463e8246632fe2ccc91c3aa62b",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/ea6b7eb0e85758123a565439f36356fb0e710788"
+        },
+        "date": 1680122103104,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 1.7256,
+            "range": "+/- 0.003",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 16.432,
+            "range": "+/- 0.041",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 283.53,
+            "range": "+/- 0.320",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 6.3517,
+            "range": "+/- 0.007",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 13.477,
+            "range": "+/- 0.042",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 343.06,
+            "range": "+/- 1.320",
             "unit": "ms"
           }
         ]
