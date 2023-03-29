@@ -925,6 +925,17 @@ impl ProofState {
                         ));
                     }
                 }
+
+                if self.stash.iter().any(|ws| {
+                    ws.diagram
+                        .generators()
+                        .get(&generator)
+                        .map_or(false, |os| os.contains(&Orientation::Negative))
+                }) {
+                    return Err(ProofError::SignatureError(
+                        SignatureError::CannotBeMadeDirected,
+                    ));
+                }
             } else {
                 return Ok(false);
             }
