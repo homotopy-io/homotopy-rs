@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1680122117483,
+  "lastUpdate": 1680122279934,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -47201,6 +47201,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 343.06,
             "range": "+/- 1.320",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "12773ed917f3e0aa00f0ee1209a679068333ef9b",
+          "message": "Stash diagrams (#1051)\n\n* Basic stash action\r\n\r\n* Update stashed diagrams after relevant actions\r\n\r\n* Fix comment\r\n\r\n* Add stash drop and stash apply actions\r\n\r\n* Replace keybindings with buttons in debug panel\r\n\r\n* Check stash does not contain inverse of generator",
+          "timestamp": "2023-03-29T20:16:44Z",
+          "tree_id": "552c153c1a736f1580d20edce36eeb0394aa549a",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/12773ed917f3e0aa00f0ee1209a679068333ef9b"
+        },
+        "date": 1680122267499,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 1.7355,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 14.722,
+            "range": "+/- 0.050",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 236.87,
+            "range": "+/- 0.200",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 5.0529,
+            "range": "+/- 0.002",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 13.689,
+            "range": "+/- 0.075",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 357.36,
+            "range": "+/- 0.910",
             "unit": "ms"
           }
         ]
