@@ -1299,9 +1299,9 @@ dependencies = [
 
 [[package]]
 name = "obake"
-version = "1.0.4"
+version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eda26464437175aa4630c72b246b2a5c007c9019df9ae22fbfcac58d647e29fd"
+checksum = "c016d34f5be5713bfcaa23668b736865921606c2ddff17e158f0815e4cde091b"
 dependencies = [
  "obake_macros",
 ]

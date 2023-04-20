@@ -48,7 +48,7 @@ lyon_path = "1.0.3"
 thiserror = "1.0.40"
 katex = { version = "0.4", features = ["wasm-js"], default-features = false }
 html-escape = "0.2.13"
-obake = { version = "1.0.4", features = ["serde"] }
+obake = { version = "1.0.5", features = ["serde"] }
 good_lp = { version = "1.3.2", features = ["highs"], default-features = false}
 highs = "1.2.1"
 
