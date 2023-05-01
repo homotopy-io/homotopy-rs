@@ -11,7 +11,7 @@ build = true
 
 [dependencies]
 homotopy-common = { path = "../homotopy-common" }
-anyhow = "1.0.70"
+anyhow = "1.0.71"
 bimap = "0.6.3"
 getrandom = { version = "0.2.9", features = ["js"] }
 hashconsing = "1.5.1"
