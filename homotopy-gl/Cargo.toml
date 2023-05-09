@@ -10,7 +10,7 @@ homotopy-common = { path = "../homotopy-common" }
 homotopy-core = { path = "../homotopy-core" }
 
 js-sys = "0.3.61"
-wasm-bindgen = { version = "0.2.84", features = ["serde-serialize"] }
+wasm-bindgen = { version = "0.2.85", features = ["serde-serialize"] }
 petgraph = "0.6.2"
 ultraviolet = "0.9.1"
 thiserror = "1.0.40"

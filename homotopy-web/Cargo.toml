@@ -35,7 +35,7 @@ zip = { version = "0.6.6", default-features = false, features = ["deflate"] }
 
 # The `wasm-bindgen` crate provides the bare minimum functionality needed
 # to interact with JavaScript.
-wasm-bindgen = { version = "0.2.84" }
+wasm-bindgen = { version = "0.2.85" }
 serde-wasm-bindgen = "0.5.0"
 gloo = "0.8.0"
 gloo-timers = { version = "0.2.6", features = ["futures"] }
