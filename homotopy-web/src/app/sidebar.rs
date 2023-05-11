@@ -359,6 +359,7 @@ impl Component for Sidebar {
 impl Sidebar {
     const WIDTH: i32 = 48; // px
 
+    #[allow(clippy::let_underscore_untyped)]
     fn drawer(&self, ctx: &Context<Self>) -> Html {
         let model_dispatch = &ctx.props().dispatch;
         let sidebar_dispatch = ctx.link().callback(|x| x);

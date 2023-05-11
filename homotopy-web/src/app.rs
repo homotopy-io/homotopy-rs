@@ -166,6 +166,7 @@ impl App {
         self.before_unload = Some(before_unload);
     }
 
+    #[allow(clippy::let_underscore_untyped)]
     fn render(ctx: &Context<Self>, state: &model::State, loading: bool) -> Html {
         let proof = state.proof();
         let dispatch = ctx.link().callback(Message::BlockingDispatch);

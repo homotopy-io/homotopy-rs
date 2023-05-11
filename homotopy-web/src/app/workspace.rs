@@ -149,6 +149,7 @@ impl WorkspaceView {
         }
     }
 
+    #[allow(clippy::let_underscore_untyped)]
     fn view_diagram_svg<const N: usize>(&self, ctx: &Context<Self>) -> Html {
         if let Some(ref ws) = ctx.props().workspace {
             let attachment_highlight = match N {
@@ -181,7 +182,7 @@ impl WorkspaceView {
 }
 
 // TODO: highlighting needs better documentation and maybe a refactor
-
+#[allow(clippy::let_underscore_untyped)]
 fn highlight_attachment<const N: usize>(
     workspace: &Workspace,
     option: &AttachOption,

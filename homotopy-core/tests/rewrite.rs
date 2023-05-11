@@ -1,5 +1,3 @@
-use std::ops::Index;
-
 use homotopy_core::{
     common::{BoundaryPath, Label},
     Boundary::{Source, Target},
@@ -46,25 +44,6 @@ prop_compose! {
     pub(crate) fn arb_rewrite_1d(sources: Vec<Generator>)
         (mut cone_sizes in arb_cone_sizes_fixed_width(sources.len()))
     -> (RewriteN, Vec<Generator>) {
-        // map ([x, y, ...], target) to its corresponding 2D generator
-        fn generator_2d(source: &[Generator], target: Generator) -> Generator {
-            Generator::new(
-                if source.is_empty() {
-                    match target.id {
-                            1 /* x to f */ => 3,
-                            2 /* x to g */ => 4,
-                            _ => unreachable!(),
-                        }
-                } else {
-                    4 + source
-                        .iter()
-                        .enumerate()
-                        .map(|(i, s)| [2, 3, 5, 7].index(i) ^ s.id)
-                        .product::<usize>()
-                },
-                2,
-            )
-        }
         let x = Generator::new(0, 0);
         let internal = |g: Generator| -> Cospan {
             Cospan {
