@@ -40,6 +40,7 @@ macro_rules! declare_sidebar_drawers {
         }
 
         impl NavDrawer {
+            #[allow(clippy::let_underscore_untyped)]
             pub(super) fn view(
                 self,
                 model_dispatch: &Callback<model::Action>,
