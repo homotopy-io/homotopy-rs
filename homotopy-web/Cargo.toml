@@ -24,7 +24,7 @@ homotopy-model = { path = "../homotopy-model" }
 homotopy-graphics = { path = "../homotopy-graphics" }
 homotopy-gl = { path = "../homotopy-gl" }
 closure = "0.3.0"
-js-sys = "0.3.61"
+js-sys = "0.3.62"
 quote = "1.0.27"
 serde = { version = "1.0.163", features = ["derive"] }
 syn = "2.0.16"
