@@ -36,7 +36,7 @@ impl Color {
 
     // Used for UI to make sure we always maintain sufficient contrast for legibility.
     pub fn is_light(&self) -> bool {
-        palette::RelativeContrast::get_contrast_ratio(
+        palette::color_difference::Wcag21RelativeContrast::relative_contrast(
             palette::Srgb::new(1., 1., 1.),
             self.0.into_format::<f32>(),
         ) < 1.5
