@@ -836,7 +836,7 @@ impl Iterator for Slices {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.cospans.is_empty() {
-            return std::mem::replace(&mut self.current, None);
+            return self.current.take();
         }
 
         let current = self.current.as_ref()?;
