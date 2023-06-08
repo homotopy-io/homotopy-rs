@@ -10,6 +10,6 @@ homotopy-common = { path = "../homotopy-common" }
 homotopy-core = { path = "../homotopy-core" }
 homotopy-model = { path = "../homotopy-model" }
 anyhow = "1.0.71"
-serde = { version = "1.0.163" }
+serde = { version = "1.0.164" }
 serde_json = "1.0.96"
 structopt = "0.3"
