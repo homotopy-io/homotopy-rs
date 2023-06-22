@@ -304,7 +304,7 @@ dependencies = [
  "clap 4.3.0",
  "criterion-plot",
  "is-terminal",
- "itertools",
+ "itertools 0.10.5",
  "num-traits 0.2.15",
  "once_cell",
  "oorandom",
@@ -325,7 +325,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6b50826342786a51a89e2da3a28f1c32b06e387201bc2d19791f622c673706b1"
 dependencies = [
  "cast",
- "itertools",
+ "itertools 0.10.5",
 ]
 
 [[package]]
@@ -934,7 +934,7 @@ dependencies = [
  "homotopy-common",
  "im",
  "insta",
- "itertools",
+ "itertools 0.11.0",
  "once_cell",
  "petgraph",
  "pretty_assertions",
@@ -974,7 +974,7 @@ dependencies = [
  "homotopy-common",
  "homotopy-core",
  "insta",
- "itertools",
+ "itertools 0.11.0",
  "log",
  "lyon_algorithms",
  "lyon_geom",
@@ -1176,6 +1176,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1c173a5686ce8bfa551b3563d0c2170bf24ca44da99c7ca4bfdab5418c3fe57"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1197,7 +1206,7 @@ source = "git+https://github.com/regular-citizen/katex-rs#7b71af7ddf8d43b6785bf2
 dependencies = [
  "cfg-if",
  "derive_builder",
- "itertools",
+ "itertools 0.10.5",
  "js-sys",
  "thiserror",
  "wasm-bindgen",
