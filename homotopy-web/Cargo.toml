@@ -30,7 +30,7 @@ serde = { version = "1.0.164", features = ["derive"] }
 syn = "2.0.18"
 paste = "1.0.12"
 rmp-serde = "1.1.1"
-serde_json = "1.0.97"
+serde_json = "1.0.99"
 zip = { version = "0.6.6", default-features = false, features = ["deflate"] }
 
 # The `wasm-bindgen` crate provides the bare minimum functionality needed
