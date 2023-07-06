@@ -6,22 +6,24 @@ use crate::{
     rewrite::Cospan,
 };
 
-pub fn attach<F, E>(diagram: &DiagramN, path: BoundaryPath, build: F) -> Result<DiagramN, E>
+pub fn attach<E>(
+    diagram: &DiagramN,
+    path: BoundaryPath,
+    build: impl FnOnce(Diagram) -> Result<Vec<Cospan>, E>,
+) -> Result<DiagramN, E>
 where
-    F: FnOnce(Diagram) -> Result<Vec<Cospan>, E>,
     E: From<DimensionError>,
 {
     let (diagram, _) = attach_worker(diagram, path, build)?;
     Ok(diagram)
 }
 
-fn attach_worker<F, E>(
+fn attach_worker<E>(
     diagram: &DiagramN,
     path: BoundaryPath,
-    build: F,
+    build: impl FnOnce(Diagram) -> Result<Vec<Cospan>, E>,
 ) -> Result<(DiagramN, usize), E>
 where
-    F: FnOnce(Diagram) -> Result<Vec<Cospan>, E>,
     E: From<DimensionError>,
 {
     match path {

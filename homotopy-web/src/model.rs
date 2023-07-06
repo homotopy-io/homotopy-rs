@@ -336,7 +336,7 @@ impl State {
                         if info.invertible {
                             let bubble = |mut diagram: DiagramN| {
                                 while diagram.dimension() < haystack.dimension() + 1 {
-                                    diagram = diagram.bubble();
+                                    diagram = diagram.bubble().unwrap();
                                 }
                                 diagram
                             };

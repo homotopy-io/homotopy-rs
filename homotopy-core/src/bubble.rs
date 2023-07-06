@@ -1,24 +1,36 @@
+use itertools::Itertools;
+use thiserror::Error;
+
 use crate::{rewrite::Cone, Cospan, Diagram, DiagramN, Orientation, Rewrite, Rewrite0, RewriteN};
 
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Error)]
+pub enum BubbleError {
+    #[error("Expected an atomic diagram")]
+    NotAtomic,
+}
+
 impl DiagramN {
-    #[must_use]
-    pub fn bubble(&self) -> Self {
+    pub fn bubble(&self) -> Result<Self, BubbleError> {
         use Orientation::Zero;
 
-        assert_eq!(self.size(), 1);
-        let source = self.source();
-        let cospan = self.cospans()[0].clone();
+        // Check that the diagram is atomic.
+        let cospan = self
+            .cospans()
+            .iter()
+            .exactly_one()
+            .cloned()
+            .map_err(|_err| BubbleError::NotAtomic)?;
 
         let f0 = cospan.forward.orientation_transform(Zero);
         let b0 = cospan.backward.orientation_transform(Zero);
 
         let inverse = cospan.inverse();
 
-        let singular0 = source.clone().rewrite_forward(&cospan.forward).unwrap();
-        let singular1 = source.clone().rewrite_forward(&inverse.backward).unwrap();
+        let singular0 = self.source().rewrite_forward(&cospan.forward).unwrap();
+        let singular1 = self.source().rewrite_forward(&inverse.backward).unwrap();
 
         let contract = RewriteN::new(
-            source.dimension() + 1,
+            self.dimension(),
             vec![Cone::new(
                 0,
                 vec![cospan, inverse],
@@ -35,7 +47,7 @@ impl DiagramN {
         );
 
         let expand = RewriteN::new(
-            source.dimension() + 1,
+            self.dimension(),
             vec![Cone::new_unit(
                 0,
                 Cospan {
@@ -46,13 +58,13 @@ impl DiagramN {
             )],
         );
 
-        Self::new(
-            source.identity().into(),
+        Ok(Self::new(
+            self.source().identity().into(),
             vec![Cospan {
                 forward: expand.into(),
                 backward: contract.into(),
             }],
-        )
+        ))
     }
 }
 
