@@ -1,32 +1,20 @@
 [build]
 rustflags = [
-    "-Wclippy::pedantic",
+    "-Aunused_macros",
+
+    # cargo
     "-Wclippy::cargo",
-
-    # restrictions
-    "-Wclippy::dbg_macro",
-    "-Wclippy::decimal_literal_representation",
-    "-Wclippy::exit",
-    "-Wclippy::get_unwrap",
-    "-Wclippy::let_underscore_must_use",
-    "-Wclippy::map_err_ignore",
-    "-Wclippy::mem_forget",
-    "-Wclippy::print_stderr",
-    "-Wclippy::rc_buffer",
-    "-Wclippy::rest_pat_in_fully_bound_structs",
-    "-Wclippy::same_name_method",
-    "-Wclippy::string_to_string",
-    "-Wclippy::str_to_string",
-    "-Wclippy::todo",
-    "-Wclippy::try_err",
-    "-Wclippy::unimplemented",
-    "-Wclippy::unnecessary_self_imports",
-    "-Wclippy::unneeded_field_pattern",
-    "-Wclippy::unseparated_literal_suffix",
-
-    # exceptions
-    "-Aunused_macros", # remove this once we fix the obake versioned macro
     "-Aclippy::cargo_common_metadata",
+
+    # nursery
+    "-Wclippy::nursery",
+    "-Aclippy::missing_const_for_fn",
+    "-Aclippy::option_if_let_else",
+    "-Aclippy::suboptimal_flops",
+    "-Aclippy::use_self",
+
+    # pedantic
+    "-Wclippy::pedantic",
     "-Aclippy::cast_possible_truncation",
     "-Aclippy::cast_possible_wrap",
     "-Aclippy::cast_precision_loss",
@@ -38,7 +26,29 @@ rustflags = [
     "-Aclippy::module_name_repetitions",
     "-Aclippy::must_use_candidate",
     "-Aclippy::range_plus_one",
-    "-Aclippy::redundant_else",
     "-Aclippy::similar_names",
     "-Aclippy::too_many_lines",
+
+    # restrictions
+    "-Wclippy::dbg_macro",
+    "-Wclippy::decimal_literal_representation",
+    "-Wclippy::deref_by_slicing",
+    "-Wclippy::exit",
+    "-Wclippy::get_unwrap",
+    "-Wclippy::let_underscore_must_use",
+    "-Wclippy::map_err_ignore",
+    "-Wclippy::mem_forget",
+    "-Wclippy::mod_module_files",
+    "-Wclippy::print_stderr",
+    "-Wclippy::rc_buffer",
+    "-Wclippy::rest_pat_in_fully_bound_structs",
+    "-Wclippy::same_name_method",
+    "-Wclippy::str_to_string",
+    "-Wclippy::string_to_string",
+    "-Wclippy::todo",
+    "-Wclippy::try_err",
+    "-Wclippy::unimplemented",
+    "-Wclippy::unnecessary_self_imports",
+    "-Wclippy::unneeded_field_pattern",
+    "-Wclippy::unseparated_literal_suffix",
 ]

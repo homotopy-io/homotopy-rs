@@ -662,9 +662,10 @@ impl RewriteN {
         self.cones()
             .iter()
             .find(|cone| cone.index <= height && height < cone.index + cone.len())
-            .map_or(Rewrite::identity(self.dimension() - 1), |cone| {
-                cone.singular_slices()[height - cone.index].clone()
-            })
+            .map_or_else(
+                || Rewrite::identity(self.dimension() - 1),
+                |cone| cone.singular_slices()[height - cone.index].clone(),
+            )
     }
 
     /// This will implicitly mangle/strip labels
@@ -759,9 +760,8 @@ impl RewriteN {
                 return (index as isize + offset) as usize;
             } else if index < cone.index + cone.len() {
                 return (cone.index as isize + offset) as usize;
-            } else {
-                offset += 1 - cone.len() as isize;
             }
+            offset += 1 - cone.len() as isize;
         }
 
         (index as isize + offset) as usize
@@ -795,9 +795,8 @@ impl RewriteN {
         for cone in self.cones() {
             if index <= (cone.index as isize + offset) as usize {
                 return (index as isize - offset) as usize;
-            } else {
-                offset += 1 - cone.len() as isize;
             }
+            offset += 1 - cone.len() as isize;
         }
 
         (index as isize - offset) as usize
@@ -819,9 +818,8 @@ impl RewriteN {
             } else if cone.index < index && index < cone.index + cone.len() {
                 let start = (cone.index as isize + offset) as usize;
                 return start..start;
-            } else {
-                offset += 1 - cone.len() as isize;
             }
+            offset += 1 - cone.len() as isize;
         }
 
         let start = (index as isize + offset) as usize;

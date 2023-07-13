@@ -67,6 +67,7 @@ impl Component for App {
         }
     }
 
+    #[allow(clippy::cognitive_complexity)]
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Message::BlockingDispatch(action) | Message::Dispatch(action) => {
@@ -122,7 +123,7 @@ impl Component for App {
 
                 self.loading = false;
 
-                if let Ok(true) = result {
+                if matches!(result, Ok(true)) {
                     if resets_panzoom {
                         PanZoom::reset();
                         GlViewControl::reset();

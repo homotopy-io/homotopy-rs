@@ -73,7 +73,7 @@ impl CrashDump {
         if let Some(ibuf) = &self.import {
             let mut buf: Vec<u8> = vec![0; ibuf.len() + actions.len()];
             let size = {
-                let mut zip = ZipWriter::new(std::io::Cursor::new(&mut buf[..]));
+                let mut zip = ZipWriter::new(std::io::Cursor::new(&mut *buf));
                 let options =
                     FileOptions::default().compression_method(zip::CompressionMethod::DEFLATE);
 

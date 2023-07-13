@@ -73,9 +73,8 @@ impl Monotone {
         for i in self.slices() {
             if i >= g.len() {
                 return None;
-            } else {
-                seq.push(g[i]);
             }
+            seq.push(g[i]);
         }
         Some(seq.into())
     }
@@ -218,9 +217,8 @@ impl Iterator for MonotoneIterator {
                     // If the constraint is invalid, the iterator is empty.
                     if self.constraints[i].is_empty() {
                         return None;
-                    } else {
-                        seq.push(self.constraints[i].start);
                     }
+                    seq.push(self.constraints[i].start);
                 }
                 self.cur = Some(seq.into());
             }
@@ -234,21 +232,21 @@ impl Iterator for MonotoneIterator {
                 if end == 0 {
                     // All elements are maximal, so we have reached the end.
                     return None;
-                } else {
-                    // Increment the last non-maximal element.
-                    seq[end - 1] += 1;
+                }
 
-                    // Reset all elements to the right to their minimal values while preserving monotonicity.
-                    let mut min = seq[end - 1];
-                    for i in end..seq.len() {
-                        if self.strict {
-                            min = cmp::max(min + 1, self.constraints[i].start);
-                        } else {
-                            min = cmp::max(min, self.constraints[i].start);
-                        }
-                        assert!(min < self.constraints[i].end);
-                        seq[i] = min;
+                // Increment the last non-maximal element.
+                seq[end - 1] += 1;
+
+                // Reset all elements to the right to their minimal values while preserving monotonicity.
+                let mut min = seq[end - 1];
+                for i in end..seq.len() {
+                    if self.strict {
+                        min = cmp::max(min + 1, self.constraints[i].start);
+                    } else {
+                        min = cmp::max(min, self.constraints[i].start);
                     }
+                    assert!(min < self.constraints[i].end);
+                    seq[i] = min;
                 }
             }
         }
@@ -268,9 +266,8 @@ impl DoubleEndedIterator for MonotoneIterator {
                     // If the constraint is invalid, the iterator is empty.
                     if self.constraints[i].is_empty() {
                         return None;
-                    } else {
-                        seq.push(self.constraints[i].end - 1);
                     }
+                    seq.push(self.constraints[i].end - 1);
                 }
                 self.cur = Some(seq.into());
             }
@@ -284,21 +281,21 @@ impl DoubleEndedIterator for MonotoneIterator {
                 if start == seq.len() {
                     // All elements are maximal, we have reached the end.
                     return None;
-                } else {
-                    // Decrement the first non-minimal element.
-                    seq[start] -= 1;
+                }
 
-                    // Reset all elements to the left to their maximal values while preserving monotonicity.
-                    let mut max = seq[start];
-                    for i in (0..start).rev() {
-                        if self.strict {
-                            max = cmp::min(max - 1, self.constraints[i].end - 1);
-                        } else {
-                            max = cmp::min(max, self.constraints[i].end - 1);
-                        }
-                        assert!(max >= self.constraints[i].start);
-                        seq[i] = max;
+                // Decrement the first non-minimal element.
+                seq[start] -= 1;
+
+                // Reset all elements to the left to their maximal values while preserving monotonicity.
+                let mut max = seq[start];
+                for i in (0..start).rev() {
+                    if self.strict {
+                        max = cmp::min(max - 1, self.constraints[i].end - 1);
+                    } else {
+                        max = cmp::min(max, self.constraints[i].end - 1);
                     }
+                    assert!(max >= self.constraints[i].start);
+                    seq[i] = max;
                 }
             }
         }

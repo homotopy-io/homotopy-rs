@@ -57,10 +57,10 @@ fn typecheck_worker(
 ) -> Result<(), TypeError> {
     let diagram = match diagram {
         Diagram::Diagram0(d) => {
-            if d.generator.dimension == 0 {
-                return Ok(());
+            return if d.generator.dimension == 0 {
+                Ok(())
             } else {
-                return Err(TypeError::IllTyped);
+                Err(TypeError::IllTyped)
             }
         }
         Diagram::DiagramN(d) => d,

@@ -327,12 +327,12 @@ impl Component for Sidebar {
                 true
             }
             SidebarMsg::Dispatch(action) => {
-                if let model::Action::Proof(proof::Action::CreateGeneratorZero) = action {
-                    if !matches!(self.open, Some(drawers::NavDrawer::DRAWER_SIGNATURE)) {
-                        ctx.link().send_message(SidebarMsg::Toggle(Some(
-                            drawers::NavDrawer::DRAWER_SIGNATURE,
-                        )));
-                    }
+                if action == model::Action::Proof(proof::Action::CreateGeneratorZero)
+                    && !matches!(self.open, Some(drawers::NavDrawer::DRAWER_SIGNATURE))
+                {
+                    ctx.link().send_message(SidebarMsg::Toggle(Some(
+                        drawers::NavDrawer::DRAWER_SIGNATURE,
+                    )));
                 }
                 ctx.props().dispatch.emit(action);
                 false

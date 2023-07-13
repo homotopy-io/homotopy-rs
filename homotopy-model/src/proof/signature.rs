@@ -224,7 +224,7 @@ impl Signature {
         match edit {
             SignatureEdit::Edit(node, edit) => {
                 // Intercept edit in order to update the whole signature.
-                if let SignatureItemEdit::MakeOriented(true) = edit {
+                if matches!(edit, SignatureItemEdit::MakeOriented(true)) {
                     let generator = self.find_generator(*node).unwrap();
                     self.0 = self.0.clone().map(|item| match item {
                         SignatureItem::Item(info) => SignatureItem::Item(GeneratorInfo {
@@ -234,7 +234,7 @@ impl Signature {
                         SignatureItem::Folder(_) => item,
                     });
                 }
-                if let SignatureItemEdit::MakeInvertible(false) = edit {
+                if matches!(edit, SignatureItemEdit::MakeInvertible(false)) {
                     let generator = self.find_generator(*node).unwrap();
                     for info in self.iter() {
                         if info

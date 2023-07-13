@@ -384,9 +384,10 @@ where
                                         source_height,
                                         target_height,
                                     },
-                                    cone.map_or(Rewrite::identity(rewrite.dimension() - 1), |c| {
-                                        c.singular_slices()[source_height - start].clone()
-                                    }),
+                                    cone.map_or_else(
+                                        || Rewrite::identity(rewrite.dimension() - 1),
+                                        |c| c.singular_slices()[source_height - start].clone(),
+                                    ),
                                 );
                                 if source_height < end - 1 {
                                     // one regular slice between each adjacent pair of singular slices
