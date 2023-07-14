@@ -1,9 +1,4 @@
-use std::convert::{Into, TryInto};
-
-use homotopy_core::{
-    common::{Boundary, Height, SliceIndex},
-    DiagramN,
-};
+use homotopy_core::SliceIndex;
 use path_control::PathControl;
 use slice_control::SliceControl;
 use view_control::ViewControl;
@@ -12,7 +7,10 @@ use yew::prelude::*;
 use crate::{
     app::{
         diagram_gl::DiagramGl,
-        diagram_svg::{DiagramSvg, HighlightKind, HighlightSvg},
+        diagram_svg::{
+            highlight::{highlight_attachment, highlight_slice},
+            DiagramSvg,
+        },
         info::get_onboarding_message,
         tex::TexSpan,
         AppSettings,
@@ -152,14 +150,11 @@ impl WorkspaceView {
     #[allow(clippy::let_underscore_untyped)]
     fn view_diagram_svg<const N: usize>(&self, ctx: &Context<Self>) -> Html {
         if let Some(ref ws) = ctx.props().workspace {
-            let attachment_highlight = match N {
-                0 => None,
-                _ => ctx
-                    .props()
-                    .attachment_highlight
-                    .as_ref()
-                    .map(|option| highlight_attachment::<N>(ws, option)),
-            };
+            let attachment_highlight = ctx
+                .props()
+                .attachment_highlight
+                .as_ref()
+                .map(|option| highlight_attachment::<N>(ws.path.len(), option));
             let slice_highlight = ctx.props().slice_highlight.map(highlight_slice::<N>);
             let highlight = attachment_highlight.or(slice_highlight);
             html! {
@@ -178,104 +173,5 @@ impl WorkspaceView {
         } else {
             Default::default()
         }
-    }
-}
-
-// TODO: highlighting needs better documentation and maybe a refactor
-#[allow(clippy::let_underscore_untyped)]
-fn highlight_attachment<const N: usize>(
-    workspace: &Workspace,
-    option: &AttachOption,
-) -> HighlightSvg<N> {
-    use Height::Regular;
-
-    fn extend<const N: usize>(slices: [SliceIndex; 2]) -> [SliceIndex; N] {
-        let mut extension = [SliceIndex::Interior(Regular(0)); N];
-        for (i, &slice) in slices.iter().enumerate() {
-            if let Some(x) = extension.get_mut(i) {
-                *x = slice;
-            }
-        }
-        extension
-    }
-
-    let needle = &option.diagram;
-    let boundary_path = option.boundary_path;
-    let embedding = &option.embedding;
-
-    match boundary_path {
-        Some(bp) if bp.depth() == workspace.path.len() => {
-            let slice: Result<DiagramN, _> = needle.slice(bp.boundary().flip()).unwrap().try_into();
-            let size = slice.map(|slice| slice.size()).unwrap_or_default();
-            HighlightSvg {
-                from: extend([
-                    bp.boundary().into(),
-                    Regular(embedding.get(0).copied().unwrap_or_default()).into(),
-                ]),
-                to: extend([
-                    bp.boundary().into(),
-                    Regular(embedding.get(0).copied().unwrap_or_default() + size).into(),
-                ]),
-                kind: HighlightKind::Attach,
-            }
-        }
-        Some(bp) if bp.depth() > workspace.path.len() => HighlightSvg {
-            from: extend([Boundary::Source.into(), bp.boundary().into()]),
-            to: extend([Boundary::Target.into(), bp.boundary().into()]),
-            kind: HighlightKind::Attach,
-        },
-        Some(bp) if bp.boundary() == Boundary::Source => {
-            let embedding = embedding.skip(workspace.path.len() - bp.depth() - 1);
-            HighlightSvg {
-                from: extend([
-                    Regular(embedding.get(0).copied().unwrap_or_default()).into(),
-                    Regular(embedding.get(1).copied().unwrap_or_default()).into(),
-                ]),
-                to: extend([
-                    Regular(embedding.get(0).copied().unwrap_or_default()).into(),
-                    Regular(embedding.get(1).copied().unwrap_or_default() + 1).into(),
-                ]),
-                kind: HighlightKind::Attach,
-            }
-        }
-        _ => {
-            // Note: An empty boundary path implies that `needle` is one dimension higher than the
-            // currently displayed diagram. Since this function computes highlights for at least 1D
-            // diagrams, the `needle` diagram is at least two-dimensional. When it computes a
-            // highlight for a 2D diagram, `needle` is at least three-dimensional.
-            let depth = boundary_path.map_or(0, |bp| bp.depth() + 1);
-            let embedding = embedding.skip(workspace.path.len() - depth);
-            let needle_s: DiagramN = needle.source().try_into().unwrap();
-            let needle_st_size: usize = needle_s
-                .target()
-                .try_into()
-                .map(|d: DiagramN| d.size())
-                .unwrap_or_default();
-
-            HighlightSvg {
-                from: extend([
-                    Regular(embedding.get(0).copied().unwrap_or_default()).into(),
-                    Regular(embedding.get(1).copied().unwrap_or_default()).into(),
-                ]),
-                to: extend([
-                    Regular(embedding.get(0).copied().unwrap_or_default() + needle_s.size()).into(),
-                    Regular(embedding.get(1).copied().unwrap_or_default() + needle_st_size).into(),
-                ]),
-                kind: HighlightKind::Attach,
-            }
-        }
-    }
-}
-
-fn highlight_slice<const N: usize>(slice: SliceIndex) -> HighlightSvg<N> {
-    let mut from = [Boundary::Source.into(); N];
-    from[0] = slice;
-    let mut to = [Boundary::Target.into(); N];
-    to[0] = slice;
-
-    HighlightSvg {
-        from,
-        to,
-        kind: HighlightKind::Slice,
     }
 }

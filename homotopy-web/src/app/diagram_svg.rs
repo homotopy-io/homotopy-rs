@@ -28,6 +28,7 @@ use homotopy_graphics::{
 use web_sys::Element;
 use yew::prelude::*;
 
+use self::highlight::{HighlightKind, HighlightSvg};
 use crate::{
     components::{read_touch_list_abs, Finger},
     model::proof::{
@@ -35,6 +36,8 @@ use crate::{
         Signature,
     },
 };
+
+pub mod highlight;
 
 pub struct DiagramSvg<const N: usize> {
     prepared: PreparedDiagram<N>,
@@ -62,22 +65,6 @@ pub struct DiagramSvgProps<const N: usize> {
     #[prop_or_default]
     pub diagram_ref: NodeRef,
 }
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum HighlightKind {
-    Attach,
-    Slice,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct HighlightSvg<const N: usize> {
-    pub from: [SliceIndex; N],
-    pub to: [SliceIndex; N],
-    pub kind: HighlightKind,
-}
-
-// TODO: Drag callbacks in props
-// TODO: Highlights in props
 
 #[allow(clippy::enum_variant_names)]
 pub enum DiagramSvgMessage {
@@ -457,13 +444,17 @@ impl<const N: usize> DiagramSvg<N> {
     }
 
     fn view_highlight(&self, ctx: &Context<Self>) -> Html {
-        let Some(highlight) = ctx.props().highlight else {
+        let Some(highlight) = &ctx.props().highlight else {
             return Default::default();
         };
 
-        let (Some(from), Some(to)) = (self.position(highlight.from), self.position(highlight.to)) else {
-            return Default::default();
-        };
+        let (from, to) = highlight.points.iter().map(|p| self.position(*p)).fold(
+            (
+                Point2D::splat(f32::INFINITY),
+                Point2D::splat(f32::NEG_INFINITY),
+            ),
+            |(min, max), pos| (min.min(pos), max.max(pos)),
+        );
 
         let padding = match highlight.kind {
             HighlightKind::Attach => {
@@ -473,8 +464,8 @@ impl<const N: usize> DiagramSvg<N> {
             HighlightKind::Slice => Vector2D::new(0.0, ctx.props().style.scale * 0.5),
         };
 
-        let from = from + padding;
-        let to = to - padding;
+        let from = from - padding;
+        let to = to + padding;
 
         let path = format!(
             "M {from_x} {from_y} L {from_x} {to_y} L {to_x} {to_y} L {to_x} {from_y} Z",
@@ -498,9 +489,9 @@ impl<const N: usize> DiagramSvg<N> {
         }
     }
 
-    fn position(&self, point: [SliceIndex; N]) -> Option<Point2D<f32>> {
-        let point = project_2d(*self.prepared.layout.get(&point)?).into();
-        Some(self.prepared.transform.transform_point(point))
+    fn position(&self, point: [SliceIndex; N]) -> Point2D<f32> {
+        let point = project_2d(self.prepared.layout[&point]).into();
+        self.prepared.transform.transform_point(point)
     }
 
     fn simplex_at(&self, ctx: &Context<Self>, point: Point2D<f32>) -> Option<Simplex<N>> {
@@ -524,7 +515,7 @@ impl<const N: usize> DiagramSvg<N> {
             let angle = diff.angle_from_x_axis();
             self.drag_start = None;
 
-            let Some(simplex) = self.simplex_at(ctx,start) else {
+            let Some(simplex) = self.simplex_at(ctx, start) else {
                 return;
             };
 

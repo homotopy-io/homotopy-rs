@@ -467,11 +467,11 @@ impl DiagramN {
         Slices::new(self)
     }
 
-    pub(crate) fn regular_slices(&self) -> impl Iterator<Item = Diagram> {
+    pub fn regular_slices(&self) -> impl Iterator<Item = Diagram> {
         self.slices().step_by(2)
     }
 
-    pub(crate) fn singular_slices(&self) -> impl Iterator<Item = Diagram> {
+    pub fn singular_slices(&self) -> impl Iterator<Item = Diagram> {
         self.slices().skip(1).step_by(2)
     }
 
@@ -553,7 +553,7 @@ impl DiagramN {
         let height = SliceIndex::Interior(Height::Regular(regular));
 
         let Some(slice) = self.slice(height) else {
-                return false;
+            return false;
         };
 
         match diagram {
