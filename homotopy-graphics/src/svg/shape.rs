@@ -15,7 +15,7 @@ pub struct Fill {
 
 impl Fill {
     pub fn new(path: Path) -> Self {
-        let bounds = fast_bounding_box(path.into_iter());
+        let bounds = fast_bounding_box(&path);
         Self { path, bounds }
     }
 
@@ -24,12 +24,7 @@ impl Fill {
             return false;
         }
 
-        hit_test_path(
-            &point,
-            self.path.into_iter(),
-            lyon_path::FillRule::NonZero,
-            tolerance,
-        )
+        hit_test_path(&point, &self.path, lyon_path::FillRule::NonZero, tolerance)
     }
 }
 

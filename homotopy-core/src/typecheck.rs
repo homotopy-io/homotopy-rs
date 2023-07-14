@@ -144,7 +144,7 @@ fn target_points(rewrites: &[Rewrite]) -> Vec<(Point, Generator)> {
 
     let mut target_rewrites: FastHashMap<usize, Vec<Rewrite>> = Default::default();
 
-    for rewrite in rewrites.iter() {
+    for rewrite in rewrites {
         let rewrite: RewriteN = rewrite.clone().try_into().unwrap();
         for target_height in rewrite.targets() {
             let target_rewrites_at_height = target_rewrites

@@ -198,7 +198,7 @@ fn render_inner(
     }
 
     tikz.push_str("% Background surfaces\n");
-    for (g, path) in surfaces.iter() {
+    for (g, path) in surfaces {
         writeln!(
             tikz,
             "\\fill[{color}] {path};",
@@ -212,7 +212,7 @@ fn render_inner(
     // might as well make a macro for it and have TeX do the CTRL+V for us.
     if needs_masking {
         writeln!(tikz, "\\newcommand{{\\layer}}[1]{{",).unwrap();
-        for (g, path) in surfaces.iter() {
+        for (g, path) in surfaces {
             writeln!(
                 tikz,
                 "  \\clipped{{{color}}}{{#1}}{{{path}}}",

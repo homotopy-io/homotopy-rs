@@ -387,7 +387,7 @@ impl<K> From<[u64; 2]> for Key<K> {
 
 impl<K> Clone for Key<K> {
     fn clone(&self) -> Self {
-        Self(self.0, PhantomData)
+        *self
     }
 }
 

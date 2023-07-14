@@ -243,7 +243,7 @@ impl<const N: usize> GraphicElement<N> {
 
 // TODO(@calintat): These functions can be removed if we record the parity of each simplex.
 fn orient_wire<const N: usize>(wire: &[Coordinate<N>; 2]) -> [Coordinate<N>; 2] {
-    let (a, b) = (wire[0], wire[1]);
+    let [a, b] = *wire;
     if a[0] < b[0] {
         [a, b]
     } else {

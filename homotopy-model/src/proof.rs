@@ -345,7 +345,9 @@ impl ProofState {
     /// Invalid if the workspace is empty.
     /// Returns an error if the diagrams are incompatible as boundaries.
     fn set_boundary(&mut self, boundary: Boundary) -> Result<bool, ProofError> {
-        let Some(ws) = self.workspace.take() else { return Ok(false) };
+        let Some(ws) = self.workspace.take() else {
+            return Ok(false);
+        };
 
         match self.boundary.take() {
             Some(selected) if selected.boundary != boundary => {
@@ -371,7 +373,9 @@ impl ProofState {
     ///
     /// Invalid if the workspace is empty.
     fn take_identity_diagram(&mut self) -> bool {
-        let Some(ws) = &mut self.workspace else { return false };
+        let Some(ws) = &mut self.workspace else {
+            return false;
+        };
 
         if ws.diagram.dimension() + ws.path.len() >= 2 {
             ws.path.push_front(Boundary::Target.into());
@@ -416,7 +420,9 @@ impl ProofState {
     ///
     /// Invalid if the workspace is empty or the path is too short.
     fn ascend_slice(&mut self, count: usize) -> bool {
-        let Some(ws) = &mut self.workspace else { return false };
+        let Some(ws) = &mut self.workspace else {
+            return false;
+        };
 
         if count == 0 || ws.path.is_empty() {
             return false;
@@ -441,9 +447,13 @@ impl ProofState {
     ///
     /// Returns an error if the slice is not a valid slice of the diagram.
     fn descend_slice(&mut self, slice: SliceIndex) -> Result<bool, ProofError> {
-        let Some(ws) = &mut self.workspace else { return Ok(false) };
+        let Some(ws) = &mut self.workspace else {
+            return Ok(false);
+        };
 
-        let Diagram::DiagramN(diagram) = ws.visible_diagram() else { return Ok(false) };
+        let Diagram::DiagramN(diagram) = ws.visible_diagram() else {
+            return Ok(false);
+        };
 
         if let SliceIndex::Interior(height) = slice {
             if height > Height::Regular(diagram.size()) {
@@ -461,9 +471,13 @@ impl ProofState {
     ///
     /// Invalid if the workspace is empty, the path is empty, or we cannot step in the given direction.
     fn switch_slice(&mut self, direction: Direction) -> bool {
-        let Some(ws) = &mut self.workspace else { return false };
+        let Some(ws) = &mut self.workspace else {
+            return false;
+        };
 
-        let Some(slice) = ws.path.pop_back() else { return false };
+        let Some(slice) = ws.path.pop_back() else {
+            return false;
+        };
 
         let diagram = DiagramN::try_from(ws.visible_diagram()).unwrap();
         let next_slice = slice.step(diagram.size(), direction);
@@ -475,7 +489,9 @@ impl ProofState {
     ///
     /// Invalid if the workspace is empty or the view dimension is too high.
     fn increase_view(&mut self, count: u8) -> bool {
-        let Some(ws) = &mut self.workspace else { return false };
+        let Some(ws) = &mut self.workspace else {
+            return false;
+        };
 
         let max = std::cmp::min(ws.visible_dimension() as u8, View::MAX);
 
@@ -492,7 +508,9 @@ impl ProofState {
     ///
     /// Invalid if the workspace is empty or the view dimension is too low.
     fn decrease_view(&mut self, count: u8) -> bool {
-        let Some(ws) = &mut self.workspace else { return false };
+        let Some(ws) = &mut self.workspace else {
+            return false;
+        };
 
         if count == 0 || ws.view.dimension == 0 {
             return false;
@@ -507,13 +525,17 @@ impl ProofState {
     ///
     /// Invalid if the workspace is empty or has dimension 0 (if the boundary path is not null).
     fn attach(&mut self, option: &AttachOption) -> Result<bool, ProofError> {
-        let Some(ws) = &mut self.workspace else { return Ok(false) };
+        let Some(ws) = &mut self.workspace else {
+            return Ok(false);
+        };
         let diagram = &mut ws.diagram;
 
         let embedding: Vec<_> = option.embedding.iter().copied().collect();
 
         if let Some(bp) = &option.boundary_path {
-            let Diagram::DiagramN(diagram) = diagram else { return Ok(false) };
+            let Diagram::DiagramN(diagram) = diagram else {
+                return Ok(false);
+            };
             *diagram = diagram.attach(&option.diagram, bp.boundary(), &embedding)?;
         } else {
             *diagram = diagram
@@ -530,7 +552,9 @@ impl ProofState {
     ///
     /// Invalid if the workspace is empty or has dimension 0.
     fn homotopy_expand(&mut self, homotopy: &Expand) -> Result<bool, ProofError> {
-        let Some(ws) = &mut self.workspace else { return Ok(false) };
+        let Some(ws) = &mut self.workspace else {
+            return Ok(false);
+        };
         let diagram = &mut ws.diagram;
 
         let location = {
@@ -542,7 +566,9 @@ impl ProofState {
         let (boundary_path, mut interior_path) = BoundaryPath::split(&location);
 
         if let Some(boundary_path) = boundary_path {
-            let Diagram::DiagramN(diagram) = diagram else { return Ok(false) };
+            let Diagram::DiagramN(diagram) = diagram else {
+                return Ok(false);
+            };
             *diagram = diagram.expand(
                 boundary_path,
                 &mut interior_path,
@@ -576,7 +602,9 @@ impl ProofState {
     ///
     /// Invalid if the workspace is empty or has dimension 0.
     fn homotopy_contract(&mut self, homotopy: &Contract) -> Result<bool, ProofError> {
-        let Some(ws) = &mut self.workspace else { return Ok(false) };
+        let Some(ws) = &mut self.workspace else {
+            return Ok(false);
+        };
         let diagram = &mut ws.diagram;
 
         let location = {
@@ -588,7 +616,9 @@ impl ProofState {
         let (boundary_path, mut interior_path) = BoundaryPath::split(&location);
 
         if let Some(boundary_path) = boundary_path {
-            let Diagram::DiagramN(diagram) = diagram else { return Ok(false) };
+            let Diagram::DiagramN(diagram) = diagram else {
+                return Ok(false);
+            };
             *diagram = diagram.contract(
                 boundary_path,
                 &mut interior_path,
@@ -624,8 +654,12 @@ impl ProofState {
     ///
     /// Invalid if the workspace is empty or has dimension 0, or if the path is invalid.
     fn behead(&mut self) -> bool {
-        let Some(ws) = &mut self.workspace else { return false };
-        let Diagram::DiagramN(diagram) = &ws.diagram else { return false };
+        let Some(ws) = &mut self.workspace else {
+            return false;
+        };
+        let Diagram::DiagramN(diagram) = &ws.diagram else {
+            return false;
+        };
 
         let max_height = match ws.path.len() {
             0 if diagram.size() > 0 => diagram.size() - 1,
@@ -654,8 +688,12 @@ impl ProofState {
     ///
     /// Invalid if the workspace is empty or has dimension 0, or if the path is invalid.
     fn befoot(&mut self) -> bool {
-        let Some(ws) = &mut self.workspace else { return false };
-        let Diagram::DiagramN(diagram) = &ws.diagram else { return false };
+        let Some(ws) = &mut self.workspace else {
+            return false;
+        };
+        let Diagram::DiagramN(diagram) = &ws.diagram else {
+            return false;
+        };
 
         let min_height = match ws.path.len() {
             0 if diagram.size() > 0 => 1,
@@ -686,7 +724,9 @@ impl ProofState {
     ///
     /// Returns an error if the diagram cannot be inverted (if not all generators are invertible).
     fn invert(&mut self) -> Result<bool, ProofError> {
-        let Some(ws) = &mut self.workspace else { return Ok(false) };
+        let Some(ws) = &mut self.workspace else {
+            return Ok(false);
+        };
 
         if !ws.path.is_empty() {
             return Ok(false);
@@ -696,7 +736,9 @@ impl ProofState {
             return Err(ProofError::NotInvertible);
         }
 
-        let Diagram::DiagramN(diagram) = &mut ws.diagram else { return Ok(false) };
+        let Diagram::DiagramN(diagram) = &mut ws.diagram else {
+            return Ok(false);
+        };
         *diagram = diagram.inverse();
 
         Ok(true)
@@ -706,7 +748,9 @@ impl ProofState {
     ///
     /// Invalid if the workspace is empty, or if the path is empty or contains a singular slice.
     fn restrict(&mut self) -> bool {
-        let Some(ws) = &mut self.workspace else { return false };
+        let Some(ws) = &mut self.workspace else {
+            return false;
+        };
 
         if ws.path.is_empty()
             || ws
@@ -727,10 +771,14 @@ impl ProofState {
     ///
     /// Invalid if the workspace is empty or has dimension 0.
     fn theorem(&mut self) -> Result<bool, ProofError> {
-        let Some(ws) = self.workspace.take() else { return Ok(false) };
+        let Some(ws) = self.workspace.take() else {
+            return Ok(false);
+        };
 
         let invertible = ws.diagram.is_invertible(&self.signature);
-        let Diagram::DiagramN(diagram) = ws.diagram else { return Ok(false) };
+        let Diagram::DiagramN(diagram) = ws.diagram else {
+            return Ok(false);
+        };
 
         // new generator of singular height 1 from source to target of current diagram
         let singleton = self.signature.create_generator(
@@ -961,7 +1009,9 @@ impl ProofState {
     ///
     /// Invalid if the selected boundary is empty.
     fn flip_boundary(&mut self) -> bool {
-        let Some(selected) = &mut self.boundary else { return false };
+        let Some(selected) = &mut self.boundary else {
+            return false;
+        };
         selected.boundary = selected.boundary.flip();
         true
     }
@@ -970,7 +1020,9 @@ impl ProofState {
     ///
     /// Invalid if the selected boundary is empty.
     fn recover_boundary(&mut self) -> bool {
-        let Some(selected) = self.boundary.as_ref() else { return false };
+        let Some(selected) = self.boundary.as_ref() else {
+            return false;
+        };
         self.workspace = Some(Workspace::new(selected.diagram.clone()));
         true
     }
@@ -979,7 +1031,9 @@ impl ProofState {
     ///
     /// Invalid if the workspace is empty.
     fn stash_push(&mut self) -> bool {
-        let Some(ws) = self.workspace.take() else { return false };
+        let Some(ws) = self.workspace.take() else {
+            return false;
+        };
         self.stash.push_back(ws);
         true
     }
@@ -995,7 +1049,9 @@ impl ProofState {
     ///
     /// Invalid if the stash is empty.
     fn stash_pop(&mut self) -> bool {
-        let Some(stashed) = self.stash.pop_back() else { return false };
+        let Some(stashed) = self.stash.pop_back() else {
+            return false;
+        };
         self.workspace = Some(stashed);
         true
     }
@@ -1004,7 +1060,9 @@ impl ProofState {
     ///
     /// Invalid if the stash is empty.
     fn stash_apply(&mut self) -> bool {
-        let Some(stashed) = self.stash.back() else { return false };
+        let Some(stashed) = self.stash.back() else {
+            return false;
+        };
         self.workspace = Some(stashed.clone());
         true
     }

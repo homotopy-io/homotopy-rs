@@ -124,7 +124,7 @@ where
     pub fn new() -> Self {
         Self {
             raw: vec![],
-            _phantom: PhantomData::default(),
+            _phantom: PhantomData,
         }
     }
 
@@ -135,7 +135,7 @@ where
     {
         Self {
             raw: vec![t; len],
-            _phantom: PhantomData::default(),
+            _phantom: PhantomData,
         }
     }
 
@@ -143,7 +143,7 @@ where
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             raw: Vec::with_capacity(capacity),
-            _phantom: PhantomData::default(),
+            _phantom: PhantomData,
         }
     }
 
@@ -176,7 +176,7 @@ where
     {
         IdxVec {
             raw: self.raw.into_iter().map(f).collect(),
-            _phantom: PhantomData::default(),
+            _phantom: PhantomData,
         }
     }
 
@@ -187,7 +187,7 @@ where
     {
         IdxVec {
             raw: self.raw,
-            _phantom: PhantomData::default(),
+            _phantom: PhantomData,
         }
     }
 
@@ -323,7 +323,7 @@ where
         IdxVecIterator {
             next_idx: 0,
             iter: self.raw.into_iter(),
-            _phantom: PhantomData::default(),
+            _phantom: PhantomData,
         }
     }
 }
