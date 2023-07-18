@@ -44,7 +44,7 @@ tracing = { version = "0.1.38", features = ["log"] }
 tracing-subscriber = { version = "0.3.17", features = ["time"] }
 euclid = "0.22.9"
 ultraviolet = "0.9.1"
-lyon_path = "1.0.3"
+lyon_path = "1.0.4"
 thiserror = "1.0.43"
 katex = { version = "0.4", features = ["wasm-js"], default-features = false }
 html-escape = "0.2.13"
