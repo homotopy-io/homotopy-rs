@@ -42,7 +42,7 @@ pub mod highlight;
 pub struct DiagramSvg<const N: usize> {
     prepared: PreparedDiagram<N>,
     drag_start: Option<Point2D<f32>>,
-    title: String,
+    title: Option<String>,
 }
 
 #[derive(Clone, PartialEq, Properties)]
@@ -71,6 +71,7 @@ pub enum DiagramSvgMessage {
     OnMouseDown(Point2D<f32>),
     OnMouseMove(Point2D<f32>, bool),
     OnMouseUp,
+    OnMouseOut,
     OnTouchUpdate(Vec<(Finger, Point2D<f32>)>),
     OnTouchMove(Vec<(Finger, Point2D<f32>)>),
 }
@@ -170,11 +171,10 @@ impl<const N: usize> Component for DiagramSvg<N> {
     fn create(ctx: &Context<Self>) -> Self {
         let prepared = PreparedDiagram::new(&ctx.props().diagram, ctx.props().style);
         let drag_start = Default::default();
-        let title = String::new();
         Self {
             prepared,
             drag_start,
-            title,
+            title: None,
         }
     }
 
@@ -209,12 +209,16 @@ impl<const N: usize> Component for DiagramSvg<N> {
                         Orientation::Negative => format!("{} (inverse)", info.name),
                     }
                 };
-                let old_title = std::mem::replace(&mut self.title, new_title);
+                let old_title = std::mem::replace(&mut self.title, Some(new_title));
                 self.title != old_title
             }
             DiagramSvgMessage::OnMouseUp => {
                 self.pointer_stop(ctx);
                 false
+            }
+            DiagramSvgMessage::OnMouseOut => {
+                self.title = None;
+                true
             }
             DiagramSvgMessage::OnTouchUpdate(touches) => {
                 if self.drag_start.is_none() && touches.len() == 1 {
@@ -283,6 +287,13 @@ impl<const N: usize> Component for DiagramSvg<N> {
             })
         };
 
+        let on_mouse_out = {
+            let link = ctx.link().clone();
+            Callback::from(move |_e: MouseEvent| {
+                link.send_message(DiagramSvgMessage::OnMouseOut);
+            })
+        };
+
         let on_touch_move = {
             let link = ctx.link().clone();
             Callback::from(move |e: TouchEvent| {
@@ -317,13 +328,16 @@ impl<const N: usize> Component for DiagramSvg<N> {
                 onmousedown={on_mouse_down}
                 onmouseup={on_mouse_up}
                 onmousemove={on_mouse_move}
+                onmouseout={on_mouse_out}
                 ontouchmove={on_touch_move}
                 ontouchstart={on_touch_update.clone()}
                 ontouchend={on_touch_update.clone()}
                 ontouchcancel={on_touch_update.clone()}
                 ref={ctx.props().diagram_ref.clone()}
             >
-                <title>{&self.title}</title>
+                if let Some(title) = &self.title {
+                    <title>{title}</title>
+                }
                 {self.prepared.graphic.iter().enumerate().map(|(i, e)| self.view_element(ctx, i, e)).collect::<Html>()}
                 {self.view_highlight(ctx)}
             </svg>
