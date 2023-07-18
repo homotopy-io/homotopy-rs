@@ -61,7 +61,6 @@ im = { version = "15.1.0", features = ["serde"] }
 arrayvec = "0.7.4"
 yew = { version = "0.20.0", features = ["csr"]}
 yew-macro = "0.20.0"
-time = {version = "0.3.23", features = ["wasm-bindgen"] }
 
 # The `web-sys` crate allows you to interact with the various browser APIs,
 # like the DOM.

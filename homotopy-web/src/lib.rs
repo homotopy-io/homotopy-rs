@@ -3,7 +3,7 @@
 use tracing::metadata::Metadata;
 use tracing_subscriber::{
     filter::{FilterFn, LevelFilter},
-    fmt::{format::Pretty, time::UtcTime},
+    fmt::format::Pretty,
     prelude::__tracing_subscriber_SubscriberExt,
     util::SubscriberInitExt,
 };
@@ -34,7 +34,7 @@ pub fn main_js() -> Result<(), JsValue> {
     // setup tracing
     let fmt_layer = tracing_subscriber::fmt::layer()
         .with_ansi(false)
-        .with_timer(UtcTime::rfc_3339())
+        .without_time()
         .with_writer(MakeConsoleWriter);
     let perf_layer = performance_layer().with_details_from_fields(Pretty::default());
 
