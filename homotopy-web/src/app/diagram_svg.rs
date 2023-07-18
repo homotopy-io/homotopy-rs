@@ -186,7 +186,7 @@ impl<const N: usize> Component for DiagramSvg<N> {
             }
             DiagramSvgMessage::OnMouseMove(point, shift_key) => {
                 self.pointer_move(ctx, point, shift_key);
-                self.title = {
+                let new_title = {
                     let point = self.transform_screen_to_image(ctx).transform_point(point);
                     let element = self.prepared.graphic.iter().rev().find(|element| {
                         element
@@ -209,7 +209,8 @@ impl<const N: usize> Component for DiagramSvg<N> {
                         Orientation::Negative => format!("{} (inverse)", info.name),
                     }
                 };
-                true
+                let old_title = std::mem::replace(&mut self.title, new_title);
+                self.title != old_title
             }
             DiagramSvgMessage::OnMouseUp => {
                 self.pointer_stop(ctx);
