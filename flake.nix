@@ -257,6 +257,7 @@
               emmake make -j $NIX_BUILD_CORES libhighs
               emcc -O3 \
                       -s EXPORTED_FUNCTIONS="@${packages.highs_exported_methods}" \
+                      -s DISABLE_EXCEPTION_CATCHING=0 \
                       -s EXPORTED_RUNTIME_METHODS="['cwrap','HEAPU8']" \
                       -s EXPORT_NAME="createHighsModule" \
                       -s MODULARIZE=1 \
