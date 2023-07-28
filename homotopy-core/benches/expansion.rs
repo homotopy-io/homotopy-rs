@@ -17,6 +17,7 @@ fn expand_matchsticks(crit: &mut Criterion) {
             &mut [],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Lower),
             &sig,
         )

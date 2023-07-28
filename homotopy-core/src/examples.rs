@@ -255,6 +255,7 @@ pub fn half_braid() -> (impl Signature, DiagramN) {
             &mut [],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Lower),
             &sig,
         )
@@ -465,6 +466,7 @@ pub fn cap() -> (impl Signature, DiagramN) {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )
@@ -491,6 +493,7 @@ pub fn cup() -> (impl Signature, DiagramN) {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )
@@ -518,6 +521,7 @@ pub fn snake() -> (impl Signature, DiagramN) {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )
@@ -529,6 +533,7 @@ pub fn snake() -> (impl Signature, DiagramN) {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )
@@ -561,6 +566,7 @@ pub fn bubble() -> (impl Signature, DiagramN) {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )
@@ -572,6 +578,7 @@ pub fn bubble() -> (impl Signature, DiagramN) {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )
@@ -699,6 +706,7 @@ pub fn two_cups() -> (impl Signature, DiagramN) {
             &mut [],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Same),
             &sig,
         )
@@ -708,6 +716,7 @@ pub fn two_cups() -> (impl Signature, DiagramN) {
             &mut [],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Same),
             &sig,
         )

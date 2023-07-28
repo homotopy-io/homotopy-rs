@@ -624,6 +624,7 @@ impl ProofState {
                 &mut interior_path,
                 homotopy.height,
                 homotopy.direction,
+                1,
                 homotopy.bias,
                 &self.signature,
             )?;
@@ -636,6 +637,7 @@ impl ProofState {
                     &mut interior_path,
                     homotopy.height,
                     homotopy.direction,
+                    1,
                     homotopy.bias,
                     &self.signature,
                 )?

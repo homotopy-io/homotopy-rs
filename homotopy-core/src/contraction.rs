@@ -90,19 +90,21 @@ struct ContractExpand {
 }
 
 impl DiagramN {
+    #[allow(clippy::too_many_arguments)]
     pub fn contract(
         &self,
         boundary_path: BoundaryPath,
         interior_path: &mut [Height],
         height: SingularHeight,
         direction: Direction,
+        step: usize,
         bias: Option<Bias>,
         signature: &impl Signature,
     ) -> Result<Self, ContractionError> {
         attach(self, boundary_path, |slice| {
             let slice = slice.try_into()?;
             let ContractExpand { contract, expand } =
-                contract_in_path(&slice, interior_path, height, direction, bias, true)?;
+                contract_in_path(&slice, interior_path, height, direction, step, bias, true)?;
 
             let cospan = Cospan {
                 forward: contract.into(),
@@ -125,98 +127,85 @@ fn contract_base(
     diagram: &DiagramN,
     height: SingularHeight,
     direction: Direction,
+    step: usize,
     bias: Option<Bias>,
     cone_wise_smooth: bool,
 ) -> Result<ContractExpand, ContractionError> {
     use Height::{Regular, Singular};
 
+    assert!(
+        step == 1 || bias.is_none(),
+        "Biased multicontraction is not supported"
+    );
+
     if height >= diagram.size()
-        || (height == 0 && direction == Direction::Backward)
-        || (height == diagram.size() - 1 && direction == Direction::Forward)
+        || (height < step && direction == Direction::Backward)
+        || (height + step >= diagram.size() && direction == Direction::Forward)
     {
         return Err(ContractionError::OutOfBounds);
     }
 
     let (i, bias) = match direction {
         Direction::Forward => (height, bias),
-        Direction::Backward => (height - 1, bias.map(Bias::flip)),
+        Direction::Backward => (height - step, bias.map(Bias::flip)),
     };
 
-    let slices: IdxVec<Height, Diagram> = diagram.slices().take(2 * i + 5).collect();
-
-    let cospan0 = &diagram.cospans()[i];
-    let cospan1 = &diagram.cospans()[i + 1];
-
-    let regular0 = &slices[Regular(i)];
-    let singular0 = &slices[Singular(i)];
-    let regular1 = &slices[Regular(i + 1)];
-    let singular1 = &slices[Singular(i + 1)];
-    let regular2 = &slices[Regular(i + 2)];
-
-    let (bias0, bias1) = match bias {
-        None => (None, None),
-        Some(b) => (Some(b.flip()), Some(b)),
-    };
+    let cospans = &diagram.cospans()[i..=i + step];
 
     let mut graph = DiGraph::new();
-    let r0 = graph.add_node(ScaffoldNode {
-        key: ContractNode {
-            bias: None,
-            coordinate: vec![Regular(0)],
-        },
-        diagram: regular0.clone(),
-    });
-    let s0 = graph.add_node(ScaffoldNode {
-        key: ContractNode {
-            bias: bias0,
-            coordinate: vec![Singular(0)],
-        },
-        diagram: singular0.clone(),
-    });
-    let r1 = graph.add_node(ScaffoldNode {
-        key: ContractNode {
-            bias: None,
-            coordinate: vec![Regular(1)],
-        },
-        diagram: regular1.clone(),
-    });
-    let s1 = graph.add_node(ScaffoldNode {
-        key: ContractNode {
-            bias: bias1,
-            coordinate: vec![Singular(1)],
-        },
-        diagram: singular1.clone(),
-    });
-    let r2 = graph.add_node(ScaffoldNode {
-        key: ContractNode {
-            bias: None,
-            coordinate: vec![Regular(2)],
-        },
-        diagram: regular2.clone(),
-    });
-    graph.add_edge(r0, s0, cospan0.forward.clone().into());
-    graph.add_edge(r1, s0, cospan0.backward.clone().into());
-    graph.add_edge(r1, s1, cospan1.forward.clone().into());
-    graph.add_edge(r2, s1, cospan1.backward.clone().into());
+    let nodes: IdxVec<Height, NodeIndex> = diagram
+        .slices()
+        .skip(2 * i)
+        .take(2 * step + 3)
+        .enumerate()
+        .map(|(i, slice)| {
+            let height = Height::from(i);
+            let bias = match (step, height) {
+                (1, Singular(0)) => bias.map(Bias::flip),
+                (1, Singular(1)) => bias,
+                _ => None,
+            };
+            graph.add_node(ScaffoldNode {
+                key: ContractNode {
+                    bias,
+                    coordinate: vec![height],
+                },
+                diagram: slice,
+            })
+        })
+        .collect();
+    for (i, cs) in cospans.iter().enumerate() {
+        graph.add_edge(
+            nodes[Regular(i)],
+            nodes[Singular(i)],
+            cs.forward.clone().into(),
+        );
+        graph.add_edge(
+            nodes[Regular(i + 1)],
+            nodes[Singular(i)],
+            cs.backward.clone().into(),
+        );
+    }
+
     let result = colimit(&graph)?;
 
     let cospan = Cospan {
-        forward: result.legs[r0].clone(),
-        backward: result.legs[r2].clone(),
+        forward: result.legs[nodes[Regular(0)]].clone(),
+        backward: result.legs[nodes[Regular(step + 1)]].clone(),
     };
 
     let contract = RewriteN::new(
         diagram.dimension(),
         vec![Cone::new(
             i,
-            vec![cospan0.clone(), cospan1.clone()],
+            cospans.to_vec(),
             cospan.clone(),
-            vec![
-                result.legs[r0].clone(),
-                result.legs[r1].clone(),
-                result.legs[r2].clone(),
-            ],
-            vec![result.legs[s0].clone(), result.legs[s1].clone()],
+            (0..=step + 1)
+                .map(|i| result.legs[nodes[Regular(i)]].clone())
+                .collect(),
+            (0..=step)
+                .map(|i| result.legs[nodes[Singular(i)]].clone())
+                .collect(),
         )],
     );
 
@@ -296,25 +285,26 @@ fn contract_in_path(
     path: &mut [Height],
     height: SingularHeight,
     direction: Direction,
+    step: usize,
     bias: Option<Bias>,
     cone_wise_smooth: bool,
 ) -> Result<ContractExpand, ContractionError> {
     use Height::{Regular, Singular};
 
     match path.split_first_mut() {
-        None => contract_base(diagram, height, direction, bias, cone_wise_smooth),
-        Some((step, rest)) => {
+        None => contract_base(diagram, height, direction, step, bias, cone_wise_smooth),
+        Some((first, rest)) => {
             let slice: DiagramN = diagram
-                .slice(*step)
+                .slice(*first)
                 .ok_or(ContractionError::OutOfBounds)?
                 .try_into()?;
             let ContractExpand {
                 contract: contract_base,
                 expand: expand_base,
-            } = contract_in_path(&slice, rest, height, direction, bias, false)?;
-            match *step {
+            } = contract_in_path(&slice, rest, height, direction, step, bias, false)?;
+            match *first {
                 Regular(i) => {
-                    *step = Singular(i);
+                    *first = Singular(i);
                     let contract = RewriteN::new(
                         diagram.dimension(),
                         vec![Cone::new_unit(
@@ -328,7 +318,7 @@ fn contract_in_path(
                     );
                     let expand = expand_propagate(
                         &diagram.clone().rewrite_forward(&contract).unwrap(),
-                        step,
+                        first,
                         expand_base.into(),
                         false,
                     )
@@ -397,7 +387,7 @@ fn contract_in_path(
                     );
                     let expand = expand_propagate(
                         &diagram.clone().rewrite_forward(&contract).unwrap(),
-                        step,
+                        first,
                         expand_base.into(),
                         true,
                     )
@@ -715,7 +705,8 @@ fn colimit_recursive<Ix: IndexType>(
             let bias = scc
                 .iter()
                 .map(|&n| graph[exploded[n].key.parent].key.bias)
-                .min()
+                .all_equal_value()
+                .ok()
                 .flatten();
             scc_to_priority[i] = (priority, bias);
         }

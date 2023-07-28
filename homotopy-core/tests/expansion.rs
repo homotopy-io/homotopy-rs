@@ -17,6 +17,7 @@ fn matchsticks() {
             &mut [],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Lower),
             &sig,
         )
@@ -77,6 +78,7 @@ fn bead_with_half_braid() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?
@@ -117,6 +119,7 @@ fn bead_with_half_braid() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?
@@ -169,6 +172,7 @@ fn braid_smooth() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?
@@ -219,6 +223,7 @@ fn bead_no_stretch() -> anyhow::Result<()> {
             &mut [Height::Singular(0)],
             1,
             Direction::Forward,
+            1,
             None,
             &sig
         )
@@ -233,6 +238,7 @@ fn bead_no_stretch() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?
@@ -254,6 +260,7 @@ fn bead_no_stretch() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?

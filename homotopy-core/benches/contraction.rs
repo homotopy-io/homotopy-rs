@@ -16,6 +16,7 @@ fn contract_scalar(crit: &mut Criterion) {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 Some(Bias::Lower),
                 &sig,
             )
@@ -28,6 +29,7 @@ fn contract_scalar(crit: &mut Criterion) {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 Some(Bias::Higher),
                 &sig,
             )
@@ -48,6 +50,7 @@ fn contract_beads(crit: &mut Criterion) {
                 &mut [],
                 1,
                 Direction::Forward,
+                1,
                 None,
                 &sig,
             )
@@ -61,6 +64,7 @@ fn contract_beads(crit: &mut Criterion) {
             &mut [],
             1,
             Direction::Forward,
+            1,
             None,
             &sig,
         )
@@ -84,6 +88,7 @@ fn contract_stacks(crit: &mut Criterion) {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 None,
                 &sig,
             )
@@ -97,6 +102,7 @@ fn contract_stacks(crit: &mut Criterion) {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )
@@ -127,6 +133,7 @@ fn contract_high_dimensions(crit: &mut Criterion) {
                                     &mut [],
                                     0,
                                     Direction::Forward,
+                                    1,
                                     None,
                                     &sig,
                                 )

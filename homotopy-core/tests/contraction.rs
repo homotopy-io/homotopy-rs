@@ -32,6 +32,7 @@ fn scalar() {
             &mut [],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Same),
             &sig
         )
@@ -47,6 +48,7 @@ fn scalar() {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 Some(Bias::Lower),
                 &sig
             )
@@ -63,6 +65,7 @@ fn scalar() {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 Some(Bias::Higher),
                 &sig
             )
@@ -79,6 +82,7 @@ fn scalar() {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 Some(Bias::Same),
                 &sig
             )
@@ -95,6 +99,7 @@ fn scalar() {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 Some(Bias::Same),
                 &sig
             )
@@ -118,6 +123,7 @@ fn three_scalars() {
             &mut [],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Higher),
             &sig,
         )
@@ -130,6 +136,7 @@ fn three_scalars() {
         &mut [],
         0,
         Direction::Forward,
+        1,
         Some(Bias::Lower),
         &sig,
     );
@@ -139,6 +146,7 @@ fn three_scalars() {
         &mut [],
         0,
         Direction::Forward,
+        1,
         Some(Bias::Higher),
         &sig,
     );
@@ -158,6 +166,7 @@ fn braids() {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 None,
                 &sig
             )
@@ -175,6 +184,7 @@ fn braids() {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 None,
                 &sig
             )
@@ -194,6 +204,7 @@ fn beads() {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )
@@ -213,6 +224,7 @@ fn stacks() {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )
@@ -237,6 +249,7 @@ fn inverses_1d() {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 None,
                 &sig
             )
@@ -257,6 +270,7 @@ fn inverses_1d() {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 None,
                 &sig
             )
@@ -278,6 +292,7 @@ fn inverses_2d() {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig
         )
@@ -293,6 +308,7 @@ fn inverses_2d() {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 None,
                 &sig
             )
@@ -313,6 +329,7 @@ fn inverses_2d() {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 None,
                 &sig
             )
@@ -334,6 +351,7 @@ fn snakerator() {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 None,
                 &sig
             )
@@ -355,6 +373,7 @@ fn bubble_pop_2d() {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 None,
                 &sig
             )
@@ -389,6 +408,7 @@ fn bead_tensor_bead_and_inverse() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?
@@ -401,6 +421,7 @@ fn bead_tensor_bead_and_inverse() -> anyhow::Result<()> {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 None,
                 &sig
             )?
@@ -436,6 +457,7 @@ fn monoid_tensor_bead_and_inverse() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?
@@ -448,6 +470,7 @@ fn monoid_tensor_bead_and_inverse() -> anyhow::Result<()> {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 None,
                 &sig
             )?
@@ -464,6 +487,7 @@ fn monoid_tensor_bead_and_inverse() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?
@@ -476,6 +500,7 @@ fn monoid_tensor_bead_and_inverse() -> anyhow::Result<()> {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 None,
                 &sig
             )?
@@ -505,6 +530,7 @@ fn cap_braid() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Same),
             &sig,
         )?;
@@ -517,6 +543,7 @@ fn cap_braid() -> anyhow::Result<()> {
             &mut [Height::Singular(0)],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Lower),
             &sig,
         )?
@@ -530,6 +557,7 @@ fn cap_braid() -> anyhow::Result<()> {
             &mut [Height::Singular(0)],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Higher),
             &sig,
         )?
@@ -588,6 +616,7 @@ fn no_reidemeister_1() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Same),
             &sig,
         )?;
@@ -597,6 +626,7 @@ fn no_reidemeister_1() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Higher),
             &sig,
         )?
@@ -613,6 +643,7 @@ fn no_reidemeister_1() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?
@@ -624,6 +655,7 @@ fn no_reidemeister_1() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig
         )
@@ -662,6 +694,7 @@ fn bead_through_cap_cup() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?
@@ -676,6 +709,7 @@ fn bead_through_cap_cup() -> anyhow::Result<()> {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 None,
                 &sig
             )?
@@ -691,6 +725,7 @@ fn bead_through_cap_cup() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?
@@ -705,6 +740,7 @@ fn bead_through_cap_cup() -> anyhow::Result<()> {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 None,
                 &sig
             )?
@@ -724,6 +760,7 @@ fn bead_through_cap_cup() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?
@@ -738,6 +775,7 @@ fn bead_through_cap_cup() -> anyhow::Result<()> {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 None,
                 &sig
             )?
@@ -753,6 +791,7 @@ fn bead_through_cap_cup() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?
@@ -767,6 +806,7 @@ fn bead_through_cap_cup() -> anyhow::Result<()> {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 None,
                 &sig
             )?
@@ -799,6 +839,7 @@ fn three_dimensional_scalar_across_wire_preserves_label_neighbourhood() -> anyho
             &mut [Height::Singular(0)],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Higher),
             &sig,
         )?
@@ -859,6 +900,7 @@ fn contract_two_caps() -> anyhow::Result<()> {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 None,
                 &sig,
             )?
@@ -871,6 +913,7 @@ fn contract_two_caps() -> anyhow::Result<()> {
             &mut [Height::Singular(0)],
             0,
             Direction::Forward,
+            1,
             None,
             &sig
         )
@@ -888,6 +931,7 @@ fn contract_two_caps() -> anyhow::Result<()> {
                 &mut [],
                 0,
                 Direction::Forward,
+                1,
                 None,
                 &sig,
             )?
@@ -900,6 +944,7 @@ fn contract_two_caps() -> anyhow::Result<()> {
             &mut [Height::Singular(0)],
             0,
             Direction::Forward,
+            1,
             None,
             &sig
         )
@@ -926,6 +971,7 @@ fn hourglass_no_absorb() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?
@@ -934,6 +980,7 @@ fn hourglass_no_absorb() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?;
@@ -945,6 +992,7 @@ fn hourglass_no_absorb() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Same),
             &sig
         )
@@ -956,6 +1004,7 @@ fn hourglass_no_absorb() -> anyhow::Result<()> {
             &mut [],
             1,
             Direction::Forward,
+            1,
             Some(Bias::Same),
             &sig
         )
@@ -982,6 +1031,7 @@ fn counit_braid() -> anyhow::Result<()> {
         &mut [Height::Singular(0)],
         0,
         Direction::Forward,
+        1,
         Some(Bias::Lower),
         &sig,
     );
@@ -991,6 +1041,7 @@ fn counit_braid() -> anyhow::Result<()> {
         &mut [Height::Singular(0)],
         0,
         Direction::Forward,
+        1,
         Some(Bias::Higher),
         &sig,
     );
@@ -1000,6 +1051,7 @@ fn counit_braid() -> anyhow::Result<()> {
         &mut [Height::Singular(0)],
         0,
         Direction::Forward,
+        1,
         Some(Bias::Lower),
         &sig,
     );
@@ -1009,6 +1061,7 @@ fn counit_braid() -> anyhow::Result<()> {
         &mut [Height::Singular(0)],
         0,
         Direction::Forward,
+        1,
         Some(Bias::Higher),
         &sig,
     );
@@ -1032,6 +1085,7 @@ fn bead_interchanger() -> anyhow::Result<()> {
         &mut [],
         0,
         Direction::Forward,
+        1,
         None,
         &sig,
     )?;
@@ -1051,6 +1105,7 @@ fn bead_interchanger() -> anyhow::Result<()> {
                     &mut [],
                     0,
                     Direction::Forward,
+                    1,
                     None,
                     &sig
                 )?
@@ -1074,6 +1129,7 @@ fn bead_interchanger() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig
         )
@@ -1099,6 +1155,7 @@ fn pull_through_braid() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?
@@ -1124,6 +1181,7 @@ fn pull_through_braid() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?
@@ -1172,6 +1230,7 @@ fn no_bend_cup() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig
         )
@@ -1197,6 +1256,7 @@ fn no_bend_cup() -> anyhow::Result<()> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig
         )
@@ -1224,6 +1284,7 @@ fn double_braid() -> anyhow::Result<()> {
             &mut [Height::Regular(0)],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Lower),
             &sig,
         )?
@@ -1236,6 +1297,7 @@ fn double_braid() -> anyhow::Result<()> {
             &mut [Height::Singular(0)],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Higher),
             &sig
         )
@@ -1247,6 +1309,7 @@ fn double_braid() -> anyhow::Result<()> {
             &mut [Height::Singular(0)],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Lower),
             &sig
         )
@@ -1260,6 +1323,7 @@ fn double_braid() -> anyhow::Result<()> {
             &mut [Height::Regular(0)],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Higher),
             &sig,
         )?
@@ -1272,6 +1336,7 @@ fn double_braid() -> anyhow::Result<()> {
             &mut [Height::Singular(0)],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Higher),
             &sig
         )
@@ -1283,6 +1348,7 @@ fn double_braid() -> anyhow::Result<()> {
             &mut [Height::Singular(0)],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Lower),
             &sig
         )
@@ -1296,6 +1362,7 @@ fn double_braid() -> anyhow::Result<()> {
             &mut [Height::Regular(0)],
             1,
             Direction::Forward,
+            1,
             Some(Bias::Lower),
             &sig,
         )?
@@ -1308,6 +1375,7 @@ fn double_braid() -> anyhow::Result<()> {
             &mut [Height::Singular(0)],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Higher),
             &sig
         )
@@ -1319,6 +1387,7 @@ fn double_braid() -> anyhow::Result<()> {
             &mut [Height::Singular(0)],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Lower),
             &sig
         )
@@ -1331,6 +1400,7 @@ fn double_braid() -> anyhow::Result<()> {
             &mut [Height::Regular(0)],
             1,
             Direction::Forward,
+            1,
             Some(Bias::Higher),
             &sig,
         )?
@@ -1343,6 +1413,7 @@ fn double_braid() -> anyhow::Result<()> {
             &mut [Height::Singular(0)],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Higher),
             &sig
         )
@@ -1354,6 +1425,7 @@ fn double_braid() -> anyhow::Result<()> {
             &mut [Height::Singular(0)],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Lower),
             &sig
         )
@@ -1380,6 +1452,7 @@ fn braid_next_to_endomorphism() -> anyhow::Result<()> {
             &mut [Height::Singular(0)],
             1,
             Direction::Forward,
+            1,
             Some(Bias::Lower),
             &sig
         )
@@ -1391,6 +1464,7 @@ fn braid_next_to_endomorphism() -> anyhow::Result<()> {
             &mut [Height::Singular(0)],
             1,
             Direction::Forward,
+            1,
             Some(Bias::Higher),
             &sig
         )
@@ -1406,6 +1480,7 @@ fn braid_next_to_endomorphism() -> anyhow::Result<()> {
             &mut [Height::Singular(0)],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Lower),
             &sig
         )
@@ -1417,6 +1492,7 @@ fn braid_next_to_endomorphism() -> anyhow::Result<()> {
             &mut [Height::Singular(0)],
             0,
             Direction::Forward,
+            1,
             Some(Bias::Higher),
             &sig
         )
@@ -1472,6 +1548,7 @@ fn endomorphism_on_ring() -> anyhow::Result<(impl Signature, DiagramN)> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?;
@@ -1483,6 +1560,7 @@ fn endomorphism_on_ring() -> anyhow::Result<(impl Signature, DiagramN)> {
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?;
@@ -1515,6 +1593,7 @@ fn endomorphism_on_half_algebraic_ring() -> anyhow::Result<(impl Signature, Diag
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?;
@@ -1533,6 +1612,7 @@ fn singular_braid_on_two_cups() -> anyhow::Result<()> {
         &mut [Height::Regular(0)],
         0,
         Direction::Forward,
+        1,
         Some(Bias::Lower),
         &sig,
     )?;
@@ -1585,6 +1665,7 @@ fn contract_with_weak_id((sig, diagram): (impl Signature, DiagramN)) -> anyhow::
             &mut [],
             0,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?
@@ -1605,6 +1686,7 @@ fn contract_with_weak_id((sig, diagram): (impl Signature, DiagramN)) -> anyhow::
             &mut [],
             diagram.size() - 1,
             Direction::Forward,
+            1,
             None,
             &sig,
         )?
