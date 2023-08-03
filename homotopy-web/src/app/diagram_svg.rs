@@ -595,6 +595,7 @@ fn drag_to_homotopy<const N: usize>(
             };
 
             Some(Homotopy::Contract(Contract {
+                step: 1,
                 bias: None,
                 location: Default::default(),
                 height,
@@ -684,6 +685,7 @@ fn drag_to_homotopy<const N: usize>(
                 };
 
                 Some(Homotopy::Contract(Contract {
+                    step: 1,
                     bias,
                     location: prefix.into_iter().collect(),
                     height,

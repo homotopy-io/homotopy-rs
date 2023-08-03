@@ -9521,6 +9521,7 @@
      {
         "Homotopy": {
            "Contract": {
+              "step": 1,
               "bias": "Lower",
               "location": [
                  "Target"

@@ -365,6 +365,7 @@
           "Contract": {
             "height": 1,
             "direction": "Backward",
+            "step": 1,
             "bias": "Lower",
             "location": [
               "Target"
@@ -395,6 +396,7 @@
           "Contract": {
             "height": 1,
             "direction": "Backward",
+            "step": 1,
             "bias": "Lower",
             "location": []
           }
@@ -405,6 +407,7 @@
           "Contract": {
             "height": 0,
             "direction": "Forward",
+            "step": 1,
             "bias": "Same",
             "location": [
               "Target"
@@ -429,6 +432,7 @@
           "Contract": {
             "height": 1,
             "direction": "Backward",
+            "step": 1,
             "bias": "Lower",
             "location": []
           }
@@ -692,6 +696,7 @@
           "Contract": {
             "height": 1,
             "direction": "Backward",
+            "step": 1,
             "bias": "Lower",
             "location": [
               "Target"
@@ -722,6 +727,7 @@
           "Contract": {
             "height": 1,
             "direction": "Backward",
+            "step": 1,
             "bias": "Lower",
             "location": []
           }
@@ -732,6 +738,7 @@
           "Contract": {
             "height": 0,
             "direction": "Forward",
+            "step": 1,
             "bias": "Same",
             "location": [
               "Target"
@@ -756,6 +763,7 @@
           "Contract": {
             "height": 1,
             "direction": "Backward",
+            "step": 1,
             "bias": "Lower",
             "location": []
           }

@@ -144,6 +144,7 @@
           "Contract": {
             "height": 1,
             "direction": "Backward",
+            "step": 1,
             "bias": "Lower",
             "location": [
               "Source"
@@ -174,6 +175,7 @@
           "Contract": {
             "height": 1,
             "direction": "Backward",
+            "step": 1,
             "bias": "Lower",
             "location": []
           }
@@ -202,6 +204,7 @@
           "Contract": {
             "height": 1,
             "direction": "Backward",
+            "step": 1,
             "bias": "Lower",
             "location": [
               {
@@ -239,6 +242,7 @@
           "Contract": {
             "height": 1,
             "direction": "Backward",
+            "step": 1,
             "bias": "Lower",
             "location": []
           }

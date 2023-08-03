@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 pub struct Contract {
     pub height: SingularHeight,
     pub direction: Direction,
+    pub step: usize,
     pub bias: Option<Bias>,
     pub location: Vec<SliceIndex>,
 }

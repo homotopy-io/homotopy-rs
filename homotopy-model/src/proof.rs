@@ -559,7 +559,7 @@ impl ProofState {
 
         let location = {
             let mut location: Vec<_> = ws.path.iter().copied().collect();
-            location.extend(homotopy.location.clone());
+            location.extend(&homotopy.location);
             location
         };
 
@@ -609,7 +609,7 @@ impl ProofState {
 
         let location = {
             let mut location: Vec<_> = ws.path.iter().copied().collect();
-            location.extend(homotopy.location.clone());
+            location.extend(&homotopy.location);
             location
         };
 
@@ -624,7 +624,7 @@ impl ProofState {
                 &mut interior_path,
                 homotopy.height,
                 homotopy.direction,
-                1,
+                homotopy.step,
                 homotopy.bias,
                 &self.signature,
             )?;
@@ -637,7 +637,7 @@ impl ProofState {
                     &mut interior_path,
                     homotopy.height,
                     homotopy.direction,
-                    1,
+                    homotopy.step,
                     homotopy.bias,
                     &self.signature,
                 )?

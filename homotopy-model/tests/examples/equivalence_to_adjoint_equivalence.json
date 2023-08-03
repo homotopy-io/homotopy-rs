@@ -13242,6 +13242,7 @@
     {
       "Homotopy": {
         "Contract": {
+          "step": 1,
           "bias": "Lower",
           "location": [],
           "height": 4,
@@ -13268,6 +13269,7 @@
     {
       "Homotopy": {
         "Contract": {
+          "step": 1,
           "bias": "Same",
           "location": [],
           "height": 3,
@@ -13278,6 +13280,7 @@
     {
       "Homotopy": {
         "Contract": {
+          "step": 1,
           "bias": "Lower",
           "location": [],
           "height": 3,
@@ -13304,6 +13307,7 @@
     {
       "Homotopy": {
         "Contract": {
+          "step": 1,
           "bias": "Lower",
           "location": [],
           "height": 1,
@@ -13330,6 +13334,7 @@
     {
       "Homotopy": {
         "Contract": {
+          "step": 1,
           "bias": "Same",
           "location": [],
           "height": 1,
@@ -13340,6 +13345,7 @@
     {
       "Homotopy": {
         "Contract": {
+          "step": 1,
           "bias": "Same",
           "location": [],
           "height": 0,
@@ -13353,6 +13359,7 @@
     {
       "Homotopy": {
         "Contract": {
+          "step": 1,
           "bias": "Higher",
           "location": [],
           "height": 8,
@@ -13363,6 +13370,7 @@
     {
       "Homotopy": {
         "Contract": {
+          "step": 1,
           "bias": "Lower",
           "location": [],
           "height": 3,
@@ -13373,6 +13381,7 @@
     {
       "Homotopy": {
         "Contract": {
+          "step": 1,
           "bias": "Lower",
           "location": [],
           "height": 5,
@@ -21241,6 +21250,7 @@
     {
       "Homotopy": {
         "Contract": {
+          "step": 1,
           "bias": "Lower",
           "location": [],
           "height": 0,
@@ -21267,6 +21277,7 @@
     {
       "Homotopy": {
         "Contract": {
+          "step": 1,
           "bias": "Higher",
           "location": [],
           "height": 1,
@@ -21293,6 +21304,7 @@
     {
       "Homotopy": {
         "Contract": {
+          "step": 1,
           "bias": "Same",
           "location": [],
           "height": 2,
@@ -21303,6 +21315,7 @@
     {
       "Homotopy": {
         "Contract": {
+          "step": 1,
           "bias": "Same",
           "location": [],
           "height": 0,
@@ -21316,6 +21329,7 @@
     {
       "Homotopy": {
         "Contract": {
+          "step": 1,
           "bias": "Higher",
           "location": [],
           "height": 4,
@@ -21326,6 +21340,7 @@
     {
       "Homotopy": {
         "Contract": {
+          "step": 1,
           "bias": "Higher",
           "location": [],
           "height": 2,
