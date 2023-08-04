@@ -41,8 +41,8 @@ impl OrbitCamera {
             let scale = self.distance / 10.;
             let aspect = ctx.aspect_ratio();
             orthographic_gl(
-                -aspect * scale,
                 aspect * scale,
+                -aspect * scale,
                 -scale,
                 scale,
                 Self::NEAR,
@@ -51,7 +51,7 @@ impl OrbitCamera {
         } else {
             perspective_gl(
                 f32::to_radians(self.fov),
-                ctx.aspect_ratio(),
+                -ctx.aspect_ratio(),
                 Self::NEAR,
                 Self::FAR,
             )
