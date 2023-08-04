@@ -59,7 +59,7 @@ impl OrbitCamera {
     }
 
     pub fn apply_angle_delta(&mut self, delta: Vec2) {
-        self.phi -= delta.x;
+        self.phi += delta.x;
         self.theta = (self.theta + delta.y).clamp(Self::EPSILON, PI - Self::EPSILON);
     }
 
@@ -73,7 +73,7 @@ impl OrbitCamera {
         let x = up.cross(z).normalized();
         let y = z.cross(x).normalized();
 
-        self.target += delta.x * x + delta.y * y;
+        self.target += -delta.x * x + delta.y * y;
     }
 
     pub fn set_ortho(&mut self, ortho: bool) {
