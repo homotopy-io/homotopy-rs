@@ -318,28 +318,33 @@ impl State {
                     );
                 };
             }
+            let bubble = |mut diagram: DiagramN| {
+                while diagram.dimension() < haystack.dimension() + 1 {
+                    diagram = diagram.bubble().unwrap();
+                }
+                diagram
+            };
+            let weak_unit = |mut diagram: Diagram| {
+                while diagram.dimension() < haystack.dimension() + 1 {
+                    diagram = diagram.weak_identity().into();
+                }
+                DiagramN::try_from(diagram).unwrap()
+            };
 
             match info.generator.dimension.cmp(&(haystack.dimension() + 1)) {
                 std::cmp::Ordering::Less => {
                     if weak_units {
-                        let identity = |mut diagram: Diagram| {
-                            while diagram.dimension() < haystack.dimension() + 1 {
-                                diagram = diagram.weak_identity().into();
-                            }
-                            DiagramN::try_from(diagram).unwrap()
-                        };
-
-                        extend!(identity(info.diagram.clone()), Some("identity".to_owned()));
+                        extend!(weak_unit(info.diagram.clone()), Some("identity".to_owned()));
                     }
 
                     if let Diagram::DiagramN(d) = &info.diagram {
                         if info.invertible {
-                            let bubble = |mut diagram: DiagramN| {
-                                while diagram.dimension() < haystack.dimension() + 1 {
-                                    diagram = diagram.bubble().unwrap();
-                                }
-                                diagram
-                            };
+                            if weak_units {
+                                extend!(
+                                    weak_unit(d.inverse().into()),
+                                    Some("inverse identity".to_owned())
+                                );
+                            }
 
                             extend!(bubble(d.clone()), Some("bubble".to_owned()));
                             extend!(bubble(d.inverse()), Some("inverse bubble".to_owned()));
