@@ -82,6 +82,7 @@ struct PreparedDiagram<const N: usize> {
     graphic: Vec<GraphicElement<N>>,
     actions: Vec<(Simplex<N>, Shape)>,
     depths: Depths<N>,
+    projection: Projection<N>,
     layout: Layout<N>,
 
     /// The width and height of the diagram image in pixels.
@@ -157,6 +158,7 @@ impl<const N: usize> PreparedDiagram<N> {
             graphic,
             actions,
             depths,
+            projection,
             layout,
             dimensions,
             transform,
@@ -186,31 +188,9 @@ impl<const N: usize> Component for DiagramSvg<N> {
             }
             DiagramSvgMessage::OnMouseMove(point, shift_key) => {
                 self.pointer_move(ctx, point, shift_key);
-                let new_title = {
-                    let point = self.transform_screen_to_image(ctx).transform_point(point);
-                    let element = self.prepared.graphic.iter().rev().find(|element| {
-                        element
-                            .transformed(&self.prepared.transform)
-                            .to_shape(
-                                ctx.props().style.wire_thickness,
-                                ctx.props().style.point_radius,
-                            )
-                            .contains_point(point, 0.01)
-                    });
-                    let Some(element) = element else { return false };
-                    let info = ctx
-                        .props()
-                        .signature
-                        .generator_info(element.generator())
-                        .unwrap();
-                    match element.orientation() {
-                        Orientation::Positive => info.name.clone(),
-                        Orientation::Zero => format!("{} (homotopy)", info.name),
-                        Orientation::Negative => format!("{} (inverse)", info.name),
-                    }
-                };
-                let old_title = std::mem::replace(&mut self.title, Some(new_title));
-                self.title != old_title
+                let mut title = self.calculate_hover_tooltip(ctx, point);
+                std::mem::swap(&mut self.title, &mut title);
+                self.title != title
             }
             DiagramSvgMessage::OnMouseUp => {
                 self.pointer_stop(ctx);
@@ -515,7 +495,7 @@ impl<const N: usize> DiagramSvg<N> {
             .actions
             .iter()
             .find(|(_, shape)| shape.contains_point(point, 0.01))
-            .map(|(simplex, _)| simplex.clone())
+            .map(|(simplex, _)| *simplex)
     }
 
     fn pointer_move(&mut self, ctx: &Context<Self>, point: Point2D<f32>, shift_key: bool) {
@@ -558,10 +538,28 @@ impl<const N: usize> DiagramSvg<N> {
         if let Some(point) = self.drag_start {
             self.drag_start = None;
             if let Some(simplex) = self.simplex_at(ctx, point) {
-                ctx.props()
-                    .on_select
-                    .emit(simplex.into_iter().next().unwrap().to_vec());
+                ctx.props().on_select.emit(simplex[0].to_vec());
             }
+        }
+    }
+
+    fn calculate_hover_tooltip(
+        &mut self,
+        ctx: &Context<Self>,
+        point: Point2D<f32>,
+    ) -> Option<String> {
+        let simplex = self.simplex_at(ctx, point)?;
+        let p = simplex[0];
+        let d = match simplex {
+            Simplex::Surface(_) => self.prepared.projection.generator(p),
+            Simplex::Wire(_) | Simplex::Point(_) => self.prepared.projection.front_generator(p).0,
+        };
+        let info = ctx.props().signature.generator_info(d.generator).unwrap();
+        let coord = p.map(|si| si.to_string()).join(", ");
+        match d.orientation {
+            Orientation::Positive => format!("{} @ {}", info.name, coord).into(),
+            Orientation::Zero => format!("{} (homotopy) @ {}", info.name, coord).into(),
+            Orientation::Negative => format!("{} (inverse) @ {}", info.name, coord).into(),
         }
     }
 }

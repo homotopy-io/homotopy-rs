@@ -1,25 +1,24 @@
-use std::hash::Hash;
+use std::{hash::Hash, ops::Deref};
 
 use crate::{common::SliceIndex, mesh::Mesh, Diagram};
 
 pub type Coordinate<const N: usize> = [SliceIndex; N];
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum Simplex<const N: usize> {
     Surface([Coordinate<N>; 3]),
     Wire([Coordinate<N>; 2]),
     Point([Coordinate<N>; 1]),
 }
 
-impl<'a, const N: usize> IntoIterator for &'a Simplex<N> {
-    type IntoIter = std::iter::Copied<std::slice::Iter<'a, Coordinate<N>>>;
-    type Item = Coordinate<N>;
+impl<const N: usize> Deref for Simplex<N> {
+    type Target = [Coordinate<N>];
 
-    fn into_iter(self) -> Self::IntoIter {
+    fn deref(&self) -> &Self::Target {
         match self {
-            Simplex::Surface(p) => p.iter().copied(),
-            Simplex::Wire(p) => p.iter().copied(),
-            Simplex::Point(p) => p.iter().copied(),
+            Simplex::Surface(p) => p,
+            Simplex::Wire(p) => p,
+            Simplex::Point(p) => p,
         }
     }
 }

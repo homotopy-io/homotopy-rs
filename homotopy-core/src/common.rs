@@ -58,6 +58,15 @@ impl Boundary {
     }
 }
 
+impl fmt::Display for Boundary {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Source => f.write_str("S"),
+            Self::Target => f.write_str("T"),
+        }
+    }
+}
+
 pub type RegularHeight = usize;
 pub type SingularHeight = usize;
 
@@ -112,6 +121,15 @@ impl PartialOrd for Height {
 impl Ord for Height {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         usize::from(*self).cmp(&usize::from(*other))
+    }
+}
+
+impl fmt::Display for Height {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Regular(i) => write!(f, "R{}", *i),
+            Self::Singular(i) => write!(f, "S{}", *i),
+        }
     }
 }
 
@@ -216,6 +234,15 @@ impl Ord for SliceIndex {
 impl PartialOrd for SliceIndex {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
+    }
+}
+
+impl fmt::Display for SliceIndex {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Boundary(b) => write!(f, "{b}"),
+            Self::Interior(h) => write!(f, "{h}"),
+        }
     }
 }
 
