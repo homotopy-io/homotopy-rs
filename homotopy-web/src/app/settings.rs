@@ -8,6 +8,7 @@ declare_settings! {
         show_previews: bool = true,
         weak_units: bool = false,
         animated_3d: bool = false,
+        contraction_step: u32 = 1,
 
         cubical_subdivision: bool = true,
         dpr_scale: bool = true,
@@ -80,6 +81,15 @@ impl Component for SettingsView {
                             "Render 3D diagrams as movies",
                             AppSettings::get_animated_3d(),
                             AppSettings::set_animated_3d,
+                        )
+                    }
+                    {
+                        Self::view_slider(
+                            "Contraction step",
+                            AppSettings::get_contraction_step(),
+                            AppSettings::set_contraction_step,
+                            1,
+                            7,
                         )
                     }
                 </div>

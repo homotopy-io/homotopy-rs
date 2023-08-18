@@ -30,6 +30,7 @@ use yew::prelude::*;
 
 use self::highlight::{HighlightKind, HighlightSvg};
 use crate::{
+    app::settings::AppSettings,
     components::{read_touch_list_abs, Finger},
     model::proof::{
         homotopy::{Contract, Expand, Homotopy},
@@ -574,6 +575,8 @@ fn drag_to_homotopy<const N: usize>(
     use Height::{Regular, Singular};
     use SliceIndex::{Boundary, Interior};
 
+    let default_step = AppSettings::get_contraction_step() as usize;
+
     let abs_radians = angle.radians.abs();
     let horizontal = !(PI / 4.0..(3.0 * PI) / 4.0).contains(&abs_radians);
 
@@ -595,7 +598,7 @@ fn drag_to_homotopy<const N: usize>(
             };
 
             Some(Homotopy::Contract(Contract {
-                step: 1,
+                step: default_step,
                 bias: None,
                 location: Default::default(),
                 height,
@@ -671,7 +674,9 @@ fn drag_to_homotopy<const N: usize>(
                     direction,
                 }))
             } else {
-                let bias = if force_same {
+                let bias = if default_step != 1 {
+                    None
+                } else if force_same {
                     Some(Bias::Same)
                 } else if horizontal || abs_radians >= PI / 2.0 {
                     Some(Bias::Lower)
@@ -685,7 +690,7 @@ fn drag_to_homotopy<const N: usize>(
                 };
 
                 Some(Homotopy::Contract(Contract {
-                    step: 1,
+                    step: default_step,
                     bias,
                     location: prefix.into_iter().collect(),
                     height,
