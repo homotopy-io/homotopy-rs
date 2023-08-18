@@ -125,6 +125,8 @@ pub enum Action {
 
     Homotopy(Homotopy),
 
+    Squash,
+
     Behead,
 
     Befoot,
@@ -212,6 +214,9 @@ impl Action {
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.diagram.dimension() > 0),
+            Self::Squash => proof.workspace.as_ref().map_or(false, |ws| {
+                ws.visible_diagram().size().map_or(false, |size| size > 0)
+            }),
             Self::Behead | Self::Befoot => {
                 proof
                     .workspace
@@ -294,6 +299,7 @@ impl ProofState {
             Action::Attach(option) => self.attach(option)?,
             Action::Homotopy(Homotopy::Expand(homotopy)) => self.homotopy_expand(homotopy)?,
             Action::Homotopy(Homotopy::Contract(homotopy)) => self.homotopy_contract(homotopy)?,
+            Action::Squash => self.squash()?,
             Action::Behead => self.behead(),
             Action::Befoot => self.befoot(),
             Action::Invert => self.invert()?,
@@ -650,6 +656,30 @@ impl ProofState {
         }
 
         Ok(true)
+    }
+
+    /// Handler for [Action::Squash].
+    ///
+    /// Invalid if the workspace is empty or the visible diagram has dimension 0 or size 0.
+    fn squash(&mut self) -> Result<bool, ProofError> {
+        let Some(ws) = &mut self.workspace else {
+            return Ok(false);
+        };
+        let Some(step) = ws
+            .visible_diagram()
+            .size()
+            .and_then(|size| size.checked_sub(1))
+        else {
+            return Ok(false);
+        };
+
+        self.homotopy_contract(&Contract {
+            height: 0,
+            direction: Direction::Forward,
+            step,
+            bias: None,
+            location: Default::default(),
+        })
     }
 
     /// Handler for [Action::Behead].
