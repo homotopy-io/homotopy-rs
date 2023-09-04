@@ -12,7 +12,7 @@ homotopy-core = { path = "../homotopy-core" }
 js-sys = "0.3.64"
 wasm-bindgen = { version = "0.2.87", features = ["serde-serialize"] }
 petgraph = "0.6.2"
-ultraviolet = "0.9.1"
+ultraviolet = "0.9.2"
 thiserror = "1.0.47"
 yew = "0.20.0"
 
