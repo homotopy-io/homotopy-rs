@@ -603,7 +603,7 @@ checksum = "89ca545a94061b6365f2c7355b4b32bd20df3ff95f02da9329b34ccc3bd6ee72"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.35",
+ "syn 2.0.37",
 ]
 
 [[package]]
@@ -994,7 +994,7 @@ dependencies = [
  "proc-macro-crate",
  "proc-macro2",
  "quote",
- "syn 2.0.35",
+ "syn 2.0.37",
 ]
 
 [[package]]
@@ -1188,7 +1188,7 @@ dependencies = [
  "rmp-serde",
  "serde",
  "serde_json",
- "syn 2.0.35",
+ "syn 2.0.37",
  "thiserror",
  "tracing",
 ]
@@ -1225,7 +1225,7 @@ dependencies = [
  "serde",
  "serde-wasm-bindgen 0.6.0",
  "serde_json",
- "syn 2.0.35",
+ "syn 2.0.37",
  "thiserror",
  "tracing",
  "tracing-subscriber",
@@ -1643,7 +1643,7 @@ source = "git+https://github.com/Ogeon/palette#337058773ebeff056230fb7ae6bf6c3ec
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.35",
+ "syn 2.0.37",
 ]
 
 [[package]]
@@ -2189,7 +2189,7 @@ checksum = "dc59dfdcbad1437773485e0367fea4b090a2e0a16d9ffc46af47764536a298ec"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.35",
+ "syn 2.0.37",
 ]
 
 [[package]]
@@ -2321,9 +2321,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.35"
+version = "2.0.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59bf04c28bee9043ed9ea1e41afc0552288d3aba9c6efdd78903b802926f4879"
+checksum = "7303ef2c05cd654186cb250d29049a24840ca25d2747c25c0381c8d9e2f582e8"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2405,7 +2405,7 @@ checksum = "49922ecae66cc8a249b77e68d1d0623c1b2c514f0060c27cdc68bd62a1219d35"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.35",
+ "syn 2.0.37",
 ]
 
 [[package]]
@@ -2513,7 +2513,7 @@ checksum = "0f57e3ca2a01450b1a921183a9c9cbfda207fd822cef4ccb00a65402cbba7a74"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.35",
+ "syn 2.0.37",
 ]
 
 [[package]]
@@ -2677,7 +2677,7 @@ dependencies = [
  "once_cell",
  "proc-macro2",
  "quote",
- "syn 2.0.35",
+ "syn 2.0.37",
  "wasm-bindgen-shared",
 ]
 
@@ -2711,7 +2711,7 @@ checksum = "54681b18a46765f095758388f2d0cf16eb8d4169b639ab575a8f5693af210c7b"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.35",
+ "syn 2.0.37",
  "wasm-bindgen-backend",
  "wasm-bindgen-shared",
 ]
