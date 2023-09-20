@@ -1,0 +1,45 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function ownProject(uid, metadata) {
+      return request.auth.uid == uid;
+    }
+    function publicProject(metadata) {
+      return metadata.visibility == "Public"
+        || metadata.visibility == "Unlisted";
+    }
+    function accessibleProject(uid, metadata) {
+      return ownProject(uid, metadata) || publicProject(metadata);
+    }
+    // function validNonce(uploadNonce, path) {
+    //     return firestore.exists(path) && uploadNonce == firestore.get(path).uploadNonce;
+    // }
+
+    match /personal/{uid}/upload/save/{id}/{uploadNonce} {
+        allow create: if uid == request.auth.uid;
+                // && validNonce(uploadNonce, /personal/$(request.auth.uid)/projects/$(id));
+    }
+
+    match /personal/{uid}/upload/publish/{id}/{version}/{uploadNonce} {
+        allow create: if uid == request.auth.uid
+                // && validNonce(uploadNonce, /personal/$(request.auth.uid)/projects/$(id));
+    }
+
+    // match /personal/{uid}/upload/{id}/versions/{version} {
+    //   // Set max upload file size at arbitrary 20MB
+    //   allow create: if request.resource.size < 20 * 1024 * 1024
+    //                         && request.auth.uid == uid;
+    // }
+    match /personal/{uid}/projects/{project} {
+      allow read: if accessibleProject(
+        uid,
+        firestore.get(/users/{uid}/projects/{project})
+      );
+    }
+
+    match /published/{id}/versions/{version} {
+      allow read: if true;
+    }
+  }
+}

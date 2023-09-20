@@ -14,6 +14,8 @@ use serde::Serialize;
 use thiserror::Error;
 use wasm_bindgen::JsCast;
 
+use crate::app::account::RemoteProjectMetadata;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub enum Action {
     Proof(proof::Action),
@@ -33,6 +35,8 @@ pub enum Action {
     SelectPoint(Vec<SliceIndex>, bool),
     HighlightAttachment(Option<AttachOption>),
     HighlightSlice(Option<SliceIndex>),
+
+    SetRemoteProjectMetadata(Option<RemoteProjectMetadata>),
 
     Help,
 }
@@ -90,6 +94,7 @@ impl Selectables {
 
 #[derive(Debug, Clone, Default)]
 pub struct State {
+    pub remote_project_metadata: Option<RemoteProjectMetadata>,
     pub history: History,
     pub options: Option<Selectables>,
     pub attachment_highlight: Option<AttachOption>,
@@ -306,6 +311,9 @@ impl State {
             Action::HighlightSlice(slice) => self.highlight_slice(slice),
             Action::ClearSelections => self.clear_selections(),
             Action::Merge(generator) => self.merge_options(generator),
+            Action::SetRemoteProjectMetadata(metadata) => {
+                self.set_remote_project_metadata(metadata);
+            }
             Action::Help => help()?,
         }
 
@@ -445,6 +453,11 @@ impl State {
         if !result.is_empty() {
             self.options = Some(Selectables::Merge(generator, result));
         }
+    }
+
+    /// Handler for [Action::SetRemoteProjectId].
+    fn set_remote_project_metadata(&mut self, metadata: Option<RemoteProjectMetadata>) {
+        self.remote_project_metadata = metadata;
     }
 }
 

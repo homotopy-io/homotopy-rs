@@ -73,6 +73,13 @@ button, .button {
   cursor: pointer;
 }
 
+/* Material Icons Sizing */
+
+.material-icons.md-18 { font-size: 18px; }
+.material-icons.md-24 { font-size: 24px; }
+.material-icons.md-36 { font-size: 36px; }
+.material-icons.md-48 { font-size: 48px; }
+
 /* Sidebar */
 
 .sidebar {
@@ -1133,7 +1140,110 @@ svg {
   pointer-events: none;
 }
 
+/* Account */
+
+.account__user-details {
+  display: flex;
+  margin-bottom: var(--space-1);
+}
+
+.account__user-photo {
+    border-radius: 100%;
+    margin-right: var(--space-1);
+}
+
+.account__user-name {
+  font-size: 1.3em;
+  font-weight: bold;
+  margin: auto var(--space-0);
+}
+
+.account__save-status {
+  text-align: center;
+}
+
+.account__save-status-failed {
+  color: red;
+}
+
+.account__projects-view-toggles-wrapper {
+  display: flex;
+}
+
+.account__projects-view-toggle {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--space-1);
+  border-radius: var(--space-0);
+  text-align: center;
+  transition: background-color 100ms;
+}
+
+.account__projects-view-toggle-active {
+  background-color: #9991;
+  border: 2px solid var(--button-border);
+  border-bottom: none;
+}
+
+.account__projects-view-toggle-inactive {
+  cursor: pointer;
+}
+
+.account__projects-view-toggle-inactive:hover {
+  background-color: var(--drawer-selected);
+}
+
+.account__no-projects-msg {
+  text-align: center;
+  margin-top: var(--space-1);
+}
+
+.account__project-list {
+  width: 100%;
+  list-style-type: none;
+  padding: 0;
+}
+
+.account__project-list-item {
+  width: 100%;
+  height: calc(2.5 * var(--signature-height));
+  transition: background-color 100ms;
+  box-sizing: border-box;
+  padding: 0 4px;
+  border-radius: var(--space-0);
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.account__project-list-item.account__project-list-item-current {
+  background-color: #9991;
+  border: 2px solid var(--button-border);
+}
+
+.account__project-list-item:hover {
+  background-color: var(--drawer-selected);
+}
+
+.account__project-list-item-author {
+  color: var(--drawer-foreground-dimmed-text);
+}
+
+.account__project-list-item-lm {
+  text-align: right;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.account__project-list-item-visibility {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  font-size: 12px;
+  font-weight: normal;
+}
+
 /* Toaster */
+
 .toaster {
   position: absolute;
   bottom: 0;

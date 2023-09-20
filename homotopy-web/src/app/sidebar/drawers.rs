@@ -5,7 +5,10 @@ use super::{DrawerViewSize, Sidebar, SidebarButton, SidebarDrawer, SidebarMsg};
 use crate::app::debug::DebugView;
 use crate::{
     app::{
-        image_export::ImageExportView, project::ProjectView, settings::SettingsView,
+        account::{AccountView, RemoteProjectMetadata},
+        image_export::ImageExportView,
+        project::ProjectView,
+        settings::SettingsView,
         signature::SignatureView,
     },
     components::Visible,
@@ -46,6 +49,7 @@ macro_rules! declare_sidebar_drawers {
                 model_dispatch: &Callback<model::Action>,
                 sidebar_dispatch: &Callback<SidebarMsg>,
                 proof: &Proof,
+                remote_project_metadata: &Option<RemoteProjectMetadata>,
                 initial_width: i32,
                 drawer_view_size: DrawerViewSize,
             ) -> Html {
@@ -68,7 +72,7 @@ macro_rules! declare_sidebar_drawers {
                                         action(proof)
                                     })?
                                 >
-                                    {body(model_dispatch, proof, drawer_view_size)}
+                                    {body(model_dispatch, proof, drawer_view_size, remote_project_metadata)}
                                 </SidebarDrawer>
                             }
                         }
@@ -107,22 +111,25 @@ macro_rules! declare_sidebar_drawers {
 }
 
 declare_sidebar_drawers! {
-    // DRAWER_LOGIN {
-    //     "Account",
-    //     "account",
-    //     "account_circle",
-    //     |_, _, _| html! {
-    //         <AccountView
-    //         />
-    //     },
-    //     min_width: 250,
-    // }
+    DRAWER_LOGIN {
+        "Account",
+        "account",
+        "account_circle",
+        |dispatch, proof: &Proof, _, remote_project_metadata: &Option<RemoteProjectMetadata>| html! {
+            <AccountView
+                dispatch={dispatch}
+                proof={proof.clone()}
+                remote_project_metadata={remote_project_metadata.clone()}
+            />
+        },
+        min_width: 250,
+    }
 
     DRAWER_PROJECT {
         "Project",
         "project",
         "info",
-        |dispatch, proof: &Proof, _| html! {
+        |dispatch, proof: &Proof, _, _| html! {
             <ProjectView
                 dispatch={dispatch}
                 metadata={proof.metadata.clone()}
@@ -135,10 +142,10 @@ declare_sidebar_drawers! {
         "Signature",
         "signature",
         "list",
-        |dispatch: &Callback<model::Action>, proof: &Proof, drawer_view_size: DrawerViewSize| html! {
+        |dispatch, proof: &Proof, drawer_view_size: DrawerViewSize, _| html! {
             <SignatureView
                 signature={proof.signature.clone()}
-                dispatch={dispatch.clone()}
+                dispatch={dispatch}
                 drawer_view_size={drawer_view_size}
             />
         },
@@ -151,7 +158,7 @@ declare_sidebar_drawers! {
         "Image export",
         "ImageExport",
         "output",
-        |dispatch, proof: &Proof, _| html! {
+        |dispatch, proof: &Proof, _, _| html! {
             <ImageExportView
                 dispatch={dispatch}
                 view_dim={proof.workspace.as_ref().map_or(0, |ws| ws.view.dimension())}
@@ -165,7 +172,7 @@ declare_sidebar_drawers! {
         "Settings",
         "settings",
         "settings",
-        |_, _, _| html! {
+        |_, _, _, _| html! {
             <SettingsView />
         },
         min_width: 250,
@@ -176,7 +183,7 @@ declare_sidebar_drawers! {
         "Debug",
         "debug",
         "bug_report",
-        |dispatch, proof: &Proof, _| html! {
+        |dispatch, proof: &Proof, _, _| html! {
             <DebugView proof={proof.clone()} dispatch={dispatch} />
         },
         min_width: 250,

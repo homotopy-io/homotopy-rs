@@ -17,7 +17,7 @@ use crate::{
     model,
 };
 
-mod account;
+pub mod account;
 mod attach;
 mod boundary;
 #[cfg(any(debug_assertions, feature = "show_debug_panel"))]
@@ -207,6 +207,7 @@ impl App {
                     dispatch={dispatch}
                     proof={proof.clone()}
                     options={state.options.clone()}
+                    remote_project_metadata={state.remote_project_metadata.clone()}
                 />
                 <div class="toaster">
                     <ToasterComponent timeout={3000} />

@@ -37,6 +37,7 @@ find dist \
     ! -name highs.wasm \
     ! -name homotopy_web.js \
     ! -name homotopy_web_bg.wasm \
+    ! -name snippets \
     -type f -exec rm -f {} +
 cp -r homotopy-web/static/* dist/
 ls dist
