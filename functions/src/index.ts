@@ -136,7 +136,7 @@ async function getAllUserProjects(firestore: Firestore, uid: string, args: any):
         .collection(`personal/${uid}/projects`)
         .get();
 
-    const personalProjects = personalSnapshot.docs.map(p => {
+    const personalProjects = personalSnapshot.docs.map((p) => {
         const data = p.data();
         return {
             id: p.id,
@@ -206,36 +206,33 @@ export const requestBlobUpload = onCall(async (req) => {
             return await createPublishedProjectVersion(firestore, uid, args);
         }
 
-        const res = await firestore.runTransaction(tx => {
+        const res = await firestore.runTransaction(async (tx) => {
             const projectsRef = firestore.collection(`personal/${uid}/projects`);
 
             const uploadNonce = newUploadNonce();
 
-            return (async () => {
-                let id = args.id;
-                const ts = Timestamp.now();
+            let id = args.id;
+            const ts = Timestamp.now();
 
-                const newDoc = {
-                    created: ts,
-                    lastModified: ts,
-                    title: args.title,
-                    author: args.author,
-                    abstract: args.abstract,
-                    visibility: args.visibility,
-                    uploadNonce,
-                };
+            const newDoc = {
+                created: ts,
+                lastModified: ts,
+                title: args.title,
+                author: args.author,
+                abstract: args.abstract,
+                visibility: args.visibility,
+                uploadNonce,
+            };
 
-                if (id) {
-                    const projectRef = firestore.doc(`personal/${uid}/projects/${id}`);
-                    await tx.update(projectRef, newDoc);
-                } else {
-                    const projectRef = await projectsRef.add(newDoc); // TODO: Data race? (not handled by tx)
+            if (id) {
+                const projectRef = firestore.doc(`personal/${uid}/projects/${id}`);
+                await tx.update(projectRef, newDoc);
+            } else {
+                const projectRef = await projectsRef.add(newDoc); // TODO: Data race? (not handled by tx)
+                id = projectRef.id;
+            }
 
-                    id = projectRef.id;
-                }
-
-                return { id, uploadNonce }
-            })();
+            return { id, uploadNonce };
         });
 
         return res;
@@ -245,7 +242,7 @@ export const requestBlobUpload = onCall(async (req) => {
 });
 
 export async function createPublishedProjectVersion(firestore: Firestore, uid: string, args: any): Promise<any> {
-    const res = await firestore.runTransaction(tx => {
+    const res = await firestore.runTransaction((tx) => {
         const uploadNonce = newUploadNonce();
 
         const newProject = async (args: any, ts: Timestamp) => {
@@ -307,8 +304,9 @@ export async function createPublishedProjectVersion(firestore: Firestore, uid: s
 export const onUpload = onObjectFinalized(async (event: any) => {
     // Get parent folder for filePath
     const filePath = event.data.name;
-    const path = filePath.split('/');
-    const uid = path[1], id = path[4];
+    const path = filePath.split("/");
+    const uid = path[1];
+    const id = path[4];
     logger.info(event.data);
     logger.info(`saving ${id} for user ${uid} at ${path}`);
 
@@ -318,7 +316,8 @@ export const onUpload = onObjectFinalized(async (event: any) => {
             const uploadNonce = path[5];
             return await saveProject(event, uid, id, uploadNonce);
         } else if (path[3] === "publish") {
-            const version = path[5], uploadNonce = path[6];
+            const version = path[5];
+            const uploadNonce = path[6];
             return await publishProject(event, uid, id, version, uploadNonce);
         }
     }
@@ -330,6 +329,7 @@ async function saveProject(event: any, uid: string, id: string, uploadNonce: str
     const storage = getStorage();
 
     // TODO: put in transaction?
+    // TODO: check uploadNonce
     const docRef = firestore.doc(`personal/${uid}/projects/${id}`);
     const doc = await docRef.get();
 
@@ -380,7 +380,7 @@ export const updateProjectMetadata = onCall(async (req) => {
         const args = req.data;
         const id = args.id;
 
-        let update: any = {};
+        const update: any = {};
         if (args.title !== null) update.title = args.title;
         if (args.author !== null) update.author = args.author;
         if (args.abstract !== null) update.abstract = args.abstract;
@@ -401,7 +401,7 @@ export const updateProjectMetadata = onCall(async (req) => {
                         HOMOTOPYIO_AUTHOR: update.author,
                         HOMOTOPYIO_ABSTRACT: update.abstract,
                         HOMOTOPYIO_VISIBILITY: update.visibility,
-                    }
+                    },
                 });
 
             if (newMetadata) {
@@ -419,7 +419,7 @@ export const updateProjectMetadata = onCall(async (req) => {
             } else {
                 return { err: "Failed to get updated metadata" };
             }
-        } catch(err) {
+        } catch (err) {
             return { err: "Update failed" };
         }
     }
