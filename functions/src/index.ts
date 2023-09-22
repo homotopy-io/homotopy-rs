@@ -85,12 +85,12 @@ async function getUserProject(firestore: Firestore, uid: string, args: any): Pro
 
     if (args.project.published) {
         const res = await firestore.runTransaction(async (tx) => {
-            const projectSnapshot = await tx.get(firestore.doc(`published/${id}`));
+            const projectSnapshot = await tx.get(firestore.doc(`published-rs/${id}`));
             const projectData = projectSnapshot.data();
             if (projectData) {
                 const latestVersion = projectData.latestVersion;
 
-                const versionSnapshot = await tx.get(firestore.doc(`published/${id}/versions/${latestVersion}`));
+                const versionSnapshot = await tx.get(firestore.doc(`published-rs/${id}/versions/${latestVersion}`));
                 const data = versionSnapshot.data();
                 if (data) {
                     return {
@@ -111,7 +111,7 @@ async function getUserProject(firestore: Firestore, uid: string, args: any): Pro
         });
         return res;
     } else {
-        const projectSnapshot = await firestore.doc(`published/${id}`).get();
+        const projectSnapshot = await firestore.doc(`published-rs/${id}`).get();
         const data = await projectSnapshot.data();
 
         if (data) {
@@ -133,7 +133,7 @@ async function getUserProject(firestore: Firestore, uid: string, args: any): Pro
 
 async function getAllUserProjects(firestore: Firestore, uid: string, args: any): Promise<any> {
     const personalSnapshot = await firestore
-        .collection(`personal/${uid}/projects`)
+        .collection(`personal-rs/${uid}/projects`)
         .get();
 
     const personalProjects = personalSnapshot.docs.map((p) => {
@@ -152,20 +152,20 @@ async function getAllUserProjects(firestore: Firestore, uid: string, args: any):
     });
 
     const userDoc = await firestore
-        .doc(`personal/${uid}`)
+        .doc(`personal-rs/${uid}`)
         .get();
     let publishedProjects = [];
     const userData = await userDoc.data();
     if (userData && userData.published) {
         const publishedProjectData = userData.published.flatMap(async (id: string) => {
             const projectDoc = await firestore
-                .doc(`published/${id}`)
+                .doc(`published-rs/${id}`)
                 .get();
             const projectData = projectDoc.data();
             if (projectData) {
                 const version = projectData.latestVersion;
                 const projectVersionDoc = await firestore
-                    .doc(`published/${id}/versions/${version}`)
+                    .doc(`published-rs/${id}/versions/${version}`)
                     .get();
                 const data = projectVersionDoc.data();
                 if (data) {
@@ -207,7 +207,7 @@ export const requestBlobUpload = onCall(async (req) => {
         }
 
         const res = await firestore.runTransaction(async (tx) => {
-            const projectsRef = firestore.collection(`personal/${uid}/projects`);
+            const projectsRef = firestore.collection(`personal-rs/${uid}/projects`);
 
             const uploadNonce = newUploadNonce();
 
@@ -225,7 +225,7 @@ export const requestBlobUpload = onCall(async (req) => {
             };
 
             if (id) {
-                const projectRef = firestore.doc(`personal/${uid}/projects/${id}`);
+                const projectRef = firestore.doc(`personal-rs/${uid}/projects/${id}`);
                 await tx.update(projectRef, newDoc);
             } else {
                 const projectRef = await projectsRef.add(newDoc); // TODO: Data race? (not handled by tx)
@@ -248,7 +248,7 @@ export async function createPublishedProjectVersion(firestore: Firestore, uid: s
         const newProject = async (args: any, ts: Timestamp) => {
             const id = await getNewPublishedProjectId(firestore);
 
-            await tx.set(firestore.doc(`published/${id}`), {
+            await tx.set(firestore.doc(`published-rs/${id}`), {
                 created: ts,
                 lastModified: ts,
                 latestVersion: 0,
@@ -265,7 +265,7 @@ export async function createPublishedProjectVersion(firestore: Firestore, uid: s
 
             // Get ID for new project version
             if (id) {
-                const projectRef = firestore.doc(`published/${id}`);
+                const projectRef = firestore.doc(`published-rs/${id}`);
                 const project = await tx.get(projectRef);
                 const projectData = await project.data();
 
@@ -283,11 +283,11 @@ export async function createPublishedProjectVersion(firestore: Firestore, uid: s
                 id = await newProject(args, ts);
             }
 
-            await tx.set(firestore.doc(`personal/${uid}`), {
+            await tx.set(firestore.doc(`personal-rs/${uid}`), {
                 published: FieldValue.arrayUnion(`${id}`),
             }, { merge: true });
 
-            await tx.set(firestore.doc(`published/${id}/versions/${newVersion}`), {
+            await tx.set(firestore.doc(`published-rs/${id}/versions/${newVersion}`), {
                 uid,
                 title: args.title,
                 author: args.author,
@@ -330,7 +330,7 @@ async function saveProject(event: any, uid: string, id: string, uploadNonce: str
 
     // TODO: put in transaction?
     // TODO: check uploadNonce
-    const docRef = firestore.doc(`personal/${uid}/projects/${id}`);
+    const docRef = firestore.doc(`personal-rs/${uid}/projects/${id}`);
     const doc = await docRef.get();
 
     if (await doc.data()) {
@@ -353,7 +353,7 @@ async function publishProject(event: any, uid: string, id: string, version: stri
 
     logger.info({ uid, id, version, uploadNonce });
     // TODO: put in transaction?
-    const docRef = firestore.doc(`published/${id}/versions/${version}`);
+    const docRef = firestore.doc(`published-rs/${id}/versions/${version}`);
     const doc = await docRef.get();
 
     // get next version and update firestore
@@ -387,14 +387,14 @@ export const updateProjectMetadata = onCall(async (req) => {
         if (args.visibility !== null) update.visibility = args.visibility;
 
         try {
-            const docRef = firestore.doc(`personal/${uid}/projects/${id}`);
+            const docRef = firestore.doc(`personal-rs/${uid}/projects/${id}`);
             await docRef.update(update);
             const newDoc = await docRef.get();
             const newMetadata = await newDoc.data();
 
             await storage
                 .bucket()
-                .file(`personal/${uid}/projects/${id}`)
+                .file(`personal-rs/${uid}/projects/${id}`)
                 .setMetadata({
                     metadata: {
                         HOMOTOPYIO_TITLE: update.title,
@@ -436,12 +436,12 @@ export const deleteProject = onCall(async (req) => {
         const id = args.id;
 
         await firestore
-            .doc(`personal/${uid}/projects/${id}`)
+            .doc(`personal-rs/${uid}/projects/${id}`)
             .delete();
 
         await storage
             .bucket()
-            .file(`personal/${uid}/projects/${id}`)
+            .file(`personal-rs/${uid}/projects/${id}`)
             .delete();
     }
 });

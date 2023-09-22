@@ -16,29 +16,29 @@ service firebase.storage {
     //     return firestore.exists(path) && uploadNonce == firestore.get(path).uploadNonce;
     // }
 
-    match /personal/{uid}/upload/save/{id}/{uploadNonce} {
+    match /personal-rs/{uid}/upload/save/{id}/{uploadNonce} {
         allow create: if uid == request.auth.uid;
-                // && validNonce(uploadNonce, /personal/$(request.auth.uid)/projects/$(id));
+                // && validNonce(uploadNonce, /personal-rs/$(request.auth.uid)/projects/$(id));
     }
 
-    match /personal/{uid}/upload/publish/{id}/{version}/{uploadNonce} {
+    match /personal-rs/{uid}/upload/publish/{id}/{version}/{uploadNonce} {
         allow create: if uid == request.auth.uid
-                // && validNonce(uploadNonce, /personal/$(request.auth.uid)/projects/$(id));
+                // && validNonce(uploadNonce, /personal-rs/$(request.auth.uid)/projects/$(id));
     }
 
-    // match /personal/{uid}/upload/{id}/versions/{version} {
+    // match /personal-rs/{uid}/upload/{id}/versions/{version} {
     //   // Set max upload file size at arbitrary 20MB
     //   allow create: if request.resource.size < 20 * 1024 * 1024
     //                         && request.auth.uid == uid;
     // }
-    match /personal/{uid}/projects/{project} {
+    match /personal-rs/{uid}/projects/{project} {
       allow read: if accessibleProject(
         uid,
         firestore.get(/users/{uid}/projects/{project})
       );
     }
 
-    match /published/{id}/versions/{version} {
+    match /published-rs/{id}/versions/{version} {
       allow read: if true;
     }
   }

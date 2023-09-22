@@ -109,8 +109,8 @@ export async function saveProject(args, saveCallback) {
         id = requestBlobUpload.data.id;
 
         const filePath = args.visibility === "Published"
-            ? `personal/${uid}/upload/publish/${id}/${version}/${uploadNonce}`
-            : `personal/${uid}/upload/save/${id}/${uploadNonce}`;
+            ? `personal-rs/${uid}/upload/publish/${id}/${version}/${uploadNonce}`
+            : `personal-rs/${uid}/upload/save/${id}/${uploadNonce}`;
 
         // Upload blob where filename is ID
         const fileRef = storage.ref().child(filePath);
@@ -202,7 +202,7 @@ export async function downloadProject(args, downloadCallback) {
 
         if (published) {
             if (specificVersion) {
-                fileRef = storageRef.child(`published/${id}/versions/${specificVersion}`);
+                fileRef = storageRef.child(`published-rs/${id}/versions/${specificVersion}`);
             } else {
                 const project = await getUserProjectsCF({
                     project: { id, published, specificVersion },
@@ -211,11 +211,11 @@ export async function downloadProject(args, downloadCallback) {
 
                 if (project.data) {
                     const latestVersion = project.data.latestVersion;
-                    fileRef = storageRef.child(`published/${id}/versions/${latestVersion}`);
+                    fileRef = storageRef.child(`published-rs/${id}/versions/${latestVersion}`);
                 }
             }
         } else {
-            fileRef = storageRef.child(`personal/${uid}/projects/${id}`);
+            fileRef = storageRef.child(`personal-rs/${uid}/projects/${id}`);
         }
 
         if (!fileRef) {
