@@ -26,6 +26,7 @@ pub enum OperationStatus {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RemoteProjectMetadata {
     pub id: String,
+    pub uid: String,
     pub title: String,
     pub author: String,
     pub abstr: String,
@@ -335,7 +336,7 @@ impl Component for AccountView {
                 true
             }
             Msg::OpenProject(project) => {
-                Self::download_project(ctx, project);
+                Self::download_project(ctx, &project);
                 true
             }
             Msg::ProjectDownloaded((remote_project_metadata, blob)) => {
@@ -378,8 +379,7 @@ impl AccountView {
     fn get_all_user_projects(ctx: &Context<Self>) {
         let projects_cb = ctx.link().callback(Msg::ProjectsFetched);
         let projects_cb_js = Closure::once_into_js(move |projects: JsValue| {
-            let mut projects: ProjectCollection =
-                serde_wasm_bindgen::from_value(projects.clone()).unwrap();
+            let mut projects: ProjectCollection = serde_wasm_bindgen::from_value(projects).unwrap();
             projects
                 .personal
                 .sort_by(|a, b| b.last_modified.cmp(&a.last_modified));
@@ -388,7 +388,7 @@ impl AccountView {
                 .sort_by(|a, b| b.last_modified.cmp(&a.last_modified));
             projects_cb.emit(projects);
         });
-        get_user_projects_js(None::<GetUserProjectsArgs>.into(), projects_cb_js);
+        get_user_projects_js(None::<u8>.into(), projects_cb_js);
     }
 
     fn user_projects_list(&self, ctx: &Context<Self>) -> Html {
@@ -459,6 +459,7 @@ impl AccountView {
                                 onclick={update_visibility_cb}
                             />
                         </div>
+                        <div class="account__project-list-item-id">{project.id.clone()}</div>
                         <div class="account__project-list-item-lm">{lm}</div>
                     </li>
                 }
@@ -498,10 +499,11 @@ impl AccountView {
             let mut metadata = proof.metadata.clone();
 
             // Author is filled in with user's name if applicable
-            metadata.author = metadata.author.or(self
-                .user
-                .as_ref()
-                .map(|userdata| userdata.display_name.clone()));
+            metadata.author = metadata.author.or_else(|| {
+                self.user
+                    .as_ref()
+                    .map(|userdata| userdata.display_name.clone())
+            });
 
             let blob = model::serialize::serialize(
                 proof.signature.clone(),
@@ -514,7 +516,7 @@ impl AccountView {
                 blob,
                 title: metadata.title.clone().unwrap_or_default(),
                 author: metadata.author.clone().unwrap_or_default(),
-                abstr: metadata.abstr.clone().unwrap_or_default(),
+                abstr: metadata.abstr.unwrap_or_default(),
                 visibility: remote_metadata.visibility.to_string(),
             };
             save_project_js(args.into(), save_cb_js);
@@ -533,10 +535,11 @@ impl AccountView {
         let mut metadata = proof.metadata.clone();
 
         // Author is filled in with user's name if applicable
-        metadata.author = metadata.author.or(self
-            .user
-            .as_ref()
-            .map(|userdata| userdata.display_name.clone()));
+        metadata.author = metadata.author.or_else(|| {
+            self.user
+                .as_ref()
+                .map(|userdata| userdata.display_name.clone())
+        });
 
         let blob = model::serialize::serialize(
             proof.signature.clone(),
@@ -549,8 +552,8 @@ impl AccountView {
             blob,
             title: metadata.title.clone().unwrap_or_default(),
             author: metadata.clone().author.unwrap_or_default(),
-            abstr: metadata.abstr.clone().unwrap_or_default(),
-            visibility: ProjectVisibility::default().to_string(), // This should be decided by dropdown.
+            abstr: metadata.abstr.unwrap_or_default(),
+            visibility: ProjectVisibility::default().to_string(), /* This should be decided by dropdown. */
         };
         save_project_js(args.into(), save_cb_js);
     }
@@ -565,11 +568,11 @@ impl AccountView {
         let mut metadata = proof.metadata.clone();
 
         // Author is filled in with user's name if applicable
-        metadata.author = metadata.author.or(self
-            .user
-            .as_ref()
-            .map(|userdata| userdata.display_name.clone()));
-
+        metadata.author = metadata.author.or_else(|| {
+            self.user
+                .as_ref()
+                .map(|userdata| userdata.display_name.clone())
+        });
 
         let blob = model::serialize::serialize(
             proof.signature.clone(),
@@ -577,12 +580,22 @@ impl AccountView {
             metadata.clone(),
         );
 
+        let id = if let Some(remote_metadata) = &ctx.props().remote_project_metadata {
+            if remote_metadata.visibility == ProjectVisibility::Published {
+                Some(remote_metadata.id.clone())
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
         let args = SaveProjectArgs {
-            id: None,
+            id,
             blob,
             title: metadata.title.clone().unwrap_or_default(),
             author: metadata.author.clone().unwrap_or_default(),
-            abstr: metadata.abstr.clone().unwrap_or_default(),
+            abstr: metadata.abstr.unwrap_or_default(),
             visibility: ProjectVisibility::Published.to_string(),
         };
         save_project_js(args.into(), publish_cb_js);
@@ -625,25 +638,37 @@ impl AccountView {
         delete_project_js(args.into(), dp_cb_js);
     }
 
-    fn download_project(ctx: &Context<Self>, project: RemoteProjectMetadata) {
+    fn download_project(ctx: &Context<Self>, project: &RemoteProjectMetadata) {
         tracing::debug!("Downloading {}", project.id);
         let id = project.id.clone();
         let published = project.visibility == ProjectVisibility::Published;
-
         let dl_cb = ctx.link().callback(Msg::ProjectDownloaded);
-        let dl_cb_js = Closure::once_into_js(move |opened: Option<js_sys::Uint8Array>| {
-            if let Some(blob) = opened {
-                dl_cb.emit((project, blob.to_vec()));
-            }
-        });
 
-        let args = DownloadProjectArgs {
-            id,
-            published,
-            specific_version: None,
-        };
-        download_project_js(args.into(), dl_cb_js);
+        download_project_with_id(None, id, published, dl_cb);
     }
+}
+
+pub fn download_project_with_id(
+    uid: Option<String>,
+    id: String,
+    published: bool,
+    cb: yew::Callback<(RemoteProjectMetadata, Vec<u8>)>,
+) {
+    let cb_js = Closure::once_into_js(move |metadata_and_blob: JsValue| {
+        let pair: Option<(RemoteProjectMetadata, Vec<u8>)> =
+            serde_wasm_bindgen::from_value(metadata_and_blob).unwrap();
+        if let Some((metadata, blob)) = pair {
+            cb.emit((metadata, blob));
+        }
+    });
+
+    let args = DownloadProjectArgs {
+        uid,
+        id,
+        published,
+        specific_version: None,
+    };
+    download_project_js(args.into(), cb_js);
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -658,13 +683,6 @@ pub struct User {
 pub struct ProjectCollection {
     personal: Vec<RemoteProjectMetadata>,
     published: Vec<RemoteProjectMetadata>,
-}
-
-#[wasm_bindgen]
-#[derive(Debug, Clone)]
-pub struct GetUserProjectsArgs {
-    id: String,
-    published: bool,
 }
 
 #[wasm_bindgen]
@@ -687,6 +705,7 @@ pub struct DeleteProjectArgs {
 #[wasm_bindgen]
 #[derive(Debug, Clone)]
 pub struct DownloadProjectArgs {
+    uid: Option<String>,
     id: String,
     published: bool,
     specific_version: Option<u32>,
@@ -738,6 +757,10 @@ impl DeleteProjectArgs {
 
 #[wasm_bindgen]
 impl DownloadProjectArgs {
+    pub fn uid(&self) -> Option<String> {
+        self.uid.clone()
+    }
+
     pub fn id(&self) -> String {
         self.id.clone()
     }

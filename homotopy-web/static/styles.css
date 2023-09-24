@@ -1206,7 +1206,7 @@ svg {
 
 .account__project-list-item {
   width: 100%;
-  height: calc(2.5 * var(--signature-height));
+  height: calc(3 * var(--signature-height));
   transition: background-color 100ms;
   box-sizing: border-box;
   padding: 0 4px;
@@ -1228,7 +1228,7 @@ svg {
   color: var(--drawer-foreground-dimmed-text);
 }
 
-.account__project-list-item-lm {
+.account__project-list-item-lm, .account__project-list-item-id {
   text-align: right;
   font-size: 12px;
   font-weight: normal;

@@ -74,16 +74,15 @@ export function logOut(logOutCallback) {
         });
 }
 
-export function getUserProjects(maybeProject, projectsCallback) {
+export async function getUserProjects(maybeProject, projectsCallback) {
     if (auth.currentUser) {
         // User is signed in
-        getUserProjectsCF(maybeProject)
-            .then(res => {
-                projectsCallback(res.data);
-            })
-            .catch(err => {
-                console.error(err);
-            });
+        try {
+            const res = await getUserProjectsCF(maybeProject)
+            return projectsCallback(res.data);
+        } catch(err) {
+            console.error(err);
+        }
     }
 }
 
@@ -108,7 +107,7 @@ export async function saveProject(args, saveCallback) {
         const version = requestBlobUpload.data.version;
         id = requestBlobUpload.data.id;
 
-        const filePath = args.visibility === "Published"
+        const filePath = args.visibility() === "Published"
             ? `personal-rs/${uid}/upload/publish/${id}/${version}/${uploadNonce}`
             : `personal-rs/${uid}/upload/save/${id}/${uploadNonce}`;
 
@@ -136,6 +135,7 @@ export async function saveProject(args, saveCallback) {
 
         return saveCallback({
             id,
+            uid,
             title: args.title(),
             author: args.author(),
             abstr: args.abstr(),
@@ -189,51 +189,48 @@ export async function deleteProject(args, deleteCallback) {
 }
 
 export async function downloadProject(args, downloadCallback) {
-    if (auth.currentUser) {
-        const uid = auth.currentUser.uid;
-        const id = args.id();
-        const published = args.published();
-        const specificVersion = args.specificVersion();
+    const uid = args.uid() || (auth.currentUser ? auth.currentUser.uid : null);
+    const id = args.id();
+    const published = args.published();
+    const specificVersion = args.specificVersion();
 
-        let fileRef;
-        const storageRef = storage.ref();
+    let fileRef;
+    const storageRef = storage.ref();
 
-        console.log({id,published,specificVersion});
+    console.log({id,published,specificVersion});
 
-        if (published) {
-            if (specificVersion) {
-                fileRef = storageRef.child(`published-rs/${id}/versions/${specificVersion}`);
-            } else {
-                const project = await getUserProjectsCF({
-                    project: { id, published, specificVersion },
-                });
-                console.log({project});
-
-                if (project.data) {
-                    const latestVersion = project.data.latestVersion;
-                    fileRef = storageRef.child(`published-rs/${id}/versions/${latestVersion}`);
-                }
-            }
+    const project = await getUserProjectsCF({
+        project: { id, published, specificVersion },
+    });
+    if (published) {
+        if (specificVersion) {
+            fileRef = storageRef.child(`published-rs/${id}/versions/${specificVersion}`);
         } else {
-            fileRef = storageRef.child(`personal-rs/${uid}/projects/${id}`);
+            console.log({project});
+            if (project.data) {
+                const latestVersion = project.data.latestVersion;
+                fileRef = storageRef.child(`published-rs/${id}/versions/${latestVersion}`);
+            }
         }
+    } else {
+        fileRef = storageRef.child(`personal-rs/${uid}/projects/${id}`);
+    }
 
-        if (!fileRef) {
-            console.error(`Can't find project with id ${id}`);
-            return downloadCallback();
-        }
+    if (!fileRef) {
+        console.error(`Can't find project with id ${id}`);
+        return downloadCallback();
+    }
 
-        try {
-            const downloadUrl = await fileRef.getDownloadURL();
-            const data = await fetch(downloadUrl);
-            console.log(data);
-            const blob = await data.arrayBuffer();
-            console.log(blob);
-            return downloadCallback(new Uint8Array(blob));
-        } catch(err) {
-            console.error(err);
-            return downloadCallback();
-        }
+    try {
+        const downloadUrl = await fileRef.getDownloadURL();
+        const data = await fetch(downloadUrl);
+        const blob = await data.arrayBuffer();
+        console.log(blob);
+        console.log(project.data);
+        return downloadCallback([project.data, new Uint8Array(blob)]);
+    } catch(err) {
+        console.error(err);
+        return downloadCallback();
     }
     return downloadCallback();
 }

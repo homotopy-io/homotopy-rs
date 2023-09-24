@@ -59,6 +59,8 @@ impl Component for App {
         let signature_stylesheet = SignatureStylesheet::new();
         signature_stylesheet.mount();
 
+        Self::load_project_from_url_path(ctx);
+
         Self {
             state,
             loading: false,
@@ -165,6 +167,42 @@ impl App {
             .set_onbeforeunload(Some(before_unload.as_ref().unchecked_ref()));
 
         self.before_unload = Some(before_unload);
+    }
+
+    fn load_project_from_url_path(ctx: &Context<Self>) {
+        let sm_cb = ctx
+            .link()
+            .callback(Message::BlockingDispatch)
+            .reform(model::Action::SetRemoteProjectMetadata);
+        let dl_cb = ctx.link().callback(Message::BlockingDispatch).reform(
+            move |(metadata, bytes): (_, Vec<u8>)| {
+                sm_cb.emit(Some(metadata));
+                model::Action::Proof(model::proof::Action::ImportProof(bytes.into()))
+            },
+        );
+        let path_str = web_sys::window().unwrap().location().pathname().unwrap();
+        let path = &path_str.split('/').collect::<Vec<&str>>()[1..];
+        if path[0] == "p" && path.len() == 2 {
+            // Published project
+            tracing::debug!("Load published project {}", path[1]);
+            account::download_project_with_id(
+                None,
+                path[1].to_owned(), // id
+                true,
+                dl_cb,
+            );
+        } else if path[0] == "u" && path.len() == 3 {
+            // Personal projects
+            tracing::debug!("Load personal project {}/{}", path[1], path[2]);
+            account::download_project_with_id(
+                Some(path[1].to_owned()), // uid
+                path[2].to_owned(),       // id
+                false,
+                dl_cb,
+            );
+        } else {
+            model::update_window_url_path("/");
+        }
     }
 
     #[allow(clippy::let_underscore_untyped)]
