@@ -747,20 +747,28 @@ fn colimit_recursive<Ix: IndexType>(
             // all targeting Regular(0)
             exploded
                 .node_references()
-                .filter_map(
+                .filter(
                     |(
-                        i,
+                        _,
                         ScaffoldNode {
                             key: ExplodedNode { parent, height, .. },
                             ..
                         },
                     )| {
-                        (graph.externals(Outgoing).contains(parent) // comes from singular height (i.e. in Δ)
-                        && height == &Height::Regular(0))
-                            .then(|| {
-                                parent_by_height.push(*parent);
-                                i
-                            })
+                        graph.externals(Outgoing).contains(parent) // comes from singular height (i.e. in Δ)
+                        && height == &Height::Regular(0)
+                    },
+                )
+                .map(
+                    |(
+                        i,
+                        ScaffoldNode {
+                            key: ExplodedNode { parent, .. },
+                            ..
+                        },
+                    )| {
+                        parent_by_height.push(*parent);
+                        i
                     },
                 )
                 .collect(),

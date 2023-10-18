@@ -136,7 +136,8 @@ pub(crate) fn unify<V, E, Ix>(
     // unify along the source of edges
     for (target, e) in graph
         .edges_directed(remove, Outgoing)
-        .filter_map(|e| (e.target() != keep).then(|| (e.target(), e.id())))
+        .filter(|&e| (e.target() != keep))
+        .map(|e| (e.target(), e.id()))
         .collect::<Vec<_>>()
     {
         let removed = graph.remove_edge(e).expect("tried to remove missing edge");
@@ -158,7 +159,8 @@ pub(crate) fn unify<V, E, Ix>(
     // unify along the target of edges
     for (source, e) in graph
         .edges_directed(remove, Incoming)
-        .filter_map(|e| (e.source() != keep).then(|| (e.source(), e.id())))
+        .filter(|&e| (e.source() != keep))
+        .map(|e| (e.source(), e.id()))
         .collect::<Vec<_>>()
     {
         let removed = graph.remove_edge(e).expect("tried to remove missing edge");

@@ -147,9 +147,7 @@ fn target_points(rewrites: &[Rewrite]) -> Vec<(Point, Generator)> {
     for rewrite in rewrites {
         let rewrite: RewriteN = rewrite.clone().try_into().unwrap();
         for target_height in rewrite.targets() {
-            let target_rewrites_at_height = target_rewrites
-                .entry(target_height)
-                .or_insert_with(Vec::new);
+            let target_rewrites_at_height = target_rewrites.entry(target_height).or_default();
 
             for source_height in rewrite.singular_preimage(target_height) {
                 target_rewrites_at_height.push(rewrite.slice(source_height));

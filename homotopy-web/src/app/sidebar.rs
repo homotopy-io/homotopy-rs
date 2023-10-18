@@ -128,7 +128,7 @@ impl Component for SidebarDrawer {
 
     fn create(ctx: &Context<Self>) -> Self {
         let resize_msg = ctx.link().callback(SidebarDrawerMsg::Resize);
-        let done_msg = ctx.link().callback(|_| SidebarDrawerMsg::ResizeDone);
+        let done_msg = ctx.link().callback(|()| SidebarDrawerMsg::ResizeDone);
 
         let mouse_move_handler = move |e: MouseEvent| {
             let width = e.client_x() - Sidebar::WIDTH + Self::RESIZE_OFFSET;

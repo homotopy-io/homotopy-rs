@@ -194,7 +194,7 @@ impl SliceIndex {
 
         match self {
             Self::Boundary(Boundary::Source) => None,
-            Self::Interior(Regular(i)) if i == 0 => Some(Boundary::Source.into()),
+            Self::Interior(Regular(0)) => Some(Boundary::Source.into()),
             Self::Interior(Regular(i)) => Some(Singular(i - 1).into()),
             Self::Interior(Singular(i)) => Some(Regular(i).into()),
             Self::Boundary(Boundary::Target) => Some(Regular(size).into()),
