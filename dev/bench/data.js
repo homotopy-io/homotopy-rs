@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1692371108179,
+  "lastUpdate": 1697661432490,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -48059,6 +48059,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 343.44,
             "range": "+/- 0.980",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "d71003dc0a5df8c6cd25fd6286be49f86d963f44",
+          "message": "Rewrite cone_over_target to return index for identity cones\n\nAlso use it to rewrite singular_preimage and fix bug in factorization",
+          "timestamp": "2023-10-18T21:06:32+01:00",
+          "tree_id": "39cc38e2a106edcfbd92440284a95722ab6b06bd",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/d71003dc0a5df8c6cd25fd6286be49f86d963f44"
+        },
+        "date": 1697661419050,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 1.6838,
+            "range": "+/- 0.001",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 15.178,
+            "range": "+/- 0.048",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 257.43,
+            "range": "+/- 0.310",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 5.7211,
+            "range": "+/- 0.002",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 13.208,
+            "range": "+/- 0.086",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 339.83,
+            "range": "+/- 1.200",
             "unit": "ms"
           }
         ]
