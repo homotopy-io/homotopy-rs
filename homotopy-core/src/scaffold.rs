@@ -343,7 +343,7 @@ where
                     }
                     // Unit, regular, and singular slices.
                     SliceIndex::Interior(Height::Singular(target_height)) => {
-                        let cone = rewrite.cone_over_target(target_height);
+                        let cone = rewrite.cone_over_target(target_height).left();
                         let preimage = rewrite.singular_preimage(target_height);
 
                         if preimage.is_empty() {

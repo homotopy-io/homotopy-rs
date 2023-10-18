@@ -153,7 +153,7 @@ fn target_points(rewrites: &[Rewrite]) -> Vec<(Point, Generator)> {
                 target_rewrites_at_height.push(rewrite.slice(source_height));
             }
 
-            let cone = rewrite.cone_over_target(target_height).unwrap();
+            let cone = rewrite.cone_over_target(target_height).unwrap_left();
             let cone_target = cone.target();
 
             target_rewrites_at_height.push(cone_target.forward.clone());
@@ -217,7 +217,7 @@ impl Embedding {
                     .collect();
 
                 if preimage_slices.is_empty() {
-                    let cospan = &rewrite.cone_over_target(*height).unwrap().target();
+                    let cospan = &rewrite.cone_over_target(*height).unwrap_left().target();
                     Self::Regular(
                         preimage_height,
                         Rc::new(slices[0].preimage(&cospan.forward)),
@@ -300,7 +300,7 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
                 let embedding_slice = &slices[target_height - *height];
 
                 // TODO: This is quite ugly
-                let cone = rewrite.cone_over_target(target_height).unwrap();
+                let cone = rewrite.cone_over_target(target_height).unwrap_left();
 
                 let restricted_regular_slices: Vec<_> = cone
                     .regular_slices()

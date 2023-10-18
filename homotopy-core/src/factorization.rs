@@ -43,18 +43,14 @@ pub fn factorize(f: Rewrite, g: Rewrite, target: Diagram) -> Factorization {
                 // when g_cone.len() = 0), represented as a Vec<Cone>
                 // ultimately, obtain Vec<Vec<Cone>> with length = #singular heights in the
                 // common target of f and g, whose concatenation give the cones of h
-                let mut offset = 0;
                 target
                     .singular_slices()
                     .enumerate()
                     .map(|(i, singular)| {
-                        let f_cone = f.cone_over_target(i).cloned();
-                        if let Some(c) = &f_cone {
-                            offset = c.index;
-                        } else {
-                            offset += 1;
-                        }
-                        match g.cone_over_target(i).cloned() {
+                        let (f_cone, offset) = f
+                            .cone_over_target(i)
+                            .either(|c| (Some(c.clone()), c.index), |i| (None, i));
+                        match g.cone_over_target(i).left().cloned() {
                             None => ConeFactorization::Unique(
                                 f_cone.map(|c| vec![c]).unwrap_or_default().into(),
                             ),

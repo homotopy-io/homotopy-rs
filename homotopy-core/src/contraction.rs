@@ -230,8 +230,8 @@ fn contract_base(
                     let mut b_cones = vec![];
                     for height in 0..colimit.size() {
                         match (
-                            forward.cone_over_target(height),
-                            backward.cone_over_target(height),
+                            forward.cone_over_target(height).left(),
+                            backward.cone_over_target(height).left(),
                         ) {
                             (None, None) => {}
                             (None, Some(b_cone)) => b_cones.push(b_cone.clone()),

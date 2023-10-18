@@ -9,6 +9,7 @@ use std::{
 
 use hashconsing::{HConsed, HConsign, HashConsign};
 use homotopy_common::hash::{FastHashMap, FastHashSet};
+use itertools::Either;
 use once_cell::unsync::OnceCell;
 use serde::{ser::SerializeStruct, Deserialize, Serialize};
 use thiserror::Error;
@@ -641,20 +642,25 @@ impl RewriteN {
     }
 
     /// Find a cone targeting a singular height
-    pub(crate) fn cone_over_target(&self, height: SingularHeight) -> Option<&Cone> {
-        let mut offset: isize = 0;
-
+    ///
+    /// If the cone is an identity cone, return its index.
+    pub(crate) fn cone_over_target(&self, mut height: SingularHeight) -> Either<&Cone, usize> {
         for cone in self.cones() {
-            let target = (cone.index as isize + offset) as usize;
-
-            if target == height {
-                return Some(cone);
+            match cone.index.cmp(&height) {
+                Ordering::Less => match cone.len().checked_sub(1) {
+                    None => height -= 1,
+                    Some(offset) => height += offset,
+                },
+                Ordering::Equal => {
+                    return Either::Left(cone);
+                }
+                Ordering::Greater => {
+                    return Either::Right(height);
+                }
             }
-
-            offset += 1 - cone.len() as isize;
         }
 
-        None
+        Either::Right(height)
     }
 
     /// Take a singular slice of a rewrite
@@ -768,25 +774,10 @@ impl RewriteN {
     }
 
     pub fn singular_preimage(&self, index: SingularHeight) -> Range<SingularHeight> {
-        let mut offset: isize = 0;
-
-        for cone in self.cones() {
-            let adjusted = (index as isize - offset) as usize;
-            match adjusted.cmp(&cone.index) {
-                Ordering::Less => {
-                    return adjusted..adjusted + 1;
-                }
-                Ordering::Equal => {
-                    return cone.index..cone.index + cone.len();
-                }
-                Ordering::Greater => {
-                    offset += 1 - cone.len() as isize;
-                }
-            }
-        }
-
-        let adjusted = (index as isize - offset) as usize;
-        adjusted..adjusted + 1
+        let (start, len) = self
+            .cone_over_target(index)
+            .either(|c| (c.index, c.len()), |i| (i, 1));
+        start..start + len
     }
 
     pub fn regular_image(&self, index: RegularHeight) -> RegularHeight {

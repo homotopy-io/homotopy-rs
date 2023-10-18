@@ -125,8 +125,8 @@ impl<const N: usize> Projection<N> {
                         Some(i) => {
                             let input: &RewriteN = input.try_into()?;
                             let output: &RewriteN = output.try_into()?;
-                            input.cone_over_target(i).is_none()
-                                && output.cone_over_target(i).is_none()
+                            input.cone_over_target(i).is_left()
+                                && output.cone_over_target(i).is_left()
                         }
                     },
                     _ => false,
