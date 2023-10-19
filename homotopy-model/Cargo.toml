@@ -19,7 +19,7 @@ serde_json = "1.0.107"
 
 palette = { git = "https://github.com/Ogeon/palette", features = ["serializing"] }
 
-tracing = "0.1.39"
+tracing = "0.1.40"
 
 thiserror = "1.0.50"
 obake = { version = "1.0.5", features = ["serde"] }
