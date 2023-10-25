@@ -68,13 +68,13 @@ impl Monotone {
     }
 
     /// Compose two monotones maps.
-    pub fn compose(&self, g: &Self) -> Option<Self> {
+    pub fn compose(&self, other: &Self) -> Option<Self> {
         let mut seq = Vec::with_capacity(self.len());
         for i in self.slices() {
-            if i >= g.len() {
+            if i >= other.len() {
                 return None;
             }
-            seq.push(g[i]);
+            seq.push(other[i]);
         }
         Some(seq.into())
     }

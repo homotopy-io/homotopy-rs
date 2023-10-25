@@ -269,8 +269,8 @@ impl Rewrite {
     /// Do not read labels of the result and always
     /// compare it with equals_modulo_labels
     #[inline]
-    pub fn compose(&self, g: &Self) -> Result<Self, CompositionError> {
-        match (self, g) {
+    pub fn compose(&self, other: &Self) -> Result<Self, CompositionError> {
+        match (self, other) {
             (Self::Rewrite0(ref f), Self::Rewrite0(ref g)) => Ok(f.compose(g)?.into()),
             (Self::RewriteN(ref f), Self::RewriteN(ref g)) => Ok(f.compose(g)?.into()),
             (f, g) => Err(CompositionError::Dimension(f.dimension(), g.dimension())),
@@ -408,10 +408,10 @@ impl Rewrite0 {
     /// This will implicitly mangle/strip labels
     /// Do not read labels of the result and always
     /// compare it with equals_modulo_labels
-    pub fn compose(&self, g: &Self) -> Result<Self, CompositionError> {
-        match (&self.0, &g.0) {
+    pub fn compose(&self, other: &Self) -> Result<Self, CompositionError> {
+        match (&self.0, &other.0) {
             (Some(_), None) => Ok(self.clone()),
-            (None, Some(_)) => Ok(g.clone()),
+            (None, Some(_)) => Ok(other.clone()),
             (None, None) => Ok(Self::identity()),
             (Some((f_s, f_t, _)), Some((g_s, g_t, _))) if f_t == g_s => {
                 Ok(Self::new(*f_s, *g_t, None))
@@ -677,16 +677,19 @@ impl RewriteN {
     /// This will implicitly mangle/strip labels
     /// Do not read labels of the result and always
     /// compare it with equals_modulo_labels
-    pub fn compose(&self, g: &Self) -> Result<Self, CompositionError> {
-        if self.dimension() != g.dimension() {
-            return Err(CompositionError::Dimension(self.dimension(), g.dimension()));
+    pub fn compose(&self, other: &Self) -> Result<Self, CompositionError> {
+        if self.dimension() != other.dimension() {
+            return Err(CompositionError::Dimension(
+                self.dimension(),
+                other.dimension(),
+            ));
         }
 
         let mut offset = 0;
         let mut delayed_offset = 0;
 
         let mut f_cones: Vec<Cone> = self.cones().iter().rev().cloned().collect();
-        let mut g_cones: Vec<Cone> = g.cones().iter().rev().cloned().collect();
+        let mut g_cones: Vec<Cone> = other.cones().iter().rev().cloned().collect();
         let mut cones: Vec<Cone> = Vec::new();
 
         loop {
