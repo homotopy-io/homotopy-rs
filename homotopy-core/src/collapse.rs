@@ -184,8 +184,8 @@ pub(crate) fn unify<V, E, Ix>(
         .remove_node(remove)
         .expect("tried to remove missing node");
     on_remove_node(remove);
-    if let Some(k) = graph.node_weight_mut(keep) {
-        k.add_assign(removed);
+    if let Some(node) = graph.node_weight_mut(keep) {
+        node.key.add_assign(removed.key);
     }
 }
 

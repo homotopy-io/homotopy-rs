@@ -1,4 +1,4 @@
-use std::ops::{AddAssign, Index, Range};
+use std::ops::{Index, Range};
 
 use homotopy_common::idx::{Idx, IdxVec};
 use petgraph::{
@@ -82,17 +82,14 @@ where
 }
 
 /// Weighted graph node with associated [`Diagram`].
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ScaffoldNode<V> {
     pub key: V,
     pub diagram: Diagram,
 }
 
 impl<V> ScaffoldNode<V> {
-    pub fn new<D>(key: V, diagram: D) -> Self
-    where
-        D: Into<Diagram>,
-    {
+    pub fn new(key: V, diagram: impl Into<Diagram>) -> Self {
         Self {
             key,
             diagram: diagram.into(),
@@ -104,12 +101,6 @@ impl<V> ScaffoldNode<V> {
             key: f(self.key),
             diagram: self.diagram,
         }
-    }
-}
-
-impl<V: AddAssign> AddAssign for ScaffoldNode<V> {
-    fn add_assign(&mut self, rhs: Self) {
-        self.key += rhs.key;
     }
 }
 
@@ -127,10 +118,7 @@ pub struct ScaffoldEdge<E> {
 }
 
 impl<E> ScaffoldEdge<E> {
-    pub fn new<R>(key: E, rewrite: R) -> Self
-    where
-        R: Into<Rewrite>,
-    {
+    pub fn new(key: E, rewrite: impl Into<Rewrite>) -> Self {
         Self {
             key,
             rewrite: rewrite.into(),
