@@ -405,7 +405,7 @@ fn collapse_simplicies(diagram: impl Into<Diagram>) -> FastHashSet<LabelledSimpl
     scaffold.add_node(diagram.into());
     for _ in 0..dimension {
         scaffold = scaffold
-            .explode_simple(
+            .explode_graph(
                 |_, key, si| match si {
                     SliceIndex::Boundary(_) => None,
                     SliceIndex::Interior(h) => Some([key.as_slice(), &[h]].concat()),

@@ -66,7 +66,7 @@ impl<const N: usize> Projection<N> {
             diagram.clone(),
         ));
         for i in 0..N {
-            graph = graph.explode_simple(
+            graph = graph.explode_graph(
                 |_, key, si| {
                     let mut key = *key;
                     key[i] = si;
@@ -279,7 +279,7 @@ impl<const N: usize> Depths<N> {
             diagram.clone(),
         ));
         for i in 0..N {
-            graph = graph.explode_simple(
+            graph = graph.explode_graph(
                 |_, key, si| {
                     let mut key = *key;
                     key[i] = si;

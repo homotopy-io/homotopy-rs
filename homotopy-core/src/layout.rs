@@ -41,7 +41,7 @@ impl<const N: usize> Layout<N> {
 
         for i in 0..N {
             let positions = layout(&graph, i, |key| &key.0[..i], |key| *key)?;
-            graph = graph.explode_simple(
+            graph = graph.explode_graph(
                 |n, key, si| {
                     let mut key = *key;
                     key.0[i] = si;
