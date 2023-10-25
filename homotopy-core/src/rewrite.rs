@@ -96,31 +96,24 @@ pub enum Rewrite {
 }
 
 impl Rewrite {
-    /// Invariant: depth == boundary_path.depth() + prefix.len() && prefix.is_empty() <=> label_identifications.is_some()
     pub fn cone_over_generator(
         generator: Generator,
         base: Diagram,
         boundary_path: BoundaryPath,
-        depth: usize,
         prefix: &[Height],
         label_identifications: (&mut FastHashSet<Diagram>, &mut LabelIdentifications, bool),
-        rewrite_cache: &mut FastHashMap<
-            (Generator, Diagram, BoundaryPath, usize, Vec<Height>),
-            Self,
-        >,
+        rewrite_cache: &mut FastHashMap<(Generator, Diagram, BoundaryPath, Vec<Height>), Self>,
     ) -> Self {
         use Height::{Regular, Singular};
 
         use crate::Boundary::{Source, Target};
 
+        let depth = boundary_path.depth() + prefix.len();
+
         // memoize to reduce number of recursive calls
-        if let Some(rewrite) = rewrite_cache.get(&(
-            generator,
-            base.clone(),
-            boundary_path,
-            depth,
-            prefix.to_vec(),
-        )) {
+        if let Some(rewrite) =
+            rewrite_cache.get(&(generator, base.clone(), boundary_path, prefix.to_vec()))
+        {
             return rewrite.clone();
         }
 
@@ -144,7 +137,6 @@ impl Rewrite {
                         generator,
                         base.source(),
                         BoundaryPath(Source, depth + 1),
-                        depth + 1,
                         &[],
                         (seen, store, true),
                         rewrite_cache,
@@ -153,7 +145,6 @@ impl Rewrite {
                         generator,
                         base.target(),
                         BoundaryPath(Target, depth + 1),
-                        depth + 1,
                         &[],
                         (seen, store, true),
                         rewrite_cache,
@@ -168,7 +159,6 @@ impl Rewrite {
                             generator,
                             slice,
                             boundary_path,
-                            depth + 1,
                             &[prefix, &[Regular(i)]].concat(),
                             (seen, store, false),
                             rewrite_cache,
@@ -177,7 +167,6 @@ impl Rewrite {
                             generator,
                             slice,
                             boundary_path,
-                            depth + 1,
                             &[prefix, &[Singular(i)]].concat(),
                             (seen, store, false),
                             rewrite_cache,
@@ -198,7 +187,7 @@ impl Rewrite {
         };
 
         rewrite_cache.insert(
-            (generator, base, boundary_path, depth, prefix.to_vec()),
+            (generator, base, boundary_path, prefix.to_vec()),
             result.clone(),
         );
 
