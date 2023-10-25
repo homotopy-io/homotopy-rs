@@ -420,3 +420,43 @@ where
         })
     }
 }
+
+impl Diagram {
+    pub(crate) fn fully_explode<G>(self) -> G
+    where
+        G: Default
+            + Build
+            + ScaffoldGraph<EdgeKey = ()>
+            + EdgeCount
+            + Index<G::NodeId, Output = G::NodeWeight>,
+        for<'a> &'a G: GraphBase<NodeId = G::NodeId, EdgeId = G::EdgeId>
+            + IntoNodeReferences<NodeRef = (G::NodeId, &'a G::NodeWeight)>
+            + IntoEdgeReferences<EdgeWeight = G::EdgeWeight>,
+        G::NodeKey: Clone + Default + IntoIterator<Item = Height> + FromIterator<Height>,
+        G::NodeId: Idx,
+        G::EdgeId: Idx,
+    {
+        // Construct the fully exploded scaffold of the diagram.
+        let mut scaffold: G = Default::default();
+        let dimension = self.dimension();
+        scaffold.add_node(self.into());
+        for _ in 0..dimension {
+            scaffold = scaffold
+                .explode_simple(
+                    |_, key, si| match si {
+                        SliceIndex::Boundary(_) => None,
+                        SliceIndex::Interior(h) => Some(
+                            Clone::clone(key)
+                                .into_iter()
+                                .chain(std::iter::once(h))
+                                .collect(),
+                        ),
+                    },
+                    |_, _, _| Some(()),
+                    |_, _, _| Some(()),
+                )
+                .unwrap();
+        }
+        scaffold
+    }
+}

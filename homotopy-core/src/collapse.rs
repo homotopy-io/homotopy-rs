@@ -1,26 +1,22 @@
 //! Functions to collapse diagram scaffolds; used in contraction, typechecking etc.
-use std::ops::{AddAssign, Index};
+use std::ops::AddAssign;
 
-use homotopy_common::{declare_idx, hash::FastHashSet, idx::Idx};
+use homotopy_common::{declare_idx, hash::FastHashSet};
 use im::OrdSet;
 use itertools::Itertools;
 use once_cell::unsync::OnceCell;
 use petgraph::{
-    data::Build,
     prelude::DiGraph,
     stable_graph::{DefaultIx, EdgeIndex, IndexType, NodeIndex},
     unionfind::UnionFind,
-    visit::{
-        EdgeCount, EdgeFiltered, EdgeRef, GraphBase, IntoEdgeReferences, IntoNodeReferences, Topo,
-        Walker,
-    },
+    visit::{EdgeFiltered, EdgeRef, IntoEdgeReferences, IntoNodeReferences, Topo, Walker},
     Direction::{Incoming, Outgoing},
 };
 
 use crate::{
     common::{Label, LabelIdentifications},
-    scaffold::{Explodable, Scaffold, ScaffoldGraph, ScaffoldNode, StableScaffold},
-    Diagram, Height, Rewrite0, SliceIndex,
+    scaffold::{Scaffold, ScaffoldNode, StableScaffold},
+    Diagram, Height, Rewrite0,
 };
 
 /// Trait for objects which have associated coordinates in `C`.
@@ -333,44 +329,6 @@ where
 }
 
 impl Diagram {
-    pub(crate) fn fully_explode<G>(self) -> G
-    where
-        G: Default
-            + Build
-            + ScaffoldGraph<EdgeKey = ()>
-            + EdgeCount
-            + Index<G::NodeId, Output = G::NodeWeight>,
-        for<'a> &'a G: GraphBase<NodeId = G::NodeId, EdgeId = G::EdgeId>
-            + IntoNodeReferences<NodeRef = (G::NodeId, &'a G::NodeWeight)>
-            + IntoEdgeReferences<EdgeWeight = G::EdgeWeight>,
-        G::NodeKey: Clone + Default + IntoIterator<Item = Height> + FromIterator<Height>,
-        G::NodeId: Idx,
-        G::EdgeId: Idx,
-    {
-        // Construct the fully exploded scaffold of the diagram.
-        let mut scaffold: G = Default::default();
-        let dimension = self.dimension();
-        scaffold.add_node(self.into());
-        for _ in 0..dimension {
-            scaffold = scaffold
-                .explode_simple(
-                    |_, key, si| match si {
-                        SliceIndex::Boundary(_) => None,
-                        SliceIndex::Interior(h) => Some(
-                            Clone::clone(key)
-                                .into_iter()
-                                .chain(std::iter::once(h))
-                                .collect(),
-                        ),
-                    },
-                    |_, _, _| Some(()),
-                    |_, _, _| Some(()),
-                )
-                .unwrap();
-        }
-        scaffold
-    }
-
     pub(crate) fn label_identifications(self) -> LabelIdentifications {
         let (stable, union_find) = self.fully_explode::<Scaffold<Vec<Height>>>().collapse();
         union_find
