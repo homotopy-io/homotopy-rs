@@ -330,21 +330,22 @@ where
 
 impl Diagram {
     pub(crate) fn label_identifications(self) -> LabelIdentifications {
-        let (stable, union_find) = self.fully_explode::<Scaffold<Vec<Height>>>().collapse();
-        union_find
-            .into_labeling()
-            .into_iter()
-            .flat_map(|ix| {
-                match stable[ix].key.clone() {
-                    OneMany::One(c) => vec![(c.clone(), OrdSet::unit(c))],
-                    OneMany::Many(cs) => {
-                        let shared = cs.clone();
-                        cs.into_iter().map(|c| (c, shared.clone())).collect()
+        let graph = self.fully_explode::<Scaffold<Vec<Height>>>();
+        let mut labels =
+            LabelIdentifications::with_capacity_and_hasher(graph.node_count(), Default::default());
+        for node in graph.collapse().0.node_weights() {
+            match &node.key {
+                OneMany::One(c) => {
+                    labels.insert(c.clone(), OrdSet::unit(c.clone()));
+                }
+                OneMany::Many(cs) => {
+                    for c in cs {
+                        labels.insert(c.clone(), cs.clone());
                     }
                 }
-                .into_iter()
-            })
-            .collect()
+            }
+        }
+        labels
     }
 }
 
