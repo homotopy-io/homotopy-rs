@@ -12,7 +12,7 @@ homotopy-core = { path = "../homotopy-core" }
 homotopy-graphics = { path = "../homotopy-graphics" }
 quote = "1.0.33"
 serde = { version = "1.0.185", features = ["derive"] }
-syn = "2.0.38"
+syn = "2.0.39"
 paste = "1.0.14"
 rmp-serde = "1.1.2"
 serde_json = "1.0.108"
