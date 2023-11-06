@@ -1,5 +1,6 @@
 use std::ops::Range;
 
+use homotopy_common::iter::ZeroOneMany;
 use itertools::{Itertools, MultiProduct};
 
 use crate::{
@@ -9,14 +10,17 @@ use crate::{
     Cospan, Diagram, Height, Rewrite, RewriteN,
 };
 
+pub type Factorization = ZeroOneMany<FactorizationInternal>;
+pub type ConeFactorization = ZeroOneMany<ConeFactorizationInternal>;
+
 /// Given `Rewrite`s A -f> C <g- B, find some `Rewrite` A -h> B which factorises f = g ∘ h.
 pub fn factorize(f: Rewrite, g: Rewrite, target: Diagram) -> Factorization {
     if g.is_identity() {
-        return Factorization::Unique(f.into());
+        return Factorization::One(f);
     }
 
     if f.equals_modulo_labels(&g) {
-        return Factorization::Unique(Rewrite::identity(f.dimension()).into());
+        return Factorization::One(Rewrite::identity(f.dimension()));
     }
 
     match (f, g, target) {
@@ -24,7 +28,7 @@ pub fn factorize(f: Rewrite, g: Rewrite, target: Diagram) -> Factorization {
             assert!(f.target().is_none() || f.target() == Some(t));
             assert!(g.target().is_none() || g.target() == Some(t));
 
-            Factorization::Unique(None)
+            Factorization::Empty
         }
         (Rewrite::RewriteN(f), Rewrite::RewriteN(g), Diagram::DiagramN(target)) => {
             assert_eq!(f.dimension(), g.dimension());
@@ -51,9 +55,9 @@ pub fn factorize(f: Rewrite, g: Rewrite, target: Diagram) -> Factorization {
                             .cone_over_target(i)
                             .either(|c| (Some(c.clone()), c.index), |i| (None, i));
                         match g.cone_over_target(i).left().cloned() {
-                            None => ConeFactorization::Unique(
-                                f_cone.map(|c| vec![c]).unwrap_or_default().into(),
-                            ),
+                            None => {
+                                ConeFactorization::One(f_cone.map(|c| vec![c]).unwrap_or_default())
+                            }
                             Some(g_cone)
                                 if f_cone.as_ref().map_or(false, |c| {
                                     c.source() == g_cone.source()
@@ -70,14 +74,14 @@ pub fn factorize(f: Rewrite, g: Rewrite, target: Diagram) -> Factorization {
                                         .all(|(f, g)| f.equals_modulo_labels(g))
                                 }) =>
                             {
-                                ConeFactorization::Unique(vec![].into())
+                                ConeFactorization::One(vec![])
                             }
                             Some(g_cone) => {
                                 let f_cone_len = f_cone.as_ref().map_or(1, Cone::len);
                                 let constraints: Vec<Range<usize>> =
                                     vec![0..g_cone.singular_slices().len(); f_cone_len];
                                 let monotone = MonotoneIterator::new(false, &constraints);
-                                ConeFactorization::Iterator(ConeFactorizationInternal {
+                                ConeFactorization::Many(ConeFactorizationInternal {
                                     f_cone,
                                     g_cone,
                                     singular,
@@ -91,51 +95,32 @@ pub fn factorize(f: Rewrite, g: Rewrite, target: Diagram) -> Factorization {
                     .multi_cartesian_product()
             };
 
-            Factorization::Iterator(f.dimension(), cones)
+            Factorization::Many(FactorizationInternal {
+                dimension: f.dimension(),
+                cones,
+            })
         }
         _ => panic!("Mismatched dimensions"),
     }
 }
 
 #[derive(Clone)]
-pub enum Factorization {
-    Unique(Option<Rewrite>),
-    Iterator(usize, MultiProduct<ConeFactorization>),
+pub struct FactorizationInternal {
+    dimension: usize,
+    cones: MultiProduct<ConeFactorization>,
 }
 
-impl Iterator for Factorization {
+impl Iterator for FactorizationInternal {
     type Item = Rewrite;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self {
-            Self::Unique(h) => h.take(),
-            Self::Iterator(dim, cones) => cones
-                .next()
-                .map(|cs| RewriteN::new(*dim, cs.concat()).into()),
-        }
+        self.cones
+            .next()
+            .map(|cs| RewriteN::new(self.dimension, cs.concat()).into())
     }
 }
 
-impl std::iter::FusedIterator for Factorization {}
-
-#[derive(Clone)]
-pub enum ConeFactorization {
-    Unique(Option<Vec<Cone>>),
-    Iterator(ConeFactorizationInternal),
-}
-
-impl Iterator for ConeFactorization {
-    type Item = Vec<Cone>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match self {
-            ConeFactorization::Unique(cones) => cones.take(),
-            ConeFactorization::Iterator(cones) => cones.next(),
-        }
-    }
-}
-
-impl std::iter::FusedIterator for ConeFactorization {}
+impl std::iter::FusedIterator for FactorizationInternal {}
 
 #[derive(Clone)]
 pub struct ConeFactorizationInternal {
