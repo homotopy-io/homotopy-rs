@@ -7,7 +7,7 @@ use crate::{
     common::Mode,
     monotone::{MonotoneIterator, Split},
     rewrite::Cone,
-    Cospan, Height, Rewrite, RewriteN,
+    Cospan, Height, Rewrite, Rewrite0, RewriteN,
 };
 
 pub type Factorization = ZeroOneMany<FactorizationInternal>;
@@ -15,14 +15,6 @@ pub type ConeFactorization = ZeroOneMany<ConeFactorizationInternal>;
 
 /// Given `Rewrite`s A -f> C <g- B, find some `Rewrite` A -h> B which factorises f = g ∘ h.
 pub fn factorize(f: Rewrite, g: Rewrite) -> Factorization {
-    if g.is_identity() {
-        return Factorization::One(f);
-    }
-
-    if f.equals_modulo_labels(&g) {
-        return Factorization::One(Rewrite::identity(f.dimension()));
-    }
-
     match (f, g) {
         (Rewrite::Rewrite0(f), Rewrite::Rewrite0(g)) => {
             assert!(f
@@ -30,10 +22,29 @@ pub fn factorize(f: Rewrite, g: Rewrite) -> Factorization {
                 .zip(g.target())
                 .map_or(true, |(f_t, g_t)| f_t == g_t));
 
-            Factorization::Empty
+            match g.source() {
+                None => Factorization::One(f.into()),
+                Some(g_s) => {
+                    match f
+                        .source()
+                        .filter(|f_s| f_s.generator.dimension <= g_s.generator.dimension)
+                    {
+                        None => Factorization::Empty,
+                        Some(f_s) => Factorization::One(Rewrite0::new(f_s, g_s, None).into()),
+                    }
+                }
+            }
         }
         (Rewrite::RewriteN(f), Rewrite::RewriteN(g)) => {
             assert_eq!(f.dimension(), g.dimension());
+
+            if g.is_identity() {
+                return Factorization::One(f.into());
+            }
+
+            if f.equals_modulo_labels(&g) {
+                return Factorization::One(Rewrite::identity(f.dimension()));
+            }
 
             let cones = {
                 // the defining property of cones is that each singular height in the
