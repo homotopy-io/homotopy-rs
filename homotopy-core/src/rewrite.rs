@@ -510,28 +510,6 @@ impl RewriteN {
         regular_slices: Vec<Vec<Rewrite>>,
         singular_slices: Vec<Vec<Rewrite>>,
     ) -> Self {
-        let rewrite = Self::from_slices_unsafe(
-            dimension,
-            source_cospans,
-            target_cospans,
-            regular_slices,
-            singular_slices,
-        );
-        if cfg!(feature = "safety-checks") {
-            rewrite.check(Mode::Shallow).expect("Rewrite is malformed");
-        }
-        rewrite
-    }
-
-    /// Unsafe version of `from_slices` which does not check if the rewrite is well-formed.
-    #[inline]
-    pub fn from_slices_unsafe(
-        dimension: usize,
-        source_cospans: &[Cospan],
-        target_cospans: &[Cospan],
-        regular_slices: Vec<Vec<Rewrite>>,
-        singular_slices: Vec<Vec<Rewrite>>,
-    ) -> Self {
         let mut cones = Vec::new();
         let mut index = 0;
 
@@ -547,7 +525,7 @@ impl RewriteN {
             index += size;
         }
 
-        Self::new_unsafe(dimension, cones)
+        Self::new(dimension, cones)
     }
 
     #[must_use]
