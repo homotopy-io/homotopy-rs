@@ -3,8 +3,7 @@ use homotopy_core::{
     factorization::factorize,
     rewrite::Cone,
     signature::{Signature, SignatureBuilder},
-    Boundary, Cospan, Diagram, DiagramN, Generator, Height, Rewrite, Rewrite0, RewriteN,
-    SliceIndex,
+    Boundary, Cospan, DiagramN, Generator, Height, Rewrite, Rewrite0, RewriteN, SliceIndex,
 };
 
 #[test]
@@ -163,17 +162,13 @@ fn bead_rewrite_base() -> Result<(), String> {
         ],
     );
 
-    let mut with_identity = factorize(
-        f.clone().into(),
-        Rewrite::identity(1),
-        terminal.clone().into(),
-    );
+    let mut with_identity = factorize(f.clone().into(), Rewrite::identity(1));
     assert_eq!(with_identity.next(), Some(f.clone().into()));
 
-    let mut with_f = factorize(f.clone().into(), f.clone().into(), terminal.clone().into());
+    let mut with_f = factorize(f.clone().into(), f.clone().into());
     assert_eq!(with_f.next(), Some(Rewrite::identity(1)));
 
-    let mut with_g = factorize(f.into(), g.into(), terminal.into());
+    let mut with_g = factorize(f.into(), g.into());
     assert_eq!(with_g.next(), Some(h.into()));
 
     Ok(())
@@ -280,9 +275,7 @@ fn scalar_braid() {
     )
     .into();
 
-    let target = DiagramN::new(Diagram::Diagram0(x.into()), vec![s_cospan, f_cospan]).into();
-
-    let mut fact = factorize(rewrite_f, rewrite_g, target);
+    let mut fact = factorize(rewrite_f, rewrite_g);
 
     assert!(fact.next().is_some());
 }

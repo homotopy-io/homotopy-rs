@@ -433,20 +433,13 @@ pub(crate) fn expand_propagate(
         Height::Singular(i) => i,
     };
 
-    let slice = diagram
-        .slice(Height::Singular(i))
+    let target_cospan = diagram
+        .cospans()
+        .get(i)
         .ok_or(ExpansionError::OutOfBounds)?;
 
-    let target_cospan = &diagram.cospans()[i];
-
-    let forward = factorize(
-        target_cospan.forward.clone(),
-        expansion.clone(),
-        slice.clone(),
-    )
-    .next();
-
-    let backward = factorize(target_cospan.backward.clone(), expansion.clone(), slice).next();
+    let forward = factorize(target_cospan.forward.clone(), expansion.clone()).next();
+    let backward = factorize(target_cospan.backward.clone(), expansion.clone()).next();
 
     #[allow(clippy::single_match_else)]
     let cone = match (forward, backward) {
