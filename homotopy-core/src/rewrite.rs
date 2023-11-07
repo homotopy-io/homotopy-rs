@@ -596,16 +596,12 @@ impl RewriteN {
     }
 
     /// For each cone, find its target singular height
-    pub fn targets(&self) -> Vec<usize> {
-        let mut targets = Vec::new();
-        let mut offset: isize = 0;
-
-        for cone in self.cones() {
-            targets.push((cone.index as isize + offset) as usize);
-            offset += 1 - cone.len() as isize;
-        }
-
-        targets
+    pub fn targets(&self) -> impl Iterator<Item = usize> + '_ {
+        self.cones().iter().scan(0, |offset, cone| {
+            let target = (cone.index as isize + *offset) as usize;
+            *offset += 1 - cone.len() as isize;
+            Some(target)
+        })
     }
 
     /// Find a cone targeting a singular height

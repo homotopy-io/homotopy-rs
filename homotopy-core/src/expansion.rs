@@ -289,8 +289,8 @@ fn expand_cospan(
     backward: &RewriteN,
 ) -> Result<ExpandedCospan, ExpansionError> {
     debug_assert_eq!(forward.dimension(), backward.dimension());
-    let forward_targets = forward.targets();
-    let backward_targets = backward.targets();
+    let forward_targets: Vec<_> = forward.targets().collect();
+    let backward_targets: Vec<_> = backward.targets().collect();
 
     let forward_index = forward_targets.iter().position(|t| *t == height);
     let backward_index = backward_targets.iter().position(|t| *t == height);

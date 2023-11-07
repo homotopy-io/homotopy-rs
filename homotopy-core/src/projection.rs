@@ -304,7 +304,7 @@ impl<const N: usize> Depths<N> {
                     edge_depths[edge.id()] =
                         node_depths[edge.source()].map(|d| r.singular_image(d));
 
-                    let target_depth = r.targets().first().copied();
+                    let target_depth = r.targets().next();
                     node_depths[node] = min_defined(
                         min_defined(node_depths[node], edge_depths[edge.id()]),
                         target_depth,
