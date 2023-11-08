@@ -466,14 +466,8 @@ pub(crate) fn expand_propagate(
             }
         }
         // (Some(forward), None) => {
-        //     let (backward, inclusion) = factorize_inc(
-        //         &slice
-        //             .clone()
-        //             .rewrite_backward(&target_cospan.backward)
-        //             .unwrap(),
-        //         &slice,
-        //         &target_cospan.backward,
-        //     );
+        //     let slice = diagram.slice(Height::Singular(i)).unwrap();
+        //     let (backward, inclusion) = factorize2(&slice, &target_cospan.backward).unwrap();
         //     let (_, inner_backward, inner_forward) = antipushout(
         //         &slice.clone().rewrite_backward(&expansion).unwrap(),
         //         &slice.clone().rewrite_backward(&inclusion).unwrap(),
@@ -483,7 +477,7 @@ pub(crate) fn expand_propagate(
         //     )[0]
         //     .clone();
 
-        //     Some(Cone::new(
+        //     Some(Cone::new_unlabelled(
         //         i,
         //         vec![
         //             Cospan {
@@ -496,19 +490,12 @@ pub(crate) fn expand_propagate(
         //             },
         //         ],
         //         target_cospan.clone(),
-        //         todo!("need antipushout"),
         //         vec![expansion, inclusion],
         //     ))
         // }
         // (None, Some(backward)) => {
-        //     let (forward, inclusion) = factorize_inc(
-        //         &slice
-        //             .clone()
-        //             .rewrite_backward(&target_cospan.forward)
-        //             .unwrap(),
-        //         &slice,
-        //         &target_cospan.forward,
-        //     );
+        //     let slice = diagram.slice(Height::Singular(i)).unwrap();
+        //     let (forward, inclusion) = factorize2(&slice, &target_cospan.forward).unwrap();
         //     let (_, inner_backward, inner_forward) = antipushout(
         //         &slice.clone().rewrite_backward(&inclusion).unwrap(),
         //         &slice.clone().rewrite_backward(&expansion).unwrap(),
@@ -518,7 +505,7 @@ pub(crate) fn expand_propagate(
         //     )[0]
         //     .clone();
 
-        //     Some(Cone::new(
+        //     Some(Cone::new_unlabelled(
         //         i,
         //         vec![
         //             Cospan {
@@ -531,7 +518,6 @@ pub(crate) fn expand_propagate(
         //             },
         //         ],
         //         target_cospan.clone(),
-        //         todo!("need antipushout"),
         //         vec![inclusion, expansion],
         //     ))
         // }
