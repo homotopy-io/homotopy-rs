@@ -467,7 +467,7 @@ pub(crate) fn expand_propagate(
         }
         // (Some(forward), None) => {
         //     let slice = diagram.slice(Height::Singular(i)).unwrap();
-        //     let (backward, inclusion) = factorize2(&slice, &target_cospan.backward).unwrap();
+        //     let (backward, inclusion) = factorize2(&target_cospan.backward).unwrap();
         //     let (_, inner_backward, inner_forward) = antipushout(
         //         &slice.clone().rewrite_backward(&expansion).unwrap(),
         //         &slice.clone().rewrite_backward(&inclusion).unwrap(),
@@ -495,7 +495,7 @@ pub(crate) fn expand_propagate(
         // }
         // (None, Some(backward)) => {
         //     let slice = diagram.slice(Height::Singular(i)).unwrap();
-        //     let (forward, inclusion) = factorize2(&slice, &target_cospan.forward).unwrap();
+        //     let (forward, inclusion) = factorize2(&target_cospan.forward).unwrap();
         //     let (_, inner_backward, inner_forward) = antipushout(
         //         &slice.clone().rewrite_backward(&inclusion).unwrap(),
         //         &slice.clone().rewrite_backward(&expansion).unwrap(),
