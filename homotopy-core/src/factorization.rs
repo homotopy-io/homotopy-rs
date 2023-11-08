@@ -1,13 +1,13 @@
 use std::{collections::BTreeSet, ops::Range};
 
 use homotopy_common::iter::ZeroOneMany;
-use itertools::{Itertools, MultiProduct};
+use itertools::{Either, Itertools, MultiProduct};
 
 use crate::{
     common::Mode,
     monotone::{MonotoneIterator, Split},
     rewrite::Cone,
-    Cospan, Height, Rewrite, Rewrite0, RewriteN,
+    Cospan, Diagram, Height, Rewrite, Rewrite0, RewriteN,
 };
 
 pub type Factorization = ZeroOneMany<FactorizationInternal>;
@@ -224,3 +224,82 @@ impl Iterator for ConeIterator {
 }
 
 impl std::iter::FusedIterator for ConeIterator {}
+
+/// Given a `Rewrite` A -f> B, find some `Rewrite`s A -p> C -q> B such that f = q ∘ p.
+pub fn factorize2(target: &Diagram, rewrite: &Rewrite) -> Option<(Rewrite, Rewrite)> {
+    let (ps, q) = factorize_sink(target, std::slice::from_ref(rewrite))?;
+    Some((ps.into_iter().next().unwrap(), q))
+}
+
+pub(crate) fn factorize_sink(
+    target: &Diagram,
+    rewrites: &[Rewrite],
+) -> Option<(Vec<Rewrite>, Rewrite)> {
+    match target {
+        Diagram::Diagram0(_) => {
+            let rewrite = rewrites.iter().all_equal_value().ok()?;
+            Some((vec![Rewrite::identity(0); rewrites.len()], rewrite.clone()))
+        }
+        Diagram::DiagramN(target) => {
+            let mut p_cones = vec![vec![]; rewrites.len()];
+            let mut q_cones = vec![];
+
+            for (i, target_slice) in target.singular_slices().enumerate() {
+                let target_cospan = &target.cospans()[i];
+
+                // Recursively factorise the slices into the target slice.
+                let (mut ps, q) = {
+                    let mut rewrite_slices = Vec::default();
+                    for rewrite in rewrites {
+                        let rewrite: &RewriteN = rewrite.try_into().ok()?;
+                        match rewrite.cone_over_target(i).left() {
+                            None => {
+                                rewrite_slices.push(Rewrite::identity(target_slice.dimension()));
+                            }
+                            Some(cone) => {
+                                rewrite_slices.extend(cone.singular_slices().iter().cloned());
+                            }
+                        }
+                    }
+                    factorize_sink(&target_slice, &rewrite_slices)?
+                };
+
+                let middle_cospan = Cospan {
+                    forward: factorize(&target_cospan.forward, &q).next()?,
+                    backward: factorize(&target_cospan.backward, &q).next()?,
+                };
+
+                for (rewrite, p_cones) in rewrites.iter().zip(p_cones.iter_mut()) {
+                    let rewrite: &RewriteN = rewrite.try_into().ok()?;
+
+                    let (index, source, len) = match rewrite.cone_over_target(i) {
+                        Either::Left(c) => (c.index, c.source().to_vec(), c.len()),
+                        Either::Right(index) => (index, vec![target_cospan.clone()], 1),
+                    };
+
+                    p_cones.push(Cone::new_unlabelled(
+                        index,
+                        source,
+                        middle_cospan.clone(),
+                        ps.drain(..len).collect(),
+                    ));
+                }
+
+                q_cones.push(Cone::new_unlabelled(
+                    i,
+                    vec![middle_cospan],
+                    target_cospan.clone(),
+                    vec![q],
+                ));
+            }
+
+            Some((
+                p_cones
+                    .into_iter()
+                    .map(|p_cones| RewriteN::new(target.dimension(), p_cones).into())
+                    .collect(),
+                RewriteN::new(target.dimension(), q_cones).into(),
+            ))
+        }
+    }
+}
