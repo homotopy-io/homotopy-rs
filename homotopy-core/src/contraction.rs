@@ -321,6 +321,7 @@ fn contract_in_path(
                         first,
                         expand_base.into(),
                         false,
+                        false,
                     )
                     .map_err(|_err| ContractionError::Invalid)?;
                     Ok(ContractExpand { contract, expand })
@@ -390,6 +391,7 @@ fn contract_in_path(
                         first,
                         expand_base.into(),
                         true,
+                        false,
                     )
                     .map_err(|_err| ContractionError::Invalid)?;
                     Ok(ContractExpand { contract, expand })

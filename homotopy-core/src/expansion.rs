@@ -6,12 +6,13 @@ use std::{
 use thiserror::Error;
 
 use crate::{
+    antipushout::antipushout,
     attach::attach,
     common::{
         Boundary, BoundaryPath, DimensionError, Direction, Height, RegularHeight, SingularHeight,
     },
     diagram::DiagramN,
-    factorization::factorize,
+    factorization::{factorize, factorize2},
     rewrite::{Cone, Cospan, Rewrite, RewriteN},
     signature::Signature,
     typecheck::{typecheck_cospan, TypeError},
@@ -97,7 +98,7 @@ pub fn expand_in_path(
                 .ok_or(ExpansionError::OutOfBounds)?
                 .try_into()?;
             let recursive = expand_in_path(&slice, rest, point, direction)?;
-            expand_propagate(diagram, step, recursive.into(), true)
+            expand_propagate(diagram, step, recursive.into(), true, true)
         }
     }
 }
@@ -427,6 +428,7 @@ pub(crate) fn expand_propagate(
     height: &mut Height,
     expansion: Rewrite,
     normalize: bool,
+    anticontraction: bool,
 ) -> Result<RewriteN, ExpansionError> {
     let i = match *height {
         Height::Regular(_) => return Err(ExpansionError::RegularSlice),
@@ -465,62 +467,62 @@ pub(crate) fn expand_propagate(
                 ))
             }
         }
-        // (Some(forward), None) => {
-        //     let slice = diagram.slice(Height::Singular(i)).unwrap();
-        //     let (backward, inclusion) = factorize2(&target_cospan.backward).unwrap();
-        //     let (_, inner_backward, inner_forward) = antipushout(
-        //         &slice.clone().rewrite_backward(&expansion).unwrap(),
-        //         &slice.clone().rewrite_backward(&inclusion).unwrap(),
-        //         &slice,
-        //         &expansion,
-        //         &inclusion,
-        //     )[0]
-        //     .clone();
+        (Some(forward), None) if anticontraction => {
+            let slice = diagram.slice(Height::Singular(i)).unwrap();
+            let (backward, inclusion) = factorize2(&target_cospan.backward).unwrap();
+            let (_, inner_backward, inner_forward) = antipushout(
+                &slice.clone().rewrite_backward(&expansion).unwrap(),
+                &slice.clone().rewrite_backward(&inclusion).unwrap(),
+                &slice,
+                &expansion,
+                &inclusion,
+            )[0]
+            .clone();
 
-        //     Some(Cone::new_unlabelled(
-        //         i,
-        //         vec![
-        //             Cospan {
-        //                 forward,
-        //                 backward: inner_backward,
-        //             },
-        //             Cospan {
-        //                 forward: inner_forward,
-        //                 backward,
-        //             },
-        //         ],
-        //         target_cospan.clone(),
-        //         vec![expansion, inclusion],
-        //     ))
-        // }
-        // (None, Some(backward)) => {
-        //     let slice = diagram.slice(Height::Singular(i)).unwrap();
-        //     let (forward, inclusion) = factorize2(&target_cospan.forward).unwrap();
-        //     let (_, inner_backward, inner_forward) = antipushout(
-        //         &slice.clone().rewrite_backward(&inclusion).unwrap(),
-        //         &slice.clone().rewrite_backward(&expansion).unwrap(),
-        //         &slice,
-        //         &inclusion,
-        //         &expansion,
-        //     )[0]
-        //     .clone();
+            Some(Cone::new_unlabelled(
+                i,
+                vec![
+                    Cospan {
+                        forward,
+                        backward: inner_backward,
+                    },
+                    Cospan {
+                        forward: inner_forward,
+                        backward,
+                    },
+                ],
+                target_cospan.clone(),
+                vec![expansion, inclusion],
+            ))
+        }
+        (None, Some(backward)) if anticontraction => {
+            let slice = diagram.slice(Height::Singular(i)).unwrap();
+            let (forward, inclusion) = factorize2(&target_cospan.forward).unwrap();
+            let (_, inner_backward, inner_forward) = antipushout(
+                &slice.clone().rewrite_backward(&inclusion).unwrap(),
+                &slice.clone().rewrite_backward(&expansion).unwrap(),
+                &slice,
+                &inclusion,
+                &expansion,
+            )[0]
+            .clone();
 
-        //     Some(Cone::new_unlabelled(
-        //         i,
-        //         vec![
-        //             Cospan {
-        //                 forward,
-        //                 backward: inner_backward,
-        //             },
-        //             Cospan {
-        //                 forward: inner_forward,
-        //                 backward,
-        //             },
-        //         ],
-        //         target_cospan.clone(),
-        //         vec![inclusion, expansion],
-        //     ))
-        // }
+            Some(Cone::new_unlabelled(
+                i,
+                vec![
+                    Cospan {
+                        forward,
+                        backward: inner_backward,
+                    },
+                    Cospan {
+                        forward: inner_forward,
+                        backward,
+                    },
+                ],
+                target_cospan.clone(),
+                vec![inclusion, expansion],
+            ))
+        }
         _ => {
             let source_cospans = vec![
                 Cospan {
