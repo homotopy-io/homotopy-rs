@@ -438,8 +438,8 @@ pub(crate) fn expand_propagate(
         .get(i)
         .ok_or(ExpansionError::OutOfBounds)?;
 
-    let forward = factorize(target_cospan.forward.clone(), expansion.clone()).next();
-    let backward = factorize(target_cospan.backward.clone(), expansion.clone()).next();
+    let forward = factorize(&target_cospan.forward, &expansion).next();
+    let backward = factorize(&target_cospan.backward, &expansion).next();
 
     #[allow(clippy::single_match_else)]
     let cone = match (forward, backward) {

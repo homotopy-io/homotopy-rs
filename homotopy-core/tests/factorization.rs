@@ -98,7 +98,8 @@ fn bead_rewrite_base() -> Result<(), String> {
                 .map_err(|_err| "malformed diagram")?
                 .slice(0)],
         ],
-    );
+    )
+    .into();
 
     // x -> bead_rewrite <- x ---> e <-- x
     // |        |           |      |     |
@@ -124,7 +125,8 @@ fn bead_rewrite_base() -> Result<(), String> {
                 .map_err(|_err| "malformed diagram")?
                 .slice(0)],
         ],
-    );
+    )
+    .into();
 
     // x -> e <------------ x -> e <- x
     // |     \              |    |    |
@@ -160,16 +162,17 @@ fn bead_rewrite_base() -> Result<(), String> {
             .slice(0)],
             vec![Rewrite::identity(0)],
         ],
-    );
+    )
+    .into();
 
-    let mut with_identity = factorize(f.clone().into(), Rewrite::identity(1));
-    assert_eq!(with_identity.next(), Some(f.clone().into()));
+    let mut with_identity = factorize(&f, &Rewrite::identity(1));
+    assert_eq!(with_identity.next(), Some(f.clone()));
 
-    let mut with_f = factorize(f.clone().into(), f.clone().into());
+    let mut with_f = factorize(&f, &f);
     assert_eq!(with_f.next(), Some(Rewrite::identity(1)));
 
-    let mut with_g = factorize(f.into(), g.into());
-    assert_eq!(with_g.next(), Some(h.into()));
+    let mut with_g = factorize(&f, &g);
+    assert_eq!(with_g.next(), Some(h));
 
     Ok(())
 }
@@ -275,7 +278,7 @@ fn scalar_braid() {
     )
     .into();
 
-    let mut fact = factorize(rewrite_f, rewrite_g);
+    let mut fact = factorize(&rewrite_f, &rewrite_g);
 
     assert!(fact.next().is_some());
 }

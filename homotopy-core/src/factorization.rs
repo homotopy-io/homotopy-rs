@@ -14,7 +14,7 @@ pub type Factorization = ZeroOneMany<FactorizationInternal>;
 pub type ConeFactorization = ZeroOneMany<ConeFactorizationInternal>;
 
 /// Given `Rewrite`s A -f> C <g- B, find some `Rewrite` A -h> B which factorises f = g ∘ h.
-pub fn factorize(f: Rewrite, g: Rewrite) -> Factorization {
+pub fn factorize(f: &Rewrite, g: &Rewrite) -> Factorization {
     match (f, g) {
         (Rewrite::Rewrite0(f), Rewrite::Rewrite0(g)) => {
             assert!(f
@@ -23,7 +23,7 @@ pub fn factorize(f: Rewrite, g: Rewrite) -> Factorization {
                 .map_or(true, |(f_t, g_t)| f_t == g_t));
 
             match g.source() {
-                None => Factorization::One(f.into()),
+                None => Factorization::One(f.clone().into()),
                 Some(g_s) => {
                     match f
                         .source()
@@ -39,10 +39,10 @@ pub fn factorize(f: Rewrite, g: Rewrite) -> Factorization {
             assert_eq!(f.dimension(), g.dimension());
 
             if g.is_identity() {
-                return Factorization::One(f.into());
+                return Factorization::One(f.clone().into());
             }
 
-            if f.equals_modulo_labels(&g) {
+            if f.equals_modulo_labels(g) {
                 return Factorization::One(Rewrite::identity(f.dimension()));
             }
 
@@ -155,16 +155,16 @@ impl Iterator for ConeFactorizationInternal {
                         .cones(self.g_cone.len())
                         .map(|Split { source, target }| {
                             let g_slice = &self.g_cone.singular_slices()[target];
+                            let id = Rewrite::identity(g_slice.dimension());
                             let f_slice = |h: Height| {
-                                self.f_cone.as_ref().map_or_else(
-                                    || Rewrite::identity(g_slice.dimension()),
-                                    |f_cone| f_cone.slice(h).clone(),
-                                )
+                                self.f_cone
+                                    .as_ref()
+                                    .map_or_else(|| &id, |f_cone| f_cone.slice(h))
                             };
 
                             let slices_product = (usize::from(Height::Regular(source.start))
                                 ..=usize::from(Height::Regular(source.end)))
-                                .map(|i| factorize(f_slice(Height::from(i)), g_slice.clone()))
+                                .map(|i| factorize(f_slice(Height::from(i)), g_slice))
                                 .multi_cartesian_product();
 
                             ConeIterator {
