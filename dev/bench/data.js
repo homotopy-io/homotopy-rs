@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1699404952294,
+  "lastUpdate": 1699449688040,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -48875,6 +48875,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 422,
             "range": "+/- 5.100",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "6db5a7d5b154e22f1dfa9d3e0519efcc5ebc850c",
+          "message": "Sink factorization structure for rewrites\n\nNeeded for anticontraction",
+          "timestamp": "2023-11-08T12:50:13Z",
+          "tree_id": "6761aebef35dea38961ecf53054438a06f529517",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/6db5a7d5b154e22f1dfa9d3e0519efcc5ebc850c"
+        },
+        "date": 1699449674827,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 1.2414,
+            "range": "+/- 0.003",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 12.019,
+            "range": "+/- 0.034",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 227.34,
+            "range": "+/- 1.940",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 5.3451,
+            "range": "+/- 0.008",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 9.4439,
+            "range": "+/- 0.151",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 239.23,
+            "range": "+/- 1.110",
             "unit": "ms"
           }
         ]
