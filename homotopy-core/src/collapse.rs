@@ -1,7 +1,7 @@
 //! Functions to collapse diagram scaffolds; used in contraction, typechecking etc.
 use std::ops::AddAssign;
 
-use homotopy_common::{declare_idx, hash::FastHashSet};
+use homotopy_common::{declare_idx, hash::FastHashSet, iter::ZeroOneMany};
 use im::OrdSet;
 use itertools::Itertools;
 use once_cell::unsync::OnceCell;
@@ -330,22 +330,15 @@ where
 
 impl Diagram {
     pub(crate) fn label_identifications(self) -> LabelIdentifications {
-        let graph = self.fully_explode::<Scaffold<Vec<Height>>>();
-        let mut labels =
-            LabelIdentifications::with_capacity_and_hasher(graph.node_count(), Default::default());
-        for node in graph.collapse().0.node_weights() {
-            match &node.key {
-                OneMany::One(c) => {
-                    labels.insert(c.clone(), OrdSet::unit(c.clone()));
-                }
-                OneMany::Many(cs) => {
-                    for c in cs {
-                        labels.insert(c.clone(), cs.clone());
-                    }
-                }
-            }
-        }
-        labels
+        self.fully_explode::<Scaffold<Vec<Height>>>()
+            .collapse()
+            .0
+            .node_weights()
+            .flat_map(|node| match &node.key {
+                OneMany::One(c) => ZeroOneMany::One((c.clone(), OrdSet::unit(c.clone()))),
+                OneMany::Many(cs) => ZeroOneMany::Many(cs.iter().map(|c| (c.clone(), cs.clone()))),
+            })
+            .collect()
     }
 }
 
