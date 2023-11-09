@@ -1,4 +1,4 @@
-use std::{collections::BTreeSet, ops::Range};
+use std::collections::BTreeSet;
 
 use homotopy_common::iter::ZeroOneMany;
 use itertools::{Either, Itertools, MultiProduct};
@@ -79,9 +79,8 @@ pub fn factorize(f: &Rewrite, g: &Rewrite) -> Factorization {
                             }
                             Some(g_cone) => {
                                 let f_cone_len = f_cone.as_ref().map_or(1, Cone::len);
-                                let constraints: Vec<Range<usize>> =
-                                    vec![0..g_cone.singular_slices().len(); f_cone_len];
-                                let monotone = MonotoneIterator::new(false, &constraints);
+                                let monotone =
+                                    MonotoneIterator::new(false, vec![0..g_cone.len(); f_cone_len]);
                                 ConeFactorization::Many(ConeFactorizationInternal {
                                     f_cone,
                                     g_cone,
