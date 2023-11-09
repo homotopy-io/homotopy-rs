@@ -42,7 +42,7 @@ pub fn factorize(f: &Rewrite, g: &Rewrite) -> Factorization {
                 return Factorization::One(f.clone().into());
             }
 
-            if f.equals_modulo_labels(g) {
+            if f.equivalent(g) {
                 return Factorization::One(Rewrite::identity(f.dimension()));
             }
 
@@ -71,20 +71,9 @@ pub fn factorize(f: &Rewrite, g: &Rewrite) -> Factorization {
                                 ConeFactorization::One(f_cone.map(|c| vec![c]).unwrap_or_default())
                             }
                             Some(g_cone)
-                                if f_cone.as_ref().map_or(false, |c| {
-                                    c.source() == g_cone.source()
-                                        && c.target() == g_cone.target()
-                                        && std::iter::zip(
-                                            c.regular_slices(),
-                                            g_cone.regular_slices(),
-                                        )
-                                        .all(|(f, g)| f.equals_modulo_labels(g))
-                                        && std::iter::zip(
-                                            c.singular_slices(),
-                                            g_cone.singular_slices(),
-                                        )
-                                        .all(|(f, g)| f.equals_modulo_labels(g))
-                                }) =>
+                                if f_cone
+                                    .as_ref()
+                                    .map_or(false, |f_cone| f_cone.equivalent(&g_cone)) =>
                             {
                                 ConeFactorization::One(vec![])
                             }

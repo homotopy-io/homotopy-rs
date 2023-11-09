@@ -683,10 +683,7 @@ impl RewriteN {
                     } else {
                         let index = index as usize;
 
-                        if !f_cone
-                            .target()
-                            .equals_modulo_labels(&g_cone.source()[index])
-                        {
+                        if f_cone.target() != &g_cone.source()[index] {
                             return Err(CompositionError::Incompatible);
                         }
 
