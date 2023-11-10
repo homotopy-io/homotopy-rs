@@ -62,32 +62,31 @@ pub fn factorize(f: &Rewrite, g: &Rewrite) -> Factorization {
                 let targets: BTreeSet<_> = f.targets().chain(g.targets()).collect();
                 targets
                     .into_iter()
-                    .map(|i| {
+                    .filter_map(|i| {
                         let (f_cone, offset) = f
                             .cone_over_target(i)
                             .either(|c| (Some(c.clone()), c.index), |i| (None, i));
                         match g.cone_over_target(i).left().cloned() {
-                            None => {
-                                ConeFactorization::One(f_cone.map(|c| vec![c]).unwrap_or_default())
-                            }
-                            Some(g_cone)
+                            None => Some(ConeFactorization::One(vec![f_cone.unwrap()])),
+                            Some(g_cone) => {
+                                // If the two cones are equivalent, skip them since the factorization is trivial.
                                 if f_cone
                                     .as_ref()
-                                    .map_or(false, |f_cone| f_cone.equivalent(&g_cone)) =>
-                            {
-                                ConeFactorization::One(vec![])
-                            }
-                            Some(g_cone) => {
+                                    .map_or(false, |f_cone| f_cone.equivalent(&g_cone))
+                                {
+                                    return None;
+                                }
+
                                 let f_cone_len = f_cone.as_ref().map_or(1, Cone::len);
                                 let monotone =
                                     MonotoneIterator::new(false, vec![0..g_cone.len(); f_cone_len]);
-                                ConeFactorization::Many(ConeFactorizationInternal {
+                                Some(ConeFactorization::Many(ConeFactorizationInternal {
                                     f_cone,
                                     g_cone,
                                     monotone,
                                     offset,
                                     cur: None,
-                                })
+                                }))
                             }
                         }
                     })
