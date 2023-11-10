@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-
 use homotopy_common::iter::ZeroOneMany;
 use itertools::{Either, Itertools, MultiProduct};
 
@@ -59,12 +57,10 @@ pub fn factorize(f: &Rewrite, g: &Rewrite) -> Factorization {
                 // when g_cone.len() = 0), represented as a Vec<Cone>
                 // ultimately, obtain Vec<Vec<Cone>> with length = #singular heights in the
                 // common target of f and g, whose concatenation give the cones of h
-                let targets: BTreeSet<_> = f.targets().chain(g.targets()).collect();
-                targets
-                    .into_iter()
-                    .filter_map(|i| {
-                        let f_cone = f.cone_over_target(i).map_left(Clone::clone);
-                        match g.cone_over_target(i).left().cloned() {
+                array_cones([f, g])
+                    .filter_map(|(_, [f_cone, g_cone])| {
+                        let f_cone = f_cone.map_left(Clone::clone);
+                        match g_cone.left().cloned() {
                             None => Some(ConeFactorization::One(vec![f_cone.unwrap_left()])),
                             Some(g_cone) => {
                                 // If the two cones are equivalent, skip them since the factorization is trivial.
@@ -229,29 +225,10 @@ pub(crate) fn factorize_sink(rewrites: &[Rewrite]) -> Option<(Vec<Rewrite>, Rewr
         return Some((vec![Rewrite::identity(0); rewrites.len()], rewrite.clone()));
     }
 
-    // Convert all rewrites to `RewriteN`s.
-    let rewrites = rewrites
-        .iter()
-        .map(TryInto::try_into)
-        .collect::<Result<Vec<&RewriteN>, _>>()
-        .ok()?;
-
-    // Find the common set of targets of all rewrites.
-    let targets = rewrites
-        .iter()
-        .flat_map(|rewrite| rewrite.targets())
-        .collect::<BTreeSet<_>>();
-
     let mut p_cones = vec![vec![]; rewrites.len()];
     let mut q_cones = vec![];
 
-    for i in targets {
-        // For each rewrite, collect the cone over the given target height.
-        let cones_over_target = rewrites
-            .iter()
-            .map(|rewrite| rewrite.cone_over_target(i))
-            .collect::<Vec<_>>();
-
+    for (i, cones_over_target) in cones(rewrites.iter().map(|r| r.try_into().unwrap())) {
         // Check all cones have the same target.
         let target_cospan = cones_over_target
             .iter()
@@ -304,4 +281,48 @@ pub(crate) fn factorize_sink(rewrites: &[Rewrite]) -> Option<(Vec<Rewrite>, Rewr
             .collect(),
         RewriteN::new(dimension, q_cones).into(),
     ))
+}
+
+// Given a family of rewrites with a common target, iterate over their cones in lockstep.
+fn cones<'a>(
+    rewrites: impl IntoIterator<Item = &'a RewriteN>,
+) -> impl Iterator<Item = (usize, Vec<Either<&'a Cone, usize>>)> {
+    // For each rewrite, we record a reference to its cones and an offset for calculating the targets.
+    let mut state: Vec<_> = rewrites.into_iter().map(|r| (r.cones(), 0)).collect();
+
+    std::iter::from_fn(move || {
+        let calculate_target = |c: &Cone, offset: isize| (c.index as isize + offset) as usize;
+
+        // Find the next target or return None if there are no more cones left.
+        let target = state
+            .iter()
+            .filter_map(|(cs, offset)| cs.first().map(|c| calculate_target(c, *offset)))
+            .min()?;
+
+        // For each rewrite, pop the first cone (if any) if its target is minimal.
+        Some((
+            target,
+            state
+                .iter_mut()
+                .map(|(cs, offset)| match cs.first() {
+                    Some(c) if calculate_target(c, *offset) == target => {
+                        *cs = &cs[1..];
+                        *offset += 1 - c.len() as isize;
+                        Either::Left(c)
+                    }
+                    _ => {
+                        let index = (target as isize - *offset) as usize;
+                        Either::Right(index)
+                    }
+                })
+                .collect(),
+        ))
+    })
+}
+
+// Same as `cones` but returns arrays instead of vectors.
+fn array_cones<const N: usize>(
+    rewrites: [&RewriteN; N],
+) -> impl Iterator<Item = (usize, [Either<&Cone, usize>; N])> {
+    cones(rewrites).map(|(i, cones)| (i, cones.try_into().unwrap()))
 }
