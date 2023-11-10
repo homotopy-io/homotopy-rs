@@ -63,28 +63,25 @@ pub fn factorize(f: &Rewrite, g: &Rewrite) -> Factorization {
                 targets
                     .into_iter()
                     .filter_map(|i| {
-                        let (f_cone, offset) = f
-                            .cone_over_target(i)
-                            .either(|c| (Some(c.clone()), c.index), |i| (None, i));
+                        let f_cone = f.cone_over_target(i).map_left(Clone::clone);
                         match g.cone_over_target(i).left().cloned() {
-                            None => Some(ConeFactorization::One(vec![f_cone.unwrap()])),
+                            None => Some(ConeFactorization::One(vec![f_cone.unwrap_left()])),
                             Some(g_cone) => {
                                 // If the two cones are equivalent, skip them since the factorization is trivial.
                                 if f_cone
                                     .as_ref()
-                                    .map_or(false, |f_cone| f_cone.equivalent(&g_cone))
+                                    .either(|f_cone| f_cone.equivalent(&g_cone), |_| false)
                                 {
                                     return None;
                                 }
 
-                                let f_cone_len = f_cone.as_ref().map_or(1, Cone::len);
+                                let f_cone_len = f_cone.as_ref().either(Cone::len, |_| 1);
                                 let monotone =
                                     MonotoneIterator::new(false, vec![0..g_cone.len(); f_cone_len]);
                                 Some(ConeFactorization::Many(ConeFactorizationInternal {
                                     f_cone,
                                     g_cone,
                                     monotone,
-                                    offset,
                                     cur: None,
                                 }))
                             }
@@ -122,10 +119,9 @@ impl std::iter::FusedIterator for FactorizationInternal {}
 
 #[derive(Clone)]
 pub struct ConeFactorizationInternal {
-    f_cone: Option<Cone>,
+    f_cone: Either<Cone, usize>,
     g_cone: Cone,
     monotone: MonotoneIterator,
-    offset: usize,
     cur: Option<MultiProduct<ConeIterator>>,
 }
 
@@ -146,7 +142,7 @@ impl Iterator for ConeFactorizationInternal {
                             let f_slice = |h: Height| {
                                 self.f_cone
                                     .as_ref()
-                                    .map_or_else(|| &id, |f_cone| f_cone.slice(h))
+                                    .either(|f_cone| f_cone.slice(h), |_| &id)
                             };
 
                             let slices_product = (usize::from(Height::Regular(source.start))
@@ -154,15 +150,16 @@ impl Iterator for ConeFactorizationInternal {
                                 .map(|i| factorize(f_slice(Height::from(i)), g_slice))
                                 .multi_cartesian_product();
 
+                            let offset = self.f_cone.as_ref().either(|f_cone| f_cone.index, |i| *i);
                             ConeIterator {
                                 slices_product,
-                                index: self.offset + source.start,
+                                index: offset + source.start,
                                 source: if source.is_empty() {
                                     vec![]
                                 } else {
-                                    self.f_cone.as_ref().map_or_else(
-                                        || vec![self.g_cone.target().clone()],
+                                    self.f_cone.as_ref().either(
                                         |f_cone| f_cone.source()[source].to_vec(),
+                                        |_| vec![self.g_cone.target().clone()],
                                     )
                                 },
                                 target: self.g_cone.source()[target].clone(),
