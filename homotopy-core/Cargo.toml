@@ -40,7 +40,7 @@ quickcheck_macros = "1.0.0"
 serde_json = "1.0.108"
 test-case = "3.2.1"
 base64 = "0.21.5"
-tracing-subscriber = "0.3.17"
+tracing-subscriber = "0.3.18"
 
 [features]
 default = ["safety-checks"]
