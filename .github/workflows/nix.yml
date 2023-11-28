@@ -38,7 +38,7 @@ jobs:
           extra_nix_config: |
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
       - name: Setup cachix
-        uses: cachix/cachix-action@v12
+        uses: cachix/cachix-action@v13
         with:
           name: homotopy-io
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
