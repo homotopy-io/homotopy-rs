@@ -24,7 +24,7 @@ paste = "1.0.14"
 petgraph = "0.6.2"
 serde = { features = ["derive"], version = "1.0.185" }
 serde_json = "1.0.108"
-thiserror = "1.0.51"
+thiserror = "1.0.52"
 ultraviolet = "0.9.2"
 
 [dev-dependencies]
