@@ -221,8 +221,49 @@ pub(crate) fn factorize_sink(rewrites: &[Rewrite]) -> Option<(Vec<Rewrite>, Rewr
 
     // Base case: all rewrites are equal.
     if dimension == 0 {
-        let rewrite = rewrites.iter().all_equal_value().ok()?;
-        return Some((vec![Rewrite::identity(0); rewrites.len()], rewrite.clone()));
+        let target = match rewrites
+            .iter()
+            .filter_map(|r| {
+                let r: &Rewrite0 = r.try_into().unwrap();
+                r.target()
+            })
+            .all_equal_value()
+        {
+            Ok(t) => t,
+            Err(None) => {
+                // All identities
+                return Some((
+                    vec![Rewrite::identity(0); rewrites.len()],
+                    Rewrite::identity(0),
+                ));
+            }
+            Err(Some(_)) => {
+                panic!("Mismatched targets")
+            }
+        };
+
+        let sources = rewrites
+            .iter()
+            .map(|r| {
+                let r: &Rewrite0 = r.try_into().unwrap();
+                r.source().unwrap_or(target)
+            })
+            .collect::<Vec<_>>();
+
+        let max_sources = sources.iter().max_set_by_key(|s| s.generator.dimension);
+        let join = if max_sources.len() == 1 {
+            *max_sources[0]
+        } else {
+            target
+        };
+
+        return Some((
+            sources
+                .into_iter()
+                .map(|source| Rewrite0::new(source, join, None).into())
+                .collect(),
+            Rewrite0::new(join, target, None).into(),
+        ));
     }
 
     let mut p_cones = vec![vec![]; rewrites.len()];
