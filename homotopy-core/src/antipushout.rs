@@ -146,7 +146,7 @@ pub fn antipushout(
                                 )
                             })
                             .multi_cartesian_product()
-                            .map(|spans| {
+                            .filter_map(|spans| {
                                 let s_slices =
                                     spans.iter().map(|span| span.0.clone()).collect_vec();
                                 let h_slices =
@@ -154,7 +154,7 @@ pub fn antipushout(
                                 let k_slices =
                                     spans.iter().map(|span| span.2.clone()).collect_vec();
 
-                                let s = construct_source(a, h_mono, &h_slices, &s_slices);
+                                let s = construct_source(a, h_mono, &h_slices, &s_slices)?;
 
                                 let h = RewriteN::from_monotone_unlabelled(
                                     s.dimension(),
@@ -172,7 +172,7 @@ pub fn antipushout(
                                     &k_slices,
                                 );
 
-                                (s.into(), h.into(), k.into())
+                                Some((s.into(), h.into(), k.into()))
                             })
                             .collect_vec()
                     }
@@ -188,7 +188,7 @@ fn construct_source(
     mono: &Monotone,
     slices: &[Rewrite],
     source_slices: &[Diagram],
-) -> DiagramN {
+) -> Option<DiagramN> {
     let mut cospans = vec![];
     let target_slices = target.singular_slices().collect_vec();
     for (ti, cospan) in target.cospans().iter().enumerate() {
@@ -200,13 +200,14 @@ fn construct_source(
             let mut rewrites = vec![factorize(&cospan.forward, &slices[start]).next().unwrap()];
 
             for si in start..end - 1 {
-                let span = &antipushout(
+                let antipushouts = antipushout(
                     &source_slices[si],
                     &source_slices[si + 1],
                     &target_slices[ti],
                     &slices[si],
                     &slices[si + 1],
-                )[0];
+                );
+                let span = antipushouts.first()?;
                 rewrites.push(span.1.clone());
                 rewrites.push(span.2.clone());
             }
@@ -226,7 +227,7 @@ fn construct_source(
         }
     }
 
-    DiagramN::new(target.source(), cospans)
+    Some(DiagramN::new(target.source(), cospans))
 }
 
 impl RewriteN {
