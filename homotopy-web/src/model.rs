@@ -171,12 +171,12 @@ impl State {
                     let data = tikz::render(&slice, signature, leftright, with_braid).unwrap();
 
                     let name = match Height::from(i) {
-                        Height::Regular(i) => format!("regular{}.tikz", i),
-                        Height::Singular(i) => format!("singular{}.tikz", i),
+                        Height::Regular(i) => format!("regular{i}.tikz"),
+                        Height::Singular(i) => format!("singular{i}.tikz"),
                     };
 
                     zip.start_file(name, options)?;
-                    zip.write(data.as_bytes()).unwrap();
+                    zip.write_all(data.as_bytes()).unwrap();
                 }
 
                 drop(zip);
