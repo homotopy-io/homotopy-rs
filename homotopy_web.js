@@ -1389,12 +1389,12 @@ function __wbg_get_imports() {
         const ret = makeMutClosure(arg0, arg1, 1286, __wbg_adapter_35);
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_closure_wrapper5150 = function(arg0, arg1, arg2) {
-        const ret = makeMutClosure(arg0, arg1, 1912, __wbg_adapter_48);
+    imports.wbg.__wbindgen_closure_wrapper5153 = function(arg0, arg1, arg2) {
+        const ret = makeMutClosure(arg0, arg1, 1913, __wbg_adapter_48);
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_closure_wrapper5370 = function(arg0, arg1, arg2) {
-        const ret = makeMutClosure(arg0, arg1, 1943, __wbg_adapter_51);
+    imports.wbg.__wbindgen_closure_wrapper5373 = function(arg0, arg1, arg2) {
+        const ret = makeMutClosure(arg0, arg1, 1944, __wbg_adapter_51);
         return addHeapObject(ret);
     };
 
