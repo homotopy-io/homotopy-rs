@@ -472,14 +472,17 @@ pub(crate) fn expand_propagate(
                 let Some((backward, inclusion)) = factorize2(&target_cospan.backward) else {
                     break 'arm;
                 };
-                let (_, inner_backward, inner_forward) = antipushout(
+                let Some((_, inner_backward, inner_forward)) = antipushout(
                     &slice.clone().rewrite_backward(&expansion).unwrap(),
                     &slice.clone().rewrite_backward(&inclusion).unwrap(),
                     &slice,
                     &expansion,
                     &inclusion,
-                )[0]
-                .clone();
+                )
+                .first()
+                .cloned() else {
+                    break 'arm;
+                };
 
                 return Ok(Some(Cone::new_unlabelled(
                     i,
@@ -502,14 +505,17 @@ pub(crate) fn expand_propagate(
                 let Some((forward, inclusion)) = factorize2(&target_cospan.forward) else {
                     break 'arm;
                 };
-                let (_, inner_backward, inner_forward) = antipushout(
+                let Some((_, inner_backward, inner_forward)) = antipushout(
                     &slice.clone().rewrite_backward(&inclusion).unwrap(),
                     &slice.clone().rewrite_backward(&expansion).unwrap(),
                     &slice,
                     &inclusion,
                     &expansion,
-                )[0]
-                .clone();
+                )
+                .first()
+                .cloned() else {
+                    break 'arm;
+                };
 
                 return Ok(Some(Cone::new_unlabelled(
                     i,
