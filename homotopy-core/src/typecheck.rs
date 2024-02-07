@@ -411,7 +411,7 @@ fn collapse_simplicies(diagram: impl Into<Diagram>) -> FastHashSet<LabelledSimpl
                     SliceIndex::Interior(h) => Some([key.as_slice(), &[h]].concat()),
                 },
                 |_, _, _| Some(()),
-                |_, _, _| Some(()),
+                |_, (), _| Some(()),
             )
             .unwrap();
     }
