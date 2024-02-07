@@ -81,13 +81,16 @@ pub enum Height {
 
 impl Height {
     /// Create an iterator over all heights in a diagram of a specified size.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// # use homotopy_core::common::Height;
     /// # use homotopy_core::common::Height::*;
-    /// assert_eq!(Height::for_size(1).collect::<Vec<_>>(), vec![Regular(0), Singular(0), Regular(1)])
+    /// assert_eq!(
+    ///     Height::for_size(1).collect::<Vec<_>>(),
+    ///     vec![Regular(0), Singular(0), Regular(1)]
+    /// )
     /// ```
     pub fn for_size(size: usize) -> impl DoubleEndedIterator<Item = Height> {
         (0..2 * size + 1).map(Height::from)
@@ -153,9 +156,9 @@ pub enum SliceIndex {
 
 impl SliceIndex {
     /// Create an iterator over all slice indices in a diagram of a specified size.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// # use homotopy_core::common::Boundary::*;
     /// # use homotopy_core::common::Height::*;
@@ -163,7 +166,13 @@ impl SliceIndex {
     /// # use homotopy_core::common::SliceIndex::*;
     /// assert_eq!(
     ///     SliceIndex::for_size(1).collect::<Vec<_>>(),
-    ///     vec![Boundary(Source), Interior(Regular(0)), Interior(Singular(0)), Interior(Regular(1)), Boundary(Target)],
+    ///     vec![
+    ///         Boundary(Source),
+    ///         Interior(Regular(0)),
+    ///         Interior(Singular(0)),
+    ///         Interior(Regular(1)),
+    ///         Boundary(Target)
+    ///     ],
     /// )
     /// ```
     pub fn for_size(size: usize) -> impl DoubleEndedIterator<Item = SliceIndex> {
@@ -312,16 +321,20 @@ pub struct BoundaryPath(pub Boundary, pub usize);
 
 impl BoundaryPath {
     /// Given a path in a diagram, split it into a boundary path and an interior path.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// # use homotopy_core::common::Boundary::*;
     /// # use homotopy_core::common::BoundaryPath;
     /// # use homotopy_core::common::Height::*;
     /// # use homotopy_core::common::SliceIndex::*;
     /// assert_eq!(
-    ///     BoundaryPath::split(&[Interior(Regular(0)), Boundary(Source), Interior(Singular(0))]),
+    ///     BoundaryPath::split(&[
+    ///         Interior(Regular(0)),
+    ///         Boundary(Source),
+    ///         Interior(Singular(0))
+    ///     ]),
     ///     (Some(BoundaryPath(Source, 1)), vec![Singular(0)]),
     /// )
     /// ```
