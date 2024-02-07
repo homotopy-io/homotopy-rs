@@ -97,7 +97,7 @@ fn typecheck_worker(
         }
     }
 
-    RESTRICT_CACHE.with(|cache| cache.borrow_mut().clear());
+    RESTRICT_CACHE.with_borrow_mut(FastHashMap::clear);
 
     Ok(())
 }
@@ -268,12 +268,8 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
         return rewrite.clone();
     }
 
-    let cached = RESTRICT_CACHE.with(|cache| {
-        cache
-            .borrow()
-            .get(&(rewrite.clone(), embedding.clone()))
-            .cloned()
-    });
+    let cached = RESTRICT_CACHE
+        .with_borrow(|cache| cache.get(&(rewrite.clone(), embedding.clone())).cloned());
 
     if let Some(cached) = cached {
         return cached;
@@ -345,8 +341,8 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
             let restricted_rewrite: Rewrite =
                 RewriteN::new(rewrite.dimension(), restricted_cones).into();
 
-            RESTRICT_CACHE.with(|cache| {
-                cache.borrow_mut().insert(
+            RESTRICT_CACHE.with_borrow_mut(|cache| {
+                cache.insert(
                     (rewrite.clone().into(), embedding.clone()),
                     restricted_rewrite.clone(),
                 )

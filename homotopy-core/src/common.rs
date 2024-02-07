@@ -437,7 +437,7 @@ impl<'de> Deserialize<'de> for Label {
         D: serde::Deserializer<'de>,
     {
         Deserialize::deserialize(deserializer)
-            .map(|l| Label(LABEL_FACTORY.with(|factory| factory.borrow_mut().mk(l))))
+            .map(|l| Label(LABEL_FACTORY.with_borrow_mut(|factory| factory.mk(l))))
     }
 }
 
@@ -452,11 +452,10 @@ impl fmt::Debug for Label {
 
 impl Label {
     pub fn new(boundary_path: BoundaryPath, coords: OrdSet<Vec<Height>>) -> Self {
-        Self(LABEL_FACTORY.with(|factory| {
-            factory
-                .borrow_mut()
-                .mk(LabelInternal(boundary_path, coords))
-        }))
+        Self(
+            LABEL_FACTORY
+                .with_borrow_mut(|factory| factory.mk(LabelInternal(boundary_path, coords))),
+        )
     }
 
     pub fn boundary_path(&self) -> BoundaryPath {
@@ -468,7 +467,7 @@ impl Label {
     }
 
     pub(crate) fn collect_garbage() {
-        LABEL_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
+        LABEL_FACTORY.with_borrow_mut(|factory| factory.collect_to_fit());
     }
 }
 

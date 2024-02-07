@@ -20,8 +20,8 @@ impl Diagram {
         let result = self.check_worker(mode);
 
         // Clear cache
-        DIAGRAM_CACHE.with(|cache| cache.borrow_mut().clear());
-        REWRITE_CACHE.with(|cache| cache.borrow_mut().clear());
+        DIAGRAM_CACHE.with_borrow_mut(FastHashMap::clear);
+        REWRITE_CACHE.with_borrow_mut(FastHashMap::clear);
 
         result
     }
@@ -39,14 +39,14 @@ impl DiagramN {
         let result = self.check_worker(mode);
 
         // Clear cache
-        DIAGRAM_CACHE.with(|cache| cache.borrow_mut().clear());
-        REWRITE_CACHE.with(|cache| cache.borrow_mut().clear());
+        DIAGRAM_CACHE.with_borrow_mut(FastHashMap::clear);
+        REWRITE_CACHE.with_borrow_mut(FastHashMap::clear);
 
         result
     }
 
     fn check_worker(&self, mode: Mode) -> Result<(), Vec<MalformedDiagram>> {
-        if let Some(errors) = DIAGRAM_CACHE.with(|cache| cache.borrow().get(self).cloned()) {
+        if let Some(errors) = DIAGRAM_CACHE.with_borrow(|cache| cache.get(self).cloned()) {
             return if errors.is_empty() {
                 Ok(())
             } else {
@@ -112,7 +112,7 @@ impl DiagramN {
             }
         }
 
-        DIAGRAM_CACHE.with(|cache| cache.borrow_mut().insert(self.clone(), errors.clone()));
+        DIAGRAM_CACHE.with_borrow_mut(|cache| cache.insert(self.clone(), errors.clone()));
 
         if errors.is_empty() {
             Ok(())
@@ -127,8 +127,8 @@ impl Rewrite {
         let result = self.check_worker(mode);
 
         // Clear cache
-        DIAGRAM_CACHE.with(|cache| cache.borrow_mut().clear());
-        REWRITE_CACHE.with(|cache| cache.borrow_mut().clear());
+        DIAGRAM_CACHE.with_borrow_mut(FastHashMap::clear);
+        REWRITE_CACHE.with_borrow_mut(FastHashMap::clear);
 
         result
     }
@@ -146,14 +146,14 @@ impl RewriteN {
         let result = self.check_worker(mode);
 
         // Clear cache
-        DIAGRAM_CACHE.with(|cache| cache.borrow_mut().clear());
-        REWRITE_CACHE.with(|cache| cache.borrow_mut().clear());
+        DIAGRAM_CACHE.with_borrow_mut(FastHashMap::clear);
+        REWRITE_CACHE.with_borrow_mut(FastHashMap::clear);
 
         result
     }
 
     fn check_worker(&self, mode: Mode) -> Result<(), Vec<MalformedRewrite>> {
-        if let Some(errors) = REWRITE_CACHE.with(|cache| cache.borrow().get(self).cloned()) {
+        if let Some(errors) = REWRITE_CACHE.with_borrow(|cache| cache.get(self).cloned()) {
             return if errors.is_empty() {
                 Ok(())
             } else {
@@ -178,7 +178,7 @@ impl RewriteN {
             errors.push(MalformedRewrite::NotOrderedCorrectly);
         }
 
-        REWRITE_CACHE.with(|cache| cache.borrow_mut().insert(self.clone(), errors.clone()));
+        REWRITE_CACHE.with_borrow_mut(|cache| cache.insert(self.clone(), errors.clone()));
 
         if errors.is_empty() {
             Ok(())

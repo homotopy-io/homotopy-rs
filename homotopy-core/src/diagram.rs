@@ -340,7 +340,7 @@ impl<'de> Deserialize<'de> for DiagramN {
         D: serde::Deserializer<'de>,
     {
         Deserialize::deserialize(deserializer)
-            .map(|d| DiagramN(DIAGRAM_FACTORY.with(|factory| factory.borrow_mut().mk(d))))
+            .map(|d| DiagramN(DIAGRAM_FACTORY.with_borrow_mut(|factory| factory.mk(d))))
     }
 }
 
@@ -400,8 +400,8 @@ impl DiagramN {
     /// Unsafe version of `new` which does not check if the diagram is well-formed.
     #[inline]
     pub(crate) fn new_unsafe(source: Diagram, cospans: Vec<Cospan>) -> Self {
-        Self(DIAGRAM_FACTORY.with(|factory| {
-            factory.borrow_mut().mk(DiagramInternal {
+        Self(DIAGRAM_FACTORY.with_borrow_mut(|factory| {
+            factory.mk(DiagramInternal {
                 source,
                 cospans,
                 max_generator: OnceCell::new(),
@@ -433,7 +433,7 @@ impl DiagramN {
     }
 
     pub(crate) fn collect_garbage() {
-        DIAGRAM_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
+        DIAGRAM_FACTORY.with_borrow_mut(|factory| factory.collect_to_fit());
     }
 
     /// The dimension of the diagram, which is at least one.

@@ -465,7 +465,7 @@ impl<'de> Deserialize<'de> for RewriteN {
         D: serde::Deserializer<'de>,
     {
         Deserialize::deserialize(deserializer)
-            .map(|r| RewriteN(REWRITE_FACTORY.with(|factory| factory.borrow_mut().mk(r))))
+            .map(|r| RewriteN(REWRITE_FACTORY.with_borrow_mut(|factory| factory.mk(r))))
     }
 }
 
@@ -487,8 +487,8 @@ impl RewriteN {
         // cones.
         cones.retain(|cone| !cone.is_identity());
 
-        Self(REWRITE_FACTORY.with(|factory| {
-            factory.borrow_mut().mk(RewriteInternal {
+        Self(REWRITE_FACTORY.with_borrow_mut(|factory| {
+            factory.mk(RewriteInternal {
                 dimension,
                 cones,
                 max_generator_source: OnceCell::new(),
@@ -545,7 +545,7 @@ impl RewriteN {
     }
 
     pub(crate) fn collect_garbage() {
-        REWRITE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
+        REWRITE_FACTORY.with_borrow_mut(|factory| factory.collect_to_fit());
     }
 
     pub(crate) fn cones(&self) -> &[Cone] {
@@ -1000,7 +1000,7 @@ impl<'de> Deserialize<'de> for Cone {
         }
         Deserialize::deserialize(deserializer).map(|c: ConeUnshared| Cone {
             index: c.index,
-            internal: CONE_FACTORY.with(|factory| factory.borrow_mut().mk(c.internal)),
+            internal: CONE_FACTORY.with_borrow_mut(|factory| factory.mk(c.internal)),
         })
     }
 }
@@ -1018,8 +1018,8 @@ impl Cone {
         assert_eq!(regular_slices.len(), singular_slices.len() + 1);
         Self {
             index,
-            internal: CONE_FACTORY.with(|factory| {
-                factory.borrow_mut().mk(ConeInternal {
+            internal: CONE_FACTORY.with_borrow_mut(|factory| {
+                factory.mk(ConeInternal {
                     source,
                     target,
                     regular_slices,
@@ -1074,7 +1074,7 @@ impl Cone {
     }
 
     pub(crate) fn collect_garbage() {
-        CONE_FACTORY.with(|factory| factory.borrow_mut().collect_to_fit());
+        CONE_FACTORY.with_borrow_mut(|factory| factory.collect_to_fit());
     }
 
     #[allow(dead_code)]
