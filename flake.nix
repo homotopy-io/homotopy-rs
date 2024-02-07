@@ -42,7 +42,7 @@
       url = "github:oxalica/rust-overlay";
     };
     crate2nix = {
-      url = "github:kolloch/crate2nix?rev=9f6d5f15f8f8dbe5cf615660097dfb37f76823db";
+      url = "github:kolloch/crate2nix";
       flake = false;
     };
   };
