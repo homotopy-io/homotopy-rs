@@ -34,7 +34,7 @@ where
         if e.data_transfer()
             .and_then(|dt| dt.get_data("text").ok())
             .and_then(|data| data.parse().ok())
-            .map_or(false, |from| !ancestors.contains(&Node::new(from)))
+            .is_some_and(|from| !ancestors.contains(&Node::new(from)))
         {
             f(e);
         }

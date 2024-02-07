@@ -234,7 +234,7 @@ impl Signature {
                             .diagram
                             .generators()
                             .get(&generator)
-                            .map_or(false, |os| os.contains(&Orientation::Negative))
+                            .is_some_and(|os| os.contains(&Orientation::Negative))
                         {
                             return Err(SignatureError::CannotBeMadeDirected);
                         }

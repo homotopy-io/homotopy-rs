@@ -183,20 +183,20 @@ impl Action {
                     && proof
                         .workspace
                         .as_ref()
-                        .map_or(false, |ws| !ws.path.is_empty())
+                        .is_some_and(|ws| !ws.path.is_empty())
             }
             Self::DescendSlice(_) => proof
                 .workspace
                 .as_ref()
-                .map_or(false, |ws| ws.visible_dimension() > 0),
-            Self::SwitchSlice(_) => proof.workspace.as_ref().map_or(false, |ws| {
+                .is_some_and(|ws| ws.visible_dimension() > 0),
+            Self::SwitchSlice(_) => proof.workspace.as_ref().is_some_and(|ws| {
                 ws.path
                     .last()
-                    .map_or(false, |index| matches!(index, Interior(_)))
+                    .is_some_and(|index| matches!(index, Interior(_)))
             }),
             Self::IncreaseView(count) => {
                 *count > 0
-                    && proof.workspace.as_ref().map_or(false, |ws| {
+                    && proof.workspace.as_ref().is_some_and(|ws| {
                         ws.view.dimension < std::cmp::min(ws.visible_dimension() as u8, View::MAX)
                     })
             }
@@ -205,23 +205,25 @@ impl Action {
                     && proof
                         .workspace
                         .as_ref()
-                        .map_or(false, |ws| ws.view.dimension > 0)
+                        .is_some_and(|ws| ws.view.dimension > 0)
             }
-            Self::Attach(option) => proof.workspace.as_ref().map_or(false, |ws| {
-                option.boundary_path.is_none() || ws.diagram.dimension() > 0
-            }),
+            Self::Attach(option) => proof
+                .workspace
+                .as_ref()
+                .is_some_and(|ws| option.boundary_path.is_none() || ws.diagram.dimension() > 0),
             Self::Homotopy(_) => proof
                 .workspace
                 .as_ref()
-                .map_or(false, |ws| ws.diagram.dimension() > 0),
-            Self::Squash => proof.workspace.as_ref().map_or(false, |ws| {
-                ws.visible_diagram().size().map_or(false, |size| size > 0)
-            }),
+                .is_some_and(|ws| ws.diagram.dimension() > 0),
+            Self::Squash => proof
+                .workspace
+                .as_ref()
+                .is_some_and(|ws| ws.visible_diagram().size().is_some_and(|size| size > 0)),
             Self::Behead | Self::Befoot => {
                 proof
                     .workspace
                     .as_ref()
-                    .map_or(false, |ws| match &ws.diagram {
+                    .is_some_and(|ws| match &ws.diagram {
                         Diagram::Diagram0(_) => false,
                         Diagram::DiagramN(diagram) => {
                             (ws.path.is_empty() && diagram.size() > 0)
@@ -233,8 +235,8 @@ impl Action {
             Self::Invert => proof
                 .workspace
                 .as_ref()
-                .map_or(false, |ws| ws.path.is_empty() && ws.diagram.dimension() > 0),
-            Self::Restrict => proof.workspace.as_ref().map_or(false, |ws| {
+                .is_some_and(|ws| ws.path.is_empty() && ws.diagram.dimension() > 0),
+            Self::Restrict => proof.workspace.as_ref().is_some_and(|ws| {
                 !ws.path.is_empty()
                     && ws
                         .path
@@ -244,7 +246,7 @@ impl Action {
             Self::Theorem => proof
                 .workspace
                 .as_ref()
-                .map_or(false, |ws| ws.diagram.dimension() > 0),
+                .is_some_and(|ws| ws.diagram.dimension() > 0),
             Self::Suspend(_, _) | Self::SuspendSignature => proof.signature.has_generators(),
             Self::Merge(_, _) => true,
             Self::ImportProof(_) => true,
@@ -325,11 +327,10 @@ impl ProofState {
     /// Determines if a given [Action] should reset the panzoom state, given the current  [ProofState].
     pub fn resets_panzoom(&self, action: &Action) -> bool {
         match *action {
-            Action::EditSignature(SignatureEdit::Remove(node)) => {
-                self.workspace.as_ref().map_or(false, |ws| {
-                    self.signature.has_descendents_in(node, &ws.diagram)
-                })
-            }
+            Action::EditSignature(SignatureEdit::Remove(node)) => self
+                .workspace
+                .as_ref()
+                .is_some_and(|ws| self.signature.has_descendents_in(node, &ws.diagram)),
             Action::AscendSlice(i) => i > 0,
             Action::SelectGenerator(_)
             | Action::ClearWorkspace
@@ -985,7 +986,7 @@ impl ProofState {
                         .diagram
                         .generators()
                         .get(&generator)
-                        .map_or(false, |os| os.contains(&Orientation::Negative))
+                        .is_some_and(|os| os.contains(&Orientation::Negative))
                     {
                         return Err(ProofError::SignatureError(
                             SignatureError::CannotBeMadeDirected,
@@ -998,7 +999,7 @@ impl ProofState {
                         .diagram
                         .generators()
                         .get(&generator)
-                        .map_or(false, |os| os.contains(&Orientation::Negative))
+                        .is_some_and(|os| os.contains(&Orientation::Negative))
                     {
                         return Err(ProofError::SignatureError(
                             SignatureError::CannotBeMadeDirected,
@@ -1010,7 +1011,7 @@ impl ProofState {
                     ws.diagram
                         .generators()
                         .get(&generator)
-                        .map_or(false, |os| os.contains(&Orientation::Negative))
+                        .is_some_and(|os| os.contains(&Orientation::Negative))
                 }) {
                     return Err(ProofError::SignatureError(
                         SignatureError::CannotBeMadeDirected,

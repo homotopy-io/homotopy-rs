@@ -46,14 +46,15 @@ impl Action {
             Self::ExportTikz(_, _) | Self::ExportSvg | Self::ExportManim(_) => proof
                 .workspace
                 .as_ref()
-                .map_or(false, |ws| ws.view.dimension() == 2),
-            Self::ExportTikzSlices(_, _) => proof.workspace.as_ref().map_or(false, |ws| {
-                ws.view.dimension() == 2 && ws.diagram.dimension() > 2
-            }),
+                .is_some_and(|ws| ws.view.dimension() == 2),
+            Self::ExportTikzSlices(_, _) => proof
+                .workspace
+                .as_ref()
+                .is_some_and(|ws| ws.view.dimension() == 2 && ws.diagram.dimension() > 2),
             Self::ExportStl => proof
                 .workspace
                 .as_ref()
-                .map_or(false, |ws| ws.view.dimension() == 3),
+                .is_some_and(|ws| ws.view.dimension() == 3),
             Self::SelectPoint(_, _) => proof.workspace.is_some(),
             _ => true,
         }

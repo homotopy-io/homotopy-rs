@@ -364,7 +364,7 @@ fn check_dimension(diagram: Diagram) -> bool {
             Diagram::DiagramN(diagram) => {
                 if checked
                     .get(&diagram)
-                    .map_or(false, |checked| *checked <= max_dimension)
+                    .is_some_and(|checked| *checked <= max_dimension)
                 {
                     return true;
                 }
