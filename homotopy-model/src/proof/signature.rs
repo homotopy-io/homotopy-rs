@@ -84,19 +84,12 @@ impl Signature {
         })
     }
 
-    pub fn generator_iter(&self) -> impl Iterator<Item = &Generator> {
-        self.iter().map(|info| &info.generator)
-    }
-
     pub fn has_generators(&self) -> bool {
         self.iter().next().is_some()
     }
 
     pub(crate) fn next_generator_id(&self) -> usize {
-        self.generator_iter()
-            .map(|g| g.id)
-            .max()
-            .map_or(0, |id| id + 1)
+        self.generators().map(|g| g.id).max().map_or(0, |id| id + 1)
     }
 
     fn next_folder_id(&self) -> usize {
@@ -327,8 +320,8 @@ impl SignatureStyleData for Signature {
 impl homotopy_core::signature::Signature for Signature {
     type Info = GeneratorInfo;
 
-    fn generators(&self) -> Box<dyn Iterator<Item = Generator> + '_> {
-        Box::new(self.generator_iter().copied())
+    fn generators(&self) -> impl Iterator<Item = Generator> {
+        self.iter().map(|info| info.generator)
     }
 
     fn generator_info(&self, g: Generator) -> Option<&GeneratorInfo> {

@@ -10,7 +10,7 @@ pub trait GeneratorInfo {
 
 pub trait Signature {
     type Info: GeneratorInfo;
-    fn generators(&self) -> Box<dyn Iterator<Item = Generator> + '_>;
+    fn generators(&self) -> impl Iterator<Item = Generator>;
     fn generator_info(&self, g: Generator) -> Option<&Self::Info>;
     fn add_zero(&mut self) -> Diagram0;
     fn add(
@@ -49,8 +49,8 @@ impl GeneratorInfo for GeneratorData {
 impl Signature for SignatureBuilder {
     type Info = GeneratorData;
 
-    fn generators(&self) -> Box<dyn Iterator<Item = Generator> + '_> {
-        Box::new(self.0.iter().map(|gd| gd.0))
+    fn generators(&self) -> impl Iterator<Item = Generator> {
+        self.0.iter().map(|gd| gd.0)
     }
 
     fn generator_info(&self, g: Generator) -> Option<&GeneratorData> {
