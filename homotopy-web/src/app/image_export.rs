@@ -14,6 +14,7 @@ declare_settings! {
 pub struct Props {
     pub dispatch: Callback<model::Action>,
     pub view_dim: u8,
+    pub dim: usize,
 }
 
 pub struct ImageExportView {
@@ -94,7 +95,11 @@ impl ImageExportView {
                                 ImageExportSettings::set_tikz_show_braidings,
                             )
                         }
-                        <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportTikz(leftright_mode,show_braidings))}>{"Export"}</button>
+                        <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportTikz(leftright_mode, show_braidings))}>{"Export"}</button>
+
+                        if ctx.props().dim > 2 {
+                            <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportTikzSlices(leftright_mode, show_braidings))}>{"Export slices"}</button>
+                        }
                     </div>
                 </>
             }

@@ -68,13 +68,13 @@ impl Monotone {
     }
 
     /// Compose two monotones maps.
-    pub fn compose(&self, g: &Self) -> Option<Self> {
+    pub fn compose(&self, other: &Self) -> Option<Self> {
         let mut seq = Vec::with_capacity(self.len());
         for i in self.slices() {
-            if i >= g.len() {
+            if i >= other.len() {
                 return None;
             }
-            seq.push(g[i]);
+            seq.push(other[i]);
         }
         Some(seq.into())
     }
@@ -151,31 +151,30 @@ pub struct MonotoneIterator {
 
 #[allow(clippy::len_without_is_empty)]
 impl MonotoneIterator {
-    pub fn new(strict: bool, constraints: &[Range<usize>]) -> Self {
+    pub fn new(strict: bool, mut constraints: Vec<Range<usize>>) -> Self {
         let len = constraints.len();
 
         // We need to tighten the constraints as the iterator assumes the constraints are tight.
-        let mut tight_constraints = constraints.to_owned();
         if len > 1 {
-            let mut min = tight_constraints[0].start;
-            let mut max = tight_constraints[len - 1].end;
+            let mut min = constraints[0].start;
+            let mut max = constraints[len - 1].end;
             for i in 1..len {
                 if strict {
-                    min = cmp::max(min + 1, tight_constraints[i].start);
-                    max = cmp::min(max - 1, tight_constraints[len - i - 1].end);
+                    min = cmp::max(min + 1, constraints[i].start);
+                    max = cmp::min(max - 1, constraints[len - i - 1].end);
                 } else {
-                    min = cmp::max(min, tight_constraints[i].start);
-                    max = cmp::min(max, tight_constraints[len - i - 1].end);
+                    min = cmp::max(min, constraints[i].start);
+                    max = cmp::min(max, constraints[len - i - 1].end);
                 }
-                tight_constraints[i].start = min;
-                tight_constraints[len - i - 1].end = max;
+                constraints[i].start = min;
+                constraints[len - i - 1].end = max;
             }
         }
 
         Self {
             cur: None,
             strict,
-            constraints: tight_constraints,
+            constraints,
         }
     }
 

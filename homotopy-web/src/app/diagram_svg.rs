@@ -646,7 +646,7 @@ fn drag_to_homotopy<const N: usize>(
                         let backward: &RewriteN = (&cospan.backward).try_into().unwrap();
 
                         // TODO: This should probably be a method on Cospan.
-                        let mut targets: Vec<_> = forward.targets();
+                        let mut targets: Vec<_> = forward.targets().collect();
                         targets.extend(backward.targets());
                         targets.sort_unstable();
                         targets.dedup();

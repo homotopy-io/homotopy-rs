@@ -155,6 +155,7 @@ declare_sidebar_drawers! {
             <ImageExportView
                 dispatch={dispatch}
                 view_dim={proof.workspace.as_ref().map_or(0, |ws| ws.view.dimension())}
+                dim={proof.workspace.as_ref().map_or(0, |ws| ws.diagram.dimension())}
             />
         },
         min_width: 250,

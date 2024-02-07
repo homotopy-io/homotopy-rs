@@ -230,8 +230,8 @@ fn contract_base(
                     let mut b_cones = vec![];
                     for height in 0..colimit.size() {
                         match (
-                            forward.cone_over_target(height),
-                            backward.cone_over_target(height),
+                            forward.cone_over_target(height).left(),
+                            backward.cone_over_target(height).left(),
                         ) {
                             (None, None) => {}
                             (None, Some(b_cone)) => b_cones.push(b_cone.clone()),
@@ -321,6 +321,7 @@ fn contract_in_path(
                         first,
                         expand_base.into(),
                         false,
+                        false,
                     )
                     .map_err(|_err| ContractionError::Invalid)?;
                     Ok(ContractExpand { contract, expand })
@@ -390,6 +391,7 @@ fn contract_in_path(
                         first,
                         expand_base.into(),
                         true,
+                        false,
                     )
                     .map_err(|_err| ContractionError::Invalid)?;
                     Ok(ContractExpand { contract, expand })
@@ -747,20 +749,28 @@ fn colimit_recursive<Ix: IndexType>(
             // all targeting Regular(0)
             exploded
                 .node_references()
-                .filter_map(
+                .filter(
                     |(
-                        i,
+                        _,
                         ScaffoldNode {
                             key: ExplodedNode { parent, height, .. },
                             ..
                         },
                     )| {
-                        (graph.externals(Outgoing).contains(parent) // comes from singular height (i.e. in Δ)
-                        && height == &Height::Regular(0))
-                            .then(|| {
-                                parent_by_height.push(*parent);
-                                i
-                            })
+                        graph.externals(Outgoing).contains(parent) // comes from singular height (i.e. in Δ)
+                        && height == &Height::Regular(0)
+                    },
+                )
+                .map(
+                    |(
+                        i,
+                        ScaffoldNode {
+                            key: ExplodedNode { parent, .. },
+                            ..
+                        },
+                    )| {
+                        parent_by_height.push(*parent);
+                        i
                     },
                 )
                 .collect(),

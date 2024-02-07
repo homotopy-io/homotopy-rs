@@ -1,9 +1,11 @@
+use std::io::Write;
+
 pub use history::Proof;
 use history::{History, UndoState};
 use homotopy_core::{
     common::{BoundaryPath, Generator},
     signature::Signature,
-    Boundary, Diagram, DiagramN, SliceIndex,
+    Boundary, Diagram, DiagramN, Height, SliceIndex,
 };
 use homotopy_graphics::{manim, stl, svg, tikz};
 use homotopy_model::proof::AttachOption;
@@ -20,6 +22,7 @@ pub enum Action {
     ExportProof,
     ExportActions,
     ExportTikz(bool, bool),
+    ExportTikzSlices(bool, bool),
     ExportSvg,
     ExportManim(bool),
     ExportStl,
@@ -44,6 +47,9 @@ impl Action {
                 .workspace
                 .as_ref()
                 .map_or(false, |ws| ws.view.dimension() == 2),
+            Self::ExportTikzSlices(_, _) => proof.workspace.as_ref().map_or(false, |ws| {
+                ws.view.dimension() == 2 && ws.diagram.dimension() > 2
+            }),
             Self::ExportStl => proof
                 .workspace
                 .as_ref()
@@ -145,6 +151,37 @@ impl State {
                 let data = tikz::render(&diagram, signature, leftright, with_braid).unwrap();
                 generate_download("homotopy_io_export", "tikz", data.as_bytes())
                     .map_err(ModelError::Export)?;
+            }
+
+            Action::ExportTikzSlices(leftright, with_braid) => {
+                let signature = &self.proof().signature;
+                let Diagram::DiagramN(diagram) =
+                    self.proof().workspace.as_ref().unwrap().visible_diagram()
+                else {
+                    return Ok(false);
+                };
+
+                let mut buf = Vec::new();
+                let mut zip = zip::ZipWriter::new(std::io::Cursor::new(&mut buf));
+
+                let options = zip::write::FileOptions::default()
+                    .compression_method(zip::CompressionMethod::STORE);
+
+                for (i, slice) in diagram.slices().enumerate() {
+                    let data = tikz::render(&slice, signature, leftright, with_braid).unwrap();
+
+                    let name = match Height::from(i) {
+                        Height::Regular(i) => format!("regular{i}.tikz"),
+                        Height::Singular(i) => format!("singular{i}.tikz"),
+                    };
+
+                    zip.start_file(name, options)?;
+                    zip.write_all(data.as_bytes()).unwrap();
+                }
+
+                drop(zip);
+
+                generate_download("homotopy_io_export", "zip", &buf).map_err(ModelError::Export)?;
             }
 
             Action::ExportSvg => {
@@ -418,6 +455,8 @@ pub enum ModelError {
     Proof(#[from] proof::ProofError),
     #[error(transparent)]
     History(#[from] history::HistoryError),
+    #[error(transparent)]
+    Zip(#[from] zip::result::ZipError),
     #[error("internal error")]
     Internal,
     #[error("no attachment found")]

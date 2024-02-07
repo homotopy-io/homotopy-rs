@@ -147,15 +147,13 @@ fn target_points(rewrites: &[Rewrite]) -> Vec<(Point, Generator)> {
     for rewrite in rewrites {
         let rewrite: RewriteN = rewrite.clone().try_into().unwrap();
         for target_height in rewrite.targets() {
-            let target_rewrites_at_height = target_rewrites
-                .entry(target_height)
-                .or_insert_with(Vec::new);
+            let target_rewrites_at_height = target_rewrites.entry(target_height).or_default();
 
             for source_height in rewrite.singular_preimage(target_height) {
                 target_rewrites_at_height.push(rewrite.slice(source_height));
             }
 
-            let cone = rewrite.cone_over_target(target_height).unwrap();
+            let cone = rewrite.cone_over_target(target_height).unwrap_left();
             let cone_target = cone.target();
 
             target_rewrites_at_height.push(cone_target.forward.clone());
@@ -219,7 +217,7 @@ impl Embedding {
                     .collect();
 
                 if preimage_slices.is_empty() {
-                    let cospan = &rewrite.cone_over_target(*height).unwrap().target();
+                    let cospan = &rewrite.cone_over_target(*height).unwrap_left().target();
                     Self::Regular(
                         preimage_height,
                         Rc::new(slices[0].preimage(&cospan.forward)),
@@ -302,7 +300,7 @@ fn restrict_rewrite(rewrite: &Rewrite, embedding: &Embedding) -> Rewrite {
                 let embedding_slice = &slices[target_height - *height];
 
                 // TODO: This is quite ugly
-                let cone = rewrite.cone_over_target(target_height).unwrap();
+                let cone = rewrite.cone_over_target(target_height).unwrap_left();
 
                 let restricted_regular_slices: Vec<_> = cone
                     .regular_slices()
@@ -407,7 +405,7 @@ fn collapse_simplicies(diagram: impl Into<Diagram>) -> FastHashSet<LabelledSimpl
     scaffold.add_node(diagram.into());
     for _ in 0..dimension {
         scaffold = scaffold
-            .explode_simple(
+            .explode_graph(
                 |_, key, si| match si {
                     SliceIndex::Boundary(_) => None,
                     SliceIndex::Interior(h) => Some([key.as_slice(), &[h]].concat()),

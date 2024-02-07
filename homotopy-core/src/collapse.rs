@@ -1,26 +1,22 @@
 //! Functions to collapse diagram scaffolds; used in contraction, typechecking etc.
-use std::ops::{AddAssign, Index};
+use std::ops::AddAssign;
 
-use homotopy_common::{declare_idx, hash::FastHashSet, idx::Idx};
+use homotopy_common::{declare_idx, hash::FastHashSet, iter::ZeroOneMany};
 use im::OrdSet;
 use itertools::Itertools;
 use once_cell::unsync::OnceCell;
 use petgraph::{
-    data::Build,
     prelude::DiGraph,
     stable_graph::{DefaultIx, EdgeIndex, IndexType, NodeIndex},
     unionfind::UnionFind,
-    visit::{
-        EdgeCount, EdgeFiltered, EdgeRef, GraphBase, IntoEdgeReferences, IntoNodeReferences, Topo,
-        Walker,
-    },
+    visit::{EdgeFiltered, EdgeRef, IntoEdgeReferences, IntoNodeReferences, Topo, Walker},
     Direction::{Incoming, Outgoing},
 };
 
 use crate::{
     common::{Label, LabelIdentifications},
-    scaffold::{Explodable, Scaffold, ScaffoldGraph, ScaffoldNode, StableScaffold},
-    Diagram, Height, Rewrite0, SliceIndex,
+    scaffold::{Scaffold, ScaffoldNode, StableScaffold},
+    Diagram, Height, Rewrite0,
 };
 
 /// Trait for objects which have associated coordinates in `C`.
@@ -136,7 +132,8 @@ pub(crate) fn unify<V, E, Ix>(
     // unify along the source of edges
     for (target, e) in graph
         .edges_directed(remove, Outgoing)
-        .filter_map(|e| (e.target() != keep).then(|| (e.target(), e.id())))
+        .filter(|&e| (e.target() != keep))
+        .map(|e| (e.target(), e.id()))
         .collect::<Vec<_>>()
     {
         let removed = graph.remove_edge(e).expect("tried to remove missing edge");
@@ -158,7 +155,8 @@ pub(crate) fn unify<V, E, Ix>(
     // unify along the target of edges
     for (source, e) in graph
         .edges_directed(remove, Incoming)
-        .filter_map(|e| (e.source() != keep).then(|| (e.source(), e.id())))
+        .filter(|&e| (e.source() != keep))
+        .map(|e| (e.source(), e.id()))
         .collect::<Vec<_>>()
     {
         let removed = graph.remove_edge(e).expect("tried to remove missing edge");
@@ -182,8 +180,8 @@ pub(crate) fn unify<V, E, Ix>(
         .remove_node(remove)
         .expect("tried to remove missing node");
     on_remove_node(remove);
-    if let Some(k) = graph.node_weight_mut(keep) {
-        k.add_assign(removed);
+    if let Some(node) = graph.node_weight_mut(keep) {
+        node.key.add_assign(removed.key);
     }
 }
 
@@ -331,58 +329,14 @@ where
 }
 
 impl Diagram {
-    pub(crate) fn fully_explode<G>(self) -> G
-    where
-        G: Default
-            + Build
-            + ScaffoldGraph<EdgeKey = ()>
-            + EdgeCount
-            + Index<G::NodeId, Output = G::NodeWeight>,
-        for<'a> &'a G: GraphBase<NodeId = G::NodeId, EdgeId = G::EdgeId>
-            + IntoNodeReferences<NodeRef = (G::NodeId, &'a G::NodeWeight)>
-            + IntoEdgeReferences<EdgeWeight = G::EdgeWeight>,
-        G::NodeKey: Clone + Default + IntoIterator<Item = Height> + FromIterator<Height>,
-        G::NodeId: Idx,
-        G::EdgeId: Idx,
-    {
-        // Construct the fully exploded scaffold of the diagram.
-        let mut scaffold: G = Default::default();
-        let dimension = self.dimension();
-        scaffold.add_node(self.into());
-        for _ in 0..dimension {
-            scaffold = scaffold
-                .explode_simple(
-                    |_, key, si| match si {
-                        SliceIndex::Boundary(_) => None,
-                        SliceIndex::Interior(h) => Some(
-                            Clone::clone(key)
-                                .into_iter()
-                                .chain(std::iter::once(h))
-                                .collect(),
-                        ),
-                    },
-                    |_, _, _| Some(()),
-                    |_, _, _| Some(()),
-                )
-                .unwrap();
-        }
-        scaffold
-    }
-
     pub(crate) fn label_identifications(self) -> LabelIdentifications {
-        let (stable, union_find) = self.fully_explode::<Scaffold<Vec<Height>>>().collapse();
-        union_find
-            .into_labeling()
-            .into_iter()
-            .flat_map(|ix| {
-                match stable[ix].key.clone() {
-                    OneMany::One(c) => vec![(c.clone(), OrdSet::unit(c))],
-                    OneMany::Many(cs) => {
-                        let shared = cs.clone();
-                        cs.into_iter().map(|c| (c, shared.clone())).collect()
-                    }
-                }
-                .into_iter()
+        self.fully_explode::<Scaffold<Vec<Height>>>()
+            .collapse()
+            .0
+            .node_weights()
+            .flat_map(|node| match &node.key {
+                OneMany::One(c) => ZeroOneMany::One((c.clone(), OrdSet::unit(c.clone()))),
+                OneMany::Many(cs) => ZeroOneMany::Many(cs.iter().map(|c| (c.clone(), cs.clone()))),
             })
             .collect()
     }

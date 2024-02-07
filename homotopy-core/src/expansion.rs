@@ -6,12 +6,13 @@ use std::{
 use thiserror::Error;
 
 use crate::{
+    antipushout::antipushout,
     attach::attach,
     common::{
         Boundary, BoundaryPath, DimensionError, Direction, Height, RegularHeight, SingularHeight,
     },
     diagram::DiagramN,
-    factorization::factorize,
+    factorization::{factorize, factorize2},
     rewrite::{Cone, Cospan, Rewrite, RewriteN},
     signature::Signature,
     typecheck::{typecheck_cospan, TypeError},
@@ -97,7 +98,7 @@ pub fn expand_in_path(
                 .ok_or(ExpansionError::OutOfBounds)?
                 .try_into()?;
             let recursive = expand_in_path(&slice, rest, point, direction)?;
-            expand_propagate(diagram, step, recursive.into(), true)
+            expand_propagate(diagram, step, recursive.into(), true, true)
         }
     }
 }
@@ -289,8 +290,8 @@ fn expand_cospan(
     backward: &RewriteN,
 ) -> Result<ExpandedCospan, ExpansionError> {
     debug_assert_eq!(forward.dimension(), backward.dimension());
-    let forward_targets = forward.targets();
-    let backward_targets = backward.targets();
+    let forward_targets: Vec<_> = forward.targets().collect();
+    let backward_targets: Vec<_> = backward.targets().collect();
 
     let forward_index = forward_targets.iter().position(|t| *t == height);
     let backward_index = backward_targets.iter().position(|t| *t == height);
@@ -427,40 +428,35 @@ pub(crate) fn expand_propagate(
     height: &mut Height,
     expansion: Rewrite,
     normalize: bool,
+    anticontraction: bool,
 ) -> Result<RewriteN, ExpansionError> {
     let i = match *height {
         Height::Regular(_) => return Err(ExpansionError::RegularSlice),
         Height::Singular(i) => i,
     };
 
-    let slice = diagram
-        .slice(Height::Singular(i))
+    let target_cospan = diagram
+        .cospans()
+        .get(i)
         .ok_or(ExpansionError::OutOfBounds)?;
 
-    let target_cospan = &diagram.cospans()[i];
-
-    let forward = factorize(
-        target_cospan.forward.clone(),
-        expansion.clone(),
-        slice.clone(),
-    )
-    .next();
-
-    let backward = factorize(target_cospan.backward.clone(), expansion.clone(), slice).next();
+    let forward = factorize(&target_cospan.forward, &expansion).next();
+    let backward = factorize(&target_cospan.backward, &expansion).next();
 
     #[allow(clippy::single_match_else)]
-    let cone = match (forward, backward) {
-        (Some(forward), Some(backward)) => {
-            let source_cospan = Cospan { forward, backward };
-            if normalize && source_cospan.is_redundant() {
-                *height = Height::Regular(i);
-                Some(Cone::new_unit(
-                    i,
-                    target_cospan.clone(),
-                    target_cospan.forward.clone(),
-                ))
-            } else {
-                Some(Cone::new(
+    let cone = || {
+        match (forward, backward) {
+            (Some(forward), Some(backward)) => {
+                let source_cospan = Cospan { forward, backward };
+                if normalize && source_cospan.is_redundant() {
+                    *height = Height::Regular(i);
+                    return Ok(Some(Cone::new_unit(
+                        i,
+                        target_cospan.clone(),
+                        target_cospan.forward.clone(),
+                    )));
+                }
+                return Ok(Some(Cone::new(
                     i,
                     vec![source_cospan],
                     target_cospan.clone(),
@@ -469,116 +465,111 @@ pub(crate) fn expand_propagate(
                         target_cospan.backward.clone(),
                     ],
                     vec![expansion],
-                ))
+                )));
             }
-        }
-        // (Some(forward), None) => {
-        //     let (backward, inclusion) = factorize_inc(
-        //         &slice
-        //             .clone()
-        //             .rewrite_backward(&target_cospan.backward)
-        //             .unwrap(),
-        //         &slice,
-        //         &target_cospan.backward,
-        //     );
-        //     let (_, inner_backward, inner_forward) = antipushout(
-        //         &slice.clone().rewrite_backward(&expansion).unwrap(),
-        //         &slice.clone().rewrite_backward(&inclusion).unwrap(),
-        //         &slice,
-        //         &expansion,
-        //         &inclusion,
-        //     )[0]
-        //     .clone();
+            (Some(forward), None) if anticontraction => 'arm: {
+                let slice = diagram.slice(Height::Singular(i)).unwrap();
+                let Some((backward, inclusion)) = factorize2(&target_cospan.backward) else {
+                    break 'arm;
+                };
+                let Some((_, inner_backward, inner_forward)) = antipushout(
+                    &slice.clone().rewrite_backward(&expansion).unwrap(),
+                    &slice.clone().rewrite_backward(&inclusion).unwrap(),
+                    &slice,
+                    &expansion,
+                    &inclusion,
+                )
+                .first()
+                .cloned() else {
+                    break 'arm;
+                };
 
-        //     Some(Cone::new(
-        //         i,
-        //         vec![
-        //             Cospan {
-        //                 forward,
-        //                 backward: inner_backward,
-        //             },
-        //             Cospan {
-        //                 forward: inner_forward,
-        //                 backward,
-        //             },
-        //         ],
-        //         target_cospan.clone(),
-        //         todo!("need antipushout"),
-        //         vec![expansion, inclusion],
-        //     ))
-        // }
-        // (None, Some(backward)) => {
-        //     let (forward, inclusion) = factorize_inc(
-        //         &slice
-        //             .clone()
-        //             .rewrite_backward(&target_cospan.forward)
-        //             .unwrap(),
-        //         &slice,
-        //         &target_cospan.forward,
-        //     );
-        //     let (_, inner_backward, inner_forward) = antipushout(
-        //         &slice.clone().rewrite_backward(&inclusion).unwrap(),
-        //         &slice.clone().rewrite_backward(&expansion).unwrap(),
-        //         &slice,
-        //         &inclusion,
-        //         &expansion,
-        //     )[0]
-        //     .clone();
-
-        //     Some(Cone::new(
-        //         i,
-        //         vec![
-        //             Cospan {
-        //                 forward,
-        //                 backward: inner_backward,
-        //             },
-        //             Cospan {
-        //                 forward: inner_forward,
-        //                 backward,
-        //             },
-        //         ],
-        //         target_cospan.clone(),
-        //         todo!("need antipushout"),
-        //         vec![inclusion, expansion],
-        //     ))
-        // }
-        _ => {
-            let source_cospans = vec![
-                Cospan {
-                    forward: target_cospan.forward.clone(),
-                    backward: expansion.clone(),
-                },
-                Cospan {
-                    forward: expansion.clone(),
-                    backward: target_cospan.backward.clone(),
-                },
-            ];
-            if source_cospans[0].is_redundant() || source_cospans[1].is_redundant() {
-                // Identity
-                None
-            } else if target_cospan.forward.is_homotopy() && target_cospan.backward.is_homotopy() {
-                // Insert a bubble
-                *height = Height::Regular(i + 1);
-                Some(Cone::new(
+                return Ok(Some(Cone::new_unlabelled(
                     i,
-                    source_cospans,
-                    target_cospan.clone(),
                     vec![
-                        target_cospan.forward.clone(),
-                        expansion,
-                        target_cospan.backward.clone(),
+                        Cospan {
+                            forward,
+                            backward: inner_backward,
+                        },
+                        Cospan {
+                            forward: inner_forward,
+                            backward,
+                        },
                     ],
-                    vec![Rewrite::identity(diagram.dimension() - 1); 2],
-                ))
-            } else {
-                return Err(ExpansionError::FailedToPropagate);
+                    target_cospan.clone(),
+                    vec![expansion, inclusion],
+                )));
             }
+            (None, Some(backward)) if anticontraction => 'arm: {
+                let slice = diagram.slice(Height::Singular(i)).unwrap();
+                let Some((forward, inclusion)) = factorize2(&target_cospan.forward) else {
+                    break 'arm;
+                };
+                let Some((_, inner_backward, inner_forward)) = antipushout(
+                    &slice.clone().rewrite_backward(&inclusion).unwrap(),
+                    &slice.clone().rewrite_backward(&expansion).unwrap(),
+                    &slice,
+                    &inclusion,
+                    &expansion,
+                )
+                .first()
+                .cloned() else {
+                    break 'arm;
+                };
+
+                return Ok(Some(Cone::new_unlabelled(
+                    i,
+                    vec![
+                        Cospan {
+                            forward,
+                            backward: inner_backward,
+                        },
+                        Cospan {
+                            forward: inner_forward,
+                            backward,
+                        },
+                    ],
+                    target_cospan.clone(),
+                    vec![inclusion, expansion],
+                )));
+            }
+            _ => {}
+        }
+        let source_cospans = vec![
+            Cospan {
+                forward: target_cospan.forward.clone(),
+                backward: expansion.clone(),
+            },
+            Cospan {
+                forward: expansion.clone(),
+                backward: target_cospan.backward.clone(),
+            },
+        ];
+        if source_cospans[0].is_redundant() || source_cospans[1].is_redundant() {
+            // Identity
+            Ok(None)
+        } else if target_cospan.forward.is_homotopy() && target_cospan.backward.is_homotopy() {
+            // Insert a bubble
+            *height = Height::Regular(i + 1);
+            Ok(Some(Cone::new(
+                i,
+                source_cospans,
+                target_cospan.clone(),
+                vec![
+                    target_cospan.forward.clone(),
+                    expansion,
+                    target_cospan.backward.clone(),
+                ],
+                vec![Rewrite::identity(diagram.dimension() - 1); 2],
+            )))
+        } else {
+            Err(ExpansionError::FailedToPropagate)
         }
     };
 
     Ok(RewriteN::new(
         diagram.dimension(),
-        cone.into_iter().collect(),
+        cone()?.into_iter().collect(),
     ))
 }
 

@@ -9,6 +9,7 @@ use std::{
 
 use hashconsing::{HConsed, HConsign, HashConsign};
 use homotopy_common::hash::{FastHashMap, FastHashSet};
+use itertools::Either;
 use once_cell::unsync::OnceCell;
 use serde::{ser::SerializeStruct, Deserialize, Serialize};
 use thiserror::Error;
@@ -95,31 +96,24 @@ pub enum Rewrite {
 }
 
 impl Rewrite {
-    /// Invariant: depth == boundary_path.depth() + prefix.len() && prefix.is_empty() <=> label_identifications.is_some()
     pub fn cone_over_generator(
         generator: Generator,
         base: Diagram,
         boundary_path: BoundaryPath,
-        depth: usize,
         prefix: &[Height],
         label_identifications: (&mut FastHashSet<Diagram>, &mut LabelIdentifications, bool),
-        rewrite_cache: &mut FastHashMap<
-            (Generator, Diagram, BoundaryPath, usize, Vec<Height>),
-            Self,
-        >,
+        rewrite_cache: &mut FastHashMap<(Generator, Diagram, BoundaryPath, Vec<Height>), Self>,
     ) -> Self {
         use Height::{Regular, Singular};
 
         use crate::Boundary::{Source, Target};
 
+        let depth = boundary_path.depth() + prefix.len();
+
         // memoize to reduce number of recursive calls
-        if let Some(rewrite) = rewrite_cache.get(&(
-            generator,
-            base.clone(),
-            boundary_path,
-            depth,
-            prefix.to_vec(),
-        )) {
+        if let Some(rewrite) =
+            rewrite_cache.get(&(generator, base.clone(), boundary_path, prefix.to_vec()))
+        {
             return rewrite.clone();
         }
 
@@ -143,7 +137,6 @@ impl Rewrite {
                         generator,
                         base.source(),
                         BoundaryPath(Source, depth + 1),
-                        depth + 1,
                         &[],
                         (seen, store, true),
                         rewrite_cache,
@@ -152,7 +145,6 @@ impl Rewrite {
                         generator,
                         base.target(),
                         BoundaryPath(Target, depth + 1),
-                        depth + 1,
                         &[],
                         (seen, store, true),
                         rewrite_cache,
@@ -167,7 +159,6 @@ impl Rewrite {
                             generator,
                             slice,
                             boundary_path,
-                            depth + 1,
                             &[prefix, &[Regular(i)]].concat(),
                             (seen, store, false),
                             rewrite_cache,
@@ -176,7 +167,6 @@ impl Rewrite {
                             generator,
                             slice,
                             boundary_path,
-                            depth + 1,
                             &[prefix, &[Singular(i)]].concat(),
                             (seen, store, false),
                             rewrite_cache,
@@ -197,7 +187,7 @@ impl Rewrite {
         };
 
         rewrite_cache.insert(
-            (generator, base, boundary_path, depth, prefix.to_vec()),
+            (generator, base, boundary_path, prefix.to_vec()),
             result.clone(),
         );
 
@@ -268,8 +258,8 @@ impl Rewrite {
     /// Do not read labels of the result and always
     /// compare it with equals_modulo_labels
     #[inline]
-    pub fn compose(&self, g: &Self) -> Result<Self, CompositionError> {
-        match (self, g) {
+    pub fn compose(&self, other: &Self) -> Result<Self, CompositionError> {
+        match (self, other) {
             (Self::Rewrite0(ref f), Self::Rewrite0(ref g)) => Ok(f.compose(g)?.into()),
             (Self::RewriteN(ref f), Self::RewriteN(ref g)) => Ok(f.compose(g)?.into()),
             (f, g) => Err(CompositionError::Dimension(f.dimension(), g.dimension())),
@@ -407,10 +397,10 @@ impl Rewrite0 {
     /// This will implicitly mangle/strip labels
     /// Do not read labels of the result and always
     /// compare it with equals_modulo_labels
-    pub fn compose(&self, g: &Self) -> Result<Self, CompositionError> {
-        match (&self.0, &g.0) {
+    pub fn compose(&self, other: &Self) -> Result<Self, CompositionError> {
+        match (&self.0, &other.0) {
             (Some(_), None) => Ok(self.clone()),
-            (None, Some(_)) => Ok(g.clone()),
+            (None, Some(_)) => Ok(other.clone()),
             (None, None) => Ok(Self::identity()),
             (Some((f_s, f_t, _)), Some((g_s, g_t, _))) if f_t == g_s => {
                 Ok(Self::new(*f_s, *g_t, None))
@@ -520,28 +510,6 @@ impl RewriteN {
         regular_slices: Vec<Vec<Rewrite>>,
         singular_slices: Vec<Vec<Rewrite>>,
     ) -> Self {
-        let rewrite = Self::from_slices_unsafe(
-            dimension,
-            source_cospans,
-            target_cospans,
-            regular_slices,
-            singular_slices,
-        );
-        if cfg!(feature = "safety-checks") {
-            rewrite.check(Mode::Shallow).expect("Rewrite is malformed");
-        }
-        rewrite
-    }
-
-    /// Unsafe version of `from_slices` which does not check if the rewrite is well-formed.
-    #[inline]
-    pub fn from_slices_unsafe(
-        dimension: usize,
-        source_cospans: &[Cospan],
-        target_cospans: &[Cospan],
-        regular_slices: Vec<Vec<Rewrite>>,
-        singular_slices: Vec<Vec<Rewrite>>,
-    ) -> Self {
         let mut cones = Vec::new();
         let mut index = 0;
 
@@ -557,7 +525,7 @@ impl RewriteN {
             index += size;
         }
 
-        Self::new_unsafe(dimension, cones)
+        Self::new(dimension, cones)
     }
 
     #[must_use]
@@ -628,33 +596,34 @@ impl RewriteN {
     }
 
     /// For each cone, find its target singular height
-    pub fn targets(&self) -> Vec<usize> {
-        let mut targets = Vec::new();
-        let mut offset: isize = 0;
-
-        for cone in self.cones() {
-            targets.push((cone.index as isize + offset) as usize);
-            offset += 1 - cone.len() as isize;
-        }
-
-        targets
+    pub fn targets(&self) -> impl Iterator<Item = usize> + '_ {
+        self.cones().iter().scan(0, |offset, cone| {
+            let target = (cone.index as isize + *offset) as usize;
+            *offset += 1 - cone.len() as isize;
+            Some(target)
+        })
     }
 
     /// Find a cone targeting a singular height
-    pub(crate) fn cone_over_target(&self, height: SingularHeight) -> Option<&Cone> {
-        let mut offset: isize = 0;
-
+    ///
+    /// If the cone is an identity cone, return its index.
+    pub(crate) fn cone_over_target(&self, mut height: SingularHeight) -> Either<&Cone, usize> {
         for cone in self.cones() {
-            let target = (cone.index as isize + offset) as usize;
-
-            if target == height {
-                return Some(cone);
+            match cone.index.cmp(&height) {
+                Ordering::Less => match cone.len().checked_sub(1) {
+                    None => height -= 1,
+                    Some(offset) => height += offset,
+                },
+                Ordering::Equal => {
+                    return Either::Left(cone);
+                }
+                Ordering::Greater => {
+                    return Either::Right(height);
+                }
             }
-
-            offset += 1 - cone.len() as isize;
         }
 
-        None
+        Either::Right(height)
     }
 
     /// Take a singular slice of a rewrite
@@ -671,16 +640,19 @@ impl RewriteN {
     /// This will implicitly mangle/strip labels
     /// Do not read labels of the result and always
     /// compare it with equals_modulo_labels
-    pub fn compose(&self, g: &Self) -> Result<Self, CompositionError> {
-        if self.dimension() != g.dimension() {
-            return Err(CompositionError::Dimension(self.dimension(), g.dimension()));
+    pub fn compose(&self, other: &Self) -> Result<Self, CompositionError> {
+        if self.dimension() != other.dimension() {
+            return Err(CompositionError::Dimension(
+                self.dimension(),
+                other.dimension(),
+            ));
         }
 
         let mut offset = 0;
         let mut delayed_offset = 0;
 
         let mut f_cones: Vec<Cone> = self.cones().iter().rev().cloned().collect();
-        let mut g_cones: Vec<Cone> = g.cones().iter().rev().cloned().collect();
+        let mut g_cones: Vec<Cone> = other.cones().iter().rev().cloned().collect();
         let mut cones: Vec<Cone> = Vec::new();
 
         loop {
@@ -711,10 +683,7 @@ impl RewriteN {
                     } else {
                         let index = index as usize;
 
-                        if !f_cone
-                            .target()
-                            .equals_modulo_labels(&g_cone.source()[index])
-                        {
+                        if f_cone.target() != &g_cone.source()[index] {
                             return Err(CompositionError::Incompatible);
                         }
 
@@ -768,25 +737,10 @@ impl RewriteN {
     }
 
     pub fn singular_preimage(&self, index: SingularHeight) -> Range<SingularHeight> {
-        let mut offset: isize = 0;
-
-        for cone in self.cones() {
-            let adjusted = (index as isize - offset) as usize;
-            match adjusted.cmp(&cone.index) {
-                Ordering::Less => {
-                    return adjusted..adjusted + 1;
-                }
-                Ordering::Equal => {
-                    return cone.index..cone.index + cone.len();
-                }
-                Ordering::Greater => {
-                    offset += 1 - cone.len() as isize;
-                }
-            }
-        }
-
-        let adjusted = (index as isize - offset) as usize;
-        adjusted..adjusted + 1
+        let (start, len) = self
+            .cone_over_target(index)
+            .either(|c| (c.index, c.len()), |i| (i, 1));
+        start..start + len
     }
 
     pub fn regular_image(&self, index: RegularHeight) -> RegularHeight {

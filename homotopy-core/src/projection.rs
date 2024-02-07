@@ -66,7 +66,7 @@ impl<const N: usize> Projection<N> {
             diagram.clone(),
         ));
         for i in 0..N {
-            graph = graph.explode_simple(
+            graph = graph.explode_graph(
                 |_, key, si| {
                     let mut key = *key;
                     key[i] = si;
@@ -125,8 +125,8 @@ impl<const N: usize> Projection<N> {
                         Some(i) => {
                             let input: &RewriteN = input.try_into()?;
                             let output: &RewriteN = output.try_into()?;
-                            input.cone_over_target(i).is_none()
-                                && output.cone_over_target(i).is_none()
+                            input.cone_over_target(i).is_right()
+                                && output.cone_over_target(i).is_right()
                         }
                     },
                     _ => false,
@@ -279,7 +279,7 @@ impl<const N: usize> Depths<N> {
             diagram.clone(),
         ));
         for i in 0..N {
-            graph = graph.explode_simple(
+            graph = graph.explode_graph(
                 |_, key, si| {
                     let mut key = *key;
                     key[i] = si;
@@ -304,7 +304,7 @@ impl<const N: usize> Depths<N> {
                     edge_depths[edge.id()] =
                         node_depths[edge.source()].map(|d| r.singular_image(d));
 
-                    let target_depth = r.targets().first().copied();
+                    let target_depth = r.targets().next();
                     node_depths[node] = min_defined(
                         min_defined(node_depths[node], edge_depths[edge.id()]),
                         target_depth,
