@@ -24,19 +24,19 @@ homotopy-model = { path = "../homotopy-model" }
 homotopy-graphics = { path = "../homotopy-graphics" }
 homotopy-gl = { path = "../homotopy-gl" }
 closure = "0.3.0"
-js-sys = "0.3.64"
-quote = "1.0.33"
-serde = { version = "1.0.185", features = ["derive"] }
-syn = "2.0.43"
+js-sys = "0.3.68"
+quote = "1.0.35"
+serde = { version = "1.0.196", features = ["derive"] }
+syn = "2.0.48"
 paste = "1.0.14"
 rmp-serde = "1.1.2"
-serde_json = "1.0.108"
+serde_json = "1.0.113"
 zip = { version = "0.6.6", default-features = false, features = ["deflate"] }
 
 # The `wasm-bindgen` crate provides the bare minimum functionality needed
 # to interact with JavaScript.
-wasm-bindgen = { version = "0.2.87" }
-serde-wasm-bindgen = "0.6.1"
+wasm-bindgen = { version = "0.2.89" }
+serde-wasm-bindgen = "0.6.3"
 gloo = "0.11.0"
 gloo-timers = { version = "0.3.0", features = ["futures"] }
 tracing-web = "0.1.3"
@@ -65,7 +65,7 @@ yew-macro = "0.20.0"
 # The `web-sys` crate allows you to interact with the various browser APIs,
 # like the DOM.
 [dependencies.web-sys]
-version = "0.3.64"
+version = "0.3.68"
 features = [
   "BeforeUnloadEvent",
   "console",
@@ -89,5 +89,5 @@ features = [
 # These crates are used for running unit tests.
 [dev-dependencies]
 cargo-husky = { features = ["precommit-hook", "run-cargo-check", "run-cargo-test", "run-cargo-fmt", "run-cargo-clippy"], version = "1.5.0" }
-wasm-bindgen-test = "0.3.37"
+wasm-bindgen-test = "0.3.41"
 futures = "0.3.30"

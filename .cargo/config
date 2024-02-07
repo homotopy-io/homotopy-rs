@@ -28,6 +28,7 @@ rustflags = [
     "-Aclippy::must_use_candidate",
     "-Aclippy::range_plus_one",
     "-Aclippy::similar_names",
+    "-Aclippy::struct_field_names",
     "-Aclippy::too_many_lines",
 
     # restrictions

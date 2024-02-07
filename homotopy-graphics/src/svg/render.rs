@@ -410,7 +410,7 @@ fn make_path_segment<const N: usize>(
     let layout_start: Point = project_2d(layout[&start]).into();
     let layout_end: Point = project_2d(layout[&end]).into();
 
-    match ((start.get(0), start.get(1)), (end.get(0), end.get(1))) {
+    match ((start.first(), start.get(1)), (end.first(), end.get(1))) {
         (
             (Some(Interior(Regular(_))), _),
             (Some(Interior(Singular(_))), Some(Interior(Singular(_)))),

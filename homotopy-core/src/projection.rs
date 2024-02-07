@@ -286,7 +286,7 @@ impl<const N: usize> Depths<N> {
                     Some(key)
                 },
                 |_, _, _| Some(()),
-                |_, _, r| r.is_atomic().then_some(()),
+                |_, (), r| r.is_atomic().then_some(()),
             )?;
         }
 

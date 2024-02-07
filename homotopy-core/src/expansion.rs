@@ -401,7 +401,7 @@ fn expand_cospan(
 
     let new_regular_slice = {
         let mut cones = new_backward0.cones().to_vec();
-        if let Some(cone) = new_forward1.cones().get(0) {
+        if let Some(cone) = new_forward1.cones().first() {
             debug_assert!(forward_index.is_some());
             let index = backward_index.unwrap_or_else(|| {
                 backward_targets

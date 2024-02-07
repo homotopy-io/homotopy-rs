@@ -10,12 +10,12 @@ instant = { version = "0.1.12"}
 homotopy-common = { path = "../homotopy-common" }
 homotopy-core = { path = "../homotopy-core" }
 homotopy-graphics = { path = "../homotopy-graphics" }
-quote = "1.0.33"
-serde = { version = "1.0.185", features = ["derive"] }
-syn = "2.0.43"
+quote = "1.0.35"
+serde = { version = "1.0.196", features = ["derive"] }
+syn = "2.0.48"
 paste = "1.0.14"
 rmp-serde = "1.1.2"
-serde_json = "1.0.108"
+serde_json = "1.0.113"
 
 palette = { git = "https://github.com/Ogeon/palette", features = ["serializing"] }
 
