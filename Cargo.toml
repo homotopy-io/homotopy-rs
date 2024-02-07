@@ -8,6 +8,7 @@ members = [
   "homotopy-web",
   "homotopy-cli",
 ]
+resolver = "2"
 
 [profile.release]
 # This makes the compiled code faster and smaller, but it makes compiling slower,
@@ -23,4 +24,4 @@ cachix = { name = "homotopy-io", key = "homotopy-io.cachix.org-1:W30ZjMFglzQwLte
 [patch.crates-io]
 highs = { git = "https://github.com/regular-citizen/highs" }
 katex = { git = "https://github.com/regular-citizen/katex-rs" }
-petgraph = { git = "https://github.com/NickHu/petgraph", branch = "master" }
+petgraph = { git = "https://github.com/NickHu/petgraph", branch = "filter_map" }
