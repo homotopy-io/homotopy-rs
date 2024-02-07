@@ -7,6 +7,7 @@ pub struct GeneratorPreferenceCheckboxProps {
     pub disabled: bool,
     pub left: &'static str,
     pub right: &'static str,
+    #[prop_or_default]
     pub tooltip: Option<&'static str>,
     pub color: String,
     pub onclick: Callback<MouseEvent>,
