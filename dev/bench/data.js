@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1707314873160,
+  "lastUpdate": 1707315348932,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -49775,6 +49775,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 244.52,
             "range": "+/- 0.870",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "09c00e9ecb238563d9fee132435383263e42eda5",
+          "message": "build(deps): bump yew from 0.20.0 to 0.21.0 (#1239)\n\n* build(deps): bump yew from 0.20.0 to 0.21.0\n\nBumps [yew](https://github.com/yewstack/yew) from 0.20.0 to 0.21.0.\n- [Release notes](https://github.com/yewstack/yew/releases)\n- [Changelog](https://github.com/yewstack/yew/blob/master/CHANGELOG.md)\n- [Commits](https://github.com/yewstack/yew/compare/yew-v0.20.0...yew-v0.21.0)\n\n---\nupdated-dependencies:\n- dependency-name: yew\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n\n* Option props are now mandatory unless explicitly overridden\n\n* update Cargo.lock\n\n---------\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Nick Hu <me@nickhu.co.uk>",
+          "timestamp": "2024-02-07T12:44:09Z",
+          "tree_id": "68c5c92417a783201f80ea84373efc2c288b2627",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/09c00e9ecb238563d9fee132435383263e42eda5"
+        },
+        "date": 1707315334360,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 1.2448,
+            "range": "+/- 0.004",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 12.04,
+            "range": "+/- 0.050",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 225.52,
+            "range": "+/- 0.530",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 5.3596,
+            "range": "+/- 0.005",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 9.6047,
+            "range": "+/- 0.066",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 242.95,
+            "range": "+/- 1.060",
             "unit": "ms"
           }
         ]
