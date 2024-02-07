@@ -23,15 +23,17 @@ pub struct Generator {
 }
 
 impl Generator {
+    /// Creates a new generator with the given id and dimension.
     pub fn new(id: usize, dimension: usize) -> Self {
         Self { id, dimension }
     }
 
+    /// Increments the dimension by one.
     #[must_use]
     pub fn suspended(self) -> Self {
         Self {
+            id: self.id,
             dimension: self.dimension + 1,
-            ..self
         }
     }
 }
@@ -49,6 +51,7 @@ pub enum Boundary {
 }
 
 impl Boundary {
+    /// The opposite boundary.
     #[must_use]
     pub fn flip(self) -> Self {
         match self {
@@ -78,6 +81,14 @@ pub enum Height {
 
 impl Height {
     /// Create an iterator over all heights in a diagram of a specified size.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// # use homotopy_core::common::Height;
+    /// # use homotopy_core::common::Height::*;
+    /// assert_eq!(Height::for_size(1).collect::<Vec<_>>(), vec![Regular(0), Singular(0), Regular(1)])
+    /// ```
     pub fn for_size(size: usize) -> impl DoubleEndedIterator<Item = Height> {
         (0..2 * size + 1).map(Height::from)
     }
@@ -142,6 +153,19 @@ pub enum SliceIndex {
 
 impl SliceIndex {
     /// Create an iterator over all slice indices in a diagram of a specified size.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// # use homotopy_core::common::Boundary::*;
+    /// # use homotopy_core::common::Height::*;
+    /// # use homotopy_core::common::SliceIndex;
+    /// # use homotopy_core::common::SliceIndex::*;
+    /// assert_eq!(
+    ///     SliceIndex::for_size(1).collect::<Vec<_>>(),
+    ///     vec![Boundary(Source), Interior(Regular(0)), Interior(Singular(0)), Interior(Regular(1)), Boundary(Target)],
+    /// )
+    /// ```
     pub fn for_size(size: usize) -> impl DoubleEndedIterator<Item = SliceIndex> {
         use std::iter::once;
         once(Boundary::Source.into())
@@ -154,9 +178,9 @@ impl SliceIndex {
     /// # Examples
     ///
     /// ```
-    /// # use homotopy_core::common::SliceIndex::*;
-    /// # use homotopy_core::common::Height::*;
     /// # use homotopy_core::common::Boundary::*;
+    /// # use homotopy_core::common::Height::*;
+    /// # use homotopy_core::common::SliceIndex::*;
     /// assert_eq!(Boundary(Source).next(1), Some(Interior(Regular(0))));
     /// assert_eq!(Interior(Regular(0)).next(1), Some(Interior(Singular(0))));
     /// assert_eq!(Interior(Singular(0)).next(1), Some(Interior(Regular(1))));
@@ -180,9 +204,9 @@ impl SliceIndex {
     /// # Examples
     ///
     /// ```
-    /// # use homotopy_core::common::SliceIndex::*;
-    /// # use homotopy_core::common::Height::*;
     /// # use homotopy_core::common::Boundary::*;
+    /// # use homotopy_core::common::Height::*;
+    /// # use homotopy_core::common::SliceIndex::*;
     /// assert_eq!(Boundary(Source).prev(1), None);
     /// assert_eq!(Interior(Regular(0)).prev(1), Some(Boundary(Source)));
     /// assert_eq!(Interior(Singular(0)).prev(1), Some(Interior(Regular(0))));
@@ -211,8 +235,8 @@ impl SliceIndex {
 
 /// ```
 /// # use homotopy_core::common::Boundary::*;
-/// # use homotopy_core::common::SliceIndex::*;
 /// # use homotopy_core::common::Height::*;
+/// # use homotopy_core::common::SliceIndex::*;
 /// assert!(Boundary(Source) < Interior(Regular(0)));
 /// assert!(Interior(Regular(10)) < Boundary(Target));
 /// ```
@@ -282,25 +306,40 @@ impl<T> IndexMut<SliceIndex> for Vec<T> {
     }
 }
 
+/// A boundary path represents a boundary of a diagram.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct BoundaryPath(pub Boundary, pub usize);
 
 impl BoundaryPath {
+    /// Given a path in a diagram, split it into a boundary path and an interior path.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// # use homotopy_core::common::Boundary::*;
+    /// # use homotopy_core::common::BoundaryPath;
+    /// # use homotopy_core::common::Height::*;
+    /// # use homotopy_core::common::SliceIndex::*;
+    /// assert_eq!(
+    ///     BoundaryPath::split(&[Interior(Regular(0)), Boundary(Source), Interior(Singular(0))]),
+    ///     (Some(BoundaryPath(Source, 1)), vec![Singular(0)]),
+    /// )
+    /// ```
     pub fn split(path: &[SliceIndex]) -> (Option<Self>, Vec<Height>) {
         use SliceIndex::{Boundary, Interior};
 
         let mut boundary_path: Option<Self> = None;
-        let mut interior = Vec::new();
+        let mut interior_path = Vec::new();
 
         for height in path.iter().rev() {
             match (&mut boundary_path, height) {
                 (Some(bp), _) => bp.1 += 1,
                 (None, Boundary(b)) => boundary_path = Some(Self(*b, 0)),
-                (None, Interior(h)) => interior.insert(0, *h),
+                (None, Interior(h)) => interior_path.insert(0, *h),
             }
         }
 
-        (boundary_path, interior)
+        (boundary_path, interior_path)
     }
 
     #[inline]
