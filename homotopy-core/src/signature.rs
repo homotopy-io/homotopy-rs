@@ -12,12 +12,6 @@ pub trait Signature {
     type Info: GeneratorInfo;
     fn generators(&self) -> impl Iterator<Item = Generator>;
     fn generator_info(&self, g: Generator) -> Option<&Self::Info>;
-    fn add_zero(&mut self) -> Diagram0;
-    fn add(
-        &mut self,
-        source: impl Into<Diagram>,
-        target: impl Into<Diagram>,
-    ) -> Result<DiagramN, NewDiagramError>;
 
     fn globular_pairs(&self, generator: Generator) -> Vec<Generator> {
         let diagram = self.generator_info(generator).unwrap().diagram();
@@ -56,15 +50,17 @@ impl Signature for SignatureBuilder {
     fn generator_info(&self, g: Generator) -> Option<&GeneratorData> {
         self.0.get(g.id)
     }
+}
 
-    fn add_zero(&mut self) -> Diagram0 {
+impl SignatureBuilder {
+    pub fn add_zero(&mut self) -> Diagram0 {
         let generator = Generator::new(self.0.len(), 0);
         let diagram = Diagram0::from(generator);
         self.0.push(GeneratorData(generator, diagram.into()));
         diagram
     }
 
-    fn add(
+    pub fn add(
         &mut self,
         source: impl Into<Diagram>,
         target: impl Into<Diagram>,

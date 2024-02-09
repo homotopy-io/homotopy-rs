@@ -327,18 +327,6 @@ impl homotopy_core::signature::Signature for Signature {
     fn generator_info(&self, g: Generator) -> Option<&GeneratorInfo> {
         self.iter().find(|info| info.generator == g)
     }
-
-    fn add_zero(&mut self) -> Diagram0 {
-        self.create_generator_zero("Cell")
-    }
-
-    fn add(
-        &mut self,
-        source: impl Into<Diagram>,
-        target: impl Into<Diagram>,
-    ) -> Result<DiagramN, NewDiagramError> {
-        self.create_generator(source.into(), target.into(), "Cell", false)
-    }
 }
 
 impl From<Tree<SignatureItem>> for Signature {
