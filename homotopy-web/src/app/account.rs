@@ -521,7 +521,7 @@ impl AccountView {
             };
             save_project_js(args.into(), save_cb_js);
         } else {
-            tracing::error!("Cannot save a project which is not open (try \"save as\")");
+            tracing::error!("Cannot save a project which is not open (try \"save new\")");
         }
     }
 
