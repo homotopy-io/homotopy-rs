@@ -188,12 +188,12 @@ impl Store {
                     target,
                     label,
                 } => match (source, target, label) {
-                    (None, None, None) => Some(Rewrite0(None).into()),
+                    (None, None, None) => Some(Rewrite0::identity().into()),
                     (Some(source), Some(target), label) => {
                         let source = Diagram0::new(source.0, source.1);
                         let target = Diagram0::new(target.0, target.1);
                         let label = label.map(|label| Label::new(label.0, label.1));
-                        Some(Rewrite0(Some((source, target, label))).into())
+                        Some(Rewrite0::new(source, target, label).into())
                     }
                     _ => None,
                 },

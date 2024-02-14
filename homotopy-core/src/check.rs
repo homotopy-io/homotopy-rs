@@ -329,11 +329,7 @@ impl Rewrite {
 impl Rewrite0 {
     #[must_use]
     pub fn equivalent(&self, other: &Rewrite0) -> bool {
-        match (&self.0, &other.0) {
-            (Some((ss, st, _)), Some((os, ot, _))) => ss == os && st == ot,
-            (None, None) => true,
-            (_, _) => false,
-        }
+        self.boundaries() == other.boundaries()
     }
 }
 

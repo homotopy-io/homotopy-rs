@@ -291,7 +291,7 @@ where
         // find collapsible edges wrt nodes
         for e in edges.into_iter().filter(|e| {
             // e is an identity rewrite
-            <&Rewrite0>::try_from(&e.weight().rewrite).unwrap().0.as_ref().map_or(true, |(s, t, _)| s.generator == t.generator) &&
+            <&Rewrite0>::try_from(&e.weight().rewrite).unwrap().boundaries().map_or(true, |(s, t)| s.generator == t.generator) &&
             // check triangles within nodes which might refute collapsibility of e
             graph
                 .neighbors_directed(e.source(), Incoming)

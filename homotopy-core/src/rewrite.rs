@@ -290,7 +290,7 @@ impl Rewrite {
 }
 
 #[derive(Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct Rewrite0(pub(crate) Option<(Diagram0, Diagram0, Option<Label>)>);
+pub struct Rewrite0(Option<(Diagram0, Diagram0, Option<Label>)>);
 
 impl Rewrite0 {
     pub fn new(
@@ -410,6 +410,12 @@ impl Rewrite0 {
                 Err(CompositionError::Incompatible)
             }
         }
+    }
+
+    pub fn boundaries(&self) -> Option<(Diagram0, Diagram0)> {
+        self.0
+            .as_ref()
+            .map(|(source, target, _)| (*source, *target))
     }
 
     pub fn source(&self) -> Option<Diagram0> {

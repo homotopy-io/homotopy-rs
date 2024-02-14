@@ -286,9 +286,9 @@ impl Diagram0 {
     }
 
     pub(crate) fn rewrite_forward(self, rewrite: &Rewrite0) -> Result<Self, RewritingError> {
-        match rewrite.0 {
+        match rewrite.boundaries() {
             None => Ok(self),
-            Some((source, target, _)) => {
+            Some((source, target)) => {
                 if self == source {
                     Ok(target)
                 } else {
@@ -299,9 +299,9 @@ impl Diagram0 {
     }
 
     pub(crate) fn rewrite_backward(self, rewrite: &Rewrite0) -> Result<Self, RewritingError> {
-        match rewrite.0 {
+        match rewrite.boundaries() {
             None => Ok(self),
-            Some((source, target, _)) => {
+            Some((source, target)) => {
                 if self == target {
                     Ok(source)
                 } else {
