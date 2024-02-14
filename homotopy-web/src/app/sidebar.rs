@@ -91,6 +91,7 @@ pub struct SidebarDrawerProps {
     pub title: &'static str,
     pub model_dispatch: Callback<model::Action>,
     pub sidebar_dispatch: Callback<SidebarMsg>,
+    #[prop_or_default]
     pub remote_project_metadata: Option<RemoteProjectMetadata>,
     pub initial_width: i32,
     #[prop_or(0)]
