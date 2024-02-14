@@ -437,6 +437,12 @@ impl AccountView {
                         Msg::UpdateProjectMetadata(update)
                     })
                 };
+                let delete = {
+                    let delete_project_id = project_id.clone();
+                    html! {
+                        <button onclick={ctx.link().callback(move |_| Msg::DeleteProject(delete_project_id.clone()))}>{"Delete"}</button>
+                    }
+                };
                 let open_cb = {
                     let project = project.clone();
                     ctx.link()
@@ -446,6 +452,18 @@ impl AccountView {
                     "account__project-list-item account__project-list-item-current"
                 } else {
                     "account__project-list-item"
+                };
+                let delete_or_versions = if project.visibility == ProjectVisibility::Published {
+                    // TODO: handle other versions
+                    html! {
+                        <div class="account__project-list-item-versions">
+                            { [0].iter().map(|v| html! { <span>{format!("v{v}")}</span> }).collect::<Html>() }
+                        </div>
+                    }
+                } else {
+                    html! {
+                        <div class="account__project-list-item-delete">{delete}</div>
+                    }
                 };
                 html! {
                     <li class={li_class} onclick={open_cb}>
@@ -461,6 +479,7 @@ impl AccountView {
                         </div>
                         <div class="account__project-list-item-id">{project.id.clone()}</div>
                         <div class="account__project-list-item-lm">{lm}</div>
+                        {delete_or_versions}
                     </li>
                 }
             })
