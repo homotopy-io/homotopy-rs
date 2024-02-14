@@ -1,7 +1,7 @@
 {
   "hosting": {
     "target": "homotopy-rs",
-    "public": "result",
+    "public": "dist",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -36,5 +36,26 @@
   },
   "storage": {
     "rules": "storage.rules"
+  },
+  "emulators": {
+    "auth": {
+      "port": 9099
+    },
+    "functions": {
+      "port": 5001
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "hosting": {
+      "port": 5000
+    },
+    "storage": {
+      "port": 9199
+    },
+    "ui": {
+      "enabled": true
+    },
+    "singleProjectMode": true
   }
 }

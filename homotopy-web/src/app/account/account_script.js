@@ -1,20 +1,22 @@
 // This file is included in `bindings.rs`
 
-import "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js";
-import "https://www.gstatic.com/firebasejs/9.15.0/firebase-storage-compat.js";
-import "https://www.gstatic.com/firebasejs/9.15.0/firebase-functions-compat.js";
-import "https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.js";
+import "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js";
+import "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js";
+import "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions-compat.js";
+import "https://www.gstatic.com/firebasejs/ui/6.1.0/firebase-ui-auth.js";
 
 const auth = firebase.auth();
-const ui = new firebaseui.auth.AuthUI(auth);
 
 const storage = firebase.storage();
 const functions = firebase.functions();
 
 if (location.hostname === "localhost") {
+    console.log("localhost detected, using firebase emulators");
+    auth.useEmulator("http://127.0.0.1:9099");
     storage.useEmulator("127.0.0.1", 9199);
     functions.useEmulator("127.0.0.1", 5001);
 }
+const ui = new firebaseui.auth.AuthUI(auth);
 
 const getUserProjectsCF = functions.httpsCallable('getUserProjects');
 const requestBlobUploadCF = functions.httpsCallable('requestBlobUpload');

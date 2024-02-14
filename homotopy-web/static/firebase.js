@@ -17,7 +17,7 @@ const firebaseConfig = {
 console.log("Loading firebase...");
 
 // Compat modules for firebase ui
-await import("https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js")
+await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js")
     .catch(err => {
         console.error("Failed to import firebase-app-compat", err);
         throw err;
@@ -25,14 +25,14 @@ await import("https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js")
 // Initialize Firebase
 const app = firebase.initializeApp(firebaseConfig);
 
-await import("https://www.gstatic.com/firebasejs/9.15.0/firebase-analytics-compat.js")
+await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics-compat.js")
     .catch(err => {
         console.error("Failed to import firebase-analytics-compat", err);
         throw err;
     });
 const analytics = firebase.analytics();
 
-await import("https://www.gstatic.com/firebasejs/9.15.0/firebase-performance-compat.js")
+await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-performance-compat.js")
     .catch(err => {
         console.error("Failed to import firebase-performance-compat", err);
         throw err;
