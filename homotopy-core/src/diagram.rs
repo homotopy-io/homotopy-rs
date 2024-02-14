@@ -125,48 +125,18 @@ impl Diagram {
     }
 
     pub(crate) fn rewrite_forward(self, rewrite: &Rewrite) -> Result<Self, RewritingError> {
-        use Diagram::{Diagram0, DiagramN};
-        match self {
-            Diagram0(g) => match &rewrite {
-                Rewrite::Rewrite0(r) => match &r.0 {
-                    None => Ok(self),
-                    Some((source, target, _label)) => {
-                        if g == *source {
-                            Ok(Diagram0(*target))
-                        } else {
-                            Err(RewritingError::Incompatible)
-                        }
-                    }
-                },
-                Rewrite::RewriteN(r) => Err(RewritingError::Dimension(0, r.dimension())),
-            },
-            DiagramN(d) => match &rewrite {
-                Rewrite::Rewrite0(_) => Err(RewritingError::Dimension(d.dimension(), 0)),
-                Rewrite::RewriteN(r) => d.rewrite_forward(r).map(DiagramN),
-            },
+        match (self, rewrite) {
+            (Diagram::Diagram0(d), Rewrite::Rewrite0(r)) => d.rewrite_forward(r).map(Into::into),
+            (Diagram::DiagramN(d), Rewrite::RewriteN(r)) => d.rewrite_forward(r).map(Into::into),
+            (d, r) => Err(RewritingError::Dimension(d.dimension(), r.dimension())),
         }
     }
 
     pub(crate) fn rewrite_backward(self, rewrite: &Rewrite) -> Result<Self, RewritingError> {
-        use Diagram::{Diagram0, DiagramN};
-        match self {
-            Diagram0(g) => match &rewrite {
-                Rewrite::Rewrite0(r) => match &r.0 {
-                    None => Ok(self),
-                    Some((source, target, _label)) => {
-                        if g == *target {
-                            Ok(Diagram0(*source))
-                        } else {
-                            Err(RewritingError::Incompatible)
-                        }
-                    }
-                },
-                Rewrite::RewriteN(r) => Err(RewritingError::Dimension(0, r.dimension())),
-            },
-            DiagramN(d) => match &rewrite {
-                Rewrite::Rewrite0(_) => Err(RewritingError::Dimension(d.dimension(), 0)),
-                Rewrite::RewriteN(r) => d.rewrite_backward(r).map(DiagramN),
-            },
+        match (self, rewrite) {
+            (Diagram::Diagram0(d), Rewrite::Rewrite0(r)) => d.rewrite_backward(r).map(Into::into),
+            (Diagram::DiagramN(d), Rewrite::RewriteN(r)) => d.rewrite_backward(r).map(Into::into),
+            (d, r) => Err(RewritingError::Dimension(d.dimension(), r.dimension())),
         }
     }
 
@@ -313,6 +283,32 @@ impl Diagram0 {
     #[must_use]
     pub fn orientation_transform(self, k: Orientation) -> Self {
         Self::new(self.generator, self.orientation * k)
+    }
+
+    pub(crate) fn rewrite_forward(self, rewrite: &Rewrite0) -> Result<Self, RewritingError> {
+        match rewrite.0 {
+            None => Ok(self),
+            Some((source, target, _)) => {
+                if self == source {
+                    Ok(target)
+                } else {
+                    Err(RewritingError::Incompatible)
+                }
+            }
+        }
+    }
+
+    pub(crate) fn rewrite_backward(self, rewrite: &Rewrite0) -> Result<Self, RewritingError> {
+        match rewrite.0 {
+            None => Ok(self),
+            Some((source, target, _)) => {
+                if self == target {
+                    Ok(source)
+                } else {
+                    Err(RewritingError::Incompatible)
+                }
+            }
+        }
     }
 }
 
