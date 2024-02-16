@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1708083393436,
+  "lastUpdate": 1708095996185,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -50075,6 +50075,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 230.95,
             "range": "+/- 1.860",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thud@thud.dev",
+            "name": "Jasper Parish",
+            "username": "thud"
+          },
+          "committer": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "distinct": true,
+          "id": "dc38271916f79bf5f7d0b7486451cd9d97545712",
+          "message": "Initial account support (#1234)\n\n* Add initial account support\n\n* Tweak linting for cloud functions\n\n* Rename top level firebase directories for clarity\n\n* Add basic URL catching support\n\n* yew 2.1 compatibility\n\n* update firebase versions\n\n* fix some lints, make auth emulator work\n\n* basic delete UI\n\n* add firebase warning\n\n* fix lints\n\n---------\n\nCo-authored-by: Nick Hu <me@nickhu.co.uk>",
+          "timestamp": "2024-02-16T14:47:15Z",
+          "tree_id": "fc0167615762e59f91040d754abd062f8ef410d2",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/dc38271916f79bf5f7d0b7486451cd9d97545712"
+        },
+        "date": 1708095982333,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 1.22,
+            "range": "+/- 0.004",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 11.379,
+            "range": "+/- 0.061",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 200.4,
+            "range": "+/- 0.570",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 4.6396,
+            "range": "+/- 0.008",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 9.3051,
+            "range": "+/- 0.024",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 242.03,
+            "range": "+/- 0.680",
             "unit": "ms"
           }
         ]
