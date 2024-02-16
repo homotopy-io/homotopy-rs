@@ -17,6 +17,7 @@ use crate::{
     model,
 };
 
+#[allow(clippy::mem_forget)] // due to wasm_bindgen
 pub mod account;
 mod attach;
 mod boundary;

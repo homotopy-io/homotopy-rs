@@ -223,6 +223,7 @@ impl Component for AccountView {
         }
     }
 
+    #[allow(clippy::cognitive_complexity)]
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::LogIn(user) => {
@@ -465,7 +466,10 @@ impl AccountView {
                     // TODO: handle other versions
                     html! {
                         <div class="account__project-list-item-versions">
-                            { [0].iter().map(|v| html! { <span>{format!("v{v}")}</span> }).collect::<Html>() }
+                            {
+                                #[allow(clippy::iter_on_single_items)]
+                                [0].iter().map(|v| html! { <span>{format!("v{v}")}</span> }).collect::<Html>()
+                            }
                         </div>
                     }
                 } else {
