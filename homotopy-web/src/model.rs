@@ -14,6 +14,8 @@ use serde::Serialize;
 use thiserror::Error;
 use wasm_bindgen::JsCast;
 
+use crate::app::account;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub enum Action {
     Proof(proof::Action),
@@ -33,6 +35,8 @@ pub enum Action {
     SelectPoint(Vec<SliceIndex>, bool),
     HighlightAttachment(Option<AttachOption>),
     HighlightSlice(Option<SliceIndex>),
+
+    SetRemoteProjectMetadata(Option<account::RemoteProjectMetadata>),
 
     Help,
 }
@@ -90,6 +94,7 @@ impl Selectables {
 
 #[derive(Debug, Clone, Default)]
 pub struct State {
+    pub remote_project_metadata: Option<account::RemoteProjectMetadata>,
     pub history: History,
     pub options: Option<Selectables>,
     pub attachment_highlight: Option<AttachOption>,
@@ -306,6 +311,9 @@ impl State {
             Action::HighlightSlice(slice) => self.highlight_slice(slice),
             Action::ClearSelections => self.clear_selections(),
             Action::Merge(generator) => self.merge_options(generator),
+            Action::SetRemoteProjectMetadata(metadata) => {
+                self.set_remote_project_metadata(metadata);
+            }
             Action::Help => help()?,
         }
 
@@ -446,6 +454,19 @@ impl State {
             self.options = Some(Selectables::Merge(generator, result));
         }
     }
+
+    /// Handler for [Action::SetRemoteProjectId].
+    fn set_remote_project_metadata(&mut self, metadata: Option<account::RemoteProjectMetadata>) {
+        if let Some(md) = &metadata {
+            let path = if md.visibility == account::ProjectVisibility::Published {
+                format!("/p/{}", md.id)
+            } else {
+                format!("/u/{}/{}", md.uid, md.id)
+            };
+            update_window_url_path(&path);
+        }
+        self.remote_project_metadata = metadata;
+    }
 }
 
 #[derive(Debug, Error)]
@@ -495,4 +516,18 @@ pub fn generate_download(name: &str, ext: &str, data: &[u8]) -> Result<(), wasm_
     a.click();
     a.remove();
     web_sys::Url::revoke_object_url(&url)
+}
+
+pub fn update_window_url_path(new_path: &str) {
+    let window = web_sys::window().unwrap();
+    let origin = window.location().origin().unwrap();
+    window
+        .history()
+        .unwrap()
+        .replace_state_with_url(
+            &None::<u8>.into(),
+            "title",
+            Some(&format!("{origin}{new_path}")),
+        )
+        .unwrap();
 }

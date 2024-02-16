@@ -4,7 +4,7 @@ use yew::prelude::*;
 use yew_macro::function_component;
 
 use crate::{
-    app::{attach::AttachView, keybindings::Keybindings},
+    app::{account::RemoteProjectMetadata, attach::AttachView, keybindings::Keybindings},
     components::{
         icon::{Icon, IconSize},
         Visibility,
@@ -91,6 +91,8 @@ pub struct SidebarDrawerProps {
     pub title: &'static str,
     pub model_dispatch: Callback<model::Action>,
     pub sidebar_dispatch: Callback<SidebarMsg>,
+    #[prop_or_default]
+    pub remote_project_metadata: Option<RemoteProjectMetadata>,
     pub initial_width: i32,
     #[prop_or(0)]
     pub min_width: i32,
@@ -263,6 +265,7 @@ pub struct SidebarProps {
     pub proof: Proof,
     pub options: Option<model::Selectables>,
     pub dispatch: Callback<model::Action>,
+    pub remote_project_metadata: Option<RemoteProjectMetadata>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -390,6 +393,7 @@ impl Sidebar {
                     model_dispatch,
                     &sidebar_dispatch,
                     &ctx.props().proof,
+                    &ctx.props().remote_project_metadata,
                     self.last_drawer_width,
                     self.drawer_view_size,
                 )

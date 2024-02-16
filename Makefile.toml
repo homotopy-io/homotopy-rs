@@ -28,6 +28,12 @@ mkdir -p dist
 cp -f $(nix build .#highs --no-link --print-out-paths --extra-experimental-features flakes --extra-experimental-features nix-command)/highs.{js,wasm} dist/
 '''
 
+[tasks.build-functions]
+script = '''
+cd functions/
+npm run build
+'''
+
 [tasks.dist-static]
 script = '''
 mkdir -p dist
@@ -37,6 +43,7 @@ find dist \
     ! -name highs.wasm \
     ! -name homotopy_web.js \
     ! -name homotopy_web_bg.wasm \
+    ! -name snippets \
     -type f -exec rm -f {} +
 cp -r homotopy-web/static/* dist/
 ls dist

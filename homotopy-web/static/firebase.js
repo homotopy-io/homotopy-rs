@@ -13,39 +13,28 @@ const firebaseConfig = {
   measurementId: "G-CYGQVSSM6Q"
 };
 
-if (location.hostname.match(/^(?:[^.]+\.)?homotopy.io$/)) {
-  console.log("Loading firebase...");
+// Initialize Firebase
+console.log("Loading firebase...");
 
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Compat modules for firebase ui
-  await import("https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js")
+// Compat modules for firebase ui
+await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js")
     .catch(err => {
-      console.error("Failed to import firebase-app-compat", err);
-      throw err;
+        console.error("Failed to import firebase-app-compat", err);
+        throw err;
     });
-  // Initialize Firebase
-  const app = firebase.initializeApp(firebaseConfig);
+// Initialize Firebase
+const app = firebase.initializeApp(firebaseConfig);
 
-  await import("https://www.gstatic.com/firebasejs/9.15.0/firebase-analytics-compat.js")
+await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics-compat.js")
     .catch(err => {
-      console.error("Failed to import firebase-analytics-compat", err);
-      throw err;
+        console.error("Failed to import firebase-analytics-compat", err);
+        throw err;
     });
-  const analytics = firebase.analytics();
+const analytics = firebase.analytics();
 
-  await import("https://www.gstatic.com/firebasejs/9.15.0/firebase-performance-compat.js")
+await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-performance-compat.js")
     .catch(err => {
-      console.error("Failed to import firebase-performance-compat", err);
-      throw err;
+        console.error("Failed to import firebase-performance-compat", err);
+        throw err;
     });
-  const perf = firebase.performance();
-
-  await import("https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js")
-    .catch(err => {
-      console.error("Failed to import firebase-auth-compat", err);
-      throw err;
-    });
-  const auth = firebase.auth();
-}
+const perf = firebase.performance();
