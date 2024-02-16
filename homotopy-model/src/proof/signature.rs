@@ -2,7 +2,7 @@ use std::{collections::VecDeque, str::FromStr};
 
 use homotopy_common::tree::{Node, Tree};
 use homotopy_core::{
-    diagram::NewDiagramError, signature::Signature as S, Diagram, Diagram0, DiagramN, Generator,
+    diagram::NewDiagramError, signature::Signature as _, Diagram, Diagram0, DiagramN, Generator,
     Orientation,
 };
 use homotopy_graphics::style::{Color, SignatureStyleData, VertexShape};

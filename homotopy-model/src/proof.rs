@@ -6,7 +6,7 @@ use homotopy_core::{
     contraction::ContractionError,
     diagram::{AttachmentError, NewDiagramError},
     expansion::ExpansionError,
-    signature::Signature as S,
+    signature::Signature as _,
     Diagram, Diagram0, DiagramN, Orientation,
 };
 use im::Vector;

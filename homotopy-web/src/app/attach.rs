@@ -1,4 +1,4 @@
-use homotopy_core::{common::Generator, signature::Signature as S};
+use homotopy_core::{common::Generator, signature::Signature as _};
 use yew::prelude::*;
 
 use crate::{
