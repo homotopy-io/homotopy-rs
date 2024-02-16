@@ -172,6 +172,14 @@ impl Component for AccountView {
 
             html! {
                 <>
+                    <div style="color:red">
+                        <p>
+                            {"Warning: This server functionality is a work in progress. Please do not use this for anything important, and export any workspaces which you wish to save."}
+                        </p>
+                        <p>
+                            {"In this testing period, no guarantees will be made about data retention and the server may be wiped at any point."}
+                        </p>
+                    </div>
                     <div class="account__user-details">
                         { user_icon }
                         <div class="account__user-name">{userdata.display_name.clone()}</div>
