@@ -3,15 +3,6 @@
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 
-// Compat modules for firebase ui
-import "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics-compat.js";
-import "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js";
-import "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js";
-import "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions-compat.js";
-import "https://www.gstatic.com/firebasejs/10.8.0/firebase-performance-compat.js";
-import "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js";
-import "https://www.gstatic.com/firebasejs/ui/6.1.0/firebase-ui-auth.js";
-
 const firebaseConfig = {
   apiKey: "AIzaSyBCtkQM2P7eBAFtKWnlGfyTNyTHE8y5wXY",
   authDomain: "homotopy-io.firebaseapp.com",
@@ -27,7 +18,7 @@ const firebaseConfig = {
 console.log("Loading firebase...");
 
 // Initialize Firebase
-const app = app.initializeApp(firebaseConfig);
+const app = firebase.initializeApp(firebaseConfig);
 const analytics = app.analytics();
 const perf = app.performance();
 
