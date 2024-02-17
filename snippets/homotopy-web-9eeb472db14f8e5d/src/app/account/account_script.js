@@ -8,7 +8,7 @@ import "https://www.gstatic.com/firebasejs/ui/6.1.0/firebase-ui-auth.js";
 const auth = firebase.auth();
 
 const storage = firebase.storage();
-const functions = firebase.functions("us-east1");
+const functions = app.functions('us-east1');
 
 if (location.hostname === "localhost") {
   console.log("localhost detected, using firebase emulators");
