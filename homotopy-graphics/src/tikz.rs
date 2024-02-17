@@ -164,7 +164,7 @@ pub fn render(
 // This contains all the "magic" commands we need to inject
 // in the case we want to show braidings.
 const MAGIC_MACRO: &str = "\n\\newcommand{\\wire}[2]{
-  \\ifdefined\\recolor\\draw[color=\\recolor, line width=10pt]\\else\\draw[color=#1, line width=5pt]\\fi #2;
+  \\ifdefined\\recolor\\draw[color=\\recolor, line width=10pt]\\else\\draw[color=#1, line width=5pt]\\fi #2
 }
 \\newcommand{\\clipped}[3]{
 \\begin{scope}
