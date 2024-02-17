@@ -2,6 +2,7 @@
 //
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+
 const firebaseConfig = {
   apiKey: "AIzaSyBCtkQM2P7eBAFtKWnlGfyTNyTHE8y5wXY",
   authDomain: "homotopy-io.firebaseapp.com",
@@ -16,25 +17,21 @@ const firebaseConfig = {
 // Initialize Firebase
 console.log("Loading firebase...");
 
-// Compat modules for firebase ui
-await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js")
-    .catch(err => {
-        console.error("Failed to import firebase-app-compat", err);
-        throw err;
-    });
 // Initialize Firebase
 const app = firebase.initializeApp(firebaseConfig);
+const analytics = app.analytics();
+const perf = app.performance();
 
-await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics-compat.js")
-    .catch(err => {
-        console.error("Failed to import firebase-analytics-compat", err);
-        throw err;
-    });
-const analytics = firebase.analytics();
+const auth = app.auth();
 
-await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-performance-compat.js")
-    .catch(err => {
-        console.error("Failed to import firebase-performance-compat", err);
-        throw err;
-    });
-const perf = firebase.performance();
+const storage = app.storage();
+const functions = app.functions('us-east1');
+
+if (location.hostname === "localhost") {
+  console.log("localhost detected, using firebase emulators");
+  auth.useEmulator("http://127.0.0.1:9099");
+  storage.useEmulator("127.0.0.1", 9199);
+  functions.useEmulator("127.0.0.1", 5001);
+}
+
+const ui = new firebaseui.auth.AuthUI(auth);
