@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1708130801098,
+  "lastUpdate": 1708131891212,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -50255,6 +50255,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 242.92,
             "range": "+/- 1.540",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "committer": {
+            "email": "me@nickhu.co.uk",
+            "name": "Nick Hu",
+            "username": "NickHu"
+          },
+          "distinct": true,
+          "id": "0f40df71be3ab15367d9775c0286b038a154a658",
+          "message": "use correct Cloud Functions region",
+          "timestamp": "2024-02-17T00:46:32Z",
+          "tree_id": "34b6c27cd6730e18059e7c1ca8a52d281ecc3a8e",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/0f40df71be3ab15367d9775c0286b038a154a658"
+        },
+        "date": 1708131871129,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 1.205,
+            "range": "+/- 0.005",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 10.723,
+            "range": "+/- 0.091",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 180.46,
+            "range": "+/- 1.360",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 3.9702,
+            "range": "+/- 0.007",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 9.2461,
+            "range": "+/- 0.021",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 234.91,
+            "range": "+/- 0.800",
             "unit": "ms"
           }
         ]
