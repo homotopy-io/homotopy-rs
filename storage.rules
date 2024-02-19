@@ -1,45 +1,19 @@
 rules_version = '2';
-
 service firebase.storage {
   match /b/{bucket}/o {
-    function ownProject(uid, metadata) {
-      return request.auth.uid == uid;
+    match /personal-rs/{user}/projects/{project} {
+      allow read: if request.auth.uid == user;
+      allow write: if request.auth.uid == user
+                   && request.resource.contentType == "application/msgpack"
+                   && project.matches(".*\\.hom$")
+                   && firestore.exists(/databases/(default)/documents/personal-rs/$(user)/projects/$(project[0:project.size()-4]));
     }
-    function publicProject(metadata) {
-      return metadata.visibility == "Public"
-        || metadata.visibility == "Unlisted";
-    }
-    function accessibleProject(uid, metadata) {
-      return ownProject(uid, metadata) || publicProject(metadata);
-    }
-    // function validNonce(uploadNonce, path) {
-    //     return firestore.exists(path) && uploadNonce == firestore.get(path).uploadNonce;
-    // }
-
-    match /personal-rs/{uid}/upload/save/{id}/{uploadNonce} {
-        allow create: if uid == request.auth.uid;
-                // && validNonce(uploadNonce, /personal-rs/$(request.auth.uid)/projects/$(id));
-    }
-
-    match /personal-rs/{uid}/upload/publish/{id}/{version}/{uploadNonce} {
-        allow create: if uid == request.auth.uid
-                // && validNonce(uploadNonce, /personal-rs/$(request.auth.uid)/projects/$(id));
-    }
-
-    // match /personal-rs/{uid}/upload/{id}/versions/{version} {
-    //   // Set max upload file size at arbitrary 20MB
-    //   allow create: if request.resource.size < 20 * 1024 * 1024
-    //                         && request.auth.uid == uid;
-    // }
-    match /personal-rs/{uid}/projects/{project} {
-      allow read: if accessibleProject(
-        uid,
-        firestore.get(/users/{uid}/projects/{project})
-      );
-    }
-
-    match /published-rs/{id}/versions/{version} {
+    match /published-rs/{file=**} {
       allow read: if true;
+    }
+    match /published-rs/{tag}/versions/new.hom {
+      allow write: if request.auth.uid == firestore.get(/databases/(default)/documents/published-rs/$(tag)).data.uid
+                   && request.resource.contentType == "application/msgpack";
     }
   }
 }

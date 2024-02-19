@@ -25,6 +25,7 @@ homotopy-graphics = { path = "../homotopy-graphics" }
 homotopy-gl = { path = "../homotopy-gl" }
 chrono = "0.4.34"
 closure = "0.3.0"
+futures = "0.3.30"
 js-sys = "0.3.68"
 quote = "1.0.35"
 serde = { version = "1.0.196", features = ["derive"] }
@@ -36,7 +37,8 @@ zip = { version = "0.6.6", default-features = false, features = ["deflate"] }
 
 # The `wasm-bindgen` crate provides the bare minimum functionality needed
 # to interact with JavaScript.
-wasm-bindgen = { version = "0.2.89" }
+wasm-bindgen = { version = "0.2.91" }
+wasm-bindgen-futures = { version = "0.4.41" }
 serde-wasm-bindgen = "0.6.3"
 gloo = "0.11.0"
 gloo-timers = { version = "0.3.0", features = ["futures"] }
@@ -91,4 +93,3 @@ features = [
 [dev-dependencies]
 cargo-husky = { features = ["precommit-hook", "run-cargo-check", "run-cargo-test", "run-cargo-fmt", "run-cargo-clippy"], version = "1.5.0" }
 wasm-bindgen-test = "0.3.41"
-futures = "0.3.30"

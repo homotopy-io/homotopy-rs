@@ -24,12 +24,14 @@ const perf = app.performance();
 
 const auth = app.auth();
 
+const firestore = app.firestore();
 const storage = app.storage();
 const functions = app.functions('us-east1');
 
 if (location.hostname === "localhost") {
   console.log("localhost detected, using firebase emulators");
   auth.useEmulator("http://127.0.0.1:9099");
+  firestore.useEmulator("127.0.0.1", 8080);
   storage.useEmulator("127.0.0.1", 9199);
   functions.useEmulator("127.0.0.1", 5001);
 }

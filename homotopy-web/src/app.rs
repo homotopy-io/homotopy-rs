@@ -17,7 +17,7 @@ use crate::{
     model,
 };
 
-#[allow(clippy::mem_forget)] // due to wasm_bindgen
+#[allow(clippy::mem_forget, clippy::future_not_send)] // due to wasm_bindgen
 pub mod account;
 mod attach;
 mod boundary;
@@ -170,37 +170,53 @@ impl App {
         self.before_unload = Some(before_unload);
     }
 
+    // TODO: replace this with yew-router
     fn load_project_from_url_path(ctx: &Context<Self>) {
-        let sm_cb = ctx
-            .link()
-            .callback(Message::BlockingDispatch)
-            .reform(model::Action::SetRemoteProjectMetadata);
-        let dl_cb = ctx.link().callback(Message::BlockingDispatch).reform(
-            move |(metadata, bytes): (_, Vec<u8>)| {
-                sm_cb.emit(Some(metadata));
-                model::Action::Proof(model::proof::Action::ImportProof(bytes.into()))
-            },
-        );
         let path_str = web_sys::window().unwrap().location().pathname().unwrap();
         let path = &path_str.split('/').collect::<Vec<&str>>()[1..];
         if path[0] == "p" && path.len() == 2 {
             // Published project
             tracing::debug!("Load published project {}", path[1]);
-            account::download_project_with_id(
-                None,
-                path[1].to_owned(), // id
-                true,
-                dl_cb,
-            );
+            let tag = path[1].to_owned();
+            ctx.link().send_future_batch(async move {
+                if let Some((project, blob)) =
+                    account::download_published_project(&tag, 1 /* TODO */).await
+                {
+                    vec![
+                        Message::BlockingDispatch(model::Action::SetRemoteProjectMetadata(Some(
+                            project,
+                        ))),
+                        Message::BlockingDispatch(model::Action::Proof(
+                            model::proof::Action::ImportProof(blob.into()),
+                        )),
+                    ]
+                } else {
+                    // failed, reset the url
+                    model::update_window_url_path("/");
+                    Vec::default()
+                }
+            });
         } else if path[0] == "u" && path.len() == 3 {
             // Personal projects
-            tracing::debug!("Load personal project {}/{}", path[1], path[2]);
-            account::download_project_with_id(
-                Some(path[1].to_owned()), // uid
-                path[2].to_owned(),       // id
-                false,
-                dl_cb,
-            );
+            let uid = path[1].to_owned();
+            let id = path[2].to_owned();
+            tracing::debug!("Load personal project {uid}/{id}");
+            ctx.link().send_future_batch(async move {
+                if let Some((project, blob)) = account::download_personal_project(&uid, &id).await {
+                    vec![
+                        Message::BlockingDispatch(model::Action::SetRemoteProjectMetadata(Some(
+                            project,
+                        ))),
+                        Message::BlockingDispatch(model::Action::Proof(
+                            model::proof::Action::ImportProof(blob.into()),
+                        )),
+                    ]
+                } else {
+                    // failed, reset the url
+                    model::update_window_url_path("/");
+                    Vec::default()
+                }
+            });
         } else {
             model::update_window_url_path("/");
         }

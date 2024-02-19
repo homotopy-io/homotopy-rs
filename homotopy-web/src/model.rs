@@ -464,6 +464,8 @@ impl State {
                 format!("/u/{}/{}", md.uid, md.id)
             };
             update_window_url_path(&path);
+        } else {
+            update_window_url_path("/");
         }
         self.remote_project_metadata = metadata;
     }
