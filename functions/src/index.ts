@@ -81,9 +81,12 @@ export const onCreate = onObjectFinalized(
 
       // update firestore record with metadata and blob path
       const firestore = getFirestore();
-      const docRef = firestore.doc(filePath.split(".")[0]);
-      docRef.set({ created: FieldValue.serverTimestamp() }, { merge: false });
-      docRef.update(metadata, { mergeFields: ["title", "author", "abstract", "updated"] });
+      return firestore.runTransaction(async (tx) => {
+        const docRef = firestore.doc(filePath.split(".")[0]);
+        tx.set(docRef, { created: FieldValue.serverTimestamp() }, { merge: false });
+        tx.update(docRef, metadata, { mergeFields: ["title", "author", "abstract", "updated"] });
+        logger.info(`saved personal project ${id} for user ${uid} at ${filePath}`);
+      })
     } else if (path[0] === "published-rs") {
       const tag = path[1];
       if (filePath === `published-rs/${tag}/versions/new.hom`) {
@@ -91,7 +94,7 @@ export const onCreate = onObjectFinalized(
         const metadata = event.data.metadata;
 
         const firestore = getFirestore();
-        firestore.runTransaction(async (tx) => {
+        return firestore.runTransaction(async (tx) => {
           const docRef = firestore.doc(`published-rs/${tag}`);
           const snapshot = await tx.get(docRef);
           const newVersion = snapshot.get("latest") + 1;
@@ -104,6 +107,7 @@ export const onCreate = onObjectFinalized(
           tx.set(newDocRef, metadata, { merge: false });
           const storage = getStorage();
           storage.bucket().file(filePath).rename(`published-rs/${tag}/versions/v${newVersion}.hom`);
+          logger.info(`saved published project ${tag} version ${newVersion}`);
         });
       }
     }
@@ -123,7 +127,7 @@ export const onDelete = onObjectDeleted(
     // delete firestore record
     const firestore = getFirestore();
     const docRef = firestore.doc(filePath.split(".")[0]);
-    docRef.delete();
+    return docRef.delete();
   }
 );
 
