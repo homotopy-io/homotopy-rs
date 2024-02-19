@@ -11,13 +11,13 @@ service cloud.firestore {
       allow read: if resource.data.public;
     }
     match /personal-rs/{user} {
-      allow read: if true;
+      allow get: if true;
       match /projects/{project} {
         allow read: if resource.data.public || request.auth.uid == user;
         allow create: if request.auth.uid == user
-                      && (request.resource.data.keys().hasOnly([]));
+                      && request.resource.data.keys().hasOnly([]);
         allow update: if request.auth.uid == user
-                      && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['public']));
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['public']);
       }
     }
     match /published-rs/{document=**} {

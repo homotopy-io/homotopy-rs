@@ -2,17 +2,20 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     match /personal-rs/{user}/projects/{project} {
-      allow read: if request.auth.uid == user;
-      allow write: if request.auth.uid == user
+      allow get: if request.auth.uid == user;
+      allow create: if request.auth.uid == user
                    && request.resource.contentType == "application/msgpack"
                    && project.matches(".*\\.hom$")
                    && firestore.exists(/databases/(default)/documents/personal-rs/$(user)/projects/$(project[0:project.size()-4]));
+      allow delete: if request.auth.uid == user
+                    && project.matches(".*\\.hom$")
+                    && firestore.exists(/databases/(default)/documents/personal-rs/$(user)/projects/$(project[0:project.size()-4]));
     }
     match /published-rs/{file=**} {
-      allow read: if true;
+      allow get: if true;
     }
     match /published-rs/{tag}/versions/new.hom {
-      allow write: if request.auth.uid == firestore.get(/databases/(default)/documents/published-rs/$(tag)).data.uid
+      allow create: if request.auth.uid == firestore.get(/databases/(default)/documents/published-rs/$(tag)).data.uid
                    && request.resource.contentType == "application/msgpack";
     }
   }
