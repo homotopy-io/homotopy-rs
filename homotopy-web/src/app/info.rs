@@ -101,22 +101,31 @@ pub fn get_help_message() -> Html {
 pub fn get_about_message() -> Html {
     html! {
         <div>
+            <h3>
+                {"homotopy.io: a proof assistant for finitely-presented globular n-categories"}
+            </h3>
             <p>
-                <a href="https://ncatlab.org/nlab/show/homotopy.io">{"homotopy.io"}</a>
-                {": the proof assistant for finitely-presented globular n-categories."}
-            </p>
-            <p>{"Written by "}
+                {"Written by "}
                 <a href="https://github.com/doctorn">{"Nathan Corbyn"}</a>
                 {", "}
                 <a href="https://github.com/zrho">{"Lukas Heidemann"}</a>
                 {", "}
                 <a href="https://github.com/NickHu">{"Nick Hu"}</a>
                 {", "}
-                <a href="https://github.com/calintat">{"Calin Tataru"}</a>
-                {", "}
                 <a href="https://sarti.me">{"Chiara Sarti"}</a>
+                {", "}
+                <a href="https://github.com/calintat">{"Calin Tataru"}</a>
                 {", and "}
                 <a href="https://github.com/jamievicary">{"Jamie Vicary"}</a>
+                {"."}
+            </p>
+            <p>
+                {"For more information, please see the "}
+                <a href="https://arxiv.org/abs/2402.13179">{"arXiv paper"}</a>
+                {", "}
+                <a href="https://ncatlab.org/nlab/show/homotopy.io">{"nLab page"}</a>
+                {", and "}
+                <a href="httsp://github.com/homotopy-io/homotopy-rs">{"GitHub repository"}</a>
                 {"."}
             </p>
             <h3>{"License"}</h3>
