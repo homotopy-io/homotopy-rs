@@ -4,7 +4,7 @@ The homotopy.io proof assistant allows the construction of composite morphisms i
 
 The proof assistant is implemented in the Rust programming language, and compiled to WebAssembly to run in the web browser.
 
-For a description of how the tool works, please see the [nLab page](https://ncatlab.org/nlab/show/homotopy.io). A more recent tutorial may be found [here](./TUTORIAL.md).
+For a description of how the tool works, please see the [arXiv paper](https://arxiv.org/abs/2402.13179) or [nLab page](https://ncatlab.org/nlab/show/homotopy.io). A more recent tutorial may be found [here](./TUTORIAL.md).
 
 The master branch is hosted live here: https://beta.homotopy.io/
 
@@ -53,11 +53,11 @@ In future, Firebase will also act as online storage for user projects.
 The tool should be cited as follows:
 
 ```
-@article{homotopy-io,
-  author = {Nathan Corbyn and Lukas Heidemann and Nick Hu and Calin Tataru and Jamie Vicary},
-  title = {The proof assistant homotopy.io},
-  url = {https://homotopy.io/},
-  date = {2022},
+@article{hio,
+  title={homotopy.io: a proof assistant for finitely-presented globular $n$-categories},
+  author={Corbyn, Nathan and Heidemann, Lukas and Hu, Nick and Sarti, Chiara and Tataru, Calin and Vicary, Jamie},
+  journal={arXiv preprint arXiv:2402.13179},
+  year={2024}
 }
 ```
 
