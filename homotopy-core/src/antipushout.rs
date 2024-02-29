@@ -197,7 +197,7 @@ fn construct_source(
             let start = preimage.start;
             let end = preimage.end;
 
-            let mut rewrites = vec![factorize(&cospan.forward, &slices[start]).next().unwrap()];
+            let mut rewrites = vec![factorize(&cospan.forward, &slices[start]).next()?];
 
             for si in start..end - 1 {
                 let antipushouts = antipushout(
@@ -212,11 +212,7 @@ fn construct_source(
                 rewrites.push(span.2.clone());
             }
 
-            rewrites.push(
-                factorize(&cospan.backward, &slices[end - 1])
-                    .next()
-                    .unwrap(),
-            );
+            rewrites.push(factorize(&cospan.backward, &slices[end - 1]).next()?);
 
             for chunk in rewrites.chunks(2) {
                 cospans.push(Cospan {
