@@ -40,8 +40,8 @@ impl DiagramN {
                 },
                 vec![f0.clone(), b0, f0.clone()],
                 vec![
-                    Rewrite::directed_identity(&singular0),
-                    Rewrite::directed_identity(&singular1),
+                    Rewrite::directed_identity(singular0),
+                    Rewrite::directed_identity(singular1),
                 ],
             )],
         );
@@ -69,20 +69,18 @@ impl DiagramN {
 }
 
 impl Rewrite {
-    fn directed_identity(source: &Diagram) -> Self {
+    fn directed_identity(source: Diagram) -> Self {
         use Orientation::Zero;
         match source {
-            Diagram::Diagram0(s) => {
-                let t = s.orientation_transform(Zero);
-                Rewrite0::new(*s, t, None).into()
-            }
-            Diagram::DiagramN(source) => {
-                let singular: Vec<Diagram> = source.singular_slices().collect();
-                let cones = source
+            Diagram::Diagram0(s) => Rewrite0::new(s, s.orientation_transform(Zero), None).into(),
+            Diagram::DiagramN(source) => RewriteN::new(
+                source.dimension(),
+                source
                     .cospans()
                     .iter()
+                    .zip(source.singular_slices())
                     .enumerate()
-                    .map(|(i, cs)| {
+                    .map(|(i, (cs, singular))| {
                         let f0 = cs.forward.orientation_transform(Zero);
                         let b0 = cs.backward.orientation_transform(Zero);
                         Cone::new(
@@ -93,12 +91,12 @@ impl Rewrite {
                                 backward: b0.clone(),
                             },
                             vec![f0, b0],
-                            vec![Rewrite::directed_identity(&singular[i])],
+                            vec![Rewrite::directed_identity(singular)],
                         )
                     })
-                    .collect();
-                RewriteN::new(source.dimension(), cones).into()
-            }
+                    .collect(),
+            )
+            .into(),
         }
     }
 }
