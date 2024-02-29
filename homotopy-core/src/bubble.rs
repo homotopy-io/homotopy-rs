@@ -39,10 +39,7 @@ impl DiagramN {
                     backward: f0.clone(),
                 },
                 vec![f0.clone(), b0, f0.clone()],
-                vec![
-                    Rewrite::directed_identity(singular0),
-                    Rewrite::directed_identity(singular1),
-                ],
+                vec![singular0.directed_identity(), singular1.directed_identity()],
             )],
         );
 
@@ -68,12 +65,12 @@ impl DiagramN {
     }
 }
 
-impl Rewrite {
-    fn directed_identity(source: Diagram) -> Self {
+impl Diagram {
+    fn directed_identity(self) -> Rewrite {
         use Orientation::Zero;
-        match source {
-            Diagram::Diagram0(s) => Rewrite0::new(s, s.orientation_transform(Zero), None).into(),
-            Diagram::DiagramN(source) => RewriteN::new(
+        match self {
+            Self::Diagram0(s) => Rewrite0::new(s, s.orientation_transform(Zero), None).into(),
+            Self::DiagramN(source) => RewriteN::new(
                 source.dimension(),
                 source
                     .cospans()
@@ -91,7 +88,7 @@ impl Rewrite {
                                 backward: b0.clone(),
                             },
                             vec![f0, b0],
-                            vec![Rewrite::directed_identity(singular)],
+                            vec![singular.directed_identity()],
                         )
                     })
                     .collect(),
