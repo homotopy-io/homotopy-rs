@@ -489,7 +489,7 @@ impl Component for AccountView {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
-struct PublishResult {
+pub struct PublishResult {
     tag: String,
     version: u64,
 }
@@ -709,6 +709,7 @@ async fn fetch_published_project(id: &str, version: u64) -> Option<RemoteProject
         .flatten()
 }
 
+#[allow(clippy::cognitive_complexity)]
 async fn fetch_user_projects() -> Option<ProjectCollection> {
     let uid = user_id()?;
     let personal = firebase()
@@ -986,7 +987,7 @@ pub struct ProjectCollection {
 #[derive(Debug, Deserialize)]
 struct Timestamp {
     seconds: u64,
-    nanoseconds: u64,
+    _nanoseconds: u64,
 }
 
 // metadata that exists in firestore
@@ -996,7 +997,7 @@ struct PersonalRecord {
     author: String,
     r#abstract: String,
     public: bool,
-    created: Timestamp,
+    _created: Timestamp,
     updated: Timestamp,
 }
 
