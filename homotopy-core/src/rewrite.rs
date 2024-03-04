@@ -896,10 +896,14 @@ impl RewriteN {
             self.cones()
                 .iter()
                 .map(|c| {
+                    let index = match directions[codimension] {
+                        Direction::Forward => c.index,
+                        Direction::Backward => source.size() - c.index - c.len(),
+                    };
                     let regulars = &regulars[c.index..=c.index + c.len()];
                     let singulars = &singulars[c.index..c.index + c.len()];
                     Cone::new(
-                        source.size() - c.index - c.len(),
+                        index,
                         c.source()
                             .iter()
                             .enumerate()
