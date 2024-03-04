@@ -133,7 +133,7 @@ impl Default for ScrubState {
         Self {
             t: 0.,
             direction: Direction::Forward,
-            state: PlayState::Playing,
+            state: PlayState::Paused,
             speed: PlaybackSpeed::Normal,
             behaviour: LoopingBehaviour::Boomerang,
             pushed: Default::default(),
