@@ -9,7 +9,7 @@ edition = "2021"
 homotopy-common = { path = "../homotopy-common" }
 homotopy-core = { path = "../homotopy-core" }
 homotopy-model = { path = "../homotopy-model" }
-anyhow = "1.0.79"
+anyhow = "1.0.80"
 serde = { version = "1.0.196" }
 serde_json = "1.0.113"
 structopt = "0.3"
