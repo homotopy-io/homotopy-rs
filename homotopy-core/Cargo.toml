@@ -21,7 +21,7 @@ tracing = "0.1.40"
 once_cell = "1.19.0"
 petgraph = "0.6.4"
 pretty_assertions = "1.4.0"
-serde = { features = ["derive"], version = "1.0.196" }
+serde = { features = ["derive"], version = "1.0.197" }
 rmp-serde = "1.1.2"
 itertools = "0.12.1"
 thiserror = "1.0.57"
