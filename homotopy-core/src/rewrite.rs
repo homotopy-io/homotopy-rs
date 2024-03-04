@@ -17,10 +17,9 @@ use thiserror::Error;
 use crate::{
     common::{
         BoundaryPath, DimensionError, Generator, Label, LabelIdentifications, Mode, Orientation,
-        RegularHeight, SingularHeight,
+        RegularHeight, SingularHeight, WithDirection,
     },
-    diagram::Diagram,
-    Boundary, Diagram0, Height,
+    Boundary, Diagram, Diagram0, DiagramN, Direction, Height,
 };
 
 thread_local! {
@@ -86,6 +85,24 @@ impl Cospan {
     pub fn inverse(&self) -> Self {
         use Orientation::Negative;
         self.map(|r| r.orientation_transform(Negative)).flip()
+    }
+
+    #[must_use]
+    pub fn reflect(
+        &self,
+        source: &Diagram,
+        target: &Diagram,
+        directions: &[Direction],
+        codimension: usize,
+    ) -> Self {
+        let cospan = Cospan {
+            forward: self.forward.reflect(source, directions, codimension + 1),
+            backward: self.backward.reflect(target, directions, codimension + 1),
+        };
+        match directions[codimension] {
+            Direction::Forward => cospan,
+            Direction::Backward => cospan.flip(),
+        }
     }
 }
 
@@ -287,6 +304,19 @@ impl Rewrite {
             Self::RewriteN(r) => Self::RewriteN(r.remove_framing(generator)),
         }
     }
+
+    /// Given a rewrite A -> B construct the rewrite A⁻¹ -> B⁻¹.
+    #[must_use]
+    pub fn reflect(&self, source: &Diagram, directions: &[Direction], codimension: usize) -> Self {
+        assert_eq!(directions.len(), self.dimension() + codimension);
+        match self {
+            Self::Rewrite0(r) => r.reflect(directions).into(),
+            Self::RewriteN(r) => {
+                let source: &DiagramN = source.try_into().expect("Mismatched dimensions");
+                r.reflect(source, directions, codimension).into()
+            }
+        }
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
@@ -379,6 +409,18 @@ impl Rewrite0 {
 
     pub fn is_identity(&self) -> bool {
         self.0.is_none()
+    }
+
+    #[must_use]
+    pub fn reflect(&self, directions: &[Direction]) -> Self {
+        match &self.0 {
+            None => Self(None),
+            Some((source, target, label)) => Self::new(
+                source.reflect(directions),
+                target.reflect(directions),
+                label.clone(),
+            ),
+        }
     }
 
     #[must_use]
@@ -832,6 +874,62 @@ impl RewriteN {
             .collect();
 
         Self::new_unsafe(self.dimension(), cones)
+    }
+
+    #[must_use]
+    pub fn reflect(&self, source: &DiagramN, directions: &[Direction], codimension: usize) -> Self {
+        assert_eq!(directions.len(), self.dimension() + codimension);
+
+        if directions[codimension..]
+            .iter()
+            .all(|&d| d == Direction::Forward)
+        {
+            return self.clone();
+        }
+
+        // Compute all regular and singular slices once to avoid recomputation.
+        let regulars = source.regular_slices().collect::<Vec<_>>();
+        let singulars = source.singular_slices().collect::<Vec<_>>();
+
+        Self::new(
+            self.dimension(),
+            self.cones()
+                .iter()
+                .map(|c| {
+                    let regulars = &regulars[c.index..=c.index + c.len()];
+                    let singulars = &singulars[c.index..c.index + c.len()];
+                    Cone::new(
+                        source.size() - c.index - c.len(),
+                        c.source()
+                            .iter()
+                            .enumerate()
+                            .map(|(i, cs)| {
+                                cs.reflect(&regulars[i], &regulars[i + 1], directions, codimension)
+                            })
+                            .with_direction(directions[codimension])
+                            .collect(),
+                        c.target().reflect(
+                            &regulars[0],
+                            &regulars[c.len()],
+                            directions,
+                            codimension,
+                        ),
+                        c.regular_slices()
+                            .iter()
+                            .enumerate()
+                            .map(|(i, r)| r.reflect(&regulars[i], directions, codimension + 1))
+                            .with_direction(directions[codimension])
+                            .collect(),
+                        c.singular_slices()
+                            .iter()
+                            .enumerate()
+                            .map(|(i, r)| r.reflect(&singulars[i], directions, codimension + 1))
+                            .with_direction(directions[codimension])
+                            .collect(),
+                    )
+                })
+                .collect(),
+        )
     }
 }
 

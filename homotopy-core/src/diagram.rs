@@ -15,7 +15,7 @@ use crate::{
     attach::attach,
     common::{
         Boundary, BoundaryPath, DimensionError, Direction, Generator, Height, Label, Mode,
-        RegularHeight, SliceIndex,
+        RegularHeight, SliceIndex, WithDirection,
     },
     rewrite::{Cospan, Rewrite, Rewrite0, RewriteN},
     signature::{GeneratorInfo, Signature},
@@ -152,6 +152,19 @@ impl Diagram {
                     .map(|cs| cs.map(|r| r.remove_framing(generator)))
                     .collect(),
             )),
+        }
+    }
+
+    /// Reflect a diagram according to the given directions.
+    ///
+    /// The codimension specifies that the n-diagram occurs inside a larger (n + k)-diagram so we ignore the first k directions.
+    /// This is needed for the recursive implementation. However, in practice, the function should be called with codimension 0.
+    #[must_use]
+    pub fn reflect(&self, directions: &[Direction], codimension: usize) -> Self {
+        assert_eq!(directions.len(), self.dimension() + codimension);
+        match self {
+            Self::Diagram0(d) => d.reflect(directions).into(),
+            Self::DiagramN(d) => d.reflect(directions, codimension).into(),
         }
     }
 
@@ -309,6 +322,19 @@ impl Diagram0 {
                 }
             }
         }
+    }
+
+    #[must_use]
+    pub fn reflect(&self, directions: &[Direction]) -> Self {
+        self.orientation_transform(
+            directions
+                .iter()
+                .copied()
+                .rev()
+                .take(self.generator.dimension)
+                .map(Orientation::from)
+                .product(),
+        )
     }
 }
 
@@ -655,6 +681,36 @@ impl DiagramN {
         Self::new(
             self.target(),
             self.cospans().iter().map(Cospan::inverse).rev().collect(),
+        )
+    }
+
+    #[must_use]
+    pub fn reflect(&self, directions: &[Direction], codimension: usize) -> Self {
+        assert_eq!(directions.len(), self.dimension() + codimension);
+
+        if directions[codimension..]
+            .iter()
+            .all(|d| *d == Direction::Forward)
+        {
+            return self.clone();
+        }
+
+        // Compute all regular slices once to avoid recomputation.
+        let slices = self.regular_slices().collect::<Vec<_>>();
+
+        let i = match directions[codimension] {
+            Direction::Forward => 0,
+            Direction::Backward => self.size(),
+        };
+
+        Self::new(
+            slices[i].reflect(directions, codimension + 1),
+            self.cospans()
+                .iter()
+                .enumerate()
+                .map(|(i, cs)| cs.reflect(&slices[i], &slices[i + 1], directions, codimension))
+                .with_direction(directions[codimension])
+                .collect(),
         )
     }
 

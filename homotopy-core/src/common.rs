@@ -2,12 +2,14 @@ use std::{
     cell::RefCell,
     cmp::Ordering,
     fmt,
+    iter::Product,
     ops::{Index, IndexMut, Mul},
 };
 
 use hashconsing::{HConsed, HConsign, HashConsign};
 use homotopy_common::{hash::FastHashMap, idx::Idx};
 use im::OrdSet;
+use itertools::Either;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -378,6 +380,20 @@ pub enum Direction {
     Backward,
 }
 
+pub trait WithDirection: DoubleEndedIterator {
+    fn with_direction(self, direction: Direction) -> impl DoubleEndedIterator<Item = Self::Item>
+    where
+        Self: Sized,
+    {
+        match direction {
+            Direction::Forward => Either::Left(self),
+            Direction::Backward => Either::Right(self.rev()),
+        }
+    }
+}
+
+impl<T: DoubleEndedIterator> WithDirection for T {}
+
 #[derive(Debug, Error)]
 #[error("invalid dimension")]
 pub struct DimensionError;
@@ -409,12 +425,27 @@ impl Mul for Orientation {
     }
 }
 
+impl Product for Orientation {
+    fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Self::Positive, Mul::mul)
+    }
+}
+
 impl fmt::Debug for Orientation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Negative => write!(f, "-"),
             Self::Zero => write!(f, "0"),
             Self::Positive => write!(f, "+"),
+        }
+    }
+}
+
+impl From<Direction> for Orientation {
+    fn from(direction: Direction) -> Self {
+        match direction {
+            Direction::Forward => Self::Positive,
+            Direction::Backward => Self::Negative,
         }
     }
 }
