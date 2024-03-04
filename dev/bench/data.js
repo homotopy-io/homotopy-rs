@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1709555693629,
+  "lastUpdate": 1709570506827,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -51035,6 +51035,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 242.92,
             "range": "+/- 1.400",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "13754e59a05746de770f0f7cdc3871155d2531df",
+          "message": "Compute multidirectional inverses of diagrams\n\nThis only implements the logic not any UI",
+          "timestamp": "2024-03-04T16:19:53Z",
+          "tree_id": "89d63a10b1e5b4eeba6ba72855def778c91ae8da",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/13754e59a05746de770f0f7cdc3871155d2531df"
+        },
+        "date": 1709570492160,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 1.2329,
+            "range": "+/- 0.004",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 11.303,
+            "range": "+/- 0.037",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 195.36,
+            "range": "+/- 0.530",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 4.4371,
+            "range": "+/- 0.006",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 9.2632,
+            "range": "+/- 0.018",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 241.36,
+            "range": "+/- 2.210",
             "unit": "ms"
           }
         ]
