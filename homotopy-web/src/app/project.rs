@@ -1,3 +1,5 @@
+use std::io::Read;
+
 use closure::closure;
 use web_sys::{File, HtmlInputElement};
 use yew::prelude::*;
@@ -54,7 +56,7 @@ impl Component for ProjectView {
                 <label for="import" class="button">
                     {"Import"}
                 </label>
-                <input type="file" accept="application/msgpack,application/octet-stream,.hom,.json" class="visually-hidden" id="import" onchange={import}/>
+                <input type="file" accept="application/msgpack,application/octet-stream,application/zip,.hom,.json,.zip" class="visually-hidden" id="import" onchange={import}/>
                 <div class="metadata__details">
                     <TexSpan
                         class="metadata__title"
@@ -104,10 +106,42 @@ impl Component for ProjectView {
         let dispatch = &ctx.props().dispatch;
         match msg {
             Msg::ImportProof(file) => {
+                let is_zip = std::path::Path::new(&file.name())
+                    .extension()
+                    .map_or(false, |ext| ext.eq_ignore_ascii_case("zip"));
                 let task = gloo::file::callbacks::read_as_bytes(
                     &file.into(),
                     closure!(clone dispatch, |res| {
-                        dispatch.emit(model::Action::Proof(model::proof::Action::ImportProof(res.expect("failed to read file").into())));
+                        let data = res.expect("failed to read file");
+                        let serialized = is_zip
+                            .then(|| {
+                                // find the *unique* .hom/.json file in the zip
+                                let mut archive = zip::ZipArchive::new(std::io::Cursor::new(&data)).ok()?;
+                                let matches: Vec<_> = archive
+                                    .file_names()
+                                    .filter_map(|name| {
+                                        let path = std::path::Path::new(name);
+                                        (!path.starts_with("__MACOSX/")
+                                            && path.extension().map_or(false, |ext| {
+                                                ext.eq_ignore_ascii_case("hom")
+                                                    || ext.eq_ignore_ascii_case("json")
+                                            }))
+                                        .then(|| name.to_owned())
+                                    })
+                                    .collect();
+                                match matches.as_slice() {
+                                    [filename] => {
+                                        let mut file = archive.by_name(filename).ok()?;
+                                        let mut data = Vec::new();
+                                        file.read_to_end(&mut data).ok()?;
+                                        Some(data)
+                                    }
+                                    _ => None,
+                                }
+                            })
+                            .flatten()
+                            .unwrap_or(data);
+                        dispatch.emit(model::Action::Proof(model::proof::Action::ImportProof(serialized.into())));
                     }),
                 );
                 self.reader = Some(task);
