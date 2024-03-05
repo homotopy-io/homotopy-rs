@@ -295,31 +295,13 @@ type Result<T> = std::result::Result<T, OldProofError>;
 #[derive(Debug, Error)]
 pub enum OldProofError {
     #[error("JSON parse failed")]
-    Parse(serde_json::Error),
+    Parse(#[from] serde_json::Error),
     #[error("cannot decode base64")]
-    Decode(base64::DecodeError),
+    Decode(#[from] base64::DecodeError),
     #[error("cannot decompress proof string")]
-    Io(std::io::Error),
+    Io(#[from] std::io::Error),
     #[error("internal error")]
     Internal,
-}
-
-impl From<serde_json::Error> for OldProofError {
-    fn from(err: serde_json::Error) -> OldProofError {
-        OldProofError::Parse(err)
-    }
-}
-
-impl From<base64::DecodeError> for OldProofError {
-    fn from(err: base64::DecodeError) -> OldProofError {
-        OldProofError::Decode(err)
-    }
-}
-
-impl From<std::io::Error> for OldProofError {
-    fn from(err: std::io::Error) -> OldProofError {
-        OldProofError::Io(err)
-    }
 }
 
 fn decode_bufreader(bytes: &[u8]) -> io::Result<String> {
