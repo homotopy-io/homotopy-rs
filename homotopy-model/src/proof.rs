@@ -1073,7 +1073,7 @@ impl ProofState {
         let Some(ws) = self.workspace.take() else {
             return false;
         };
-        self.stash.push_back(ws);
+        self.stash.push_front(ws);
         true
     }
 
@@ -1081,14 +1081,14 @@ impl ProofState {
     ///
     /// Invalid if the stash is empty.
     fn stash_drop(&mut self) -> bool {
-        self.stash.pop_back().is_some()
+        self.stash.pop_front().is_some()
     }
 
     /// Handler for [Action::StashPop].
     ///
     /// Invalid if the stash is empty.
     fn stash_pop(&mut self) -> bool {
-        let Some(stashed) = self.stash.pop_back() else {
+        let Some(stashed) = self.stash.pop_front() else {
             return false;
         };
         self.workspace = Some(stashed);
@@ -1099,7 +1099,7 @@ impl ProofState {
     ///
     /// Invalid if the stash is empty.
     fn stash_apply(&mut self) -> bool {
-        let Some(stashed) = self.stash.back() else {
+        let Some(stashed) = self.stash.front() else {
             return false;
         };
         self.workspace = Some(stashed.clone());

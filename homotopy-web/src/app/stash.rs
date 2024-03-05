@@ -20,7 +20,7 @@ pub fn StashView(props: &Props) -> Html {
     let stash_pop = props.dispatch.reform(|_| proof::Action::StashPop.into());
     let stash_apply = props.dispatch.reform(|_| proof::Action::StashApply.into());
 
-    let diagrams = props.stash.iter().rev().map(|ws| {
+    let diagrams = props.stash.iter().map(|ws| {
         let diagram = match ws.view.dimension() {
             0 => view_diagram::<0>(ws.visible_diagram(), &props.signature),
             1 => view_diagram::<1>(ws.visible_diagram(), &props.signature),
