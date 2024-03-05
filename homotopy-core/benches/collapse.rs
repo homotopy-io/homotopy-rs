@@ -9,7 +9,7 @@ fn label_identifications_high_dimensions(crit: &mut Criterion) {
             &dimension,
             |b, &dimension| {
                 b.iter(|| {
-                    examples::iterated_endomorphism(dimension);
+                    let _ = examples::iterated_endomorphism(dimension);
                 });
             },
         );

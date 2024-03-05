@@ -249,14 +249,17 @@ impl<const N: usize> Projection<N> {
         })
     }
 
+    #[must_use]
     pub fn generator(&self, p: Coordinate<N>) -> Diagram0 {
         self.generators[self.coord_to_node[&p]]
     }
 
+    #[must_use]
     pub fn front_generator(&self, p: Coordinate<N>) -> (Diagram0, bool) {
         self.front_generators[self.coord_to_node[&p]]
     }
 
+    #[must_use]
     pub fn homotopy(&self, p: Coordinate<N>) -> Option<Homotopy> {
         self.homotopies[self.coord_to_node[&p]]
     }
@@ -321,11 +324,13 @@ impl<const N: usize> Depths<N> {
         })
     }
 
+    #[must_use]
     pub fn node_depth(&self, coord: Coordinate<N>) -> Option<usize> {
         let &n = self.coord_to_node.get(&coord)?;
         self.node_depths[n]
     }
 
+    #[must_use]
     pub fn edge_depth(&self, from: Coordinate<N>, to: Coordinate<N>) -> Option<usize> {
         let &from = self.coord_to_node.get(&from)?;
         let &to = self.coord_to_node.get(&to)?;
@@ -336,6 +341,7 @@ impl<const N: usize> Depths<N> {
         self.edge_depths[e.id()]
     }
 
+    #[must_use]
     pub fn edges_above(&self, depth: usize, to: Coordinate<N>) -> Vec<Coordinate<N>> {
         let to = match self.coord_to_node.get(&to) {
             Some(to) => *to,

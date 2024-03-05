@@ -1041,6 +1041,7 @@ fn colimit_recursive<Ix: IndexType>(
 }
 
 impl Cospan {
+    #[must_use]
     pub fn is_redundant(&self) -> bool {
         self.forward == self.backward && self.forward.is_redundant()
     }

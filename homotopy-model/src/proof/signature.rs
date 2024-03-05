@@ -84,6 +84,7 @@ impl Signature {
         })
     }
 
+    #[must_use]
     pub fn has_generators(&self) -> bool {
         self.iter().next().is_some()
     }
@@ -171,6 +172,7 @@ impl Signature {
         });
     }
 
+    #[must_use]
     pub fn has_descendents_in(&self, node: Node, diagram: &Diagram) -> bool {
         self.0.descendents_of(node).any(|node| {
             self.0
@@ -300,10 +302,12 @@ impl Signature {
         Ok(())
     }
 
+    #[must_use]
     pub fn as_tree(&self) -> Tree<SignatureItem> {
         self.0.clone()
     }
 
+    #[must_use]
     pub fn into_tree(self) -> Tree<SignatureItem> {
         self.0
     }
@@ -343,6 +347,7 @@ pub struct Metadata {
 }
 
 impl Metadata {
+    #[must_use]
     pub const fn new() -> Self {
         Self {
             title: None,

@@ -75,6 +75,7 @@ where
         self.volumes.push((volume, parity))
     }
 
+    #[must_use]
     pub fn bounds(&self) -> (Vec4, Vec4) {
         self.verts.values().fold(
             (
@@ -101,6 +102,7 @@ pub struct VertData {
     pub k: usize,
 }
 
+#[must_use]
 pub fn calculate_boundary<const N: usize>(path: [SliceIndex; N]) -> [bool; N] {
     let mut boundary = path.map(|si| matches!(si, SliceIndex::Boundary(_)));
     boundary.reverse();
@@ -541,6 +543,7 @@ impl SimplicialGeometry {
         self.curves.clear();
     }
 
+    #[must_use]
     pub fn compute_normals_3d(&self) -> IdxVec<Vert, Vec3> {
         let mut normals = IdxVec::splat(Vec3::zero(), self.verts.len());
 
@@ -566,6 +569,7 @@ impl SimplicialGeometry {
         normals
     }
 
+    #[must_use]
     pub fn compute_normals_4d(&self) -> IdxVec<Vert, Vec4> {
         let mut normals = IdxVec::splat(Vec4::zero(), self.verts.len());
 
@@ -607,6 +611,7 @@ impl SimplicialGeometry {
         normals
     }
 
+    #[must_use]
     pub fn time_order(&self, i: Vert, j: Vert) -> Ordering {
         self.verts[i]
             .position

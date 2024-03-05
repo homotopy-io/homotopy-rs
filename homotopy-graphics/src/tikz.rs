@@ -46,6 +46,7 @@ pub fn stylesheet(
 }
 
 #[inline]
+#[must_use]
 pub const fn color_selector(
     diagram: Diagram0,
     diagram_dimension: usize,
@@ -59,6 +60,7 @@ pub const fn color_selector(
 }
 
 #[inline]
+#[must_use]
 pub fn name_from_diagram_dim(
     diagram: Diagram0,
     diagram_dimension: usize,

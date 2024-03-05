@@ -27,6 +27,7 @@ impl Parity {
         }
     }
 
+    #[must_use]
     pub const fn is_even(self) -> bool {
         match self {
             Self::Even => true,
@@ -34,6 +35,7 @@ impl Parity {
         }
     }
 
+    #[must_use]
     pub const fn from_direction(direction: Direction) -> Self {
         match direction {
             Direction::Forward => Self::Even,
@@ -41,6 +43,7 @@ impl Parity {
         }
     }
 
+    #[must_use]
     pub fn from_orientation(orientation: &[(usize, Direction)]) -> Self {
         orientation
             .iter()

@@ -43,6 +43,7 @@ pub enum Action {
 
 impl Action {
     /// Determines if a given [Action] is valid given the current [Proof].
+    #[must_use]
     pub fn is_valid(&self, proof: &Proof) -> bool {
         match self {
             Self::Proof(action) => action.is_valid(proof),
@@ -84,6 +85,7 @@ pub enum Selectables {
 }
 
 impl Selectables {
+    #[must_use]
     pub const fn name(&self) -> &'static str {
         match self {
             Self::Attach(_) => "Attach",
@@ -103,6 +105,7 @@ pub struct State {
 
 impl State {
     #[inline]
+    #[must_use]
     pub fn proof(&self) -> &Proof {
         self.history.proof()
     }

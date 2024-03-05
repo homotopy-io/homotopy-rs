@@ -47,6 +47,7 @@ pub struct Cube<const N: usize> {
 }
 
 impl<const N: usize> Cube<N> {
+    #[must_use]
     pub fn dimension(&self) -> usize {
         self.orientation.len()
     }

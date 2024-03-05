@@ -30,6 +30,7 @@ pub struct View {
 impl View {
     const MAX: u8 = 4;
 
+    #[must_use]
     pub const fn dimension(self) -> u8 {
         self.dimension
     }
@@ -43,6 +44,7 @@ pub struct Workspace {
 }
 
 impl Workspace {
+    #[must_use]
     pub fn new(diagram: Diagram) -> Self {
         // Default to 2D unless the diagram has dimension 0 or 1.
         let dimension = diagram.dimension().min(2) as u8;
@@ -53,6 +55,7 @@ impl Workspace {
         }
     }
 
+    #[must_use]
     pub fn visible_diagram(&self) -> Diagram {
         self.path
             .iter()
@@ -61,6 +64,7 @@ impl Workspace {
             })
     }
 
+    #[must_use]
     pub fn visible_dimension(&self) -> usize {
         self.diagram.dimension() - self.path.len()
     }
@@ -169,6 +173,7 @@ impl Action {
     ///
     /// This should return true iff performing the action does *not* return false.
     #[allow(clippy::match_same_arms)]
+    #[must_use]
     pub fn is_valid(&self, proof: &ProofState) -> bool {
         use homotopy_core::{Height::Singular, SliceIndex::Interior};
         match self {
@@ -325,6 +330,7 @@ impl ProofState {
     }
 
     /// Determines if a given [Action] should reset the panzoom state, given the current  [ProofState].
+    #[must_use]
     pub fn resets_panzoom(&self, action: &Action) -> bool {
         match *action {
             Action::EditSignature(SignatureEdit::Remove(node)) => self

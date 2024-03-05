@@ -53,6 +53,7 @@ impl<const N: usize> ActionRegion<N> {
     ///
     /// This function can panic or produce undefined results if the simplicial complex and the
     /// layout have not come from the same diagram.
+    #[must_use]
     pub fn build(
         complex: &[(Simplex<N>, bool)],
         layout: &Layout<N>,
@@ -88,6 +89,7 @@ impl<const N: usize> ActionRegion<N> {
         regions
     }
 
+    #[must_use]
     pub fn to_shape(&self, wire_thickness: f32, point_radius: f32) -> Shape {
         match self {
             Self::Surface(_, path) => Fill::new(path.clone()).into(),
@@ -141,6 +143,7 @@ impl<const N: usize> GraphicElement<N> {
         }
     }
 
+    #[must_use]
     pub const fn generator(&self) -> Generator {
         use GraphicElement::{Point, Surface, Wire};
         match self {
@@ -148,6 +151,7 @@ impl<const N: usize> GraphicElement<N> {
         }
     }
 
+    #[must_use]
     pub const fn orientation(&self) -> Orientation {
         use GraphicElement::{Point, Surface, Wire};
         match self {
@@ -162,6 +166,7 @@ impl<const N: usize> GraphicElement<N> {
     ///
     /// This function can panic or produce undefined results if the simplicial complex, the layout
     /// and the projected generators have not come from the same diagram.
+    #[must_use]
     pub fn build(
         complex: &[(Simplex<N>, bool)],
         layout: &Layout<N>,
@@ -232,6 +237,7 @@ impl<const N: usize> GraphicElement<N> {
         elements
     }
 
+    #[must_use]
     pub fn to_shape(&self, wire_thickness: f32, point_radius: f32) -> Shape {
         match self {
             Self::Surface(_, path) => Fill::new(path.clone()).into(),

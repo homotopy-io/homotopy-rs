@@ -47,6 +47,7 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
 }
 
 #[inline]
+#[must_use]
 pub fn name_from_diagram_dim(
     diagram: Diagram0,
     diagram_dimension: usize,

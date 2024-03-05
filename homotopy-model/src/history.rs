@@ -100,6 +100,7 @@ pub enum HistoryError {
 }
 
 impl History {
+    #[must_use]
     pub fn proof(&self) -> &Proof {
         &self.snapshots[self.current]
     }
@@ -139,6 +140,7 @@ impl History {
         Ok(())
     }
 
+    #[must_use]
     pub fn get_actions(&self) -> Vec<super::proof::Action> {
         let mut actions: Vec<_> = self
             .snapshots
@@ -149,6 +151,7 @@ impl History {
         actions
     }
 
+    #[must_use]
     pub fn get_last_import_segment(&self) -> Vec<super::proof::Action> {
         let mut actions = Vec::new();
         for a in self
@@ -165,6 +168,7 @@ impl History {
         actions
     }
 
+    #[must_use]
     pub fn last_action(&self) -> Option<super::proof::Action> {
         self.snapshots
             .with(self.current, |s| s.action.clone())

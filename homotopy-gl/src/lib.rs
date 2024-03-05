@@ -187,26 +187,31 @@ impl GlCtx {
     }
 
     #[inline]
+    #[must_use]
     pub fn to_ndc(&self, v: Vec2) -> Vec2 {
         2. * (Vec2::new(v.x, -v.y) / self.size()) + Vec2::new(-1., 1.)
     }
 
     #[inline]
+    #[must_use]
     pub const fn width(&self) -> u32 {
         self.width
     }
 
     #[inline]
+    #[must_use]
     pub const fn height(&self) -> u32 {
         self.height
     }
 
     #[inline]
+    #[must_use]
     pub const fn size(&self) -> Vec2 {
         Vec2::new(self.width as f32, self.height as f32)
     }
 
     #[inline]
+    #[must_use]
     pub fn aspect_ratio(&self) -> f32 {
         (self.width as f32) / (self.height as f32)
     }

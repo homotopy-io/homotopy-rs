@@ -5,6 +5,7 @@ use lyon_path::{path::Builder, Path};
 
 use crate::svg::{render::GraphicElement, shape::Point};
 
+#[must_use]
 pub fn simplify_graphic<const N: usize>(graphic: &[GraphicElement<N>]) -> Vec<GraphicElement<N>> {
     let mut new_graphic = Vec::with_capacity(graphic.len());
     let mut point_elements = Vec::new();
@@ -112,6 +113,7 @@ fn points_collinear(p0: Point, p1: Point, p2: Point) -> bool {
 // Simple peep-hole simplifier for paths.
 // Churns through the wire step by step and checks if local
 // simplifications can be performed.
+#[must_use]
 pub fn simplify_path(path: &Path) -> Path {
     let mut builder = Path::builder();
     let mut it = path.iter();

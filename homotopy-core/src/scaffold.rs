@@ -140,6 +140,7 @@ pub enum InternalRewrite {
 }
 
 impl InternalRewrite {
+    #[must_use]
     pub const fn direction(self) -> Direction {
         use Boundary::{Source, Target};
         match self {
@@ -171,10 +172,12 @@ pub enum ExternalRewrite {
 }
 
 impl ExternalRewrite {
+    #[must_use]
     pub const fn is_atomic(self) -> bool {
         !matches!(self, Self::RegularSlice { .. })
     }
 
+    #[must_use]
     pub const fn is_flange(self) -> bool {
         match self {
             Self::RegularSlice { flange, .. } => flange,
@@ -403,6 +406,7 @@ where
 
 impl Diagram {
     /// Construct the fully exploded scaffold of the diagram.
+    #[must_use]
     pub fn fully_explode<G>(self) -> G
     where
         G: Create + Explodable<G>,

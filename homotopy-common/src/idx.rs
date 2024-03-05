@@ -121,6 +121,7 @@ where
     I: Idx,
 {
     #[inline]
+    #[must_use]
     pub fn new() -> Self {
         Self {
             raw: vec![],
@@ -140,6 +141,7 @@ where
     }
 
     #[inline]
+    #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             raw: Vec::with_capacity(capacity),
@@ -160,11 +162,13 @@ where
     }
 
     #[inline]
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.raw.is_empty()
     }
 
     #[inline]
+    #[must_use]
     pub fn len(&self) -> usize {
         self.raw.len()
     }
@@ -181,6 +185,7 @@ where
     }
 
     #[inline]
+    #[must_use]
     pub fn reindex<J>(self) -> IdxVec<J, T>
     where
         J: Idx,
@@ -237,6 +242,7 @@ where
     }
 
     #[inline]
+    #[must_use]
     pub fn into_raw(self) -> Vec<T> {
         self.raw
     }

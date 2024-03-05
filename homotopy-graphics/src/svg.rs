@@ -56,6 +56,7 @@ pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
 }
 
 #[inline]
+#[must_use]
 pub fn generator_class_from_diagram_dim(
     generator: Generator,
     orientation: Orientation,

@@ -24,6 +24,7 @@ impl<const N: usize> Deref for Simplex<N> {
 }
 
 /// Generate a 2-dimensional simplicial complex for a diagram.
+#[must_use]
 pub fn make_complex<const N: usize>(diagram: &Diagram) -> Vec<(Simplex<N>, bool)> {
     const TRI_ASSEMBLY_ORDER: [[usize; 3]; 2] = [[0, 1, 3], [0, 3, 2]];
 

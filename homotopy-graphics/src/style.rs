@@ -29,12 +29,14 @@ impl Color {
     const MIN_LIGHTNESS_WRAP: f32 = 0.25;
     const MAX_LIGHTNESS_WRAP: f32 = 0.90;
 
+    #[must_use]
     pub fn hex(&self) -> String {
         let (r, g, b) = self.clone().into_components::<u8>();
         format!("#{r:02x}{g:02x}{b:02x}")
     }
 
     // Used for UI to make sure we always maintain sufficient contrast for legibility.
+    #[must_use]
     pub fn is_light(&self) -> bool {
         palette::color_difference::Wcag21RelativeContrast::relative_contrast(
             palette::Srgb::new(1., 1., 1.),
@@ -91,6 +93,7 @@ impl Color {
         Self(srgb.into_format())
     }
 
+    #[must_use]
     pub fn into_components<T>(self) -> (T, T, T)
     where
         T: palette::stimulus::FromStimulus<u8>,
@@ -98,6 +101,7 @@ impl Color {
         self.0.into_format().into_components()
     }
 
+    #[must_use]
     pub fn into_linear_f32_components(self) -> (f32, f32, f32) {
         self.0.into_format::<f32>().into_linear().into_components()
     }

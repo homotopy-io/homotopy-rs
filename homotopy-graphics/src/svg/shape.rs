@@ -14,11 +14,13 @@ pub struct Fill {
 }
 
 impl Fill {
+    #[must_use]
     pub fn new(path: Path) -> Self {
         let bounds = fast_bounding_box(&path);
         Self { path, bounds }
     }
 
+    #[must_use]
     pub fn contains_point(&self, point: Point, tolerance: f32) -> bool {
         if !self.bounds.contains(point) {
             return false;
@@ -41,10 +43,12 @@ pub struct Stroke {
 }
 
 impl Stroke {
+    #[must_use]
     pub const fn new(path: Path, width: f32) -> Self {
         Self { path, width }
     }
 
+    #[must_use]
     pub fn contains_point(&self, point: Point, tolerance: f32) -> bool {
         for event in &self.path {
             use lyon_path::Event;
@@ -128,10 +132,12 @@ pub struct Circle {
 }
 
 impl Circle {
+    #[must_use]
     pub const fn new(center: Point, radius: f32) -> Self {
         Self { center, radius }
     }
 
+    #[must_use]
     pub fn contains_point(&self, point: Point) -> bool {
         (self.center - point).square_length() < self.radius * self.radius
     }
@@ -143,6 +149,7 @@ impl From<Circle> for Shape {
     }
 }
 
+#[must_use]
 pub fn path_to_svg(path: &Path) -> String {
     let mut svg = String::new();
 
@@ -187,6 +194,7 @@ pub enum Shape {
 }
 
 impl Shape {
+    #[must_use]
     pub fn contains_point(&self, point: Point, tolerance: f32) -> bool {
         match self {
             Self::Fill(s) => s.contains_point(point, tolerance),
@@ -196,6 +204,7 @@ impl Shape {
     }
 }
 
+#[must_use]
 pub fn project_2d<const N: usize>(point: [f32; N]) -> [f32; 2] {
     match N {
         0 => [0.5, 0.5],

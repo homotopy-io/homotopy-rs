@@ -42,10 +42,12 @@ pub struct Split {
 }
 
 impl Monotone {
+    #[must_use]
     pub fn len(&self) -> usize {
         self.0.len()
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
@@ -68,6 +70,7 @@ impl Monotone {
     }
 
     /// Compose two monotones maps.
+    #[must_use]
     pub fn compose(&self, other: &Self) -> Option<Self> {
         let mut seq = Vec::with_capacity(self.len());
         for i in self.slices() {
@@ -110,6 +113,7 @@ impl Monotone {
         dual[1..target_size].iter().map(|&i| i - 1).collect()
     }
 
+    #[must_use]
     pub fn preimage(&self, target_index: usize) -> Range<usize> {
         self.preimage_from(0, target_index)
     }
@@ -131,10 +135,12 @@ impl Monotone {
 }
 
 impl RewriteN {
+    #[must_use]
     pub fn singular_monotone(&self, source_size: usize) -> Monotone {
         (0..source_size).map(|i| self.singular_image(i)).collect()
     }
 
+    #[must_use]
     pub fn regular_monotone(&self, target_size: usize) -> Monotone {
         (0..target_size + 1)
             .map(|i| self.regular_image(i))
@@ -151,6 +157,7 @@ pub struct MonotoneIterator {
 
 #[allow(clippy::len_without_is_empty)]
 impl MonotoneIterator {
+    #[must_use]
     pub fn new(strict: bool, mut constraints: Vec<Range<usize>>) -> Self {
         let len = constraints.len();
 
@@ -178,11 +185,13 @@ impl MonotoneIterator {
         }
     }
 
+    #[must_use]
     pub fn len(&self) -> usize {
         self.constraints.len()
     }
 
     /// Checks if the constraints can only be satisfied by the trivial sequence.
+    #[must_use]
     pub fn is_trivial(&self, target_size: usize) -> bool {
         self.constraints.len() == target_size
             && self

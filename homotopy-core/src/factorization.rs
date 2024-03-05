@@ -12,6 +12,7 @@ pub type Factorization = ZeroOneMany<FactorizationInternal>;
 pub type ConeFactorization = ZeroOneMany<ConeFactorizationInternal>;
 
 /// Given `Rewrite`s A -f> C <g- B, find some `Rewrite` A -h> B which factorises f = g ∘ h.
+#[must_use]
 pub fn factorize(f: &Rewrite, g: &Rewrite) -> Factorization {
     match (f, g) {
         (Rewrite::Rewrite0(f), Rewrite::Rewrite0(g)) => {
@@ -206,6 +207,7 @@ impl Iterator for ConeIterator {
 impl std::iter::FusedIterator for ConeIterator {}
 
 /// Given a `Rewrite` A -f> B, find some `Rewrite`s A -p> C -q> B such that f = q ∘ p.
+#[must_use]
 pub fn factorize2(rewrite: &Rewrite) -> Option<(Rewrite, Rewrite)> {
     let (ps, q) = factorize_sink(std::slice::from_ref(rewrite))?;
     Some((ps.into_iter().next().unwrap(), q))

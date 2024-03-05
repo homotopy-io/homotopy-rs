@@ -45,6 +45,7 @@ impl Cospan {
     }
 
     #[inline]
+    #[must_use]
     pub fn is_identity(&self) -> bool {
         self.forward.is_identity() && self.backward.is_identity()
     }
@@ -212,6 +213,7 @@ impl Rewrite {
     }
 
     #[inline]
+    #[must_use]
     pub fn identity(dimension: usize) -> Self {
         match dimension {
             0 => Rewrite0::identity().into(),
@@ -240,7 +242,6 @@ impl Rewrite {
         self.orientation_transform_above(k, self.dimension())
     }
 
-    #[must_use]
     fn orientation_transform_above(&self, k: Orientation, dim: usize) -> Self {
         use Rewrite::{Rewrite0, RewriteN};
         match self {
@@ -250,6 +251,7 @@ impl Rewrite {
     }
 
     #[inline]
+    #[must_use]
     pub fn dimension(&self) -> usize {
         match self {
             Self::Rewrite0(_) => 0,
@@ -258,6 +260,7 @@ impl Rewrite {
     }
 
     #[inline]
+    #[must_use]
     pub fn is_identity(&self) -> bool {
         match self {
             Self::Rewrite0(r) => r.is_identity(),
@@ -266,6 +269,7 @@ impl Rewrite {
     }
 
     #[inline]
+    #[must_use]
     pub fn is_homotopy(&self) -> bool {
         self.max_generator(Boundary::Target)
             .map_or(true, |d| d.generator.dimension <= self.dimension())
@@ -338,6 +342,7 @@ impl Rewrite0 {
         }
     }
 
+    #[must_use]
     pub fn suspend(&self, s: Generator, t: Generator) -> RewriteN {
         use Height::{Regular, Singular};
 
@@ -401,10 +406,12 @@ impl Rewrite0 {
         }
     }
 
+    #[must_use]
     pub const fn identity() -> Self {
         Self(None)
     }
 
+    #[must_use]
     pub const fn is_identity(&self) -> bool {
         self.0.is_none()
     }
@@ -421,7 +428,6 @@ impl Rewrite0 {
         }
     }
 
-    #[must_use]
     fn orientation_transform_above(&self, k: Orientation, dim: usize) -> Self {
         match &self.0 {
             None => Self(None),
@@ -452,20 +458,24 @@ impl Rewrite0 {
         }
     }
 
+    #[must_use]
     pub fn boundaries(&self) -> Option<(Diagram0, Diagram0)> {
         self.0
             .as_ref()
             .map(|(source, target, _)| (*source, *target))
     }
 
+    #[must_use]
     pub fn source(&self) -> Option<Diagram0> {
         self.0.as_ref().map(|(source, _, _)| *source)
     }
 
+    #[must_use]
     pub fn target(&self) -> Option<Diagram0> {
         self.0.as_ref().map(|(_, target, _)| *target)
     }
 
+    #[must_use]
     pub fn label(&self) -> Option<&Label> {
         self.0.as_ref().and_then(|(_, _, label)| label.as_ref())
     }
@@ -516,6 +526,7 @@ impl<'de> Deserialize<'de> for RewriteN {
 }
 
 impl RewriteN {
+    #[must_use]
     pub fn new(dimension: usize, cones: Vec<Cone>) -> Self {
         let rewrite = Self::new_unsafe(dimension, cones);
         if cfg!(feature = "safety-checks") {
@@ -544,11 +555,13 @@ impl RewriteN {
     }
 
     #[inline]
+    #[must_use]
     pub fn identity(dimension: usize) -> Self {
         Self::new(dimension, Vec::new())
     }
 
     #[inline]
+    #[must_use]
     pub fn from_slices(
         dimension: usize,
         source_cospans: &[Cospan],
@@ -608,11 +621,11 @@ impl RewriteN {
     }
 
     #[inline]
+    #[must_use]
     pub fn is_identity(&self) -> bool {
         self.0.cones.is_empty()
     }
 
-    #[must_use]
     fn orientation_transform_above(&self, k: Orientation, dim: usize) -> Self {
         let cones = self
             .cones()
@@ -637,6 +650,7 @@ impl RewriteN {
         Self::new(self.dimension(), cones)
     }
 
+    #[must_use]
     pub fn dimension(&self) -> usize {
         self.0.dimension
     }
@@ -673,6 +687,7 @@ impl RewriteN {
     }
 
     /// Take a singular slice of a rewrite
+    #[must_use]
     pub fn slice(&self, height: SingularHeight) -> Rewrite {
         self.cones()
             .iter()
@@ -767,6 +782,7 @@ impl RewriteN {
         Ok(Self::new_unsafe(self.dimension(), cones))
     }
 
+    #[must_use]
     pub fn singular_image(&self, index: SingularHeight) -> SingularHeight {
         let mut offset: isize = 0;
 
@@ -782,6 +798,7 @@ impl RewriteN {
         (index as isize + offset) as usize
     }
 
+    #[must_use]
     pub fn singular_preimage(&self, index: SingularHeight) -> Range<SingularHeight> {
         let (start, len) = self
             .cone_over_target(index)
@@ -789,6 +806,7 @@ impl RewriteN {
         start..start + len
     }
 
+    #[must_use]
     pub fn regular_image(&self, index: RegularHeight) -> RegularHeight {
         let mut offset = 0;
 
@@ -802,6 +820,7 @@ impl RewriteN {
         (index as isize - offset) as usize
     }
 
+    #[must_use]
     pub fn regular_preimage(&self, index: RegularHeight) -> Range<RegularHeight> {
         let mut offset = 0;
 
@@ -1113,6 +1132,7 @@ impl<'de> Deserialize<'de> for Cone {
 
 impl Cone {
     #[inline]
+    #[must_use]
     pub fn new(
         index: usize,
         source: Vec<Cospan>,
@@ -1137,6 +1157,7 @@ impl Cone {
 
     /// Constructs a unit cone with a unique regular slice.
     #[inline]
+    #[must_use]
     pub fn new_unit(index: usize, target: Cospan, regular_slice: Rewrite) -> Self {
         Self::new(index, vec![], target, vec![regular_slice], vec![])
     }
@@ -1209,6 +1230,7 @@ impl Cone {
             None => self.clone(),
         }
     }
+
     #[must_use]
     pub fn map<F>(&self, f: F) -> Self
     where
@@ -1226,12 +1248,10 @@ impl Cone {
         )
     }
 
-    #[must_use]
     fn suspend(&self, s: Generator, t: Generator) -> Self {
         self.map(|r| r.suspend(s, t).into())
     }
 
-    #[must_use]
     fn replace(&self, from: Generator, to: Generator, oriented: bool) -> Self {
         self.map(|r| r.replace(from, to, oriented))
     }

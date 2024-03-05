@@ -23,7 +23,6 @@ rustflags = [
     "-Aclippy::missing_errors_doc",
     "-Aclippy::missing_panics_doc",
     "-Aclippy::module_name_repetitions",
-    "-Aclippy::must_use_candidate",
     "-Aclippy::range_plus_one",
     "-Aclippy::similar_names",
     "-Aclippy::struct_field_names",

@@ -110,6 +110,7 @@ impl<T> Tree<T> {
     }
 
     #[inline]
+    #[must_use]
     pub fn get(&self, node: Node) -> Option<&NodeData<T>> {
         self.nodes.get(node)
     }
@@ -236,6 +237,7 @@ impl<T> Tree<T> {
     }
 
     #[inline]
+    #[must_use]
     pub const fn root(&self) -> Node {
         self.root
     }
@@ -344,6 +346,7 @@ impl<T> Tree<T> {
 }
 
 impl<T> Tree<Option<T>> {
+    #[must_use]
     pub fn transpose(self) -> Option<Tree<T>> {
         let mut nodes = IdxVec::with_capacity(self.nodes.len());
 

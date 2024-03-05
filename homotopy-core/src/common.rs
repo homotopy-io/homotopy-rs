@@ -26,6 +26,7 @@ pub struct Generator {
 
 impl Generator {
     /// Creates a new generator with the given id and dimension.
+    #[must_use]
     pub const fn new(id: usize, dimension: usize) -> Self {
         Self { id, dimension }
     }
@@ -198,6 +199,7 @@ impl SliceIndex {
     /// assert_eq!(Interior(Regular(1)).next(1), Some(Boundary(Target)));
     /// assert_eq!(Boundary(Target).next(1), None);
     /// ```
+    #[must_use]
     pub fn next(self, size: usize) -> Option<Self> {
         use Height::{Regular, Singular};
 
@@ -224,6 +226,7 @@ impl SliceIndex {
     /// assert_eq!(Interior(Regular(1)).prev(1), Some(Interior(Singular(0))));
     /// assert_eq!(Boundary(Target).prev(1), Some(Interior(Regular(1))));
     /// ```
+    #[must_use]
     pub fn prev(self, size: usize) -> Option<Self> {
         use Height::{Regular, Singular};
 
@@ -236,6 +239,7 @@ impl SliceIndex {
         }
     }
 
+    #[must_use]
     pub fn step(self, size: usize, direction: Direction) -> Option<Self> {
         match direction {
             Direction::Forward => self.next(size),
@@ -340,6 +344,7 @@ impl BoundaryPath {
     ///     (Some(BoundaryPath(Source, 1)), vec![Singular(0)]),
     /// )
     /// ```
+    #[must_use]
     pub fn split(path: &[SliceIndex]) -> (Option<Self>, Vec<Height>) {
         use SliceIndex::{Boundary, Interior};
 
@@ -358,11 +363,13 @@ impl BoundaryPath {
     }
 
     #[inline]
+    #[must_use]
     pub const fn boundary(self) -> Boundary {
         self.0
     }
 
     #[inline]
+    #[must_use]
     pub const fn depth(self) -> usize {
         self.1
     }
@@ -482,6 +489,7 @@ impl fmt::Debug for Label {
 }
 
 impl Label {
+    #[must_use]
     pub fn new(boundary_path: BoundaryPath, coords: OrdSet<Vec<Height>>) -> Self {
         Self(
             LABEL_FACTORY
@@ -489,10 +497,12 @@ impl Label {
         )
     }
 
+    #[must_use]
     pub fn boundary_path(&self) -> BoundaryPath {
         self.0 .0
     }
 
+    #[must_use]
     pub fn coords(&self) -> OrdSet<Vec<Height>> {
         self.0 .1.clone()
     }

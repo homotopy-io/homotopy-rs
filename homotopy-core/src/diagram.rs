@@ -34,6 +34,7 @@ pub enum Diagram {
 }
 
 impl Diagram {
+    #[must_use]
     pub fn size(&self) -> Option<usize> {
         match self {
             Self::Diagram0(_) => None,
@@ -41,6 +42,7 @@ impl Diagram {
         }
     }
 
+    #[must_use]
     pub fn max_generator(&self) -> Diagram0 {
         match self {
             Self::Diagram0(d) => *d,
@@ -49,6 +51,7 @@ impl Diagram {
     }
 
     /// Returns all the generators mentioned by this diagram.
+    #[must_use]
     pub fn generators(&self) -> FastHashMap<Generator, FastHashSet<Orientation>> {
         use Diagram::{Diagram0, DiagramN};
         fn add_generators(
@@ -80,6 +83,7 @@ impl Diagram {
         gs
     }
 
+    #[must_use]
     pub fn dimension(&self) -> usize {
         match self {
             Self::Diagram0(_) => 0,
@@ -104,6 +108,7 @@ impl Diagram {
         )
     }
 
+    #[must_use]
     pub fn embeds(&self, diagram: &Self, embedding: &[usize]) -> bool {
         use Diagram::{Diagram0, DiagramN};
         match (self, diagram) {
@@ -113,6 +118,7 @@ impl Diagram {
         }
     }
 
+    #[must_use]
     pub fn embeddings(&self, diagram: &Self) -> Embeddings {
         use Diagram::{Diagram0, DiagramN};
         match (self, diagram) {
@@ -175,6 +181,7 @@ impl Diagram {
             .all(|g| signature.generator_info(*g).unwrap().is_invertible())
     }
 
+    #[must_use]
     pub fn contains_point(&self, point: &[Height], embedding: &[RegularHeight]) -> bool {
         use Diagram::{Diagram0, DiagramN};
 
@@ -206,6 +213,7 @@ impl Diagram {
             Self::DiagramN(d) => d.suspend(s, t),
         }
     }
+
     #[must_use]
     pub fn replace(&self, from: Generator, to: Generator, oriented: bool) -> Self {
         match self {
@@ -231,6 +239,7 @@ pub struct Diagram0 {
 }
 
 impl Diagram0 {
+    #[must_use]
     pub const fn new(generator: Generator, orientation: Orientation) -> Self {
         Self {
             generator,
@@ -238,6 +247,7 @@ impl Diagram0 {
         }
     }
 
+    #[must_use]
     pub fn identity(self) -> DiagramN {
         Diagram::from(self).identity()
     }
@@ -249,6 +259,7 @@ impl Diagram0 {
         }
     }
 
+    #[must_use]
     pub fn suspend(&self, s: Generator, t: Generator) -> DiagramN {
         assert_eq!(s.dimension, 0);
         assert_eq!(t.dimension, 0);
@@ -411,6 +422,7 @@ impl DiagramN {
         Ok(Self::new_unsafe(source, vec![cospan]))
     }
 
+    #[must_use]
     pub fn new(source: Diagram, cospans: Vec<Cospan>) -> Self {
         let diagram = Self::new_unsafe(source, cospans);
         if cfg!(feature = "safety-checks") {
@@ -459,11 +471,13 @@ impl DiagramN {
     }
 
     /// The dimension of the diagram, which is at least one.
+    #[must_use]
     pub fn dimension(&self) -> usize {
         self.0.source.dimension() + 1
     }
 
     /// The source boundary of the diagram.
+    #[must_use]
     pub fn source(&self) -> Diagram {
         self.0.source.clone()
     }
@@ -471,6 +485,7 @@ impl DiagramN {
     /// The target boundary of the diagram.
     ///
     /// This function rewrites the source slice of the diagram with all of the diagram's cospans.
+    #[must_use]
     pub fn target(&self) -> Diagram {
         let mut slice = self.0.source.clone();
 
@@ -483,6 +498,7 @@ impl DiagramN {
     }
 
     /// An iterator over all of the diagram's slices.
+    #[must_use]
     pub fn slices(&self) -> Slices {
         Slices::new(self)
     }
@@ -557,11 +573,13 @@ impl DiagramN {
         Ok(Self::new_unsafe(self.source(), cospans))
     }
 
+    #[must_use]
     pub fn cospans(&self) -> &[Cospan] {
         &self.0.cospans
     }
 
     /// Check if [diagram] embeds into this diagram via the specified [embedding].
+    #[must_use]
     pub fn embeds(&self, diagram: &Diagram, embedding: &[usize]) -> bool {
         use Diagram::{Diagram0, DiagramN};
 
@@ -595,6 +613,7 @@ impl DiagramN {
         }
     }
 
+    #[must_use]
     pub fn embeddings(&self, diagram: &Diagram) -> Embeddings {
         use std::cmp::Ordering;
 
@@ -633,11 +652,13 @@ impl DiagramN {
 
     /// The size of the diagram is the number of singular slices or equivalently the number of
     /// cospans in the diagram.
+    #[must_use]
     pub fn size(&self) -> usize {
         self.0.cospans.len()
     }
 
     /// Determine the first maximum-dimensional generator.
+    #[must_use]
     pub fn max_generator(&self) -> Diagram0 {
         *self.0.max_generator.get_or_init(|| {
             std::iter::once(self.source().max_generator())
@@ -727,6 +748,7 @@ impl DiagramN {
         )
     }
 
+    #[must_use]
     pub fn boundary(&self, boundary_path: BoundaryPath) -> Option<Diagram> {
         let mut diagram = self.clone();
 

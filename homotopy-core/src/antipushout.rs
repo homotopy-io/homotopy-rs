@@ -69,6 +69,7 @@ mod monotone {
 
 /// Given `Rewrite`s A -f> T <g- B, find some `Rewrite`s A <h- S -k> B such that the square is a pushout.
 #[allow(clippy::many_single_char_names)]
+#[must_use]
 pub fn antipushout(
     a: &Diagram,
     b: &Diagram,

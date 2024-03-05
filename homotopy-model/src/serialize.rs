@@ -63,6 +63,7 @@ struct GeneratorData {
     diagram: Key<Diagram>,
 }
 
+#[must_use]
 pub fn serialize(
     signature: Signature,
     workspace: Option<Workspace>,

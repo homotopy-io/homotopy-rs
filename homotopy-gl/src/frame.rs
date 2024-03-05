@@ -82,6 +82,7 @@ pub struct Draw<'a> {
 
 impl<'a> Draw<'a> {
     #[inline]
+    #[must_use]
     pub fn new_with_depth(
         program: &'a Program,
         vertex_array: &'a VertexArray,
@@ -98,6 +99,7 @@ impl<'a> Draw<'a> {
     }
 
     #[inline]
+    #[must_use]
     pub fn new(
         program: &'a Program,
         vertex_array: &'a VertexArray,
@@ -121,7 +123,6 @@ impl<'a> Draw<'a> {
 
 impl<'a> Frame<'a> {
     #[inline]
-    #[must_use]
     pub fn new(ctx: &'a mut GlCtx) -> Self {
         Self {
             ctx,
