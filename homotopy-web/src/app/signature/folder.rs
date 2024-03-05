@@ -90,27 +90,9 @@ where
     }
 }
 
-// NOTE this looks like it could be a function component but it can't.
-// Making this a function component means that it doesn't re-render
-// as the signature is incrementally modified.
-pub struct FolderView {}
-
-impl Component for FolderView {
-    type Message = ();
-    type Properties = Props;
-
-    fn create(_: &Context<Self>) -> Self {
-        Self {}
-    }
-
-    fn changed(&mut self, _: &Context<Self>, _: &Self::Properties) -> bool {
-        // This is the critical line.
-        true
-    }
-
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        render_children(ctx.props(), ctx.props().signature.as_tree().root())
-    }
+#[function_component]
+pub fn FolderView(props: &Props) -> Html {
+    render_children(props, props.signature.as_tree().root())
 }
 
 fn render_drop_zone(props: &Props, node: Node, position: DropPosition) -> Html {

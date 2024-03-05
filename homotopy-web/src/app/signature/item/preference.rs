@@ -13,69 +13,59 @@ pub struct GeneratorPreferenceCheckboxProps {
     pub onclick: Callback<MouseEvent>,
 }
 
-pub struct GeneratorPreferenceCheckbox;
+#[function_component]
+pub fn GeneratorPreferenceCheckbox(props: &GeneratorPreferenceCheckboxProps) -> Html {
+    let color_main = &props.color;
+    let color_disabled = "var(--drawer-foreground-dimmed)";
+    let color_text_on = "var(--drawer-background)";
+    let color_text_off = "var(--drawer-foreground)";
+    let color_text_disabled = "var(--drawer-foreground-dimmed-text)";
 
-impl Component for GeneratorPreferenceCheckbox {
-    type Message = ();
-    type Properties = GeneratorPreferenceCheckboxProps;
+    let color = if props.disabled {
+        color_disabled
+    } else {
+        color_main
+    };
 
-    fn create(_ctx: &Context<Self>) -> Self {
-        Self {}
-    }
+    let border_style = format!("border: 1px solid {color};");
 
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        let color_main = &ctx.props().color;
-        let color_disabled = "var(--drawer-foreground-dimmed)";
-        let color_text_on = "var(--drawer-background)";
-        let color_text_off = "var(--drawer-foreground)";
-        let color_text_disabled = "var(--drawer-foreground-dimmed-text)";
+    let slider_style = format!(
+        "transform: translateX({}); background-color: {color};",
+        if props.checked { "100%" } else { "0" },
+    );
 
-        let color = if ctx.props().disabled {
-            color_disabled
-        } else {
-            color_main
-        };
+    let (left_color, right_color) = if props.disabled {
+        (color_text_disabled, color_text_disabled)
+    } else if props.checked {
+        (color_text_off, color_text_on)
+    } else {
+        (color_text_on, color_text_off)
+    };
+    let (left_style, right_style) = (
+        format!("color: {left_color};"),
+        format!("color: {right_color};"),
+    );
 
-        let border_style = format!("border: 1px solid {color};");
-
-        let slider_style = format!(
-            "transform: translateX({}); background-color: {color};",
-            if ctx.props().checked { "100%" } else { "0" },
-        );
-
-        let (left_color, right_color) = if ctx.props().disabled {
-            (color_text_disabled, color_text_disabled)
-        } else if ctx.props().checked {
-            (color_text_off, color_text_on)
-        } else {
-            (color_text_on, color_text_off)
-        };
-        let (left_style, right_style) = (
-            format!("color: {left_color};"),
-            format!("color: {right_color};"),
-        );
-
-        html! {
-            <div
-                class={"signature__generator-preference"}
-                onclick={ctx.props().onclick.clone()}
-                style={border_style}
-            >
-                <div class="signature__generator-preference-options-wrapper">
-                    <div class="signature__generator-preference-option" style={left_style}>
-                        {ctx.props().left}
-                    </div>
-                    <div class="signature__generator-preference-option" style={right_style}>
-                        {ctx.props().right}
-                    </div>
+    html! {
+        <div
+            class={"signature__generator-preference"}
+            onclick={props.onclick.clone()}
+            style={border_style}
+        >
+            <div class="signature__generator-preference-options-wrapper">
+                <div class="signature__generator-preference-option" style={left_style}>
+                    {props.left}
                 </div>
-                <div class="signature__generator-preference-slider" style={slider_style} />
-                <input
-                    type="checkbox"
-                    checked={ctx.props().checked}
-                    disabled={ctx.props().disabled}
-                />
+                <div class="signature__generator-preference-option" style={right_style}>
+                    {props.right}
+                </div>
             </div>
-        }
+            <div class="signature__generator-preference-slider" style={slider_style} />
+            <input
+                type="checkbox"
+                checked={props.checked}
+                disabled={props.disabled}
+            />
+        </div>
     }
 }
