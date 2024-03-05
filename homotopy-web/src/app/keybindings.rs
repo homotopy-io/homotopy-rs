@@ -36,6 +36,7 @@ declare_keybindings! {
     "f" => Action::Proof(proof::Action::Befoot)
     "v" => Action::Proof(proof::Action::Invert)
     "r" => Action::Proof(proof::Action::Restrict)
+    "o" => Action::Proof(proof::Action::Squash)
     "h" => Action::Proof(proof::Action::Theorem)
     "a" => Action::Proof(proof::Action::CreateGeneratorZero)
     "s" => Action::Proof(proof::Action::SetBoundary(Boundary::Source))

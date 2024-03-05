@@ -74,6 +74,12 @@ declare_sidebar_tools! {
         model::Action::Proof(model::proof::Action::Restrict),
     }
 
+    BUTTON_SQUASH {
+        "Squash",
+        "unfold_less",
+        model::Action::Proof(model::proof::Action::Squash),
+    }
+
     BUTTON_THEOREM {
         "Theorem",
         "title",

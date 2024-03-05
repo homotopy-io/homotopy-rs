@@ -60,7 +60,6 @@ impl Component for DebugView {
                     <input type="file" accept=".json,.txt" class="visually-hidden" id="import" onchange={import}/>
                 </div>
                 <div>
-                    <button onclick={ctx.props().dispatch.reform(move |_| proof::Action::Squash.into())}>{"Squash"}</button>
                     <button onclick={ctx.props().dispatch.reform(move |_| proof::Action::Stash.into())}>{"Stash"}</button>
                     <button onclick={ctx.props().dispatch.reform(move |_| proof::Action::StashDrop.into())}>{"Stash drop"}</button>
                     <button onclick={ctx.props().dispatch.reform(move |_| proof::Action::StashPop.into())}>{"Stash pop"}</button>
