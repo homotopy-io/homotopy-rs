@@ -1037,6 +1037,24 @@ input.signature__item-name {
   height: 0;
 }
 
+/* Stash */
+
+.stash__element {
+  background-color: var(--toolbar-background);
+  border: 1px solid var(--toolbar-border);
+  border-radius: var(--space-0);
+  user-select: none;
+}
+
+.stash__diagram {
+  overflow: auto;
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Diagram SVG */
 
 .diagram-svg__attach-highlight {

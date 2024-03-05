@@ -33,6 +33,7 @@ mod settings;
 mod sidebar;
 mod signature;
 mod signature_stylesheet;
+mod stash;
 mod tex;
 mod workspace;
 

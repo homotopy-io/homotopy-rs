@@ -1,5 +1,4 @@
 use closure::closure;
-use homotopy_model::proof;
 use web_sys::{File, HtmlInputElement};
 use yew::prelude::*;
 
@@ -58,12 +57,6 @@ impl Component for DebugView {
                     <button onclick={ctx.props().dispatch.reform(move |_| Action::ExportActions)}>{"Export actions"}</button>
                     <label for="import" class="button">{"Import actions"}</label>
                     <input type="file" accept=".json,.txt" class="visually-hidden" id="import" onchange={import}/>
-                </div>
-                <div>
-                    <button onclick={ctx.props().dispatch.reform(move |_| proof::Action::Stash.into())}>{"Stash"}</button>
-                    <button onclick={ctx.props().dispatch.reform(move |_| proof::Action::StashDrop.into())}>{"Stash drop"}</button>
-                    <button onclick={ctx.props().dispatch.reform(move |_| proof::Action::StashPop.into())}>{"Stash pop"}</button>
-                    <button onclick={ctx.props().dispatch.reform(move |_| proof::Action::StashApply.into())}>{"Stash apply"}</button>
                 </div>
             </>
         }

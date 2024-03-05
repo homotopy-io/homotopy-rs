@@ -10,6 +10,7 @@ use crate::{
         project::ProjectView,
         settings::SettingsView,
         signature::SignatureView,
+        stash::StashView,
     },
     components::Visible,
     model::{
@@ -152,6 +153,20 @@ declare_sidebar_drawers! {
         min_width: 250,
         top_icon: "create_new_folder",
         top_icon_action: |proof: &Proof| model::Action::Proof(Action::EditSignature(SignatureEdit::NewFolder(proof.signature.as_tree().root()))),
+    }
+
+    DRAWER_STASH {
+        "Stash",
+        "stash",
+        "bookmarks",
+        |dispatch, proof: &Proof, _, _| html! {
+            <StashView
+                stash={proof.stash.clone()}
+                dispatch={dispatch}
+                signature={proof.signature.clone()}
+            />
+        },
+        min_width: 250,
     }
 
     DRAWER_IMAGE_EXPORT {
