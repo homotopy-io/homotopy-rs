@@ -11,10 +11,6 @@ use crate::{
     model::proof::{Action, SelectedBoundary, Signature},
 };
 
-pub struct BoundaryPreview {}
-
-pub enum BoundaryPreviewMessage {}
-
 #[derive(Clone, PartialEq, Properties)]
 pub struct BoundaryPreviewProps {
     pub boundary: SelectedBoundary,
@@ -22,75 +18,58 @@ pub struct BoundaryPreviewProps {
     pub signature: Signature,
 }
 
-impl Component for BoundaryPreview {
-    type Message = BoundaryPreviewMessage;
-    type Properties = BoundaryPreviewProps;
+#[function_component]
+pub fn BoundaryPreview(props: &BoundaryPreviewProps) -> Html {
+    let bound = match props.boundary.boundary {
+        Boundary::Source => "Source",
+        Boundary::Target => "Target",
+    };
 
-    fn create(_ctx: &Context<Self>) -> Self {
-        Self {}
-    }
+    let dim = props.boundary.diagram.dimension();
 
-    fn update(&mut self, _ctx: &Context<Self>, _msg: Self::Message) -> bool {
-        false
-    }
+    let preview = match dim {
+        0 => view_diagram_svg::<0>(props),
+        1 => view_diagram_svg::<1>(props),
+        _ => view_diagram_svg::<2>(props),
+    };
 
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        let bound = match ctx.props().boundary.boundary {
-            Boundary::Source => "Source",
-            Boundary::Target => "Target",
-        };
+    let onclick = props.dispatch.reform(move |_| Action::RecoverBoundary);
+    let preview = html! {
+        <div
+            class="boundary__element boundary__preview"
+            onclick={onclick}
+        >
+            {preview}
+        </div>
+    };
 
-        let dim = ctx.props().boundary.diagram.dimension();
-
-        let preview = match dim {
-            0 => Self::view_diagram_svg::<0>(ctx),
-            1 => Self::view_diagram_svg::<1>(ctx),
-            _ => Self::view_diagram_svg::<2>(ctx),
-        };
-
-        let onclick = ctx
-            .props()
-            .dispatch
-            .reform(move |_| Action::RecoverBoundary);
-        let preview = html! {
+    html! {
+        <div class="boundary">
             <div
-                class="boundary__element boundary__preview"
-                onclick={onclick}
+                class="boundary__element boundary__name"
+                onclick={props.dispatch.reform(move |_| Action::FlipBoundary)}
             >
-                {preview}
+                <span>{bound}</span>
             </div>
-        };
-
-        html! {
-            <div class="boundary">
-                <div
-                    class="boundary__element boundary__name"
-                    onclick={ctx.props().dispatch.reform(move |_| Action::FlipBoundary)}
-                >
-                    <span>{bound}</span>
-                </div>
-                <div
-                    class="boundary__element boundary__button"
-                    onclick={ctx.props().dispatch.reform(move |_| Action::ClearBoundary)}
-                >
-                    <Icon name="close" size={IconSize::Icon18} />
-                </div>
-                {preview}
+            <div
+                class="boundary__element boundary__button"
+                onclick={props.dispatch.reform(move |_| Action::ClearBoundary)}
+            >
+                <Icon name="close" size={IconSize::Icon18} />
             </div>
-        }
+            {preview}
+        </div>
     }
 }
 
-impl BoundaryPreview {
-    fn view_diagram_svg<const N: usize>(ctx: &Context<Self>) -> Html {
-        html! {
-            <DiagramSvg<N>
-                    diagram={ctx.props().boundary.diagram.clone()}
-                    id="boundary__preview"
-                    signature={ctx.props().signature.clone()}
-                    max_width={Some(160.0)}
-                    max_height={Some(160.0)}
-            />
-        }
+fn view_diagram_svg<const N: usize>(props: &BoundaryPreviewProps) -> Html {
+    html! {
+        <DiagramSvg<N>
+                diagram={props.boundary.diagram.clone()}
+                id="boundary__preview"
+                signature={props.signature.clone()}
+                max_width={Some(160.0)}
+                max_height={Some(160.0)}
+        />
     }
 }
