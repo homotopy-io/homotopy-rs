@@ -15,7 +15,7 @@ impl<I> NodeData<I>
 where
     I: Idx,
 {
-    fn new(parent: I) -> Self {
+    const fn new(parent: I) -> Self {
         Self { parent, size: 0 }
     }
 }

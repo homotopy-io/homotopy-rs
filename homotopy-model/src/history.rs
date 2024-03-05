@@ -72,7 +72,7 @@ impl fmt::Debug for Snapshot {
 }
 
 impl Snapshot {
-    fn new(action: Option<super::proof::Action>, proof: ProofState) -> Self {
+    const fn new(action: Option<super::proof::Action>, proof: ProofState) -> Self {
         Self { proof, action }
     }
 }

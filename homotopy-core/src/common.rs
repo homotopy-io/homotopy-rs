@@ -26,13 +26,13 @@ pub struct Generator {
 
 impl Generator {
     /// Creates a new generator with the given id and dimension.
-    pub fn new(id: usize, dimension: usize) -> Self {
+    pub const fn new(id: usize, dimension: usize) -> Self {
         Self { id, dimension }
     }
 
     /// Increments the dimension by one.
     #[must_use]
-    pub fn suspended(self) -> Self {
+    pub const fn suspended(self) -> Self {
         Self {
             id: self.id,
             dimension: self.dimension + 1,
@@ -55,7 +55,7 @@ pub enum Boundary {
 impl Boundary {
     /// The opposite boundary.
     #[must_use]
-    pub fn flip(self) -> Self {
+    pub const fn flip(self) -> Self {
         match self {
             Self::Source => Self::Target,
             Self::Target => Self::Source,
@@ -358,12 +358,12 @@ impl BoundaryPath {
     }
 
     #[inline]
-    pub fn boundary(self) -> Boundary {
+    pub const fn boundary(self) -> Boundary {
         self.0
     }
 
     #[inline]
-    pub fn depth(self) -> usize {
+    pub const fn depth(self) -> usize {
         self.1
     }
 }

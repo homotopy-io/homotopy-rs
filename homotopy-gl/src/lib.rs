@@ -192,17 +192,17 @@ impl GlCtx {
     }
 
     #[inline]
-    pub fn width(&self) -> u32 {
+    pub const fn width(&self) -> u32 {
         self.width
     }
 
     #[inline]
-    pub fn height(&self) -> u32 {
+    pub const fn height(&self) -> u32 {
         self.height
     }
 
     #[inline]
-    pub fn size(&self) -> Vec2 {
+    pub const fn size(&self) -> Vec2 {
         Vec2::new(self.width as f32, self.height as f32)
     }
 

@@ -343,7 +343,7 @@ pub struct Metadata {
 }
 
 impl Metadata {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             title: None,
             author: None,

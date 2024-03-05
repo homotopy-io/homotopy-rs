@@ -84,7 +84,7 @@ pub enum Selectables {
 }
 
 impl Selectables {
-    pub fn name(&self) -> &'static str {
+    pub const fn name(&self) -> &'static str {
         match self {
             Self::Attach(_) => "Attach",
             Self::Merge(_, _) => "Merge",

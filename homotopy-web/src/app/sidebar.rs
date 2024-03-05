@@ -77,7 +77,7 @@ impl From<i32> for DrawerViewSize {
 
 impl DrawerViewSize {
     // Some drawer view sizes (eg. compact) will snap the drawer to a certain width (px).
-    fn snap_width(self) -> Option<i32> {
+    const fn snap_width(self) -> Option<i32> {
         match self {
             Self::TemporarilyHidden => Some(0),
             Self::Regular | Self::Expanded => None,

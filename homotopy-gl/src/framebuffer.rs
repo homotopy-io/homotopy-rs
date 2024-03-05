@@ -30,7 +30,7 @@ impl AttachmentPoint {
         WebGl2RenderingContext::COLOR_ATTACHMENT15,
     ];
 
-    fn into_gl_const(self) -> u32 {
+    const fn into_gl_const(self) -> u32 {
         match self {
             Self::Color(i) => Self::COLOR_ATTACHMENTS[i],
             Self::Depth => WebGl2RenderingContext::DEPTH_ATTACHMENT,

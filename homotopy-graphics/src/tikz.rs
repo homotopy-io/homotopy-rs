@@ -46,7 +46,7 @@ pub fn stylesheet(
 }
 
 #[inline]
-pub fn color_selector(
+pub const fn color_selector(
     diagram: Diagram0,
     diagram_dimension: usize,
     representation: GeneratorRepresentation,

@@ -20,21 +20,21 @@ impl From<bool> for Parity {
 
 impl Parity {
     #[must_use]
-    pub fn flip(self) -> Self {
+    pub const fn flip(self) -> Self {
         match self {
             Self::Even => Self::Odd,
             Self::Odd => Self::Even,
         }
     }
 
-    pub fn is_even(self) -> bool {
+    pub const fn is_even(self) -> bool {
         match self {
             Self::Even => true,
             Self::Odd => false,
         }
     }
 
-    pub fn from_direction(direction: Direction) -> Self {
+    pub const fn from_direction(direction: Direction) -> Self {
         match direction {
             Direction::Forward => Self::Even,
             Direction::Backward => Self::Odd,

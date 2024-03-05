@@ -140,7 +140,7 @@ pub enum InternalRewrite {
 }
 
 impl InternalRewrite {
-    pub fn direction(self) -> Direction {
+    pub const fn direction(self) -> Direction {
         use Boundary::{Source, Target};
         match self {
             Self::Boundary(Source) => Direction::Forward,
@@ -171,11 +171,11 @@ pub enum ExternalRewrite {
 }
 
 impl ExternalRewrite {
-    pub fn is_atomic(self) -> bool {
+    pub const fn is_atomic(self) -> bool {
         !matches!(self, Self::RegularSlice { .. })
     }
 
-    pub fn is_flange(self) -> bool {
+    pub const fn is_flange(self) -> bool {
         match self {
             Self::RegularSlice { flange, .. } => flange,
             _ => false,

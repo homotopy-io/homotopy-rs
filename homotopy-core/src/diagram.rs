@@ -231,7 +231,7 @@ pub struct Diagram0 {
 }
 
 impl Diagram0 {
-    pub fn new(generator: Generator, orientation: Orientation) -> Self {
+    pub const fn new(generator: Generator, orientation: Orientation) -> Self {
         Self {
             generator,
             orientation,
@@ -242,7 +242,7 @@ impl Diagram0 {
         Diagram::from(self).identity()
     }
 
-    pub(crate) fn suspended(self) -> Self {
+    pub(crate) const fn suspended(self) -> Self {
         Self {
             generator: self.generator.suspended(),
             ..self

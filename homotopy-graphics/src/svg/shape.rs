@@ -41,7 +41,7 @@ pub struct Stroke {
 }
 
 impl Stroke {
-    pub fn new(path: Path, width: f32) -> Self {
+    pub const fn new(path: Path, width: f32) -> Self {
         Self { path, width }
     }
 
@@ -128,7 +128,7 @@ pub struct Circle {
 }
 
 impl Circle {
-    pub fn new(center: Point, radius: f32) -> Self {
+    pub const fn new(center: Point, radius: f32) -> Self {
         Self { center, radius }
     }
 

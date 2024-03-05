@@ -28,7 +28,7 @@ pub struct Tree<T> {
 
 impl<T> NodeData<T> {
     #[inline]
-    pub fn inner(&self) -> &T {
+    pub const fn inner(&self) -> &T {
         &self.data
     }
 
@@ -55,7 +55,7 @@ impl<T> NodeData<T> {
     }
 
     #[inline]
-    pub fn parent(&self) -> Option<Node> {
+    pub const fn parent(&self) -> Option<Node> {
         self.parent
     }
 
@@ -236,7 +236,7 @@ impl<T> Tree<T> {
     }
 
     #[inline]
-    pub fn root(&self) -> Node {
+    pub const fn root(&self) -> Node {
         self.root
     }
 

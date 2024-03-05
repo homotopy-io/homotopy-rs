@@ -401,11 +401,11 @@ impl Rewrite0 {
         }
     }
 
-    pub fn identity() -> Self {
+    pub const fn identity() -> Self {
         Self(None)
     }
 
-    pub fn is_identity(&self) -> bool {
+    pub const fn is_identity(&self) -> bool {
         self.0.is_none()
     }
 

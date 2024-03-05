@@ -141,14 +141,14 @@ impl<const N: usize> GraphicElement<N> {
         }
     }
 
-    pub fn generator(&self) -> Generator {
+    pub const fn generator(&self) -> Generator {
         use GraphicElement::{Point, Surface, Wire};
         match self {
             Surface(d, _) | Wire(d, _, _, _) | Point(d, _) => d.generator,
         }
     }
 
-    pub fn orientation(&self) -> Orientation {
+    pub const fn orientation(&self) -> Orientation {
         use GraphicElement::{Point, Surface, Wire};
         match self {
             Surface(d, _) | Wire(d, _, _, _) | Point(d, _) => d.orientation,
@@ -252,7 +252,7 @@ fn orient_wire<const N: usize>(wire: &[Coordinate<N>; 2]) -> [Coordinate<N>; 2] 
 }
 
 fn orient_surface<const N: usize>(surface: &[Coordinate<N>; 3]) -> [Coordinate<N>; 3] {
-    fn ordering_to_int(ordering: Ordering) -> isize {
+    const fn ordering_to_int(ordering: Ordering) -> isize {
         match ordering {
             Ordering::Less => -1,
             Ordering::Equal => 0,

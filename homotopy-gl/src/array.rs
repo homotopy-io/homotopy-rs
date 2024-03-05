@@ -56,12 +56,12 @@ impl VertexArray {
     }
 
     #[inline]
-    pub(super) fn len(&self) -> usize {
+    pub(super) const fn len(&self) -> usize {
         self.len
     }
 
     #[inline]
-    pub(super) fn elements(&self) -> Option<&ElementBuffer> {
+    pub(super) const fn elements(&self) -> Option<&ElementBuffer> {
         self.elements.as_ref()
     }
 

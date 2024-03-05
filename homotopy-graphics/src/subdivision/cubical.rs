@@ -419,7 +419,7 @@ impl<'a> Subdivider<'a> {
         )
     }
 
-    fn square_weight_matrix() -> Mat4 {
+    const fn square_weight_matrix() -> Mat4 {
         Mat4::new(
             Vec4::broadcast(0.25),
             Vec4::broadcast(0.25),
@@ -428,7 +428,7 @@ impl<'a> Subdivider<'a> {
         )
     }
 
-    fn cube_weight_matrix() -> [Mat4; 4] {
+    const fn cube_weight_matrix() -> [Mat4; 4] {
         [
             Mat4::new(
                 Vec4::broadcast(0.125),

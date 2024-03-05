@@ -28,7 +28,7 @@ enum PlaybackSpeed {
 }
 
 impl PlaybackSpeed {
-    fn next(self) -> Self {
+    const fn next(self) -> Self {
         match self {
             Self::Half => Self::Normal,
             Self::Normal => Self::Fast,
@@ -37,7 +37,7 @@ impl PlaybackSpeed {
         }
     }
 
-    fn modifier(self) -> f32 {
+    const fn modifier(self) -> f32 {
         match self {
             Self::Half => 0.5,
             Self::Normal => 1.,
@@ -46,7 +46,7 @@ impl PlaybackSpeed {
         }
     }
 
-    fn as_str(self) -> &'static str {
+    const fn as_str(self) -> &'static str {
         match self {
             Self::Half => "0.5x",
             Self::Normal => "1x",

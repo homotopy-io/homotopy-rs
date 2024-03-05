@@ -30,7 +30,7 @@ pub struct View {
 impl View {
     const MAX: u8 = 4;
 
-    pub fn dimension(self) -> u8 {
+    pub const fn dimension(self) -> u8 {
         self.dimension
     }
 }

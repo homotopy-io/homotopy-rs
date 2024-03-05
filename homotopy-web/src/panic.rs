@@ -56,7 +56,7 @@ impl CrashDump {
         }
     }
 
-    fn needs_zip(&self) -> bool {
+    const fn needs_zip(&self) -> bool {
         self.import.is_some()
     }
 
