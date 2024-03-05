@@ -100,7 +100,7 @@ impl Signature {
     }
 
     #[must_use]
-    pub fn filter_map<F>(&self, f: F) -> Signature
+    pub fn filter_map<F>(&self, f: F) -> Self
     where
         F: Fn(&GeneratorInfo) -> Option<GeneratorInfo>,
     {

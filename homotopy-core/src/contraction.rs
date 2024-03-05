@@ -1049,10 +1049,10 @@ impl Cospan {
 impl Rewrite {
     fn is_redundant(&self) -> bool {
         match self {
-            Rewrite::Rewrite0(r) => r
+            Self::Rewrite0(r) => r
                 .target()
                 .map_or(true, |t| t.orientation == Orientation::Zero),
-            Rewrite::RewriteN(r) => r.cones().iter().all(Cone::is_redundant),
+            Self::RewriteN(r) => r.cones().iter().all(Cone::is_redundant),
         }
     }
 }

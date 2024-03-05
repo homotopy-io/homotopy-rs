@@ -316,7 +316,7 @@ pub enum MalformedCone {
 
 impl Rewrite {
     #[must_use]
-    pub fn equivalent(&self, other: &Rewrite) -> bool {
+    pub fn equivalent(&self, other: &Self) -> bool {
         use Rewrite::{Rewrite0, RewriteN};
         match (self, other) {
             (Rewrite0(f), Rewrite0(g)) => f.equivalent(g),
@@ -328,14 +328,14 @@ impl Rewrite {
 
 impl Rewrite0 {
     #[must_use]
-    pub fn equivalent(&self, other: &Rewrite0) -> bool {
+    pub fn equivalent(&self, other: &Self) -> bool {
         self.boundaries() == other.boundaries()
     }
 }
 
 impl RewriteN {
     #[must_use]
-    pub fn equivalent(&self, other: &RewriteN) -> bool {
+    pub fn equivalent(&self, other: &Self) -> bool {
         // Do all the cheap and non-recursive tests first
         self.dimension() == other.dimension()
             && self.cones().len() == other.cones().len()
@@ -350,7 +350,7 @@ impl RewriteN {
 
 impl Cone {
     #[must_use]
-    pub fn equivalent(&self, other: &Cone) -> bool {
+    pub fn equivalent(&self, other: &Self) -> bool {
         self.source() == other.source()
             && self.target() == other.target()
             && self

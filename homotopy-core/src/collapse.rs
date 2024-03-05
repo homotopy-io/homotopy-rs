@@ -72,8 +72,8 @@ where
 
     fn into_iter(self) -> Self::IntoIter {
         match self {
-            OneMany::One(x) => std::iter::once(x).collect::<TS>().into_iter(),
-            OneMany::Many(xs) => xs.into_iter(),
+            Self::One(x) => std::iter::once(x).collect::<TS>().into_iter(),
+            Self::Many(xs) => xs.into_iter(),
         }
     }
 }

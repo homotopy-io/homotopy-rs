@@ -95,7 +95,7 @@ impl Cospan {
         directions: &[Direction],
         codimension: usize,
     ) -> Self {
-        let cospan = Cospan {
+        let cospan = Self {
             forward: self.forward.reflect(source, directions, codimension + 1),
             backward: self.backward.reflect(target, directions, codimension + 1),
         };
@@ -360,21 +360,19 @@ impl Rewrite0 {
                 };
                 let (regular_slices, singular_slices) = if s == t && source.generator == s {
                     (
-                        vec![Rewrite0::new(s, target.suspended(), label(Regular(0))).into()],
+                        vec![Self::new(s, target.suspended(), label(Regular(0))).into()],
                         vec![],
                     )
                 } else {
                     (
                         vec![
-                            Rewrite0::new(s, target.suspended(), label(Regular(0))).into(),
-                            Rewrite0::new(t, target.suspended(), label(Regular(1))).into(),
+                            Self::new(s, target.suspended(), label(Regular(0))).into(),
+                            Self::new(t, target.suspended(), label(Regular(1))).into(),
                         ],
-                        vec![Rewrite0::new(
-                            source.suspended(),
-                            target.suspended(),
-                            label(Singular(0)),
-                        )
-                        .into()],
+                        vec![
+                            Self::new(source.suspended(), target.suspended(), label(Singular(0)))
+                                .into(),
+                        ],
                     )
                 };
                 RewriteN::from_slices(
@@ -513,7 +511,7 @@ impl<'de> Deserialize<'de> for RewriteN {
         D: serde::Deserializer<'de>,
     {
         Deserialize::deserialize(deserializer)
-            .map(|r| RewriteN(REWRITE_FACTORY.with_borrow_mut(|factory| factory.mk(r))))
+            .map(|r| Self(REWRITE_FACTORY.with_borrow_mut(|factory| factory.mk(r))))
     }
 }
 
@@ -1106,7 +1104,7 @@ impl<'de> Deserialize<'de> for Cone {
             index: usize,
             internal: ConeInternal,
         }
-        Deserialize::deserialize(deserializer).map(|c: ConeUnshared| Cone {
+        Deserialize::deserialize(deserializer).map(|c: ConeUnshared| Self {
             index: c.index,
             internal: CONE_FACTORY.with_borrow_mut(|factory| factory.mk(c.internal)),
         })

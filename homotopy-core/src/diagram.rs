@@ -126,16 +126,16 @@ impl Diagram {
 
     pub(crate) fn rewrite_forward(self, rewrite: &Rewrite) -> Result<Self, RewritingError> {
         match (self, rewrite) {
-            (Diagram::Diagram0(d), Rewrite::Rewrite0(r)) => d.rewrite_forward(r).map(Into::into),
-            (Diagram::DiagramN(d), Rewrite::RewriteN(r)) => d.rewrite_forward(r).map(Into::into),
+            (Self::Diagram0(d), Rewrite::Rewrite0(r)) => d.rewrite_forward(r).map(Into::into),
+            (Self::DiagramN(d), Rewrite::RewriteN(r)) => d.rewrite_forward(r).map(Into::into),
             (d, r) => Err(RewritingError::Dimension(d.dimension(), r.dimension())),
         }
     }
 
     pub(crate) fn rewrite_backward(self, rewrite: &Rewrite) -> Result<Self, RewritingError> {
         match (self, rewrite) {
-            (Diagram::Diagram0(d), Rewrite::Rewrite0(r)) => d.rewrite_backward(r).map(Into::into),
-            (Diagram::DiagramN(d), Rewrite::RewriteN(r)) => d.rewrite_backward(r).map(Into::into),
+            (Self::Diagram0(d), Rewrite::Rewrite0(r)) => d.rewrite_backward(r).map(Into::into),
+            (Self::DiagramN(d), Rewrite::RewriteN(r)) => d.rewrite_backward(r).map(Into::into),
             (d, r) => Err(RewritingError::Dimension(d.dimension(), r.dimension())),
         }
     }
@@ -207,7 +207,7 @@ impl Diagram {
         }
     }
     #[must_use]
-    pub fn replace(&self, from: Generator, to: Generator, oriented: bool) -> Diagram {
+    pub fn replace(&self, from: Generator, to: Generator, oriented: bool) -> Self {
         match self {
             Self::Diagram0(d) => Self::Diagram0(d.replace(from, to)),
             Self::DiagramN(d) => Self::DiagramN(d.replace(from, to, oriented)),
@@ -278,7 +278,7 @@ impl Diagram0 {
             )
             .into();
 
-            let source: Diagram0 = s.into();
+            let source: Self = s.into();
             let cospan = Cospan { forward, backward };
             DiagramN::new(source.into(), vec![cospan])
         }
@@ -362,7 +362,7 @@ impl<'de> Deserialize<'de> for DiagramN {
         D: serde::Deserializer<'de>,
     {
         Deserialize::deserialize(deserializer)
-            .map(|d| DiagramN(DIAGRAM_FACTORY.with_borrow_mut(|factory| factory.mk(d))))
+            .map(|d| Self(DIAGRAM_FACTORY.with_borrow_mut(|factory| factory.mk(d))))
     }
 }
 

@@ -12,7 +12,6 @@ rustflags = [
     "-Aclippy::needless_collect",
     "-Aclippy::option_if_let_else",
     "-Aclippy::suboptimal_flops",
-    "-Aclippy::use_self",
 
     # pedantic
     "-Wclippy::pedantic",

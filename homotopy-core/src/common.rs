@@ -94,8 +94,8 @@ impl Height {
     ///     vec![Regular(0), Singular(0), Regular(1)]
     /// )
     /// ```
-    pub fn for_size(size: usize) -> impl DoubleEndedIterator<Item = Height> {
-        (0..2 * size + 1).map(Height::from)
+    pub fn for_size(size: usize) -> impl DoubleEndedIterator<Item = Self> {
+        (0..2 * size + 1).map(Self::from)
     }
 }
 
@@ -177,7 +177,7 @@ impl SliceIndex {
     ///     ],
     /// )
     /// ```
-    pub fn for_size(size: usize) -> impl DoubleEndedIterator<Item = SliceIndex> {
+    pub fn for_size(size: usize) -> impl DoubleEndedIterator<Item = Self> {
         use std::iter::once;
         once(Boundary::Source.into())
             .chain(Height::for_size(size).map(SliceIndex::Interior))
@@ -468,7 +468,7 @@ impl<'de> Deserialize<'de> for Label {
         D: serde::Deserializer<'de>,
     {
         Deserialize::deserialize(deserializer)
-            .map(|l| Label(LABEL_FACTORY.with_borrow_mut(|factory| factory.mk(l))))
+            .map(|l| Self(LABEL_FACTORY.with_borrow_mut(|factory| factory.mk(l))))
     }
 }
 

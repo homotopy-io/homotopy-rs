@@ -23,7 +23,7 @@ pub trait State: Default + Clone + Sized + 'static {
 }
 
 impl State for bool {
-    type Action = bool;
+    type Action = Self;
 
     fn update(&mut self, action: &Self::Action) -> bool {
         let ret = self != action;
@@ -33,7 +33,7 @@ impl State for bool {
 }
 
 impl State for u32 {
-    type Action = u32;
+    type Action = Self;
 
     fn update(&mut self, action: &Self::Action) -> bool {
         let ret = self != action;
@@ -61,7 +61,7 @@ where
     T: State,
 {
     pub fn new(state: T) -> Self {
-        Delta(RefCell::new(DeltaInner {
+        Self(RefCell::new(DeltaInner {
             state,
             handlers: IdxVec::new(),
         }))

@@ -90,9 +90,9 @@ impl<const N: usize> ActionRegion<N> {
 
     pub fn to_shape(&self, wire_thickness: f32, point_radius: f32) -> Shape {
         match self {
-            ActionRegion::Surface(_, path) => Fill::new(path.clone()).into(),
-            ActionRegion::Wire(_, path) => Stroke::new(path.clone(), wire_thickness).into(),
-            ActionRegion::Point(_, point) => Circle::new(*point, point_radius).into(),
+            Self::Surface(_, path) => Fill::new(path.clone()).into(),
+            Self::Wire(_, path) => Stroke::new(path.clone(), wire_thickness).into(),
+            Self::Point(_, point) => Circle::new(*point, point_radius).into(),
         }
     }
 }
@@ -234,9 +234,9 @@ impl<const N: usize> GraphicElement<N> {
 
     pub fn to_shape(&self, wire_thickness: f32, point_radius: f32) -> Shape {
         match self {
-            GraphicElement::Surface(_, path) => Fill::new(path.clone()).into(),
-            GraphicElement::Wire(_, _, path, _) => Stroke::new(path.clone(), wire_thickness).into(),
-            GraphicElement::Point(_, point) => Circle::new(*point, point_radius).into(),
+            Self::Surface(_, path) => Fill::new(path.clone()).into(),
+            Self::Wire(_, _, path, _) => Stroke::new(path.clone(), wire_thickness).into(),
+            Self::Point(_, point) => Circle::new(*point, point_radius).into(),
         }
     }
 }

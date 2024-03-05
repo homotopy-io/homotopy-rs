@@ -297,7 +297,7 @@ enum RewriteSer {
 impl Hash for RewriteSer {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         match self {
-            RewriteSer::R0 {
+            Self::R0 {
                 source,
                 target,
                 label,
@@ -306,7 +306,7 @@ impl Hash for RewriteSer {
                 target.hash(state);
                 label.hash(state);
             }
-            RewriteSer::Rn { dimension, cones } => {
+            Self::Rn { dimension, cones } => {
                 dimension.hash(state);
                 state.write_u32(cones.len() as u32);
                 for cone in cones {

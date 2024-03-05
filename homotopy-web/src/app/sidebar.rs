@@ -286,7 +286,7 @@ pub struct Sidebar {
 
 impl Default for Sidebar {
     fn default() -> Self {
-        Sidebar {
+        Self {
             last_drawer_width: SidebarDrawer::DEFAULT_WIDTH,
             drawer_view_size: DrawerViewSize::from(SidebarDrawer::DEFAULT_WIDTH),
             open: Default::default(),
@@ -300,7 +300,7 @@ impl Component for Sidebar {
     type Properties = SidebarProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let mut sidebar = Sidebar::default();
+        let mut sidebar = Self::default();
         sidebar.install_keyboard_shortcuts(ctx);
         sidebar
     }

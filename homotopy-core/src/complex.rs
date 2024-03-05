@@ -16,9 +16,9 @@ impl<const N: usize> Deref for Simplex<N> {
 
     fn deref(&self) -> &Self::Target {
         match self {
-            Simplex::Surface(p) => p,
-            Simplex::Wire(p) => p,
-            Simplex::Point(p) => p,
+            Self::Surface(p) => p,
+            Self::Wire(p) => p,
+            Self::Point(p) => p,
         }
     }
 }

@@ -54,7 +54,7 @@ impl OldProof {
         // zlib decompress
         let proof_str = decode_bufreader(&proof_str)?;
         // parse json
-        let mut proof: OldProof = serde_json::from_str(&proof_str)?;
+        let mut proof: Self = serde_json::from_str(&proof_str)?;
 
         proof.load()?;
         Ok(proof)

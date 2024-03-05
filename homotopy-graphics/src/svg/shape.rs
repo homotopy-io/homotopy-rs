@@ -189,9 +189,9 @@ pub enum Shape {
 impl Shape {
     pub fn contains_point(&self, point: Point, tolerance: f32) -> bool {
         match self {
-            Shape::Fill(s) => s.contains_point(point, tolerance),
-            Shape::Stroke(s) => s.contains_point(point, tolerance),
-            Shape::Circle(s) => s.contains_point(point),
+            Self::Fill(s) => s.contains_point(point, tolerance),
+            Self::Stroke(s) => s.contains_point(point, tolerance),
+            Self::Circle(s) => s.contains_point(point),
         }
     }
 }
