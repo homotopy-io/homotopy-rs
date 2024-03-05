@@ -184,28 +184,12 @@ impl<const N: usize> Projection<N> {
                     let front_inputs = input_depths
                         .iter()
                         .enumerate()
-                        .filter_map(
-                            |(i, &depth)| {
-                                if depth == min_depth {
-                                    Some(i)
-                                } else {
-                                    None
-                                }
-                            },
-                        )
+                        .filter_map(|(i, &depth)| (depth == min_depth).then_some(i))
                         .collect::<Vec<_>>();
                     let front_outputs = output_depths
                         .iter()
                         .enumerate()
-                        .filter_map(
-                            |(i, &depth)| {
-                                if depth == min_depth {
-                                    Some(i)
-                                } else {
-                                    None
-                                }
-                            },
-                        )
+                        .filter_map(|(i, &depth)| (depth == min_depth).then_some(i))
                         .collect::<Vec<_>>();
 
                     if front_inputs.len() != 1 || front_outputs.len() != 1 {

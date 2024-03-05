@@ -128,12 +128,10 @@ impl Texture {
             .with_gl(WebGl2RenderingContext::create_texture)
             .ok_or(GlError::Allocate)?;
 
-        let hook = if opts.dimensions.is_none() {
+        let hook = opts.dimensions.is_none().then(|| {
             let hook = opts.build_resize_hook(ctx.ctx_handle(), webgl_texture.clone());
-            Some(ctx.install_resize_hook(hook))
-        } else {
-            None
-        };
+            ctx.install_resize_hook(hook)
+        });
 
         let texture = Self(Rc::new(TextureData {
             ctx: ctx.ctx_handle(),

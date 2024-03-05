@@ -125,11 +125,7 @@ impl<T> Tree<T> {
     where
         F: FnOnce(&NodeData<T>) -> U,
     {
-        if node.0 < self.nodes.len() {
-            Some(f(&self.nodes[node]))
-        } else {
-            None
-        }
+        (node.0 < self.nodes.len()).then(|| f(&self.nodes[node]))
     }
 
     #[inline]
@@ -137,11 +133,7 @@ impl<T> Tree<T> {
     where
         F: FnOnce(&mut NodeData<T>) -> U,
     {
-        if node.0 < self.nodes.len() {
-            Some(f(&mut self.nodes[node]))
-        } else {
-            None
-        }
+        (node.0 < self.nodes.len()).then(|| f(&mut self.nodes[node]))
     }
 
     /// Removes `node` from the tree. This is done by disconnecting the subtree rooted at `node`
@@ -162,17 +154,15 @@ impl<T> Tree<T> {
 
     #[inline]
     pub fn push_onto(&mut self, node: Node, t: T) -> Option<Node> {
-        if node.0 < self.nodes.len() {
+        (node.0 < self.nodes.len()).then(|| {
             let id = self.nodes.push(NodeData {
                 data: t,
                 children: vec![],
                 parent: Some(node),
             });
             self.nodes[node].children.push(id);
-            Some(id)
-        } else {
-            None
-        }
+            id
+        })
     }
 
     /// Returns an iterator of the ancestors of `node`.
