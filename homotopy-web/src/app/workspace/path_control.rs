@@ -27,8 +27,8 @@ enum Step {
     Projection,
 }
 
-#[function_component(PathControl)]
-pub fn path_control(props: &PathControlProps) -> Html {
+#[function_component]
+pub fn PathControl(props: &PathControlProps) -> Html {
     let path_len = props.path.len();
 
     let step_button = |index: usize, step: Step| -> Html {

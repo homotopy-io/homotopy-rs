@@ -56,8 +56,8 @@ struct ItemViewButtonProps {
     light: bool,
 }
 
-#[function_component(ItemViewButton)]
-fn item_view_button(props: &ItemViewButtonProps) -> Html {
+#[function_component]
+fn ItemViewButton(props: &ItemViewButtonProps) -> Html {
     let class = format!(
         "signature__item-child {} {}",
         if props.fill {
@@ -92,8 +92,8 @@ pub struct NewFolderButtonProps {
     pub node: Node,
 }
 
-#[function_component(NewFolderButton)]
-pub fn new_folder_button(props: &NewFolderButtonProps) -> Html {
+#[function_component]
+pub fn NewFolderButton(props: &NewFolderButtonProps) -> Html {
     let node = props.node;
     let on_click = props
         .dispatch
@@ -168,8 +168,8 @@ struct CustomRecolorButtonProps {
     value: Color,
 }
 
-#[function_component(CustomRecolorButton)]
-fn custom_recolor_button(props: &CustomRecolorButtonProps) -> Html {
+#[function_component]
+fn CustomRecolorButton(props: &CustomRecolorButtonProps) -> Html {
     html! {
         <div class={"signature__generator-picker-custom-wrapper"}>
             <div class={"signature__generator-picker-custom-flex"}>

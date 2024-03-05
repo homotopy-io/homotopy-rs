@@ -18,8 +18,8 @@ pub struct Props {
     pub drawer_view_size: DrawerViewSize,
 }
 
-#[function_component(SignatureView)]
-pub fn signature_view(props: &Props) -> Html {
+#[function_component]
+pub fn SignatureView(props: &Props) -> Html {
     // TODO: Add search
     // TODO: On mobile, drag to the side to delete
     let suspension_controls = if props.signature.has_generators() {

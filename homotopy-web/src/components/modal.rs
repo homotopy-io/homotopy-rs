@@ -12,8 +12,8 @@ pub struct Props {
     pub children: Children,
 }
 
-#[function_component(Modal)]
-pub fn modal(props: &Props) -> Html {
+#[function_component]
+pub fn Modal(props: &Props) -> Html {
     html! {
         <div id={props.id.clone()} class="modal">
             if !props.persistent {

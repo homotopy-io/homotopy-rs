@@ -19,8 +19,8 @@ pub enum IconSize {
     /* Icon48, */
 }
 
-#[function_component(Icon)]
-pub fn icon(props: &Props) -> Html {
+#[function_component]
+pub fn Icon(props: &Props) -> Html {
     let class = format!(
         "material-icons md-{} {} {}",
         if props.light { "light" } else { "dark" },

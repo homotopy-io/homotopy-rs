@@ -27,8 +27,8 @@ pub struct SidebarButtonProps {
     pub visibility: Visibility,
 }
 
-#[function_component(SidebarButton)]
-pub fn sidebar_button(props: &SidebarButtonProps) -> Html {
+#[function_component]
+pub fn SidebarButton(props: &SidebarButtonProps) -> Html {
     let action = props.action.clone();
 
     html! {
