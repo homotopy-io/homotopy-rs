@@ -132,8 +132,6 @@ fn simplex_boundary(simplex: &Simplex) -> HashSet<Simplex> {
 }
 
 fn is_unit_sphere(complex: &Complex, dim: usize) -> bool {
-    tracing::info!("is_unit_sphere: {:#?}, dim: {}", complex, dim);
-
     let vertices = complex.vertices();
     if complex.facets.len() != dim + 2 || vertices.len() != dim + 2 {
         return false;
@@ -161,10 +159,7 @@ fn collapse_edge(edge: &Simplex, complex: &Complex) -> Complex {
 
 #[allow(clippy::cognitive_complexity)]
 fn is_sphere(complex: &Complex, dim: usize) -> bool {
-    tracing::info!("entering is_sphere for {:#?}", complex);
-
     if is_unit_sphere(complex, dim) {
-        tracing::info!("unit sphere");
         return true;
     }
 
@@ -181,17 +176,18 @@ fn is_sphere(complex: &Complex, dim: usize) -> bool {
     }
 
     for edge in complex.edges() {
-        tracing::info!("collapse {:#?}", edge);
         if is_sphere(&collapse_edge(&edge, complex), dim) {
             return true;
         }
-        tracing::info!("uncollapse");
     }
     false
 }
 
+#[must_use]
 pub fn is_manifold(diagram: Diagram) -> bool {
     let dimension = diagram.dimension();
+    assert!(dimension >= 2);
+
     let scaffold: Scaffold<Vec<Height>> = diagram.fully_explode();
     let max_stratum_node = scaffold
         .node_indices()
@@ -201,7 +197,6 @@ pub fn is_manifold(diagram: Diagram) -> bool {
         .node_indices()
         .filter(|n| is_visible(&scaffold[*n].key))
         .collect();
-    tracing::info!("visible nodes: {:#?}", &visible_nodes);
 
     let neighbourhoods = neighbourhoods(&scaffold);
 
@@ -211,8 +206,6 @@ pub fn is_manifold(diagram: Diagram) -> bool {
                 .iter()
                 .map(|t| t.iter().copied().collect())
                 .collect();
-
-            tracing::info!("neighbourhood of {:#?}: {:#?}", &n, &neighbourhood);
 
             let mut visible_nodes = visible_nodes.clone();
             visible_nodes.retain(|&x| x != n);
