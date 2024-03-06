@@ -1,4 +1,4 @@
-use homotopy_core::{common::Generator, Diagram};
+use homotopy_core::{common::Generator, signature::Invertibility, Diagram};
 use homotopy_graphics::style::{Color, GeneratorStyle, VertexShape};
 use serde::Serialize;
 
@@ -35,7 +35,7 @@ impl homotopy_core::signature::GeneratorInfo for GeneratorInfo {
         &self.diagram
     }
 
-    fn is_invertible(&self) -> bool {
-        self.invertible
+    fn invertibility(&self) -> Invertibility {
+        self.invertible.into()
     }
 }

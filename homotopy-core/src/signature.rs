@@ -3,9 +3,30 @@ use crate::{
     Diagram, Diagram0, DiagramN, Generator,
 };
 
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub enum Invertibility {
+    Directed,
+    Dualisable(usize),
+    Invertible,
+}
+
+impl From<bool> for Invertibility {
+    fn from(invertible: bool) -> Self {
+        if invertible {
+            Self::Invertible
+        } else {
+            Self::Directed
+        }
+    }
+}
+
 pub trait GeneratorInfo {
     fn diagram(&self) -> &Diagram;
-    fn is_invertible(&self) -> bool;
+    fn invertibility(&self) -> Invertibility;
+
+    fn is_invertible(&self) -> bool {
+        !matches!(self.invertibility(), Invertibility::Directed)
+    }
 }
 
 pub trait Signature {
@@ -35,8 +56,8 @@ impl GeneratorInfo for GeneratorData {
         &self.1
     }
 
-    fn is_invertible(&self) -> bool {
-        self.0.dimension > 0
+    fn invertibility(&self) -> Invertibility {
+        (self.0.dimension > 0).into()
     }
 }
 
