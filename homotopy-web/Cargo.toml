@@ -13,7 +13,7 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-default = ["console_error_panic_hook"]
+default = ["console_error_panic_hook", "show_debug_panel"]
 show_debug_panel = []
 
 [dependencies]
