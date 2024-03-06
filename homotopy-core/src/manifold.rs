@@ -1,4 +1,4 @@
-use std::{collections::BTreeSet, convert::Into};
+use std::collections::BTreeSet;
 
 use homotopy_common::idx::IdxVec;
 use im::HashSet;
@@ -6,12 +6,7 @@ use itertools::Itertools;
 use petgraph::{graph::NodeIndex, visit::EdgeRef};
 
 pub use crate::common::Mode;
-use crate::{
-    common::Height,
-    diagram::Diagram,
-    scaffold::{Explodable, Scaffold},
-    SliceIndex,
-};
+use crate::{common::Height, diagram::Diagram, scaffold::Scaffold};
 
 type SimplexVec = Vec<NodeIndex>; // An n-simplex is a list of n + 1 vertices.
 type Simplex = BTreeSet<NodeIndex>;
@@ -22,7 +17,7 @@ struct Complex {
 }
 
 impl Complex {
-    fn from_faces(faces: HashSet<Simplex>) -> Complex {
+    fn from_faces(faces: HashSet<Simplex>) -> Self {
         let mut facets: HashSet<Simplex> = HashSet::new();
         for face in faces {
             let mut maximal = true;
@@ -39,7 +34,7 @@ impl Complex {
                 facets.insert(face);
             }
         }
-        Complex { facets }
+        Self { facets }
     }
 
     fn vertices(&self) -> Simplex {
@@ -79,28 +74,6 @@ impl Complex {
     }
 }
 
-fn fully_explode(diagram: impl Into<Diagram>) -> Scaffold<Vec<Height>> {
-    let diagram: Diagram = diagram.into();
-    let dimension = diagram.dimension();
-
-    // Construct the fully exploded scaffold of the diagram.
-    let mut scaffold: Scaffold<Vec<Height>> = Scaffold::default();
-    scaffold.add_node(diagram.into());
-    for _ in 0..dimension {
-        scaffold = scaffold
-            .explode_simple(
-                |_, key, si| match si {
-                    SliceIndex::Boundary(_) => None,
-                    SliceIndex::Interior(h) => Some([key.as_slice(), &[h]].concat()),
-                },
-                |_, _, _| Some(()),
-                |_, _, _| Some(()),
-            )
-            .unwrap();
-    }
-    scaffold
-}
-
 fn stratum(coord: &[Height]) -> usize {
     coord.iter().fold(0, |stratum, h| {
         stratum
@@ -111,7 +84,7 @@ fn stratum(coord: &[Height]) -> usize {
     })
 }
 
-fn is_visible(coord: &[Height]) -> bool {
+const fn is_visible(coord: &[Height]) -> bool {
     let n = coord.len();
     match coord[n - 1] {
         Height::Regular(_) => false,
@@ -186,6 +159,7 @@ fn collapse_edge(edge: &Simplex, complex: &Complex) -> Complex {
     Complex::from_faces(result)
 }
 
+#[allow(clippy::cognitive_complexity)]
 fn is_sphere(complex: &Complex, dim: usize) -> bool {
     tracing::info!("entering is_sphere for {:#?}", complex);
 
@@ -218,7 +192,7 @@ fn is_sphere(complex: &Complex, dim: usize) -> bool {
 
 pub fn is_manifold(diagram: Diagram) -> bool {
     let dimension = diagram.dimension();
-    let scaffold: Scaffold<Vec<Height>> = fully_explode(diagram);
+    let scaffold: Scaffold<Vec<Height>> = diagram.fully_explode();
     let max_stratum_node = scaffold
         .node_indices()
         .max_by_key(|n| stratum(&scaffold[*n].key));
