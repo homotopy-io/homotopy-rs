@@ -3,9 +3,19 @@ use crate::{
     Diagram, Diagram0, DiagramN, Generator,
 };
 
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub enum Depth {
+    Finite(usize),
+    Infinite,
+}
+
 pub trait GeneratorInfo {
     fn diagram(&self) -> &Diagram;
-    fn is_invertible(&self) -> bool;
+    fn invertibility(&self) -> Option<Depth>;
+
+    fn is_invertible(&self) -> bool {
+        self.invertibility().is_some()
+    }
 }
 
 pub trait Signature {
@@ -35,8 +45,8 @@ impl GeneratorInfo for GeneratorData {
         &self.1
     }
 
-    fn is_invertible(&self) -> bool {
-        self.0.dimension > 0
+    fn invertibility(&self) -> Option<Depth> {
+        (self.0.dimension > 0).then_some(Depth::Infinite)
     }
 }
 

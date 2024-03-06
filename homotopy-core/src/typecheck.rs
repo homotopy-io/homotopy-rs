@@ -17,9 +17,10 @@ use crate::{
     collapse::Collapsible,
     common::{Generator, Height, Label, SingularHeight},
     diagram::{Diagram, DiagramN},
+    manifold::is_manifold,
     rewrite::{Cone, Cospan, Rewrite, RewriteN},
     scaffold::{Explodable, Scaffold},
-    signature::{GeneratorInfo, Signature},
+    signature::{Depth, GeneratorInfo, Signature},
     Rewrite0, SliceIndex,
 };
 
@@ -32,6 +33,9 @@ pub enum TypeError {
 
     #[error("diagram is ill-typed")]
     IllTyped,
+
+    #[error("illegal non-manifold detected")]
+    NonManifold,
 }
 
 thread_local! {
@@ -78,6 +82,10 @@ fn typecheck_worker(
             .map(|(t, g)| (Embedding::from_point(&t), g));
 
         for (target_embedding, generator) in target_embeddings {
+            let info = signature
+                .generator_info(generator)
+                .ok_or(TypeError::UnknownGenerator(generator))?;
+
             let source = restrict_diagram(
                 &slices[Height::Regular(i)],
                 &target_embedding.preimage(&cospan.forward),
@@ -86,12 +94,16 @@ fn typecheck_worker(
             let forward = restrict_rewrite(&cospan.forward, &target_embedding);
             let backward = restrict_rewrite(&cospan.backward, &target_embedding);
             let restricted = DiagramN::new(source, vec![Cospan { forward, backward }]);
-            let signature_diagram = signature
-                .generator_info(generator)
-                .ok_or(TypeError::UnknownGenerator(generator))?
-                .diagram();
 
-            if collapse_simplicies(restricted) != collapse_simplicies(signature_diagram.clone()) {
+            if let Some(Depth::Finite(k)) = info.invertibility() {
+                if diagram.dimension() > generator.dimension + k + 1
+                    && !is_manifold(restricted.slice(Height::Singular(0)).unwrap())
+                {
+                    return Err(TypeError::NonManifold);
+                }
+            }
+
+            if collapse_simplicies(restricted) != collapse_simplicies(info.diagram().clone()) {
                 return Err(TypeError::IllTyped);
             }
         }
@@ -111,12 +123,8 @@ pub fn typecheck_cospan(
 
     typecheck(&diagram.target(), signature, Mode::Shallow)?;
 
-    if cfg!(feature = "safety-checks") {
-        typecheck(&diagram.into(), signature, Mode::Shallow)
-            .expect("Contraction/expansion is ill-typed");
-    }
-
-    Ok(())
+    // should never return `IllTyped` but may return `NonManifold`
+    typecheck(&diagram.into(), signature, Mode::Shallow)
 }
 
 fn target_points(rewrites: &[Rewrite]) -> Vec<(Point, Generator)> {
