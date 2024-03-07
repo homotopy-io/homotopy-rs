@@ -1717,12 +1717,12 @@ function __wbg_get_imports() {
         const ret = makeMutClosure(arg0, arg1, 570, __wbg_adapter_61);
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_closure_wrapper5842 = function(arg0, arg1, arg2) {
-        const ret = makeClosure(arg0, arg1, 2283, __wbg_adapter_64);
+    imports.wbg.__wbindgen_closure_wrapper5848 = function(arg0, arg1, arg2) {
+        const ret = makeClosure(arg0, arg1, 2286, __wbg_adapter_64);
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_closure_wrapper5963 = function(arg0, arg1, arg2) {
-        const ret = makeMutClosure(arg0, arg1, 2310, __wbg_adapter_67);
+    imports.wbg.__wbindgen_closure_wrapper5969 = function(arg0, arg1, arg2) {
+        const ret = makeMutClosure(arg0, arg1, 2313, __wbg_adapter_67);
         return addHeapObject(ret);
     };
 
