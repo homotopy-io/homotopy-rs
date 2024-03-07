@@ -2,8 +2,9 @@ use std::{collections::VecDeque, str::FromStr};
 
 use homotopy_common::tree::{Node, Tree};
 use homotopy_core::{
-    diagram::NewDiagramError, signature::Signature as _, Diagram, Diagram0, DiagramN, Generator,
-    Orientation,
+    diagram::NewDiagramError,
+    signature::{Invertibility, Signature as _},
+    Diagram, Diagram0, DiagramN, Generator, Orientation,
 };
 use homotopy_graphics::style::{Color, SignatureStyleData, VertexShape};
 use serde::{Deserialize, Serialize};
@@ -119,14 +120,14 @@ impl Signature {
         generator: Generator,
         diagram: impl Into<Diagram>,
         name: &str,
-        invertible: bool,
+        invertibility: Invertibility,
     ) {
         let diagram: Diagram = diagram.into();
         let info = GeneratorInfo {
             generator,
             name: format!("{name} {}", generator.id),
             oriented: false,
-            invertible,
+            invertibility,
             single_preview: true,
             color: Color::from_str(COLORS[generator.id % COLORS.len()]).unwrap(),
             shape: Default::default(),
@@ -165,7 +166,9 @@ impl Signature {
             (SignatureItem::Item(info), Recolor(color)) => info.color = color,
             (SignatureItem::Item(info), Reshape(shape)) => info.shape = shape,
             (SignatureItem::Item(info), MakeOriented(true)) => info.oriented = true,
-            (SignatureItem::Item(info), MakeInvertible(invertible)) => info.invertible = invertible,
+            (SignatureItem::Item(info), MakeInvertible(invertible)) => {
+                info.invertibility = invertible.into();
+            }
             (SignatureItem::Item(info), ShowSourceTarget(show)) => info.single_preview = !show,
             (SignatureItem::Folder(info), Rename(name)) => info.name = name,
             (_, _) => {}
@@ -191,7 +194,7 @@ impl Signature {
         let id = self.next_generator_id();
         let generator = Generator::new(id, 0);
         let diagram = Diagram0::from(generator);
-        self.insert(generator, diagram, name, false);
+        self.insert(generator, diagram, name, Invertibility::Directed);
         diagram
     }
 
@@ -200,12 +203,12 @@ impl Signature {
         source: Diagram,
         target: Diagram,
         name: &str,
-        invertible: bool,
+        invertibility: Invertibility,
     ) -> Result<DiagramN, NewDiagramError> {
         let id = self.next_generator_id();
         let generator = Generator::new(id, source.dimension() + 1);
         let diagram = DiagramN::from_generator(generator, source, target)?;
-        self.insert(generator, diagram.clone(), name, invertible);
+        self.insert(generator, diagram.clone(), name, invertibility);
         Ok(diagram)
     }
 

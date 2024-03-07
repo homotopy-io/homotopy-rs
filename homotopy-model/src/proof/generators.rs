@@ -6,7 +6,7 @@ use serde::Serialize;
 pub struct GeneratorInfo {
     pub generator: Generator,
     pub oriented: bool,
-    pub invertible: bool,
+    pub invertibility: Invertibility,
     pub single_preview: bool,
     pub color: Color,
     pub shape: VertexShape,
@@ -36,6 +36,6 @@ impl homotopy_core::signature::GeneratorInfo for GeneratorInfo {
     }
 
     fn invertibility(&self) -> Invertibility {
-        self.invertible.into()
+        self.invertibility
     }
 }

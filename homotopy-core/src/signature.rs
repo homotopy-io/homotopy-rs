@@ -1,9 +1,11 @@
+use serde::{Deserialize, Serialize};
+
 use crate::{
     diagram::{globularity, NewDiagramError},
     Diagram, Diagram0, DiagramN, Generator,
 };
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Serialize, Deserialize)]
 pub enum Invertibility {
     Directed,
     Dualisable(usize),
@@ -20,13 +22,16 @@ impl From<bool> for Invertibility {
     }
 }
 
+impl Invertibility {
+    #[must_use]
+    pub const fn is_invertible(self) -> bool {
+        !matches!(self, Self::Directed)
+    }
+}
+
 pub trait GeneratorInfo {
     fn diagram(&self) -> &Diagram;
     fn invertibility(&self) -> Invertibility;
-
-    fn is_invertible(&self) -> bool {
-        !matches!(self.invertibility(), Invertibility::Directed)
-    }
 }
 
 pub trait Signature {

@@ -387,7 +387,7 @@ impl State {
                     }
 
                     if let Diagram::DiagramN(d) = &info.diagram {
-                        if info.invertible {
+                        if info.invertibility.is_invertible() {
                             if weak_units {
                                 extend!(
                                     weak_unit(d.inverse().into()),
@@ -403,7 +403,7 @@ impl State {
                 std::cmp::Ordering::Equal => {
                     if let Diagram::DiagramN(d) = &info.diagram {
                         extend!(d.clone(), None);
-                        if info.invertible {
+                        if info.invertibility.is_invertible() {
                             extend!(d.inverse(), Some("inverse".to_owned()));
                         }
                     }

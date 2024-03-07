@@ -1,4 +1,4 @@
-use homotopy_core::migration::OldProof;
+use homotopy_core::{migration::OldProof, signature::Invertibility};
 use homotopy_graphics::style::{Color, VertexShape};
 use serde::Deserialize;
 
@@ -58,7 +58,7 @@ fn load(proof: OldProof) -> Option<(Signature, Option<Workspace>)> {
             generator: v.generator,
             name: v.name,
             oriented: true,
-            invertible: false,
+            invertibility: Invertibility::Directed,
             single_preview: true,
             color,
             shape: VertexShape::default(),

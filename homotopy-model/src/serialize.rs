@@ -88,7 +88,7 @@ pub fn serialize(
             name: info.name,
             color: info.color,
             oriented: info.oriented,
-            invertible: info.invertible,
+            invertible: info.invertibility.is_invertible(),
         }),
     });
 
@@ -139,7 +139,8 @@ pub fn deserialize(data: &[u8]) -> Option<((Signature, Option<Workspace>), Metad
                     shape: Default::default(),
                     diagram: store.unpack_diagram(gd.diagram)?,
                     oriented: gd.oriented,
-                    invertible: gd.invertible,
+                    // TODO: `invertibility` should be properly serialized
+                    invertibility: gd.invertible.into(),
                     // TODO: `single_preview` should be properly serialized
                     single_preview: true,
                 }),

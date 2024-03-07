@@ -754,7 +754,7 @@ impl ItemView {
                 _ => ("I", "O"),
             };
 
-            let invertible = if info.invertible {
+            let invertible = if info.invertibility.is_invertible() {
                 html! {
                     <span class={invertible_class}>{invertible_text}</span>
                 }
@@ -850,7 +850,7 @@ impl ItemView {
                         right="Invertible"
                         color={color.clone()}
                         onclick={toggle_invertible}
-                        checked={info.invertible}
+                        checked={info.invertibility.is_invertible()}
                     />
                     <GeneratorPreferenceCheckbox
                         left="Framed"

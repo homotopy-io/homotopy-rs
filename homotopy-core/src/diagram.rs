@@ -18,7 +18,7 @@ use crate::{
         RegularHeight, SliceIndex, WithDirection,
     },
     rewrite::{Cospan, Rewrite, Rewrite0, RewriteN},
-    signature::{GeneratorInfo, Signature},
+    signature::{GeneratorInfo, Invertibility, Signature},
     Orientation,
 };
 
@@ -174,11 +174,13 @@ impl Diagram {
         }
     }
 
-    pub fn is_invertible(&self, signature: &impl Signature) -> bool {
+    pub fn invertibility(&self, signature: &impl Signature) -> Invertibility {
         self.generators()
             .keys()
             .filter(|g| g.dimension >= self.dimension())
-            .all(|g| signature.generator_info(*g).unwrap().is_invertible())
+            .map(|g| signature.generator_info(*g).unwrap().invertibility())
+            .min()
+            .unwrap_or(Invertibility::Invertible)
     }
 
     #[must_use]

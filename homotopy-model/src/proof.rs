@@ -6,7 +6,7 @@ use homotopy_core::{
     contraction::ContractionError,
     diagram::{AttachmentError, NewDiagramError},
     expansion::ExpansionError,
-    signature::Signature as _,
+    signature::{Invertibility, Signature as _},
     Diagram, Diagram0, DiagramN, Orientation,
 };
 use im::Vector;
@@ -369,7 +369,7 @@ impl ProofState {
                     Boundary::Target => (selected.diagram, ws.diagram),
                 };
                 self.signature
-                    .create_generator(source, target, "Cell", false)?;
+                    .create_generator(source, target, "Cell", Invertibility::Directed)?;
             }
             _ => {
                 self.boundary = Some(SelectedBoundary {
@@ -771,7 +771,7 @@ impl ProofState {
             return Ok(false);
         }
 
-        if !ws.diagram.is_invertible(&self.signature) {
+        if !ws.diagram.invertibility(&self.signature).is_invertible() {
             return Err(ProofError::NotInvertible);
         }
 
@@ -814,7 +814,7 @@ impl ProofState {
             return Ok(false);
         };
 
-        let invertible = ws.diagram.is_invertible(&self.signature);
+        let invertibility = ws.diagram.invertibility(&self.signature);
         let Diagram::DiagramN(diagram) = ws.diagram else {
             return Ok(false);
         };
@@ -824,12 +824,16 @@ impl ProofState {
             diagram.source(),
             diagram.target(),
             "Theorem",
-            invertible,
+            invertibility,
         )?;
 
         // rewrite from singleton to original diagram
-        self.signature
-            .create_generator(singleton.into(), diagram.into(), "Proof", true)?;
+        self.signature.create_generator(
+            singleton.into(),
+            diagram.into(),
+            "Proof",
+            Invertibility::Invertible,
+        )?;
 
         Ok(true)
     }
@@ -840,10 +844,18 @@ impl ProofState {
         let id = self.signature.next_generator_id();
         let source = Generator::new(id, 0);
         let target = Generator::new(id + 1, 0);
-        self.signature
-            .insert(source, Diagram0::from(source), "Base Source", false);
-        self.signature
-            .insert(target, Diagram0::from(target), "Base Target", false);
+        self.signature.insert(
+            source,
+            Diagram0::from(source),
+            "Base Source",
+            Invertibility::Directed,
+        );
+        self.signature.insert(
+            target,
+            Diagram0::from(target),
+            "Base Target",
+            Invertibility::Directed,
+        );
         self.suspend(source, target)
     }
 
@@ -885,22 +897,22 @@ impl ProofState {
             .signature
             .generator_info(to)
             .ok_or(ProofError::UnknownGeneratorSelected)?;
-        let invertible = info_from.invertible || info_to.invertible;
+        let invertibility = std::cmp::max(info_from.invertibility, info_to.invertibility);
         let oriented = info_from.oriented || info_to.oriented;
 
         self.signature = self.signature.filter_map(|info| {
             if info.generator == from {
                 None
             } else {
-                let (oriented, invertible) = if info.generator == to {
-                    (oriented, invertible)
+                let (oriented, invertibility) = if info.generator == to {
+                    (oriented, invertibility)
                 } else {
-                    (info.oriented, info.invertible)
+                    (info.oriented, info.invertibility)
                 };
                 Some(GeneratorInfo {
                     diagram: info.diagram.replace(from, to, oriented),
                     oriented,
-                    invertible,
+                    invertibility,
                     ..info.clone()
                 })
             }
