@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1709771100563,
+  "lastUpdate": 1709771888563,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -51875,6 +51875,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 233.16,
             "range": "+/- 0.710",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "calintat@gmail.com",
+            "name": "Calin Tataru",
+            "username": "calintat"
+          },
+          "distinct": true,
+          "id": "6c94846157520632af7faaf31270995c06adb93f",
+          "message": "build(deps): bump chrono from 0.4.34 to 0.4.35 (#1351)\n\nBumps [chrono](https://github.com/chronotope/chrono) from 0.4.34 to 0.4.35.\n- [Release notes](https://github.com/chronotope/chrono/releases)\n- [Changelog](https://github.com/chronotope/chrono/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/chronotope/chrono/compare/v0.4.34...v0.4.35)\n\n---\nupdated-dependencies:\n- dependency-name: chrono\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2024-03-07T00:17:00Z",
+          "tree_id": "5742c0ad2aa52cec78952e5912330deb203cd5c7",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/6c94846157520632af7faaf31270995c06adb93f"
+        },
+        "date": 1709771869333,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 1.2052,
+            "range": "+/- 0.002",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 11.476,
+            "range": "+/- 0.024",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 213.19,
+            "range": "+/- 0.950",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 5.0036,
+            "range": "+/- 0.003",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 9.2946,
+            "range": "+/- 0.008",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 243.99,
+            "range": "+/- 1.300",
             "unit": "ms"
           }
         ]
