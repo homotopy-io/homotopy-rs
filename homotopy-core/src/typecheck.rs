@@ -21,7 +21,7 @@ use crate::{
     rewrite::{Cone, Cospan, Rewrite, RewriteN},
     scaffold::{Explodable, Scaffold},
     signature::{GeneratorInfo, Invertibility, Signature},
-    Rewrite0, SliceIndex,
+    Diagram0, Orientation, Rewrite0, SliceIndex,
 };
 
 type Point = Vec<SingularHeight>;
@@ -34,8 +34,11 @@ pub enum TypeError {
     #[error("diagram is ill-typed")]
     IllTyped,
 
-    #[error("illegal non-manifold detected")]
-    NonManifold,
+    #[error("directed generator appears in non-positive orientation")]
+    Directed,
+
+    #[error("dualisable generator exhibits illegal non-manifold behaviour")]
+    Dualisable,
 }
 
 thread_local! {
@@ -61,7 +64,7 @@ fn typecheck_worker(
 ) -> Result<(), TypeError> {
     let diagram = match diagram {
         Diagram::Diagram0(d) => {
-            return if d.generator.dimension == 0 {
+            return if d.generator.dimension == 0 && d.orientation == Orientation::Positive {
                 Ok(())
             } else {
                 Err(TypeError::IllTyped)
@@ -83,12 +86,18 @@ fn typecheck_worker(
 
         let target_embeddings = target_points(&[cospan.forward.clone(), cospan.backward.clone()])
             .into_iter()
-            .map(|(t, g)| (Embedding::from_point(&t), g));
+            .map(|(point, target)| (Embedding::from_point(&point), target));
 
-        for (target_embedding, generator) in target_embeddings {
+        for (target_embedding, target) in target_embeddings {
             let info = signature
-                .generator_info(generator)
-                .ok_or(TypeError::UnknownGenerator(generator))?;
+                .generator_info(target.generator)
+                .ok_or(TypeError::UnknownGenerator(target.generator))?;
+
+            if info.invertibility() == Invertibility::Directed
+                && target.orientation != Orientation::Positive
+            {
+                return Err(TypeError::Directed);
+            }
 
             let source = restrict_diagram(&regular0, &target_embedding.preimage(&cospan.forward));
 
@@ -97,10 +106,10 @@ fn typecheck_worker(
             let restricted = DiagramN::new(source, vec![Cospan { forward, backward }]);
 
             if let Invertibility::Dualisable(k) = info.invertibility() {
-                if diagram.dimension() > generator.dimension + k + 1
+                if diagram.dimension() > target.generator.dimension + k + 1
                     && !is_manifold(restricted.slice(Height::Singular(0)).unwrap())
                 {
-                    return Err(TypeError::NonManifold);
+                    return Err(TypeError::Dualisable);
                 }
             }
 
@@ -128,7 +137,7 @@ pub fn typecheck_cospan(
     typecheck(&diagram.into(), signature, Mode::Shallow)
 }
 
-fn target_points(rewrites: &[Rewrite]) -> Vec<(Point, Generator)> {
+fn target_points(rewrites: &[Rewrite]) -> Vec<(Point, Diagram0)> {
     if rewrites.is_empty() {
         return vec![];
     }
@@ -141,7 +150,7 @@ fn target_points(rewrites: &[Rewrite]) -> Vec<(Point, Generator)> {
 
         match target {
             Some(target) => {
-                return vec![(vec![], target.generator)];
+                return vec![(vec![], target)];
             }
             None => return vec![],
         }
