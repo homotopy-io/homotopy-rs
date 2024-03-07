@@ -70,13 +70,17 @@ fn typecheck_worker(
         Diagram::DiagramN(d) => d,
     };
 
-    if Mode::Deep == mode {
+    if mode == Mode::Deep {
         typecheck_worker(&diagram.source(), signature, mode)?;
     }
 
-    let slices: IdxVec<Height, Diagram> = diagram.slices().collect();
+    for (cospan, (regular0, regular1)) in
+        std::iter::zip(diagram.cospans(), diagram.regular_slices().tuple_windows())
+    {
+        if mode == Mode::Deep {
+            typecheck_worker(&regular1, signature, mode)?;
+        }
 
-    for (i, cospan) in diagram.cospans().iter().enumerate() {
         let target_embeddings = target_points(&[cospan.forward.clone(), cospan.backward.clone()])
             .into_iter()
             .map(|(t, g)| (Embedding::from_point(&t), g));
@@ -86,10 +90,7 @@ fn typecheck_worker(
                 .generator_info(generator)
                 .ok_or(TypeError::UnknownGenerator(generator))?;
 
-            let source = restrict_diagram(
-                &slices[Height::Regular(i)],
-                &target_embedding.preimage(&cospan.forward),
-            );
+            let source = restrict_diagram(&regular0, &target_embedding.preimage(&cospan.forward));
 
             let forward = restrict_rewrite(&cospan.forward, &target_embedding);
             let backward = restrict_rewrite(&cospan.backward, &target_embedding);
