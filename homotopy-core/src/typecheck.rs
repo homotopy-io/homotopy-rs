@@ -50,6 +50,7 @@ pub struct Mode {
     directed: bool,
     dualisable: bool,
     simplices: bool,
+    generator: Option<Generator>,
 }
 
 impl Default for Mode {
@@ -58,6 +59,7 @@ impl Default for Mode {
             directed: true,
             dualisable: true,
             simplices: true,
+            generator: None,
         }
     }
 }
@@ -108,6 +110,9 @@ fn typecheck_worker(
             .map(|(point, target)| (Embedding::from_point(&point), target));
 
         for (target_embedding, target) in target_embeddings {
+            if mode.generator.is_some_and(|g| target.generator != g) {
+                continue;
+            }
             let info = signature
                 .generator_info(target.generator)
                 .ok_or(TypeError::UnknownGenerator(target.generator))?;
