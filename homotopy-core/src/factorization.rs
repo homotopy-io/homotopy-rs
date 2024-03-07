@@ -2,7 +2,6 @@ use homotopy_common::iter::ZeroOneMany;
 use itertools::{Either, Itertools, MultiProduct};
 
 use crate::{
-    common::Mode,
     monotone::{MonotoneIterator, Split},
     rewrite::Cone,
     Cospan, Height, Rewrite, Rewrite0, RewriteN,
@@ -197,7 +196,7 @@ impl Iterator for ConeIterator {
                 slices.iter().step_by(2).cloned().collect_vec(),
                 slices.into_iter().skip(1).step_by(2).collect_vec(),
             );
-            if cone.check(Mode::Shallow).is_ok() {
+            if cone.check(false).is_ok() {
                 return Some(cone);
             }
         }

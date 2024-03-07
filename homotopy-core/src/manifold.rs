@@ -5,7 +5,6 @@ use im::HashSet;
 use itertools::Itertools;
 use petgraph::{graph::NodeIndex, visit::EdgeRef};
 
-pub use crate::common::Mode;
 use crate::{common::Height, diagram::Diagram, scaffold::Scaffold};
 
 type SimplexVec = Vec<NodeIndex>; // An n-simplex is a list of n + 1 vertices.

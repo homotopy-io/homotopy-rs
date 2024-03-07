@@ -2,7 +2,7 @@ use std::convert::{Into, TryFrom};
 
 use homotopy::Homotopy;
 use homotopy_core::{
-    common::{Boundary, BoundaryPath, Direction, Generator, Height, Mode, SliceIndex},
+    common::{Boundary, BoundaryPath, Direction, Generator, Height, SliceIndex},
     contraction::ContractionError,
     diagram::{AttachmentError, NewDiagramError},
     expansion::ExpansionError,
@@ -943,13 +943,13 @@ impl ProofState {
             .ok_or(ProofError::Import)?;
         for info in signature.iter() {
             info.diagram
-                .check(Mode::Deep)
+                .check(true)
                 .map_err(|_err| ProofError::Import)?;
         }
         if let Some(workspace) = workspace.as_ref() {
             workspace
                 .diagram
-                .check(Mode::Deep)
+                .check(true)
                 .map_err(|_err| ProofError::Import)?;
         }
         self.signature = signature;

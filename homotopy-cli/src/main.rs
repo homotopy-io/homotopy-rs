@@ -5,7 +5,6 @@ use std::{
 
 use anyhow::{anyhow, Context};
 pub use history::Proof;
-use homotopy_core::common::Mode;
 pub use homotopy_model::{history, migration, proof, proof::Action, serialize};
 use structopt::StructOpt;
 
@@ -51,12 +50,12 @@ fn import_hom(path: &PathBuf) -> anyhow::Result<Proof> {
 
     for g in signature.iter() {
         g.diagram
-            .check(Mode::Deep)
+            .check(true)
             .map_err(|e| anyhow!("Signature diagram deep check failed: {:?}", e))?;
     }
     if let Some(w) = workspace.as_ref() {
         w.diagram
-            .check(Mode::Deep)
+            .check(true)
             .map_err(|e| anyhow!("Workspace diagram deep check failed: {:?}", e))?;
     }
 

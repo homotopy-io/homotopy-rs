@@ -71,7 +71,7 @@ fn contract_beads(crit: &mut Criterion) {
         .unwrap()
         .into();
     group.bench_function("typecheck", |b| {
-        b.iter(|| typecheck(&contracted, &sig, Mode::Deep).unwrap());
+        b.iter(|| typecheck(&contracted, &sig, Mode::default(), true).unwrap());
     });
 
     group.finish();
@@ -109,7 +109,7 @@ fn contract_stacks(crit: &mut Criterion) {
         .unwrap()
         .into();
     group.bench_function("typecheck", |b| {
-        b.iter(|| typecheck(&contracted, &sig, Mode::Deep).unwrap());
+        b.iter(|| typecheck(&contracted, &sig, Mode::default(), true).unwrap());
     });
     group.finish();
 }

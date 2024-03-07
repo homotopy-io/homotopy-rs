@@ -4,7 +4,6 @@ use homotopy_common::hash::FastHashMap;
 use thiserror::Error;
 
 use crate::{
-    common::Mode,
     diagram::RewritingError,
     rewrite::{CompositionError, Cone},
     Diagram, DiagramN, Direction, Height, Rewrite, Rewrite0, RewriteN,
@@ -16,8 +15,8 @@ thread_local! {
 }
 
 impl Diagram {
-    pub fn check(&self, mode: Mode) -> Result<(), Vec<MalformedDiagram>> {
-        let result = self.check_worker(mode);
+    pub fn check(&self, recursive: bool) -> Result<(), Vec<MalformedDiagram>> {
+        let result = self.check_worker(recursive);
 
         // Clear cache
         DIAGRAM_CACHE.with_borrow_mut(FastHashMap::clear);
@@ -26,17 +25,17 @@ impl Diagram {
         result
     }
 
-    fn check_worker(&self, mode: Mode) -> Result<(), Vec<MalformedDiagram>> {
+    fn check_worker(&self, recursive: bool) -> Result<(), Vec<MalformedDiagram>> {
         match self {
             Self::Diagram0(_) => Ok(()),
-            Self::DiagramN(d) => d.check_worker(mode),
+            Self::DiagramN(d) => d.check_worker(recursive),
         }
     }
 }
 
 impl DiagramN {
-    pub fn check(&self, mode: Mode) -> Result<(), Vec<MalformedDiagram>> {
-        let result = self.check_worker(mode);
+    pub fn check(&self, recursive: bool) -> Result<(), Vec<MalformedDiagram>> {
+        let result = self.check_worker(recursive);
 
         // Clear cache
         DIAGRAM_CACHE.with_borrow_mut(FastHashMap::clear);
@@ -45,7 +44,7 @@ impl DiagramN {
         result
     }
 
-    fn check_worker(&self, mode: Mode) -> Result<(), Vec<MalformedDiagram>> {
+    fn check_worker(&self, recursive: bool) -> Result<(), Vec<MalformedDiagram>> {
         if let Some(errors) = DIAGRAM_CACHE.with_borrow(|cache| cache.get(self).cloned()) {
             return if errors.is_empty() {
                 Ok(())
@@ -58,16 +57,16 @@ impl DiagramN {
         let mut errors: Vec<MalformedDiagram> = Vec::new();
 
         // Check that the source slice is well-formed.
-        if mode == Mode::Deep {
-            if let Err(e) = slice.check_worker(mode) {
+        if recursive {
+            if let Err(e) = slice.check_worker(recursive) {
                 errors.push(MalformedDiagram::Slice(Height::Regular(0), e));
             }
         }
 
         for (i, cospan) in self.cospans().iter().enumerate() {
             // Check that the forward rewrite is well-formed.
-            if mode == Mode::Deep {
-                if let Err(e) = cospan.forward.check_worker(mode) {
+            if recursive {
+                if let Err(e) = cospan.forward.check_worker(recursive) {
                     errors.push(MalformedDiagram::Rewrite(i, Direction::Forward, e));
                 }
             }
@@ -82,15 +81,15 @@ impl DiagramN {
             }
 
             // Check that the singular slice is well-formed.
-            if mode == Mode::Deep {
-                if let Err(e) = slice.check_worker(mode) {
+            if recursive {
+                if let Err(e) = slice.check_worker(recursive) {
                     errors.push(MalformedDiagram::Slice(Height::Singular(i), e));
                 }
             }
 
             // Check that the backward rewrite is well-formed.
-            if mode == Mode::Deep {
-                if let Err(e) = cospan.backward.check_worker(mode) {
+            if recursive {
+                if let Err(e) = cospan.backward.check_worker(recursive) {
                     errors.push(MalformedDiagram::Rewrite(i, Direction::Backward, e));
                 }
             }
@@ -105,8 +104,8 @@ impl DiagramN {
             }
 
             // Check that the regular slice is well-formed.
-            if mode == Mode::Deep {
-                if let Err(e) = slice.check_worker(mode) {
+            if recursive {
+                if let Err(e) = slice.check_worker(recursive) {
                     errors.push(MalformedDiagram::Slice(Height::Regular(i + 1), e));
                 }
             }
@@ -123,8 +122,8 @@ impl DiagramN {
 }
 
 impl Rewrite {
-    pub fn check(&self, mode: Mode) -> Result<(), Vec<MalformedRewrite>> {
-        let result = self.check_worker(mode);
+    pub fn check(&self, recursive: bool) -> Result<(), Vec<MalformedRewrite>> {
+        let result = self.check_worker(recursive);
 
         // Clear cache
         DIAGRAM_CACHE.with_borrow_mut(FastHashMap::clear);
@@ -133,17 +132,17 @@ impl Rewrite {
         result
     }
 
-    fn check_worker(&self, mode: Mode) -> Result<(), Vec<MalformedRewrite>> {
+    fn check_worker(&self, recursive: bool) -> Result<(), Vec<MalformedRewrite>> {
         match self {
             Self::Rewrite0(_) => Ok(()),
-            Self::RewriteN(r) => r.check_worker(mode),
+            Self::RewriteN(r) => r.check_worker(recursive),
         }
     }
 }
 
 impl RewriteN {
-    pub fn check(&self, mode: Mode) -> Result<(), Vec<MalformedRewrite>> {
-        let result = self.check_worker(mode);
+    pub fn check(&self, recursive: bool) -> Result<(), Vec<MalformedRewrite>> {
+        let result = self.check_worker(recursive);
 
         // Clear cache
         DIAGRAM_CACHE.with_borrow_mut(FastHashMap::clear);
@@ -152,7 +151,7 @@ impl RewriteN {
         result
     }
 
-    fn check_worker(&self, mode: Mode) -> Result<(), Vec<MalformedRewrite>> {
+    fn check_worker(&self, recursive: bool) -> Result<(), Vec<MalformedRewrite>> {
         if let Some(errors) = REWRITE_CACHE.with_borrow(|cache| cache.get(self).cloned()) {
             return if errors.is_empty() {
                 Ok(())
@@ -163,7 +162,7 @@ impl RewriteN {
 
         let mut errors: Vec<MalformedRewrite> = Vec::new();
         for (i, cone) in self.cones().iter().enumerate() {
-            if let Err(e) = cone.check(mode) {
+            if let Err(e) = cone.check(recursive) {
                 errors.push(MalformedRewrite::Cone(i, e));
             }
 
@@ -189,38 +188,38 @@ impl RewriteN {
 }
 
 impl Cone {
-    pub fn check(&self, mode: Mode) -> Result<(), Vec<MalformedCone>> {
+    pub fn check(&self, recursive: bool) -> Result<(), Vec<MalformedCone>> {
         let mut errors = vec![];
 
-        if mode == Mode::Deep {
+        if recursive {
             // Check that the source is well-formed.
             for (i, cs) in self.source().iter().enumerate() {
-                if let Err(e) = cs.forward.check_worker(mode) {
+                if let Err(e) = cs.forward.check_worker(recursive) {
                     errors.push(MalformedCone::Source(i, e));
                 }
-                if let Err(e) = cs.backward.check_worker(mode) {
+                if let Err(e) = cs.backward.check_worker(recursive) {
                     errors.push(MalformedCone::Source(i, e));
                 }
             }
 
             // Check that the target is well-formed.
-            if let Err(e) = self.target().forward.check_worker(mode) {
+            if let Err(e) = self.target().forward.check_worker(recursive) {
                 errors.push(MalformedCone::Target(e));
             }
-            if let Err(e) = self.target().backward.check_worker(mode) {
+            if let Err(e) = self.target().backward.check_worker(recursive) {
                 errors.push(MalformedCone::Target(e));
             }
 
             // Check that the regular slices are well-formed.
             for (i, slice) in self.regular_slices().iter().enumerate() {
-                if let Err(e) = slice.check_worker(mode) {
+                if let Err(e) = slice.check_worker(recursive) {
                     errors.push(MalformedCone::RegularSlice(i, e));
                 }
             }
 
             // Check that the singular slices are well-formed.
             for (i, slice) in self.singular_slices().iter().enumerate() {
-                if let Err(e) = slice.check_worker(mode) {
+                if let Err(e) = slice.check_worker(recursive) {
                     errors.push(MalformedCone::SingularSlice(i, e));
                 }
             }

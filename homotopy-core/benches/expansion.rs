@@ -52,7 +52,7 @@ fn expand_matchsticks(crit: &mut Criterion) {
         .unwrap()
         .into();
     group.bench_function("typecheck", |b| {
-        b.iter(|| typecheck(&expanded, &sig, Mode::Deep).unwrap());
+        b.iter(|| typecheck(&expanded, &sig, Mode::default(), true).unwrap());
     });
 
     group.finish();

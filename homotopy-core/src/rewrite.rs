@@ -16,7 +16,7 @@ use thiserror::Error;
 
 use crate::{
     common::{
-        BoundaryPath, DimensionError, Generator, Label, LabelIdentifications, Mode, Orientation,
+        BoundaryPath, DimensionError, Generator, Label, LabelIdentifications, Orientation,
         RegularHeight, SingularHeight, WithDirection,
     },
     Boundary, Diagram, Diagram0, DiagramN, Direction, Height,
@@ -530,7 +530,7 @@ impl RewriteN {
     pub fn new(dimension: usize, cones: Vec<Cone>) -> Self {
         let rewrite = Self::new_unsafe(dimension, cones);
         if cfg!(feature = "safety-checks") {
-            rewrite.check(Mode::Shallow).expect("Rewrite is malformed");
+            rewrite.check(false).expect("Rewrite is malformed");
         }
         rewrite
     }

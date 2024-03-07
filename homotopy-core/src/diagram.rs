@@ -14,8 +14,8 @@ use thiserror::Error;
 use crate::{
     attach::attach,
     common::{
-        Boundary, BoundaryPath, DimensionError, Direction, Generator, Height, Label, Mode,
-        RegularHeight, SliceIndex, WithDirection,
+        Boundary, BoundaryPath, DimensionError, Direction, Generator, Height, Label, RegularHeight,
+        SliceIndex, WithDirection,
     },
     rewrite::{Cospan, Rewrite, Rewrite0, RewriteN},
     signature::{GeneratorInfo, Invertibility, Signature},
@@ -428,7 +428,7 @@ impl DiagramN {
     pub fn new(source: Diagram, cospans: Vec<Cospan>) -> Self {
         let diagram = Self::new_unsafe(source, cospans);
         if cfg!(feature = "safety-checks") {
-            diagram.check(Mode::Shallow).expect("Diagram is malformed");
+            diagram.check(false).expect("Diagram is malformed");
         }
         diagram
     }

@@ -10,9 +10,9 @@ use homotopy_common::{
 };
 use itertools::Itertools;
 use petgraph::{graph::NodeIndex, visit::EdgeRef};
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-pub use crate::common::Mode;
 use crate::{
     collapse::Collapsible,
     common::{Generator, Height, Label, SingularHeight},
@@ -45,22 +45,41 @@ thread_local! {
     static RESTRICT_CACHE: RefCell<FastHashMap<(Rewrite, Embedding), Rewrite>> = RefCell::new(FastHashMap::default());
 }
 
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
+pub struct Mode {
+    directed: bool,
+    dualisable: bool,
+    simplices: bool,
+}
+
+impl Default for Mode {
+    fn default() -> Self {
+        Self {
+            directed: true,
+            dualisable: true,
+            simplices: true,
+        }
+    }
+}
+
 pub fn typecheck(
     diagram: &Diagram,
     signature: &impl Signature,
     mode: Mode,
+    recursive: bool,
 ) -> Result<(), TypeError> {
     if !check_dimension(diagram.clone()) {
         return Err(TypeError::IllTyped);
     }
 
-    typecheck_worker(diagram, signature, mode)
+    typecheck_worker(diagram, signature, mode, recursive)
 }
 
 fn typecheck_worker(
     diagram: &Diagram,
     signature: &impl Signature,
     mode: Mode,
+    recursive: bool,
 ) -> Result<(), TypeError> {
     let diagram = match diagram {
         Diagram::Diagram0(d) => {
@@ -73,15 +92,15 @@ fn typecheck_worker(
         Diagram::DiagramN(d) => d,
     };
 
-    if mode == Mode::Deep {
-        typecheck_worker(&diagram.source(), signature, mode)?;
+    if recursive {
+        typecheck_worker(&diagram.source(), signature, mode, recursive)?;
     }
 
     for (cospan, (regular0, regular1)) in
         std::iter::zip(diagram.cospans(), diagram.regular_slices().tuple_windows())
     {
-        if mode == Mode::Deep {
-            typecheck_worker(&regular1, signature, mode)?;
+        if recursive {
+            typecheck_worker(&regular1, signature, mode, recursive)?;
         }
 
         let target_embeddings = target_points(&[cospan.forward.clone(), cospan.backward.clone()])
@@ -93,7 +112,8 @@ fn typecheck_worker(
                 .generator_info(target.generator)
                 .ok_or(TypeError::UnknownGenerator(target.generator))?;
 
-            if info.invertibility() == Invertibility::Directed
+            if mode.directed
+                && info.invertibility() == Invertibility::Directed
                 && target.orientation != Orientation::Positive
             {
                 return Err(TypeError::Directed);
@@ -106,14 +126,17 @@ fn typecheck_worker(
             let restricted = DiagramN::new(source, vec![Cospan { forward, backward }]);
 
             if let Invertibility::Dualisable(k) = info.invertibility() {
-                if diagram.dimension() > target.generator.dimension + k + 1
+                if mode.dualisable
+                    && diagram.dimension() > target.generator.dimension + k + 1
                     && !is_manifold(restricted.slice(Height::Singular(0)).unwrap())
                 {
                     return Err(TypeError::Dualisable);
                 }
             }
 
-            if collapse_simplicies(restricted) != collapse_simplicies(info.diagram().clone()) {
+            if mode.simplices
+                && collapse_simplicies(restricted) != collapse_simplicies(info.diagram().clone())
+            {
                 return Err(TypeError::IllTyped);
             }
         }
@@ -131,10 +154,10 @@ pub fn typecheck_cospan(
 ) -> Result<(), TypeError> {
     let diagram = DiagramN::new(source, vec![cospan]);
 
-    typecheck(&diagram.target(), signature, Mode::Shallow)?;
+    typecheck(&diagram.target(), signature, Mode::default(), false)?;
 
     // should never return `IllTyped` but may return `NonManifold`
-    typecheck(&diagram.into(), signature, Mode::Shallow)
+    typecheck(&diagram.into(), signature, Mode::default(), false)
 }
 
 fn target_points(rewrites: &[Rewrite]) -> Vec<(Point, Diagram0)> {
@@ -508,6 +531,6 @@ mod test {
         let right = m.attach(&m, Boundary::Source, &[1]).unwrap();
         let a = sig.add(left, right).unwrap();
 
-        typecheck(&a.into(), &sig, Mode::Deep).unwrap();
+        typecheck(&a.into(), &sig, Mode::default(), true).unwrap();
     }
 }

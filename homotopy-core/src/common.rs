@@ -405,12 +405,6 @@ impl<T: DoubleEndedIterator> WithDirection for T {}
 #[error("invalid dimension")]
 pub struct DimensionError;
 
-#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
-pub enum Mode {
-    Deep,
-    Shallow,
-}
-
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum Orientation {
     Negative,
