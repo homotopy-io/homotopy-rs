@@ -287,6 +287,24 @@ pub enum ProofError {
 }
 
 impl ProofState {
+    /// Iterator over all diagrams in the proof state (workspace, boundary, and stash).
+    fn diagrams(&self) -> impl Iterator<Item = &Diagram> {
+        self.workspace
+            .iter()
+            .map(|ws| &ws.diagram)
+            .chain(self.boundary.iter().map(|bd| &bd.diagram))
+            .chain(self.stash.iter().map(|ws| &ws.diagram))
+    }
+
+    /// Mutable iterator over all diagrams in the proof state (workspace, boundary, and stash).
+    fn diagrams_mut(&mut self) -> impl Iterator<Item = &mut Diagram> {
+        self.workspace
+            .iter_mut()
+            .map(|ws| &mut ws.diagram)
+            .chain(self.boundary.iter_mut().map(|bd| &mut bd.diagram))
+            .chain(self.stash.iter_mut().map(|ws| &mut ws.diagram))
+    }
+
     /// Update the state in response to an [Action].
     ///
     /// Returns a boolean indicating if the state was updated.
@@ -874,14 +892,8 @@ impl ProofState {
             }
         });
 
-        if let Some(ws) = &mut self.workspace {
-            ws.diagram = ws.diagram.suspend(source, target).into();
-        }
-        if let Some(bd) = &mut self.boundary {
-            bd.diagram = bd.diagram.suspend(source, target).into();
-        }
-        for ws in self.stash.iter_mut() {
-            ws.diagram = ws.diagram.suspend(source, target).into();
+        for diagram in self.diagrams_mut() {
+            *diagram = diagram.suspend(source, target).into();
         }
 
         true
@@ -918,14 +930,8 @@ impl ProofState {
             }
         });
 
-        if let Some(ws) = &mut self.workspace {
-            ws.diagram = ws.diagram.replace(from, to, oriented);
-        }
-        if let Some(bd) = &mut self.boundary {
-            bd.diagram = bd.diagram.replace(from, to, oriented);
-        }
-        for ws in self.stash.iter_mut() {
-            ws.diagram = ws.diagram.replace(from, to, oriented);
+        for diagram in self.diagrams_mut() {
+            *diagram = diagram.replace(from, to, oriented);
         }
 
         Ok(true)
@@ -978,19 +984,8 @@ impl ProofState {
 
         if let SignatureEdit::Edit(node, SignatureItemEdit::MakeOriented(true)) = edit {
             if let Some(generator) = self.signature.find_generator(*node) {
-                // remove framing from the workspace
-                if let Some(ws) = &mut self.workspace {
-                    ws.diagram = ws.diagram.remove_framing(generator);
-                }
-
-                // remove framing from the boundary
-                if let Some(selected) = &mut self.boundary {
-                    selected.diagram = selected.diagram.remove_framing(generator);
-                }
-
-                // remove framing from stashed workspaces
-                for ws in self.stash.iter_mut() {
-                    ws.diagram = ws.diagram.remove_framing(generator);
+                for diagram in self.diagrams_mut() {
+                    *diagram = diagram.remove_framing(generator);
                 }
             } else {
                 return Ok(false);
@@ -999,34 +994,8 @@ impl ProofState {
 
         if let SignatureEdit::Edit(node, SignatureItemEdit::MakeInvertible(false)) = edit {
             if let Some(generator) = self.signature.find_generator(*node) {
-                if let Some(ws) = &self.workspace {
-                    if ws
-                        .diagram
-                        .generators()
-                        .get(&generator)
-                        .is_some_and(|os| os.contains(&Orientation::Negative))
-                    {
-                        return Err(ProofError::SignatureError(
-                            SignatureError::CannotBeMadeDirected,
-                        ));
-                    }
-                }
-
-                if let Some(selected) = &self.boundary {
-                    if selected
-                        .diagram
-                        .generators()
-                        .get(&generator)
-                        .is_some_and(|os| os.contains(&Orientation::Negative))
-                    {
-                        return Err(ProofError::SignatureError(
-                            SignatureError::CannotBeMadeDirected,
-                        ));
-                    }
-                }
-
-                if self.stash.iter().any(|ws| {
-                    ws.diagram
+                if self.diagrams().any(|diagram| {
+                    diagram
                         .generators()
                         .get(&generator)
                         .is_some_and(|os| os.contains(&Orientation::Negative))

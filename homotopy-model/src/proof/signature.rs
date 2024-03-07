@@ -158,19 +158,18 @@ impl Signature {
     }
 
     fn edit(&mut self, node: Node, edit: SignatureItemEdit) {
+        use SignatureItem::{Folder, Item};
         use SignatureItemEdit::{
             MakeInvertible, MakeOriented, Recolor, Rename, Reshape, ShowSourceTarget,
         };
         self.0.with_mut(node, move |n| match (n.inner_mut(), edit) {
-            (SignatureItem::Item(info), Rename(name)) => info.name = name,
-            (SignatureItem::Item(info), Recolor(color)) => info.color = color,
-            (SignatureItem::Item(info), Reshape(shape)) => info.shape = shape,
-            (SignatureItem::Item(info), MakeOriented(true)) => info.oriented = true,
-            (SignatureItem::Item(info), MakeInvertible(invertible)) => {
-                info.invertibility = invertible.into();
-            }
-            (SignatureItem::Item(info), ShowSourceTarget(show)) => info.single_preview = !show,
-            (SignatureItem::Folder(info), Rename(name)) => info.name = name,
+            (Item(info), Rename(name)) => info.name = name,
+            (Item(info), Recolor(color)) => info.color = color,
+            (Item(info), Reshape(shape)) => info.shape = shape,
+            (Item(info), MakeOriented(true)) => info.oriented = true,
+            (Item(info), MakeInvertible(invertible)) => info.invertibility = invertible.into(),
+            (Item(info), ShowSourceTarget(show)) => info.single_preview = !show,
+            (Folder(info), Rename(name)) => info.name = name,
             (_, _) => {}
         });
     }
@@ -223,25 +222,27 @@ impl Signature {
             SignatureEdit::Edit(node, edit) => {
                 // Intercept edit in order to update the whole signature.
                 if matches!(edit, SignatureItemEdit::MakeOriented(true)) {
-                    let generator = self.find_generator(*node).unwrap();
-                    self.0 = self.0.clone().map(|item| match item {
-                        SignatureItem::Item(info) => SignatureItem::Item(GeneratorInfo {
-                            diagram: info.diagram.remove_framing(generator),
-                            ..info
-                        }),
-                        SignatureItem::Folder(_) => item,
-                    });
+                    if let Some(generator) = self.find_generator(*node) {
+                        self.0 = self.0.clone().map(|item| match item {
+                            SignatureItem::Item(info) => SignatureItem::Item(GeneratorInfo {
+                                diagram: info.diagram.remove_framing(generator),
+                                ..info
+                            }),
+                            SignatureItem::Folder(_) => item,
+                        });
+                    }
                 }
                 if matches!(edit, SignatureItemEdit::MakeInvertible(false)) {
-                    let generator = self.find_generator(*node).unwrap();
-                    for info in self.iter() {
-                        if info
-                            .diagram
-                            .generators()
-                            .get(&generator)
-                            .is_some_and(|os| os.contains(&Orientation::Negative))
-                        {
-                            return Err(SignatureError::CannotBeMadeDirected);
+                    if let Some(generator) = self.find_generator(*node) {
+                        for info in self.iter() {
+                            if info
+                                .diagram
+                                .generators()
+                                .get(&generator)
+                                .is_some_and(|os| os.contains(&Orientation::Negative))
+                            {
+                                return Err(SignatureError::CannotBeMadeDirected);
+                            }
                         }
                     }
                 }
