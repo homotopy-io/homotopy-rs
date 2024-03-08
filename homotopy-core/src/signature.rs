@@ -12,6 +12,16 @@ pub enum Invertibility {
     Invertible,
 }
 
+impl std::fmt::Display for Invertibility {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Directed => write!(f, "directed"),
+            Self::Dualisable(n) => write!(f, "{n}-dualisable"),
+            Self::Invertible => write!(f, "invertible"),
+        }
+    }
+}
+
 impl From<bool> for Invertibility {
     fn from(invertible: bool) -> Self {
         if invertible {

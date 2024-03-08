@@ -7,7 +7,8 @@ use homotopy_core::{
     diagram::{AttachmentError, NewDiagramError},
     expansion::ExpansionError,
     signature::{Invertibility, Signature as _},
-    Diagram, Diagram0, DiagramN, Orientation,
+    typecheck::{typecheck, Mode},
+    Diagram, Diagram0, DiagramN,
 };
 use im::Vector;
 use serde::{Deserialize, Serialize};
@@ -271,6 +272,7 @@ impl Action {
             Self::EditSignature(SignatureEdit::Edit(
                 _,
                 SignatureItemEdit::MakeOriented(true)
+                    | SignatureItemEdit::MakeInvertible(Invertibility::Dualisable(_))
             ))
         )
     }
@@ -1004,17 +1006,29 @@ impl ProofState {
             }
         }
 
-        if let SignatureEdit::Edit(node, SignatureItemEdit::MakeInvertible(false)) = edit {
+        if let SignatureEdit::Edit(node, SignatureItemEdit::MakeInvertible(invertibility)) = edit {
             if let Some(generator) = self.signature.find_generator(*node) {
-                if self.diagrams().any(|diagram| {
-                    diagram
-                        .generators()
-                        .get(&generator)
-                        .is_some_and(|os| os.contains(&Orientation::Negative))
-                }) {
-                    return Err(ProofError::SignatureError(
-                        SignatureError::CannotBeMadeDirected,
-                    ));
+                let info = self.signature.generator_info(generator).unwrap();
+                if *invertibility < info.invertibility {
+                    let signature = {
+                        let mut signature = self.signature.clone();
+                        signature.update(edit)?;
+                        signature
+                    };
+                    let mode = Mode {
+                        directed: true,
+                        dualisable: true,
+                        simplices: false,
+                        generator: Some(generator),
+                    };
+                    if self
+                        .diagrams()
+                        .any(|diagram| typecheck(diagram, &signature, mode, true).is_err())
+                    {
+                        return Err(ProofError::SignatureError(SignatureError::Invertibility(
+                            *invertibility,
+                        )));
+                    }
                 }
             } else {
                 return Ok(false);

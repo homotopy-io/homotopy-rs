@@ -4,7 +4,8 @@ use homotopy_common::tree::{Node, Tree};
 use homotopy_core::{
     diagram::NewDiagramError,
     signature::{Invertibility, Signature as _},
-    Diagram, Diagram0, DiagramN, Generator, Orientation,
+    typecheck::{typecheck, Mode},
+    Diagram, Diagram0, DiagramN, Generator,
 };
 use homotopy_graphics::style::{Color, SignatureStyleData, VertexShape};
 use serde::{Deserialize, Serialize};
@@ -47,7 +48,7 @@ pub enum SignatureItemEdit {
     Recolor(Color),
     Reshape(VertexShape),
     MakeOriented(bool),
-    MakeInvertible(bool),
+    MakeInvertible(Invertibility),
     ShowSourceTarget(bool),
 }
 
@@ -63,8 +64,8 @@ pub enum SignatureEdit {
 
 #[derive(Debug, Error)]
 pub enum SignatureError {
-    #[error("generator cannot be marked as directed because its inverse is being used")]
-    CannotBeMadeDirected,
+    #[error("generator cannot be marked as {0} because it is being used in an incompatible way")]
+    Invertibility(Invertibility),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize)]
@@ -167,7 +168,7 @@ impl Signature {
             (Item(info), Recolor(color)) => info.color = color,
             (Item(info), Reshape(shape)) => info.shape = shape,
             (Item(info), MakeOriented(true)) => info.oriented = true,
-            (Item(info), MakeInvertible(invertible)) => info.invertibility = invertible.into(),
+            (Item(info), MakeInvertible(invertibility)) => info.invertibility = invertibility,
             (Item(info), ShowSourceTarget(show)) => info.single_preview = !show,
             (Folder(info), Rename(name)) => info.name = name,
             (_, _) => {}
@@ -220,6 +221,8 @@ impl Signature {
     pub fn update(&mut self, edit: &SignatureEdit) -> Result<(), SignatureError> {
         match edit {
             SignatureEdit::Edit(node, edit) => {
+                self.edit(*node, edit.clone());
+
                 // Intercept edit in order to update the whole signature.
                 if matches!(edit, SignatureItemEdit::MakeOriented(true)) {
                     if let Some(generator) = self.find_generator(*node) {
@@ -232,21 +235,25 @@ impl Signature {
                         });
                     }
                 }
-                if matches!(edit, SignatureItemEdit::MakeInvertible(false)) {
+                if let SignatureItemEdit::MakeInvertible(invertibility) = edit {
                     if let Some(generator) = self.find_generator(*node) {
-                        for info in self.iter() {
-                            if info
-                                .diagram
-                                .generators()
-                                .get(&generator)
-                                .is_some_and(|os| os.contains(&Orientation::Negative))
+                        let info = self.generator_info(generator).unwrap();
+                        if *invertibility < info.invertibility {
+                            let mode = Mode {
+                                directed: true,
+                                dualisable: true,
+                                simplices: false,
+                                generator: Some(generator),
+                            };
+                            if self
+                                .iter()
+                                .any(|info| typecheck(&info.diagram, self, mode, true).is_err())
                             {
-                                return Err(SignatureError::CannotBeMadeDirected);
+                                return Err(SignatureError::Invertibility(*invertibility));
                             }
                         }
                     }
                 }
-                self.edit(*node, edit.clone());
             }
             SignatureEdit::NewFolder(node) => {
                 self.0.push_onto(

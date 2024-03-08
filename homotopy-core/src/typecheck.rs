@@ -47,10 +47,10 @@ thread_local! {
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Serialize, Deserialize)]
 pub struct Mode {
-    directed: bool,
-    dualisable: bool,
-    simplices: bool,
-    generator: Option<Generator>,
+    pub directed: bool,
+    pub dualisable: bool,
+    pub simplices: bool,
+    pub generator: Option<Generator>,
 }
 
 impl Default for Mode {

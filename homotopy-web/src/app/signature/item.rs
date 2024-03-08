@@ -800,7 +800,9 @@ impl ItemView {
                     if input.disabled() {
                         ItemViewMessage::Noop
                     } else {
-                        ItemViewMessage::Edit(SignatureItemEdit::$edit_type(!input.checked()))
+                        ItemViewMessage::Edit(SignatureItemEdit::$edit_type(
+                            (!input.checked()).into(),
+                        ))
                     }
                 }
             };

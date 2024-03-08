@@ -204,7 +204,7 @@
         "Edit": [
           5,
           {
-            "MakeInvertible": true
+            "MakeInvertible": "Invertible"
           }
         ]
       }
@@ -326,7 +326,7 @@
         "Edit": [
           6,
           {
-            "MakeInvertible": true
+            "MakeInvertible": "Invertible"
           }
         ]
       }
