@@ -262,6 +262,18 @@ impl Action {
             Self::Nothing => false,
         }
     }
+
+    /// Determines if a given [Action] is experimental.
+    #[must_use]
+    pub const fn is_experimental(&self) -> bool {
+        matches!(
+            self,
+            Self::EditSignature(SignatureEdit::Edit(
+                _,
+                SignatureItemEdit::MakeOriented(true)
+            ))
+        )
+    }
 }
 
 #[derive(Debug, Error)]
@@ -347,7 +359,7 @@ impl ProofState {
         Ok(result)
     }
 
-    /// Determines if a given [Action] should reset the panzoom state, given the current  [ProofState].
+    /// Determines if a given [Action] should reset the panzoom state, given the current [ProofState].
     #[must_use]
     pub fn resets_panzoom(&self, action: &Action) -> bool {
         match *action {

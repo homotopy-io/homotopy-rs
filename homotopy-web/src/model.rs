@@ -64,6 +64,15 @@ impl Action {
             _ => true,
         }
     }
+
+    /// Determines if a given [Action] is experimental.
+    #[must_use]
+    pub const fn is_experimental(&self) -> bool {
+        match self {
+            Self::Proof(action) => action.is_experimental(),
+            _ => false,
+        }
+    }
 }
 
 impl From<proof::Action> for Action {
@@ -108,6 +117,15 @@ impl State {
     #[must_use]
     pub fn proof(&self) -> &Proof {
         self.history.proof()
+    }
+
+    /// Determines if a given [Action] should reset the panzoom state, given the current [State].
+    #[must_use]
+    pub fn resets_panzoom(&self, action: &Action) -> bool {
+        match action {
+            Action::Proof(action) => self.proof().resets_panzoom(action),
+            _ => false,
+        }
     }
 
     /// Update the state in response to an [Action].

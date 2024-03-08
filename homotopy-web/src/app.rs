@@ -77,24 +77,16 @@ impl Component for App {
             Message::BlockingDispatch(action) | Message::Dispatch(action) => {
                 tracing::info!("Received action: {:?}", action);
 
-                // Intercept 'MakeOriented' actions to show warning.
-                if let model::Action::Proof(model::proof::Action::EditSignature(
-                    model::proof::SignatureEdit::Edit(
-                        _,
-                        model::proof::SignatureItemEdit::MakeOriented(true),
-                    ),
-                )) = &action
-                {
-                    toast(Toast::warn("Oriented generators are experimental"));
+                // Determine if the action is experimental and warn the user.
+                if action.is_experimental() {
+                    toast(Toast::warn(
+                        "This feature is experimental, proceed with caution",
+                    ));
                 }
 
                 // Determine if the action needs to reset the panzoom
                 // but do not reset it until we have performed the action.
-                let resets_panzoom = if let model::Action::Proof(action) = &action {
-                    self.state.proof().resets_panzoom(action)
-                } else {
-                    false
-                };
+                let resets_panzoom = self.state.resets_panzoom(&action);
 
                 let performance = web_sys::window().unwrap().performance().unwrap();
                 performance.mark("startStateUpdate").unwrap();
