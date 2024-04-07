@@ -987,7 +987,8 @@ pub struct ProjectCollection {
 #[derive(Debug, Deserialize)]
 struct Timestamp {
     seconds: u64,
-    _nanoseconds: u64,
+    #[allow(dead_code)] // needs to be present for JSON deserialization
+    nanoseconds: u64,
 }
 
 // metadata that exists in firestore
@@ -997,7 +998,8 @@ struct PersonalRecord {
     author: String,
     r#abstract: String,
     public: bool,
-    _created: Timestamp,
+    #[allow(dead_code)] // needs to be present for JSON deserialization
+    created: Timestamp,
     updated: Timestamp,
 }
 
