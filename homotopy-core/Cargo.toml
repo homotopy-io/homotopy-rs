@@ -24,7 +24,7 @@ pretty_assertions = "1.4.0"
 serde = { features = ["derive"], version = "1.0.198" }
 rmp-serde = "1.2.0"
 itertools = "0.12.1"
-thiserror = "1.0.58"
+thiserror = "1.0.59"
 flate2 = "1.0.28"
 serde_json = "1.0.116"
 base64 = "0.22.0"
