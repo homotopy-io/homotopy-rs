@@ -191,6 +191,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f30e7476521f6f8af1a1c4c0b8cc94f0bee37d91763d0ca2665f299b6cd8aec"
 
 [[package]]
+name = "by_address"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "64fa3c856b712db6612c019f14756e64e4bcea13337a6b33b696333a9eaa2d06"
+
+[[package]]
 name = "bytemuck"
 version = "1.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1760,7 +1766,7 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 [[package]]
 name = "palette"
 version = "0.7.5"
-source = "git+https://github.com/Ogeon/palette#97642292d3f28a32f80bf056d28cdd256817c5a9"
+source = "git+https://github.com/Ogeon/palette#7fe4d876901bea79e88da7ce95631dd09de68409"
 dependencies = [
  "approx",
  "fast-srgb8",
@@ -1772,8 +1778,9 @@ dependencies = [
 [[package]]
 name = "palette_derive"
 version = "0.7.5"
-source = "git+https://github.com/Ogeon/palette#97642292d3f28a32f80bf056d28cdd256817c5a9"
+source = "git+https://github.com/Ogeon/palette#7fe4d876901bea79e88da7ce95631dd09de68409"
 dependencies = [
+ "by_address",
  "proc-macro2",
  "quote",
  "syn 2.0.60",
