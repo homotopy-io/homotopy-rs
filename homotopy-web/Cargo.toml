@@ -33,7 +33,7 @@ syn = "2.0.60"
 paste = "1.0.14"
 rmp-serde = "1.2.0"
 serde_json = "1.0.116"
-zip = { version = "0.6.6", default-features = false, features = ["deflate"] }
+zip = { version = "1.1.1", default-features = false, features = ["deflate"] }
 
 # The `wasm-bindgen` crate provides the bare minimum functionality needed
 # to interact with JavaScript.
