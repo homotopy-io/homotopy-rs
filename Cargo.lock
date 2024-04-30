@@ -1765,8 +1765,8 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 
 [[package]]
 name = "palette"
-version = "0.7.5"
-source = "git+https://github.com/Ogeon/palette#7fe4d876901bea79e88da7ce95631dd09de68409"
+version = "0.7.6"
+source = "git+https://github.com/Ogeon/palette#43ff0a6025e101484225f8b7f10c7b5354fe4cbd"
 dependencies = [
  "approx",
  "fast-srgb8",
@@ -1777,8 +1777,8 @@ dependencies = [
 
 [[package]]
 name = "palette_derive"
-version = "0.7.5"
-source = "git+https://github.com/Ogeon/palette#7fe4d876901bea79e88da7ce95631dd09de68409"
+version = "0.7.6"
+source = "git+https://github.com/Ogeon/palette#43ff0a6025e101484225f8b7f10c7b5354fe4cbd"
 dependencies = [
  "by_address",
  "proc-macro2",
