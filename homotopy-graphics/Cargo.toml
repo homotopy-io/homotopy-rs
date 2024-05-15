@@ -18,7 +18,7 @@ itertools = "0.12.1"
 log = "0.4.21"
 lyon_algorithms = "1.0.4"
 lyon_geom = "1.0.5"
-lyon_path = "1.0.4"
+lyon_path = "1.0.5"
 palette = { git = "https://github.com/Ogeon/palette", features = ["serializing"] }
 paste = "1.0.15"
 petgraph = "0.6.4"
