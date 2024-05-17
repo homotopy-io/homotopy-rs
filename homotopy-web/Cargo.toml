@@ -48,7 +48,7 @@ tracing-subscriber = { version = "0.3.18", features = ["time"] }
 euclid = "0.22.9"
 ultraviolet = "0.9.2"
 lyon_path = "1.0.5"
-thiserror = "1.0.60"
+thiserror = "1.0.61"
 katex = { version = "0.4", features = ["wasm-js"], default-features = false }
 html-escape = "0.2.13"
 obake = { version = "1.0.5", features = ["serde"] }
