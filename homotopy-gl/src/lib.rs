@@ -1,8 +1,9 @@
 use std::ops::Deref;
 
+use js_sys::{Object, Reflect};
 use thiserror::Error;
 use ultraviolet::Vec2;
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{HtmlCanvasElement, WebGl2RenderingContext};
 use yew::prelude::*;
 
@@ -123,7 +124,18 @@ impl GlCtx {
                 "supplied node ref does not point to a canvas element",
             ))?;
 
-        let webgl_ctx = if let Ok(Some(obj)) = canvas.get_context("webgl2") {
+        // Need to set preserveDrawingBuffer to true to export the canvas as an image
+        let context_options = Object::new();
+        Reflect::set(
+            &context_options,
+            &JsValue::from_str("preserveDrawingBuffer"),
+            &JsValue::TRUE,
+        )
+        .unwrap();
+
+        let webgl_ctx = if let Ok(Some(obj)) =
+            canvas.get_context_with_context_options("webgl2", &context_options)
+        {
             obj.dyn_into::<WebGl2RenderingContext>().map_err(|_| {
                 GlError::Attachment("failed to cast WebGL context to a rendering context")
             })?

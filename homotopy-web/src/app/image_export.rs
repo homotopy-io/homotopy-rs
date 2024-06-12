@@ -44,7 +44,7 @@ impl Component for ImageExportView {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let default_text = if ctx.props().view_dim == 2 || ctx.props().view_dim == 3 {
+        let default_text = if ctx.props().view_dim >= 2 {
             Default::default()
         } else {
             html! {
@@ -57,6 +57,7 @@ impl Component for ImageExportView {
         };
         let tikz = Self::view_tikz(ctx);
         let svg = Self::view_svg(ctx);
+        let png = Self::view_png(ctx);
         let manim = Self::view_manim(ctx);
         let stl = Self::view_stl(ctx);
         html! {
@@ -64,6 +65,7 @@ impl Component for ImageExportView {
                 {default_text}
                 {tikz}
                 {svg}
+                {png}
                 {manim}
                 {stl}
             </div>
@@ -115,6 +117,21 @@ impl ImageExportView {
                     <h3>{"Export to SVG"}</h3>
                     <div class="settings__segment">
                         <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportSvg)}>{"Export"}</button>
+                    </div>
+                </>
+            }
+        } else {
+            Default::default()
+        }
+    }
+
+    fn view_png(ctx: &Context<Self>) -> Html {
+        if ctx.props().view_dim >= 3 {
+            html! {
+                <>
+                    <h3>{"Export to PNG"}</h3>
+                    <div class="settings__segment">
+                        <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportPng)}>{"Export"}</button>
                     </div>
                 </>
             }

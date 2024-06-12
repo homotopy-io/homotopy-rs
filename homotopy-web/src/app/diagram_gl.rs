@@ -190,6 +190,7 @@ impl Component for DiagramGl {
         html! {
             <>
                 <canvas
+                    id="canvas"
                     style="width: 100%; height: 100%; display: block"
                     onmousemove={on_mouse_move}
                     onmouseup={on_mouse_up}
