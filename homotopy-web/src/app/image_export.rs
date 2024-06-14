@@ -1,10 +1,16 @@
+use homotopy_graphics::{manim::ManimOptions, stl::StlOptions, tikz::TikzOptions};
 use yew::prelude::*;
 
-use crate::{components::delta::CallbackIdx, declare_settings, model};
+use super::settings::AppSettings;
+use crate::{
+    components::delta::CallbackIdx,
+    declare_settings,
+    model::{self, ImageFormat, ImageOption},
+};
 
 declare_settings! {
     pub struct ImageExportSettings {
-        tikz_leftright_mode: bool = false,
+        tikz_left_to_right: bool = false,
         tikz_show_braidings: bool = true,
         manim_use_opengl: bool = false,
     }
@@ -13,8 +19,8 @@ declare_settings! {
 #[derive(Debug, Clone, PartialEq, Properties)]
 pub struct Props {
     pub dispatch: Callback<model::Action>,
-    pub view_dim: u8,
-    pub dim: usize,
+    pub view_dimension: u8,
+    pub dimension: usize,
 }
 
 pub struct ImageExportView {
@@ -44,17 +50,6 @@ impl Component for ImageExportView {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let default_text = if ctx.props().view_dim >= 2 {
-            Default::default()
-        } else {
-            html! {
-                <p>{
-                    "There is nothing to export. \n
-                    Try creating a 2D/3D diagram or change to 2D/3D view with the view buttons
-                    at the top-right corner."}
-                </p>
-            }
-        };
         let tikz = Self::view_tikz(ctx);
         let svg = Self::view_svg(ctx);
         let png = Self::view_png(ctx);
@@ -62,32 +57,37 @@ impl Component for ImageExportView {
         let stl = Self::view_stl(ctx);
         html! {
             <div class="settings">
-                {default_text}
                 {tikz}
                 {svg}
                 {png}
                 {manim}
                 {stl}
             </div>
-
         }
     }
 }
 
 impl ImageExportView {
     fn view_tikz(ctx: &Context<Self>) -> Html {
-        let show_braidings = ImageExportSettings::get_tikz_show_braidings();
-        let leftright_mode = ImageExportSettings::get_tikz_leftright_mode();
-        if ctx.props().view_dim == 2 {
+        let options = TikzOptions {
+            left_to_right: ImageExportSettings::get_tikz_left_to_right(),
+            show_braidings: ImageExportSettings::get_tikz_show_braidings(),
+        };
+        let export_tikz = |option| {
+            ctx.props()
+                .dispatch
+                .reform(move |_| model::Action::ExportImage(ImageFormat::Tikz(options), option))
+        };
+        if ctx.props().view_dimension <= 2 {
             html! {
                 <>
                     <h3>{"Export to TikZ"}</h3>
                     <div class="settings__segment">
                         {
                             Self::view_checkbox(
-                                "Left-right mode",
-                                ImageExportSettings::get_tikz_leftright_mode(),
-                                ImageExportSettings::set_tikz_leftright_mode,
+                                "Left-to-right",
+                                ImageExportSettings::get_tikz_left_to_right(),
+                                ImageExportSettings::set_tikz_left_to_right,
                             )
                         }
                         {
@@ -97,10 +97,10 @@ impl ImageExportView {
                                 ImageExportSettings::set_tikz_show_braidings,
                             )
                         }
-                        <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportTikz(leftright_mode, show_braidings))}>{"Export"}</button>
+                        <button onclick={export_tikz(ImageOption::Single)}>{"Export"}</button>
 
-                        if ctx.props().dim > 2 {
-                            <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportTikzSlices(leftright_mode, show_braidings))}>{"Export slices"}</button>
+                        if ctx.props().dimension > 0 {
+                            <button onclick={export_tikz(ImageOption::Multiple)}>{"Export slices"}</button>
                         }
                     </div>
                 </>
@@ -111,12 +111,16 @@ impl ImageExportView {
     }
 
     fn view_svg(ctx: &Context<Self>) -> Html {
-        if ctx.props().view_dim == 2 {
+        let export_svg = ctx
+            .props()
+            .dispatch
+            .reform(move |_| model::Action::ExportImage(ImageFormat::Svg, ImageOption::Single));
+        if ctx.props().view_dimension <= 2 {
             html! {
                 <>
                     <h3>{"Export to SVG"}</h3>
                     <div class="settings__segment">
-                        <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportSvg)}>{"Export"}</button>
+                        <button onclick={export_svg}>{"Export"}</button>
                     </div>
                 </>
             }
@@ -126,12 +130,16 @@ impl ImageExportView {
     }
 
     fn view_png(ctx: &Context<Self>) -> Html {
-        if ctx.props().view_dim >= 3 {
+        let export_png = ctx
+            .props()
+            .dispatch
+            .reform(move |_| model::Action::ExportImage(ImageFormat::Png, ImageOption::Single));
+        if ctx.props().view_dimension >= 3 {
             html! {
                 <>
                     <h3>{"Export to PNG"}</h3>
                     <div class="settings__segment">
-                        <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportPng)}>{"Export"}</button>
+                        <button onclick={export_png}>{"Export"}</button>
                     </div>
                 </>
             }
@@ -141,8 +149,15 @@ impl ImageExportView {
     }
 
     fn view_manim(ctx: &Context<Self>) -> Html {
-        let use_opengl = ImageExportSettings::get_manim_use_opengl();
-        if ctx.props().view_dim == 2 {
+        let options = ManimOptions {
+            use_opengl: ImageExportSettings::get_manim_use_opengl(),
+        };
+        let export_manim = |option| {
+            ctx.props()
+                .dispatch
+                .reform(move |_| model::Action::ExportImage(ImageFormat::Manim(options), option))
+        };
+        if ctx.props().view_dimension <= 2 {
             html! {
                 <>
                     <h3>{"Export to Manim"}</h3>
@@ -154,7 +169,11 @@ impl ImageExportView {
                                 ImageExportSettings::set_manim_use_opengl,
                             )
                         }
-                        <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportManim(use_opengl))}>{"Export"}</button>
+                        <button onclick={export_manim(ImageOption::Single)}>{"Export"}</button>
+
+                        if ctx.props().dimension > 0 {
+                            <button onclick={export_manim(ImageOption::Multiple)}>{"Export slices"}</button>
+                        }
                     </div>
                 </>
             }
@@ -164,12 +183,25 @@ impl ImageExportView {
     }
 
     fn view_stl(ctx: &Context<Self>) -> Html {
-        if ctx.props().view_dim == 3 {
+        let options = StlOptions {
+            geometry_samples: AppSettings::get_geometry_samples() as u8,
+            subdivision_depth: AppSettings::get_subdivision_depth() as u8,
+        };
+        let export_stl = |option| {
+            ctx.props()
+                .dispatch
+                .reform(move |_| model::Action::ExportImage(ImageFormat::Stl(options), option))
+        };
+        if ctx.props().view_dimension == 3 {
             html! {
                 <>
                     <h3>{"Export to STL"}</h3>
                     <div class="settings__segment">
-                        <button onclick={ctx.props().dispatch.reform(move |_| model::Action::ExportStl)}>{"Export"}</button>
+                        <button onclick={export_stl(ImageOption::Single)}>{"Export"}</button>
+
+                        if ctx.props().dimension > 3 {
+                            <button onclick={export_stl(ImageOption::Multiple)}>{"Export slices"}</button>
+                        }
                     </div>
                 </>
             }

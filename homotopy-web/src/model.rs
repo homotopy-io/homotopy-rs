@@ -10,7 +10,7 @@ use homotopy_core::{
 use homotopy_graphics::{manim, stl, svg, tikz};
 use homotopy_model::proof::AttachOption;
 pub use homotopy_model::{history, migration, proof, serialize};
-use image::{DynamicImage, ImageFormat, RgbaImage};
+use image::{DynamicImage, RgbaImage};
 use serde::Serialize;
 use thiserror::Error;
 use wasm_bindgen::JsCast;
@@ -25,12 +25,8 @@ pub enum Action {
     ImportActions(proof::SerializedData),
     ExportProof,
     ExportActions,
-    ExportTikz(bool, bool),
-    ExportTikzSlices(bool, bool),
-    ExportSvg,
-    ExportManim(bool),
-    ExportStl,
-    ExportPng,
+
+    ExportImage(ImageFormat, ImageOption),
 
     Select(usize),
     ClearSelections,
@@ -44,6 +40,39 @@ pub enum Action {
     Help,
 }
 
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Serialize)]
+pub enum ImageFormat {
+    // 3d formats
+    Png,
+    Stl(stl::StlOptions),
+
+    // 2d formats
+    Svg,
+    Tikz(tikz::TikzOptions),
+    Manim(manim::ManimOptions),
+}
+
+impl ImageFormat {
+    const fn extension(self) -> &'static str {
+        match self {
+            Self::Png => "png",
+            Self::Stl(_) => "stl",
+            Self::Svg => "svg",
+            Self::Tikz(_) => "tex",
+            Self::Manim(_) => "py",
+        }
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Serialize)]
+pub enum ImageOption {
+    // Export a single image
+    Single,
+
+    // Export a zip file containing multiple images
+    Multiple,
+}
+
 impl Action {
     /// Determines if a given [Action] is valid given the current [Proof].
     #[must_use]
@@ -51,19 +80,6 @@ impl Action {
         match self {
             Self::Proof(action) => action.is_valid(proof),
             Self::History(history::Action::Move(dir)) => proof.can_move(dir),
-            Self::ExportTikz(_, _) | Self::ExportSvg | Self::ExportManim(_) => proof
-                .workspace
-                .as_ref()
-                .is_some_and(|ws| ws.view.dimension() == 2),
-            Self::ExportTikzSlices(_, _) => proof
-                .workspace
-                .as_ref()
-                .is_some_and(|ws| ws.view.dimension() == 2 && ws.diagram.dimension() > 2),
-            Self::ExportStl => proof
-                .workspace
-                .as_ref()
-                .is_some_and(|ws| ws.view.dimension() == 3),
-            Self::SelectPoint(_, _) => proof.workspace.is_some(),
             _ => true,
         }
     }
@@ -175,46 +191,13 @@ impl State {
                 self.clear_selections();
             }
 
-            Action::ExportTikz(leftright, with_braid) => {
-                let signature = &self.proof().signature;
-                let diagram = self.proof().workspace.as_ref().unwrap().visible_diagram();
-                let data = tikz::render(&diagram, signature, leftright, with_braid).unwrap();
-                generate_download("homotopy_io_export", "tikz", data.as_bytes())
-                    .map_err(ModelError::Export)?;
-            }
+            Action::ExportImage(ImageFormat::Svg, option) => {
+                assert_eq!(
+                    option,
+                    ImageOption::Single,
+                    "Multiple SVG export is not supported.",
+                );
 
-            Action::ExportTikzSlices(leftright, with_braid) => {
-                let signature = &self.proof().signature;
-                let Diagram::DiagramN(diagram) =
-                    self.proof().workspace.as_ref().unwrap().visible_diagram()
-                else {
-                    return Ok(false);
-                };
-
-                let mut buf = Vec::new();
-                let mut zip = zip::ZipWriter::new(std::io::Cursor::new(&mut buf));
-
-                let options = zip::write::FileOptions::default()
-                    .compression_method(zip::CompressionMethod::STORE);
-
-                for (i, slice) in diagram.slices().enumerate() {
-                    let data = tikz::render(&slice, signature, leftright, with_braid).unwrap();
-
-                    let name = match Height::from(i) {
-                        Height::Regular(i) => format!("regular{i}.tikz"),
-                        Height::Singular(i) => format!("singular{i}.tikz"),
-                    };
-
-                    zip.start_file(name, options)?;
-                    zip.write_all(data.as_bytes()).unwrap();
-                }
-
-                drop(zip);
-
-                generate_download("homotopy_io_export", "zip", &buf).map_err(ModelError::Export)?;
-            }
-
-            Action::ExportSvg => {
                 let signature = &self.proof().signature;
 
                 // First we locate the element containing the SVG rendered the SVG rendering
@@ -258,7 +241,13 @@ impl State {
                     .map_err(ModelError::Export)?;
             }
 
-            Action::ExportPng => {
+            Action::ExportImage(ImageFormat::Png, option) => {
+                assert_eq!(
+                    option,
+                    ImageOption::Single,
+                    "Multiple PNG export is not supported.",
+                );
+
                 // Get the canvas element
                 let canvas = web_sys::window()
                     .expect("no window")
@@ -300,27 +289,52 @@ impl State {
                     RgbaImage::from_raw(width as u32, height as u32, pixels).unwrap(),
                 )
                 .flipv()
-                .write_to(&mut Cursor::new(&mut data), ImageFormat::Png)
+                .write_to(&mut Cursor::new(&mut data), image::ImageFormat::Png)
                 .unwrap();
 
                 generate_download("homotopy_io_export", "png", &data)
                     .map_err(ModelError::Export)?;
             }
 
-            Action::ExportManim(use_opengl) => {
+            Action::ExportImage(format, ImageOption::Single) => {
                 let signature = &self.proof().signature;
-                let diagram = self.proof().workspace.as_ref().unwrap().visible_diagram();
-                let stylesheet = manim::stylesheet(signature);
-                let data = manim::render(&diagram, signature, &stylesheet, use_opengl).unwrap();
-                generate_download("homotopy_io_export", "py", data.as_bytes())
+                let Some(ws) = self.proof().workspace.as_ref() else {
+                    return Ok(false);
+                };
+
+                let diagram = ws.visible_diagram();
+                let view_dimension = ws.view.dimension();
+
+                let data = render(&diagram, view_dimension, signature, format);
+
+                generate_download("homotopy_io_export", format.extension(), data.as_bytes())
                     .map_err(ModelError::Export)?;
             }
 
-            Action::ExportStl => {
+            Action::ExportImage(format, ImageOption::Multiple) => {
                 let signature = &self.proof().signature;
-                let diagram = self.proof().workspace.as_ref().unwrap().visible_diagram();
-                let data = stl::render(&diagram, signature).unwrap();
-                generate_download("homotopy_io_export", "stl", data.as_bytes())
+                let Some(ws) = self.proof().workspace.as_ref() else {
+                    return Ok(false);
+                };
+
+                let Diagram::DiagramN(diagram) = ws.visible_diagram() else {
+                    return Ok(false);
+                };
+                let view_dimension = ws.view.dimension().min(diagram.dimension() as u8 - 1);
+
+                let extension = format.extension();
+                let data = zip_files(diagram.slices().enumerate().map(|(i, slice)| {
+                    let name = match Height::from(i) {
+                        Height::Regular(i) => format!("regular{i}"),
+                        Height::Singular(i) => format!("singular{i}"),
+                    };
+                    (
+                        format!("{name}.{extension}"),
+                        render(&slice, view_dimension, signature, format),
+                    )
+                }));
+
+                generate_download("homotopy_io_export", "zip", &data)
                     .map_err(ModelError::Export)?;
             }
 
@@ -567,6 +581,37 @@ fn help() -> Result<(), ModelError> {
     let document = window.document().ok_or(ModelError::Internal)?;
     let location = document.location().ok_or(ModelError::Internal)?;
     location.set_href("#help").or(Err(ModelError::Internal))
+}
+
+fn render(
+    diagram: &Diagram,
+    dimension: u8,
+    signature: &homotopy_model::proof::Signature,
+    format: ImageFormat,
+) -> String {
+    match format {
+        ImageFormat::Stl(options) => stl::render(diagram, signature, options).unwrap(),
+        ImageFormat::Tikz(options) => tikz::render(diagram, dimension, signature, options).unwrap(),
+        ImageFormat::Manim(options) => {
+            let stylesheet = manim::stylesheet(signature);
+            manim::render(diagram, dimension, signature, &stylesheet, options).unwrap()
+        }
+        _ => unreachable!(),
+    }
+}
+
+fn zip_files(files: impl Iterator<Item = (String, String)>) -> Vec<u8> {
+    let mut buf = Vec::new();
+    {
+        let mut zip = zip::ZipWriter::new(std::io::Cursor::new(&mut buf));
+        let file_options =
+            zip::write::FileOptions::default().compression_method(zip::CompressionMethod::STORE);
+        for (name, data) in files {
+            zip.start_file(name, file_options).unwrap();
+            zip.write_all(data.as_bytes()).unwrap();
+        }
+    }
+    buf
 }
 
 pub fn generate_download(name: &str, ext: &str, data: &[u8]) -> Result<(), wasm_bindgen::JsValue> {

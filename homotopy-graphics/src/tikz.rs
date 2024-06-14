@@ -12,12 +12,22 @@ use homotopy_core::{
 };
 use itertools::Itertools;
 use lyon_path::{Event, Path};
+use serde::Serialize;
 
 use crate::{
     path_util::simplify_graphic,
     style::{Color, GeneratorRepresentation, GeneratorStyle, SignatureStyleData, VertexShape},
     svg::render::GraphicElement,
 };
+
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Serialize)]
+pub struct TikzOptions {
+    /// Whether to render the diagrams from left to right.
+    pub left_to_right: bool,
+
+    /// Whether to use masking to render braidings.
+    pub show_braidings: bool,
+}
 
 #[allow(clippy::implicit_hasher)]
 pub fn stylesheet(
@@ -93,15 +103,28 @@ fn rgb(color: Color) -> String {
 
 pub fn render(
     diagram: &Diagram,
+    dimension: u8,
     signature_styles: &impl SignatureStyleData,
-    leftright_mode: bool,
-    show_braids: bool,
+    options: TikzOptions,
+) -> Result<String, DimensionError> {
+    match dimension {
+        0 => render_generic::<0>(diagram, signature_styles, options),
+        1 => render_generic::<1>(diagram, signature_styles, options),
+        2 => render_generic::<2>(diagram, signature_styles, options),
+        _ => Err(DimensionError),
+    }
+}
+
+fn render_generic<const N: usize>(
+    diagram: &Diagram,
+    signature_styles: &impl SignatureStyleData,
+    options: TikzOptions,
 ) -> Result<String, DimensionError> {
     let dimension = diagram.dimension();
-    let layout = Layout::<2>::new(diagram)?;
+    let layout = Layout::<N>::new(diagram)?;
     let complex = make_complex(diagram);
-    let depths = Depths::<2>::new(diagram)?;
-    let projection = Projection::<2>::new(diagram, &layout, &depths)?;
+    let depths = Depths::<N>::new(diagram)?;
+    let projection = Projection::<N>::new(diagram, &layout, &depths)?;
     let graphic = simplify_graphic(&GraphicElement::build(
         &complex,
         &layout,
@@ -134,20 +157,14 @@ pub fn render(
     writeln!(tikz, "\\begin{{tikzpicture}}").unwrap();
     tikz.push_str(&stylesheet(signature_styles, dimension, &diagrams));
 
-    tikz.push_str(&render_inner(
-        &surfaces,
-        wires,
-        leftright_mode,
-        show_braids,
-        dimension,
-    ));
+    tikz.push_str(&render_inner(&surfaces, wires, options, dimension));
 
     // Points are unchanged
     for (d, point) in points {
         let vertex = render_vertex(
             signature_styles.generator_style(d.generator).unwrap(),
             point,
-            leftright_mode,
+            options,
         );
         writeln!(
             tikz,
@@ -179,13 +196,12 @@ const MAGIC_MACRO: &str = "\n\\newcommand{\\wire}[2]{
 fn render_inner(
     surfaces: &[(Diagram0, Path)],
     wires: FastHashMap<usize, Vec<(Diagram0, Path)>>,
-    leftright_mode: bool,
-    show_braids: bool,
+    options: TikzOptions,
     diagram_dimension: usize,
 ) -> String {
     let mut tikz = String::new();
 
-    let needs_masking = wires.len() > 1 && show_braids;
+    let needs_masking = wires.len() > 1 && options.show_braidings;
 
     if needs_masking {
         tikz.push_str(MAGIC_MACRO);
@@ -205,7 +221,7 @@ fn render_inner(
             tikz,
             "\\fill[{color}] {path};",
             color = name_from_diagram_dim(*g, diagram_dimension, GeneratorRepresentation::Surface),
-            path = &render_path(path, leftright_mode)
+            path = &render_path(path, options)
         )
         .unwrap();
     }
@@ -220,7 +236,7 @@ fn render_inner(
                 "  \\clipped{{{color}}}{{#1}}{{{path}}}",
                 color =
                     name_from_diagram_dim(*g, diagram_dimension, GeneratorRepresentation::Surface),
-                path = &render_path(path, leftright_mode)
+                path = &render_path(path, options)
             )
             .unwrap();
         }
@@ -256,7 +272,7 @@ fn render_inner(
                     "\\wire{{{color}}}{{{path}}};",
                     color =
                         name_from_diagram_dim(*g, diagram_dimension, GeneratorRepresentation::Wire),
-                    path = &render_path(path, leftright_mode)
+                    path = &render_path(path, options)
                 )
                 .unwrap();
             } else {
@@ -265,7 +281,7 @@ fn render_inner(
                     "\\draw[color={color}, line width=5pt]{path};",
                     color =
                         name_from_diagram_dim(*g, diagram_dimension, GeneratorRepresentation::Wire),
-                    path = &render_path(path, leftright_mode)
+                    path = &render_path(path, options)
                 )
                 .unwrap();
             }
@@ -280,10 +296,10 @@ fn render_inner(
     tikz
 }
 
-fn render_point(point: Point2D<f32>, leftright_mode: bool) -> String {
+fn render_point(point: Point2D<f32>, options: TikzOptions) -> String {
     let x = (point.x * 100.0).round() / 100.0;
     let y = (point.y * 100.0).round() / 100.0;
-    if leftright_mode {
+    if options.left_to_right {
         format!("({y},{})", -x)
     } else {
         format!("({x},{y})")
@@ -293,7 +309,7 @@ fn render_point(point: Point2D<f32>, leftright_mode: bool) -> String {
 fn render_vertex(
     generator_style: &impl GeneratorStyle,
     point: Point2D<f32>,
-    leftright_mode: bool,
+    options: TikzOptions,
 ) -> String {
     use VertexShape::{Circle, Square};
 
@@ -320,26 +336,26 @@ fn render_vertex(
     .collect::<Vec<String>>()
     .join(", ");
 
-    if leftright_mode {
+    if options.left_to_right {
         format!("({y1},{}) {shape_str} ({sz});", -x1)
     } else {
         format!("({x1},{y1}) {shape_str} ({sz});")
     }
 }
 
-fn render_path(path: &Path, leftright_mode: bool) -> String {
+fn render_path(path: &Path, options: TikzOptions) -> String {
     let mut result = String::new();
     for event in path {
         match event {
-            Event::Begin { at } => result.push_str(&render_point(at, leftright_mode)),
+            Event::Begin { at } => result.push_str(&render_point(at, options)),
             Event::Line { to, .. } => {
-                write!(result, " -- {}", render_point(to, leftright_mode)).unwrap();
+                write!(result, " -- {}", render_point(to, options)).unwrap();
             }
             Event::Quadratic { ctrl, to, .. } => write!(
                 result,
                 " .. controls {} .. {}",
-                render_point(ctrl, leftright_mode),
-                render_point(to, leftright_mode)
+                render_point(ctrl, options),
+                render_point(to, options)
             )
             .unwrap(),
             Event::Cubic {
@@ -347,9 +363,9 @@ fn render_path(path: &Path, leftright_mode: bool) -> String {
             } => write!(
                 result,
                 " .. controls {} and {} .. {}",
-                render_point(ctrl1, leftright_mode),
-                render_point(ctrl2, leftright_mode),
-                render_point(to, leftright_mode),
+                render_point(ctrl1, options),
+                render_point(ctrl2, options),
+                render_point(to, options),
             )
             .unwrap(),
             Event::End { close, .. } => {

@@ -173,12 +173,17 @@ declare_sidebar_drawers! {
         "Image export",
         "ImageExport",
         "output",
-        |dispatch, proof: &Proof, _, _| html! {
-            <ImageExportView
-                dispatch={dispatch}
-                view_dim={proof.workspace.as_ref().map_or(0, |ws| ws.view.dimension())}
-                dim={proof.workspace.as_ref().map_or(0, |ws| ws.diagram.dimension())}
-            />
+        |dispatch, proof: &Proof, _, _| match proof.workspace.as_ref() {
+            None => html! {
+                <p>{"There is nothing to export."}</p>
+            },
+            Some(ws) => html!{
+                <ImageExportView
+                    dispatch={dispatch}
+                    view_dimension={ws.view.dimension()}
+                    dimension={ws.visible_dimension()}
+                />
+            },
         },
         min_width: 250,
     }

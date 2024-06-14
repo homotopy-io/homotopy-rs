@@ -12,6 +12,7 @@ use homotopy_core::{
 };
 use itertools::Itertools;
 use lyon_path::{Event, Path};
+use serde::Serialize;
 
 use crate::{
     path_util::simplify_graphic,
@@ -20,6 +21,12 @@ use crate::{
 };
 
 const INDENT: &str = "    ";
+
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Serialize)]
+pub struct ManimOptions {
+    /// Whether to use the OpenGL renderer.
+    pub use_opengl: bool,
+}
 
 pub fn stylesheet(styles: &impl SignatureStyleData) -> String {
     let mut stylesheet = String::new();
@@ -78,14 +85,29 @@ fn name(generator: Generator, c: usize, orientation: Orientation) -> String {
 
 pub fn render(
     diagram: &Diagram,
+    dimension: u8,
     signature_styles: &impl SignatureStyleData,
     stylesheet: &str,
-    use_opengl: bool,
+    options: ManimOptions,
 ) -> Result<String, DimensionError> {
-    let layout = Layout::<2>::new(diagram)?;
+    match dimension {
+        0 => render_generic::<0>(diagram, signature_styles, stylesheet, options),
+        1 => render_generic::<1>(diagram, signature_styles, stylesheet, options),
+        2 => render_generic::<2>(diagram, signature_styles, stylesheet, options),
+        _ => Err(DimensionError),
+    }
+}
+
+fn render_generic<const N: usize>(
+    diagram: &Diagram,
+    signature_styles: &impl SignatureStyleData,
+    stylesheet: &str,
+    options: ManimOptions,
+) -> Result<String, DimensionError> {
+    let layout = Layout::<N>::new(diagram)?;
     let complex = make_complex(diagram);
-    let depths = Depths::<2>::new(diagram)?;
-    let projection = Projection::<2>::new(diagram, &layout, &depths)?;
+    let depths = Depths::<N>::new(diagram)?;
+    let projection = Projection::<N>::new(diagram, &layout, &depths)?;
     let graphic = simplify_graphic(&GraphicElement::build(
         &complex,
         &layout,
@@ -117,7 +139,7 @@ pub fn render(
     }
 
     let mut manim = String::new();
-    if use_opengl {
+    if options.use_opengl {
         manim.push_str(
             "# Render with 'manim --format mp4 --renderer=opengl homotopy_io_export.py'\n",
         );
@@ -128,7 +150,7 @@ pub fn render(
     }
     manim.push_str("import numpy as np\n");
     manim.push_str("from manim import *\n");
-    if use_opengl {
+    if options.use_opengl {
         manim.push_str(
             "from manim.mobject.opengl.opengl_vectorized_mobject import OpenGLVMobject\n",
         );
@@ -149,7 +171,7 @@ pub fn render(
     )
     .unwrap();
 
-    let vmobj = if use_opengl {
+    let vmobj = if options.use_opengl {
         "OpenGLVMobject"
     } else {
         "VMobject"
