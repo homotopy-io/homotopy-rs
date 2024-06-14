@@ -129,7 +129,7 @@ pub fn get_about_message() -> Html {
                 {", "}
                 <a href="https://ncatlab.org/nlab/show/homotopy.io">{"nLab page"}</a>
                 {", and "}
-                <a href="httsp://github.com/homotopy-io/homotopy-rs">{"GitHub repository"}</a>
+                <a href="https://github.com/homotopy-io/homotopy-rs">{"GitHub repository"}</a>
                 {"."}
             </p>
             <h3>{"License"}</h3>
