@@ -246,9 +246,14 @@ fn render_generic<const N: usize>(
         if i > 0 {
             writeln!(manim, "{INDENT}{INDENT}# Begin scope").unwrap();
             for (d, path) in &layer {
-                writeln!(manim, "{INDENT}{INDENT}wires.add(Intersection(surfaces,self.build_path({path},width=20),color=C[\"generator_{id}_{dim}\"]))",
+                writeln!(manim, "{INDENT}{INDENT}wires.add(Intersection(surfaces,self.build_path({path},width=20),color=C[\"generator_{id}_{dim}_1_{or}\"]))",
                          id=d.generator.id,
                          dim=d.generator.dimension,
+                         or=match d.orientation {
+                            Orientation::Positive => "pos",
+                            Orientation::Negative => "neg",
+                            Orientation::Zero => "zer",
+                         },
                          path=&render_path(path)
                 ).unwrap();
             }
@@ -287,7 +292,7 @@ fn render_generic<const N: usize>(
         );
         writeln!(
             manim,
-            "{ind}{ind}points.add({vertex}.move_to(np.array([{ptx},{pty},1])) # circle_{id}_{dim}",
+            "{ind}{ind}points.add({vertex}).move_to(np.array([{ptx},{pty},1])) # circle_{id}_{dim}",
             ind = INDENT,
             id = d.generator.id,
             dim = d.generator.dimension,
