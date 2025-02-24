@@ -40,8 +40,12 @@ impl CrashDump {
             self.actions.clear();
             self.import = Some(buf.0.clone());
         } else {
-            let data = serde_json::to_string(&action).expect("Failed to serialize action.");
-            self.actions.push(data);
+            // Temporarily disabled due to memory overflows on large proofs
+            /*
+                let data = serde_json::to_string(&action).expect("Failed to serialize action.");
+                web_sys::console::log(&js_sys::Array::from(&JsValue::from_str(&data)));
+                self.actions.push(data);
+            */
         }
     }
 
