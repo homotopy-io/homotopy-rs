@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1728911875403,
+  "lastUpdate": 1740417606395,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -52535,6 +52535,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 249.74,
             "range": "+/- 1.310",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "distinct": true,
+          "id": "07d68844fdc718b897ec451c18dd4bb39c9b30e3",
+          "message": "Fixed OOM bug on large proofs (Attach action) in action logging code by turning off logging.",
+          "timestamp": "2025-02-24T16:53:11Z",
+          "tree_id": "6e2dd758e6a75d1b3649b28424a57291ca417de5",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/07d68844fdc718b897ec451c18dd4bb39c9b30e3"
+        },
+        "date": 1740417594717,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 1.2285,
+            "range": "+/- 0.003",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 11.889,
+            "range": "+/- 0.050",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 226.81,
+            "range": "+/- 1.380",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 5.3683,
+            "range": "+/- 0.004",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 9.1407,
+            "range": "+/- 0.076",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 237.22,
+            "range": "+/- 0.910",
             "unit": "ms"
           }
         ]
