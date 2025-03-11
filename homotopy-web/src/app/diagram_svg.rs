@@ -444,13 +444,23 @@ impl<const N: usize> DiagramSvg<N> {
             return Default::default();
         };
 
-        let (from, to) = highlight.points.iter().map(|p| self.position(*p)).fold(
-            (
-                Point2D::splat(f32::INFINITY),
-                Point2D::splat(f32::NEG_INFINITY),
-            ),
-            |(min, max), pos| (min.min(pos), max.max(pos)),
+        let (mut from, mut to) = (
+            Point2D::splat(f32::INFINITY),
+            Point2D::splat(f32::NEG_INFINITY),
         );
+
+        for p in &highlight.points {
+            match self.position(*p) {
+                None => {
+                    tracing::error!("Encountered highlight point outside prepared diagram (point: {:?}). This is a bug!", p);
+                    return Default::default();
+                }
+                Some(pos) => {
+                    from = from.min(pos);
+                    to = to.max(pos);
+                }
+            }
+        }
 
         let padding = match highlight.kind {
             HighlightKind::Attach => {
@@ -485,9 +495,9 @@ impl<const N: usize> DiagramSvg<N> {
         }
     }
 
-    fn position(&self, point: [SliceIndex; N]) -> Point2D<f32> {
-        let point = project_2d(self.prepared.layout[&point]).into();
-        self.prepared.transform.transform_point(point)
+    fn position(&self, point: [SliceIndex; N]) -> Option<Point2D<f32>> {
+        let point = project_2d(*self.prepared.layout.get(&point)?).into();
+        Some(self.prepared.transform.transform_point(point))
     }
 
     fn simplex_at(&self, ctx: &Context<Self>, point: Point2D<f32>) -> Option<Simplex<N>> {
