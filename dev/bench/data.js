@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1740417606395,
+  "lastUpdate": 1741678967631,
   "repoUrl": "https://github.com/homotopy-io/homotopy-rs",
   "entries": {
     "Rust Benchmark": [
@@ -52595,6 +52595,66 @@ window.BENCHMARK_DATA = {
             "name": "contract high dimensions/4",
             "value": 237.22,
             "range": "+/- 0.910",
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "committer": {
+            "email": "7887982+regular-citizen@users.noreply.github.com",
+            "name": "regular-citizen",
+            "username": "regular-citizen"
+          },
+          "distinct": true,
+          "id": "cb95421a77038f88c2327a240353bd3e908611fd",
+          "message": "Avoid crashing when highlighting missing positions - bug imitigation against races between highlights and smaller prepared diagrams.",
+          "timestamp": "2025-03-11T07:20:07Z",
+          "tree_id": "4cd2336b6c9147995fd39cbd136b1bbafbcd84cf",
+          "url": "https://github.com/homotopy-io/homotopy-rs/commit/cb95421a77038f88c2327a240353bd3e908611fd"
+        },
+        "date": 1741678955214,
+        "tool": "criterion",
+        "benches": [
+          {
+            "name": "label identifications high dimensions/5",
+            "value": 1.2287,
+            "range": "+/- 0.005",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/6",
+            "value": 11.814,
+            "range": "+/- 0.040",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/7",
+            "value": 224.35,
+            "range": "+/- 0.330",
+            "unit": "ms"
+          },
+          {
+            "name": "label identifications high dimensions/8",
+            "value": 5.3443,
+            "range": "+/- 0.006",
+            "unit": "s"
+          },
+          {
+            "name": "contract high dimensions/3",
+            "value": 9.1969,
+            "range": "+/- 0.046",
+            "unit": "ms"
+          },
+          {
+            "name": "contract high dimensions/4",
+            "value": 233.45,
+            "range": "+/- 0.410",
             "unit": "ms"
           }
         ]
