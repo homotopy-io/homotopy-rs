@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use homotopy_common::tree::Node;
-use homotopy_core::Diagram;
+use homotopy_core::{signature::Invertibility, Diagram};
 use homotopy_graphics::style::{Color, VertexShape};
 use wasm_bindgen::JsCast;
 use web_sys::{Element, HtmlInputElement};
@@ -749,20 +749,33 @@ impl ItemView {
             let oriented_class =
                 "signature__generator-indicator signature__generator-indicator-oriented";
 
-            let (invertible_text, oriented_text) = match ctx.props().drawer_view_size {
-                DrawerViewSize::Expanded => ("Invertible", "Oriented"),
-                _ => ("I", "O"),
-            };
-
-            let invertible = if info.invertibility.is_invertible() {
-                html! {
-                    <span class={invertible_class}>{invertible_text}</span>
+            let invertible = match info.invertibility {
+                Invertibility::Directed => Default::default(),
+                Invertibility::Invertible => {
+                    let invertible_text = match ctx.props().drawer_view_size {
+                        DrawerViewSize::Expanded => "Invertible",
+                        _ => "I",
+                    };
+                    html! {
+                        <span class={invertible_class}>{invertible_text}</span>
+                    }
                 }
-            } else {
-                html! {}
+                Invertibility::Dualisable(_) => {
+                    let dualisable_text = match ctx.props().drawer_view_size {
+                        DrawerViewSize::Expanded => "Dualisable",
+                        _ => "D",
+                    };
+                    html! {
+                        <span class={invertible_class}>{dualisable_text}</span>
+                    }
+                }
             };
 
             let oriented = if info.oriented {
+                let oriented_text = match ctx.props().drawer_view_size {
+                    DrawerViewSize::Expanded => "Oriented",
+                    _ => "O",
+                };
                 html! {
                     <span class={oriented_class}>{oriented_text}</span>
                 }
@@ -800,16 +813,13 @@ impl ItemView {
                     if input.disabled() {
                         ItemViewMessage::Noop
                     } else {
-                        ItemViewMessage::Edit(SignatureItemEdit::$edit_type(
-                            (!input.checked()).into(),
-                        ))
+                        ItemViewMessage::Edit(SignatureItemEdit::$edit_type(!input.checked()))
                     }
                 }
             };
         }
 
         let toggle_single_preview = ctx.link().callback(toggle_or_noop!(ShowSourceTarget));
-        let toggle_invertible = ctx.link().callback(toggle_or_noop!(MakeInvertible));
         let toggle_framed = ctx.link().callback(toggle_or_noop!(MakeOriented));
 
         let color = if info.color.is_light() {
@@ -848,13 +858,6 @@ impl ItemView {
                         disabled={!AppSettings::get_show_previews()}
                     />
                     <GeneratorPreferenceCheckbox
-                        left="Directed"
-                        right="Invertible"
-                        color={color.clone()}
-                        onclick={toggle_invertible}
-                        checked={info.invertibility.is_invertible()}
-                    />
-                    <GeneratorPreferenceCheckbox
                         left="Framed"
                         right="Oriented"
                         color={color.clone()}
@@ -862,9 +865,88 @@ impl ItemView {
                         checked={info.oriented}
                         disabled={info.oriented}
                     />
+                    {Self::view_dualisability_options(ctx, info)}
                     {merge_button}
                 </div>
             },
+        }
+    }
+
+    fn view_dualisability_options(ctx: &Context<Self>, info: &GeneratorInfo) -> Html {
+        use Invertibility::{Directed, Dualisable, Invertible};
+        use SignatureItemEdit::MakeInvertible;
+
+        let color = if info.color.is_light() {
+            "var(--drawer-foreground)".to_owned()
+        } else {
+            info.color.hex()
+        };
+        let border_style = format!("border: 1px solid {color};");
+
+        let uid = format!("{}_{}", info.generator.id, info.generator.dimension);
+
+        let name = format!("dualisability_{uid}");
+        let directed_id = format!("directed_{uid}");
+        let invertible_id = format!("invertible_{uid}");
+        let dualisable_id = format!("dualisable_{uid}");
+
+        let number_stepper = if let Dualisable(k) = info.invertibility {
+            let dec = ctx.link().callback(move |_| {
+                k.checked_sub(1).map_or(ItemViewMessage::Noop, |k| {
+                    ItemViewMessage::Edit(MakeInvertible(Dualisable(k)))
+                })
+            });
+            let inc = ctx.link().callback(move |_| {
+                k.checked_add(1).map_or(ItemViewMessage::Noop, |k| {
+                    ItemViewMessage::Edit(MakeInvertible(Dualisable(k)))
+                })
+            });
+            html! {
+                <div class="number-stepper">
+                    <span onclick={dec}><Icon name="navigate_before" size={IconSize::Icon18} /></span>
+                    {(k + 1).to_string()}
+                    <span onclick={inc}><Icon name="navigate_next" size={IconSize::Icon18} /></span>
+                </div>
+            }
+        } else {
+            Default::default()
+        };
+
+        html! {
+            <fieldset style={border_style}>
+                <legend>{"Dualisability"}</legend>
+                <div>
+                    <input
+                        type="radio"
+                        name={name.clone()}
+                        id={directed_id.clone()}
+                        checked={info.invertibility == Directed}
+                        onclick={ctx.link().callback(|_| ItemViewMessage::Edit(MakeInvertible(Directed)))}
+                    />
+                    <label for={directed_id.clone()}>{"Directed"}</label>
+                </div>
+                <div>
+                    <input
+                        type="radio"
+                        name={name.clone()}
+                        id={invertible_id.clone()}
+                        checked={info.invertibility == Invertible}
+                        onclick={ctx.link().callback(|_| ItemViewMessage::Edit(MakeInvertible(Invertible)))}
+                    />
+                    <label for={invertible_id.clone()}>{"Invertible"}</label>
+                </div>
+                <div>
+                    <input
+                        type="radio"
+                        name={name.clone()}
+                        id={dualisable_id.clone()}
+                        checked={matches!(info.invertibility, Dualisable(_))}
+                        onclick={ctx.link().callback(|_| ItemViewMessage::Edit(MakeInvertible(Dualisable(0))))}
+                    />
+                    <label for={dualisable_id.clone()}>{"Dualisable"}</label>
+                </div>
+                {number_stepper}
+            </fieldset>
         }
     }
 }
