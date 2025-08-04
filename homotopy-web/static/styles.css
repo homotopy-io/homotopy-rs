@@ -1037,6 +1037,12 @@ input.signature__item-name {
   height: 0;
 }
 
+.number-stepper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 /* Stash */
 
 .stash__element {
