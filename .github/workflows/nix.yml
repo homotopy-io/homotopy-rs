@@ -14,18 +14,17 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
-          extra_nix_config: |
-            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Update flake.lock
+        id: update
         uses: DeterminateSystems/update-flake-lock@v27
         with:
           pr-labels: |
             dependencies
           token: ${{ secrets.GH_TOKEN_FOR_UPDATES }}
       - name: Auto-merge update
-        run: gh pr merge --auto --squash "$PR_URL"
+        run: gh pr merge --auto --squash ${{ steps.update.outputs.pull-request-number }}
         env:
-          PR_URL: ${{github.event.pull_request.html_url}}
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
   devshell:
     name: Build and cache devShell
@@ -35,8 +34,7 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
-          extra_nix_config: |
-            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Setup cachix
         uses: cachix/cachix-action@v16
         with:
