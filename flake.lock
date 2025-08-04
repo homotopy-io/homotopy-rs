@@ -5,13 +5,13 @@
       "locked": {
         "lastModified": 1739473963,
         "narHash": "sha256-ItAhpjNUzEWd/cgZVyW/jvoGbCec4TK29e1Mnmn1oJE=",
-        "owner": "kolloch",
+        "owner": "nix-community",
         "repo": "crate2nix",
         "rev": "be31feae9a82c225c0fd1bdf978565dc452a483a",
         "type": "github"
       },
       "original": {
-        "owner": "kolloch",
+        "owner": "nix-community",
         "repo": "crate2nix",
         "type": "github"
       }

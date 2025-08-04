@@ -40,7 +40,7 @@
       url = "github:oxalica/rust-overlay";
     };
     crate2nix = {
-      url = "github:kolloch/crate2nix";
+      url = "github:nix-community/crate2nix";
       flake = false;
     };
   };
