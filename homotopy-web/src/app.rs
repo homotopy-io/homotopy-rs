@@ -23,7 +23,7 @@ mod attach;
 mod boundary;
 #[cfg(any(debug_assertions, feature = "show_debug_panel"))]
 mod debug;
-mod diagram_gl;
+pub(crate) mod diagram_gl;
 mod diagram_svg;
 mod image_export;
 mod info;

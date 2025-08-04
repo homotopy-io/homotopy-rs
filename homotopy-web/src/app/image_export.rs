@@ -53,6 +53,7 @@ impl Component for ImageExportView {
         let tikz = Self::view_tikz(ctx);
         let svg = Self::view_svg(ctx);
         let png = Self::view_png(ctx);
+        let pngs = Self::view_pngs(ctx);
         let manim = Self::view_manim(ctx);
         let stl = Self::view_stl(ctx);
         html! {
@@ -60,6 +61,7 @@ impl Component for ImageExportView {
                 {tikz}
                 {svg}
                 {png}
+                {pngs}
                 {manim}
                 {stl}
             </div>
@@ -137,9 +139,30 @@ impl ImageExportView {
         if ctx.props().view_dimension >= 3 {
             html! {
                 <>
-                    <h3>{"Export to PNG"}</h3>
+                    <h3>{"Export current scene to PNG"}</h3>
                     <div class="settings__segment">
                         <button onclick={export_png}>{"Export"}</button>
+                    </div>
+                </>
+            }
+        } else {
+            Default::default()
+        }
+    }
+
+    fn view_pngs(ctx: &Context<Self>) -> Html {
+        let export_pngs = ctx
+            .props()
+            .dispatch
+            .reform(move |_| model::Action::ExportImage(ImageFormat::Png, ImageOption::Multiple));
+        if ctx.props().view_dimension == 4
+            || ctx.props().view_dimension == 3 && AppSettings::get_animated_3d()
+        {
+            html! {
+                <>
+                    <h3>{"Export frames to PNGs"}</h3>
+                    <div class="settings__segment">
+                        <button onclick={export_pngs}>{"Export"}</button>
                     </div>
                 </>
             }

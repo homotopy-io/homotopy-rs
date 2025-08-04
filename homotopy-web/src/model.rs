@@ -1,4 +1,4 @@
-use std::io::{Cursor, Write};
+use std::io::Write;
 
 pub use history::Proof;
 use history::{History, UndoState};
@@ -10,13 +10,14 @@ use homotopy_core::{
 use homotopy_graphics::{manim, stl, svg, tikz};
 use homotopy_model::proof::AttachOption;
 pub use homotopy_model::{history, migration, proof, serialize};
-use image::{DynamicImage, RgbaImage};
 use serde::Serialize;
 use thiserror::Error;
 use wasm_bindgen::JsCast;
-use web_sys::{HtmlCanvasElement, WebGl2RenderingContext};
 
-use crate::app::account;
+use crate::app::{
+    account,
+    diagram_gl::{FrameCaptureControl, FRAME_CAPTURE},
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub enum Action {
@@ -242,58 +243,20 @@ impl State {
             }
 
             Action::ExportImage(ImageFormat::Png, option) => {
-                assert_eq!(
-                    option,
-                    ImageOption::Single,
-                    "Multiple PNG export is not supported.",
-                );
-
-                // Get the canvas element
-                let canvas = web_sys::window()
-                    .expect("no window")
-                    .document()
-                    .expect("no document")
-                    .get_element_by_id("canvas")
-                    .expect("no canvas")
-                    .dyn_into::<HtmlCanvasElement>()
-                    .unwrap();
-
-                // Get the WebGL context
-                let gl: WebGl2RenderingContext = canvas
-                    .get_context("webgl2")
-                    .unwrap()
-                    .unwrap()
-                    .dyn_into::<WebGl2RenderingContext>()
-                    .unwrap();
-
-                // Get the dimensions of the canvas
-                let width = canvas.width() as i32;
-                let height = canvas.height() as i32;
-
-                // Read the pixels from the WebGL context
-                let mut pixels = vec![0; (width * height * 4) as usize];
-                gl.read_pixels_with_opt_u8_array(
-                    0,
-                    0,
-                    width,
-                    height,
-                    WebGl2RenderingContext::RGBA,
-                    WebGl2RenderingContext::UNSIGNED_BYTE,
-                    Some(&mut pixels),
-                )
-                .unwrap();
-
-                // Create an image from the raw pixels and encode it to PNG
-                let mut data = Vec::new();
-                DynamicImage::from(
-                    RgbaImage::from_raw(width as u32, height as u32, pixels).unwrap(),
-                )
-                .flipv()
-                .write_to(&mut Cursor::new(&mut data), image::ImageFormat::Png)
-                .unwrap();
-
-                generate_download("homotopy_io_export", "png", &data)
-                    .map_err(ModelError::Export)?;
+                let Some(ws) = self.proof().workspace.as_ref() else {
+                    return Ok(false);
+                };
+                let Diagram::DiagramN(diagram) = ws.visible_diagram() else {
+                    return Ok(false);
+                };
+                let control = match option {
+                    ImageOption::Single => FrameCaptureControl::One,
+                    ImageOption::Multiple => FrameCaptureControl::All(diagram.size() as u16 * 60),
+                };
+                tracing::info!("Exporting PNG with control: {:?}", control);
+                FRAME_CAPTURE.with(|fc| {
+                    fc.borrow().emit(control);
+                });
             }
 
             Action::ExportImage(format, ImageOption::Single) => {
@@ -600,7 +563,7 @@ fn render(
     }
 }
 
-fn zip_files(files: impl Iterator<Item = (String, String)>) -> Vec<u8> {
+pub fn zip_files(files: impl Iterator<Item = (String, impl AsRef<[u8]>)>) -> Vec<u8> {
     let mut buf = Vec::new();
     {
         let mut zip = zip::ZipWriter::new(std::io::Cursor::new(&mut buf));
@@ -608,7 +571,7 @@ fn zip_files(files: impl Iterator<Item = (String, String)>) -> Vec<u8> {
             zip::write::FileOptions::default().compression_method(zip::CompressionMethod::STORE);
         for (name, data) in files {
             zip.start_file(name, file_options).unwrap();
-            zip.write_all(data.as_bytes()).unwrap();
+            zip.write_all(data.as_ref()).unwrap();
         }
     }
     buf
