@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
@@ -83,7 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
@@ -105,14 +105,14 @@ jobs:
     if: github.ref == 'refs/heads/master'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: web
           path: result
       - name: Checkout historical benchmarking data
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: gh-pages
           path: old
@@ -138,7 +138,7 @@ jobs:
     needs: [build, test]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
@@ -171,9 +171,9 @@ jobs:
     if: github.ref == 'refs/heads/master'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Checkout GitHub Pages (redundant)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: gh-pages
           path: result
@@ -193,7 +193,7 @@ jobs:
     if: '${{ github.event.pull_request.head.repo.full_name == github.repository }}'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
