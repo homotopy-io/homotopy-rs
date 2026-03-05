@@ -238,6 +238,14 @@ impl Rewrite {
     }
 
     #[must_use]
+    pub fn replace_map(&self, f: &dyn Fn(Generator) -> Generator) -> Self {
+        match self {
+            Self::Rewrite0(r) => Self::Rewrite0(r.replace_map(f)),
+            Self::RewriteN(r) => Self::RewriteN(r.replace_map(f)),
+        }
+    }
+
+    #[must_use]
     pub fn orientation_transform(&self, k: Orientation) -> Self {
         self.orientation_transform_above(k, self.dimension())
     }
@@ -403,6 +411,16 @@ impl Rewrite0 {
                     .filter(|_| !oriented || target.generator != from && target.generator != to)
                     .cloned(),
             ),
+        }
+    }
+
+    #[must_use]
+    pub fn replace_map(&self, f: &dyn Fn(Generator) -> Generator) -> Self {
+        match &self.0 {
+            None => Self(None),
+            Some((source, target, label)) => {
+                Self::new(source.replace_map(f), target.replace_map(f), label.clone())
+            }
         }
     }
 
@@ -599,6 +617,16 @@ impl RewriteN {
             .cones()
             .iter()
             .map(|cone| cone.replace(from, to, oriented))
+            .collect();
+        Self::new(self.dimension(), cones)
+    }
+
+    #[must_use]
+    pub fn replace_map(&self, f: &dyn Fn(Generator) -> Generator) -> Self {
+        let cones = self
+            .cones()
+            .iter()
+            .map(|cone| cone.replace_map(f))
             .collect();
         Self::new(self.dimension(), cones)
     }
@@ -1254,6 +1282,10 @@ impl Cone {
 
     fn replace(&self, from: Generator, to: Generator, oriented: bool) -> Self {
         self.map(|r| r.replace(from, to, oriented))
+    }
+
+    fn replace_map(&self, f: impl Fn(Generator) -> Generator) -> Self {
+        self.map(|r| r.replace_map(&f))
     }
 }
 

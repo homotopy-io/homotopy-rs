@@ -1,6 +1,9 @@
 use std::{collections::VecDeque, str::FromStr};
 
-use homotopy_common::tree::{Node, Tree};
+use homotopy_common::{
+    hash::FastHashMap,
+    tree::{Node, Tree},
+};
 use homotopy_core::{
     diagram::NewDiagramError,
     signature::{Invertibility, Signature as _},
@@ -215,6 +218,79 @@ impl Signature {
     pub fn remove(&mut self, generator: Generator) {
         if let Some(node) = self.find_node(generator) {
             self.0.remove(node);
+        }
+    }
+
+    /// Disjoint union this signature with another one, adding its contents to a new folder.
+    pub(crate) fn union_signature(&mut self, other: Self, metadata: Metadata) {
+        // We cannot naively copy the other signature, because its
+        // Node-s, folder IDs, and Generator-s may conflict with our
+        // existing IDs. Thus we need to generate fresh IDs ("here")
+        // and then replace those within the other signature ("there")
+        // as we add its items to this one.
+
+        // First, create fresh generator IDs for each generator in the source.
+        let mut generator_there_to_here = FastHashMap::<Generator, Generator>::default();
+        for (generator_there, id_here) in other.generators().zip(self.next_generator_id()..) {
+            generator_there_to_here.insert(
+                generator_there,
+                Generator::new(id_here, generator_there.dimension),
+            );
+        }
+
+        // Then, replace all generators in parallel, and create fresh folder IDs.
+        let mut tree_internally_here = other.0.map(|node| match node {
+            SignatureItem::Folder(mut info) => {
+                info.id = self.next_folder_id();
+                SignatureItem::Folder(info)
+            }
+            SignatureItem::Item(mut info) => {
+                if let Some(&generator_here) = generator_there_to_here.get(&info.generator) {
+                    info.generator = generator_here;
+                } else {
+                    tracing::error!("Generator {:?} not represented here", info.generator);
+                }
+
+                // It is important to substitute in parallel so that
+                // there is never a mix of old and new generators in
+                // the diagram.
+                info.diagram = info.diagram.replace_map(&|gen_there| {
+                    if let Some(&gen_here) = generator_there_to_here.get(&gen_there) {
+                        gen_here
+                    } else {
+                        // We are replacing all generators in the
+                        // imported signature with fresh generators,
+                        // so all of them should be represented.
+                        tracing::error!(
+                            "Generator {:?} in diagram not represented here",
+                            gen_there
+                        );
+                        gen_there
+                    }
+                });
+
+                SignatureItem::Item(info)
+            }
+        });
+
+        // Then merge the tree into the new folder.
+        let mut node_there_to_here = FastHashMap::<Node, Node>::default();
+        if let Some(info) = tree_internally_here.get_mut(tree_internally_here.root()) {
+            if let SignatureItem::Folder(folder) = info.inner_mut() {
+                folder.name = metadata
+                    .title
+                    .unwrap_or_else(|| "Imported folder".to_owned());
+            }
+        }
+
+        for (node_there, info) in tree_internally_here.iter() {
+            let parent_here = info
+                .parent()
+                .and_then(|parent| node_there_to_here.get(&parent).copied())
+                .unwrap_or_else(|| self.0.root());
+            if let Some(node_here) = self.0.push_onto(parent_here, info.inner().clone()) {
+                node_there_to_here.insert(node_there, node_here);
+            }
         }
     }
 
