@@ -223,6 +223,16 @@ impl Diagram {
             Self::DiagramN(d) => Self::DiagramN(d.replace(from, to, oriented)),
         }
     }
+
+    #[must_use]
+    pub fn replace_map(&self, f: &dyn Fn(Generator) -> Generator) -> Self {
+        // Q: why require &dyn Fn?
+        // A: recursive calls would produce (infinite) recursive instantiations
+        match self {
+            Self::Diagram0(d) => Self::Diagram0(d.replace_map(f)),
+            Self::DiagramN(d) => Self::DiagramN(d.replace_map(f)),
+        }
+    }
 }
 
 pub(crate) fn globularity(s: &Diagram, t: &Diagram) -> bool {
@@ -304,6 +314,11 @@ impl Diagram0 {
         } else {
             *self
         }
+    }
+
+    #[must_use]
+    pub fn replace_map(&self, f: &dyn Fn(Generator) -> Generator) -> Self {
+        Self::new(f(self.generator), self.orientation)
     }
 
     #[must_use]
@@ -466,6 +481,11 @@ impl DiagramN {
             |d| d.replace(from, to, oriented),
             |r| r.replace(from, to, oriented),
         )
+    }
+
+    #[must_use]
+    pub fn replace_map(&self, f: &dyn Fn(Generator) -> Generator) -> Self {
+        self.map(|d| d.replace_map(f), |r| r.replace_map(f))
     }
 
     pub(crate) fn collect_garbage() {

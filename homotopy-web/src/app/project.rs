@@ -15,6 +15,7 @@ use crate::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Msg {
     ImportProof(File),
+    ImportProofExtend(File),
     EditMetadata(MetadataEdit),
     Noop,
 }
@@ -49,6 +50,14 @@ impl Component for ProjectView {
                 Msg::Noop
             }
         });
+        let import_extend = ctx.link().callback(|e: Event| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            if let Some(filelist) = input.files() {
+                Msg::ImportProofExtend(filelist.get(0).unwrap())
+            } else {
+                Msg::Noop
+            }
+        });
 
         html! {
             <>
@@ -57,6 +66,10 @@ impl Component for ProjectView {
                     {"Import"}
                 </label>
                 <input type="file" accept="application/msgpack,application/octet-stream,application/zip,.hom,.json,.zip" class="visually-hidden" id="import" onchange={import}/>
+                <label for="import-extend" class="button">
+                    {"Import (Extend)"}
+                </label>
+                <input type="file" accept="application/msgpack,application/octet-stream,application/zip,.hom,.json,.zip" class="visually-hidden" id="import-extend" onchange={import_extend}/>
                 <div class="metadata__details">
                     <TexSpan
                         class="metadata__title"
@@ -104,8 +117,9 @@ impl Component for ProjectView {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         let dispatch = &ctx.props().dispatch;
+        let is_extend = matches!(&msg, Msg::ImportProofExtend(_));
         match msg {
-            Msg::ImportProof(file) => {
+            Msg::ImportProof(file) | Msg::ImportProofExtend(file) => {
                 let is_zip = std::path::Path::new(&file.name())
                     .extension()
                     .map_or(false, |ext| ext.eq_ignore_ascii_case("zip"));
@@ -141,7 +155,12 @@ impl Component for ProjectView {
                             })
                             .flatten()
                             .unwrap_or(data);
-                        dispatch.emit(model::Action::Proof(model::proof::Action::ImportProof(serialized.into())));
+                        dispatch.emit(model::Action::Proof(
+                            if is_extend {
+                                model::proof::Action::ImportProofExtend(serialized.into())
+                            } else {
+                                model::proof::Action::ImportProof(serialized.into())
+                            }));
                     }),
                 );
                 self.reader = Some(task);
