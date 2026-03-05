@@ -148,7 +148,11 @@ pub enum Action {
 
     Merge(Generator, Generator),
 
+    /// Import a proof, replacing the current signature.
     ImportProof(SerializedData),
+
+    /// Import a proof into a new folder, extending the current signature.
+    ImportProofExtend(SerializedData),
 
     EditSignature(SignatureEdit),
 
@@ -255,7 +259,7 @@ impl Action {
                 .is_some_and(|ws| ws.diagram.dimension() > 0),
             Self::Suspend(_, _) | Self::SuspendSignature => proof.signature.has_generators(),
             Self::Merge(_, _) => true,
-            Self::ImportProof(_) => true,
+            Self::ImportProof(_) | Self::ImportProofExtend(_) => true,
             Self::EditSignature(_) | Self::EditMetadata(_) => true, /* technically the edits could be trivial but do not worry about that for now */
             Self::FlipBoundary | Self::RecoverBoundary => proof.boundary.is_some(),
             Self::Stash => proof.workspace.is_some(),
@@ -355,6 +359,7 @@ impl ProofState {
             Action::StashPop => self.stash_pop(),
             Action::StashApply => self.stash_apply(),
             Action::ImportProof(data) => self.import_proof(data)?,
+            Action::ImportProofExtend(data) => self.import_proof_extend(data)?,
             Action::EditMetadata(edit) => self.edit_metadata(edit),
             Action::Nothing => false,
         };
@@ -971,6 +976,20 @@ impl ProofState {
         self.metadata = metadata;
         self.boundary = None;
         self.stash = Vector::new();
+        Ok(true)
+    }
+
+    /// Handler for [Action::ImportProofExtend].
+    fn import_proof_extend(&mut self, data: &SerializedData) -> Result<bool, ProofError> {
+        let ((signature, _), metadata) = serialize::deserialize(&data.0)
+            .or_else(|| migration::deserialize(&data.0))
+            .ok_or(ProofError::Import)?;
+        for info in signature.iter() {
+            info.diagram
+                .check(true)
+                .map_err(|_err| ProofError::Import)?;
+        }
+        self.signature.union_signature(signature, metadata);
         Ok(true)
     }
 
