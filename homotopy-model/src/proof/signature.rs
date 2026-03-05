@@ -239,9 +239,10 @@ impl Signature {
         }
 
         // Then, replace all generators in parallel, and create fresh folder IDs.
+        let mut folder_ids = (self.next_folder_id()..).into_iter();
         let mut tree_internally_here = other.0.map(|node| match node {
             SignatureItem::Folder(mut info) => {
-                info.id = self.next_folder_id();
+                info.id = folder_ids.next().unwrap_or_default();
                 SignatureItem::Folder(info)
             }
             SignatureItem::Item(mut info) => {
